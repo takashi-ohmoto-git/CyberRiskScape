@@ -16,7 +16,10 @@
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
     "useDefineForClassFields": true,
-    "noEmit": true
+    "noEmit": true,
+    // @types/node は明示的に読み込む（従来は vitest@2 の型定義が持つ
+    // /// <reference types="node" /> 経由で暗黙に入っていた）
+    "types": ["node"]
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
