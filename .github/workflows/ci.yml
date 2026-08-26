@@ -1,0 +1,39 @@
+# 型チェック・テスト・ビルドの継続的インテグレーション。
+# main への push と、main 宛ての Pull Request で実行する。
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: 型チェック（strict）
+        run: npx tsc --noEmit
+
+      - name: テスト
+        run: npm test
+
+      - name: ビルド
+        run: npm run build
