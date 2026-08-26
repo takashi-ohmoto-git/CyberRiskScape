@@ -1,0 +1,168 @@
+# PQC（耐量子計算機暗号）移行リスクに関する脅威ルール。
+# 出典:
+#   - NIST IR 8547 "Transition to Post-Quantum Cryptography Standards"
+#     （PQC 移行・古典暗号の deprecation/disallow スケジュール）。https://csrc.nist.gov/
+#   - NIST FIPS 203 (ML-KEM) / FIPS 204 (ML-DSA) / FIPS 205 (SLH-DSA)
+#     （標準化された PQC 鍵カプセル化・署名アルゴリズム）。https://csrc.nist.gov/
+#   - NSA CNSA 2.0 "Commercial National Security Algorithm Suite 2.0"
+#     （長寿命システム・ファームウェア署名の PQC 移行期限）。https://www.nsa.gov/
+#   - CRYPTREC「電子政府推奨暗号リスト」および耐量子計算機暗号に関する調査報告
+#     （日本国内の暗号アルゴリズム移行方針）。https://www.cryptrec.go.jp/
+#   本文は逐語転載せず日本語要約のみ。クロスマッピングは references にコメント併記する。
+#
+#   SPDX-License-Identifier: Apache-2.0
+#   ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+#   出典の帰属表示は NOTICE を参照。
+#
+# 重複回避方針:
+#   暗号・通信保護の脅威は既存ライブラリと一部重なるが、PQC 特有の「将来の量子計算機による
+#   遡及的失効」「暗号アルゴリズムの差し替え可能性（crypto-agility）」「移行管理（ガバナンス）」は
+#   現行ライブラリ未カバーのため、本ファイルで差分のみ追加する。
+#   - 現在時点の平文盗聴      → stride-edge-plain-encryption-001（encryption:[Plain]）でカバー済。
+#     本ファイルの HNDL は TLS（古典鍵交換）でも将来復号され得る点を扱い、別 canonicalId とする。
+#   - 委譲経路の暗号化欠如    → anthropic-zt-delegation-integrity-001 / maestro-agent-untrusted-response-001 でカバー済。
+#   - 保管時暗号化の不備      → stride-datastore-info-disclosure（保管時暗号化）でカバー済。
+#   本ファイルが追加するのは PQC 移行固有の 4 リスク（HNDL / CBOM 欠如 / 長寿命署名 / crypto-agility）。
+#
+# framework について:
+#   スキーマの FrameworkSchema は enum ['STRIDE','AI','AgenticAI'] で閉じており、新値 "PQC" の
+#   追加はスキーマ破壊変更となるため行わない（YAML 内表現を優先）。PQC リスクは本質的に
+#   暗号・情報保護（STRIDE の Information Disclosure / Tampering）に属するため framework:STRIDE とし、
+#   PQC 固有性は category / name / description / references で表現する。enum 拡張の要否は人間判断。
+#
+# encryption enum について:
+#   EncryptionTypeSchema は ['Plain','TLS','E2EE'] のまま。古典鍵交換 vs PQC 鍵交換の区別は
+#   enum 拡張せず、HNDL ルールの description と条件設計（[Plain, TLS] を対象に含める）で表現する。
+#
+# mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
+# description は Can/Cannot ペアと blast radius を意識して記述する（docs/threat-schema.md §7.5）。
+
+schemaVersion: 1
+
+rules:
+  # ── Harvest Now, Decrypt Later（HNDL）─────────────────────────
+  # 平文だけでなく、TLS（古典鍵交換 ECDHE/RSA）でも収集後に将来の量子計算機で
+  # 遡及復号され得る点が要点。現在時点の盗聴は stride-edge-plain-encryption-001 が扱う。
+  - id: pqc-harvest-now-decrypt-later-001
+    canonicalId: harvest-now-decrypt-later
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "Harvest Now, Decrypt Later（収集後・将来復号）"
+    severity: Medium
+    description: "{{sourceName}} から {{targetName}} へ流れる長期機密性が必要なデータ（機密情報・個人情報・認証情報を保持し得るストア等と送受する経路）が、平文または古典鍵交換（ECDHE/RSA 等）の TLS で運ばれる場合、攻撃者は今のうちに暗号文を収集・保存し、将来の暗号学的に十分な量子計算機（CRQC）が登場した時点で遡及的に復号できる。長期機密データの秘匿期間が CRQC 出現時期を跨ぐと、現時点で「暗号化済み」でも将来の機密性は保証されない。一方、この経路自体は将来時点の復号であり、現在のセッションのリアルタイム盗聴・改ざんを直ちに可能にするものではない（その即時リスクは平文経路ルールが別途扱う）。"
+    mitigation: "[Foundation] 長期機密データを運ぶ経路を TLS で暗号化し、平文経路を排除する（前提）。秘匿要求期間が長いデータフローを棚卸しし、HNDL 対象として識別する。 [Enterprise] TLS の鍵交換を PQC ハイブリッド（ML-KEM + 古典 ECDHE の併用、X25519MLKEM768 等）へ移行し、収集済み暗号文の将来復号を不可能化する。 [Advanced] 長期機密データはアプリ層でも PQC/ハイブリッド KEM により封緘し、鍵管理を crypto-agile に保ってアルゴリズム危殆化時に再暗号化できる体制を維持する。"
+    appliesTo:
+      kind: edge
+      # 長期機密データはストアへ書き込む経路とストアから読み出す経路の両方を流れる
+      anyOf:
+        - encryption: [Plain, TLS]
+          targetType: [DATA_STORE, DB]
+        - encryption: [Plain, TLS]
+          sourceType: [DATA_STORE, DB]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+    references:
+      # 要約参照のみ（逐語転載なし）。HNDL の概念と PQC 鍵交換移行の根拠。
+      - title: "NIST IR 8547 - Transition to Post-Quantum Cryptography Standards"
+        url: "https://csrc.nist.gov/pubs/ir/8547/ipd"
+      - title: "NIST FIPS 203 - Module-Lattice-Based Key-Encapsulation Mechanism (ML-KEM)"
+        url: "https://csrc.nist.gov/pubs/fips/203/final"
+
+  # ── 暗号インベントリ（CBOM）欠如 ─────────────────────────────
+  # PQC 移行の前提となる「どこで何の暗号が使われているか」の可視化が無い、というガバナンス
+  # 系の内在リスク。接続関係に依存しないため required:false。
+  - id: pqc-crypto-inventory-cbom-gap-001
+    canonicalId: crypto-inventory-gap
+    framework: STRIDE
+    category: "Cryptographic Governance"
+    name: "暗号インベントリ（CBOM）の欠如"
+    severity: Medium
+    description: "{{nodeName}} のような機密データを保持・仲介する資産で、利用中の暗号アルゴリズム・鍵長・証明書・ライブラリを体系的に棚卸しした暗号部品表（CBOM）が無い場合、組織は量子脆弱な古典暗号（RSA/ECDSA/ECDH）がどこに残存するかを把握できず、PQC 移行計画を立てられない。攻撃者の直接的な侵入手段ではないが、移行漏れにより危殆化アルゴリズムが長期間放置され、HNDL や署名偽造のリスク面を広げる（blast radius は当該資産が扱う全機密データ）。一方、CBOM 欠如それ自体は単独で機密性を破る脆弱性ではなく、量子脅威の顕在化や別の暗号弱点と組み合わさって初めて実害となる。"
+    mitigation: "[Foundation] 当該資産で使用する暗号アルゴリズム・鍵長・証明書・暗号ライブラリを台帳化し、量子脆弱な古典暗号（RSA/ECDSA/ECDH）の所在を明示する。 [Enterprise] CBOM を自動生成・継続更新し（依存スキャン・TLS スキャン連携）、CI/CD で量子脆弱アルゴリズムの新規導入を検知・ブロックする。 [Advanced] CBOM を資産インベントリ・PQC 移行ロードマップに統合し、危殆化時に影響資産を即時特定して優先度付き再暗号化を発動できる体制を維持する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: DATA_STORE
+        - nodeType: DB
+        - nodeType: GATEWAY
+        - nodeType: FRONT_END_SERVER
+      # 暗号インベントリの有無は資産の運用ガバナンスの性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "ID.AM-02"
+      - standard: nist-csf-2.0
+        ref: "ID.AM-08"
+    references:
+      - title: "NIST IR 8547 - Transition to Post-Quantum Cryptography Standards（暗号インベントリの必要性）"
+        url: "https://csrc.nist.gov/pubs/ir/8547/ipd"
+      - title: "CRYPTREC - 耐量子計算機暗号の研究動向調査報告書"
+        url: "https://www.cryptrec.go.jp/"
+
+  # ── 長寿命デバイスの非PQC署名検証 ────────────────────────────
+  # IOT 向け。ファームウェア署名・デバイス証明書の有効期間が PQC 移行期限（CNSA 2.0 等）を
+  # 跨ぐと、フィールド配備後に署名が量子脆弱なまま固定化される内在リスク。
+  - id: pqc-long-lived-device-signature-001
+    canonicalId: long-lived-non-pqc-signature
+    framework: STRIDE
+    category: "Tampering"
+    name: "長寿命デバイスの非PQC署名検証"
+    severity: Medium
+    description: "{{nodeName}} のような長期間フィールド配備される IOT デバイスが、ファームウェア署名やデバイス証明書を古典署名アルゴリズム（RSA/ECDSA）のみで検証し、その鍵・証明書の有効期間が PQC 移行期限を跨ぐ場合、将来 CRQC が署名鍵を導出できるようになると、攻撃者は偽造ファームウェアに正規署名を付して配信し、検証を通過させてデバイスを掌握できる。物理回収・再プロビジョニングが困難な長寿命デバイスでは更新自体が間に合わず、危殆化が配備寿命の残期間にわたり固定化される。一方、これは将来時点の署名偽造であり、ML-DSA/SLH-DSA 等の PQC 署名を検証できる crypto-agile なブートチェーンであれば、現行鍵の危殆化前に署名方式を切り替えて偽造を防げる。"
+    mitigation: "[Foundation] デバイスのファームウェア署名・証明書に使う署名アルゴリズムと有効期間を棚卸しし、配備寿命が PQC 移行期限を跨ぐデバイスを識別する。 [Enterprise] セキュアブート／ファームウェア更新の検証を crypto-agile に設計し、PQC 署名（ML-DSA / SLH-DSA）またはハイブリッド署名を検証できるようにする。 [Advanced] ハードウェア信頼の起点（TPM/セキュアエレメント）に PQC 署名検証を束ね、フィールドでの署名アルゴリズム移行とロールバック防止を attestation で強制する。"
+    appliesTo:
+      kind: node
+      nodeType: IOT
+      # 署名検証方式と証明書寿命はデバイス自体の設計の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-02"
+    references:
+      - title: "NSA CNSA 2.0 - Commercial National Security Algorithm Suite 2.0（長寿命システムの PQC 移行期限）"
+        url: "https://www.nsa.gov/"
+      - title: "NIST FIPS 204 - Module-Lattice-Based Digital Signature Standard (ML-DSA)"
+        url: "https://csrc.nist.gov/pubs/fips/204/final"
+      - title: "NIST FIPS 205 - Stateless Hash-Based Digital Signature Standard (SLH-DSA)"
+        url: "https://csrc.nist.gov/pubs/fips/205/final"
+
+  # ── Crypto-agility 欠如 ──────────────────────────────────────
+  # 暗号アルゴリズムを差し替えられない実装・プロトコル固定化。HNDL/署名偽造の前提を
+  # 悪化させる横断的な内在リスク。対象は暗号を担う資産（DATA_STORE/DB/GATEWAY/
+  # FRONT_END_SERVER/CONNECTOR）。
+  - id: pqc-crypto-agility-gap-001
+    canonicalId: crypto-agility-gap
+    framework: STRIDE
+    category: "Cryptographic Governance"
+    name: "Crypto-agility（暗号俊敏性）の欠如"
+    severity: Medium
+    description: "{{nodeName}} の暗号処理が特定アルゴリズム・鍵長・プロトコル版数にハードコードされ、設定や鍵管理から暗号方式を差し替えられない場合、PQC 標準（ML-KEM/ML-DSA）への移行や古典アルゴリズム危殆化時の緊急切替に、コード改修・再デプロイ・場合により全データ再暗号化を要する。攻撃者の直接的な攻撃ベクタではないが、危殆化からの復旧時間を著しく延ばし、HNDL や署名偽造の暴露期間を広げる（blast radius は当該資産が保護する全データ・全セッション）。一方、暗号方式が抽象化され設定駆動で切替可能であれば、危殆化検知から短期間で PQC/ハイブリッドへ移行でき、暴露期間を限定できる。"
+    mitigation: "[Foundation] 暗号アルゴリズム・鍵長・プロトコル版数をコードから外し、設定・鍵管理層で切替可能にする（ハードコード排除）。 [Enterprise] 暗号処理を抽象化レイヤ（crypto provider）越しに呼び出し、PQC ハイブリッドを含む複数方式をネゴシエーション／フォールバックできるようにし、切替を CI で検証する。 [Advanced] アルゴリズム危殆化を契機に設定変更のみで全経路を PQC へ移行し、再暗号化・鍵ローテーションを自動オーケストレーションできる crypto-agile 基盤を維持する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: DATA_STORE
+        - nodeType: DB
+        - nodeType: GATEWAY
+        - nodeType: FRONT_END_SERVER
+        - nodeType: CONNECTOR
+      # アルゴリズム差替え可能性は実装設計の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "ID.IM-01"
+    references:
+      - title: "NIST IR 8547 - Transition to Post-Quantum Cryptography Standards（crypto-agility の要請）"
+        url: "https://csrc.nist.gov/pubs/ir/8547/ipd"
+      - title: "CRYPTREC - 電子政府推奨暗号リスト / 耐量子計算機暗号の移行に関する報告"
+        url: "https://www.cryptrec.go.jp/"

@@ -1,0 +1,123 @@
+CyberRiskScape
+Copyright 2026 TAKASHI OMOTO
+
+Licensed under the Apache License, Version 2.0 (the "License").
+See the LICENSE file for the full license text.
+
+================================================================================
+Third-party attributions — threat library and compliance data
+（data/threat-library/, data/compliance/, data/component-library/）
+================================================================================
+
+The threat rules and compliance mappings distributed in this repository are
+original works authored for this project. They reference the external sources
+listed below by framework name, category name, technique ID, and URL, and
+summarize the underlying concepts in Japanese. No source text is reproduced
+verbatim.
+
+本リポジトリに含まれる脅威ルールおよびコンプライアンスマッピングは、本プロジェクト
+のために独自に作成したものです。以下の外部ソースについては、フレームワーク名・
+カテゴリ名・技法 ID・URL による参照と、概念の日本語要約のみを行っており、原文の
+逐語転載は行っていません。
+
+--------------------------------------------------------------------------------
+1. OWASP GenAI Security Project
+   - OWASP Top 10 for Large Language Model Applications
+   - OWASP Top 10 for Agentic Applications 2026 (ASI Top 10)
+   - OWASP AI Exchange
+   https://genai.owasp.org/
+
+   Licensed under the Creative Commons Attribution-ShareAlike 4.0 International
+   License (CC BY-SA 4.0). https://creativecommons.org/licenses/by-sa/4.0/
+
+   Referenced by: data/threat-library/owasp-llm-top10.yaml,
+                  data/threat-library/owasp-asi-top10.yaml,
+                  data/threat-library/maestro.yaml
+
+--------------------------------------------------------------------------------
+2. MITRE ATLAS (Adversarial Threat Landscape for Artificial-Intelligence Systems)
+   https://atlas.mitre.org/
+   © The MITRE Corporation. Technique IDs (AML.Txxxx) are referenced with
+   attribution.
+
+   Referenced by: data/threat-library/mitre-atlas.yaml
+
+--------------------------------------------------------------------------------
+3. Model Context Protocol — Security Best Practices
+   https://modelcontextprotocol.io/
+
+   Referenced by: data/threat-library/agentic-zt-components.yaml
+
+--------------------------------------------------------------------------------
+4. Anthropic, "Zero Trust for AI Agents: A security framework for deploying
+   autonomous AI agents in the enterprise" (2026-05-18)
+   © Anthropic PBC. All rights reserved.
+
+   This work is not distributed under an open license. It is referenced by
+   citation and short summary only.
+
+   Referenced by: data/threat-library/anthropic-zt-agents.yaml,
+                  data/threat-library/agentic-memory-rag-edges.yaml,
+                  data/threat-library/agentic-zt-components.yaml,
+                  data/threat-library/zero-trust-access.yaml
+
+--------------------------------------------------------------------------------
+5. U.S. National Institute of Standards and Technology (NIST)
+   - SP 800-46 Rev.2, SP 800-124 Rev.2, SP 800-207, SP 800-63B
+   - IR 8259 / 8259A, IR 8547
+   - FIPS 203 (ML-KEM), FIPS 204 (ML-DSA), FIPS 205 (SLH-DSA)
+   - AI Risk Management Framework 1.0 (AI 100-1)
+   - Cybersecurity Framework 2.0 (CSWP 29)
+   https://csrc.nist.gov/ , https://www.nist.gov/cyberframework
+
+   Works of the U.S. Government; not subject to copyright protection in the
+   United States (17 U.S.C. §105). Reference to NIST publications does not
+   imply endorsement by NIST of this project.
+
+--------------------------------------------------------------------------------
+6. U.S. Cybersecurity and Infrastructure Security Agency (CISA)
+   - Zero Trust Maturity Model v2
+   - Implementing Phishing-Resistant MFA
+   - Insider Threat Mitigation Guide
+   https://www.cisa.gov/
+
+   U.S. National Security Agency (NSA)
+   - Commercial National Security Algorithm Suite 2.0 (CNSA 2.0)
+   https://www.nsa.gov/
+
+   Works of the U.S. Government; not subject to copyright protection in the
+   United States (17 U.S.C. §105).
+
+--------------------------------------------------------------------------------
+7. CIS Critical Security Controls v8
+   https://www.cisecurity.org/
+   © Center for Internet Security. Control numbers are referenced as factual
+   identifiers only; no CIS text is reproduced or adapted.
+
+--------------------------------------------------------------------------------
+8. 経済産業省・総務省「AI 事業者ガイドライン（第1.01版）」2024年4月
+   https://www.meti.go.jp/shingikai/mono_info_service/ai_shakai_jisso/index.html
+   条項の見出しは公式表記、要約は独自作成。
+
+   CRYPTREC「電子政府推奨暗号リスト」および耐量子計算機暗号に関する調査報告
+   https://www.cryptrec.go.jp/
+   出典明記の上での要約参照。
+
+   Referenced by: data/compliance/jp-ai-business-guideline.yaml,
+                  data/threat-library/pqc.yaml
+
+--------------------------------------------------------------------------------
+9. STRIDE threat modeling methodology (Microsoft, 2002)
+   A methodology; referenced as a conceptual framework.
+
+   Simon Willison — the "lethal trifecta" concept
+   https://simonwillison.net/
+   Referenced as a concept with attribution.
+
+================================================================================
+Runtime dependencies
+================================================================================
+
+This project depends on third-party npm packages that are not included in this
+repository. See package.json and package-lock.json for the dependency list and
+each package's own license.

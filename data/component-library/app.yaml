@@ -1,0 +1,68 @@
+# App コンポーネントライブラリ。
+#
+# 業務アプリケーションの利用形態を脅威モデルに載せるための 5 型：
+#   - CHAT / MAIL / CRM / OTHER_APP: 用途別の業務アプリ。
+#     認可状況（sanctioned / unsanctioned）と所有状況（自社 / 他社 / 個人）を
+#     ノード属性（cloudSanction / cloudOwnership）として NodePanel から設定できる。
+#   - SHADOW_APP: 組織が把握していないシャドー IT アプリ。
+#
+# 別ライブラリ（builtin と分離）にすることで、LeftSidebar のライブラリトグルで
+# 「アプリ型を使わない」運用を選べる。
+#
+# ライセンス: Apache-2.0（同梱）
+
+schemaVersion: 1
+
+library:
+  id: app
+  title: "App Components"
+  version: "1.0"
+  license: "Apache-2.0"
+  builtin: true
+  description: "業務アプリケーション型（Chat / Mail / CRM / Other / Shadow）。認可状況・所有状況を属性で表現する。"
+
+categories:
+  - id: APP
+    label: "App"
+    order: 36
+
+components:
+  - id: CHAT
+    label: "Chat"
+    category: APP
+    icon: { kind: builtin, name: "message-circle" }
+    shape: rounded
+    color: "bg-green-600"
+    description: "チャット / メッセージングアプリ。認可状況・所有状況を属性で設定する。"
+
+  - id: MAIL
+    label: "Mail"
+    category: APP
+    icon: { kind: builtin, name: "mail" }
+    shape: rounded
+    color: "bg-blue-500"
+    description: "メールサービス / メールクライアント。認可状況・所有状況を属性で設定する。"
+
+  - id: CRM
+    label: "CRM"
+    category: APP
+    icon: { kind: builtin, name: "users" }
+    shape: rounded
+    color: "bg-orange-600"
+    description: "CRM（顧客管理）アプリ。認可状況・所有状況を属性で設定する。"
+
+  - id: OTHER_APP
+    label: "Other"
+    category: APP
+    icon: { kind: builtin, name: "app-window" }
+    shape: rounded
+    color: "bg-slate-500"
+    description: "上記に該当しないその他の業務アプリ。認可状況・所有状況を属性で設定する。"
+
+  - id: SHADOW_APP
+    label: "Shadow"
+    category: APP
+    icon: { kind: builtin, name: "eye-off" }
+    shape: rounded
+    color: "bg-zinc-600"
+    description: "組織が把握・統制していないシャドー IT アプリ。"

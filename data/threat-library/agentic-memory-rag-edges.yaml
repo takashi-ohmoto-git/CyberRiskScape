@@ -1,0 +1,135 @@
+# エッジ semantic（memory_write / memory_read / rag_retrieval）に着目した
+# エージェントメモリ・RAG 経路依存の脅威ルール（[[plan]] §2.22 1.6d 活用）。
+#
+# 背景:
+#   エッジ semantic（data_flow / tool_invocation / delegation / memory_read /
+#   memory_write / rag_retrieval）はスキーマ・エンジン対応済みだが、使用ルールは
+#   anthropic-zt-delegation-integrity-001（delegation）の 1 件のみだった。
+#   未指定エッジは data_flow 既定として評価されるため、本ファイルのルールは
+#   設計者が明示的に semantic マークしたエッジでのみ発火し、既存ルールの挙動には
+#   一切影響しない。
+#
+# 出典:
+#   - Anthropic, "Zero Trust for AI Agents", 2026-05-18。
+#     （Memory and context poisoning / Multi-agent delegation の章）。
+#   - MITRE ATLAS AML.T0051 (LLM Prompt Injection - indirect)。
+#     https://atlas.mitre.org/techniques/AML.T0051
+#   本文は逐語転載せず日本語要約のみ。
+#
+#   SPDX-License-Identifier: Apache-2.0
+#   ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+#   出典の帰属表示は NOTICE を参照。
+#
+# 重複回避方針:
+#   既存ルールは AGENT/MEMORY_STORE の「ノード」または「未指定（data_flow 既定）」
+#   エッジ視点が中心で、明示 semantic エッジの「経路」自体を条件にしたルールは
+#   未カバーだった。本ファイルは下記のとおり既存ルールと subject を分離する。
+#
+#   - memory_write 経路の永続化リスク（本ファイル新規）
+#     → maestro-agent-memory-poisoning-001（AGENT/SUB_AGENT 視点の node ルール、
+#       「エージェント自身の長期メモリに汚染が書き込まれる」という結果側）でカバー済。
+#       本ファイルは「信頼できない入力経路を持つエージェントが MEMORY_STORE への
+#       明示 memory_write エッジを持つ」という経路側の条件を新たに評価する。別 canonicalId。
+#     → anthropic-zt-memory-store-tampering-001（MEMORY_STORE 視点の intrinsic
+#       完全性検証欠如）とも別 subject（ストア側の検証 vs 書込経路の信頼度評価）。
+#
+#   - memory_read 経路の無検証取り込みリスク（本ファイル新規）
+#     → anthropic-zt-memory-privilege-retention-001（AGENT のセッション跨ぎ資格情報
+#       キャッシュ）、memory-store-cross-tenant-bleed-001（ストアのテナント分離欠如）
+#       のいずれとも異なり、「過去に書き込まれた（汚染済みかもしれない）記憶を、
+#       読み出し時に検証せずそのままコンテキストへ取り込む」という読み出し経路固有の
+#       脅威を扱う。別 canonicalId。
+#
+#   - rag_retrieval 経路の取得文書来歴検証欠如（本ファイル新規）
+#     → atlas-aml-t0051-indirect-prompt-injection-001 は LLM/AGENT/SUB_AGENT への
+#       inbound 接続（peerType に DB/CONNECTOR/MEMORY_STORE 等を含む、未指定エッジ
+#       ＝ data_flow 既定でも発火）で「間接プロンプトインジェクション一般」を広く扱う。
+#       本ファイルは明示 rag_retrieval エッジに限定し、「取得文書の来歴（provenance）
+#       検証・署名検証の欠如」という供給側の構成要件に焦点を当てる、より精密な
+#       サブセットルールとして追加する。§2.1 の方針（直接/間接 PI は意図的に分離）に
+#       倣い、atlas-t0051 への migrate は行わず別 canonicalId とする。
+#
+#   - tool_invocation エッジは見送り。maestro-tool-edge-001（canonicalId:
+#     weak-service-auth、targetType:[TOOL]）が data_flow 既定で既にカバーしており、
+#     tool_invocation 明示エッジ固有の追加差分が見出せなかったため本ファイルでは
+#     扱わない。
+#
+# mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
+# description は Can/Cannot ペアと blast radius を意識して記述する（docs/threat-schema.md §7.5）。
+
+schemaVersion: 1
+
+rules:
+  # ── memory_write 経路: 信頼できない入力を抱えたエージェントによる長期記憶への永続化 ──
+  - id: agentic-memory-write-untrusted-persistence-001
+    canonicalId: memory-write-untrusted-persistence
+    framework: AgenticAI
+    category: "Memory"
+    name: "信頼できない入力の長期記憶への永続化"
+    severity: High
+    description: "{{sourceName}} から {{targetName}} へ memory_write として明示された経路があり、かつ {{sourceName}} 自身が USER / EXTERNAL_ENTITY / TOOL 等からの inbound 入力（信頼できない可能性のある入力）を受け付ける場合、攻撃者はその入力経路に悪意ある指示やデータを混入させ、エージェントに「学んだこと」として長期記憶へ自動的に永続化させられる（Can）。永続化された汚染データは以後の全セッションでコンテキストとして再利用され、誤判断・なりすまし・指示の上書きを継続的に誘発する。一方、書込前にソース信頼度評価（trusted/untrusted タグ付け）と内容のサニタイズが行われていれば、入力経路が信頼できなくても永続化は成立しない（Cannot）。blast radius は当該 MEMORY_STORE を参照する全セッション・全ユーザの将来の応答。"
+    mitigation: "[Foundation] memory_write 経路の書込内容にソース属性タグ（trusted/untrusted）を必須付与し、untrusted 由来の書込は要約・命令文除去のサニタイズを経るまで永続化しない。 [Enterprise] 書込前に内容を分類器でスクリーニングし、命令文パターン・機微カテゴリを検出した場合は隔離キューへ回して人手レビューを要求する。 [Advanced] 書込のたびにプロベナンスチェーン（どの入力エッジ由来か）を記録し、後から汚染源を特定して当該由来のレコードのみ一括ロールバックできる設計にする。"
+    appliesTo:
+      kind: edge
+      when:
+        semantic: [memory_write]
+        sourceType: [AGENT, SUB_AGENT]
+        targetType: [MEMORY_STORE]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "ID.RA-09"
+    references:
+      - title: "Anthropic - Zero Trust for AI Agents (Memory and context poisoning)"
+      # AGENT 側の汚染結果は maestro-agent-memory-poisoning-001 が扱う（別 canonicalId、
+      # 本ルールは memory_write 経路の条件側を扱う）。
+
+  # ── memory_read 経路: 汚染済み記憶の無検証コンテキスト取り込み ──────
+  - id: agentic-memory-read-unverified-ingestion-001
+    canonicalId: memory-read-unverified-ingestion
+    framework: AgenticAI
+    category: "Tampering"
+    name: "汚染記憶の無検証コンテキスト取り込み"
+    severity: Medium
+    description: "{{sourceName}} から {{targetName}} へ memory_read として明示された経路がある場合、{{targetName}} は過去のセッションで書き込まれた記憶レコードを完全性検証なしにそのまま現在のコンテキストへ取り込む（Can）。書込時点で汚染が検知されなかったレコード（memory_write 側の対策が部分的にしか機能しなかった場合等）が、読み出し時点でも無検証であれば、汚染は時間差を置いて顕在化し、原因となった書込セッションの追跡が困難になる。一方、読取時にレコード単位の完全性ハッシュ・署名を検証し、検証失敗レコードを除外またはフラグ付けしてから利用していれば、書込時の見逃しは読取時に二重チェックされる（Cannot）。blast radius は当該記憶を読み出す全エージェントセッションの応答品質と意思決定。"
+    mitigation: "[Foundation] memory_read 時にレコードのソース属性タグ（trusted/untrusted）を確認し、untrusted レコードはコンテキストへ含める前に明示的に区別する（生の指示として解釈しない）。 [Enterprise] レコード単位の完全性ハッシュを読取時に再検証し、改ざん・検証失敗レコードは除外してアラートを上げる。 [Advanced] 読取結果に対しても異常検知（統計的逸脱・既知の汚染パターン）を継続適用し、検知時は当該レコードを書込元まで遡って隔離する。"
+    appliesTo:
+      kind: edge
+      when:
+        semantic: [memory_read]
+        sourceType: [MEMORY_STORE]
+        targetType: [AGENT, SUB_AGENT]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+    references:
+      - title: "Anthropic - Zero Trust for AI Agents (Memory and context poisoning)"
+      # MEMORY_STORE 自体の完全性検証欠如（intrinsic）は anthropic-zt-memory-store-tampering-001
+      # が扱う（別 canonicalId、本ルールは読出し経路側の条件を扱う）。
+
+  # ── rag_retrieval 経路: 取得文書の来歴・署名検証欠如 ─────────────
+  - id: agentic-rag-retrieval-provenance-gap-001
+    canonicalId: rag-retrieval-provenance-gap
+    framework: AgenticAI
+    category: "Tampering"
+    name: "RAG 取得文書の来歴・署名検証欠如"
+    severity: High
+    description: "{{sourceName}} から {{targetName}} へ rag_retrieval として明示された経路がある場合、{{targetName}} は検索結果の文書本文を取得元・更新者・改ざん有無の来歴（provenance）情報なしにコンテキストへ取り込む（Can）。攻撃者がインデックス対象の文書（社内 Wiki、共有ドライブ、Web クロール対象等）に間接プロンプトインジェクションのペイロードを仕込めば、検索ヒットした時点でエージェントの指示として解釈され得る。一方、取得文書にソース署名・最終更新者・更新時刻のメタデータが付与され、未署名または許可リスト外ソースの文書を「データ」として明示的にラベル付けし命令として解釈しない設計であれば、文書内容に指示文が含まれていても実行には至らない（Cannot）。blast radius は当該インデックスを検索する全エージェントセッションの応答・後続ツール呼出。"
+    mitigation: "[Foundation] rag_retrieval で取得した文書本文を untrusted データとして明示ラベル付けし、文書内の命令文パターンを検出・無効化してからコンテキストへ渡す。 [Enterprise] インデックス登録時にソース・更新者・更新時刻のメタデータを必須化し、許可リスト外ソース由来の文書は検索結果から除外または低信頼マークを付与する。 [Advanced] 文書に暗号学的署名・ハッシュチェーンを付与し、取得時に署名検証に失敗した文書は利用不可とする。インデックス更新の異常（大量・短時間の改変）を検知して自動隔離する。"
+    appliesTo:
+      kind: edge
+      when:
+        semantic: [rag_retrieval]
+        targetType: [AGENT, SUB_AGENT, LLM]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+      - standard: nist-csf-2.0
+        ref: "ID.AM-08"
+    references:
+      - title: "MITRE ATLAS AML.T0051 LLM Prompt Injection（関連マッピング、間接プロンプトインジェクション一般）"
+        url: "https://atlas.mitre.org/techniques/AML.T0051"
+      - title: "Anthropic - Zero Trust for AI Agents (Memory and context poisoning)"

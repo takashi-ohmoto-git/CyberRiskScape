@@ -1,0 +1,203 @@
+# Agentic Zero Trust 拡張コンポーネント（MCP_SERVER / MEMORY_STORE / SUB_AGENT）向け
+# bundled 脅威ルール（[[plan]] §2.22 1.6e 以降の段階的再構成）。
+#
+# 背景: §2.22 で MCP_SERVER / SUB_AGENT / MEMORY_STORE の 3 型を component-library に
+#   追加したが、脅威ルール側のカバレッジが薄かった（MCP_SERVER:0 / SUB_AGENT:0 /
+#   MEMORY_STORE:1）。docs/threat-schema.md §4.1 はカスタムルールでの anyOf 展開を
+#   推奨注記するが、「脅威ライブラリの質が競争優位」（docs/strategy.md §5-2）の方針に
+#   従い bundled で持つ。SUB_AGENT への AGENT ルール anyOf 展開は各ソースファイル側で
+#   in-place に行い、本ファイルは MCP_SERVER / MEMORY_STORE 固有の新規脅威に限定する。
+#
+# 出典:
+#   - Model Context Protocol 公式 "Security Best Practices"（modelcontextprotocol.io）。
+#     tool descriptor poisoning / line jumping、confused deputy、token passthrough 等。
+#   - Anthropic, "Zero Trust for AI Agents", 2026-05-18。MCP サーバ・長期メモリの
+#     ゼロトラスト観点。
+#   本文は逐語転載せず日本語要約のみ。クロスマッピングは references にコメント併記する。
+#
+#   SPDX-License-Identifier: Apache-2.0
+#   ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+#   出典の帰属表示は NOTICE を参照。
+#
+# 重複回避方針（[[anthropic-zt-agents.yaml]] / [[owasp-asi-top10.yaml]] と同じ運用）:
+#   既存ライブラリは AGENT / TOOL ノード前提のルールが多く、MCP_SERVER / MEMORY_STORE
+#   ノード型では発火しない。本ファイルは新型ノードに固有の攻撃面のみ追加する。
+#   - ツール記述子改ざん（TOOL ノード視点）→ anthropic-zt-tool-poisoning-rug-pull-001 でカバー済。
+#     本ファイルの MCP tool descriptor poisoning / line jumping は MCP_SERVER ノード視点 +
+#     「ツール呼び出し前（tools/list 取得時点）に作用する」点を扱い、別 canonicalId とする。
+#   - 委譲時の権限継承（AGENT 視点）→ anthropic-zt-confused-deputy-001 でカバー済。
+#     本ファイルの MCP OAuth token confused deputy は MCP_SERVER が下流 OAuth トークンを
+#     保持することに起因する別系統で、別 canonicalId とする（相互に references で関連付け）。
+#   - サービス認証の弱さ（edge auth 視点）→ anthropic-zt-static-api-key-001 / maestro-tool-edge-001
+#     （canonicalId: weak-service-auth）でカバー済。MCP token theft は edge ではなく
+#     MCP_SERVER ノードが保持する資格情報の集中リスクを扱う。
+#   - メモリ汚染・ストア完全性 → maestro-agent-memory-poisoning-001 /
+#     anthropic-zt-memory-store-tampering-001 でカバー済。本ファイルは
+#     「テナント/セッション跨ぎのデータ混入・残留」と「長期記憶への PII/認証情報の無秩序な蓄積」
+#     という別 subject を追加する。
+#   - セッション跨ぎの権限残留（AGENT 視点）→ anthropic-zt-memory-privilege-retention-001 でカバー済。
+#     本ファイルの MEMORY_STORE cross-tenant データ混入は AGENT のメモリキャッシュではなく
+#     MEMORY_STORE ノード自体のテナント分離欠如を扱い、別ルールとする（references で関連付け）。
+#
+# 注: エッジ semantic（memory_read / memory_write 等）を条件に使うルールは本ファイル対象外
+#   （次タスクで別途実施）。本ファイルは node ルールおよび semantic を使わない edge ルールに限定。
+#
+# mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
+# description は Can/Cannot ペアと blast radius を意識して記述する（docs/threat-schema.md §7.5）。
+
+schemaVersion: 1
+
+rules:
+  # ════════════════════════════════════════════════════════════════
+  # (a) MCP_SERVER 固有の脅威
+  # ════════════════════════════════════════════════════════════════
+
+  # ── Tool descriptor poisoning / Line jumping ─────────────────────
+  # 要点: tools/list でツール一覧を取得した「時点」で、悪意ある記述子（説明文・
+  #   パラメータスキーマに埋め込まれた指示）がエージェントのコンテキストに注入される。
+  #   ツールを一度も呼ばなくても作用する（= line jumping）点が TOOL 視点の rug pull と異なる。
+  - id: mcp-tool-descriptor-poisoning-001
+    canonicalId: tool-descriptor-poisoning
+    framework: AgenticAI
+    category: "Supply Chain"
+    name: "ツール記述子ポイズニング / Line jumping"
+    severity: Critical
+    description: "{{nodeName}} が公開するツール記述子（name・description・入力スキーマ・アノテーション）に隠し指示が埋め込まれていると、エージェントは tools/list でツール一覧を取得した時点でその記述子をコンテキストに取り込み、ツールを一度も呼び出さないうちにプロンプトインジェクションが成立する（line jumping）。攻撃者はこれで他ツールの引数すり替え・機密の外部送信・承認フローの回避を誘導できる。一方、記述子が署名検証され、未署名・改変記述子をクライアントが拒否し、かつ記述子テキストを untrusted データとして命令から分離していれば、一覧取得だけでは注入は成立しない。blast radius は当該 MCP サーバを接続する全エージェントセッション。"
+    mitigation: "[Foundation] 接続する MCP サーバを許可リスト化し、ツール記述子（説明文・スキーマ）を untrusted データとして扱って命令文を検出・無効化する。記述子の差分を承認制にし黙示の更新を禁止する。 [Enterprise] ツール記述子に署名を必須化し、未署名・無効署名・前回ハッシュからの無断変更を拒否する。記述子をモデルへ渡す前にサニタイズゲートを通す。 [Advanced] 記述子の deployment verification と完全性 attestation を CI に統合し、変更検知時に当該サーバを自動隔離する。"
+    appliesTo:
+      kind: node
+      nodeType: MCP_SERVER
+      # 記述子ポイズニングは MCP サーバを構成図に置いた時点で問うべき内在リスク（接続不問）。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "GV.SC-05"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-06"
+    references:
+      - title: "Model Context Protocol - Security Best Practices（tool descriptor / prompt injection via tool definitions）"
+        url: "https://modelcontextprotocol.io/"
+      # TOOL ノード視点の改ざん（rug pull）は anthropic-zt-tool-poisoning-rug-pull-001 が扱う（別 canonicalId）。
+      - title: "Anthropic - Zero Trust for AI Agents (Tool poisoning)（関連マッピング）"
+
+  # ── MCP サーバなりすまし / タイポスクワッティング ──────────────────
+  # 要点: ディスカバリ・レジストリ・パッケージ名の偽装で、正規 MCP サーバになりすました
+  #   悪性サーバをエージェントに接続させるサプライチェーン攻撃。
+  - id: mcp-server-impersonation-typosquatting-001
+    canonicalId: mcp-server-impersonation
+    framework: AgenticAI
+    category: "Supply Chain"
+    name: "MCP サーバなりすまし / タイポスクワッティング"
+    severity: High
+    description: "{{nodeName}} の接続先 MCP サーバがレジストリ・パッケージ名・ディスカバリ応答の偽装（タイポスクワッティング、名前衝突、レジストリ汚染）で正規サーバになりすましている場合、エージェントは悪性サーバへ接続し、入力プロンプト・引数・取得結果を攻撃者へ引き渡してしまう。攻撃者は正規サーバを装いつつツール出力を改ざん・窃取できる。一方、サーバのアイデンティティが暗号学的に検証され（署名済み server card / 固定エンドポイント + 証明書ピン留め）、許可リスト外サーバへの接続を拒否していれば、名前の類似だけでは接続を奪取できない。blast radius は当該サーバへ送られる全リクエストとその応答に依存するエージェント挙動。"
+    mitigation: "[Foundation] 接続先 MCP サーバを ID・エンドポイント単位で許可リスト化し、名前の類似に依存せず固定の識別子で解決する。 [Enterprise] サーバアイデンティティを暗号学的に検証（署名済み server metadata / mTLS + 証明書ピン留め）し、レジストリ応答の改ざん・偽登録を拒否する。 [Advanced] PKI 信頼ルートと attested registry でサーバを継続検証し、危殆化・なりすまし検知時に接続を自動失効する。"
+    appliesTo:
+      kind: node
+      nodeType: MCP_SERVER
+      # サーバの真正性検証は構成図に MCP サーバを置いた時点の内在リスク（接続不問）。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "GV.SC-05"
+      - standard: nist-csf-2.0
+        ref: "GV.SC-07"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+    references:
+      - title: "Model Context Protocol - Security Best Practices（server identity / discovery spoofing）"
+        url: "https://modelcontextprotocol.io/"
+      # モデル成果物の供給網（supply-chain-model）とは subject が異なるため別 canonicalId。
+
+  # ── MCP の OAuth トークン窃取 / Confused Deputy ───────────────────
+  # 要点: MCP サーバが下流 API への OAuth トークン（複数ユーザ・複数下流分）を保持・中継する
+  #   ことで、サーバ侵害時にトークンが一括窃取される。また下流に対しては「サーバ自身の権限」で
+  #   呼び出すため、エンドユーザ意図を超えた confused deputy が成立する。
+  - id: mcp-oauth-token-confused-deputy-001
+    canonicalId: mcp-token-custody
+    framework: AgenticAI
+    category: "Identity"
+    name: "MCP の OAuth トークン窃取 / Confused Deputy"
+    severity: High
+    description: "{{nodeName}} が下流 API への OAuth アクセストークン／リフレッシュトークンを保持・中継する設計では、サーバ侵害時に複数ユーザ・複数下流分の長寿命トークンが一括窃取され、攻撃者は各下流 API へ正規トークンで横展開できる。さらに下流呼び出しがエンドユーザ意図ではなく「サーバ自身の権限」で行われると、低権限の要求でも下流の広い権限が行使される confused deputy が成立する。一方、トークンが短命でユーザ単位にスコープ分離され（token passthrough を禁止し下流ごとに on-behalf-of 交換）、サーバが資格情報を平文保持せず KMS/HSM で封緘していれば、サーバ侵害でも下流権限の一括奪取は成立しにくい。blast radius は当該サーバが仲介する全下流 API と全ユーザのトークン。"
+    mitigation: "[Foundation] MCP サーバに長寿命・共有トークンを保持させず、下流呼び出しはユーザ単位の短命スコープ付きトークンに限定する。トークンの無加工中継（passthrough）を禁止する。 [Enterprise] 下流ごとに on-behalf-of トークン交換を行い、エンドユーザの請求（claims）を各呼び出しで検証して confused deputy を防ぐ。トークンは KMS で封緘し平文保持を禁止する。 [Advanced] ハードウェア attest 済みの credential を root とし（compromise host からエクスポート不能）、トークン発行を JIT/JEA で必要時のみ昇格・完了直後に自動失効する。"
+    appliesTo:
+      kind: node
+      nodeType: MCP_SERVER
+      # 下流 API への接続を持つ MCP サーバでトークン集中リスクが顕在化する。
+      connection:
+        direction: outbound
+        peerType: [TOOL, CONNECTOR, DB, LLM, EXTERNAL_ENTITY]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "Model Context Protocol - Security Best Practices（token passthrough / confused deputy）"
+        url: "https://modelcontextprotocol.io/"
+      # AGENT 視点の委譲時権限継承は anthropic-zt-confused-deputy-001 が扱う（別 canonicalId）。
+      # edge 視点の静的キー/弱認証は anthropic-zt-static-api-key-001（weak-service-auth）が扱う。
+      - title: "Anthropic - Zero Trust for AI Agents (Service authentication / Identity and privilege abuse)（関連マッピング）"
+
+  # ════════════════════════════════════════════════════════════════
+  # (c) MEMORY_STORE 固有の脅威（semantic edge ルールは対象外）
+  # ════════════════════════════════════════════════════════════════
+
+  # ── テナント/セッション跨ぎのデータ混入・残留 ─────────────────────
+  # 要点: MEMORY_STORE ノード自体のテナント/セッション分離欠如。AGENT のメモリキャッシュ
+  #   （anthropic-zt-memory-privilege-retention-001）とは別 subject。
+  - id: memory-store-cross-tenant-bleed-001
+    canonicalId: memory-cross-tenant-bleed
+    framework: AgenticAI
+    category: "Information Disclosure"
+    name: "テナント/セッション跨ぎのメモリ混入・残留"
+    severity: High
+    description: "{{nodeName}} がテナント・セッション・ユーザ単位の分離キーを持たずにエージェントの長期メモリ・要約・検索インデックスを格納していると、あるテナントのセッションで書き込まれた内容が別テナント・別セッションの検索／要約で参照され、機密データ・会話内容・中間成果物が混入・残留する。攻撃者は意図的に「他テナントの記憶」を引き出すプロンプトでクロステナント漏洩を誘発できる。一方、メモリレコードがテナント／セッション ID で物理または論理分離され、読取時に呼出元スコープと突合する ACL が強制されていれば、別スコープのレコードは検索結果に現れず混入は成立しない。blast radius は当該ストアを共有する全テナント・全セッションの記憶内容。"
+    mitigation: "[Foundation] メモリレコードにテナント／セッション／ユーザ ID を必須付与し、読取・検索を呼出元スコープに限定する（共有をデフォルト禁止）。セッション終了時に揮発メモリを破棄する。 [Enterprise] テナントごとにインデックス／名前空間を分離し、読取時に属性ベース ACL を強制する。残留対策として保持期間（TTL）と論理削除の検証を運用する。 [Advanced] レコード単位の暗号化キーをテナント鍵で分離（crypto-shredding 可能）し、クロススコープ参照の試行を検知してアラート・隔離する。"
+    appliesTo:
+      kind: node
+      nodeType: MEMORY_STORE
+      # テナント/セッション分離の有無はメモリストアの設計の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "Anthropic - Zero Trust for AI Agents (Memory and context poisoning / tenant isolation)"
+      # AGENT のメモリキャッシュ経由の権限残留は anthropic-zt-memory-privilege-retention-001 が扱う。
+      # ストア自体の完全性（汚染データ永続化）は anthropic-zt-memory-store-tampering-001 が扱う。
+
+  # ── 長期記憶への PII / 認証情報の無秩序な蓄積 ─────────────────────
+  # 要点: 機微カテゴリ（PERSONAL_INFO / CREDENTIAL 等）を選別・最小化せず長期記憶に
+  #   蓄積することで、ストアが高価値ターゲット化し漏洩時の影響が増幅する。
+  - id: memory-store-sensitive-data-accumulation-001
+    canonicalId: memory-sensitive-accumulation
+    framework: AgenticAI
+    category: "Information Disclosure"
+    name: "長期記憶への個人情報・認証情報の無秩序な蓄積"
+    severity: Medium
+    description: "{{nodeName}} が会話・ツール応答・中間成果物から個人情報（PERSONAL_INFO）・認証情報（CREDENTIAL）・機密情報を選別せずそのまま長期記憶へ蓄積すると、ストアが時間とともに高価値の機微データ集積点となり、ひとたび漏洩・不正アクセスが起きた際の影響範囲がセッション単位を超えて拡大する。攻撃者はストア侵害でキャッシュ済み資格情報や過去 PII を一括取得できる。一方、書き込み時に機微カテゴリを検出してマスキング／除外し、認証情報の永続化を禁止していれば、ストアが侵害されても回収できる機微データは限定される。blast radius は当該ストアに蓄積された全期間の機微データ。"
+    mitigation: "[Foundation] 長期記憶への書き込み前に機微カテゴリ（PII・認証情報・機密）を検出し、認証情報の永続化を禁止・PII はマスキングまたは保持禁止とする。 [Enterprise] 記憶対象を業務上必要な要約に最小化し、機微カテゴリには短い保持期間（TTL）と自動失効を適用する。蓄積内容を定期的に棚卸し・監査する。 [Advanced] 保管時の機微データをトークナイズ／暗号化し、データ主体の削除要求（消去権）に応えられる消去可能な記憶設計を維持する。"
+    appliesTo:
+      kind: node
+      nodeType: MEMORY_STORE
+      # 機微データ蓄積の方針はストアの運用設計の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "ID.AM-08"
+    references:
+      - title: "Anthropic - Zero Trust for AI Agents (Memory hygiene / minimization)"
+      # OWASP LLM02 Sensitive Information Disclosure に対応（クロスマッピング、LLM ノード視点は owasp-llm02 が扱う）。
+      - title: "OWASP LLM02:2025 Sensitive Information Disclosure（関連マッピング）"
+        url: "https://genai.owasp.org/llmrisk/llm02-sensitive-information-disclosure/"

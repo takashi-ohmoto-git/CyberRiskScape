@@ -1,0 +1,228 @@
+# MITRE ATLAS (Adversarial Threat Landscape for AI Systems) ベースの脅威ルール。
+# 出典: https://atlas.mitre.org/
+# SPDX-License-Identifier: Apache-2.0
+# ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+# 出典の帰属表示は NOTICE を参照。
+#
+# 設計メモ:
+# - ATLAS の technique ID（AML.T00xx）を id 命名に含めて出典追跡を容易にする。
+# - 既存 stride-ai.yaml の `stride-ai-llm-evasion-001` / `stride-ai-llm-model-extraction-001` /
+#   `stride-ai-db-data-poisoning-001` との重複は避け、より特異な技法に絞って収録する。
+
+schemaVersion: 1
+
+rules:
+  # ── ML Model Access / Discovery ────────────────────────────
+  - id: atlas-aml-t0040-inference-api-access-001
+    canonicalId: inference-api-reconnaissance
+    framework: AI
+    category: "Information Disclosure"
+    name: "推論API 偵察"
+    severity: Medium
+    description: "公開された推論APIへの大量クエリにより、攻撃者が決定境界・信頼度分布・プロンプトテンプレートを観測し、後続攻撃（回避・抽出）の足掛かりにするリスク。"
+    mitigation: "APIキー単位のクエリレート制限、決定境界を粗くする応答（トップ1ラベルのみ、丸めた信頼度）、異常クエリパターン検知。"
+    appliesTo:
+      kind: node
+      nodeType: LLM
+    references:
+      - title: "MITRE ATLAS AML.T0040 ML Model Inference API Access"
+        url: "https://atlas.mitre.org/techniques/AML.T0040"
+
+  - id: atlas-aml-t0044-full-model-access-001
+    canonicalId: full-model-access
+    framework: AI
+    category: "Information Disclosure"
+    name: "モデル完全アクセス"
+    severity: Critical
+    description: "クラウドコンソール権限・コンテナ侵害・誤ったストレージ公開により、モデル重み・トークナイザ・システムプロンプトの一式に攻撃者が直接アクセスするリスク。"
+    mitigation: "モデルアーティファクトの IAM 最小権限、暗号化付きアーティファクトレジストリ、特権操作の MFA と監査、Bucket 公開設定の常時スキャン。"
+    appliesTo:
+      kind: node
+      nodeType: LLM
+      # モデル重み/アーティファクトへの直接アクセスは構成図外の経路（IAM/ストレージ公開）。
+      # 接続関係に依存しないアセット保護のリスク。
+      connection:
+        required: false
+    references:
+      - title: "MITRE ATLAS AML.T0044 Full ML Model Access"
+        url: "https://atlas.mitre.org/techniques/AML.T0044"
+
+  # ── Inference attacks ──────────────────────────────────────
+  - id: atlas-aml-t0024-001-membership-inference-001
+    canonicalId: membership-inference
+    framework: AI
+    category: "Information Disclosure"
+    name: "メンバーシップ推論"
+    severity: Medium
+    description: "推論APIの応答揺らぎから、特定のレコードが学習データに含まれていたかを推定され、機微なコホート（患者・契約者）の所属が漏洩するリスク。"
+    mitigation: "差分プライバシ付き学習、信頼度の量子化、頻度ベースの異常クエリ検知、機微属性のラベル除去。"
+    appliesTo:
+      kind: node
+      nodeType: LLM
+    references:
+      - title: "MITRE ATLAS AML.T0024.001 Infer Training Data Membership"
+        url: "https://atlas.mitre.org/techniques/AML.T0024.001"
+
+  - id: atlas-aml-t0024-002-model-inversion-001
+    canonicalId: model-inversion
+    framework: AI
+    category: "Information Disclosure"
+    name: "モデル反転"
+    severity: High
+    description: "出力やコンフィデンスを用いた反転攻撃により、学習データ中の代表サンプル（顔・カルテ・コード片）が復元されるリスク。"
+    mitigation: "出力の粗粒化、温度・top-k 制御、生成 API の利用範囲制限、出力ロギングと反転検知。"
+    appliesTo:
+      kind: node
+      nodeType: LLM
+    references:
+      - title: "MITRE ATLAS AML.T0024.002 Invert ML Model"
+        url: "https://atlas.mitre.org/techniques/AML.T0024.002"
+
+  # ── ML Attack Staging ─────────────────────────────────────
+  - id: atlas-aml-t0005-create-proxy-model-001
+    canonicalId: model-theft
+    framework: AI
+    category: "Resource Development"
+    name: "代理モデル構築"
+    severity: Medium
+    description: "標的モデルの入出力を蒸留して代理モデル（プロキシ）を作成され、ホワイトボックス前提の敵対サンプル設計やジェイルブレイク試験に転用されるリスク。"
+    mitigation: "応答出力のレート制限と多様性低減、API 利用契約への蒸留禁止条項、模倣検知（クエリ分布の異常検出）。"
+    appliesTo:
+      kind: node
+      nodeType: LLM
+    references:
+      - title: "MITRE ATLAS AML.T0005 Create Proxy ML Model"
+        url: "https://atlas.mitre.org/techniques/AML.T0005"
+
+  # ── LLM-specific techniques ─────────────────────────────────
+  - id: atlas-aml-t0051-indirect-prompt-injection-001
+    canonicalId: indirect-prompt-injection
+    framework: AI
+    category: "Tampering"
+    name: "間接プロンプトインジェクション"
+    severity: High
+    description: "RAG 取得文書・Web ページ・メール本文・ツール応答・長期メモリに埋め込まれた指令が LLM／エージェントの入力に取り込まれ、ユーザの意図に反する応答や副作用呼び出しを誘発するリスク。"
+    mitigation: "取得コンテンツの untrusted ラベリング、HTML/コードブロックの正規化、命令文の検出と無効化、機微ツールはユーザ明示指示時のみ実行可。"
+    appliesTo:
+      kind: node
+      # SUB_AGENT も改ざん可能ソースからの入力で間接 PI を受けるため追加（§2.22 1.6e anyOf 展開）。
+      anyOf:
+        - nodeType: LLM
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+      # 間接 PI は改ざん可能ソース（RAG/ツール応答/メモリ等）→ 対象ノードへの
+      # 入力流入が前提条件。inbound 経路があるときのみ発火する。
+      connection:
+        direction: inbound
+        peerType: [DB, TOOL, EXTERNAL_ENTITY, DATA_STORE, CONNECTOR, MEMORY_STORE]
+    references:
+      - title: "MITRE ATLAS AML.T0051 LLM Prompt Injection"
+        url: "https://atlas.mitre.org/techniques/AML.T0051"
+      # OWASP ASI Top 10 の ASI01 Agent Goal Hijack に対応（クロスマッピング）。
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI01: Agent Goal Hijack（関連マッピング）"
+        url: "https://genai.owasp.org/"
+
+  - id: atlas-aml-t0054-llm-jailbreak-001
+    canonicalId: llm-jailbreak
+    framework: AI
+    category: "Defense Evasion"
+    name: "ジェイルブレイク"
+    severity: High
+    description: "ロールプレイ・多段プロンプト・難読化指示によりガードレールが回避され、本来禁止された有害コンテンツ・規約違反応答が生成されるリスク。"
+    mitigation: "多層ガードレール（前処理＋後処理＋サンプル監査）、ジェイルブレイク既知パターンの継続更新、リスク応答の人手レビュー回送。"
+    appliesTo:
+      kind: node
+      nodeType: LLM
+    references:
+      - title: "MITRE ATLAS AML.T0054 LLM Jailbreak"
+        url: "https://atlas.mitre.org/techniques/AML.T0054"
+
+  - id: atlas-aml-t0029-denial-of-ml-service-001
+    canonicalId: llm-resource-exhaustion
+    framework: AI
+    category: "Denial of Service"
+    name: "ML サービス停止"
+    severity: High
+    description: "計算量を意図的に増やす入力（長文・再帰呼び出し誘発・ヘビーリーズニング）により ML 推論基盤の可用性とコストが破壊されるリスク。"
+    mitigation: "入力長上限、推論時間上限、コスト上限ベースのサーキットブレーカー、攻撃パターンのレート制限分離。"
+    appliesTo:
+      kind: node
+      nodeType: LLM
+    references:
+      - title: "MITRE ATLAS AML.T0029 Denial of ML Service"
+        url: "https://atlas.mitre.org/techniques/AML.T0029"
+
+  # ── Supply chain / Initial Access ──────────────────────────
+  - id: atlas-aml-t0019-publish-poisoned-datasets-001
+    canonicalId: training-data-poisoning
+    framework: AI
+    category: "Resource Development"
+    name: "汚染データセット公開"
+    severity: High
+    description: "攻撃者が公開リポジトリに汚染データセット（隠しトリガ・偏向ラベル）を投下し、これを取り込んだ下流の学習・RAG 構築で悪意ある動作が埋め込まれるリスク。"
+    mitigation: "信頼レジストリの利用、データセット出所と署名の検証、汚染検知（外れ値・トリガパターン検査）、コミュニティ報告の継続監視。"
+    appliesTo:
+      kind: node
+      nodeType: DB
+      # データセットの来歴・署名検証は DB を置いた時点で問うべきリスク。
+      connection:
+        required: false
+    references:
+      - title: "MITRE ATLAS AML.T0019 Publish Poisoned Datasets"
+        url: "https://atlas.mitre.org/techniques/AML.T0019"
+
+  - id: atlas-aml-t0010-003-ml-supply-chain-model-001
+    canonicalId: supply-chain-model
+    framework: AI
+    category: "Supply Chain"
+    name: "モデル供給網侵害"
+    severity: Critical
+    description: "公開モデルハブ（Hugging Face 等）から取得したモデル重み・LoRA・トークナイザに、バックドアや有害ペイロードが仕込まれているリスク。"
+    mitigation: "モデル署名検証、SBOM とハッシュ固定、社内検証パイプラインでの行動テスト、信頼ベンダーのみへの絞り込み。"
+    appliesTo:
+      kind: node
+      nodeType: LLM
+      # モデル供給網（モデルハブ経由）は構成図外の上流リスク。接続関係に依存しない。
+      connection:
+        required: false
+    references:
+      - title: "MITRE ATLAS AML.T0010.003 ML Supply Chain Compromise: Model"
+        url: "https://atlas.mitre.org/techniques/AML.T0010.003"
+      # OWASP ASI Top 10 の ASI04 Agentic Supply Chain Vulnerabilities に対応（クロスマッピング）。
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI04: Agentic Supply Chain Vulnerabilities（関連マッピング）"
+        url: "https://genai.owasp.org/"
+
+  # ── Impact / External Harms ────────────────────────────────
+  - id: atlas-aml-t0048-external-harms-001
+    canonicalId: external-harms
+    framework: AI
+    category: "Impact"
+    name: "外部への二次被害"
+    severity: High
+    description: "AI システムの誤動作・悪用結果が外部（ユーザ・顧客・社会・第三者システム）に到達し、財務損失・差別・誤情報拡散・法令違反を引き起こすリスク。"
+    mitigation: "出力のリスク分類と人手承認の閾値設計、影響範囲別の SLA とインシデント対応プレイブック、外部影響の継続モニタリング。"
+    appliesTo:
+      kind: node
+      nodeType: LLM
+    references:
+      - title: "MITRE ATLAS AML.T0048 External Harms"
+        url: "https://atlas.mitre.org/techniques/AML.T0048"
+
+  # ── Command and Control via agent ──────────────────────────
+  - id: atlas-aml-t0050-command-and-control-001
+    canonicalId: agent-command-and-control
+    framework: AgenticAI
+    category: "Command and Control"
+    name: "LLM 経由の指令"
+    severity: High
+    description: "攻撃者が事前に仕込んだトリガを通じて、エージェントを C2 ノードのように使い、内部システムへの偵察・横移動・データ収集を継続的に行うリスク。"
+    mitigation: "エージェントの長期メモリと外部通信先の許可リスト化、セッションを超える永続コンテキストの監査、ツール呼び出し履歴の異常検知。"
+    appliesTo:
+      kind: node
+      # SUB_AGENT も C2 化されうるため同等に成立（§2.22 1.6e anyOf 展開）。
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+    references:
+      - title: "MITRE ATLAS AML.T0050 Command and Control"
+        url: "https://atlas.mitre.org/techniques/AML.T0050"

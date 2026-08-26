@@ -1,0 +1,56 @@
+# Attacker コンポーネントライブラリ。
+#
+# 攻撃者を脅威モデル上に明示配置するための 3 型：
+#   - THREAT_ACTOR: 外部脅威アクター。Type 属性（threatActorType）で
+#     Cyber Criminals / Nation-State Actors / Financially motivated actors /
+#     Hacktivists / Script Kiddies を区分する。
+#   - INSIDER_THREAT: 内部不正・内部脅威。
+#   - AGENTIC_ATTACKER: AI エージェントを用いた / AI エージェント自体が暴走する攻撃者。
+#
+# 3 型とも objective（attackObjectiveId）属性で、標的とするキャンバス上の
+# コンポーネントを 1 つ指定できる（NodePanel から設定）。
+#
+# 別ライブラリ（builtin と分離）にすることで、LeftSidebar のライブラリトグルで
+# 「攻撃者型を使わない」運用を選べる。
+#
+# ライセンス: Apache-2.0（同梱）
+
+schemaVersion: 1
+
+library:
+  id: attacker
+  title: "Attacker Components"
+  version: "1.0"
+  license: "Apache-2.0"
+  builtin: true
+  description: "攻撃者型（Threat actors / Insider Threats / Agentic Attacker）。Type と標的（objective）を属性で表現する。"
+
+categories:
+  - id: ATTACKER
+    label: "Attacker"
+    order: 37
+
+components:
+  - id: THREAT_ACTOR
+    label: "Threat actors"
+    category: ATTACKER
+    icon: { kind: builtin, name: "skull" }
+    shape: rounded
+    color: "bg-red-600"
+    description: "外部脅威アクター。Type 属性で動機・能力の区分を設定し、objective で標的コンポーネントを指定する。"
+
+  - id: INSIDER_THREAT
+    label: "Insider Threats"
+    category: ATTACKER
+    icon: { kind: builtin, name: "user-x" }
+    shape: rounded
+    color: "bg-rose-700"
+    description: "内部不正・内部脅威（従業員・委託先等の正規アクセス権を持つ攻撃者）。objective で標的コンポーネントを指定する。"
+
+  - id: AGENTIC_ATTACKER
+    label: "Agentic Attacker"
+    category: ATTACKER
+    icon: { kind: builtin, name: "bot" }
+    shape: rounded
+    color: "bg-purple-700"
+    description: "AI エージェントを悪用する、または自律エージェント自体が攻撃主体となる攻撃者。objective で標的コンポーネントを指定する。"

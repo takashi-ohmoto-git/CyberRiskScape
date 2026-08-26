@@ -1,0 +1,380 @@
+# Anthropic "Zero Trust for AI Agents" (2026) ベースの脅威ルール。
+# 出典: Anthropic, "Zero Trust for AI Agents: A security framework for deploying
+#       autonomous AI agents in the enterprise", 2026-05-18.
+# 既存ライブラリ（owasp-llm-top10 / maestro / stride-ai / mitre-atlas の各 YAML）で
+# 未カバーまたは Zero Trust 観点で再整理すべき脅威のみを追加する。
+#
+# mitigation のテキストには 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）
+# をインライン markup で示す（スキーマ拡張は次フェーズ）。
+# 概念的背景（Blast Radius / Least Agency / Impossible vs Tedious テスト）は
+# docs/threat-schema.md の補足セクションを参照。
+#
+# SPDX-License-Identifier: Apache-2.0
+# ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+# 出典の帰属表示は NOTICE を参照。
+
+schemaVersion: 1
+
+rules:
+  # ── Identity: 暗号学的アイデンティティの不在（attribution gap）─────
+  - id: anthropic-zt-agent-identity-attribution-001
+    canonicalId: agent-identity-attribution-gap
+    framework: AgenticAI
+    category: "Identity"
+    name: "エージェント識別の不在"
+    severity: High
+    description: "{{nodeName}} に永続的・暗号学的に裏付けられた一意な識別子が割り当てられていない場合、ログ相関・行為帰属・アクセス制御の根拠が失われ、インシデント時に誰のどの行為かを再構成できなくなるリスク。"
+    mitigation: "[Foundation] 各エージェントインスタンスに永続 ID（ラベルではなく鍵素材で裏付け）を付与しライフサイクルを管理。 [Enterprise] X.509 証明書でサービス間接続を認証、ローテーション/失効を運用。 [Advanced] HSM/TPM に鍵を格納し attestation でエージェント完全性を検証してからアクセス許可。"
+    appliesTo:
+      kind: node
+      # SUB_AGENT も一意な暗号学的識別子を要するため同等に成立（§2.22 1.6e anyOf 展開）。
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+      # 識別子割当は設計時の判断で接続関係に依存しない。
+      connection:
+        required: false
+      # identityTier が Cryptographic / HardwareBound と明示宣言されたノードは対象外
+      # （未指定は LabelOnly として扱われ発火する＝既存挙動を保持）。
+      agentAttributes:
+        identityTier: [LabelOnly]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+    references:
+      - title: "Anthropic - Zero Trust for AI Agents (Part III: Agent identity and authentication)"
+      # OWASP ASI Top 10 の ASI03 Identity & Privilege Abuse に対応（クロスマッピング）。
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI03: Identity and Privilege Abuse（関連マッピング）"
+        url: "https://genai.owasp.org/"
+
+  # ── Credentials: 静的 API キー / 共有サービスアカウント ────────────
+  - id: anthropic-zt-static-api-key-001
+    canonicalId: weak-service-auth
+    framework: AgenticAI
+    category: "Credentials"
+    name: "静的 API キー"
+    severity: High
+    description: "{{sourceName}} から {{targetName}} への呼び出しが認証なしまたは長寿命の共有資格情報で行われています。モデル支援のコード分析を持つ攻撃者にとって静的 API キーは最初の攻略対象となり、Foundation 層の最低要件すら満たしません。"
+    mitigation: "[Foundation] OAuth 2.0 等で分単位の短命トークンを発行し自動リフレッシュ。コード/設定ファイル埋込禁止。 [Enterprise] mTLS と証明書ピン留め、証明書透明性監視。 [Advanced] ハードウェア attest 済みの credential に root（compromise host からエクスポート不能）。"
+    appliesTo:
+      kind: edge
+      anyOf:
+        - sourceType: [AGENT]
+          targetType: [TOOL, CONNECTOR, DB, LLM]
+          auth: [None]
+        - sourceType: [AGENT]
+          targetType: [TOOL, CONNECTOR, DB, LLM]
+          auth: [Password]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "Anthropic - Zero Trust for AI Agents (Service authentication)"
+
+  # ── Privilege: Confused Deputy / Unscoped privilege inheritance ──
+  - id: anthropic-zt-confused-deputy-001
+    canonicalId: confused-deputy-delegation
+    framework: AgenticAI
+    category: "Identity"
+    name: "Confused Deputy / 委譲時の権限継承"
+    severity: High
+    description: "{{nodeName}} が他エージェントへタスクを委譲する際、自身のフル権限コンテキストをそのまま引き渡すと、低権限のワーカーが本来許されないアクションを「呼出元の権限」で実行できてしまう。低権限エージェントが正規見えの指示を高権限エージェントに渡す confused deputy も同根。"
+    mitigation: "[Foundation] 委譲ごとに「呼出元ユーザ意図」を再検証し、ワーカー側で最小権限スコープを再付与する設計。 [Enterprise] エージェント間メッセージに署名 + 元の請求（claims）を保持し、各ステップで認可を再評価。 [Advanced] JIT/JEA（Just-In-Time / Just-Enough-Administration）で委譲時のみ権限を昇格し、完了直後に自動失効。"
+    appliesTo:
+      kind: node
+      # SUB_AGENT は委譲チェーンの中継点であり、さらに下流へ委譲する際に同じ権限継承問題を
+      # 起こす（unscoped privilege inheritance の経路）。同等に成立（§2.22 1.6e anyOf 展開）。
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+      # multi-agent 委譲の前提として接続必須。
+      connection:
+        direction: outbound
+        peerType: [AGENT, SUB_AGENT, TOOL]
+      # 委譲・アクション実行を行うエージェント（Autonomous / Bounded）のみ対象。
+      # Advisory / None は副作用を持たないため confused deputy 化しない。
+      agentAttributes:
+        agency: [Autonomous, Bounded]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-04"
+    references:
+      - title: "Anthropic - Zero Trust for AI Agents (Identity and privilege abuse)"
+      # OWASP ASI Top 10 の ASI03 Identity & Privilege Abuse に対応（クロスマッピング）。
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI03: Identity and Privilege Abuse（関連マッピング）"
+        url: "https://genai.owasp.org/"
+
+  # ── Memory: Cross-session credential cache leakage ───────────────
+  - id: anthropic-zt-memory-privilege-retention-001
+    canonicalId: memory-privilege-retention
+    framework: AgenticAI
+    category: "Memory"
+    name: "セッション跨ぎの権限残留"
+    severity: High
+    description: "{{nodeName}} が文脈再利用のために資格情報や API キーをメモリ上にキャッシュし、適切なセグメンテーションが行われていないと、攻撃者は別セッションのプロンプト経由でキャッシュ済み資格情報を引き出し、当該攻撃者自身では決して得られないアクションを実行できる（セッション境界跨ぎの権限昇格）。"
+    mitigation: "[Foundation] セッション単位のメモリ分離を必須化し、機微カテゴリ（資格情報・トークン）の永続化を禁止。 [Enterprise] メモリ書込にソース属性タグを付与し、検証されない外部入力由来のメモリには TTL を設定。 [Advanced] 暗号学的ハッシュで完全性検証 + 信頼境界跨ぎの再利用時は再認証を強制。"
+    appliesTo:
+      kind: node
+      # SUB_AGENT も文脈再利用のため資格情報をキャッシュしうるため同等に成立（§2.22 1.6e anyOf 展開）。
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "Anthropic - Zero Trust for AI Agents (Memory-based privilege retention)"
+      # OWASP ASI Top 10 の ASI03 Identity & Privilege Abuse に対応（クロスマッピング）。
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI03: Identity and Privilege Abuse（関連マッピング）"
+        url: "https://genai.owasp.org/"
+
+  # ── Tool Supply Chain: Tool poisoning / Rug pull ─────────────────
+  - id: anthropic-zt-tool-poisoning-rug-pull-001
+    canonicalId: tool-poisoning-rug-pull
+    framework: AgenticAI
+    category: "Supply Chain"
+    name: "Tool poisoning / Rug pull"
+    severity: Critical
+    description: "{{nodeName}} のツール記述子（MCP descriptor 等）・スキーマ・メタデータが改ざんされ、エージェントは偽装された capability に基づいてツールを呼び出してしまうリスク。正規ツールが後から悪性版に差し替えられる rug pull もこの系統。世界初の悪意ある MCP サーバは正規メールサービスを偽装し送信メールを密かにコピーしていた。"
+    mitigation: "[Foundation] ツール記述子に署名検証を必須化し、未署名・無効署名の呼出は拒否。 [Enterprise] MCP サーバを自前でホスト + immutable platform 上で稼働、更新前に再署名・コード再評価。 [Advanced] ツール記述子の deployment verification + 完全性 attestation を CI に統合し、変更検知時に自動隔離。"
+    appliesTo:
+      kind: node
+      nodeType: TOOL
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "GV.SC-05"
+      - standard: nist-csf-2.0
+        ref: "GV.SC-07"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+    references:
+      - title: "Anthropic - Zero Trust for AI Agents (Tool poisoning)"
+      # OWASP ASI Top 10 の ASI04 Agentic Supply Chain Vulnerabilities に対応（クロスマッピング）。
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI04: Agentic Supply Chain Vulnerabilities（関連マッピング）"
+        url: "https://genai.owasp.org/"
+
+  # ── Tool Chaining: 正規ツールの組合せ悪用 ───────────────────────
+  - id: anthropic-zt-tool-chaining-001
+    canonicalId: tool-chaining-abuse
+    framework: AgenticAI
+    category: "Tool"
+    name: "正規ツールの連鎖悪用"
+    severity: High
+    description: "{{nodeName}} は内部 CRM 等の社内信頼ツールと外部メール送信ツール等を併せ持つ場合、攻撃者は両ツール単独では露見しない経路（顧客データを取得→外部送信）を組み合わせて exfiltration を実行できる。各コマンドは正規バイナリ + 正規資格情報で動くため host-centric な監視では検知できない。"
+    mitigation: "[Foundation] ツール許可リストをエージェント機能単位で明示し、内部読取系と外部送信系の同居を設計時にブロック。 [Enterprise] ツール呼出シーケンスのパターン検知 + ABAC でデータ感度 × 送信先のコンテキスト評価。 [Advanced] 機能ごとにエージェント分割（compartmentalization）し、相互呼出に独立した認可ゲートを設置。"
+    appliesTo:
+      kind: node
+      # SUB_AGENT も複数ツールを併せ持つと連鎖悪用が成立するため同等（§2.22 1.6e anyOf 展開）。
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+      connection:
+        required: false
+      # ツール呼出を行うエージェント（Autonomous / Bounded）のみ対象。
+      agentAttributes:
+        agency: [Autonomous, Bounded]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "Anthropic - Zero Trust for AI Agents (Tool chaining)"
+      # OWASP ASI Top 10 の ASI02 Tool Misuse and Exploitation に対応（クロスマッピング）。
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI02: Tool Misuse and Exploitation（関連マッピング）"
+        url: "https://genai.owasp.org/"
+
+  # ── Sandbox: 信頼外入力を扱うエージェントの隔離欠如 ──────────────
+  - id: anthropic-zt-untrusted-input-sandbox-001
+    canonicalId: untrusted-input-sandbox-gap
+    framework: AgenticAI
+    category: "Isolation"
+    name: "信頼外入力のサンドボックス未実装"
+    severity: High
+    description: "{{nodeName}} が Web コンテンツ・ドキュメント・取得結果など信頼外入力を処理する場合、サンドボックス内で実行されていないと、間接プロンプトインジェクション成立時にホスト OS・ファイルシステム・ネットワークまで攻撃者の意のままになるリスク。サンドボックス化は信頼外入力を扱うエージェントにとって aspirational ではなく mandatory。"
+    mitigation: "[Foundation] コンテナ実行 + ネットワーク/マウント制限。 [Enterprise] gVisor 等の syscall フィルタリングを行うコンテナランタイム、限定的なマウントボリュームとネットワークアクセス。 [Advanced] AMD SEV / Intel TDX / microVM によるハードウェア分離 + 実行環境完全性の attestation。"
+    appliesTo:
+      kind: node
+      # SUB_AGENT も信頼外入力を処理する場合は隔離が必要なため同等（§2.22 1.6e anyOf 展開）。
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+      # 信頼外入力（USER, EXTERNAL_ENTITY, GATEWAY 経由）が ingress に存在する場合のみ警告。
+      connection:
+        direction: inbound
+        peerType: [USER, EXTERNAL_ENTITY, GATEWAY]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "Anthropic - Zero Trust for AI Agents (Resource boundaries / Sandboxed execution)"
+
+  # ── Configuration: 設定ファイルの完全性 ─────────────────────────
+  - id: anthropic-zt-config-integrity-001
+    canonicalId: agent-config-integrity
+    framework: AgenticAI
+    category: "Tampering"
+    name: "エージェント設定の完全性"
+    severity: High
+    description: "{{nodeName}} の設定ファイル（プロンプト・許可リスト・ツール設定）が改ざんされると、コードを 1 行も変えずに権限拡大・セキュリティ制御無効化・指示すり替えが可能になる。設定は攻撃対象として code と同等の rigor で扱う必要がある。"
+    mitigation: "[Foundation] 設定をバージョン管理に格納しレビュー必須化。 [Enterprise] 承認済み設定を暗号学的に署名し、デプロイ時に署名検証。未署名/無効署名はデプロイ拒否。 [Advanced] エージェントを immutable image としてデプロイし attestation で完全性検証、更新は in-place 修正でなく置換のみ。"
+    appliesTo:
+      kind: node
+      # SUB_AGENT も独自の設定（プロンプト・許可リスト）を持つため同等（§2.22 1.6e anyOf 展開）。
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-02"
+    references:
+      - title: "Anthropic - Zero Trust for AI Agents (Configuration integrity)"
+
+  # ── Memory Store: 長期メモリ自体の完全性（[[plan]] §2.22 1.6e）────
+  - id: anthropic-zt-memory-store-tampering-001
+    canonicalId: memory-store-tampering
+    framework: AgenticAI
+    category: "Tampering"
+    name: "エージェントメモリストアの完全性"
+    severity: High
+    description: "{{nodeName}} はエージェントの長期メモリ・要約・統計記憶を保持しますが、書込ソースの信頼度評価や完全性検証が無いと、汚染データが永続化され後続セッションで誤判断・なりすまし・データ漏洩を継続的に引き起こします（agent 側 memory poisoning とは別系統の、ストア自体への攻撃面）。"
+    mitigation: "[Foundation] メモリ書込時にソース属性タグ（trusted/untrusted）を必須化し untrusted は TTL 付与。 [Enterprise] 暗号学的ハッシュで読取時に完全性検証、汚染検知時は隔離 + アラート。 [Advanced] バージョン管理可能なメモリストアで rollback と forensic 分析を可能にし、ML ベースの逸脱検知でドリフトを監視。"
+    appliesTo:
+      kind: node
+      nodeType: MEMORY_STORE
+      # メモリストアを構成図に置いた時点で問うべきリスク（接続不問）。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "ID.RA-09"
+    references:
+      - title: "Anthropic - Zero Trust for AI Agents (Memory and context poisoning)"
+      # OWASP ASI Top 10 の ASI06 Memory & Context Poisoning に対応（クロスマッピング）。
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI06: Memory & Context Poisoning（関連マッピング）"
+        url: "https://genai.owasp.org/"
+
+  # ── Delegation: エージェント間委譲の整合性（[[plan]] §2.22 1.6d）────
+  - id: anthropic-zt-delegation-integrity-001
+    canonicalId: delegation-message-integrity
+    framework: AgenticAI
+    category: "Identity"
+    name: "委譲メッセージの整合性欠如"
+    severity: High
+    description: "{{sourceName}} から {{targetName}} への委譲経路が認証または暗号化を欠いており、メッセージ改ざん・なりすまし委譲・元請求 (claims) 偽装の経路となるリスク。confused deputy と組み合わさると低権限ワーカーが呼出元権限で動作する。"
+    mitigation: "[Foundation] 委譲メッセージに認証トークンを必須化し平文を禁止。 [Enterprise] HMAC 署名 + 元の請求 (claims) 保持で各ステップ認可再評価。 [Advanced] OpenTelemetry で委譲チェーン全体を追跡、SOC で異常パターンを検知し自動隔離。"
+    appliesTo:
+      kind: edge
+      anyOf:
+        - semantic: [delegation]
+          auth: [None]
+        - semantic: [delegation]
+          encryption: [Plain]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+    references:
+      - title: "Anthropic - Zero Trust for AI Agents (Multi-agent delegation)"
+
+  # ── Shared Context Poisoning（マルチテナント環境）────────────────
+  - id: anthropic-zt-shared-context-poisoning-001
+    canonicalId: shared-context-poisoning
+    framework: AgenticAI
+    category: "Tampering"
+    name: "共有コンテキストの汚染"
+    severity: Medium
+    description: "マルチテナント環境で再利用される共有コンテキスト（要約・peer-agent feedback・統計ベース知識）に通常会話を装った汚染データが注入されると、新規ユーザセッションが汚染されたコンテキストを継承し、誤情報・安全でないコード実行・誤ったツール起動を引き起こす。単一の変更が悪性に見えない gradual drift のため検知が困難。"
+    mitigation: "[Foundation] テナント単位のコンテキスト分離を必須化（共有禁止をデフォルト）。 [Enterprise] 共有メモリの書込ソース信頼度評価 + 統計的逸脱検知でドリフトを監視。 [Advanced] コンテキスト要素ごとのプロベナンスチェーン記録 + ML-based 振る舞い分析で潜伏した汚染を発見。"
+    appliesTo:
+      kind: node
+      nodeType: DB
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "Anthropic - Zero Trust for AI Agents (Shared context poisoning)"
+      # OWASP ASI Top 10 の ASI06 Memory & Context Poisoning に対応（クロスマッピング）。
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI06: Memory & Context Poisoning（関連マッピング）"
+        url: "https://genai.owasp.org/"
+
+  # ── Observability: エージェント行動ログ・追跡可能性の欠如 ──────────
+  # Part III「Observability and auditing」の対策不在を脅威として表現。
+  # 既存ライブラリは LLM ノードのログ欠如を直接扱わず、本ルールは AGENT の
+  # 行動（ツール呼出・データアクセス・対外通信）の記録不在に特化する。
+  - id: anthropic-zt-agent-observability-gap-001
+    canonicalId: agent-observability-gap
+    framework: AgenticAI
+    category: "Observability"
+    name: "エージェント行動ログ/追跡可能性の欠如"
+    severity: High
+    description: "{{nodeName}} のツール呼出・データアクセス・対外通信が包括的に記録されていないと、侵害を検知できず、検知までの滞留時間（dwell time）が伸び、インシデント調査もコンプライアンス証明も不能になる。アイデンティティが付与されていても、行動が記録されなければ「誰が何をしたか」を後から再構成できない（attribution gap とは別系統の可視性欠如）。"
+    mitigation: "[Foundation] ツール呼出・データアクセス・外部通信を全件ログ化し、エージェント ID・タイムスタンプ・要求コンテキストを含めて規制要件に沿って保管。 [Enterprise] 追記専用（append-only）ストレージへ書込み、ログの完全性を暗号学的に検証。 [Advanced] SIEM へリアルタイムストリーミングして他のセキュリティイベントと相関、OpenTelemetry でマルチエージェントを跨ぐ分散トレーシングを実現。"
+    appliesTo:
+      kind: node
+      # SUB_AGENT の行動（委譲先でのツール呼出・データアクセス）も記録対象（§2.22 1.6e anyOf 展開）。
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+      # ログ・可視性の設計は接続関係に依存しないエージェント固有の内在的特性。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-04"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "Anthropic - Zero Trust for AI Agents (Observability and auditing)"
+
+  # ── Recovery: 既知正常状態への復旧能力の欠如 ────────────────────
+  # Part III「Integrity and recovery」の対策不在を脅威として表現。
+  - id: anthropic-zt-agent-recovery-gap-001
+    canonicalId: agent-recovery-gap
+    framework: AgenticAI
+    category: "Recovery"
+    name: "既知正常状態への復旧能力の欠如"
+    severity: Medium
+    description: "{{nodeName}} に文書化・テスト済みのロールバック手順や既知正常状態への復元手段が無いと、設定改ざん・メモリ汚染・悪性アップデートによる侵害が成立した際に迅速に復旧できず、滞留時間と blast radius が拡大する。復旧能力の欠如は攻撃の成立そのものではないが、攻撃成功時の被害を長期化させる二次的リスク。"
+    mitigation: "[Foundation] 旧バージョンへの復元手順を文書化し定期的にテスト、直前バージョンを保持。 [Enterprise] ヘルスチェック付きの自動ロールバックを実装し、異常検知時に自動復元。 [Advanced] 自己修復（circuit breaker による隔離 + 代替エージェントの自動払い出し）を実装し、復元前にバックアップの完全性を検証。"
+    appliesTo:
+      kind: node
+      # SUB_AGENT も既知正常状態への復旧手段を要するため同等（§2.22 1.6e anyOf 展開）。
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+      # 復旧能力は接続関係に依存しないエージェント運用設計の内在的特性。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "RC.RP-01"
+      - standard: nist-csf-2.0
+        ref: "RC.RP-03"
+    references:
+      - title: "Anthropic - Zero Trust for AI Agents (Integrity and recovery / Recovery capabilities)"

@@ -1,0 +1,54 @@
+# Agentic Zero Trust 拡張コンポーネントライブラリ（[[plan]] §2.22 1.6e）。
+#
+# Anthropic "Zero Trust for AI Agents" (2026-05-18) で扱われる
+# エージェント特有の構成要素を扱うための追加型 3 種：
+#   - MCP_SERVER: Model Context Protocol サーバ（tool descriptor / function calling 提供）
+#   - MEMORY_STORE: エージェントの長期メモリ・要約・統計記憶
+#   - SUB_AGENT: マルチエージェント構成における下位エージェント（委譲先）
+#
+# 別ライブラリ（builtin と分離）にすることで、ユーザーは LeftSidebar の
+# ライブラリトグルで「エージェント特化型を使わない」運用を選べる。
+#
+# ライセンス: Apache-2.0（同梱）
+
+schemaVersion: 1
+
+library:
+  id: agentic-zt
+  title: "Agentic Zero Trust Components"
+  version: "1.0"
+  license: "Apache-2.0"
+  builtin: true
+  description: "Anthropic Zero Trust 観点で重要なエージェント特化型（MCP サーバ / 長期メモリ / サブエージェント）。"
+
+# 既存 builtin の AI カテゴリを idempotent に再宣言（label/order を一致させる）。
+categories:
+  - id: AI
+    label: "AI Components"
+    order: 20
+
+components:
+  - id: MCP_SERVER
+    label: "MCP サーバ"
+    category: AI
+    icon: { kind: builtin, name: "settings" }
+    shape: rounded
+    color: "bg-fuchsia-600"
+    description: "Model Context Protocol サーバ。ツール記述子・スキーマ・メタデータをエージェントに提供する。tool poisoning / rug pull の標的になりやすい。"
+
+  - id: MEMORY_STORE
+    label: "エージェントメモリ"
+    category: AI
+    icon: { kind: builtin, name: "hard-drive" }
+    shape: data-store
+    color: "bg-amber-600"
+    description: "エージェントの長期メモリ・要約・統計記憶。memory poisoning や cross-session privilege retention の起点。"
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, CREDENTIAL, LOG, OTHER_DOCUMENT]
+
+  - id: SUB_AGENT
+    label: "サブエージェント"
+    category: AI
+    icon: { kind: builtin, name: "layers" }
+    shape: rounded
+    color: "bg-pink-300"
+    description: "マルチエージェント構成における下位エージェント（委譲先）。confused deputy / unscoped privilege inheritance の経路。"

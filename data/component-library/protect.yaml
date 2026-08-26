@@ -1,0 +1,48 @@
+# Protect コンポーネントライブラリ。
+#
+# 防御・ポリシー強制点（Policy Enforcement Point）をモデル上に明示配置するための 2 型：
+#   - AI_GATEWAY: AI ゲートウェイ / LLM プロキシ。LLM・エージェント向けトラフィックの
+#     集中制御点（プロンプト/応答の検査、レート制限、モデルルーティング、利用ログ）。
+#   - GUARDRAIL: ガードレール / LLM ファイアウォール。プロンプトインジェクション検知・
+#     出力フィルタ・PII マスキング等のコンテンツレベルのポリシー強制点。
+#
+# 防御コンポーネントを明示配置することで、脅威ルール側から peerType で
+# 「保護経由か否か」を条件化できるようになる（例: AI_GATEWAY を経由しない
+# LLM 直接続の検出）。
+#
+# 別ライブラリ（builtin と分離）にすることで、LeftSidebar のライブラリトグルで
+# 「防御型を使わない」運用を選べる（attacker.yaml と同じ方針）。
+#
+# ライセンス: Apache-2.0（同梱）
+
+schemaVersion: 1
+
+library:
+  id: protect
+  title: "Protect Components"
+  version: "1.0"
+  license: "Apache-2.0"
+  builtin: true
+  description: "防御型（AI Gateway / Guardrail）。AI トラフィックの集中制御点とコンテンツレベルのポリシー強制点を表現する。"
+
+categories:
+  - id: PROTECT
+    label: "Protect"
+    order: 25
+
+components:
+  - id: AI_GATEWAY
+    label: "AI Gateway"
+    category: PROTECT
+    icon: { kind: builtin, name: "filter" }
+    shape: rounded
+    color: "bg-indigo-600"
+    description: "AI ゲートウェイ / LLM プロキシ。プロンプト・応答の検査、レート制限、モデルルーティング、利用ログを担う AI トラフィックの集中制御点。"
+
+  - id: GUARDRAIL
+    label: "Guardrail"
+    category: PROTECT
+    icon: { kind: builtin, name: "shield" }
+    shape: rounded
+    color: "bg-green-600"
+    description: "ガードレール / LLM ファイアウォール。プロンプトインジェクション検知・出力フィルタ・PII マスキング等のコンテンツレベルのポリシー強制点。"

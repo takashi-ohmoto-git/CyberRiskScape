@@ -1,0 +1,21 @@
+node_modules
+dist
+.env
+.env.local
+*.log
+.DS_Store
+
+# 個人ローカル設定・ローカル作業データ（リポジトリに含めない）
+CLAUDE.local.md
+save/
+.claude/settings.local.json
+
+# browser-verify スキルのローカル成果物
+.run-screens/
+.verify.mjs
+
+# ローカル作業用（公開対象外）
+docs/
+.claude/
+CLAUDE.md
+.mcp.json

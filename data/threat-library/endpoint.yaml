@@ -1,0 +1,132 @@
+# エンドポイント系ノード型（PC / SMARTPHONE / IOT）の内在脅威、および
+# targetManagedState（端末管理状態）を条件にしたエッジルール。
+#
+# 出典:
+#   - NIST SP 800-46 Rev.2, "Guide to Enterprise Telework, Remote Access, and
+#     Bring Your Own Device (BYOD) Security"。
+#   - NIST SP 800-124 Rev.2, "Guidelines for Managing the Security of Mobile
+#     Devices in the Enterprise"。
+#   - NIST IR 8259 / 8259A, "Foundational Cybersecurity Activities for IoT
+#     Device Manufacturers" / "IoT Device Cybersecurity Capability Core
+#     Baseline"。
+#   - CIS Critical Security Controls v8（Control 1: Inventory and Control of
+#     Enterprise Assets / Control 4: Secure Configuration）。
+#   本文は逐語転載せず日本語要約のみ。
+#
+#   SPDX-License-Identifier: Apache-2.0
+#   ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+#   出典の帰属表示は NOTICE を参照。
+#
+# 重複回避方針:
+#   端末管理状態（managedState）軸の edge ルールは既に
+#   stride-edge-unmanaged-device-sensitive-001（stride-ai.yaml）が
+#   sourceManagedState:[Unmanaged] x sourceType:[PC,SMARTPHONE,IOT] x
+#   targetType:[LLM,AGENT,DB,DATA_STORE,GATEWAY] で「未管理端末から機微システムへの
+#   アクセス」をカバー済み。本ファイルは下記のとおり差分のみ追加する。
+#
+#   - 「未管理端末からのアクセス」（source 側）→ stride-edge-unmanaged-device-sensitive-001
+#     でカバー済み。本ファイルは migrate せず、source 側ルールには触れない。
+#
+#   - 「未管理端末への配信・制御」（target 側、targetManagedState）は 0 件のまま
+#     未活用だったため、本ファイルで新規に追加する（agentic-endpoint-command-
+#     unmanaged-target-001）。AGENT/TOOL/CONNECTOR 等が Unmanaged な PC/SMARTPHONE/IOT
+#     に対して制御コマンド・設定・ペイロードを送る経路は、source 側ルールとは逆方向の
+#     リスク（応答や検知ができない管理外デバイスへ一方的に作用する）であり別 subject。
+#
+#   - PC/SMARTPHONE/IOT ノード単体の intrinsic リスク（接続関係に依存しない端末自体の
+#     性質）は本ファイル以前は IOT 向け pqc-long-lived-device-signature-001
+#     （署名検証・証明書寿命に特化）の 1 件のみで、PC/SMARTPHONE は 0 件だった。
+#     本ファイルは下記の intrinsic ルールを追加する：
+#       - IOT: デフォルト認証情報・パッチ適用困難性（pqc.yaml の署名検証ルールとは
+#         別観点、別 canonicalId）
+#       - PC / SMARTPHONE: 端末紛失・盗難時のローカル認証情報露出
+#         （canContain は脅威条件として参照不可のため、ルール条件としては
+#         「ノード型 + managedState」のみを根拠にし、含有データの種類には踏み込まない）
+#
+# mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
+# description は Can/Cannot ペアと blast radius を意識して記述する（docs/threat-schema.md §7.5）。
+
+schemaVersion: 1
+
+rules:
+  # ── IOT: デフォルト認証情報・パッチ適用困難性（intrinsic）───────────
+  - id: endpoint-iot-default-credentials-unpatchable-001
+    canonicalId: iot-default-credentials-unpatchable
+    framework: STRIDE
+    category: "Spoofing"
+    name: "IoT デバイスのデフォルト認証情報・パッチ適用困難性"
+    severity: High
+    description: "{{nodeName}} のような IoT・組込デバイスは、出荷時のデフォルト認証情報が変更されないまま運用される、またはファームウェア更新機構が無く既知脆弱性が長期間放置されるケースが多い（Can）。攻撃者はデフォルト資格情報での認証成功や既知 CVE の悪用により、ボットネット組込・内部ネットワークへの足掛かり（ラテラルムーブメントの起点）を獲得できる。一方、初回起動時に一意なパスワード設定を強制し、署名済みファームウェアの OTA 更新機構を備えていれば、出荷時設定のままの侵害は成立しない（Cannot）。blast radius は当該デバイスが接続するネットワークセグメント全体（侵害デバイスを踏み台にした横展開）。"
+    mitigation: "[Foundation] 出荷時デフォルト認証情報を初回セットアップ時に一意なパスワードへ強制変更させ、変更前は外部ネットワークへ接続させない。デバイスインベントリを台帳化し既知 CVE の有無を定期確認する。 [Enterprise] 署名済みファームウェアの OTA 更新機構を備え、重大 CVE 公開後の更新適用 SLA を定める。デバイスを専用 VLAN に隔離しマイクロセグメンテーションで内部到達範囲を制限する。 [Advanced] ハードウェア attest 済みのデバイス ID（TPM/セキュアエレメント）でゼロトラスト認証を行い、異常な通信パターンを検知した際は自動的にネットワークから隔離する。"
+    appliesTo:
+      kind: node
+      nodeType: IOT
+      # デフォルト認証情報・パッチ適用性はデバイス自体の設計・運用の性質で、
+      # 接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "ID.AM-01"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-02"
+    references:
+      - title: "NIST IR 8259 / 8259A - Foundational Cybersecurity Activities for IoT Device Manufacturers / IoT Device Cybersecurity Capability Core Baseline"
+        url: "https://csrc.nist.gov/pubs/ir/8259/final"
+      # 長寿命デバイスの署名検証・証明書寿命（PQC 移行観点）は pqc-long-lived-device-signature-001 が扱う（別 canonicalId）。
+
+  # ── PC / SMARTPHONE: 端末紛失・盗難時のローカル認証情報露出（intrinsic）──
+  - id: endpoint-device-loss-local-credential-exposure-001
+    canonicalId: endpoint-loss-credential-exposure
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "端末紛失・盗難によるローカル認証情報露出"
+    severity: Medium
+    description: "{{nodeName}} のような PC・モバイル端末が紛失・盗難に遭った場合、端末内にキャッシュされたセッショントークン・保存済み認証情報・ローカルアプリの自動ログイン状態を、物理的に端末を取得した者が悪用できる（Can）。ロック画面を突破できれば、当該端末で認証済みのクラウドサービス・社内システムへそのままアクセスし得る。一方、ディスク全体暗号化（FileVault/BitLocker 等）と強力なロック画面認証が有効で、リモートワイプ機能により紛失検知後すみやかに端末データを消去できれば、物理取得のみでは認証情報の窃取・なりすましは成立しない（Cannot）。blast radius は当該端末にキャッシュされていた全アカウントのセッション・認証情報。"
+    mitigation: "[Foundation] ディスク全体暗号化（FileVault/BitLocker 等）と画面ロック（PIN/生体認証）を必須化し、未設定端末の業務利用を禁止する。 [Enterprise] MDM でリモートロック・リモートワイプを有効化し、紛失報告から消去実行までのプロセスを定義・訓練する。セッショントークンの有効期限を短縮し、端末紛失時に強制失効できるようにする。 [Advanced] ハードウェアセキュリティモジュール（TPM/Secure Enclave）に認証情報を束縛し、端末を離れたコンテキストでは復号不能にする。継続的な端末ポスチャ評価でリスクスコアに応じたアクセス制御を動的適用する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: PC
+        - nodeType: SMARTPHONE
+      # 紛失・盗難時の露出リスクは端末自体が機微情報・認証情報をキャッシュし得る性質に
+      # 起因し、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+    references:
+      - title: "NIST SP 800-46 Rev.2 - Guide to Enterprise Telework, Remote Access, and BYOD Security"
+        url: "https://csrc.nist.gov/pubs/sp/800/46/r2/final"
+      - title: "NIST SP 800-124 Rev.2 - Guidelines for Managing the Security of Mobile Devices in the Enterprise"
+        url: "https://csrc.nist.gov/pubs/sp/800/124/r2/final"
+
+  # ── 未管理端末への一方的な配信・制御（target 側、targetManagedState）──
+  - id: agentic-endpoint-command-unmanaged-target-001
+    canonicalId: endpoint-command-unmanaged-target
+    framework: AgenticAI
+    category: "Tampering"
+    name: "未管理端末への配信・制御コマンドの検証欠如"
+    severity: High
+    description: "{{sourceName}} から {{targetName}} へのエッジが Unmanaged（未管理）端末を宛先としている場合、{{sourceName}}（エージェント・ツール・コネクタ等）が送信する設定変更・制御コマンド・ペイロードは、MDM/EDR による受信側の検証・記録・ロールバック機構を経由しない（Can）。{{sourceName}} 側が侵害された場合、攻撃者はその経路を悪用して未管理端末へ任意のコマンドを一方的に配信でき、配信結果の監査証跡も端末側に残らない。一方、未管理端末への配信前に署名検証・許可リスト化されたコマンドのみを許可し、配信ログを送信側で完全に記録していれば、侵害された送信元からの任意コマンド配信は宛先側で拒否される（Cannot）。blast radius は当該経路で到達可能な全 Unmanaged 端末。"
+    mitigation: "[Foundation] Unmanaged 端末宛の制御コマンド・設定配信経路を棚卸しし、許可リスト化されたコマンド種別のみに制限する。配信内容と結果を送信側で完全にログ化する。 [Enterprise] 配信コマンドに署名を必須化し、未署名コマンドは端末側エージェント（あれば）または中継コネクタで拒否する。Unmanaged 端末への配信は MDM 登録済み端末より低い権限スコープに制限する。 [Advanced] Unmanaged 端末への配信経路自体を縮退させ、管理対象外端末へは読み取り専用の通知のみを許可するゼロトラストアーキテクチャへ移行する。"
+    appliesTo:
+      kind: edge
+      when:
+        sourceType: [AGENT, SUB_AGENT, TOOL, CONNECTOR]
+        targetType: [PC, SMARTPHONE, IOT]
+        targetManagedState: [Unmanaged]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "NIST SP 800-46 Rev.2 - Guide to Enterprise Telework, Remote Access, and BYOD Security（管理外端末への配信統制）"
+        url: "https://csrc.nist.gov/pubs/sp/800/46/r2/final"
+      # source 側（未管理端末からのアクセス）は stride-edge-unmanaged-device-sensitive-001 が扱う（別 canonicalId、逆方向の経路）。

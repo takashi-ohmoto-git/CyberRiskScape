@@ -1,0 +1,362 @@
+# NIST AI Risk Management Framework 1.0 (NIST AI 100-1) のマッピング表。
+# 出典: U.S. National Institute of Standards and Technology, January 2023
+#   https://www.nist.gov/itl/ai-risk-management-framework
+# ライセンス: U.S. 政府著作物（パブリックドメイン）。
+# title は公式表記を翻案、summary は独自要約（1〜2 行）。
+# 脅威ルール側 `complianceRefs.ref` と一致するキーは `ref:` フィールド。
+
+schemaVersion: 1
+
+standard:
+  id: nist-ai-rmf
+  title: "NIST AI RMF"
+  version: "1.0"
+  url: "https://www.nist.gov/itl/ai-risk-management-framework"
+  license: "Public Domain (U.S. Government Work)"
+  disclaimer: "title / summary は AI 100-1 (2023年1月) の独自翻案・要約。原文は出典 URL を参照。"
+
+items:
+  # ────────────────────────────────────────────────
+  # GOVERN — 組織ガバナンス・文化・ポリシー整備
+  # ────────────────────────────────────────────────
+  - ref: "GOVERN 1.1"
+    title: "AI に関する法令・規制要求の理解と文書化"
+    summary: "AI に適用される法令・規制要求を継続的に把握し、組織として理解・管理・文書化する。"
+    relatedTo:
+      - { standard: jp-ai-business-guideline, ref: "共通の指針-9" }
+
+  - ref: "GOVERN 1.2"
+    title: "信頼できる AI の特性をポリシーに統合"
+    summary: "信頼性・公平性・安全性等の特性を組織のポリシー・手順・実務に組み込む。"
+
+  - ref: "GOVERN 1.3"
+    title: "リスク許容度に応じた管理活動レベルの決定"
+    summary: "組織のリスク許容度に基づき、必要な AI リスク管理活動の強度を決定するプロセスを整備する。"
+
+  - ref: "GOVERN 1.4"
+    title: "透明なリスク管理プロセスと優先順位付け"
+    summary: "リスク管理プロセスとその結果を透明なポリシー・手順で確立し、組織のリスク優先度に基づいて運用する。"
+
+  - ref: "GOVERN 1.5"
+    title: "継続的モニタリングと役割責任の明確化"
+    summary: "リスク管理プロセスの継続的モニタリング・定期見直しを計画し、頻度と役割責任を明文化する。"
+
+  - ref: "GOVERN 1.6"
+    title: "AI システムインベントリの整備"
+    summary: "AI システムの棚卸し（インベントリ）の仕組みを設け、リスク優先度に応じて経営資源を配分する。"
+
+  - ref: "GOVERN 1.7"
+    title: "安全な退役・廃止プロセス"
+    summary: "AI システムの退役・廃止を、新たなリスクや信頼性低下を招かない形で実施するプロセスを整備する。"
+
+  - ref: "GOVERN 2.1"
+    title: "MAP/MEASURE/MANAGE の役割・責任・連絡ライン"
+    summary: "リスク管理活動に関わる役割・責任・コミュニケーション経路を文書化し、組織横断で明確化する。"
+
+  - ref: "GOVERN 2.2"
+    title: "AI リスク管理研修の提供"
+    summary: "従業員・パートナーが AI リスク管理上の責務を果たせるよう、関連研修を提供する。"
+    relatedTo:
+      - { standard: jp-ai-business-guideline, ref: "共通の指針-8" }
+
+  - ref: "GOVERN 2.3"
+    title: "経営層によるリスク意思決定の責任"
+    summary: "AI システムの開発・展開に関するリスクの意思決定責任を経営層が負う。"
+    relatedTo:
+      - { standard: jp-ai-business-guideline, ref: "共通の指針-7" }
+
+  - ref: "GOVERN 3.1"
+    title: "多様なチームによる意思決定"
+    summary: "リスク管理の意思決定は、人材構成・専門領域・経歴の多様なチームによって行う。"
+
+  - ref: "GOVERN 3.2"
+    title: "Human-AI 構成と人間関与の役割定義"
+    summary: "AI システムの人間関与・監督に関する役割と責任を定義し、ポリシーで分離する。"
+    relatedTo:
+      - { standard: jp-ai-business-guideline, ref: "共通の指針-1" }
+      - { standard: jp-ai-business-guideline, ref: "提供者-1" }
+
+  - ref: "GOVERN 4.1"
+    title: "批判的思考と安全第一の文化醸成"
+    summary: "設計・開発・展開・利用の全過程で、批判的思考と安全第一の文化を組織的に醸成する。"
+    relatedTo:
+      - { standard: jp-ai-business-guideline, ref: "共通の指針-2" }
+
+  - ref: "GOVERN 4.2"
+    title: "リスク・影響の文書化と内外コミュニケーション"
+    summary: "開発・展開する AI のリスクと潜在的影響を文書化し、関係者と広く共有する。"
+
+  - ref: "GOVERN 4.3"
+    title: "テスト・インシデント検知・情報共有"
+    summary: "AI のテスト実施、インシデント特定、情報共有を可能にする組織実務を整備する。"
+
+  - ref: "GOVERN 5.1"
+    title: "外部フィードバックの収集と統合"
+    summary: "個人・社会への影響に関する外部フィードバックを収集・優先順位付けし、リスク管理に統合する。"
+
+  - ref: "GOVERN 5.2"
+    title: "判定済みフィードバックの設計・実装への反映"
+    summary: "関係者からの精査済みフィードバックを、システム設計・実装に定期的に取り込むメカニズムを整備する。"
+
+  - ref: "GOVERN 6.1"
+    title: "サプライチェーンリスクと知的財産"
+    summary: "第三者由来データ・モデル・コンポーネントに伴うリスク（IP 侵害含む）を扱うポリシーと手順を整備する。"
+    relatedTo:
+      - { standard: jp-ai-business-guideline, ref: "共通の指針-5" }
+      - { standard: jp-ai-business-guideline, ref: "開発者-6" }
+
+  - ref: "GOVERN 6.2"
+    title: "高リスク第三者依存への代替・継続計画"
+    summary: "高リスクと判定された第三者データ・AI システムの障害・インシデントに対応する代替計画を整備する。"
+
+  # ────────────────────────────────────────────────
+  # MAP — 利用文脈・能力・リスクの把握
+  # ────────────────────────────────────────────────
+  - ref: "MAP 1.1"
+    title: "意図された目的・利用文脈の文書化"
+    summary: "AI システムの意図された用途、想定される利用環境、適用される法令・規範・期待を理解し文書化する。"
+
+  - ref: "MAP 1.2"
+    title: "学際的・多様なチームによる文脈設定"
+    summary: "文脈設定に関わる AI アクターが分野横断的・多様な構成であり、その参加が文書化されている。"
+
+  - ref: "MAP 1.3"
+    title: "組織ミッションと AI 利用目標の整合"
+    summary: "AI 技術に関連する組織のミッション・目標を理解し文書化する。"
+
+  - ref: "MAP 1.4"
+    title: "ビジネス価値・利用文脈の明確化"
+    summary: "ビジネス上の価値・利用文脈を明確に定義（既存システム評価時は再評価）する。"
+
+  - ref: "MAP 1.5"
+    title: "組織のリスク許容度の決定と文書化"
+    summary: "組織として許容できるリスクの水準を決定し文書化する。"
+
+  - ref: "MAP 1.6"
+    title: "システム要件の関係者からの引き出し"
+    summary: "関連 AI アクターからシステム要件（例：プライバシー尊重）を引き出し、理解する。"
+
+  - ref: "MAP 2.1"
+    title: "AI システムが支援するタスクの定義"
+    summary: "AI システムが支援する具体的タスクと、それを実装する方法を定義する。"
+
+  - ref: "MAP 2.2"
+    title: "知識限界と出力の人間監督"
+    summary: "AI システムの知識限界と、出力がどのように人間に活用・監督されるかを文書化する。"
+
+  - ref: "MAP 2.3"
+    title: "科学的整合性・TEVV の考慮"
+    summary: "実験設計・データ収集・信頼性・構成概念妥当性に関する科学的整合性と TEVV 考慮事項を文書化する。"
+
+  - ref: "MAP 3.1"
+    title: "意図された機能・性能の便益の検討"
+    summary: "意図された機能・性能から得られる便益を検討・文書化する。"
+
+  - ref: "MAP 3.2"
+    title: "誤動作・信頼性低下に伴うコストの検討"
+    summary: "想定または実際の AI エラー・信頼性低下に伴うコスト（非金銭的含む）を検討・文書化する。"
+
+  - ref: "MAP 3.3"
+    title: "適用範囲の特定"
+    summary: "システムの能力・文脈・カテゴリ分類に基づき、対象となる適用範囲を特定し文書化する。"
+
+  - ref: "MAP 3.4"
+    title: "オペレータ・実務者の熟達プロセス"
+    summary: "AI システムの性能・信頼性に対するオペレータ・実務者の熟達を確保するプロセスを定義する。"
+
+  - ref: "MAP 3.5"
+    title: "人間監督プロセスの定義と評価"
+    summary: "適用ポリシーに整合する人間監督プロセスを定義・評価・文書化する。"
+    relatedTo:
+      - { standard: jp-ai-business-guideline, ref: "共通の指針-1" }
+      - { standard: jp-ai-business-guideline, ref: "提供者-1" }
+
+  - ref: "MAP 4.1"
+    title: "技術・法的リスクのマッピング"
+    summary: "第三者データ・ソフトウェアを含む AI コンポーネントの技術的・法的リスク（IP 侵害含む）をマッピングする。"
+    relatedTo:
+      - { standard: jp-ai-business-guideline, ref: "共通の指針-5" }
+      - { standard: jp-ai-business-guideline, ref: "開発者-6" }
+
+  - ref: "MAP 4.2"
+    title: "内部リスク統制の特定"
+    summary: "第三者 AI 技術を含む AI システムのコンポーネントに対する内部統制を特定し文書化する。"
+
+  - ref: "MAP 5.1"
+    title: "影響の蓋然性・規模の特定"
+    summary: "想定用途・過去事例・公開インシデント・外部フィードバックに基づき、各影響の蓋然性と規模を特定する。"
+
+  - ref: "MAP 5.2"
+    title: "関係者との継続的対話"
+    summary: "AI アクターとの定期的対話を支える実務・人員を配置し、影響に関するフィードバックを統合する。"
+
+  # ────────────────────────────────────────────────
+  # MEASURE — 計測・評価
+  # ────────────────────────────────────────────────
+  - ref: "MEASURE 1.1"
+    title: "計測手法と指標の選定"
+    summary: "MAP で列挙したリスクの計測手法・指標を、最重要リスクから順に選定する。"
+
+  - ref: "MEASURE 1.2"
+    title: "指標と既存統制の妥当性の定期評価"
+    summary: "AI 指標の適切性と既存統制の有効性を定期的に評価・更新し、エラーや影響を報告する。"
+
+  - ref: "MEASURE 1.3"
+    title: "独立評価者の関与"
+    summary: "開発者でない内部専門家または独立評価者が定期評価・更新に関与する。"
+
+  - ref: "MEASURE 2.1"
+    title: "テストセット・指標・ツールの文書化"
+    summary: "TEVV で使用したテストセット・指標・ツールの詳細を文書化する。"
+
+  - ref: "MEASURE 2.2"
+    title: "人間対象評価の要件遵守と代表性"
+    summary: "人間を対象とする評価が適用要件（被験者保護等）を満たし、対象集団を代表することを担保する。"
+
+  - ref: "MEASURE 2.3"
+    title: "展開条件下の性能・保証基準の実証"
+    summary: "AI システムの性能または保証基準を、展開環境に類似した条件で定性的・定量的に実証する。"
+
+  - ref: "MEASURE 2.4"
+    title: "本番運用中の機能・挙動モニタリング"
+    summary: "MAP で特定した AI システムの機能・挙動を本番運用中にモニタリングする。"
+
+  - ref: "MEASURE 2.5"
+    title: "妥当性と信頼性の実証"
+    summary: "展開される AI システムが妥当（valid）かつ信頼できる（reliable）ことを実証する。"
+
+  - ref: "MEASURE 2.6"
+    title: "安全性リスクの定期評価"
+    summary: "MAP で特定された安全性リスクについて、AI システムを定期的に評価する。"
+    relatedTo:
+      - { standard: jp-ai-business-guideline, ref: "共通の指針-2" }
+      - { standard: jp-ai-business-guideline, ref: "開発者-3" }
+
+  - ref: "MEASURE 2.7"
+    title: "セキュリティと回復力の評価"
+    summary: "MAP で特定された AI システムのセキュリティ・回復力を評価し文書化する。"
+    relatedTo:
+      - { standard: jp-ai-business-guideline, ref: "共通の指針-5" }
+      - { standard: jp-ai-business-guideline, ref: "開発者-6" }
+      - { standard: jp-ai-business-guideline, ref: "提供者-4" }
+
+  - ref: "MEASURE 2.8"
+    title: "透明性・説明責任リスクの検討"
+    summary: "MAP で特定された透明性・説明責任に関するリスクを検討し文書化する。"
+    relatedTo:
+      - { standard: jp-ai-business-guideline, ref: "共通の指針-6" }
+      - { standard: jp-ai-business-guideline, ref: "共通の指針-7" }
+
+  - ref: "MEASURE 2.9"
+    title: "モデル説明・検証と出力の文脈解釈"
+    summary: "AI モデルを説明・検証・文書化し、出力をその利用文脈の中で解釈する。"
+    relatedTo:
+      - { standard: jp-ai-business-guideline, ref: "共通の指針-6" }
+      - { standard: jp-ai-business-guideline, ref: "開発者-7" }
+
+  - ref: "MEASURE 2.10"
+    title: "プライバシーリスクの検討"
+    summary: "MAP で特定された AI システムのプライバシーリスクを検討し文書化する。"
+    relatedTo:
+      - { standard: jp-ai-business-guideline, ref: "共通の指針-4" }
+      - { standard: jp-ai-business-guideline, ref: "開発者-5" }
+      - { standard: jp-ai-business-guideline, ref: "提供者-3" }
+
+  - ref: "MEASURE 2.11"
+    title: "公平性・バイアスの評価"
+    summary: "MAP で特定された公平性・バイアスを評価し、結果を文書化する。"
+    relatedTo:
+      - { standard: jp-ai-business-guideline, ref: "共通の指針-3" }
+      - { standard: jp-ai-business-guideline, ref: "開発者-4" }
+
+  - ref: "MEASURE 2.12"
+    title: "環境影響・サステナビリティの評価"
+    summary: "AI モデルの訓練・運用に伴う環境影響・持続可能性を評価し文書化する。"
+
+  - ref: "MEASURE 2.13"
+    title: "TEVV 指標・プロセス自体の有効性評価"
+    summary: "MEASURE 関数で用いる TEVV 指標・プロセス自体の有効性を評価し文書化する。"
+
+  - ref: "MEASURE 3.1"
+    title: "既知・未知・新興リスクの継続的追跡"
+    summary: "展開された AI の実性能を踏まえ、既知・想定外・新興リスクを継続的に特定・追跡する仕組みを整備する。"
+
+  - ref: "MEASURE 3.2"
+    title: "計測困難なリスクへの追跡手法"
+    summary: "現行手法では計測困難なリスク、または指標が未確立なリスクへの追跡アプローチを検討する。"
+
+  - ref: "MEASURE 3.3"
+    title: "エンドユーザ・影響を受ける集団からのフィードバック"
+    summary: "エンドユーザ・影響を受けるコミュニティが問題報告・結果不服申立を行える仕組みを設け、評価指標に統合する。"
+
+  - ref: "MEASURE 4.1"
+    title: "計測手法と展開文脈の整合"
+    summary: "AI リスクの計測手法を展開文脈と接続し、ドメイン専門家・エンドユーザとの協議で洗練する。"
+
+  - ref: "MEASURE 4.2"
+    title: "信頼性計測結果の専門家による検証"
+    summary: "展開文脈下の信頼性計測結果を、ドメイン専門家と関連 AI アクターの入力で検証する。"
+
+  - ref: "MEASURE 4.3"
+    title: "性能変化の特定と文書化"
+    summary: "影響を受けるコミュニティを含む関係者との協議と現場データに基づき、計測可能な性能改善・低下を特定する。"
+
+  # ────────────────────────────────────────────────
+  # MANAGE — リスク対応・運用
+  # ────────────────────────────────────────────────
+  - ref: "MANAGE 1.1"
+    title: "意図された目的の達成判定と Go/No-Go"
+    summary: "AI システムが意図された目的・目標を達成しているか、開発・展開を継続すべきかを判定する。"
+
+  - ref: "MANAGE 1.2"
+    title: "リスク対応の優先順位付け"
+    summary: "影響度・蓋然性・利用可能なリソース等に基づき、文書化された AI リスクの対応優先順位を決定する。"
+
+  - ref: "MANAGE 1.3"
+    title: "高優先度リスクへの対応計画"
+    summary: "MAP で高優先度と判断されたリスクへの対応を策定・計画・文書化する。"
+
+  - ref: "MANAGE 1.4"
+    title: "残余リスクの文書化"
+    summary: "下流の取得者・エンドユーザに対する負の残余リスク（未緩和リスクの総和）を文書化する。"
+
+  - ref: "MANAGE 2.1"
+    title: "リスク管理リソースと非 AI 代替案の検討"
+    summary: "AI リスク管理に必要なリソースを把握し、影響の規模・蓋然性を下げる非 AI 代替案も検討する。"
+
+  - ref: "MANAGE 2.2"
+    title: "展開済み AI の価値維持メカニズム"
+    summary: "展開済み AI システムの価値を維持するメカニズムを整備・運用する。"
+
+  - ref: "MANAGE 2.3"
+    title: "未知リスクへの応答・回復手順"
+    summary: "未知のリスクが特定された場合の応答・回復手順を整備し、運用する。"
+
+  - ref: "MANAGE 2.4"
+    title: "AI システムの停止・無効化メカニズム"
+    summary: "意図と乖離した挙動を示す AI システムを上書き・停止・無効化するメカニズムを整備し、責任を明確化する。"
+
+  - ref: "MANAGE 3.1"
+    title: "第三者リソースの継続的モニタリング"
+    summary: "第三者由来の AI リスクと便益を定期的にモニタリングし、リスク統制を適用・文書化する。"
+    relatedTo:
+      - { standard: jp-ai-business-guideline, ref: "共通の指針-5" }
+
+  - ref: "MANAGE 3.2"
+    title: "事前学習モデルの監視"
+    summary: "開発に用いる事前学習モデルを AI システムの定期監視・保守の対象に含める。"
+
+  - ref: "MANAGE 4.1"
+    title: "展開後モニタリング計画の実装"
+    summary: "展開後モニタリング計画（フィードバック収集・不服申立・退役・インシデント対応・変更管理）を実装する。"
+
+  - ref: "MANAGE 4.2"
+    title: "継続的改善活動の統合"
+    summary: "関係者との継続的対話を含む、計測可能な継続的改善活動を AI システムの更新に統合する。"
+
+  - ref: "MANAGE 4.3"
+    title: "インシデント・エラーの伝達と追跡"
+    summary: "インシデント・エラーを影響を受けるコミュニティを含む関連 AI アクターに伝達し、追跡・対応・回復のプロセスを文書化する。"
+    relatedTo:
+      - { standard: jp-ai-business-guideline, ref: "共通の指針-7" }
+      - { standard: jp-ai-business-guideline, ref: "利用者-7" }

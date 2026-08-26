@@ -1,0 +1,298 @@
+# エージェント型 AI のコア脅威ルール（AGENT / SUB_AGENT / TOOL とその経路）。
+# 出典: OWASP Top 10 for Agentic Applications 2026 (ASI Top 10) / OWASP AI Exchange /
+#       OWASP Top 10 for LLM Applications / Simon Willison (Lethal Trifecta)。
+#       本文は逐語転載せず日本語要約のみ。
+# SPDX-License-Identifier: Apache-2.0
+# ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+# 出典の帰属表示は NOTICE を参照。
+# 注: ファイル名と id 接頭辞 `maestro-` は歴史的経緯による据え置き。改名は既存プロジェクトの
+#   抑制状態キー（`${ruleId}-${nodeId}`）を孤児化させるため行わない（2026-06-10 判断、
+#   docs/plan.md Execution Log 参照）。出典としての CSA MAESTRO への依存は同日付で解消済み。
+
+schemaVersion: 1
+
+rules:
+  - id: maestro-agent-runaway-001
+    canonicalId: excessive-agency
+    framework: AgenticAI
+    category: "Agent"
+    name: "自律動作の暴走"
+    severity: Critical
+    description: "プロンプトインジェクション等により、エージェントが意図しない行動を取るリスク。"
+    mitigation: "プロンプト境界の明示、危険アクションの人手承認、ガードレール（許可リスト）の導入。"
+    appliesTo:
+      kind: node
+      # SUB_AGENT も自律実行するため同等に成立（§2.22 1.6e anyOf 展開）。
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "OWASP LLM Top 10 - LLM06 Excessive Agency"
+
+  - id: maestro-tool-edge-001
+    canonicalId: weak-service-auth
+    framework: AgenticAI
+    category: "Tool"
+    name: "権限昇格リスク"
+    severity: High
+    description: "ツール実行権限の認証が不十分です。エージェントから{{targetName}}への呼び出しが十分に保護されておらず、権限昇格・横展開のリスクがあります。"
+    mitigation: "ツール呼び出し前に MFA 等強固な認証を要求し、実行スコープを最小化する。"
+    appliesTo:
+      kind: edge
+      when:
+        targetType: [TOOL]
+      # MFA 接続時は同一ルールを Low 重大度の情報通知として再利用する。
+      # severity / description のみ上書きし、ルール ID は維持する。
+      conditions:
+        - when:
+            auth: [MFA]
+          severity: Low
+          description: "{{targetName}}への呼び出しは MFA で保護されています。"
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI02: Tool Misuse"
+        url: "https://genai.owasp.org/"
+
+  # ── Agent: 内部状態の汚染 / 目標逸脱 ─────────────────────────
+  - id: maestro-agent-memory-poisoning-001
+    canonicalId: agent-memory-poisoning
+    framework: AgenticAI
+    category: "Memory"
+    name: "長期メモリ汚染"
+    severity: High
+    description: "エージェントの長期メモリ・要約・ベクター記憶に悪意ある記述が書き込まれ、以降のセッションで誤判断・なりすまし・情報漏洩を継続的に誘発するリスク。"
+    mitigation: "メモリ書込のソース信頼度評価、機微カテゴリのメモリ禁止、世代ごとのスナップショットと差分監査、外部入力由来メモリの有効期限化。"
+    appliesTo:
+      kind: node
+      # SUB_AGENT も独自メモリを持つため同等に成立（§2.22 1.6e anyOf 展開）。
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "ID.RA-09"
+    references:
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI06: Memory & Context Poisoning"
+        url: "https://genai.owasp.org/"
+
+  - id: maestro-agent-goal-misalignment-001
+    canonicalId: goal-misalignment
+    framework: AgenticAI
+    category: "Reasoning"
+    name: "目標逸脱"
+    severity: High
+    description: "曖昧な指示・報酬ハック・連鎖思考の誤誘導により、エージェントが本来の業務目標から逸脱した行動（過剰な探索、勝手な最適化、ループ）を継続するリスク。"
+    mitigation: "目標仕様の明示と検証可能な完了条件、ステップ数・予算上限、外部評価関数によるドリフト検知、ヒューマン・イン・ザ・ループ。"
+    appliesTo:
+      kind: node
+      # SUB_AGENT も目標仕様・完了条件を持つため同等に成立（§2.22 1.6e anyOf 展開）。
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+      # 目標仕様・完了条件・予算上限などエージェント設計自体の問題で、接続関係に依存しない。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "GV.RM-04"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI01: Agent Goal Hijack"
+        url: "https://genai.owasp.org/"
+
+  - id: maestro-multi-agent-collusion-001
+    canonicalId: multi-agent-collusion
+    framework: AgenticAI
+    category: "Multi-agent"
+    name: "協調逸脱"
+    severity: Medium
+    description: "複数エージェントが対話を重ねるうちに、各々の安全制約が相互に解除される（共謀的ジェイルブレイク、責任の押し付け合い）リスク。"
+    mitigation: "エージェント間メッセージの監査ロギング、役割の明確化と権限分離、最終アクションへの独立ガードレール、合議結果の人手承認。"
+    appliesTo:
+      kind: node
+      # SUB_AGENT は協調逸脱（共謀）の当事者そのもの。同等に成立（§2.22 1.6e anyOf 展開）。
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-04"
+    references:
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI10: Rogue Agent"
+        url: "https://genai.owasp.org/"
+
+  # ── Tool: 単体ノードとしての脅威 ─────────────────────────────
+  - id: maestro-tool-output-handling-001
+    canonicalId: tool-output-trust-boundary
+    framework: AgenticAI
+    category: "Tool"
+    name: "出力の信頼境界違反"
+    severity: High
+    description: "外部ツール／API の応答（取得 Web ページ、メール本文、検索結果）が untrusted のままエージェントの思考に取り込まれ、間接プロンプトインジェクションや誤判断の起点になるリスク。"
+    mitigation: "ツール応答を untrusted ラベルで分離、命令文の検出と無効化、応答スキーマの強制、機微アクションの起動はユーザ明示要求時のみ。"
+    appliesTo:
+      kind: node
+      nodeType: TOOL
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-06"
+    references:
+      - title: "OWASP LLM05/01 - Output Handling & Prompt Injection"
+      # OWASP ASI Top 10 の ASI02 Tool Misuse and Exploitation に対応（クロスマッピング）。
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI02: Tool Misuse and Exploitation（関連マッピング）"
+        url: "https://genai.owasp.org/"
+
+  # ── Edge: エージェントが Internet 越しに発火 ────────────────
+  - id: maestro-agent-internet-egress-001
+    canonicalId: agent-uncontrolled-egress
+    framework: AgenticAI
+    category: "Agent"
+    name: "制御外通信"
+    severity: High
+    description: "エージェント{{sourceName}}から{{targetName}}への接続が公衆網を経由しています。許可リスト外の宛先・データ流出経路として悪用されるリスクがあります。"
+    mitigation: "エージェントの egress 先を許可リスト化し、プロキシ経由での DLP 監査、未承認ドメインへのアクセスをブロック。"
+    appliesTo:
+      kind: edge
+      when:
+        sourceType: [AGENT]
+        network: [Internet]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-01"
+    references:
+      - title: "OWASP AI Exchange - Agentic AI（egress 統制・許可リスト化）"
+        url: "https://owaspai.org/"
+
+  # ── OWASP AI Exchange 決定木の未充足ギャップ（W6）──────────
+  # Lethal Trifecta は単一 edge では表現不能なグラフ横断条件のため、
+  # AGENT 存在時の警告として近似する（docs/plan.md §2 ステップ 13）。
+  - id: maestro-lethal-trifecta-001
+    canonicalId: lethal-trifecta
+    framework: AgenticAI
+    category: "Agent"
+    name: "Lethal Trifecta"
+    severity: Critical
+    description: "{{nodeName}} は Lethal Trifecta（攻撃者制御データ取込 × 機密データアクセス × 外部送信能力）の同時成立リスクを抱える構成です。3 要素のいずれかが切れていることを構成図全体で確認してください。"
+    mitigation: "3 要素のうち最低 1 つを遮断する：(1) 外部入力を untrusted ラベルで隔離し命令文検出/無効化を行う、(2) 機密データアクセスを最小権限・人手承認に限定する、(3) egress を許可リスト化し未承認ドメインをブロックする。"
+    appliesTo:
+      kind: node
+      # SUB_AGENT も trifecta を抱えうるため同等に成立（§2.22 1.6e anyOf 展開）。
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+      # AGENT 存在時の構成全体への注意喚起として近似（docs/plan.md §2 ステップ 13）。
+      # 接続関係に依存しない警告。
+      connection:
+        required: false
+      # Lethal Trifecta の致命性は影響範囲が広い構成でこそ顕在化する。
+      # blastRadius が Self / ReadOnly と明示宣言されたノードは対象外（過剰検知抑制）。
+      # 未指定は Admin として扱われ発火する＝既存挙動を保持。
+      agentAttributes:
+        blastRadius: [Tenant, CrossTenant, Admin]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "Simon Willison - The Lethal Trifecta for AI agents"
+        url: "https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/"
+      - title: "OWASP AI Exchange - Agentic AI: Lethal Trifecta"
+        url: "https://owaspai.org/"
+
+  # Internal 以外の境界に置かれた AGENT への入力経路（ingress 側）。
+  # network: [Internet] OR auth: [None] のいずれかを満たす edge を anyOf で捕捉。
+  - id: maestro-agent-untrusted-ingress-001
+    canonicalId: agent-untrusted-prompt-ingress
+    framework: AgenticAI
+    category: "Agent"
+    name: "信頼境界外からのプロンプト入力"
+    severity: High
+    description: "{{sourceName}} から {{targetName}}（エージェント）へのプロンプト入力経路が信頼境界外を通っています。間接プロンプトインジェクションや指示すり替えの入口となるリスクがあります。"
+    mitigation: "ingress は MFA / 認証付きトークンで保護し、入力に untrusted ラベルを付与。機微ツール呼び出しはユーザの明示要求時のみ有効化。可能なら AGENT を Internal 境界内へ再配置する。"
+    appliesTo:
+      kind: edge
+      anyOf:
+        - targetType: [AGENT]
+          network: [Internet]
+        - targetType: [AGENT]
+          auth: [None]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "OWASP AI Exchange - Agentic AI: Untrusted Input Boundary"
+        url: "https://owaspai.org/"
+      # OWASP ASI Top 10 の ASI01 Agent Goal Hijack に対応（クロスマッピング）。
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI01: Agent Goal Hijack（関連マッピング）"
+        url: "https://genai.owasp.org/"
+
+  # Partner 境界（取引先）に置かれた TOOL / CONNECTOR への呼び出しは、
+  # 取引先側の改ざん・侵害（サプライチェーン経由）が自プロセスに波及するリスクを伴う。
+  - id: maestro-partner-supply-chain-tool-001
+    canonicalId: partner-tool-supply-chain
+    framework: AgenticAI
+    category: "Supply Chain"
+    name: "取引先ツール経由の汚染"
+    severity: High
+    description: "{{sourceName}} から {{targetName}}（取引先境界内）への呼び出しがサプライチェーン経由の侵害（依存先改ざん・第三者アカウント乗っ取り）の波及経路になるリスクがあります。"
+    mitigation: "取引先側の SBOM / SLA / 監査証跡を確認し、最小権限のスコープ付きトークンで呼び出す。応答は untrusted として扱い、スキーマ検証と完全性検証を必須化する。"
+    appliesTo:
+      kind: edge
+      when:
+        targetType: [TOOL, CONNECTOR]
+        targetTrust: [Partner]
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MAP 4.1"
+      - standard: nist-csf-2.0
+        ref: "GV.SC-05"
+      - standard: nist-csf-2.0
+        ref: "GV.SC-07"
+    references:
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI04: Supply Chain"
+        url: "https://genai.owasp.org/"
+
+  # AGENT 応答が認証・暗号化ともに欠落した状態で送出される（allOf で組合せ可読化）。
+  - id: maestro-agent-untrusted-response-001
+    canonicalId: agent-untrusted-response
+    framework: AgenticAI
+    category: "Agent"
+    name: "信頼境界外への応答"
+    severity: High
+    description: "エージェント {{sourceName}} の応答が認証も暗号化も無い経路で {{targetName}} に到達します。応答の改ざん・盗聴・誤情報拡散の重大リスクがあります。"
+    mitigation: "応答に署名（HMAC）を付与し、TLS を必須化。宛先側でのスキーマ検証と完全性検証を追加。可能なら AGENT を Internal 境界内へ再配置する。"
+    appliesTo:
+      kind: edge
+      allOf:
+        - sourceType: [AGENT]
+        - encryption: [Plain]
+          auth: [None]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+    references:
+      - title: "OWASP AI Exchange - Agentic AI: Untrusted Output Boundary"
+        url: "https://owaspai.org/"

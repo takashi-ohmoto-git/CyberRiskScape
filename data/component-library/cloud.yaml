@@ -1,0 +1,66 @@
+# Cloud コンポーネントライブラリ。
+#
+# クラウドサービスの利用形態を脅威モデルに載せるための 4 型：
+#   - SAAS / IAAS / PAAS: サービスモデル別のクラウドサービス。
+#     認可状況（sanctioned / unsanctioned）と所有状況（自社 / 他社 / 個人）を
+#     ノード属性（cloudSanction / cloudOwnership）として NodePanel から設定できる。
+#   - SHADOW: 組織が把握していないシャドー IT / シャドークラウド。
+#
+# 4 型とも DOCUMENTS カテゴリ（builtin）のデータ資産を内包（canContain）できる。
+#
+# 別ライブラリ（builtin と分離）にすることで、LeftSidebar のライブラリトグルで
+# 「クラウド型を使わない」運用を選べる。
+#
+# ライセンス: Apache-2.0（同梱）
+
+schemaVersion: 1
+
+library:
+  id: cloud
+  title: "Cloud Components"
+  version: "1.0"
+  license: "Apache-2.0"
+  builtin: true
+  description: "クラウドサービス型（SaaS / IaaS / PaaS / Shadow）。認可状況・所有状況を属性で表現する。"
+
+categories:
+  - id: CLOUD
+    label: "Cloud"
+    order: 35
+
+components:
+  - id: SAAS
+    label: "SaaS"
+    category: CLOUD
+    icon: { kind: builtin, name: "cloud" }
+    shape: rounded
+    color: "bg-sky-600"
+    description: "SaaS（Software as a Service）。認可状況・所有状況を属性で設定する。"
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]
+
+  - id: IAAS
+    label: "IaaS"
+    category: CLOUD
+    icon: { kind: builtin, name: "cloudy" }
+    shape: rounded
+    color: "bg-blue-700"
+    description: "IaaS（Infrastructure as a Service）。認可状況・所有状況を属性で設定する。"
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]
+
+  - id: PAAS
+    label: "PaaS"
+    category: CLOUD
+    icon: { kind: builtin, name: "cloud-cog" }
+    shape: rounded
+    color: "bg-cyan-600"
+    description: "PaaS（Platform as a Service）。認可状況・所有状況を属性で設定する。"
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]
+
+  - id: SHADOW
+    label: "Shadow"
+    category: CLOUD
+    icon: { kind: builtin, name: "cloud-off" }
+    shape: rounded
+    color: "bg-zinc-600"
+    description: "組織が把握・統制していないシャドー IT / シャドークラウド。"
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]

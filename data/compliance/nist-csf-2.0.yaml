@@ -1,0 +1,816 @@
+# NIST Cybersecurity Framework 2.0 (CSF 2.0) のマッピング表。
+# 出典: U.S. National Institute of Standards and Technology, NIST CSWP 29, February 2024
+#   https://www.nist.gov/cyberframework
+#   https://csrc.nist.gov/Projects/Cybersecurity-Framework/Filters
+# ライセンス: U.S. 政府著作物（パブリックドメイン）。
+# title / summary は CSF 2.0 (CSWP 29) の独自翻案・要約。原文は出典 URL を参照。
+# Implementation Examples は `nist-csf-2.0-examples.yaml` を参照。
+# 脅威ルール側 `complianceRefs.ref` と一致するキーは `ref:` フィールド。
+
+schemaVersion: 1
+
+standard:
+  id: nist-csf-2.0
+  title: "NIST Cybersecurity Framework"
+  version: "2.0"
+  url: "https://www.nist.gov/cyberframework"
+  license: "Public Domain (U.S. Government Work)"
+  disclaimer: "title / summary は CSF 2.0 (CSWP 29, 2024年2月) の独自翻案・要約。原文は出典 URL を参照。"
+
+# Function は概念的な最上位区分（GV/ID/PR/DE/RS/RC）でコメント区切りとして使用し、
+# items には category（GV.OC 等）と subcategory（GV.OC-01 等）のみを含める。
+# level: "category" | "subcategory"
+# parent: subcategory の場合に紐づく category ref を記載。
+
+items:
+  # ════════════════════════════════════════════════════════════════
+  # GOVERN (GV) — サイバーセキュリティリスク管理戦略・期待・方針の確立、伝達、監視
+  # ════════════════════════════════════════════════════════════════
+
+  # ──── GV.OC: 組織コンテキスト ────
+  - ref: "GV.OC"
+    level: category
+    title: "組織コンテキスト"
+    summary: "ミッション、ステークホルダ期待、依存関係、法規制・契約要求など、組織のサイバーセキュリティリスク管理判断を取り巻く状況を理解する。"
+
+  - ref: "GV.OC-01"
+    level: subcategory
+    parent: "GV.OC"
+    title: "組織ミッションの理解"
+    summary: "組織のミッションを理解し、サイバーセキュリティリスク管理に反映する。"
+
+  - ref: "GV.OC-02"
+    level: subcategory
+    parent: "GV.OC"
+    title: "内外ステークホルダの期待"
+    summary: "内外のステークホルダと、彼らのサイバーセキュリティリスク管理に関するニーズ・期待を理解し考慮する。"
+
+  - ref: "GV.OC-03"
+    level: subcategory
+    parent: "GV.OC"
+    title: "法規制・契約要求の管理"
+    summary: "プライバシー・市民的自由を含む、法規制・契約上のサイバーセキュリティ要求を理解し管理する。"
+
+  - ref: "GV.OC-04"
+    level: subcategory
+    parent: "GV.OC"
+    title: "外部依存される能力の理解"
+    summary: "外部ステークホルダが組織に期待する重要目的・能力・サービスを理解し伝達する。"
+
+  - ref: "GV.OC-05"
+    level: subcategory
+    parent: "GV.OC"
+    title: "自組織が依存する能力の理解"
+    summary: "組織が依存する成果・能力・サービスを理解し伝達する。"
+
+  # ──── GV.RM: リスク管理戦略 ────
+  - ref: "GV.RM"
+    level: category
+    title: "リスク管理戦略"
+    summary: "組織の優先順位・制約・リスク許容度・前提を確立、伝達し、運用上のリスク判断に活用する。"
+
+  - ref: "GV.RM-01"
+    level: subcategory
+    parent: "GV.RM"
+    title: "リスク管理目標の合意"
+    summary: "リスク管理目標を確立し、関係するステークホルダの合意を得る。"
+
+  - ref: "GV.RM-02"
+    level: subcategory
+    parent: "GV.RM"
+    title: "リスク選好・許容度の明文化"
+    summary: "リスク選好 (appetite) と許容度 (tolerance) の声明を確立、伝達、維持する。"
+
+  - ref: "GV.RM-03"
+    level: subcategory
+    parent: "GV.RM"
+    title: "ERM への統合"
+    summary: "サイバーセキュリティのリスク管理活動と成果を、エンタープライズリスク管理 (ERM) プロセスに統合する。"
+
+  - ref: "GV.RM-04"
+    level: subcategory
+    parent: "GV.RM"
+    title: "リスク対応方針の明示"
+    summary: "適切なリスク対応オプションを示す戦略的方向性を確立・伝達する。"
+
+  - ref: "GV.RM-05"
+    level: subcategory
+    parent: "GV.RM"
+    title: "リスクコミュニケーション経路"
+    summary: "サプライヤや第三者を含めたサイバーリスクの組織内伝達経路を確立する。"
+
+  - ref: "GV.RM-06"
+    level: subcategory
+    parent: "GV.RM"
+    title: "リスク評価手法の標準化"
+    summary: "サイバーリスクを算出・記録・分類・優先順位付けする標準手法を確立し伝達する。"
+
+  - ref: "GV.RM-07"
+    level: subcategory
+    parent: "GV.RM"
+    title: "戦略的機会 (ポジティブリスク)"
+    summary: "戦略的機会 (プラスのリスク) を特徴づけ、組織のサイバーリスク議論に含める。"
+
+  # ──── GV.RR: 役割・責任・権限 ────
+  - ref: "GV.RR"
+    level: category
+    title: "役割・責任・権限"
+    summary: "サイバーセキュリティの役割・責任・権限を確立し伝達することで、説明責任・成果評価・継続的改善を促進する。"
+
+  - ref: "GV.RR-01"
+    level: subcategory
+    parent: "GV.RR"
+    title: "リーダーシップの責任"
+    summary: "経営層がサイバーセキュリティリスクに責任を負い、リスク意識・倫理性・継続改善の文化を育む。"
+
+  - ref: "GV.RR-02"
+    level: subcategory
+    parent: "GV.RR"
+    title: "役割・責任・権限の整備"
+    summary: "サイバーセキュリティリスク管理の役割・責任・権限を確立・伝達・理解させ、施行する。"
+
+  - ref: "GV.RR-03"
+    level: subcategory
+    parent: "GV.RR"
+    title: "適切なリソース配分"
+    summary: "戦略・役割・責任・ポリシーに見合うリソースを配分する。"
+
+  - ref: "GV.RR-04"
+    level: subcategory
+    parent: "GV.RR"
+    title: "人事プラクティスへの組込"
+    summary: "サイバーセキュリティを人事プラクティスに組み込む。"
+
+  # ──── GV.PO: ポリシー ────
+  - ref: "GV.PO"
+    level: category
+    title: "ポリシー"
+    summary: "組織のサイバーセキュリティポリシーを確立・伝達・施行する。"
+
+  - ref: "GV.PO-01"
+    level: subcategory
+    parent: "GV.PO"
+    title: "ポリシーの確立"
+    summary: "組織コンテキスト・戦略・優先順位に基づきリスク管理ポリシーを確立し、伝達・施行する。"
+
+  - ref: "GV.PO-02"
+    level: subcategory
+    parent: "GV.PO"
+    title: "ポリシーの維持"
+    summary: "要求・脅威・技術・ミッションの変化を反映するため、ポリシーをレビュー・更新・伝達・施行する。"
+
+  # ──── GV.OV: 監督 ────
+  - ref: "GV.OV"
+    level: category
+    title: "監督"
+    summary: "組織横断のリスク管理活動と成果を、戦略の見直し・改善・調整に活用する。"
+
+  - ref: "GV.OV-01"
+    level: subcategory
+    parent: "GV.OV"
+    title: "リスク管理戦略の成果レビュー"
+    summary: "リスク管理戦略の成果をレビューし、戦略と方向性に反映する。"
+
+  - ref: "GV.OV-02"
+    level: subcategory
+    parent: "GV.OV"
+    title: "戦略の網羅性レビュー"
+    summary: "組織要求とリスクを網羅するよう、リスク管理戦略をレビュー・調整する。"
+
+  - ref: "GV.OV-03"
+    level: subcategory
+    parent: "GV.OV"
+    title: "パフォーマンス評価"
+    summary: "組織のサイバーセキュリティリスク管理パフォーマンスを評価・レビューし、必要な調整を行う。"
+
+  # ──── GV.SC: サプライチェーンリスク管理 (C-SCRM) ────
+  - ref: "GV.SC"
+    level: category
+    title: "サプライチェーンリスク管理"
+    summary: "サイバーサプライチェーンリスク管理プロセスを特定・確立・運用・監視・改善する。"
+
+  - ref: "GV.SC-01"
+    level: subcategory
+    parent: "GV.SC"
+    title: "SCRM プログラムの確立"
+    summary: "サイバーサプライチェーンリスク管理プログラム、戦略、目標、ポリシー、プロセスを確立しステークホルダで合意する。"
+
+  - ref: "GV.SC-02"
+    level: subcategory
+    parent: "GV.SC"
+    title: "サプライヤ・顧客・パートナーの役割定義"
+    summary: "サプライヤ・顧客・パートナーのサイバーセキュリティ役割・責任を確立、伝達、組織内外で調整する。"
+
+  - ref: "GV.SC-03"
+    level: subcategory
+    parent: "GV.SC"
+    title: "SCRM の ERM 統合"
+    summary: "サイバーサプライチェーンリスク管理を、サイバー/エンタープライズリスク管理、リスク評価、改善プロセスに統合する。"
+
+  - ref: "GV.SC-04"
+    level: subcategory
+    parent: "GV.SC"
+    title: "重要サプライヤの把握"
+    summary: "サプライヤを把握し、重要度に応じて優先順位付けする。"
+
+  - ref: "GV.SC-05"
+    level: subcategory
+    parent: "GV.SC"
+    title: "契約への要件組込"
+    summary: "サプライチェーン関連のサイバーセキュリティ要件を確立・優先順位付けし、サプライヤ等との契約・合意に組み込む。"
+
+  - ref: "GV.SC-06"
+    level: subcategory
+    parent: "GV.SC"
+    title: "契約前デューデリジェンス"
+    summary: "正式なサプライヤ関係に入る前にリスクを低減するため、計画とデューデリジェンスを実施する。"
+
+  - ref: "GV.SC-07"
+    level: subcategory
+    parent: "GV.SC"
+    title: "関係期間中のリスク監視"
+    summary: "サプライヤ・製品・サービス等のリスクを関係期間中に理解、記録、優先順位付け、評価、対応、監視する。"
+
+  - ref: "GV.SC-08"
+    level: subcategory
+    parent: "GV.SC"
+    title: "インシデント計画への組込"
+    summary: "関連サプライヤ・第三者をインシデント計画・対応・復旧活動に含める。"
+
+  - ref: "GV.SC-09"
+    level: subcategory
+    parent: "GV.SC"
+    title: "ライフサイクル全体でのセキュリティ統合"
+    summary: "サプライチェーンのセキュリティ実践をリスク管理プログラムに統合し、技術製品・サービスのライフサイクルを通じてパフォーマンスを監視する。"
+
+  - ref: "GV.SC-10"
+    level: subcategory
+    parent: "GV.SC"
+    title: "契約終了後の措置"
+    summary: "パートナーシップ・サービス契約終了後に行う活動の規定を SCRM 計画に含める。"
+
+  # ════════════════════════════════════════════════════════════════
+  # IDENTIFY (ID) — 組織の現在のサイバーセキュリティリスクの理解
+  # ════════════════════════════════════════════════════════════════
+
+  # ──── ID.AM: 資産管理 ────
+  - ref: "ID.AM"
+    level: category
+    title: "資産管理"
+    summary: "業務目的を支える資産 (データ、ハードウェア、ソフトウェア、システム、設備、サービス、人) を、重要度とリスク戦略に応じて特定・管理する。"
+
+  - ref: "ID.AM-01"
+    level: subcategory
+    parent: "ID.AM"
+    title: "ハードウェア棚卸"
+    summary: "組織が管理するハードウェアのインベントリを維持する。"
+
+  - ref: "ID.AM-02"
+    level: subcategory
+    parent: "ID.AM"
+    title: "ソフトウェア・サービス・システムの棚卸"
+    summary: "組織が管理するソフトウェア、サービス、システムのインベントリを維持する。"
+
+  - ref: "ID.AM-03"
+    level: subcategory
+    parent: "ID.AM"
+    title: "ネットワーク通信・データフローの可視化"
+    summary: "認可されたネットワーク通信、および内外のネットワークデータフローの構成を維持する。"
+
+  - ref: "ID.AM-04"
+    level: subcategory
+    parent: "ID.AM"
+    title: "サプライヤ提供サービスの棚卸"
+    summary: "サプライヤが提供するサービスのインベントリを維持する。"
+
+  - ref: "ID.AM-05"
+    level: subcategory
+    parent: "ID.AM"
+    title: "重要度に基づく優先順位付け"
+    summary: "分類・重要度・リソース・ミッションへの影響に基づき資産を優先順位付けする。"
+
+  - ref: "ID.AM-07"
+    level: subcategory
+    parent: "ID.AM"
+    title: "データ・メタデータの棚卸"
+    summary: "指定データ種別についてデータと対応メタデータのインベントリを維持する。"
+
+  - ref: "ID.AM-08"
+    level: subcategory
+    parent: "ID.AM"
+    title: "ライフサイクル管理"
+    summary: "システム、ハードウェア、ソフトウェア、サービス、データをライフサイクル全体で管理する。"
+
+  # ──── ID.RA: リスク評価 ────
+  - ref: "ID.RA"
+    level: category
+    title: "リスク評価"
+    summary: "組織・資産・個人に対するサイバーセキュリティリスクを組織として理解する。"
+
+  - ref: "ID.RA-01"
+    level: subcategory
+    parent: "ID.RA"
+    title: "脆弱性の特定・記録"
+    summary: "資産の脆弱性を特定、検証、記録する。"
+
+  - ref: "ID.RA-02"
+    level: subcategory
+    parent: "ID.RA"
+    title: "脅威インテリジェンスの受領"
+    summary: "情報共有フォーラム・情報源からサイバー脅威インテリジェンスを受領する。"
+
+  - ref: "ID.RA-03"
+    level: subcategory
+    parent: "ID.RA"
+    title: "内外脅威の特定"
+    summary: "組織に対する内外の脅威を特定し記録する。"
+
+  - ref: "ID.RA-04"
+    level: subcategory
+    parent: "ID.RA"
+    title: "影響・発生可能性の評価"
+    summary: "脆弱性を悪用する脅威の潜在的影響と発生可能性を特定・記録する。"
+
+  - ref: "ID.RA-05"
+    level: subcategory
+    parent: "ID.RA"
+    title: "固有リスクの理解"
+    summary: "脅威・脆弱性・発生可能性・影響を用いて固有リスクを理解し、対応の優先順位に反映する。"
+
+  - ref: "ID.RA-06"
+    level: subcategory
+    parent: "ID.RA"
+    title: "リスク対応の選定・追跡"
+    summary: "リスク対応策を選定、優先順位付け、計画、追跡、伝達する。"
+
+  - ref: "ID.RA-07"
+    level: subcategory
+    parent: "ID.RA"
+    title: "変更・例外の管理"
+    summary: "変更と例外を管理し、リスク影響を評価、記録、追跡する。"
+
+  - ref: "ID.RA-08"
+    level: subcategory
+    parent: "ID.RA"
+    title: "脆弱性開示プロセス"
+    summary: "脆弱性開示の受領、分析、対応プロセスを整備する。"
+
+  - ref: "ID.RA-09"
+    level: subcategory
+    parent: "ID.RA"
+    title: "取得前の真正性・完全性評価"
+    summary: "ハードウェア・ソフトウェアの真正性と完全性を取得・利用前に評価する。"
+
+  - ref: "ID.RA-10"
+    level: subcategory
+    parent: "ID.RA"
+    title: "重要サプライヤの取得前評価"
+    summary: "重要サプライヤを取得前に評価する。"
+
+  # ──── ID.IM: 改善 ────
+  - ref: "ID.IM"
+    level: category
+    title: "改善"
+    summary: "全 CSF 機能にわたるリスク管理プロセス・手順・活動の改善点を特定する。"
+
+  - ref: "ID.IM-01"
+    level: subcategory
+    parent: "ID.IM"
+    title: "評価からの改善抽出"
+    summary: "評価結果から改善点を特定する。"
+
+  - ref: "ID.IM-02"
+    level: subcategory
+    parent: "ID.IM"
+    title: "セキュリティテスト・演習からの改善抽出"
+    summary: "サプライヤや第三者と連携したものを含む、セキュリティテストと演習から改善点を特定する。"
+
+  - ref: "ID.IM-03"
+    level: subcategory
+    parent: "ID.IM"
+    title: "運用プロセスからの改善抽出"
+    summary: "運用プロセス・手順・活動の実行から改善点を特定する。"
+
+  - ref: "ID.IM-04"
+    level: subcategory
+    parent: "ID.IM"
+    title: "インシデント対応計画の整備"
+    summary: "インシデント対応計画など、運用に影響するサイバーセキュリティ計画を確立・伝達・維持・改善する。"
+
+  # ════════════════════════════════════════════════════════════════
+  # PROTECT (PR) — サイバーセキュリティリスクを管理する安全策の利用
+  # ════════════════════════════════════════════════════════════════
+
+  # ──── PR.AA: アイデンティティ・認証・アクセス制御 ────
+  - ref: "PR.AA"
+    level: category
+    title: "アイデンティティ・認証・アクセス制御"
+    summary: "物理および論理資産へのアクセスを、認可されたユーザ・サービス・ハードウェアに限定し、不正アクセスのリスクに見合った形で管理する。"
+
+  - ref: "PR.AA-01"
+    level: subcategory
+    parent: "PR.AA"
+    title: "ID・クレデンシャル管理"
+    summary: "認可されたユーザ、サービス、ハードウェアの ID とクレデンシャルを管理する。"
+
+  - ref: "PR.AA-02"
+    level: subcategory
+    parent: "PR.AA"
+    title: "ID 証明とバインディング"
+    summary: "やり取りのコンテキストに応じて ID を証明 (proof) し、クレデンシャルとバインドする。"
+
+  - ref: "PR.AA-03"
+    level: subcategory
+    parent: "PR.AA"
+    title: "認証"
+    summary: "ユーザ、サービス、ハードウェアを認証する。"
+
+  - ref: "PR.AA-04"
+    level: subcategory
+    parent: "PR.AA"
+    title: "ID アサーションの保護"
+    summary: "ID アサーションを保護、伝達、検証する。"
+
+  - ref: "PR.AA-05"
+    level: subcategory
+    parent: "PR.AA"
+    title: "最小権限と職務分掌"
+    summary: "アクセス権・特権・認可をポリシーで定義、管理、施行、レビューし、最小権限と職務分掌の原則を取り入れる。"
+
+  - ref: "PR.AA-06"
+    level: subcategory
+    parent: "PR.AA"
+    title: "物理アクセス管理"
+    summary: "資産への物理アクセスをリスクに見合った形で管理、監視、施行する。"
+
+  # ──── PR.AT: 認識・トレーニング ────
+  - ref: "PR.AT"
+    level: category
+    title: "認識・トレーニング"
+    summary: "従業員がサイバーセキュリティ関連業務を遂行できるよう、認識教育と訓練を提供する。"
+
+  - ref: "PR.AT-01"
+    level: subcategory
+    parent: "PR.AT"
+    title: "一般従業員の教育"
+    summary: "従業員がサイバーリスクを意識した一般業務を遂行できるよう、認識教育と訓練を提供する。"
+
+  - ref: "PR.AT-02"
+    level: subcategory
+    parent: "PR.AT"
+    title: "専門役割の教育"
+    summary: "特殊な役割を担う者がサイバーリスクを意識した関連業務を遂行できるよう、認識教育と訓練を提供する。"
+
+  # ──── PR.DS: データセキュリティ ────
+  - ref: "PR.DS"
+    level: category
+    title: "データセキュリティ"
+    summary: "情報の機密性・完全性・可用性を保護するため、リスク戦略に沿ってデータを管理する。"
+
+  - ref: "PR.DS-01"
+    level: subcategory
+    parent: "PR.DS"
+    title: "保存データの保護"
+    summary: "保存データ (data-at-rest) の機密性・完全性・可用性を保護する。"
+
+  - ref: "PR.DS-02"
+    level: subcategory
+    parent: "PR.DS"
+    title: "通信中データの保護"
+    summary: "通信中データ (data-in-transit) の機密性・完全性・可用性を保護する。"
+
+  - ref: "PR.DS-10"
+    level: subcategory
+    parent: "PR.DS"
+    title: "利用中データの保護"
+    summary: "利用中データ (data-in-use) の機密性・完全性・可用性を保護する。"
+
+  - ref: "PR.DS-11"
+    level: subcategory
+    parent: "PR.DS"
+    title: "バックアップ"
+    summary: "データのバックアップを作成、保護、維持、テストする。"
+
+  # ──── PR.PS: プラットフォームセキュリティ ────
+  - ref: "PR.PS"
+    level: category
+    title: "プラットフォームセキュリティ"
+    summary: "物理・仮想プラットフォームのハードウェア、ソフトウェア (ファームウェア・OS・アプリケーション含む)、サービスを、機密性・完全性・可用性の観点でリスク戦略に沿って管理する。"
+
+  - ref: "PR.PS-01"
+    level: subcategory
+    parent: "PR.PS"
+    title: "構成管理"
+    summary: "構成管理 (configuration management) の実践を確立し適用する。"
+
+  - ref: "PR.PS-02"
+    level: subcategory
+    parent: "PR.PS"
+    title: "ソフトウェアの維持・更新・廃棄"
+    summary: "ソフトウェアをリスクに見合った形で維持、置換、削除する。"
+
+  - ref: "PR.PS-03"
+    level: subcategory
+    parent: "PR.PS"
+    title: "ハードウェアの維持・更新・廃棄"
+    summary: "ハードウェアをリスクに見合った形で維持、置換、削除する。"
+
+  - ref: "PR.PS-04"
+    level: subcategory
+    parent: "PR.PS"
+    title: "ログ記録の生成"
+    summary: "継続的モニタリングのためのログレコードを生成し、利用可能にする。"
+
+  - ref: "PR.PS-05"
+    level: subcategory
+    parent: "PR.PS"
+    title: "不正ソフトウェアの実行防止"
+    summary: "不正なソフトウェアのインストール・実行を防止する。"
+
+  - ref: "PR.PS-06"
+    level: subcategory
+    parent: "PR.PS"
+    title: "セキュア開発の組込"
+    summary: "セキュアソフトウェア開発の実践を組み込み、SDLC を通じてパフォーマンスを監視する。"
+
+  # ──── PR.IR: 技術インフラのレジリエンス ────
+  - ref: "PR.IR"
+    level: category
+    title: "技術インフラのレジリエンス"
+    summary: "資産の機密性・完全性・可用性および組織レジリエンスを保護するため、セキュリティアーキテクチャを管理する。"
+
+  - ref: "PR.IR-01"
+    level: subcategory
+    parent: "PR.IR"
+    title: "不正な論理アクセスからの保護"
+    summary: "ネットワーク・環境を不正な論理アクセス・利用から保護する。"
+
+  - ref: "PR.IR-02"
+    level: subcategory
+    parent: "PR.IR"
+    title: "環境的脅威からの保護"
+    summary: "組織の技術資産を環境的脅威 (災害等) から保護する。"
+
+  - ref: "PR.IR-03"
+    level: subcategory
+    parent: "PR.IR"
+    title: "レジリエンス要件の実装"
+    summary: "平常時・有事のレジリエンス要件を達成するメカニズムを実装する。"
+
+  - ref: "PR.IR-04"
+    level: subcategory
+    parent: "PR.IR"
+    title: "可用性のためのリソース容量"
+    summary: "可用性を確保するために十分なリソース容量を維持する。"
+
+  # ════════════════════════════════════════════════════════════════
+  # DETECT (DE) — サイバー攻撃や侵害の発見と分析
+  # ════════════════════════════════════════════════════════════════
+
+  # ──── DE.CM: 継続的モニタリング ────
+  - ref: "DE.CM"
+    level: category
+    title: "継続的モニタリング"
+    summary: "異常、侵害指標、その他の有害事象の可能性を発見するため、資産を監視する。"
+
+  - ref: "DE.CM-01"
+    level: subcategory
+    parent: "DE.CM"
+    title: "ネットワーク監視"
+    summary: "ネットワークとネットワークサービスを監視し、有害事象の可能性を発見する。"
+
+  - ref: "DE.CM-02"
+    level: subcategory
+    parent: "DE.CM"
+    title: "物理環境の監視"
+    summary: "物理環境を監視し、有害事象の可能性を発見する。"
+
+  - ref: "DE.CM-03"
+    level: subcategory
+    parent: "DE.CM"
+    title: "従業員活動・技術利用の監視"
+    summary: "従業員の活動と技術利用を監視し、有害事象の可能性を発見する。"
+
+  - ref: "DE.CM-06"
+    level: subcategory
+    parent: "DE.CM"
+    title: "外部サービスプロバイダの監視"
+    summary: "外部サービスプロバイダの活動・サービスを監視し、有害事象の可能性を発見する。"
+
+  - ref: "DE.CM-09"
+    level: subcategory
+    parent: "DE.CM"
+    title: "計算資源・データの監視"
+    summary: "コンピューティングのハードウェア・ソフトウェア、ランタイム環境、データを監視し、有害事象の可能性を発見する。"
+
+  # ──── DE.AE: 有害事象の分析 ────
+  - ref: "DE.AE"
+    level: category
+    title: "有害事象の分析"
+    summary: "異常、侵害指標、その他の有害事象の可能性を分析し、事象を特徴づけてインシデントを検知する。"
+
+  - ref: "DE.AE-02"
+    level: subcategory
+    parent: "DE.AE"
+    title: "有害事象の分析"
+    summary: "潜在的に有害な事象を分析し、関連する活動を理解する。"
+
+  - ref: "DE.AE-03"
+    level: subcategory
+    parent: "DE.AE"
+    title: "複数情報源の相関分析"
+    summary: "複数の情報源からの情報を相関させる。"
+
+  - ref: "DE.AE-04"
+    level: subcategory
+    parent: "DE.AE"
+    title: "影響範囲の見積"
+    summary: "有害事象の推定影響と範囲を把握する。"
+
+  - ref: "DE.AE-06"
+    level: subcategory
+    parent: "DE.AE"
+    title: "認可スタッフ・ツールへの情報提供"
+    summary: "有害事象に関する情報を認可された担当者とツールに提供する。"
+
+  - ref: "DE.AE-07"
+    level: subcategory
+    parent: "DE.AE"
+    title: "脅威インテリジェンスの統合"
+    summary: "サイバー脅威インテリジェンスと文脈情報を分析に統合する。"
+
+  - ref: "DE.AE-08"
+    level: subcategory
+    parent: "DE.AE"
+    title: "インシデント宣言"
+    summary: "有害事象が定義された基準を満たした場合、インシデントを宣言する。"
+
+  # ════════════════════════════════════════════════════════════════
+  # RESPOND (RS) — 検知されたインシデントへの対応行動
+  # ════════════════════════════════════════════════════════════════
+
+  # ──── RS.MA: インシデント管理 ────
+  - ref: "RS.MA"
+    level: category
+    title: "インシデント管理"
+    summary: "検知されたサイバーセキュリティインシデントへの対応を管理する。"
+
+  - ref: "RS.MA-01"
+    level: subcategory
+    parent: "RS.MA"
+    title: "計画の実行"
+    summary: "インシデントが宣言された後、関連する第三者と連携してインシデント対応計画を実行する。"
+
+  - ref: "RS.MA-02"
+    level: subcategory
+    parent: "RS.MA"
+    title: "受領レポートのトリアージ・検証"
+    summary: "受領したインシデントレポートをトリアージし検証する。"
+
+  - ref: "RS.MA-03"
+    level: subcategory
+    parent: "RS.MA"
+    title: "分類・優先順位付け"
+    summary: "インシデントを分類し優先順位付けする。"
+
+  - ref: "RS.MA-04"
+    level: subcategory
+    parent: "RS.MA"
+    title: "エスカレーション"
+    summary: "必要に応じてインシデントをエスカレーション・上申する。"
+
+  - ref: "RS.MA-05"
+    level: subcategory
+    parent: "RS.MA"
+    title: "復旧開始基準の適用"
+    summary: "インシデント復旧を開始する基準を適用する。"
+
+  # ──── RS.AN: インシデント分析 ────
+  - ref: "RS.AN"
+    level: category
+    title: "インシデント分析"
+    summary: "効果的な対応と、フォレンジック・復旧活動の支援のため、調査を実施する。"
+
+  - ref: "RS.AN-03"
+    level: subcategory
+    parent: "RS.AN"
+    title: "経緯・根本原因の分析"
+    summary: "インシデント中に何が起きたか、また根本原因を明らかにする分析を実施する。"
+
+  - ref: "RS.AN-06"
+    level: subcategory
+    parent: "RS.AN"
+    title: "調査活動の記録保全"
+    summary: "調査中の活動を記録し、記録の完全性と来歴を保全する。"
+
+  - ref: "RS.AN-07"
+    level: subcategory
+    parent: "RS.AN"
+    title: "インシデントデータの保全"
+    summary: "インシデントデータとメタデータを収集し、完全性と来歴を保全する。"
+
+  - ref: "RS.AN-08"
+    level: subcategory
+    parent: "RS.AN"
+    title: "規模の見積・検証"
+    summary: "インシデントの規模を見積り検証する。"
+
+  # ──── RS.CO: インシデント対応の報告と連絡 ────
+  - ref: "RS.CO"
+    level: category
+    title: "インシデント対応の報告と連絡"
+    summary: "対応活動を、法令・規制・ポリシーに従って内外のステークホルダと調整する。"
+
+  - ref: "RS.CO-02"
+    level: subcategory
+    parent: "RS.CO"
+    title: "ステークホルダへの通知"
+    summary: "インシデントについて内外のステークホルダに通知する。"
+
+  - ref: "RS.CO-03"
+    level: subcategory
+    parent: "RS.CO"
+    title: "情報共有"
+    summary: "指定された内外のステークホルダと情報を共有する。"
+
+  # ──── RS.MI: インシデント緩和 ────
+  - ref: "RS.MI"
+    level: category
+    title: "インシデント緩和"
+    summary: "事象の拡大を防ぎ、影響を緩和するための活動を行う。"
+
+  - ref: "RS.MI-01"
+    level: subcategory
+    parent: "RS.MI"
+    title: "インシデントの封じ込め"
+    summary: "インシデントを封じ込める。"
+
+  - ref: "RS.MI-02"
+    level: subcategory
+    parent: "RS.MI"
+    title: "インシデントの根絶"
+    summary: "インシデントを根絶する。"
+
+  # ════════════════════════════════════════════════════════════════
+  # RECOVER (RC) — インシデントの影響を受けた資産と業務の復元
+  # ════════════════════════════════════════════════════════════════
+
+  # ──── RC.RP: インシデント復旧計画の実行 ────
+  - ref: "RC.RP"
+    level: category
+    title: "インシデント復旧計画の実行"
+    summary: "影響を受けたシステム・サービスの運用可用性を確保するため、復旧活動を実施する。"
+
+  - ref: "RC.RP-01"
+    level: subcategory
+    parent: "RC.RP"
+    title: "復旧プランの実行"
+    summary: "インシデント対応プロセスから開始された時点で、インシデント対応計画の復旧部分を実行する。"
+
+  - ref: "RC.RP-02"
+    level: subcategory
+    parent: "RC.RP"
+    title: "復旧アクションの選定・実行"
+    summary: "復旧アクションを選定、範囲設定、優先順位付け、実行する。"
+
+  - ref: "RC.RP-03"
+    level: subcategory
+    parent: "RC.RP"
+    title: "バックアップの完全性検証"
+    summary: "復旧に利用する前に、バックアップ・復元資産の完全性を検証する。"
+
+  - ref: "RC.RP-04"
+    level: subcategory
+    parent: "RC.RP"
+    title: "ポストインシデント運用ノルム"
+    summary: "重要ミッション機能とサイバーセキュリティリスク管理を考慮し、インシデント後の運用基準を確立する。"
+
+  - ref: "RC.RP-05"
+    level: subcategory
+    parent: "RC.RP"
+    title: "復元資産の検証と正常化"
+    summary: "復元資産の完全性を検証し、システム・サービスを復元、正常状態を確認する。"
+
+  - ref: "RC.RP-06"
+    level: subcategory
+    parent: "RC.RP"
+    title: "復旧完了宣言"
+    summary: "復旧の終了を基準に基づき宣言し、インシデント関連の文書を完了する。"
+
+  # ──── RC.CO: インシデント復旧の連絡 ────
+  - ref: "RC.CO"
+    level: category
+    title: "インシデント復旧の連絡"
+    summary: "復旧活動を内外の関係者と調整する。"
+
+  - ref: "RC.CO-03"
+    level: subcategory
+    parent: "RC.CO"
+    title: "復旧進捗の伝達"
+    summary: "復旧活動と業務能力回復の進捗を、指定された内外のステークホルダに伝達する。"
+
+  - ref: "RC.CO-04"
+    level: subcategory
+    parent: "RC.CO"
+    title: "公式な情報発信"
+    summary: "インシデント復旧に関する公的アップデートを、承認された方法とメッセージで共有する。"

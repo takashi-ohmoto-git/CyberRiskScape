@@ -1,0 +1,205 @@
+# OWASP Top 10 for Large Language Model Applications (2025) ベースの脅威ルール。
+# 出典: https://genai.owasp.org/llm-top-10/
+# SPDX-License-Identifier: Apache-2.0
+# ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+# 出典の帰属表示は NOTICE を参照。
+#
+# 設計メモ:
+# - 既存スキーマの framework enum は `STRIDE` / `AI` / `AgenticAI` の 3 つ。
+#   OWASP LLM Top 10 の各項目はその性質に応じて主に `AI`（一部 `AgenticAI`）へ振り分ける。
+#   出典は references で常に OWASP LLM Top 10 を明記する。
+# - 重複回避: stride-ai.yaml の `stride-ai-llm-model-extraction-001`（LLM10:2023 相当）
+#   は流用とし、本ファイルではより新しい 2025 区分にあわせて再構成する。
+
+schemaVersion: 1
+
+rules:
+  # ── LLM01:2025 Prompt Injection ─────────────────────────────
+  - id: owasp-llm01-prompt-injection-001
+    canonicalId: direct-prompt-injection
+    framework: AI
+    category: "Prompt Injection"
+    name: "直接プロンプトインジェクション"
+    severity: Critical
+    description: "ユーザ入力に攻撃者が悪意ある指令を直接埋め込み、システムプロンプトやガードレールを無視させて情報漏洩・不正実行・なりすまし出力を誘発するリスク。プロンプトを受理する LLM／エージェントに内在し、外部接続の有無に依存しない。"
+    mitigation: "システムプロンプトとユーザ入力を構造的に分離（ロールガード）。入力に対する命令文検出と無効化、出力ガード、機微操作の人手承認・許可リスト型ツール呼び出しで影響を限定する。"
+    appliesTo:
+      kind: node
+      # 直接 PI はプロンプト受理時点で成立する内在的脅威。接続有無に依存しない。
+      anyOf:
+        - nodeType: LLM
+        - nodeType: AGENT
+      connection:
+        required: false
+    references:
+      - title: "OWASP LLM01:2025 Prompt Injection"
+        url: "https://genai.owasp.org/llmrisk/llm01-prompt-injection/"
+      # OWASP ASI Top 10 の ASI01 Agent Goal Hijack に対応（クロスマッピング）。
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI01: Agent Goal Hijack（関連マッピング）"
+        url: "https://genai.owasp.org/"
+
+  # ── LLM02:2025 Sensitive Information Disclosure ─────────────
+  - id: owasp-llm02-sensitive-info-disclosure-001
+    canonicalId: llm-sensitive-info-disclosure
+    framework: AI
+    category: "Information Disclosure"
+    name: "機微情報漏洩"
+    severity: High
+    description: "LLM がシステムプロンプト・学習データ・他テナントの履歴に含まれる機微情報（PII、認証情報、知財）を応答に漏洩するリスク。"
+    mitigation: "入出力フィルタリング（PII/Secret 検知）、学習データの最小化と匿名化、テナント分離、機微情報を含む応答のリアルタイム監査。"
+    appliesTo:
+      kind: node
+      nodeType: LLM
+    references:
+      - title: "OWASP LLM02:2025 Sensitive Information Disclosure"
+        url: "https://genai.owasp.org/llmrisk/llm02-sensitive-information-disclosure/"
+
+  # ── LLM03:2025 Supply Chain ─────────────────────────────────
+  - id: owasp-llm03-supply-chain-001
+    canonicalId: supply-chain-model
+    framework: AI
+    category: "Supply Chain"
+    name: "モデル・依存関係の供給網"
+    severity: High
+    description: "サードパーティ製モデル（重み・LoRA・ベース）、データセット、推論ライブラリ、プラグインの混入や改ざんにより、未検知のバックドアや脆弱性が持ち込まれるリスク。"
+    mitigation: "モデル・データセットの SBOM 管理、ハッシュ署名検証、信頼レジストリの限定、依存関係スキャン（CVE/モデルカード）の CI 組込。"
+    appliesTo:
+      kind: node
+      nodeType: LLM
+      # サプライチェーンは構成図外の上流リスク。
+      connection:
+        required: false
+    references:
+      - title: "OWASP LLM03:2025 Supply Chain"
+        url: "https://genai.owasp.org/llmrisk/llm03-supply-chain/"
+      # OWASP ASI Top 10 の ASI04 Agentic Supply Chain Vulnerabilities に対応（クロスマッピング）。
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI04: Agentic Supply Chain Vulnerabilities（関連マッピング）"
+        url: "https://genai.owasp.org/"
+
+  # ── LLM04:2025 Data and Model Poisoning ─────────────────────
+  - id: owasp-llm04-data-model-poisoning-001
+    canonicalId: training-data-poisoning
+    framework: AI
+    category: "Tampering"
+    name: "学習/RAG データの汚染"
+    severity: Critical
+    description: "事前学習・ファインチューニング・継続学習・RAG インデックスのデータに毒を混入し、特定トリガで誤判定・バックドア応答・バイアス増幅を発生させるリスク。"
+    mitigation: "データソースの来歴記録、差分検査と外れ値検知、汚染テストの定期実施、信頼境界を越えるデータには再学習前の手動承認を必須化。"
+    appliesTo:
+      kind: node
+      nodeType: DB
+      # データの来歴・汚染検知は DB を置いた時点で問うべきリスク。
+      connection:
+        required: false
+    references:
+      - title: "OWASP LLM04:2025 Data and Model Poisoning"
+        url: "https://genai.owasp.org/llmrisk/llm04-data-and-model-poisoning/"
+
+  # ── LLM05:2025 Improper Output Handling ─────────────────────
+  - id: owasp-llm05-improper-output-handling-001
+    canonicalId: improper-output-handling
+    framework: AI
+    category: "Tampering"
+    name: "出力の不適切な取り扱い"
+    severity: High
+    description: "LLM 出力を下流システム（SQL、シェル、HTML、コード実行、メール送信）にサニタイズせず渡すことで、SQLi/XSS/SSRF/RCE に直結するリスク。"
+    mitigation: "LLM 出力を必ず untrusted として扱い、コンテキストごとのエスケープ・スキーマ検証・許可リストパースを行う。コード/コマンド生成はサンドボックス内でのみ実行。"
+    appliesTo:
+      kind: node
+      nodeType: LLM
+    references:
+      - title: "OWASP LLM05:2025 Improper Output Handling"
+        url: "https://genai.owasp.org/llmrisk/llm05-improper-output-handling/"
+
+  # ── LLM06:2025 Excessive Agency ─────────────────────────────
+  - id: owasp-llm06-excessive-agency-001
+    canonicalId: excessive-agency
+    framework: AgenticAI
+    category: "Agent"
+    name: "権限過剰"
+    severity: Critical
+    description: "エージェントに付与された機能・権限・自律性が業務必要範囲を超え、誤判断や攻撃時に大規模な副作用（送金・データ削除・対外通信）を起こすリスク。"
+    mitigation: "ツールの最小権限化、副作用のあるアクションへの人手承認（HITL）、レート制限と上限金額・件数のハードキャップ、ドライランモードの常設。"
+    appliesTo:
+      kind: node
+      # SUB_AGENT も過剰な権限・自律性を付与されうるため同等に成立（§2.22 1.6e anyOf 展開）。
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+      # 権限・自律性の付与範囲はエージェント設計自体の問題で、接続関係に依存しない。
+      connection:
+        required: false
+      # Autonomous 設計のエージェントのみ対象（Bounded 以下は HITL 等で副作用が抑制済み）。
+      # 未指定は Autonomous として扱われ発火する＝既存挙動を保持。
+      agentAttributes:
+        agency: [Autonomous]
+    references:
+      - title: "OWASP LLM06:2025 Excessive Agency"
+        url: "https://genai.owasp.org/llmrisk/llm06-excessive-agency/"
+      # OWASP ASI Top 10 の ASI02 Tool Misuse and Exploitation に対応（クロスマッピング）。
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI02: Tool Misuse and Exploitation（関連マッピング）"
+        url: "https://genai.owasp.org/"
+
+  # ── LLM07:2025 System Prompt Leakage ────────────────────────
+  - id: owasp-llm07-system-prompt-leakage-001
+    canonicalId: system-prompt-leakage
+    framework: AI
+    category: "Information Disclosure"
+    name: "システムプロンプト漏洩"
+    severity: Medium
+    description: "システムプロンプトに含まれる業務ルール・APIキー・内部識別子・ガードレール条件が応答経由で漏洩し、攻撃の足掛かりにされるリスク。"
+    mitigation: "システムプロンプトに秘匿情報を置かない（鍵は外部 KMS）、システムプロンプト復唱検知、機微トークンへの出力フィルタ。"
+    appliesTo:
+      kind: node
+      nodeType: LLM
+    references:
+      - title: "OWASP LLM07:2025 System Prompt Leakage"
+        url: "https://genai.owasp.org/llmrisk/llm07-system-prompt-leakage/"
+
+  # ── LLM08:2025 Vector and Embedding Weaknesses ──────────────
+  - id: owasp-llm08-vector-embedding-weaknesses-001
+    canonicalId: vector-embedding-weakness
+    framework: AI
+    category: "Information Disclosure"
+    name: "ベクター/埋め込みの弱点"
+    severity: High
+    description: "ベクターDB の検索結果がアクセス制御を持たず、別テナント・別権限のドキュメントが RAG コンテキストに混入する、また埋め込みから元テキストが復元（embedding inversion）されるリスク。"
+    mitigation: "RAG の取得段階で行レベル/属性ベース ACL を適用、テナントごとのインデックス分離、埋め込みの匿名化、検索ログの監査。"
+    appliesTo:
+      kind: node
+      nodeType: DB
+    references:
+      - title: "OWASP LLM08:2025 Vector and Embedding Weaknesses"
+        url: "https://genai.owasp.org/llmrisk/llm08-vector-and-embedding-weaknesses/"
+
+  # ── LLM09:2025 Misinformation ───────────────────────────────
+  - id: owasp-llm09-misinformation-001
+    canonicalId: llm-misinformation
+    framework: AI
+    category: "Repudiation"
+    name: "誤情報・ハルシネーション"
+    severity: Medium
+    description: "LLM のハルシネーションや古い知識による誤情報を業務判断・対外発信に用いることで、法的責任・ブランド毀損・誤った意思決定を招くリスク。"
+    mitigation: "事実確認の必須化（RAG＋出典提示）、信頼度スコアの提示、人手レビューゲート、ユーザ向け免責表示、応答ログの保全。"
+    appliesTo:
+      kind: node
+      nodeType: LLM
+    references:
+      - title: "OWASP LLM09:2025 Misinformation"
+        url: "https://genai.owasp.org/llmrisk/llm09-misinformation/"
+
+  # ── LLM10:2025 Unbounded Consumption ────────────────────────
+  - id: owasp-llm10-unbounded-consumption-001
+    canonicalId: llm-resource-exhaustion
+    framework: AI
+    category: "Denial of Service"
+    name: "リソース消費"
+    severity: High
+    description: "LLM への大量・長文・再帰的なリクエストにより、推論コスト・GPU 時間・コンテキスト枠が枯渇し、サービス停止や課金爆発を引き起こすリスク。"
+    mitigation: "ユーザ/キー単位のトークン量レート制限、最大入力長と最大ツール呼び出し回数の上限、コストアラート、循環呼び出し検知。"
+    appliesTo:
+      kind: node
+      nodeType: LLM
+    references:
+      - title: "OWASP LLM10:2025 Unbounded Consumption"
+        url: "https://genai.owasp.org/llmrisk/llm10-unbounded-consumption/"

@@ -1,0 +1,747 @@
+# STRIDE（古典）/ AI（敵対的 ML）フレームワークの脅威ルール。
+# 出典:
+#   - STRIDE (Microsoft, 2002)
+#   - STRIDE-AI 拡張（学術文献および MITRE ATLAS から派生）
+# SPDX-License-Identifier: Apache-2.0
+# ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+# 出典の帰属表示は NOTICE を参照。
+
+schemaVersion: 1
+
+rules:
+  # ── AI: LLM ────────────────────────────────────────────────
+  - id: stride-ai-llm-evasion-001
+    canonicalId: adversarial-evasion
+    framework: AI
+    category: "Tampering"
+    name: "回避攻撃"
+    severity: Medium
+    description: "入力に微小な摂動を加え、意図的に誤分類や有害な出力を誘発させるリスク。"
+    mitigation: "入力の正規化・サニタイズ、敵対的サンプル検知、推論ガードレールの導入。"
+    appliesTo:
+      kind: node
+      nodeType: LLM
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MEASURE 2.7"
+      - standard: jp-ai-business-guideline
+        ref: "開発者-3"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-10"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "MITRE ATLAS - Adversarial ML Evasion"
+
+  - id: stride-ai-llm-model-extraction-001
+    canonicalId: model-theft
+    framework: AI
+    category: "Information Disclosure"
+    name: "モデル抽出"
+    severity: High
+    description: "大量のクエリからモデルの重みや独自のアルゴリズムを盗み出すリスク。"
+    mitigation: "レート制限、クエリ異常検知、API キー単位の利用監視。"
+    appliesTo:
+      kind: node
+      nodeType: LLM
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MEASURE 2.7"
+      - standard: nist-ai-rmf
+        ref: "MEASURE 2.10"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "MITRE ATLAS - Model Extraction"
+
+  # ── AI: DB / RAG ──────────────────────────────────────────
+  - id: stride-ai-db-data-poisoning-001
+    canonicalId: training-data-poisoning
+    framework: AI
+    category: "Tampering"
+    name: "データポイズニング"
+    severity: Critical
+    description: "学習データやRAG用データに毒を混ぜ、特定の条件下で誤った判断をさせるリスク。"
+    mitigation: "データ取り込みパイプラインの完全性検証、署名済みデータセット運用、出典トレーサビリティ。"
+    appliesTo:
+      kind: node
+      nodeType: DB
+      # DB を構成図に置いた時点で「このデータの来歴が検証されているか」を問うべきリスク。
+      # 接続関係に依存しない。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MAP 4.1"
+      - standard: jp-ai-business-guideline
+        ref: "開発者-2"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "ID.RA-09"
+
+  # ── Classic DFD: External Entity ──────────────────────────
+  - id: stride-external-entity-spoofing-001
+    canonicalId: external-entity-spoofing
+    framework: STRIDE
+    category: "Spoofing"
+    name: "なりすまし"
+    severity: High
+    description: "外部主体の真正性が検証されない場合、攻撃者が正規のユーザー・組織・システムを装うリスクがある。"
+    mitigation: "強固な認証（MFA、相互 TLS、署名検証）と認可境界の明確化。"
+    appliesTo:
+      kind: node
+      nodeType: EXTERNAL_ENTITY
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+
+  - id: stride-external-entity-repudiation-001
+    canonicalId: external-entity-repudiation
+    framework: STRIDE
+    category: "Repudiation"
+    name: "否認"
+    severity: Medium
+    description: "監査ログ・電子署名・タイムスタンプが不十分な場合、外部主体による行為が後から否認されるリスクがある。"
+    mitigation: "改ざん耐性のある監査ログ、署名付きイベント、信頼できる時刻ソース。"
+    appliesTo:
+      kind: node
+      nodeType: EXTERNAL_ENTITY
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-04"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-04"
+
+  # ── Classic DFD: Process ──────────────────────────────────
+  - id: stride-process-tampering-001
+    canonicalId: process-tampering
+    framework: STRIDE
+    category: "Tampering"
+    name: "改ざん"
+    severity: High
+    description: "プロセスのロジック・設定・実行コンテキストが不正に改ざんされ、業務結果が歪曲されるリスク。"
+    mitigation: "コード署名、構成変更管理、実行環境の完全性検証。"
+    appliesTo:
+      kind: node
+      nodeType: PROCESS
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-06"
+
+  - id: stride-process-dos-001
+    canonicalId: process-denial-of-service
+    framework: STRIDE
+    category: "Denial of Service"
+    name: "サービス拒否"
+    severity: Medium
+    description: "リソース枯渇・無限ループ・大量リクエスト等によりプロセスが停止し、業務継続が脅かされるリスク。"
+    mitigation: "レート制限、タイムアウト、サーキットブレーカー、リソース上限設定。"
+    appliesTo:
+      kind: node
+      nodeType: PROCESS
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-04"
+
+  - id: stride-process-elevation-of-privilege-001
+    canonicalId: process-privilege-escalation
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "権限昇格"
+    severity: High
+    description: "プロセスの認可制御の不備により、本来権限のない操作・データアクセスが実行されるリスク。"
+    mitigation: "最小権限原則、ロールベースアクセス制御、特権操作の多重承認。"
+    appliesTo:
+      kind: node
+      nodeType: PROCESS
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+
+  # ── Classic DFD: Data Store ──────────────────────────────
+  - id: stride-data-store-info-disclosure-001
+    canonicalId: data-store-info-disclosure
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "情報漏洩"
+    severity: High
+    description: "アクセス制御・保管時暗号化の不備により、保存データが不正に閲覧・流出するリスク。"
+    mitigation: "保管時暗号化、列レベル暗号化、アクセス制御リストの最小化。"
+    appliesTo:
+      kind: node
+      nodeType: DATA_STORE
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+
+  - id: stride-data-store-tampering-001
+    canonicalId: data-store-tampering
+    framework: STRIDE
+    category: "Tampering"
+    name: "データ改ざん"
+    severity: High
+    description: "書込権限の不適切な付与・整合性チェック欠如により、保存データが不正に改ざんされるリスク。"
+    mitigation: "ハッシュ・MAC による整合性検証、変更履歴の保全。"
+    appliesTo:
+      kind: node
+      nodeType: DATA_STORE
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+
+  - id: stride-data-store-repudiation-001
+    canonicalId: data-store-repudiation
+    framework: STRIDE
+    category: "Repudiation"
+    name: "監査追跡不能"
+    severity: Medium
+    description: "監査ログ・変更履歴・WORM保護が不十分な場合、データ操作の追跡が不能になるリスク。"
+    mitigation: "WORM ストレージ、改ざん検知ログ、外部システムへのログ転送。"
+    appliesTo:
+      kind: node
+      nodeType: DATA_STORE
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-04"
+
+  # ── Edge-driven dynamic rules ──────────────────────────────
+  - id: stride-edge-unauth-internet-001
+    canonicalId: unauthenticated-internet-channel
+    framework: STRIDE
+    category: "Spoofing"
+    name: "なりすまし"
+    severity: Critical
+    description: "接続経路が未認証かつ公衆網です。外部からの不正アクセス・なりすましのリスクが極めて高い状態です。"
+    mitigation: "MFA を含む強固な認証と、VPN/VPC など閉域網経由の通信を導入する。"
+    appliesTo:
+      kind: edge
+      when:
+        auth: [None]
+        network: [Internet]
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MEASURE 2.7"
+      - standard: jp-ai-business-guideline
+        ref: "共通の指針-5"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+
+  - id: stride-edge-plain-encryption-001
+    canonicalId: plaintext-transmission
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "盗聴"
+    severity: High
+    description: "通信が暗号化されていません。{{sourceName}}から{{targetName}}へ流れるデータが傍受されるリスクがあります。"
+    mitigation: "TLS または E2EE による通信暗号化を実装する。"
+    appliesTo:
+      kind: edge
+      when:
+        encryption: [Plain]
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MEASURE 2.10"
+      - standard: jp-ai-business-guideline
+        ref: "共通の指針-4"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+
+  # ── Infrastructure: User / Client ──────────────────────────
+  - id: stride-user-spoofing-001
+    canonicalId: user-account-takeover
+    framework: STRIDE
+    category: "Spoofing"
+    name: "アカウント乗っ取り"
+    severity: High
+    description: "クライアント／ユーザ端末の認証が脆弱な場合、フィッシング・パスワードリスト型攻撃・セッションハイジャックによりアカウントが乗っ取られるリスク。"
+    mitigation: "MFA（特にフィッシング耐性のある WebAuthn/FIDO2）、デバイス紐付け、異常ログイン検知、短命セッショントークン。"
+    appliesTo:
+      kind: node
+      nodeType: USER
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+
+  - id: stride-user-info-disclosure-001
+    canonicalId: client-endpoint-info-disclosure
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "クライアント側情報漏洩"
+    severity: Medium
+    description: "ブラウザキャッシュ・端末ストレージ・ログにユーザ操作や応答内容が平文保存され、端末紛失や悪性拡張機能経由で漏洩するリスク。"
+    mitigation: "機微応答のキャッシュ抑制、クライアントストレージは IndexedDB＋暗号化、画面ロックとリモートワイプ運用、拡張機能の許可リスト。"
+    appliesTo:
+      kind: node
+      nodeType: USER
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MEASURE 2.10"
+      - standard: jp-ai-business-guideline
+        ref: "共通の指針-4"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+
+  # ── Infrastructure: Gateway ────────────────────────────────
+  - id: stride-gateway-elevation-of-privilege-001
+    canonicalId: gateway-authorization-gap
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "認可境界の不備"
+    severity: High
+    description: "API ゲートウェイで認可チェックが不徹底な場合、テナント越境（IDOR）や管理 API への横展開が成立するリスク。"
+    mitigation: "ゲートウェイ層でのスキーマ強制、リソース所有者チェック、トークンスコープの検証、テナント識別子の改ざん検知。"
+    appliesTo:
+      kind: node
+      nodeType: GATEWAY
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MEASURE 2.7"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+
+  - id: stride-gateway-dos-001
+    canonicalId: gateway-resource-exhaustion
+    framework: STRIDE
+    category: "Denial of Service"
+    name: "ゲートウェイ枯渇"
+    severity: Medium
+    description: "ゲートウェイのレート制限・コネクション上限が緩い場合、ボリューム攻撃や Slowloris 型攻撃で下流サービス全体が停止するリスク。"
+    mitigation: "アダプティブレート制限、コネクション上限、上流 WAF/CDN による緩衝、サーキットブレーカーとオートスケール。"
+    appliesTo:
+      kind: node
+      nodeType: GATEWAY
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-04"
+
+  # ── Infrastructure: Connector ──────────────────────────────
+  - id: stride-connector-tampering-001
+    canonicalId: connector-tampering
+    framework: STRIDE
+    category: "Tampering"
+    name: "中間コネクタ改ざん"
+    severity: High
+    description: "コネクタ（メッセージブローカー、iPaaS、サイドカープロキシ）が完全性検証を経ずにペイロードを中継すると、経路上で改ざん・再送・順序入替が発生するリスク。"
+    mitigation: "メッセージ署名・MAC、シーケンス番号と重複検知、コネクタの最小権限化、構成変更の監査ログ。"
+    appliesTo:
+      kind: node
+      nodeType: CONNECTOR
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+
+  # ── Additional edge rules ──────────────────────────────────
+  - id: stride-edge-password-internet-001
+    canonicalId: password-only-internet-channel
+    framework: STRIDE
+    category: "Spoofing"
+    name: "パスワード単独認証 / 公衆網"
+    severity: High
+    description: "{{sourceName}}から{{targetName}}への公衆網経由通信がパスワードのみで保護されています。総当たり・リスト型攻撃・フィッシングへの耐性が不足しています。"
+    mitigation: "MFA を追加し、可能なら閉域網（VPN/VPC）経由に切り替える。フィッシング耐性のある認証（WebAuthn）を優先。"
+    appliesTo:
+      kind: edge
+      when:
+        auth: [Password]
+        network: [Internet]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+
+  # ── 端末管理状態軸: 未管理端末からの機微アクセス ─────────────
+  # PC / SMARTPHONE / IOT が Unmanaged の場合、エンドポイント保護（EDR/MDM）が
+  # 利かず、マルウェア感染端末からのトークン窃取・セッション乗っ取り経路となるリスク。
+  - id: stride-edge-unmanaged-device-sensitive-001
+    canonicalId: unmanaged-device-sensitive-access
+    framework: STRIDE
+    category: "Spoofing/Tampering"
+    name: "未管理端末からの機微アクセス"
+    severity: High
+    description: "{{sourceName}} は未管理（Unmanaged）端末で、{{targetName}} へアクセスしています。EDR/MDM 不在のためマルウェア感染・セッション窃取の起点になるリスクがあります。"
+    mitigation: "端末を MDM 登録し EDR を導入する。BYOD の場合はリスクベースアクセス制御（端末ポスチャ検証）と、機微リソースへの直接アクセス禁止を運用する。"
+    appliesTo:
+      kind: edge
+      when:
+        sourceType: [PC, SMARTPHONE, IOT]
+        sourceManagedState: [Unmanaged]
+        targetType: [LLM, AGENT, DB, DATA_STORE, GATEWAY]
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MAP 4.1"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+
+  # ── Trust Boundary 軸: Internet 直接暴露 ─────────────────────
+  # 境界外（= Internet 扱い）から Internal 境界内の LLM/AGENT/DB へ直接到達する経路は、
+  # 認証/暗号化に関わらず攻撃面そのものが過大であるため、構成リスクとして検出する。
+  - id: stride-edge-internet-exposed-sensitive-001
+    canonicalId: internet-exposed-sensitive-component
+    framework: STRIDE
+    category: "Spoofing/Tampering"
+    name: "Trust Boundary 跨ぎの直接暴露"
+    severity: Critical
+    description: "{{sourceName}} は信頼境界外（Internet 扱い）にあり、{{targetName}} へ直接到達できる構成です。プロンプトインジェクション・モデル抽出・データ流出の起点となるリスクが極めて高い状態です。"
+    mitigation: "境界内に Gateway / WAF を前置し、外部からの直接アクセスを遮断する。閉域経路（VPC/PrivateLink）への切替、または機微コンポーネントを Internal 境界内に再配置する。"
+    appliesTo:
+      kind: edge
+      when:
+        targetType: [LLM, AGENT, DB]
+        sourceTrust: [Internet]
+        targetTrust: [Internal, Partner]
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MAP 4.1"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+
+  # ── OWASP AI Exchange 決定木の未充足ギャップ（W6）──────────
+  # サプライヤーホスト型 LLM への入力プロンプトがベンダー側ログに残存する経路リスクを、
+  # 「LLM 宛 edge × （平文 OR 公衆網 OR 未認証）」を anyOf で OR 結合して検出する。
+  - id: stride-ai-supplier-model-input-log-leak-001
+    canonicalId: supplier-model-input-log-leak
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "サプライヤーホスト型モデル入力ログ流出"
+    severity: High
+    description: "{{sourceName}} から {{targetName}} への入力経路が複数の脆弱条件のいずれかを満たし、入力プロンプトに含まれる機微情報がサプライヤー側ログに残存・流出するリスクがあります。"
+    mitigation: "ベンダーログ保持・学習利用に関する契約条項を見直し、入力時に PII/Secret マスキングを必須化。TLS を強制し、可能であれば閉域接続（PrivateLink / VPC エンドポイント）に切替。"
+    appliesTo:
+      kind: edge
+      anyOf:
+        - targetType: [LLM]
+          sourceType: [USER, GATEWAY, AGENT, PROCESS]
+          encryption: [Plain]
+        - targetType: [LLM]
+          sourceType: [USER, GATEWAY, AGENT, PROCESS]
+          network: [Internet]
+        - targetType: [LLM]
+          sourceType: [USER, GATEWAY, AGENT, PROCESS]
+          auth: [None]
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MAP 4.1"
+      - standard: nist-csf-2.0
+        ref: "GV.SC-05"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+    references:
+      - title: "OWASP AI Exchange - Hosted Model Input Log Leakage"
+        url: "https://owaspai.org/"
+
+  # ── Infrastructure: Front-end Server (Web) ───────────────────
+  # FRONT_END_SERVER / GATEWAY の Attack Surface Attribute と連動した脅威ルール。
+  # OWASP Top 10 for Web Application Security 2021 を出典に、未設定ノードは
+  # insecure baseline (hasGlobalIp=true, 他=false) として評価される。
+  - id: stride-web-global-ip-exposure-001
+    canonicalId: web-global-ip-exposure
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "グローバルIP直接公開"
+    severity: High
+    description: "{{nodeName}} は Global IP を直接保持し、インターネット全域からポートスキャンや既知脆弱性悪用の対象となります。"
+    mitigation: "可能な限りロードバランサ / CDN / API ゲートウェイの背後に配置し、原点サーバーには直接到達できないようにする。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: FRONT_END_SERVER
+        - nodeType: GATEWAY
+      connection:
+        required: false
+      attackSurface:
+        hasGlobalIp: true
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MANAGE 1.3"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "OWASP Top 10 2021 - A05 Security Misconfiguration"
+        url: "https://owasp.org/Top10/A05_2021-Security_Misconfiguration/"
+
+  - id: stride-web-no-source-ip-restriction-001
+    canonicalId: web-no-source-ip-restriction
+    framework: STRIDE
+    category: "Spoofing"
+    name: "送信元IP無制限アクセス"
+    severity: High
+    description: "{{nodeName}} は送信元 IP 制限を持たず、地理的にも組織的にも無関係な攻撃元からのアクセスを受け入れます。"
+    mitigation: "業務利用が想定される CIDR / 地域に絞った IP allowlist、WAF 上の Geo-blocking、管理画面用の Bastion を導入する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: FRONT_END_SERVER
+        - nodeType: GATEWAY
+      connection:
+        required: false
+      attackSurface:
+        hasGlobalIp: true
+        hasSourceIpRestriction: false
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MANAGE 1.3"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+
+  - id: stride-web-remote-mgmt-exposed-001
+    canonicalId: web-remote-management-exposure
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "管理面リモートアクセス"
+    severity: Critical
+    description: "{{nodeName}} はリモートアクセス制限が無く、SSH / RDP / 管理コンソール等の特権面がインターネット側に露出している可能性があります。"
+    mitigation: "管理面は Bastion / VPN / IAP（Identity-Aware Proxy）背後に限定し、Public-side からは TCP/22 / 3389 / 管理ポートをブロックする。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: FRONT_END_SERVER
+        - nodeType: GATEWAY
+      connection:
+        required: false
+      attackSurface:
+        hasGlobalIp: true
+        hasRemoteAccessRestriction: false
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MANAGE 1.3"
+      - standard: jp-ai-business-guideline
+        ref: "共通の指針-5"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "OWASP Top 10 2021 - A05 Security Misconfiguration"
+        url: "https://owasp.org/Top10/A05_2021-Security_Misconfiguration/"
+
+  - id: stride-web-no-user-auth-001
+    canonicalId: web-missing-authentication
+    framework: STRIDE
+    category: "Spoofing"
+    name: "認証欠如"
+    severity: High
+    description: "{{nodeName}} はユーザー認証を持たず、機微機能・データに匿名アクセスが可能なリスクがあります。"
+    mitigation: "OAuth/OIDC / SAML 等の標準的な認証基盤を導入し、特権操作には MFA を必須化する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: FRONT_END_SERVER
+        - nodeType: GATEWAY
+      connection:
+        required: false
+      attackSurface:
+        hasUserAuthentication: false
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MANAGE 1.3"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+    references:
+      - title: "OWASP Top 10 2021 - A07 Identification and Authentication Failures"
+        url: "https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/"
+
+  - id: stride-web-no-access-log-001
+    canonicalId: web-missing-access-log
+    framework: STRIDE
+    category: "Repudiation"
+    name: "アクセスログ欠如"
+    severity: Medium
+    description: "{{nodeName}} はアクセスログを取得しておらず、不正アクセス時の検知・追跡・否認防止が成立しません。"
+    mitigation: "L7 アクセスログ、認証イベント、管理操作の構造化ログを収集し SIEM へ集約。最低 90 日保管、特権操作は 1 年以上の保管を目安に。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: FRONT_END_SERVER
+        - nodeType: GATEWAY
+      connection:
+        required: false
+      attackSurface:
+        hasAccessLog: false
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MEASURE 2.7"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-04"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-01"
+    references:
+      - title: "OWASP Top 10 2021 - A09 Security Logging and Monitoring Failures"
+        url: "https://owasp.org/Top10/A09_2021-Security_Logging_and_Monitoring_Failures/"
+
+  - id: stride-web-no-waf-001
+    canonicalId: web-missing-waf
+    framework: STRIDE
+    category: "Tampering"
+    name: "アプリケーション層攻撃保護欠如"
+    severity: High
+    description: "{{nodeName}} は WAF / WAP による保護を持たず、SQL Injection / XSS / コマンドインジェクション等のアプリケーション層攻撃に直接さらされています。"
+    mitigation: "WAF（マネージド or OSS）を前段に配置し、OWASP Core Rule Set 等の標準シグネチャを有効化。CSP / 入力バリデーション / パラメータ化クエリも併用。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: FRONT_END_SERVER
+        - nodeType: GATEWAY
+      connection:
+        required: false
+      attackSurface:
+        hasGlobalIp: true
+        hasWafProtection: false
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MANAGE 1.3"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-06"
+    references:
+      - title: "OWASP Top 10 2021 - A03 Injection"
+        url: "https://owasp.org/Top10/A03_2021-Injection/"
+
+  - id: stride-web-no-ddos-protection-001
+    canonicalId: web-missing-ddos-protection
+    framework: STRIDE
+    category: "Denial of Service"
+    name: "DoS/DDoS保護欠如"
+    severity: High
+    description: "{{nodeName}} は DoS / DDoS 保護を持たず、ボリュメトリック攻撃・L7 リソース枯渇攻撃でサービス停止に至るリスクがあります。"
+    mitigation: "CDN / マネージド DDoS 保護（Anycast / Scrubbing）を前段に置き、L7 レートリミット・Bot 検知・Captcha を組み合わせる。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: FRONT_END_SERVER
+        - nodeType: GATEWAY
+      connection:
+        required: false
+      attackSurface:
+        hasGlobalIp: true
+        hasDdosProtection: false
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MANAGE 1.3"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-04"
+
+  - id: stride-web-anonymous-on-public-001
+    canonicalId: web-anonymous-public-access
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "匿名公開アクセス組合せ"
+    severity: Critical
+    description: "{{nodeName}} は Global IP 上で動作しながらユーザー認証・送信元 IP 制限のいずれも持たず、世界中の任意の主体が匿名で操作可能な状態です。"
+    mitigation: "公開ポイントには「認証 OR Source IP allowlist」の最低どちらかを必須化。管理面は VPN/Bastion で隔離する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: FRONT_END_SERVER
+        - nodeType: GATEWAY
+      connection:
+        required: false
+      attackSurface:
+        hasGlobalIp: true
+        hasUserAuthentication: false
+        hasSourceIpRestriction: false
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MANAGE 1.3"
+      - standard: jp-ai-business-guideline
+        ref: "共通の指針-5"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+
+  - id: stride-web-blind-perimeter-001
+    canonicalId: web-public-unmonitored
+    framework: STRIDE
+    category: "Repudiation"
+    name: "盲点境界：公開×無ログ"
+    severity: High
+    description: "{{nodeName}} は Global IP で公開されているにも関わらずアクセスログを取得しておらず、侵害が起きても検知できない盲点となります。"
+    mitigation: "公開ポイントはアクセスログ取得を必須化し SIEM へ集約。失敗認証・5xx の急増・地理的異常をアラート化する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: FRONT_END_SERVER
+        - nodeType: GATEWAY
+      connection:
+        required: false
+      attackSurface:
+        hasGlobalIp: true
+        hasAccessLog: false
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MEASURE 2.7"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-04"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-01"
+
+  - id: stride-web-unprotected-traffic-from-user-001
+    canonicalId: web-frontend-plaintext-ingress
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "Front-end への平文流入"
+    severity: High
+    description: "{{sourceName}} から {{targetName}}（Front-end Server）への通信が平文で、認証情報・セッショントークン・PII が盗聴・改ざんされるリスクがあります。"
+    mitigation: "Front-end は HTTPS / HSTS を強制し、HTTP→HTTPS リダイレクト・HSTS preload を有効化。内部通信も mTLS を推奨。"
+    appliesTo:
+      kind: edge
+      when:
+        targetType: [FRONT_END_SERVER]
+        encryption: [Plain]
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MANAGE 1.3"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+    references:
+      - title: "OWASP Top 10 2021 - A02 Cryptographic Failures"
+        url: "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/"
+
+  - id: stride-web-unauth-internet-ingress-001
+    canonicalId: web-frontend-unauthenticated-ingress
+    framework: STRIDE
+    category: "Spoofing"
+    name: "Front-end への未認証インターネット流入"
+    severity: High
+    description: "インターネット経由で {{targetName}}（Front-end Server）に未認証アクセスが流入しており、ブルートフォース・スクレイピング・脆弱性スキャンの対象となります。"
+    mitigation: "認証必須化、レートリミット、Bot 検知。匿名公開を意図する場合も Captcha / WAF / rate-limit を最低限併用する。"
+    appliesTo:
+      kind: edge
+      when:
+        targetType: [FRONT_END_SERVER]
+        network: [Internet]
+        auth: [None]
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MANAGE 1.3"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"

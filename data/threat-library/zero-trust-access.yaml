@@ -1,0 +1,438 @@
+# Zero Trust アクセス系の脅威ルール（ネットワーク暗黙信頼 / シャドー IT・AI /
+# セッション窃取 / 攻撃者型 / 認証材料スプロール）。
+#
+# 出典:
+#   - NIST SP 800-207, "Zero Trust Architecture"（暗黙信頼の排除・per-session 認可の
+#     テネット）。https://csrc.nist.gov/pubs/sp/800/207/final
+#   - CISA, "Zero Trust Maturity Model v2"（Identity / Devices / Networks /
+#     Applications / Data の 5 ピラー）。https://www.cisa.gov/zero-trust-maturity-model
+#   - NIST SP 800-63B, "Digital Identity Guidelines: Authentication and Lifecycle
+#     Management"（verifier impersonation resistance / phishing 耐性認証）。
+#   - CISA, "Implementing Phishing-Resistant MFA"（AiTM フィッシングと MFA 迂回）。
+#   - CISA, "Insider Threat Mitigation Guide"。
+#   - Anthropic, "Zero Trust for AI Agents", 2026-05-18（AI 加速攻撃 /
+#     Impossible vs Tedious テスト）。
+#   - OWASP Secrets Management Cheat Sheet（シークレットの集中管理・動的発行）。
+#   - MITRE ATT&CK T1606.002 "Forge Web Credentials: SAML Tokens"（Golden SAML 型の
+#     トークン偽造）。https://attack.mitre.org/techniques/T1606/002/
+#   - OWASP Top 10 for LLM Applications（ガードレール・フィルタの確率的限界の背景）。
+#     https://genai.owasp.org/llm-top-10/
+#   本文は逐語転載せず日本語要約のみ。
+#
+#   SPDX-License-Identifier: Apache-2.0
+#   ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+#   出典の帰属表示は NOTICE を参照。
+#
+# framework について:
+#   FrameworkSchema は enum ['STRIDE','AI','AgenticAI'] で閉じており、新値 "ZeroTrust" の
+#   追加はスキーマ破壊変更となるため行わない（pqc.yaml と同じ運用）。本ファイルのルールは
+#   性質に応じて STRIDE / AgenticAI へ振り分け、ZT 文脈は category と出典で表現する。
+#
+# 重複回避方針:
+#   Zero Trust のアクセス統制は既存ライブラリと一部重なるため、本ファイルは差分のみ追加する。
+#
+#   - 無認証 × Internet 経路 → stride-edge-unauth-internet-001（auth:[None] x
+#     network:[Internet]）でカバー済。本ファイルの「ネットワーク位置による暗黙信頼」は
+#     閉域網（VPN/VPC）側のみを扱い、network 軸で重複しない。
+#   - AGENT 発の無認証・静的鍵エッジ → weak-service-auth 群
+#     （anthropic-zt-static-api-key-001 / maestro-tool-edge-001）でカバー済。
+#     本ファイルの暗黙信頼ルールは sourceType から AGENT/SUB_AGENT を除外する。
+#   - Password × Internet → stride-edge-password-internet-001 でカバー済。
+#     本ファイルの AiTM セッション窃取は auth:[MFA] でも成立する点（phishing 耐性の有無）
+#     を差分として扱い、別 canonicalId とする。
+#   - アカウント乗っ取り一般（USER ノード視点）→ stride-user-spoofing-001 でカバー済。
+#     本ファイルの AiTM ルールはエッジ（経路）視点で MFA 既設経路に限定する。
+#   - 端末紛失によるローカルセッション露出 → endpoint-device-loss-local-credential-
+#     exposure-001 でカバー済。AiTM はネットワーク経由の中継窃取で別系統。
+#   - AGENT の制御外 egress → maestro-agent-internet-egress-001 でカバー済。
+#     本ファイルのシャドーサービス流入は人間/端末（USER/PC/SMARTPHONE）発の経路に限定する。
+#   - 認証材料のエッジ上の弱さ（静的 API キーでの呼び出し）→ weak-service-auth 群で
+#     カバー済。本ファイルの credential-sprawl は CREDENTIAL ノード（保管・散在）視点の
+#     内在脅威で subject が異なる。
+#   - THREAT_ACTOR（外部攻撃者一般）の汎用ルールは今回見送り。外部攻撃者の存在は各脅威
+#     ルールが暗黙の前提としており、ノード型固有の差分主張が弱いため（INSIDER_THREAT /
+#     AGENTIC_ATTACKER は「正規権限」「AI 加速」という固有の性質があるため収録）。
+#   - IDENTITY_PROVIDER は本ファイルと同時に builtin コンポーネントへ追加した新型で、
+#     既存ルールは参照していない（カバレッジ 0 から開始）。IdP への「ログイン経路」の
+#     AiTM 窃取は zt-aitm-session-token-theft-001（USER/PC/SMARTPHONE 発の MFA×Internet
+#     エッジ）が target 型を問わず既にカバーするため、本ファイルの IdP ルールは
+#     「IdP 自体の侵害（トークン偽造）」「集中点としての単一障害」「IdP 発行トークンの
+#     受け側（relying party）検証不備」の 3 subject に限定する。
+#   - AI_GATEWAY / GUARDRAIL も protect ライブラリへ同時追加した新型（カバレッジ 0 から
+#     開始）。ジェイルブレイク自体（LLM ノード視点）→ atlas-aml-t0054-llm-jailbreak-001
+#     でカバー済。本ファイルの GUARDRAIL ルールは「ガードレール単体依存」（GUARDRAIL
+#     ノード視点の確率的限界）を扱い別 subject。サプライヤー側のプロンプトログ流出
+#     （エッジ視点）→ stride-ai-supplier-model-input-log-leak-001 でカバー済。本ファイル
+#     の AI_GATEWAY ルールは「自組織ゲートウェイへのプロンプト集積」（ノード視点）を
+#     扱い別 subject。
+#   - 内部者の権限悪用（INSIDER_THREAT 攻撃者型ノード視点）→
+#     zt-insider-legitimate-access-abuse-001 でカバー済。本ファイルの外部協働者ルールは
+#     USER ノードの userTrustAttribute 宣言（Guest/Contractor/Partner）に基づく
+#     「経路」視点で、sourceUserTrust 軸（スキーマ拡張で追加）を初使用する。
+#     ノード側で未宣言なら発火しない（managedState と同じ明示宣言方式）。
+#
+# mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
+# description は Can/Cannot ペアと blast radius を意識して記述する（docs/threat-schema.md §7.5）。
+
+schemaVersion: 1
+
+rules:
+  # ── ネットワーク位置による暗黙の信頼（閉域網 × 無認証）─────────────
+  - id: zt-implicit-trust-network-location-001
+    canonicalId: implicit-trust-network-location
+    framework: STRIDE
+    category: "Spoofing"
+    name: "ネットワーク位置を信頼根拠とする暗黙の信頼"
+    severity: High
+    description: "{{sourceName}} から {{targetName}} への閉域網（VPN/VPC）経由の通信が認証なしで許可されている。攻撃者は VPN 資格情報の窃取・侵害済み端末・同一セグメント内の別侵害ホストのいずれかで境界内に入った時点で、{{targetName}} へ本人確認なしに到達できる（Can）。ネットワーク位置を信頼根拠とする構成では、境界突破後の横展開を識別・拒否する制御点が存在しない。一方、エッジごとに認証（サービス間は mTLS/ワークロード ID、人間は SSO+MFA）を強制していれば、ネットワーク到達のみではアクセスが成立しない（Cannot）。blast radius は同一閉域網から到達可能な全リソース。"
+    mitigation: "[Foundation] 閉域網内であってもすべてのアクセスに認証を必須化する（「ネットワーク位置＝信頼」の構成を廃止する）。 [Enterprise] サービス間は mTLS / ワークロードアイデンティティ、人間は SSO + MFA で per-session の認証・認可を行い、ポリシー判断にデバイスポスチャを含める。 [Advanced] すべてのリソースアクセスをポリシーエンジン（PDP/PEP）経由に集約し、セッション中も継続的に信頼評価を行う（NIST SP 800-207 テネット準拠）。"
+    appliesTo:
+      kind: edge
+      when:
+        # Internet 側の無認証は stride-edge-unauth-internet-001 が扱う。
+        # AGENT 発の無認証エッジは weak-service-auth 群が扱うため source から除外。
+        auth: [None]
+        network: [VPN, VPC]
+        sourceType: [USER, PC, SMARTPHONE, PROCESS, EXTERNAL_ENTITY]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "NIST SP 800-207 - Zero Trust Architecture（暗黙信頼の排除・リソース単位の認証認可）"
+        url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+      - title: "CISA - Zero Trust Maturity Model v2（Networks ピラー）"
+        url: "https://www.cisa.gov/zero-trust-maturity-model"
+
+  # ── VPN の広域ネットワークアクセス（境界型リモートアクセス）──────────
+  - id: zt-vpn-broad-network-access-001
+    canonicalId: vpn-broad-network-access
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "VPN の広域到達範囲と横展開（lateral movement）"
+    severity: Medium
+    description: "{{sourceName}} から {{targetName}} への VPN 経由アクセスは、認証成功後にネットワーク層の広い到達範囲を付与する境界型モデルである。攻撃者は VPN アカウント 1 つの侵害で、本来の業務に不要なセグメント内リソースへもネットワーク的に到達でき、横展開（lateral movement）の探索コストが大幅に下がる（Can）。一方、ZTNA / アイデンティティ認識プロキシのようにアプリケーション単位でブローカ経由接続を行い、認可されたリソース以外へのネットワーク経路自体が存在しなければ、アカウント侵害時の blast radius は当該アプリケーションに限定される（Cannot）。"
+    mitigation: "[Foundation] VPN プロファイルを業務ロール別に分割し、到達可能なセグメント・ポートを最小化する（フルトンネル＋フラットネットワークを廃止する）。 [Enterprise] アプリケーション単位の ZTNA / Identity-Aware Proxy へ移行し、認可されていないリソースへのネットワーク経路を存在させない。マイクロセグメンテーションで東西通信を制限する。 [Advanced] デバイスポスチャ・行動シグナルを含む継続評価で、セッション中もアクセス範囲を動的に再計算する。"
+    appliesTo:
+      kind: edge
+      when:
+        network: [VPN]
+        targetType: [DB, DATA_STORE, LLM, AGENT, MCP_SERVER, MEMORY_STORE, SAAS, IAAS, PAAS]
+      conditions:
+        - when:
+            auth: [MFA]
+          severity: Low
+          description: "{{sourceName}} から {{targetName}} への VPN 経由アクセスは MFA で保護されているが、認証後のネットワーク到達範囲は広いままである（Can: アカウント・端末侵害時に同一セグメント内の探索が可能）。横展開余地を限定するには、アプリケーション単位の ZTNA / マイクロセグメンテーションへの移行が有効（Cannot: 経路が存在しなければ侵害は当該アプリに限定される）。"
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "NIST SP 800-207 - Zero Trust Architecture（境界型リモートアクセスからの移行）"
+        url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+      - title: "CISA - Zero Trust Maturity Model v2（Networks: ネットワークセグメンテーション）"
+        url: "https://www.cisa.gov/zero-trust-maturity-model"
+      # 閉域網内の無認証（暗黙信頼）は zt-implicit-trust-network-location-001 が扱う（別観点・併発あり得る）。
+
+  # ── AiTM フィッシングによるセッショントークン窃取（MFA 迂回）─────────
+  - id: zt-aitm-session-token-theft-001
+    canonicalId: aitm-session-token-theft
+    framework: STRIDE
+    category: "Spoofing"
+    name: "AiTM フィッシングによるセッショントークン窃取（MFA 迂回）"
+    severity: Medium
+    description: "{{sourceName}} から {{targetName}} への公衆網経由ログインが MFA で保護されていても、OTP・プッシュ承認型の MFA は AiTM（Adversary-in-the-Middle）フィッシングプロキシでリアルタイム中継でき、攻撃者は認証完了後のセッショントークン（cookie）を窃取して MFA を事実上迂回できる（Can）。窃取トークンの有効期間中、攻撃者は正規セッションとして {{targetName}} を操作できる。一方、FIDO2/WebAuthn のようにオリジンへ暗号学的に束縛された認証器を用いればプロキシ中継自体が成立せず（Impossible）、加えてトークンをデバイスへ束縛していれば窃取トークン単独の再利用も成立しない（Cannot）。blast radius は窃取されたセッションの権限範囲。"
+    mitigation: "[Foundation] 管理者・特権アカウントから順に phishing-resistant MFA（FIDO2/WebAuthn/パスキー）へ移行する。SMS・音声 OTP は廃止する。 [Enterprise] 全ユーザへ phishing-resistant MFA を展開し、セッショントークンに短い有効期限と再認証条件（IP・デバイス変化時）を設定する。AiTM インフラの検知（TLS フィンガープリント等）を導入する。 [Advanced] トークンバインディング / デバイス束縛資格情報により窃取トークンを別環境から再利用不能にする。継続的アクセス評価（CAEP 等）でセッション失効を即時伝搬する。"
+    appliesTo:
+      kind: edge
+      when:
+        # Password × Internet は stride-edge-password-internet-001、USER ノード視点の
+        # アカウント乗っ取り一般は stride-user-spoofing-001 が扱う。本ルールは
+        # 「MFA があっても phishing 耐性がなければ中継される」差分のみを扱う。
+        auth: [MFA]
+        network: [Internet]
+        sourceType: [USER, PC, SMARTPHONE]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+    references:
+      - title: "NIST SP 800-63B - Digital Identity Guidelines（verifier impersonation resistance）"
+        url: "https://pages.nist.gov/800-63-3/sp800-63b.html"
+      - title: "CISA - Implementing Phishing-Resistant MFA"
+        url: "https://www.cisa.gov/sites/default/files/publications/fact-sheet-implementing-phishing-resistant-mfa-508c.pdf"
+
+  # ── シャドー IT / シャドー AI：統制外資産のガバナンスギャップ（intrinsic）──
+  - id: zt-shadow-asset-governance-gap-001
+    canonicalId: shadow-asset-governance-gap
+    framework: STRIDE
+    category: "Shadow IT"
+    name: "シャドー IT / シャドー AI の統制外運用"
+    severity: High
+    description: "{{nodeName}} は組織の資産管理・認証基盤・ログ収集・パッチ管理の統制外にあるシャドー IT / シャドー AI である。攻撃者は組織が把握していない攻撃面（未パッチ脆弱性・弱い認証設定・放置されたデータ）を利用でき、防御側はインシデント発生まで存在自体に気付けない（Can）。流入したデータの保存場所・保持期間・第三者提供は組織のポリシーで統制できない。一方、CASB/SSPM・egress 監視で未承認サービスを継続的に発見し、サンクション化（正規契約・SSO 統合）または遮断していれば、統制外のまま機微データが滞留する状態は成立しない（Cannot）。blast radius は当該サービスへ流入した全データと、そこで使い回された認証情報。"
+    mitigation: "[Foundation] egress ログ・経費精算・ブラウザ拡張インベントリから未承認 SaaS/アプリを定期的に発見し、台帳化する。 [Enterprise] CASB/SSPM で継続的に発見・リスク評価し、業務上必要なものは SSO/SCIM 統合してサンクション化、不要なものは遮断する。 [Advanced] データレベルの DLP・ラベリングにより、未承認サービスへの機微データ流出をコンテンツ検査で阻止する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: SHADOW
+        - nodeType: SHADOW_APP
+      # 統制外であること自体（インベントリ・ログ・パッチ・契約の不在）が脅威の根拠で、
+      # 接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "ID.AM-01"
+      - standard: nist-csf-2.0
+        ref: "ID.AM-02"
+    references:
+      - title: "CISA - Zero Trust Maturity Model v2（Visibility and Analytics）"
+        url: "https://www.cisa.gov/zero-trust-maturity-model"
+      - title: "NCSC (UK) - Shadow IT guidance"
+        url: "https://www.ncsc.gov.uk/guidance/shadow-it"
+
+  # ── シャドーサービスへの機微データ流入（経路依存）────────────────
+  - id: zt-shadow-service-sensitive-input-001
+    canonicalId: shadow-service-sensitive-input
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "シャドーサービス / シャドー AI への機微データ流入"
+    severity: High
+    description: "{{sourceName}} から {{targetName}}（未承認のシャドーサービス/アプリ）への経路では、従業員が業務効率のために機微情報（顧客データ・ソースコード・認証情報）を統制外のサービスへ入力・アップロードできる（Can）。生成 AI 型のシャドーサービスでは入力がプロバイダ側に保持され、学習・ログに利用され得るため、流出の追跡・削除要求も困難になる。一方、業務ニーズを満たす承認済み代替（サンクション済み生成 AI 含む）への誘導と、egress 制御＋DLP による未承認宛先への機微データ送信ブロックが機能していれば、この経路での流出は成立しない（Cannot）。blast radius は入力された機微データと、それに含まれる認証情報が許すアクセス範囲。"
+    mitigation: "[Foundation] 未承認サービスへの機微データ入力を禁止するポリシーを明文化し、業務ニーズを満たす承認済み代替（サンクション済み生成 AI 等）を提供する。 [Enterprise] Web プロキシ/CASB で未承認宛先へのアップロード・ペーストを DLP 検査し、機微データを含む送信をブロックする。 [Advanced] エンタープライズブラウザ・ブラウザ分離で未承認サービスへの入力経路自体を制御し、例外は監査付きで個別承認する。"
+    appliesTo:
+      kind: edge
+      when:
+        # AGENT 発の制御外通信は maestro-agent-internet-egress-001 が扱うため、
+        # 本ルールは人間/端末発の経路に限定する。
+        sourceType: [USER, PC, SMARTPHONE]
+        targetType: [SHADOW, SHADOW_APP]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+      - standard: nist-csf-2.0
+        ref: "ID.AM-02"
+    references:
+      - title: "CISA - Zero Trust Maturity Model v2（Data ピラー: DLP・データ分類）"
+        url: "https://www.cisa.gov/zero-trust-maturity-model"
+      - title: "NCSC (UK) - Shadow IT guidance"
+        url: "https://www.ncsc.gov.uk/guidance/shadow-it"
+
+  # ── 内部脅威：正規アクセス権の悪用（intrinsic）─────────────────
+  - id: zt-insider-legitimate-access-abuse-001
+    canonicalId: insider-legitimate-access-abuse
+    framework: STRIDE
+    category: "Insider Threat"
+    name: "内部者による正規アクセス権の悪用"
+    severity: High
+    description: "{{nodeName}} は正規のアクセス権を持つ内部者（従業員・委託先・退職予定者）による脅威を表す。内部者は境界防御・認証を正面から通過するため、窃取・改ざん・持ち出しが正規操作と区別しにくく、特に過剰権限・共有アカウント・退職時の権限剥奪漏れがあると長期間検知されない（Can）。一方、最小権限と Just-in-Time 権限付与で常時保有権限を絞り、職務分離と操作ログの独立監視（UEBA 含む）が機能していれば、単独の内部者が大規模な持ち出し・改ざんを完遂することは困難になる（Cannot）。blast radius は当該内部者に付与された全権限の範囲であり、ゼロトラストの最小権限が直接効く領域。"
+    mitigation: "[Foundation] 全アカウントの権限棚卸しと、退職・異動時の即時失効プロセスを確立する。共有アカウントを廃止し操作を個人に帰属させる。 [Enterprise] Just-in-Time / Just-Enough アクセスで常時保有権限を最小化し、機微操作に職務分離（4-eyes）を導入する。UEBA で大量ダウンロード・時間外アクセス等の異常を検知する。 [Advanced] データ持ち出し経路（外部メディア・個人クラウド・印刷）を DLP で統制し、高リスク領域にはセッションレコーディング付き特権アクセス管理（PAM）を適用する。"
+    appliesTo:
+      kind: node
+      nodeType: INSIDER_THREAT
+      # 攻撃者型ノードは objective（attackObjectiveId）属性で標的を指定する設計で、
+      # エッジ接続を前提としないため内在的脅威として扱う。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-03"
+    references:
+      - title: "CISA - Insider Threat Mitigation Guide"
+        url: "https://www.cisa.gov/resources-tools/resources/insider-threat-mitigation-guide"
+      - title: "NIST SP 800-207 - Zero Trust Architecture（最小権限・per-session 認可）"
+        url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+
+  # ── AI 加速攻撃者：friction-only 防御の無効化（intrinsic）───────────
+  - id: zt-agentic-attacker-ai-accelerated-001
+    canonicalId: ai-accelerated-attacker
+    framework: AgenticAI
+    category: "Adversary"
+    name: "AI 加速攻撃者による friction-only 防御の無効化"
+    severity: High
+    description: "{{nodeName}} は AI エージェントを利用する、または自律エージェント自体が主体となる攻撃者を表す。AI 加速攻撃では偵察・フィッシング文面生成・脆弱性探索・横展開の試行コストが per-attempt でほぼゼロになり、人間の攻撃者を前提とした「手間で抑止する」防御（レート制限・複雑な手順・難読化）は時間稼ぎにしかならない（Can）。攻撃は 24/365 並列で実行され、対象組織ごとのカスタマイズも自動化される。一方、攻撃を不可能にする制御（ハードウェア束縛資格情報・暗号学的アイデンティティ・そもそも存在しないネットワーク経路）は試行回数を増やしても突破できない（Cannot）。blast radius はモデル上で friction-only 防御に依存している全経路。"
+    mitigation: "[Foundation] 自組織の防御策を Impossible vs Tedious の観点で棚卸しし、「面倒にするだけ」の対策（SMS-MFA・非標準ポート・手順の複雑化）を構造的な対策へ置き換える計画を立てる。 [Enterprise] phishing-resistant 認証・短命資格情報・マイクロセグメンテーションで、自動化攻撃の主要経路（資格情報窃取・横展開）を構造的に閉じる。機械速度の攻撃に対応するため検知・対応も自動化する。 [Advanced] ハードウェア束縛アイデンティティと継続的検証により、窃取・なりすましに依存する攻撃チェーン全体を無効化する。"
+    appliesTo:
+      kind: node
+      nodeType: AGENTIC_ATTACKER
+      # 攻撃者型ノードは objective（attackObjectiveId）属性で標的を指定する設計で、
+      # エッジ接続を前提としないため内在的脅威として扱う。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "ID.RA-03"
+    references:
+      - title: "Anthropic - Zero Trust for AI Agents (AI-accelerated attacks / Impossible vs Tedious)"
+
+  # ── 認証材料（CREDENTIAL）の静的保管・スプロール（intrinsic）─────────
+  - id: zt-credential-sprawl-static-secret-001
+    canonicalId: credential-sprawl
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "認証材料の静的保管・スプロール"
+    severity: High
+    description: "{{nodeName}}（API キー・トークン・パスワード・秘密鍵等の認証材料）がソースコード・設定ファイル・共有ストレージ・チャット履歴等に静的に保管・散在していると、攻撃者はいずれか 1 箇所の侵害（リポジトリ流出・端末侵害・ログ閲覧）で認証材料を入手し、それが許す全リソースへ正規の資格情報として横展開できる（Can）。静的な長寿命シークレットは漏えいの検知も失効も遅れがちで、ローテーションされないまま長期間有効であり続けることが多い。一方、シークレットマネージャで集中管理し、短命・動的に発行された資格情報のみを使い、発行と利用を監査していれば、静的窃取そのものが価値を失う（Cannot）。blast radius は当該認証材料が許すアクセス範囲全体。"
+    mitigation: "[Foundation] リポジトリ・設定・共有ドキュメントのシークレットスキャンを導入し、検出した静的シークレットをシークレットマネージャへ移行・ローテーションする。 [Enterprise] 長寿命シークレットを廃止し、短命トークン・動的シークレット（発行時に TTL 付与）へ移行する。発行・利用を監査ログで追跡する。 [Advanced] ワークロードアイデンティティ（SPIFFE 等）・HSM/TPM 束縛により「コピー可能な静的シークレット」自体を排除する。"
+    appliesTo:
+      kind: node
+      nodeType: CREDENTIAL
+      # ドキュメント型は canContain で他コンポーネント内に置かれる設計で、エッジ接続を
+      # 前提としない。保管・散在のリスクは接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+    references:
+      - title: "OWASP Secrets Management Cheat Sheet（集中管理・動的シークレット）"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html"
+      - title: "NIST SP 800-207 - Zero Trust Architecture（per-session・短命資格情報）"
+        url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+      # エッジ上の静的 API キー利用（呼び出し時の弱い認証）は weak-service-auth 群が扱う（別 subject）。
+
+  # ── IdP 署名鍵侵害によるトークン偽造（Golden SAML 型）─────────────
+  - id: zt-idp-signing-key-compromise-001
+    canonicalId: idp-token-forgery
+    framework: STRIDE
+    category: "Spoofing"
+    name: "IdP 署名鍵侵害によるトークン偽造（Golden SAML 型）"
+    severity: Critical
+    description: "攻撃者が {{nodeName}} のトークン署名鍵（SAML 署名証明書 / OIDC 署名鍵）を窃取するか IdP 自体を侵害すると、任意のユーザ・任意の権限・任意の有効期限を持つ認証トークンを IdP を経由せず偽造でき、フェデレーション配下の全サービスがそれを正規認証として受け入れる（Can）。MFA・条件付きアクセスは IdP より上流の制御であるため、偽造トークンに対しては一切作用しない。一方、署名鍵を HSM/マネージド鍵保管にエクスポート不可で格納し、発行ログと検証側ログの突合（発行記録のないトークンの検知）を行っていれば、鍵の静的窃取自体が成立せず、偽造の検知も可能になる（Cannot）。blast radius はフェデレーション配下の全サービス・全アカウントであり、モデル上で最大級。"
+    mitigation: "[Foundation] IdP 管理者アカウントに phishing-resistant MFA を必須化し、署名証明書のローテーション・失効手順を整備する。IdP の構成変更・証明書操作を監査ログで追跡する。 [Enterprise] 署名鍵を HSM / マネージド鍵保管へ移しエクスポート不可化する。SIEM で「IdP に発行記録のないトークンの利用」を相関検知する。 [Advanced] 継続的アクセス評価（CAEP/Shared Signals）で失効を即時伝搬し、proof-of-possession 型トークン（DPoP / mTLS バインディング）で署名鍵単独の偽造を無効化する。"
+    appliesTo:
+      kind: node
+      nodeType: IDENTITY_PROVIDER
+      # フェデレーション先（relying party）に接続されているとき発火（デフォルト接続要件）。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+    references:
+      - title: "MITRE ATT&CK T1606.002 - Forge Web Credentials: SAML Tokens"
+        url: "https://attack.mitre.org/techniques/T1606/002/"
+      - title: "NIST SP 800-207 - Zero Trust Architecture（ポリシー判断点の保護）"
+        url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+
+  # ── IdP の集中点リスク（単一障害・設定波及）───────────────────
+  - id: zt-idp-single-point-of-failure-001
+    canonicalId: idp-single-point-of-failure
+    framework: STRIDE
+    category: "Denial of Service"
+    name: "IdP の単一障害点化・設定変更の全社波及"
+    severity: Medium
+    description: "Zero Trust 化はすべてのアクセス判断を {{nodeName}} に集中させるため、攻撃者は IdP への DoS・管理画面の乗っ取り・ポリシー設定の改ざんという 1 点の作用で、配下全サービスの認証可否を同時に操作できる（Can）。誤設定も同じ経路で全社に即時波及し、正規ユーザの一斉ロックアウト（自己 DoS）を引き起こす。一方、IdP の冗長化・レート制限に加え、オフライン保管のブレークグラスアカウントと設定変更の段階的ロールアウト＋レビューが整備されていれば、単一の障害・改ざん・誤設定が全面停止へ直結しない（Cannot）。blast radius は IdP に認証を依存する全サービスの可用性。"
+    mitigation: "[Foundation] IdP 障害時のブレークグラスアカウント（オフライン保管・使用時アラート）と復旧手順を整備し、定期的に有効性を確認する。 [Enterprise] IdP を冗長化・地理分散し、DDoS 対策とレート制限を備える。ポリシー・設定変更は IaC ＋レビュー＋段階的ロールアウトで適用し、即時ロールバックを可能にする。 [Advanced] IdP 停止時のフェイルセーフ挙動（既存セッション維持・新規は最小権限）を設計し、IdP 停止を想定した演習を定期実施する。"
+    appliesTo:
+      kind: node
+      nodeType: IDENTITY_PROVIDER
+      # 認証を依存するサービスが接続されているとき発火（デフォルト接続要件）。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-03"
+      - standard: nist-csf-2.0
+        ref: "RC.RP-01"
+    references:
+      - title: "NIST SP 800-207 - Zero Trust Architecture（ポリシー決定点の可用性）"
+        url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+      - title: "CISA - Zero Trust Maturity Model v2（Identity ピラー）"
+        url: "https://www.cisa.gov/zero-trust-maturity-model"
+
+  # ── IdP 発行トークンの受け側（relying party）検証不備 ─────────────
+  - id: zt-idp-token-validation-gap-001
+    canonicalId: idp-relying-party-validation-gap
+    framework: STRIDE
+    category: "Spoofing"
+    name: "発行トークンの受け側検証不備（audience confusion 等）"
+    severity: Medium
+    description: "{{sourceName}} から {{targetName}} へのトークン発行・信頼経路では、受け側（relying party）の検証が不十分な場合—audience/issuer の未検証、署名アルゴリズムの緩い受理（alg:none 等）、有効期限・失効の未確認—攻撃者は別サービス向けに正規発行されたトークンを {{targetName}} へ流用（audience confusion / token substitution）したり、検証バグを突いた改ざんトークンを受け入れさせたりできる（Can）。一方、{{targetName}} 側で audience・issuer・署名・有効期限を厳格に検証し、サービスごとに client_id / audience を分離していれば、他サービス向けトークンの流用は成立しない（Cannot）。blast radius は {{targetName}} 上で当該トークンが許す権限範囲。"
+    mitigation: "[Foundation] すべての relying party で audience / issuer / 署名 / 有効期限の検証を必須化し、検証ロジックは自作せず標準ライブラリを用いる。 [Enterprise] サービスごとに client_id / audience を分離し、トークンの権限スコープを宛先サービスに必要な最小に絞る。受理した不正・期限切れトークンの試行をログ・監視する。 [Advanced] proof-of-possession 型トークン（DPoP / mTLS バインディング）で、流用・窃取されたトークンを提示者検証で拒否する。"
+    appliesTo:
+      kind: edge
+      when:
+        # IdP → relying party のトークン発行・信頼方向のみ対象。
+        # USER → IdP のログイン経路の窃取は zt-aitm-session-token-theft-001 が扱う。
+        sourceType: [IDENTITY_PROVIDER]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+    references:
+      - title: "NIST SP 800-63B - Digital Identity Guidelines（アサーションの検証要件）"
+        url: "https://pages.nist.gov/800-63-3/sp800-63b.html"
+      - title: "OWASP - OAuth 2.0 / JWT のトークン検証ベストプラクティス（Cheat Sheet Series）"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html"
+
+  # ── GUARDRAIL: ガードレール単体依存（確率的防御の限界）─────────────
+  - id: zt-guardrail-probabilistic-bypass-001
+    canonicalId: guardrail-probabilistic-bypass
+    framework: AI
+    category: "Defense Evasion"
+    name: "ガードレール単体依存（確率的防御の限界）"
+    severity: Medium
+    description: "{{nodeName}} のようなガードレール / LLM ファイアウォールは、既知パターンの検知に基づく確率的な防御であり、攻撃者は新規のジェイルブレイク手法・難読化（エンコーディング・多言語・分割指示）・コンテキスト偽装により検知を迂回できる（Can）。ガードレールを唯一の防御線とする構成では、迂回成功がそのまま下流（LLM・エージェント・ツール）への攻撃成功になる。一方、ガードレールの背後に決定論的な制御—ツール allowlist・least agency・サンドボックス実行・出力先の権限分離—を併置していれば、ガードレール迂回が成功しても攻撃者が達成できる行動は構造的に制限される（Cannot）。blast radius はガードレール背後で「検知済みであること」を前提に許可されている全操作。"
+    mitigation: "[Foundation] ガードレールを唯一の防御にせず、下流のツール allowlist・権限最小化と組み合わせる（多層防御）。検知ログを保存し迂回試行を可視化する。 [Enterprise] 入力・出力の双方向でガードレールを適用し、迂回パターンの更新（脅威インテリジェンス・レッドチーム結果）を継続的に反映する。重要操作はガードレール判定に依らず人間承認・決定論的ポリシーで保護する。 [Advanced] 迂回を前提とした設計（assume bypass）に移行し、ガードレールは検知・観測層として扱う。実運用トラフィックでの継続的な敵対的評価（automated red teaming）を行う。"
+    appliesTo:
+      kind: node
+      nodeType: GUARDRAIL
+      # 保護対象（LLM/AGENT 等）に接続されているとき発火（デフォルト接続要件）。
+    references:
+      - title: "OWASP Top 10 for LLM Applications - LLM01: Prompt Injection（フィルタの限界）"
+        url: "https://genai.owasp.org/llm-top-10/"
+      # ジェイルブレイク自体（LLM ノード視点）は atlas-aml-t0054-llm-jailbreak-001 が扱う（別 subject）。
+
+  # ── AI_GATEWAY: プロンプト・応答ログの集中点リスク ─────────────────
+  - id: zt-ai-gateway-log-concentration-001
+    canonicalId: ai-gateway-log-concentration
+    framework: AI
+    category: "Information Disclosure"
+    name: "AI ゲートウェイへのプロンプト・応答の集積"
+    severity: Medium
+    description: "{{nodeName}} は組織内の AI トラフィックを集中検査・記録するため、全ユーザのプロンプト・応答（業務上の機微情報・個人情報・コードを含み得る）が 1 箇所に蓄積される。攻撃者は AI ゲートウェイ 1 点の侵害—管理画面の乗っ取り・ログストアへのアクセス・検査ポリシーの改ざん—で、組織全体の AI 利用内容を窃取・改ざんできる（Can）。検査のために復号・平文化される構造上、暗号化通信でもゲートウェイ上では可読になる。一方、ログの保持期間最小化と機微項目のマスキング、ログストアの分離・暗号化・アクセス統制、ゲートウェイ管理面の強い認証があれば、1 点侵害が全 AI トラフィックの露出へ直結しない（Cannot）。blast radius はゲートウェイを経由する全 AI トラフィックの内容と、それに含まれる認証情報・機微データ。"
+    mitigation: "[Foundation] ゲートウェイのログ保持期間を業務上の最小に設定し、プロンプトログ内の機微項目（PII・シークレット）をマスキングする。管理画面に phishing-resistant MFA を必須化する。 [Enterprise] ログストアをゲートウェイ本体から分離して暗号化し、アクセスを職務ベースで最小化・監査する。検査ポリシーの変更はレビュー＋監査ログ必須とする。 [Advanced] フィールドレベル暗号化・トークナイゼーションで、ログ閲覧権限と機微データ復号権限を分離する。ゲートウェイ自体の侵害を想定した検知（ポリシー差分監視・改ざん検知）を導入する。"
+    appliesTo:
+      kind: node
+      nodeType: AI_GATEWAY
+      # AI トラフィック（LLM/AGENT 等）が経由しているとき発火（デフォルト接続要件）。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+    references:
+      - title: "NIST SP 800-207 - Zero Trust Architecture（Policy Enforcement Point の保護）"
+        url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+      # サプライヤー側のプロンプトログ流出（エッジ視点）は stride-ai-supplier-model-input-log-leak-001 が扱う（別 subject）。
+
+  # ── 外部協働者（Guest/Contractor/Partner）の機微システムアクセス ──────
+  - id: zt-external-collaborator-broad-access-001
+    canonicalId: external-collaborator-broad-access
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "外部協働者の機微システムアクセス（失効・統制ギャップ）"
+    severity: Medium
+    description: "{{sourceName}}（委託先・パートナー・ゲストとして宣言されたユーザー）から {{targetName}} への経路では、アクセス権のライフサイクルが自組織の人事プロセスと連動しない。攻撃者は契約終了・再委託・担当交代後も失効されず残った正規アカウントを悪用でき、所属組織側の端末・教育・監査統制が及ばないため、侵害兆候の検知も自組織からは困難になる（Can）。一方、外部協働者のアクセスを期限付き（契約期間に連動した自動失効）で発行し、自組織のフェデレーション経由（ゲスト ID 管理）で認証・ログを掌握し、付与権限を担当業務のリソースに限定していれば、放置アカウントを足掛かりとした機微システムへの到達は成立しない（Cannot）。blast radius は当該外部協働者に付与された権限の範囲。"
+    mitigation: "[Foundation] 外部協働者アカウントに有効期限を必須化し、契約管理と連動した棚卸し・失効プロセスを確立する。共有アカウントでの外部委託を禁止する。 [Enterprise] ゲスト ID 管理（自組織 IdP のフェデレーション/ゲスト招待）へ一本化し、アクセスレビューを定期実施する。付与権限は担当業務のリソースに限定し、機微操作は職務分離する。 [Advanced] 外部協働者のセッションに継続的なリスク評価（デバイスポスチャ・行動分析）を適用し、契約 DB との自動照合で即時失効を保証する。"
+    appliesTo:
+      kind: edge
+      when:
+        # userTrustAttribute を明示宣言した USER ノードでのみ発火（未宣言は不成立）。
+        sourceUserTrust: [Guest, Contractor, Partner]
+        targetType: [DB, DATA_STORE, LLM, AGENT, MCP_SERVER, MEMORY_STORE, SAAS, IAAS, PAAS, CRM]
+      conditions:
+        - when:
+            sourceUserTrust: [Guest]
+          severity: High
+          description: "{{sourceName}}（ゲストとして宣言されたユーザー）から {{targetName}} への経路は、身元保証・契約上の守秘義務が最も弱い区分からの機微システムアクセスである（Can: ゲスト招待の放置・転送により意図しない第三者が正規経路で到達し得る）。ゲストアクセスに短い自動失効と最小権限（閲覧のみ等）を強制していれば、放置招待を足掛かりとした機微データへの到達は成立しない（Cannot）。"
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "ID.AM-01"
+    references:
+      - title: "NIST SP 800-207 - Zero Trust Architecture（サブジェクト属性に基づくアクセス判断）"
+        url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+      - title: "CISA - Zero Trust Maturity Model v2（Identity ピラー: アクセスライフサイクル管理）"
+        url: "https://www.cisa.gov/zero-trust-maturity-model"
+      # 内部者（正規権限者）の悪用は zt-insider-legitimate-access-abuse-001（INSIDER_THREAT ノード視点）が扱う（別 subject）。

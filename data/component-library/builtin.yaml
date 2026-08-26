@@ -1,0 +1,209 @@
+# Built-in component library for CyberRiskScape.
+# Default 13 component types covering Classic DFD, AI/LLM components, and
+# infrastructure primitives. Bundled with the application; cannot be disabled.
+#
+# To add custom components, create a separate YAML in this directory or upload
+# from the UI (planned for a later phase). See docs/threat-schema.md for the
+# schema reference.
+
+schemaVersion: 1
+
+library:
+  id: builtin
+  title: "Built-in Components"
+  version: "1.0"
+  license: "Apache-2.0"
+  builtin: true
+  description: "Default component set: Classic DFD primitives, AI components, and infrastructure."
+
+categories:
+  - id: CLASSIC_DFD
+    label: "Classic DFD"
+    order: 10
+  - id: AI
+    label: "AI Components"
+    order: 20
+  - id: INFRASTRUCTURE
+    label: "Infrastructure"
+    order: 30
+  - id: DOCUMENTS
+    label: "Documents"
+    order: 40
+
+components:
+  # ── Classic DFD ─────────────────────────────────────────────
+  - id: EXTERNAL_ENTITY
+    label: "外部主体"
+    category: CLASSIC_DFD
+    icon: { kind: builtin, name: "building-2" }
+    shape: rectangle
+    color: "bg-amber-500"
+    description: "システム境界の外側にいるアクター（顧客、外部システム、規制当局など）。"
+
+  - id: PROCESS
+    label: "プロセス"
+    category: CLASSIC_DFD
+    icon: { kind: builtin, name: "cog" }
+    shape: circle
+    color: "bg-cyan-500"
+    description: "データを変換・処理する機能要素。Yourdon 記法では円で表現。"
+
+  - id: DATA_STORE
+    label: "データストア"
+    category: CLASSIC_DFD
+    icon: { kind: builtin, name: "hard-drive" }
+    shape: data-store
+    color: "bg-teal-500"
+    description: "永続化されたデータの格納場所（DB、ファイルストア、キャッシュ）。"
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]
+
+  # ── AI Components ───────────────────────────────────────────
+  - id: LLM
+    label: "LLMモデル"
+    category: AI
+    icon: { kind: builtin, name: "cpu" }
+    shape: rounded
+    color: "bg-purple-600"
+    description: "大規模言語モデル（推論API、ホスト型、ローカル型を含む）。"
+
+  - id: DB
+    label: "ベクターDB / RAG"
+    category: AI
+    icon: { kind: builtin, name: "database" }
+    shape: rounded
+    color: "bg-emerald-500"
+    description: "埋め込みベクトルや RAG インデックスを保持するストア。"
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]
+
+  - id: TOOL
+    label: "外部ツール / API"
+    category: AI
+    icon: { kind: builtin, name: "settings" }
+    shape: rounded
+    color: "bg-orange-500"
+    description: "エージェントが呼び出す外部ツール／API（function calling 先）。"
+
+  - id: AGENT
+    label: "AIエージェント"
+    category: AI
+    icon: { kind: builtin, name: "layers" }
+    shape: rounded
+    color: "bg-pink-500"
+    description: "計画・ツール選択・推論を自律的に行う AI エージェント。"
+
+  # ── Infrastructure ──────────────────────────────────────────
+  - id: USER
+    label: "ユーザー"
+    category: INFRASTRUCTURE
+    icon: { kind: builtin, name: "user" }
+    shape: rounded
+    color: "bg-blue-500"
+    description: "人間のエンドユーザー。userTrustAttribute で信頼区分を分類。"
+    canContain: [PC, SMARTPHONE]
+
+  - id: PC
+    label: "パソコン"
+    category: INFRASTRUCTURE
+    icon: { kind: builtin, name: "monitor" }
+    shape: rounded
+    color: "bg-sky-500"
+    description: "PC 端末。managedState で MDM 配下か BYOD かを表現。"
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]
+
+  - id: SMARTPHONE
+    label: "スマートフォン"
+    category: INFRASTRUCTURE
+    icon: { kind: builtin, name: "smartphone" }
+    shape: rounded
+    color: "bg-violet-500"
+    description: "モバイル端末。managedState で MDM 配下か BYOD かを表現。"
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]
+
+  - id: IOT
+    label: "IoT"
+    category: INFRASTRUCTURE
+    icon: { kind: builtin, name: "wifi" }
+    shape: rounded
+    color: "bg-lime-500"
+    description: "IoT 機器・組込デバイス。多くは Unmanaged 扱い。"
+
+  - id: GATEWAY
+    label: "APIゲートウェイ"
+    category: INFRASTRUCTURE
+    icon: { kind: builtin, name: "activity" }
+    shape: rounded
+    color: "bg-indigo-500"
+    description: "API ゲートウェイ／リバースプロキシ／WAF。境界での認可と流入制御を担う。"
+
+  - id: FRONT_END_SERVER
+    label: "Front-end Server"
+    category: INFRASTRUCTURE
+    icon: { kind: builtin, name: "server" }
+    shape: rounded
+    color: "bg-rose-500"
+    description: "Web サーバー・リバースプロキシ等の外部公開ポイント。attackSurface 属性で公開条件・防御策の有無を表現する。"
+
+  - id: CONNECTOR
+    label: "コネクタ"
+    category: INFRASTRUCTURE
+    icon: { kind: builtin, name: "circle" }
+    shape: connector
+    color: "bg-slate-400"
+    description: "中継ノード（メッセージブローカー、iPaaS、サイドカープロキシ）。"
+
+  - id: IDENTITY_PROVIDER
+    label: "IdP"
+    category: INFRASTRUCTURE
+    icon: { kind: builtin, name: "shield-check" }
+    shape: rounded
+    color: "bg-fuchsia-600"
+    description: "アイデンティティプロバイダ（IdP）。SSO・フェデレーション・トークン発行を担う認証認可の中核。Zero Trust ではポリシー判断の起点となる。"
+
+  # ── Documents ───────────────────────────────────────────────
+  - id: PERSONAL_INFO
+    label: "個人情報"
+    category: DOCUMENTS
+    icon: { kind: builtin, name: "id-card" }
+    shape: rounded
+    color: "bg-red-500"
+    description: "氏名・住所・連絡先などの個人を識別し得る情報（PII）。"
+
+  - id: CONFIDENTIAL_INFO
+    label: "機密情報"
+    category: DOCUMENTS
+    icon: { kind: builtin, name: "file-lock" }
+    shape: rounded
+    color: "bg-red-700"
+    description: "事業秘密・契約情報・非公開資料など、漏洩時の影響が大きい情報。"
+
+  - id: SOURCE_CODE
+    label: "ソースコード"
+    category: DOCUMENTS
+    icon: { kind: builtin, name: "file-code" }
+    shape: rounded
+    color: "bg-yellow-500"
+    description: "アプリケーション／インフラのソースコード、IaC、設定ファイル。"
+
+  - id: CREDENTIAL
+    label: "認証情報"
+    category: DOCUMENTS
+    icon: { kind: builtin, name: "key-round" }
+    shape: rounded
+    color: "bg-amber-700"
+    description: "API キー・トークン・パスワード・秘密鍵・証明書などの認証材料。"
+
+  - id: LOG
+    label: "ログ"
+    category: DOCUMENTS
+    icon: { kind: builtin, name: "scroll-text" }
+    shape: rounded
+    color: "bg-gray-500"
+    description: "監査ログ・アクセスログ・アプリケーションログなどの記録情報。"
+
+  - id: OTHER_DOCUMENT
+    label: "その他"
+    category: DOCUMENTS
+    icon: { kind: builtin, name: "file" }
+    shape: rounded
+    color: "bg-stone-400"
+    description: "上記カテゴリに該当しないドキュメント・データ資産。"

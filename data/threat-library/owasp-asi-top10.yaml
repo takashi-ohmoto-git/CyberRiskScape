@@ -1,0 +1,169 @@
+# OWASP Top 10 for Agentic Applications 2026 (ASI Top 10) ベースの脅威ルール。
+# 出典: OWASP GenAI Security Project - Agentic Security Initiative,
+#       "OWASP Top 10 for Agentic Applications 2026", Version 2026 (December 2025).
+#       https://genai.owasp.org/
+# 出典のライセンス: OWASP GenAI Security Project の成果物は CC BY-SA 4.0。
+#   本ファイルはカテゴリ名・ID を参照し概念を日本語要約したものであり、
+#   本文の逐語転載・翻案は行っていない。
+# SPDX-License-Identifier: Apache-2.0
+# ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+# 出典の帰属表示は NOTICE を参照。
+#
+# 重複回避方針（[[anthropic-zt-agents.yaml]] と同じ運用）:
+#   ASI Top 10 は既存ライブラリと広範に重なる。本ファイルには既存で未カバー／薄い項目のみ追加する。
+#   - ASI01 Goal Hijack       → maestro-agent-goal-misalignment / -untrusted-ingress, atlas-t0051, owasp-llm01 でカバー済
+#   - ASI02 Tool Misuse       → maestro-tool-edge / -tool-output-handling, anthropic-zt-tool-chaining, owasp-llm06 でカバー済
+#   - ASI03 Identity & Priv   → anthropic-zt-agent-identity-attribution / -confused-deputy / -memory-privilege-retention でカバー済
+#   - ASI04 Supply Chain      → anthropic-zt-tool-poisoning-rug-pull, maestro-partner-supply-chain, owasp-llm03, atlas-t0010 でカバー済
+#   - ASI06 Memory Poisoning  → maestro-agent-memory-poisoning, anthropic-zt-memory-store-tampering / -shared-context-poisoning でカバー済
+#   本ファイルが追加するのは ASI05 / ASI07 / ASI08 / ASI09 / ASI10 の差分のみ。
+#   注: 上記カバー済の各ルールには、references に「ASI0x: …（関連マッピング）」の
+#   クロスマッピング出典を併記済み。UI 上でもどの ASI 項目に対応するか確認できる。
+#
+# mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
+# description は Can/Cannot ペアと blast radius を意識して記述する（docs/threat-schema.md §7.5）。
+
+schemaVersion: 1
+
+rules:
+  # ── ASI05: Unexpected Code Execution (RCE) ──────────────────
+  # 既存の owasp-llm05（LLM 出力の不適切な取り扱い）は下流注入を扱うが、
+  # エージェント自身のコード生成＋実行（vibe coding / eval ベースメモリ / サンドボックス脱出）は未カバー。
+  - id: owasp-asi05-unexpected-code-execution-001
+    canonicalId: agent-code-execution-rce
+    framework: AgenticAI
+    category: "Code Execution"
+    name: "エージェント生成コードの予期せぬ実行"
+    severity: Critical
+    description: "{{nodeName}} がコードを生成・実行する設計（vibe coding・自己修復・eval ベースのメモリ等）の場合、プロンプトインジェクションや安全でないデシリアライズが実行可能挙動に転化し、攻撃者はホスト／コンテナの掌握・永続化・サンドボックス脱出まで到達できる。一方、実行が非 root の読取専用サンドボックスに隔離され egress が遮断されていれば、コード生成自体は成立してもホスト侵害には至らない。"
+    mitigation: "[Foundation] eval・任意シェル実行を本番エージェントから排除し、生成コードは入力検証・出力エンコードのうえ専用作業ディレクトリに限定する。 [Enterprise] コード生成と実行を分離して検証ゲートを挟み、非 root のサンドボックスコンテナで egress 許可リスト・静的スキャン後のみ実行する。 [Advanced] microVM/gVisor によるハードウェア分離 + taint-tracking を行い、本番反映前に敵対的ユニットテストと unsafe eval 検知、検知時は自動隔離する。"
+    appliesTo:
+      kind: node
+      # SUB_AGENT もコード生成・実行を担う場合は同等の RCE リスク（§2.22 1.6e anyOf 展開）。
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+      # コード生成・実行能力はエージェント設計自体の性質で、接続関係に依存しない内在的リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI05: Unexpected Code Execution (RCE)"
+        url: "https://genai.owasp.org/"
+
+  # ── ASI07: Insecure Inter-Agent Communication ───────────────
+  # anthropic-zt-delegation-integrity は委譲経路の認証/暗号化欠如を扱うが、
+  # リプレイ・プロトコルダウングレード・ディスカバリ偽装（A2A registration spoofing）は未カバー。
+  - id: owasp-asi07-insecure-inter-agent-comms-001
+    canonicalId: inter-agent-comms-integrity
+    framework: AgenticAI
+    category: "Inter-Agent Comm"
+    name: "リプレイ・プロトコルダウングレード・ディスカバリ偽装"
+    severity: High
+    description: "{{sourceName}} から {{targetName}} へのエージェント間メッセージが nonce／タイムスタンプによるリプレイ防止やプロトコル版数固定を欠く場合、攻撃者は委譲・信頼メッセージのリプレイ、旧弱プロトコルへのダウングレード、ディスカバリ／レジストリへの偽エージェント登録により、正規の交換を装って権限混同・誤情報・協調操作を引き起こせる。一方、メッセージが署名・相互認証済みで版数固定されていれば、傍受してもリプレイ・なりすまし登録は成立しない。委譲経路そのものの認証／暗号化欠如は別途 anthropic-zt-delegation-integrity が扱う。"
+    mitigation: "[Foundation] エージェント間メッセージに nonce + セッション ID + タイムスタンプを必須化しリプレイを拒否、許可プロトコル版数を固定して旧モード／未知スキーマを拒否する。 [Enterprise] ディスカバリ／レジストリのメッセージを暗号学的アイデンティティで認証し、署名済み agent card のみ受理する。 [Advanced] PKI 信頼ルートと attested registry で継続検証し、メタデータ推論対策に固定長／パディングメッセージを用いる。"
+    appliesTo:
+      kind: edge
+      when:
+        sourceType: [AGENT]
+        targetType: [AGENT, SUB_AGENT]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI07: Insecure Inter-Agent Communication"
+        url: "https://genai.owasp.org/"
+
+  # ── ASI08: Cascading Failures ───────────────────────────────
+  # 初期欠陥の「発生源」ではなく、その「波及・増幅」に着目する独立リスク。既存に該当ルール無し。
+  - id: owasp-asi08-cascading-failures-001
+    canonicalId: cascading-failures
+    framework: AgenticAI
+    category: "Cascading Failures"
+    name: "障害の波及・増幅"
+    severity: High
+    description: "{{nodeName}} が他エージェントへ計画委譲・自動実行・状態永続化を行う構成では、単一の欠陥（ハルシネーション・汚染メモリ・偽メッセージ）が下流エージェントへ fan-out し、人手チェックを飛び越えて全体障害・大量誤実行へ増幅できる。一方、planner→executor 間に blast-radius ガード（quota・進捗上限・サーキットブレーカー）と独立ポリシーエンジンがあれば、初期欠陥が連鎖反応に発展する前に遮断できる。初期欠陥の発生源（供給網=ASI04／メモリ=ASI06／通信=ASI07）ではなく、その波及・増幅に着目する。"
+    mitigation: "[Foundation] planner と executor を分離し、高影響アクションをポリシー検証ゲートに通す。レート制限と異常時の一時停止を備える。 [Enterprise] エージェント毎の blast-radius ガード（quota・進捗上限・planner-executor 間サーキットブレーカー）を設け、独立ポリシーエンジンで計画と実行を分離する。 [Advanced] digital twin リプレイで波及をテストしてポリシー拡張を blast-radius 上限合格にゲートし、tamper-evident な系譜ログで非否認性を確保する。"
+    appliesTo:
+      kind: node
+      # SUB_AGENT も波及・増幅の起点／中継になりうるため同等（§2.22 1.6e anyOf 展開）。
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+      # 他エージェントと連結したマルチエージェント構成でのみ波及が成立する。
+      connection:
+        peerType: [AGENT, SUB_AGENT]
+      # 自律実行かつ影響範囲が自分を越えるエージェントのみ対象（ReadOnly/Self は波及しにくい）。
+      agentAttributes:
+        agency: [Autonomous]
+        blastRadius: [Tenant, CrossTenant, Admin]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-04"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI08: Cascading Failures"
+        url: "https://genai.owasp.org/"
+
+  # ── ASI09: Human-Agent Trust Exploitation ───────────────────
+  # 人間の過信（権威バイアス・自動化バイアス・擬人化）の悪用。既存ライブラリに完全に欠落。
+  - id: owasp-asi09-human-agent-trust-exploitation-001
+    canonicalId: human-agent-trust-exploitation
+    framework: AgenticAI
+    category: "Human-Agent Trust"
+    name: "擬人化・自動化バイアスの悪用"
+    severity: Medium
+    description: "{{nodeName}} が自然言語の流暢さ・自信ある説明で人間ユーザと強い信頼を築く場合、攻撃者や誤設計はその信頼（権威バイアス・自動化バイアス・擬人化）を悪用し、ユーザに独立検証なしで高影響アクションを承認させたり機微情報を引き出せる。最終操作は人間が行うためフォレンジックにエージェントの関与が見えにくい。一方、高影響承認に根拠提示・出典リンク・二者承認を必須化し、エージェント発話を権威ではなく要検証の提案として UI 表示すれば、説得のみでの承認誘導は成立しにくい。"
+    mitigation: "[Foundation] エージェント推奨は『要検証の提案』として提示し、自信度・出典・前提を明示する。高影響アクションには人間の独立確認を必須化する。 [Enterprise] 不可逆／高額アクションに二者承認とドライラン差分プレビューを設け、過信を促す断定的 UI 表現を抑制する。 [Advanced] 人間承認イベントとエージェント推奨の対応をログ化してフォレンジック追跡可能にし、利用者向けに自動化バイアス教育を行う。"
+    appliesTo:
+      kind: node
+      nodeType: AGENT
+      # 人間ユーザが意思決定ループに存在する（USER と連結する）場合のみ成立する。
+      connection:
+        peerType: [USER]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AT-01"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI09: Human-Agent Trust Exploitation"
+        url: "https://genai.owasp.org/"
+
+  # ── ASI10: Rogue Agents ─────────────────────────────────────
+  # ドリフト開始後のふるまい整合性・自己複製・報酬ハックに着目。
+  # maestro-agent-goal-misalignment（目標逸脱）/ -multi-agent-collusion（協調逸脱）と相補。
+  - id: owasp-asi10-rogue-agent-001
+    canonicalId: rogue-agent-drift
+    framework: AgenticAI
+    category: "Rogue Agent"
+    name: "ふるまい整合性の喪失・自己複製"
+    severity: High
+    description: "{{nodeName}} が自律実行する場合、外部侵害（プロンプトインジェクション／目標ハイジャック／供給網）を契機にふるまい整合性を失い、個々の行動は正規に見えても全体として有害・欺瞞的・寄生的に逸脱できる。プロビジョニング API 経由の自己複製、報酬ハック（コスト最小化のためバックアップ削除等）、観測エージェントのなりすましにより、検知・テイクダウンを回避して持続化できる。一方、署名付き behavioral manifest を起動時検証し、キルスイッチ・資格情報失効・watchdog による逸脱監視があれば、逸脱開始後も即時隔離でき被害を限定できる。初期侵入（ASI01／ASI04）ではなく、ドリフト開始後のふるまい整合性とガバナンスに着目する。"
+    mitigation: "[Foundation] 全アクション・ツール呼出・エージェント間通信を immutable な署名付き監査ログに記録し、未承認の委譲・複製を検知する。 [Enterprise] Trust Zone と最小権限スコープで隔離し、watchdog エージェントで協調逸脱／異常実行を検知、キルスイッチと資格情報失効で即時停止する。 [Advanced] エージェント毎の暗号学的アイデンティティ attestation と署名付き behavioral manifest を毎アクション検証し、隔離→再 attestation→人手承認を経た復帰のみ許可する。"
+    appliesTo:
+      kind: node
+      # SUB_AGENT も外部侵害を契機にふるまい整合性を失いうるため同等（§2.22 1.6e anyOf 展開）。
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+      # 自律設計のエージェントのみ対象（Advisory/Bounded は逸脱しても副作用が抑制済み）。
+      connection:
+        required: false
+      agentAttributes:
+        agency: [Autonomous]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-04"
+    references:
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI10: Rogue Agents"
+        url: "https://genai.owasp.org/"
