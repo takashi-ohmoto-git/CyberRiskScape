@@ -1,0 +1,63 @@
+# デモサイトを GitHub Pages へ公開する。
+#
+# 現在は手動トリガー（workflow_dispatch）のみ。GitHub Pages は Free プランでは
+# Public リポジトリでしか使えないため、リポジトリを Public にして Pages を
+# 「GitHub Actions」ソースで有効化するまでは実行できない。
+# 有効化後、自動デプロイしたい場合は下の push トリガーのコメントを外す。
+name: Deploy demo to GitHub Pages
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同時実行を 1 本に制限（進行中のデプロイはキャンセルしない）
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: 型チェック
+        run: npx tsc --noEmit
+
+      - name: テスト
+        run: npm test
+
+      - name: ビルド
+        run: npm run build
+        env:
+          # Pages のプロジェクトサイトはリポジトリ名のサブパスで配信される
+          BASE_PATH: /CyberRiskScape/
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
