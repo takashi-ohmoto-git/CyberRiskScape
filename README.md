@@ -36,26 +36,6 @@
 | `AI` | 25 | 敵対的 ML、モデル抽出、学習データ汚染 等 |
 | `AgenticAI` | 41 | 目標乗っ取り、ツール誤用、権限の持ち越し、メモリ汚染 等 |
 
-### 脅威知識はコードに埋め込まない
-
-脅威ルールは **すべて YAML**（`data/threat-library/`）にあり、エンジンのコードから
-分離されています。ルールの追加・修正に再コンパイルもフォークも必要ありません。
-
-```yaml
-- id: agentic-memory-write-untrusted-persistence-001
-  name: 信頼できない入力の長期メモリへの永続化
-  framework: AgenticAI
-  severity: High
-  appliesTo:
-    edge:
-      semantic: [memory_write]
-      sourceType: [AGENT, SUB_AGENT]
-      targetType: [MEMORY_STORE]
-  mitigation: |
-    [Foundation] メモリ書き込み経路に出所の記録を必須化する。
-    [Enterprise] 書き込み前に信頼度を評価し、閾値未満は隔離領域へ退避する。
-```
-
 ### 主な機能
 
 - **ビジュアル DFD エディタ** — 38 種のコンポーネント型（6 ライブラリ・9 カテゴリ）、
@@ -133,55 +113,6 @@ npm run preview   # ビルド成果物をローカルで確認
 5. **評価と対応方針を記録** — DREAD スコアと対応方針（低減／受容／移転／回避）を
    入力します。誤検知は抑制できます
 6. **エクスポート** — 脅威一覧を CSV / JSON / Markdown で出力します
-
----
-
-## 脅威ライブラリ
-
-113 ルールを 11 のソース別ファイルで管理しています。
-
-| ファイル | ルール数 | 主な出典 |
-|---|---:|---|
-| `stride-ai.yaml` | 33 | STRIDE、敵対的 ML |
-| `zero-trust-access.yaml` | 14 | NIST SP 800-207 / 800-63B、CISA ZTMM v2 |
-| `anthropic-zt-agents.yaml` | 13 | Anthropic "Zero Trust for AI Agents" |
-| `mitre-atlas.yaml` | 12 | MITRE ATLAS |
-| `maestro.yaml` | 11 | OWASP ASI Top 10 / AI Exchange / LLM Top 10 |
-| `owasp-llm-top10.yaml` | 10 | OWASP Top 10 for LLM Applications |
-| `owasp-asi-top10.yaml` | 5 | OWASP Top 10 for Agentic Applications 2026 |
-| `agentic-zt-components.yaml` | 5 | MCP 公式 Security Best Practices |
-| `pqc.yaml` | 4 | NIST IR 8547 / FIPS 203-205、CNSA 2.0 |
-| `endpoint.yaml` | 3 | NIST SP 800-46 / 800-124 / IR 8259 |
-| `agentic-memory-rag-edges.yaml` | 3 | メモリ・RAG 経路の脅威 |
-
-複数のソースが同じ脅威を扱う場合は `canonicalId` でグループ化し、表示時に
-「⧉ n ソース」として畳み込むことで重複表示を防いでいます。
-
-各ファイルの先頭には出典が明記されています。外部フレームワークの記述は
-カテゴリ名・技法 ID・URL による参照と日本語要約に留めており、原文の逐語転載は
-行っていません。詳細は [NOTICE](NOTICE) を参照してください。
-
-### 独自の脅威ルールを追加する
-
-`data/threat-library/` に YAML ファイルを追加して再ビルドするか、アプリ内の
-カスタムルールエディタから追加します。スキーマは Zod で検証され、不正なルールは
-起動時にエラーとして報告されます。
-
-同様に、独自のコンポーネント型は `data/component-library/` に YAML を追加することで
-導入できます。
-
----
-
-## 技術スタック
-
-| 領域 | 採用技術 |
-|---|---|
-| フレームワーク | React 18 + TypeScript (strict) + Vite 6 |
-| 状態管理 | Zustand |
-| 永続化 | IndexedDB（`idb`）／ File System Access API |
-| スキーマ検証 | Zod |
-| スタイル | Tailwind CSS |
-| テスト | Vitest |
 
 ```
 src/
