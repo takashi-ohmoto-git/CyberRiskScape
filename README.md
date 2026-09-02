@@ -5,9 +5,13 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Threat rules](https://img.shields.io/badge/threat%20rules-113-orange.svg)](data/threat-library)
 [![Tests](https://img.shields.io/badge/tests-468%20passing-brightgreen.svg)](#開発)
+[![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 ブラウザ上でシステム構成図（DFD）を描くと、構成に応じた脅威が自動で列挙されます。
 サーバ不要・完全ローカル動作で、設計データが外部に送信されることはありません。
+
+**▶ オンラインデモ： https://takashi-ohmoto-git.github.io/CyberRiskScape/**
+（インストール不要。ブラウザだけで試せます）
 
 > **English**: CyberRiskScape is an open-source visual threat modeling tool that
 > covers AI, LLM, agentic systems, and post-quantum cryptography. Draw a data flow
@@ -15,6 +19,7 @@
 > architecture, using 113 rules from 11 sources (OWASP LLM/ASI Top 10, MITRE ATLAS,
 > NIST, and others). It runs entirely client-side — no server, no data leaves your
 > machine. The UI is currently Japanese-first with partial English support.
+> Try it at https://takashi-ohmoto-git.github.io/CyberRiskScape/
 
 ---
 
@@ -77,6 +82,8 @@
 
 左：コンポーネントパレットとライブラリ管理 ／ 中央：DFD キャンバスと凡例 ／
 右：検出された脅威（発火条件・3 段階成熟度の緩和策・コンプライアンス対応・出典）
+
+実際の動作は[オンラインデモ](https://takashi-ohmoto-git.github.io/CyberRiskScape/)で確認できます。
 
 ---
 
