@@ -1,86 +1,92 @@
 # CyberRiskScape
 
-**AI・LLM・エージェントシステム・PQC に対応した、OSS のビジュアル脅威モデリングツール**
+**Open-source visual threat modeling for AI, LLM, agentic systems, and post-quantum cryptography**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Threat rules](https://img.shields.io/badge/threat%20rules-113-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-468%20passing-brightgreen.svg)](#開発)
+[![Tests](https://img.shields.io/badge/tests-468%20passing-brightgreen.svg)](#development)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
-ブラウザ上でシステム構成図（DFD）を描くと、構成に応じた脅威が自動で列挙されます。
-サーバ不要・完全ローカル動作で、設計データが外部に送信されることはありません。
+**English** | [日本語](README.ja.md)
 
-**▶ オンラインデモ： https://takashi-ohmoto-git.github.io/CyberRiskScape/**
-（インストール不要。ブラウザだけで試せます）
+Draw a data flow diagram in your browser, and CyberRiskScape enumerates the threats that
+apply to your architecture — including the ones classical threat modeling tools have no
+vocabulary for: goal hijacking, tool misuse, privilege carry-over, memory poisoning.
 
-> **English**: CyberRiskScape is an open-source visual threat modeling tool that
-> covers AI, LLM, agentic systems, and post-quantum cryptography. Draw a data flow
-> diagram in your browser and it enumerates the threats that apply to your
-> architecture, using 113 rules from 11 sources (OWASP LLM/ASI Top 10, MITRE ATLAS,
-> NIST, and others). It runs entirely client-side — no server, no data leaves your
-> machine. The UI is currently Japanese-first with partial English support.
-> Try it at https://takashi-ohmoto-git.github.io/CyberRiskScape/
+It runs entirely in the browser. No server, no account, no telemetry — your design never
+leaves your machine.
+
+**▶ Live demo: https://takashi-ohmoto-git.github.io/CyberRiskScape/** (nothing to install)
+
+> **Interface language.** The UI is currently Japanese-first. An English locale exists in
+> `src/i18n/locales/en.ts` but covers only part of the interface, and there is no language
+> switcher yet, so the demo runs in Japanese. Threat rule text is Japanese as well.
+> English coverage is the project's top priority — see [Roadmap](#roadmap). Help is welcome.
 
 ---
 
-## 特徴
+## What makes it different
 
-### エージェント型 AI の脅威モデリングに対応
+### Agentic AI is a first-class citizen
 
-古典的な STRIDE に加えて、**AI エージェント・LLM・MCP サーバ・長期メモリ**といった
-現代的な構成要素を第一級のコンポーネント型として扱います。
+Alongside classical STRIDE, CyberRiskScape treats **AI agents, LLMs, MCP servers, and
+long-term memory** as first-class component types, with a rule set to match.
 
-| フレームワーク区分 | ルール数 | 内容 |
+| Framework | Rules | Covers |
 |---|---:|---|
-| `STRIDE` | 47 | 古典的な脅威（なりすまし・改ざん・情報漏えい 等） |
-| `AI` | 25 | 敵対的 ML、モデル抽出、学習データ汚染 等 |
-| `AgenticAI` | 41 | 目標乗っ取り、ツール誤用、権限の持ち越し、メモリ汚染 等 |
+| `STRIDE` | 47 | Spoofing, tampering, repudiation, information disclosure, DoS, elevation of privilege |
+| `AI` | 25 | Adversarial ML, model extraction, training data poisoning |
+| `AgenticAI` | 41 | Goal hijacking, tool misuse, privilege carry-over, memory poisoning |
 
-### 主な機能
+This is where the project invests. Most threat modeling tools have zero rules in the third row.
 
-- **ビジュアル DFD エディタ** — 38 種のコンポーネント型（6 ライブラリ・9 カテゴリ）、
-  トラスト境界、データフローの暗号化区分・認証状態の表現
-- **脅威の自動検出** — 配置しただけで発火する内在脅威と、接続条件つきで発火する
-  経路依存脅威を区別して検出
-- **攻撃経路グラフ分析** — 攻撃者から資産に至る経路を可視化し、チョークポイント
-  （複数経路が集中する防御点）を特定
-- **コンプライアンスマッピング** — 検出脅威を NIST CSF 2.0（128 項目）/
-  NIST AI RMF（72 項目）/ AI 事業者ガイドライン（34 項目）に紐付け
-- **リスク評価** — DREAD スコアリング、リスク対応方針（低減・受容・移転・回避）の記録
-- **カスタムルール** — UI 上のエディタから独自の脅威ルールを追加
-- **脅威ライブラリ・インスペクタ** — どのルールがどの条件で発火するかを読み取り専用で確認
-- **エクスポート** — 脅威一覧を CSV / JSON、および Anthropic 公式
-  `defending-code-reference-harness` の `THREAT_MODEL.md` 互換 Markdown で出力
-- **ローカル保存** — IndexedDB による自動保持と、File System Access API による
-  ローカルファイルへの明示的な保存
+### Features
 
----
-
-## スクリーンショット
-
-![CyberRiskScape のスクリーンショット](assets/screenshot.png)
-
-左：コンポーネントパレットとライブラリ管理 ／ 中央：DFD キャンバスと凡例 ／
-右：検出された脅威（発火条件・3 段階成熟度の緩和策・コンプライアンス対応・出典）
-
-実際の動作は[オンラインデモ](https://takashi-ohmoto-git.github.io/CyberRiskScape/)で確認できます。
+- **Visual DFD editor** — 38 component types across 6 libraries and 9 categories, trust
+  boundaries, and data flows carrying encryption, authentication, and semantic attributes
+- **Automatic threat detection** — distinguishes *inherent* threats (a component fires them
+  just by existing) from *path-dependent* ones (they need a specific connection to exist)
+- **Attack path analysis** — maps routes from attacker to asset and identifies choke points
+  where several routes converge on one defensible node
+- **Compliance mapping** — maps detected threats to NIST CSF 2.0 (128 items), NIST AI RMF
+  (72 items), and Japan's AI Business Operator Guidelines (34 items)
+- **Risk assessment** — DREAD scoring and risk treatment decisions (mitigate / accept /
+  transfer / avoid)
+- **Custom rules** — add your own detection rules from an in-app editor
+- **Threat library inspector** — read-only view of every rule and the exact conditions
+  that make it fire
+- **Export** — threat lists as CSV / JSON, and as Markdown compatible with the
+  `THREAT_MODEL.md` schema used by Anthropic's `defending-code-reference-harness`
+- **Local persistence** — automatic retention via IndexedDB, plus explicit saves to local
+  files through the File System Access API
 
 ---
 
-## 動作要件
+## Screenshot
 
-| 項目 | 要件 |
+![CyberRiskScape screenshot](assets/screenshot.png)
+
+Left: component palette and library management. Center: the DFD canvas and its legend.
+Right: detected threats, each with its firing conditions, three-tier mitigations,
+compliance references, and sources.
+
+See it running in the [live demo](https://takashi-ohmoto-git.github.io/CyberRiskScape/).
+
+---
+
+## Requirements
+
+| | |
 |---|---|
-| Node.js | 20 以上（開発・ビルド時のみ） |
-| ブラウザ | Chromium 系（Chrome / Edge）を推奨 |
+| Node.js | 20 or later (for development and builds only) |
+| Browser | Chromium-based (Chrome / Edge) recommended |
 
-ローカルファイルへの保存機能は File System Access API を使うため、Chromium 系
-ブラウザでのみ有効です。Firefox / Safari では当該機能が無効表示になりますが、
-それ以外の機能はすべて利用できます。
+Saving to local files uses the File System Access API, which is Chromium-only. On Firefox
+and Safari that one feature is disabled; everything else works.
 
 ---
 
-## クイックスタート
+## Quick start
 
 ```bash
 git clone https://github.com/takashi-ohmoto-git/CyberRiskScape.git
@@ -89,91 +95,85 @@ npm install
 npm run dev
 ```
 
-表示された URL（既定では http://localhost:5173）をブラウザで開きます。
+Open the URL it prints (http://localhost:5173 by default).
 
-本番ビルドは以下で生成できます。出力は静的ファイルのみなので、任意の静的ホスティング
-に配置できます。
-
-```bash
-npm run build     # dist/ に出力
-npm run preview   # ビルド成果物をローカルで確認
-```
-
----
-
-## 使い方
-
-1. **コンポーネントを配置** — 左サイドバーから DFD 要素（ユーザー、LLM、エージェント、
-   データストア 等）をキャンバスへ配置します
-2. **接続を引く** — 要素間にデータフローを引き、暗号化区分・認証状態・
-   セマンティクス（ツール呼び出し、メモリ書き込み 等）を設定します
-3. **トラスト境界を描く** — 信頼境界を配置し、境界をまたぐ通信を明示します
-4. **脅威を確認** — 構成に応じた脅威が自動で列挙されます。各脅威は「検出根拠」から
-   発火条件・ルール ID・出典を辿れます
-5. **評価と対応方針を記録** — DREAD スコアと対応方針（低減／受容／移転／回避）を
-   入力します。誤検知は抑制できます
-6. **エクスポート** — 脅威一覧を CSV / JSON / Markdown で出力します
-
-```
-src/
-  core/              エディタ・キャンバス・脅威エンジン・データモデル
-  features/          機能単位（攻撃経路分析・カスタムルール・エクスポート・永続化 等）
-  threat-library/    脅威ルールのスキーマとローダー
-  component-library/ コンポーネント型のスキーマとローダー
-  compliance/        コンプライアンスマップのスキーマとローダー
-  ui/                画面コンポーネント
-  i18n/              多言語リソース
-data/
-  threat-library/    脅威ルール（YAML）
-  component-library/ コンポーネント型（YAML）
-  compliance/        コンプライアンスマップ（YAML）
-```
-
----
-
-## 開発
+Production builds are plain static files and can be hosted anywhere:
 
 ```bash
-npm run dev          # 開発サーバ起動
-npm run build        # 本番ビルド
-npm run preview      # ビルド成果物の確認
-npm run test         # テスト一括実行
-npm run test:watch   # テスト watch モード
-npx tsc --noEmit     # 型チェック（strict）
+npm run build     # outputs to dist/
+npm run preview   # serve the build locally
 ```
 
-変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 468 件の
-テストが通ります。
+---
+
+## How to use it
+
+1. **Place components** — drag DFD elements (users, LLMs, agents, data stores, …) from the
+   left sidebar onto the canvas
+2. **Connect them** — draw data flows and set encryption, authentication, and semantics
+   (tool call, memory write, …)
+3. **Draw trust boundaries** — make the crossings explicit
+4. **Review threats** — threats appear as you build. Each one opens to show why it fired:
+   its conditions, rule ID, and source
+5. **Assess and decide** — record DREAD scores and a risk treatment; suppress false positives
+6. **Export** — CSV, JSON, or Markdown
 
 ---
 
-## コントリビュート
+## Development
 
-Issue と Pull Request を歓迎します。開発の流れ・脅威ルール追加時のルール・翻訳への
-参加方法は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
+```bash
+npm run dev          # dev server
+npm run build        # production build
+npm run preview      # preview the build
+npm run test         # run all tests
+npm run test:watch   # watch mode
+npx tsc --noEmit     # type check (strict)
+```
 
----
-
-## セキュリティ
-
-脆弱性を発見した場合は、公開の Issue ではなく GitHub の Security Advisory 機能から
-非公開でご報告ください。報告手順と既知の注意点は [SECURITY.md](SECURITY.md) に
-まとめています。
-
-特に以下の 2 点にご注意ください。
-
-- **信頼できない YAML を読み込まないでください。** コンポーネントライブラリの
-  インライン SVG アイコンは現在サニタイズされていないため、第三者が配布する
-  ライブラリ YAML は内容を確認してから使用してください
-- 本ツールは脅威モデリングの**設計支援**を目的としており、検出結果の網羅性や
-  正確性を保証するものではありません。実際のリスク評価は専門家の判断と併用してください
+The standard check after a change is `npx tsc --noEmit` plus the test suite. 468 tests
+currently pass.
 
 ---
 
-## ライセンス
+## Roadmap
+
+Near-term priorities, in order:
+
+1. **English UI** — complete the English locale and add a language switcher
+2. **Structured audit report** — PDF / HTML output fit to serve as audit evidence, with
+   detection confidence stated explicitly
+3. **English threat library** — a translation overlay for the 113 rules, starting with the
+   `AgenticAI` set, leaving the existing schema unchanged
+
+---
+
+## Contributing
+
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the
+development workflow, the rules for adding threat rules, and how to help with translation.
+
+---
+
+## Security
+
+Please report vulnerabilities privately through
+[GitHub Security Advisories](https://github.com/takashi-ohmoto-git/CyberRiskScape/security/advisories/new),
+not through public issues. Details are in [SECURITY.md](SECURITY.md).
+
+Two things to be aware of:
+
+- **Do not load untrusted YAML.** Inline SVG icons in component libraries are not yet
+  sanitized, so review any third-party library YAML before using it
+- This tool is a **design aid** for threat modeling. It does not guarantee that its findings
+  are complete or correct; use it alongside expert judgment, not instead of it
+
+---
+
+## License
 
 [Apache License 2.0](LICENSE)
 
-脅威ライブラリおよびコンプライアンスマッピングは本プロジェクトの独自著作であり、
-参照している外部ソース（OWASP、MITRE ATLAS、NIST、CISA、Anthropic 等）の帰属表示は
-[NOTICE](NOTICE) にまとめています。
+The threat library and compliance mappings are original work of this project. Attribution
+for the external sources they reference (OWASP, MITRE ATLAS, NIST, CISA, Anthropic, and
+others) is collected in [NOTICE](NOTICE).

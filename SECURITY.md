@@ -1,32 +1,28 @@
-# セキュリティポリシー
+# Security Policy
 
-## 脆弱性の報告
+**English** | [日本語](SECURITY.ja.md)
 
-脆弱性を発見した場合は、**公開の Issue ではなく** GitHub の
-[Security Advisory](https://github.com/takashi-ohmoto-git/CyberRiskScape/security/advisories/new)
-から非公開でご報告ください（本リポジトリでは Private vulnerability reporting を
-有効にしています）。
+## Reporting a vulnerability
 
-内容を確認のうえ、修正方針と対応時期をご連絡します。
+Please report vulnerabilities privately through
+[GitHub Security Advisories](https://github.com/takashi-ohmoto-git/CyberRiskScape/security/advisories/new),
+**not** through public issues. Private vulnerability reporting is enabled on this repository.
 
-> **English**: Please report vulnerabilities privately via
-> [GitHub Security Advisories](https://github.com/takashi-ohmoto-git/CyberRiskScape/security/advisories/new),
-> not through public issues.
+We will review the report and respond with a fix plan and a timeline.
 
-## 対象バージョン
+## Supported versions
 
-本プロジェクトはまだ正式リリース前です。サポート対象は `main` ブランチの最新版のみです。
+This project has not made a formal release yet. Only the latest `main` is supported.
 
-## 既知の注意点
+## Known caveats
 
-- **信頼できない YAML を読み込まないでください。** コンポーネントライブラリの
-  インライン SVG アイコンは現在サニタイズされていないため、第三者が配布する
-  ライブラリ YAML は内容を確認してから使用してください
-- 本ツールは脅威モデリングの**設計支援**を目的としており、検出結果の網羅性や
-  正確性を保証するものではありません。実際のリスク評価は専門家の判断と併用してください
+- **Do not load untrusted YAML.** Inline SVG icons in component libraries are not sanitized
+  yet, so review any third-party library YAML before using it
+- This tool is a **design aid** for threat modeling. It does not guarantee that its findings
+  are complete or correct; use it alongside expert judgment, not instead of it
 
-## 設計上のセキュリティ特性
+## Security properties by design
 
-本ツールは**完全にクライアントサイドで動作**します。サーバへの通信はなく、
-作成した設計データはブラウザの IndexedDB とユーザーが明示的に保存したファイルに
-のみ残ります。設計内容が外部に送信されることはありません。
+CyberRiskScape runs **entirely client-side**. It makes no requests to any server, and the
+designs you create exist only in your browser's IndexedDB and in files you explicitly save.
+Nothing you model is transmitted anywhere.

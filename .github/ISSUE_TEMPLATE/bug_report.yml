@@ -1,0 +1,68 @@
+name: Bug report
+description: Something in the editor, the detection engine, or an export behaves incorrectly
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. Please do **not** report security
+        vulnerabilities here — use
+        [GitHub Security Advisories](https://github.com/takashi-ohmoto-git/CyberRiskScape/security/advisories/new)
+        instead.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Place an AGENT and a MEMORY_STORE
+        2. Connect them with a memory_write flow
+        3. Open the threat list
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Canvas / editor
+        - Threat detection
+        - Attack path analysis
+        - Threat library (YAML rules)
+        - Custom rule editor
+        - Export (CSV / JSON / Markdown)
+        - Save / load
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and OS
+      placeholder: Chrome 140 / Windows 11
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Commit hash, or "live demo" if you used the hosted build
+      placeholder: live demo
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Console output
+      description: Any errors from the browser console. This is rendered as code, no backticks needed.
+      render: text

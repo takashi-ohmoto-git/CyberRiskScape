@@ -1,0 +1,89 @@
+name: Threat rule proposal
+description: Propose a new detection rule for the threat library, or a correction to an existing one
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The threat library is the heart of this project, and proposals are very welcome —
+        especially for agentic AI, where coverage matters most.
+
+        Rules live in YAML under `data/threat-library/` and are never hardcoded. You do not
+        need to write the YAML yourself; a clear description and a source are enough.
+
+  - type: textarea
+    id: threat
+    attributes:
+      label: The threat
+      description: What can an attacker do, and what do they achieve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: source
+    attributes:
+      label: Source
+      description: |
+        Which framework, guideline, paper, or advisory is this based on, and where in it?
+        We summarize sources rather than reproducing their text, so a reference is enough.
+      placeholder: |
+        OWASP Top 10 for LLM Applications 2025, LLM01 Prompt Injection
+        https://genai.owasp.org/llmrisk/llm01-prompt-injection/
+    validations:
+      required: true
+
+  - type: textarea
+    id: applies-to
+    attributes:
+      label: When should it fire?
+      description: |
+        Which component types, or which connection between them? If the threat only exists
+        when a specific channel exists (direction, peer type, encryption, semantics), say so —
+        that distinction is what separates an inherent threat from a path-dependent one.
+      placeholder: |
+        Any flow with semantic=tool_call from an AGENT to an external TOOL,
+        where the tool's output is fed back into the agent's context.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: framework
+    attributes:
+      label: Framework category
+      options:
+        - STRIDE
+        - AI
+        - AgenticAI
+        - Not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Suggested severity
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: Mitigation
+      description: |
+        How should a team address it? If mitigations differ by maturity, split them —
+        the library marks them as [Foundation] / [Enterprise] / [Advanced].
+
+  - type: textarea
+    id: overlap
+    attributes:
+      label: Overlap with existing rules
+      description: |
+        Does an existing rule already describe this threat from another source? If so, it may
+        belong in the same `canonicalId` group rather than becoming a separate rule. The
+        threat library inspector in the app lists every existing rule.

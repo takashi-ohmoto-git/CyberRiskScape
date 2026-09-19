@@ -1,43 +1,67 @@
-# コントリビュートガイド
+# Contributing
 
-Issue と Pull Request を歓迎します。
+**English** | [日本語](CONTRIBUTING.ja.md)
 
-## 基本ルール
+Issues and pull requests are welcome.
 
-- **脅威ルールはコードにハードコードせず**、`data/threat-library/` の YAML に追加する
-- 新しいルールには **出典を明記** し、原文の逐語転載を避けて要約に留める
-- ロジックの変更にはテストを添える
-- コミットメッセージは [Conventional Commits](https://www.conventionalcommits.org/) に従う
+## Ground rules
 
-## 開発の流れ
+- **Never hardcode threat rules.** They belong in YAML under `data/threat-library/`
+- **Cite the source** of every new rule, and summarize rather than reproducing text verbatim
+- Changes to logic come with tests
+- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/)
+
+## Development workflow
 
 ```bash
 npm install
-npm run dev          # 開発サーバ起動
-npx tsc --noEmit     # 型チェック（strict）
-npm test             # テスト一括実行
-npm run build        # 本番ビルド
+npm run dev          # dev server
+npx tsc --noEmit     # type check (strict)
+npm test             # run all tests
+npm run build        # production build
 ```
 
-Pull Request を出す前に、型チェックとテストが通ることを確認してください。
-これらは CI（`.github/workflows/ci.yml`）でも実行されます。
+Please confirm that the type check and the tests pass before opening a pull request. CI
+(`.github/workflows/ci.yml`) runs both as well.
 
-## 脅威ルールを追加する
+## Adding a threat rule
 
-脅威ルールは `data/threat-library/` 配下の YAML で管理しています。詳細は
-README の [脅威ライブラリ](README.md#脅威ライブラリ) を参照してください。
+Threat rules live in YAML under `data/threat-library/`. See
+[`data/threat-library/`](data/threat-library) for the existing files and their structure.
 
-新しいルールの PR では、以下を本文に記載してください。
+In the pull request description, please state:
 
-- 追加するルールが**どの外部ソース（フレームワーク・ガイドライン）に基づくか**と、その参照箇所
-- 既存ルールと重複する場合、なぜ別ルールとして立てるのか
+- **which external source** (framework or guideline) the rule is based on, and where in it
+- if the rule overlaps an existing one, why it should stand as a separate rule rather than
+  sharing a `canonicalId`
 
-## 翻訳
+## Translation
 
-UI 文言は i18n 経由で管理しています。現在は日本語が既定で、英語は一部のみ対応して
-います。英語リソースの拡充は歓迎します。
+This is currently the most useful place to help.
 
-## ライセンス
+UI strings are managed through a small in-house i18n layer in `src/i18n/` — no external
+dependency. `src/i18n/locales/ja.ts` is the source of truth; `src/i18n/locales/en.ts`
+partially overrides it, and any key missing from `en.ts` falls back to Japanese. Two things
+are open:
 
-コントリビュートされた内容は、本プロジェクトのライセンスである
-[Apache License 2.0](LICENSE) の下で配布されます。
+- **Filling in `en.ts`.** Add keys as you translate them; partial coverage is fine and safe
+- **A language switcher.** The locale store exists (`useLocale`), but nothing in the UI sets
+  it yet, so the app always starts in Japanese. Note that persistence must use IndexedDB —
+  this project does not use `localStorage` or `sessionStorage`
+
+Threat rule text (`name`, `description`, `mitigation`) is Japanese. The plan is a
+translation overlay under `data/threat-library/i18n/en/` keyed by rule ID, so the existing
+schema stays unchanged and untranslated rules fall back to the original text. Please open an
+issue before starting on this so we can agree on the format first.
+
+## Documentation language
+
+**English is canonical.** `README.md`, `CONTRIBUTING.md`, and `SECURITY.md` are the versions
+to update when something changes. Their Japanese counterparts (`*.ja.md`) are kept in sync as
+summaries and may lag in detail — that is intentional. A pull request that updates only the
+Japanese file will be asked to update the English one too; the reverse is not required.
+
+## License
+
+Contributions are distributed under this project's license,
+[Apache License 2.0](LICENSE).

@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/takashi-ohmoto-git/CyberRiskScape/security/advisories/new
+    about: Please report vulnerabilities privately, not as a public issue.
+  - name: Try the live demo
+    url: https://takashi-ohmoto-git.github.io/CyberRiskScape/
+    about: Reproduce the behavior in the hosted build before filing, if you can.
+  - name: Help with the English translation
+    url: https://github.com/takashi-ohmoto-git/CyberRiskScape/blob/main/CONTRIBUTING.md#translation
+    about: The UI is Japanese-first. Filling in the English locale is the most useful place to start.
