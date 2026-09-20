@@ -1,0 +1,222 @@
+# アイデンティティ基盤（IdP / Directory / ID 同期）の脅威ルール。
+#
+# 背景:
+#   [[plan]] §2.39 で `EdgeSemantic` に `directory_sync`（オンプレ Directory ⇄ IDaaS の
+#   ID 同期）を追加したが、この semantic を条件に使うルールは 1 件も無かった。本ファイルは
+#   その同期経路と、IDENTITY_PROVIDER ノードに残っていた STRIDE 上の空白（Repudiation /
+#   フェデレーション信頼の改ざん）を埋める。
+#
+#   `semantic` 未指定のエッジは `data_flow` 既定で評価されるため、本ファイルの同期系
+#   ルールは**設計者が明示的に directory_sync をマークしたエッジでのみ発火**し、
+#   既存ダイアグラムの検出結果は変化しない。
+#
+# 出典:
+#   - MITRE ATT&CK (Enterprise) T1078.004 "Valid Accounts: Cloud Accounts"（同期用
+#     サービスアカウントを含む正規アカウントの悪用）。
+#     https://attack.mitre.org/techniques/T1078/004/
+#   - MITRE ATT&CK (Enterprise) T1484.002 "Domain or Tenant Policy Modification:
+#     Trust Modification"（不正なフェデレーション信頼の追加）。
+#     https://attack.mitre.org/techniques/T1484/002/
+#   - MITRE ATT&CK (Enterprise) T1098 "Account Manipulation"（ディレクトリオブジェクト
+#     属性の改ざんによる永続化・権限取得）。https://attack.mitre.org/techniques/T1098/
+#   - NIST SP 800-207, "Zero Trust Architecture"（ポリシー判断点の保護・per-session 認可）。
+#     https://csrc.nist.gov/pubs/sp/800/207/final
+#   - NIST SP 800-63B, "Digital Identity Guidelines: Authentication and Lifecycle
+#     Management"（アサーション・認証イベントの記録要件）。
+#     https://pages.nist.gov/800-63-3/sp800-63b.html
+#   - CISA, "Zero Trust Maturity Model v2"（Identity ピラー・可視性とアナリティクス）。
+#     https://www.cisa.gov/zero-trust-maturity-model
+#   本文は逐語転載せず日本語要約のみ。
+#
+#   SPDX-License-Identifier: Apache-2.0
+#   ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+#   出典の帰属表示は NOTICE を参照。
+#
+# framework について:
+#   本ファイルは従来 IT のアイデンティティ基盤を扱うため、全ルール STRIDE とする
+#   （AI / AgenticAI 固有の攻撃機構は含まない）。
+#
+# 重複回避方針:
+#   IDENTITY_PROVIDER は zero-trust-access.yaml が既に 3 subject をカバー済みであり、
+#   本ファイルはそれと重ならない差分のみを追加する。
+#
+#   - IdP 署名鍵の窃取によるトークン偽造（Golden SAML 型）→
+#     zt-idp-signing-key-compromise-001（canonicalId: idp-token-forgery）でカバー済。
+#     本ファイルの identity-idp-federation-trust-tampering-001 は**鍵を盗まずに
+#     「信頼される発行者」を追加する**管理面の構成改ざん（ATT&CK T1484.002）で、
+#     攻撃機構も対策も異なるため別 canonicalId とする（粒度判断は人間へエスカレーション中）。
+#   - IdP の単一障害点化・設定変更の全社波及 → zt-idp-single-point-of-failure-001
+#     （canonicalId: idp-single-point-of-failure）でカバー済。あちらは可用性
+#     （Denial of Service）軸。本ファイルは認証の完全性・追跡可能性の軸を扱う。
+#   - IdP 発行トークンの受け側検証不備 → zt-idp-token-validation-gap-001
+#     （canonicalId: idp-relying-party-validation-gap、edge sourceType:[IDENTITY_PROVIDER]）
+#     でカバー済。**IdP を source とするエッジ条件は本ファイルでは使わない**
+#     （使うと同一エッジ上で常に併発するため）。
+#   - IdP へのログイン経路の AiTM セッション窃取 → zt-aitm-session-token-theft-001
+#     でカバー済（USER/PC/SMARTPHONE 発の MFA × Internet エッジ、target 型不問）。
+#   - 閉域網（VPN/VPC）× 無認証の暗黙信頼 → zt-implicit-trust-network-location-001 が
+#     target 型を問わずカバー済。Internet × 無認証は stride-edge-unauth-internet-001、
+#     Password × Internet は stride-edge-password-internet-001 でカバー済。したがって
+#     本ファイルは **auth / network 軸を条件に使わない**（IdP を target にしただけの
+#     再掲ルールを作らない）。
+#   - 平文通信そのもの → stride-edge-plain-encryption-001（canonicalId:
+#     plaintext-transmission、encryption:[Plain] のみで発火）が同期エッジにも当たる。
+#     よって本ファイルは「同期が平文である」を独立ルールにせず、**同期経路に固有の
+#     subject**（同期アカウントの越境特権 / 同期オブジェクトの完全性 / 同期スコープ）
+#     のみを扱う。agentic-memory-rag-edges.yaml が memory_* / rag_retrieval で取った
+#     「semantic 固有の subject に限定する」方針と同じ。
+#   - 認証材料の静的保管・散在（CREDENTIAL ノード視点）→ zt-credential-sprawl-static-
+#     secret-001（canonicalId: credential-sprawl）でカバー済。本ファイルの同期アカウント
+#     ルールは「同期エッジが持つ越境特権」という経路視点で subject が異なる。
+#   - AGENT 発の弱いサービス認証 → weak-service-auth 群でカバー済。本ファイルは
+#     sourceType に AGENT 系を含めない。
+#   - コンポーネント型 DIRECTORY（AD / LDAP）は未追加のため、オンプレ Directory も
+#     IDENTITY_PROVIDER で表現される前提（[[plan]] §2.39「詳細な図」の整理に従う）。
+#
+# mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
+# description は Can/Cannot ペアと blast radius を意識して記述する（docs/threat-schema.md §7.5）。
+
+schemaVersion: 1
+
+rules:
+  # ── directory_sync 経路: 同期アカウント / 同期エージェントの越境特権 ──────
+  - id: identity-directory-sync-privileged-bridge-001
+    canonicalId: directory-sync-privileged-bridge
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "ID 同期アカウントの越境特権（オンプレ侵害からクラウドテナントへの横展開）"
+    severity: Critical
+    description: "{{sourceName}} から {{targetName}} への directory_sync 経路は、両側のディレクトリに対して恒常的な高権限を持つ同期アカウント（同期エージェントのサービスアカウント）によって成立している。攻撃者は同期エージェントが稼働するホストを 1 台侵害するだけで、そこに常駐する同期用資格情報を取得し、オンプレ側の権限のまま {{targetName}} 側のテナントへ正規のアカウントとして到達できる（Can）。同期アカウントは業務時間外も常時有効・多要素認証の対象外に置かれることが多く、その操作はディレクトリ管理者の正規操作と区別が付きにくい。一方、同期エージェントを Tier 0（ドメインコントローラ相当）資産として隔離運用し、同期アカウントの権限を「同期に必要な属性の読み書き」だけに絞り、管理者ロールの付与を禁止していれば、同期ホストの侵害がテナント全体の管理権限へは直結しない（Cannot）。blast radius は {{targetName}} 側テナントの全アカウントと、そのテナントが認証を提供する全サービス。"
+    mitigation: "[Foundation] 同期エージェントの稼働ホストを Tier 0 資産として扱い、汎用サーバ・管理端末と同居させない。同期アカウントに管理者ロールを付与せず、同期対象属性の最小権限に絞る。 [Enterprise] 同期アカウントの資格情報をエージェントホスト上に静的保管せず、マネージド ID / 証明書ベース認証へ移行し、定期ローテーションと利用元の制限（ソース IP・デバイス証明書）を行う。同期アカウントによる管理操作を SIEM で常時監視し、同期以外の API 呼び出しをアラート対象にする。 [Advanced] 同期の権限を方向ごとに分離（読み取り専用の一方向同期を既定とし、書き戻しは別アカウント・別承認経路）し、ハードウェア束縛（TPM/HSM）された資格情報で同期ホスト外へのエクスポートを不可能にする。"
+    appliesTo:
+      kind: edge
+      when:
+        # 設計者が明示的に directory_sync とマークしたエッジのみ対象。
+        # auth / network / encryption 軸は既存の汎用ルールが担うため条件に含めない。
+        semantic: [directory_sync]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-03"
+    references:
+      - title: "MITRE ATT&CK T1078.004 - Valid Accounts: Cloud Accounts（同期用サービスアカウントを含む正規アカウントの悪用）"
+        url: "https://attack.mitre.org/techniques/T1078/004/"
+      - title: "NIST SP 800-207 - Zero Trust Architecture（ポリシー判断点とその管理面の保護）"
+        url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+      # IdP 署名鍵の窃取によるトークン偽造は zt-idp-signing-key-compromise-001 が扱う（別 subject）。
+
+  # ── directory_sync 経路: 同期オブジェクトの改ざん・属性注入 ──────────────
+  - id: identity-directory-sync-object-tampering-001
+    canonicalId: directory-sync-object-tampering
+    framework: STRIDE
+    category: "Tampering"
+    name: "同期オブジェクトの改ざん・属性注入によるアカウント乗っ取り"
+    severity: High
+    description: "{{sourceName}} から {{targetName}} へ directory_sync として明示された経路では、送信側のディレクトリオブジェクト（ユーザ・グループ・属性）が受信側でそのまま権威ある値として反映される。攻撃者が送信側で一般ユーザの属性を書き換えられる立場（委任された OU の管理権限、ヘルプデスク権限、あるいは同期経路上の中間者）を得た場合、識別子属性を既存の特権アカウントと一致させて突き合わせ（soft match）を誘発したり、特権グループのメンバーシップを注入したりすることで、{{targetName}} 側で本来持ち得ない権限を持つアカウントを成立させられる（Can）。反映は正規の同期処理として実行されるため、受信側の監査ログには「同期による正常な更新」としてしか残らない。一方、同期対象の OU・属性・グループをホワイトリストで限定し、特権グループのメンバーシップを同期対象から除外して受信側で独立に管理し、識別子属性の変更を承認制にしていれば、送信側の限定的な書き込み権限が受信側の権限昇格へ変換されない（Cannot）。blast radius は {{targetName}} 側で同期オブジェクトに紐づく全アクセス権。"
+    mitigation: "[Foundation] 同期対象の OU・属性・グループをホワイトリストで明示し、既定の「全体同期」を使わない。特権グループのメンバーシップは同期対象から除外し、受信側で独立に管理する。 [Enterprise] 識別子属性（UPN / メール / 不変 ID）の変更を承認ワークフロー必須とし、変更イベントを SIEM で検知する。突き合わせ（soft match）を無効化し、不変 ID による厳密な対応付け（hard match）のみを許可する。 [Advanced] 同期差分に対する異常検知（短時間での大量属性変更・特権グループへの追加）を自動隔離と組み合わせ、反映前に保留する。同期オブジェクトに署名を付与し受信側で検証する。"
+    appliesTo:
+      kind: edge
+      when:
+        semantic: [directory_sync]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-02"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "DE.AE-03"
+    references:
+      - title: "MITRE ATT&CK T1098 - Account Manipulation（アカウント属性の改ざんによる権限取得・永続化）"
+        url: "https://attack.mitre.org/techniques/T1098/"
+      - title: "NIST SP 800-63B - Digital Identity Guidelines（ID バインディングの完全性）"
+        url: "https://pages.nist.gov/800-63-3/sp800-63b.html"
+      # 通信路そのものの盗聴・改ざん（平文）は stride-edge-plain-encryption-001 が扱う（別 subject）。
+
+  # ── directory_sync 経路: 同期スコープ過大による ID コーパスの境界外複製 ─────
+  - id: identity-directory-sync-overscoped-corpus-001
+    canonicalId: directory-sync-overscoped-corpus
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "同期スコープ過大による ID コーパスの信頼境界外複製"
+    severity: High
+    description: "{{sourceName}} から {{targetName}} への directory_sync は信頼境界を越えており、内部ディレクトリの内容（全ユーザの氏名・メール・部署・役職・グループ構成、構成によってはパスワードハッシュ）が境界外へ複製・常時保持される。同期スコープを絞らない既定構成では、クラウド側サービスを利用しない部門・退職前提のアカウント・特権管理者アカウントまでが複製対象になるため、攻撃者は {{targetName}} 側を侵害するか、そのテナントの参照権限を持つ低権限アカウントを 1 つ取得するだけで、組織全体の人員構成と権限構造を一括で入手し、標的型フィッシングと権限昇格経路の設計に利用できる（Can）。一方、同期対象を当該クラウドサービスを実際に利用する OU・属性に限定し、特権アカウントは同期対象外としてクラウド側で独立に発行し、ディレクトリ参照 API の権限を業務上必要な範囲へ絞っていれば、境界外に置かれる情報が侵害時の被害範囲と一致するまで縮小される（Cannot）。blast radius は同期対象に含まれる全アカウントの属性情報と、それらが示す組織構造。"
+    mitigation: "[Foundation] 同期スコープを「当該クラウドサービスを利用する OU・属性」に限定し、既定の全体同期を廃止する。特権管理者アカウントは同期対象外とし、クラウド側で独立に発行する。 [Enterprise] 属性単位のフィルタリングを適用し、業務上不要な属性（内線・住所・カスタム属性等）を送出しない。受信側テナントのディレクトリ参照権限（全ユーザ列挙 API）を最小化し、アクセスを監査する。 [Advanced] パスワードハッシュ同期を廃止してフェデレーション認証または証明書ベース認証へ移行し、認証材料そのものを境界外へ複製しない構成にする。同期対象の棚卸しを定期化し、スコープの逸脱を検知する。"
+    appliesTo:
+      kind: edge
+      when:
+        # 信頼境界を越える同期のみ対象。境界内で完結する同期（オンプレ内の
+        # ディレクトリ間複製等）では本ルールは発火しない。
+        semantic: [directory_sync]
+        sourceTrust: [Internal]
+        targetTrust: [Internet, Partner]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "ID.AM-05"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "CISA - Zero Trust Maturity Model v2（Identity ピラー: ID ストアの統制範囲）"
+        url: "https://www.cisa.gov/zero-trust-maturity-model"
+      - title: "NIST SP 800-207 - Zero Trust Architecture（データの所在と最小限の露出）"
+        url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+
+  # ── IDENTITY_PROVIDER: フェデレーション信頼の改ざん（不正な発行者の追加）────
+  - id: identity-idp-federation-trust-tampering-001
+    canonicalId: idp-federation-trust-tampering
+    framework: STRIDE
+    category: "Spoofing"
+    name: "フェデレーション信頼の改ざん（不正な発行者・ドメインの追加）"
+    severity: Critical
+    description: "{{nodeName}} の管理面に到達した攻撃者は、署名鍵を一切盗まずに、自分が制御する発行者（フェデレーテッドドメイン・外部 IdP・追加の署名証明書）を「信頼できる発行者」として構成へ追加できる（Can）。以後は攻撃者自身の鍵で署名したトークンが正規のアサーションとして受理されるため、任意ユーザへのなりすましが恒常的に可能になり、被害ユーザのパスワード変更・MFA 再登録・セッション失効のいずれも効果を持たない。構成変更は一度きりの小さな管理操作であり、認証ログ上は「正常なログイン」としてしか現れないため検知が難しい。一方、フェデレーション構成・信頼済みドメイン・署名証明書の追加を特権アクセス管理（PAM）の承認必須操作とし、構成のベースラインとの差分を継続監視してアラート化していれば、追加操作自体が承認なしには成立せず、成立しても即時に検知される（Cannot）。blast radius は {{nodeName}} に認証を依存する全サービス・全アカウントで、モデル上最大級。"
+    mitigation: "[Foundation] フェデレーション構成・信頼済みドメイン・署名証明書を変更できるロールを列挙して最小化し、該当ロールの保有者に phishing-resistant MFA を必須化する。構成変更イベントを監査ログで保全する。 [Enterprise] 構成変更を特権アクセス管理（PAM）の時間制限付き昇格＋二人承認の対象とし、信頼済みドメイン・発行者一覧のベースライン差分を継続監視してアラート化する。 [Advanced] フェデレーション構成を IaC で宣言的に管理し、ドリフトを自動検知・自動復元する。発行者の追加をテナント外の独立した証跡（改ざん耐性ログ）へ複製し、テナント侵害時も検証可能にする。"
+    appliesTo:
+      kind: node
+      nodeType: IDENTITY_PROVIDER
+      # フェデレーション先（relying party）に接続されているとき発火（デフォルト接続要件）。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-04"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "MITRE ATT&CK T1484.002 - Domain or Tenant Policy Modification: Trust Modification"
+        url: "https://attack.mitre.org/techniques/T1484/002/"
+      - title: "NIST SP 800-207 - Zero Trust Architecture（ポリシー判断点の構成保護）"
+        url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+      # 署名鍵の窃取によるトークン偽造は zt-idp-signing-key-compromise-001 が扱う
+      # （鍵を盗む vs 信頼を足す。攻撃機構・対策が異なるため別 canonicalId）。
+
+  # ── IDENTITY_PROVIDER: 認証イベントの記録・保全の欠如 ──────────────────
+  - id: identity-idp-authentication-log-gap-001
+    canonicalId: idp-authentication-log-gap
+    framework: STRIDE
+    category: "Repudiation"
+    name: "認証イベントの記録・保全の欠如"
+    severity: Medium
+    description: "{{nodeName}} は配下の全サービスに対する認証の唯一の証跡発生源であり、ここでサインインログ・MFA 判定結果・構成変更履歴が記録されないか、短期間で上書きされるか、{{nodeName}} 自身の管理権限で削除可能な場所にしか存在しない場合、攻撃者は侵害後に自らの認証活動の痕跡を消去または希釈し、「誰がいつどの経路で認証したか」を事後に確定できなくする（Can）。各サービス側のアプリケーションログには「認証済みユーザ」としか残らないため、IdP の証跡を失うと侵害の起点・範囲・期間のいずれも立証できず、インシデント対応は封じ込め範囲を過大にも過小にも誤る。一方、認証・構成変更イベントを発生と同時に {{nodeName}} の管理権限が及ばない外部ログ基盤へ転送し、改ざん耐性のある保存（WORM / 追記専用）と規定保持期間を確保していれば、IdP 侵害後も証跡が残り、事後の追跡が成立する（Cannot）。blast radius は {{nodeName}} に依存する全サービスの認証事象の追跡可能性。"
+    mitigation: "[Foundation] サインインログ・MFA 判定結果・管理構成変更を記録対象として有効化し、インシデント対応に必要な保持期間（最低 90 日、規制対象は所定期間）を設定する。 [Enterprise] ログを発生と同時に IdP 管理者権限の及ばない外部 SIEM / ログ基盤へ転送し、改ざん耐性のある保存（WORM / 追記専用）とする。転送の停止・欠損自体をアラート対象にする。 [Advanced] 認証イベントとサービス側アクセスログを共通の相関 ID で突合できる形で保全し、証跡の欠損区間を自動検出する。長期保全分には暗号学的な完全性証明（ハッシュチェーン）を付与する。"
+    appliesTo:
+      kind: node
+      nodeType: IDENTITY_PROVIDER
+      # 認証を依存するサービスが接続されているとき発火（デフォルト接続要件）。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+      - standard: nist-csf-2.0
+        ref: "DE.AE-03"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-01"
+    references:
+      - title: "NIST SP 800-63B - Digital Identity Guidelines（認証イベントの記録要件）"
+        url: "https://pages.nist.gov/800-63-3/sp800-63b.html"
+      - title: "CISA - Zero Trust Maturity Model v2（Visibility and Analytics: 認証テレメトリの集約）"
+        url: "https://www.cisa.gov/zero-trust-maturity-model"
+      # DATA_STORE / EXTERNAL_ENTITY の否認は stride-data-store-repudiation-001 /
+      # stride-external-entity-repudiation-001 が扱う（ノード型が異なる別 subject）。

@@ -35,12 +35,27 @@ verbatim.
                   data/threat-library/maestro.yaml
 
 --------------------------------------------------------------------------------
-2. MITRE ATLAS (Adversarial Threat Landscape for Artificial-Intelligence Systems)
+2. The MITRE Corporation
+
+   MITRE ATLAS (Adversarial Threat Landscape for Artificial-Intelligence
+   Systems)
    https://atlas.mitre.org/
    © The MITRE Corporation. Technique IDs (AML.Txxxx) are referenced with
    attribution.
 
-   Referenced by: data/threat-library/mitre-atlas.yaml
+   Referenced by: data/threat-library/mitre-atlas.yaml,
+                  data/threat-library/agentic-memory-rag-edges.yaml
+
+   MITRE ATT&CK (Enterprise)
+   https://attack.mitre.org/
+   © The MITRE Corporation. Licensed under the Creative Commons Attribution
+   4.0 International License (CC BY 4.0).
+   https://creativecommons.org/licenses/by/4.0/
+   Technique IDs (Txxxx) are referenced with attribution; no ATT&CK text is
+   reproduced verbatim.
+
+   Referenced by: data/threat-library/identity.yaml,
+                  data/threat-library/zero-trust-access.yaml
 
 --------------------------------------------------------------------------------
 3. Model Context Protocol — Security Best Practices
