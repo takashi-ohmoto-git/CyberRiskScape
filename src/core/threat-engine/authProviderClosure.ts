@@ -13,10 +13,10 @@ import type { DiagramEdge, DiagramNode } from '../model/types';
  *   X の侵害で「なりすまされる／到達不能になる」のは資源側＝target であるため。
  * - スコープはアクティブ層（`detectThreats` が層単位の nodes / edges しか受け取らないため）。
  *
- * ここで求めるのは [[plan]] §2.40 の **Tier 1（宣言された依存）** と、論理接続の判定に使う
- * 「発行元として参照されているか」だけ。Tier 2（発行元ノードに実エッジで接続する相手）は
- * **インベントリビュー側の関心**なので `buildIdentityInventory` が持つ。
- * エンジンは Tier 2 を使わないため、ここで計算すると全ノード分の走査が無駄になる。
+ * 閉包が求めるのは [[plan]] §2.40 の **Tier 1（宣言された依存）** と、論理接続の判定に使う
+ * 「発行元として参照されているか」だけ。エンジンは Tier 2 を使わないため、閉包には含めない。
+ * Tier 2（発行元ノードに実エッジで接続する相手）はビュー側（インベントリ・キャンバスの
+ * ハイライト）の関心で、**閉包から導けない**ため独立した純関数 `directPeersOf` が持つ。
  */
 export interface AuthProviderClosure {
   /** 発行元ノード id → 依存するコンポーネント（重複排除済み・エッジ出現順）。 */
@@ -81,4 +81,38 @@ export function dependentsOf(closure: AuthProviderClosure, nodeId: string): Diag
  */
 export function isReferencedProvider(closure: AuthProviderClosure, nodeId: string): boolean {
   return closure.referenced.has(nodeId);
+}
+
+/**
+ * Tier 2：発行元ノードに**実エッジで直接接続する相手**（[[plan]] §2.40）。
+ *
+ * **閉包（`AuthProviderClosure`）からは導けない。** 閉包は `authProviderId` で参照されている
+ * 発行元しか走査しないため、一度も参照されていない Directory の Tier 2 が 0 件になる
+ * （[[plan]] §2.40 に記録した実バグ）。そのため `nodes` / `edges` を直接走査する。
+ *
+ * `excludeIds` には Tier 1 を渡す（Tier 1 と重複させない）。発行元自身は常に除く。
+ */
+export function directPeersOf(
+  nodes: readonly DiagramNode[],
+  edges: readonly DiagramEdge[],
+  providerId: string,
+  excludeIds: ReadonlySet<string>,
+): DiagramNode[] {
+  const nodeById = new Map(nodes.map((n) => [n.id, n] as const));
+  const peers: DiagramNode[] = [];
+  const seen = new Set<string>();
+
+  for (const edge of edges) {
+    const isSource = edge.source === providerId;
+    const isTarget = edge.target === providerId;
+    if (!isSource && !isTarget) continue;
+    const peerId = isSource ? edge.target : edge.source;
+    if (peerId === providerId || excludeIds.has(peerId) || seen.has(peerId)) continue;
+    const peer = nodeById.get(peerId);
+    if (!peer) continue;
+    seen.add(peerId);
+    peers.push(peer);
+  }
+
+  return peers;
 }

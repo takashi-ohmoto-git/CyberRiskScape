@@ -1,6 +1,10 @@
 import type { DiagramEdge, DiagramNode, IdentityProviderKind } from '../../core/model/types';
 import { AUTH_PROVIDER_APPLICABLE } from '../../core/model/types';
-import { buildAuthProviderClosure, dependentsOf } from '../../core/threat-engine/authProviderClosure';
+import {
+  buildAuthProviderClosure,
+  dependentsOf,
+  directPeersOf,
+} from '../../core/threat-engine/authProviderClosure';
 
 /**
  * 認証基盤インベントリの構築（[[plan]] §2.40 ②）。
@@ -26,27 +30,13 @@ export function buildIdentityInventory(
   edges: readonly DiagramEdge[],
 ): IdentityInventoryRow[] {
   const closure = buildAuthProviderClosure(nodes, edges);
-  const nodeById = new Map(nodes.map((n) => [n.id, n] as const));
 
   return nodes
     .filter((n) => AUTH_PROVIDER_APPLICABLE.has(n.type))
     .map((provider) => {
       const dependents = dependentsOf(closure, provider.id);
       const tier1 = new Set(dependents.map((n) => n.id));
-      // Tier 2：この発行元に実エッジで接続する相手。Tier 1 と自分自身は除く。
-      const directPeers: DiagramNode[] = [];
-      const seen = new Set<string>();
-      for (const edge of edges) {
-        const isSource = edge.source === provider.id;
-        const isTarget = edge.target === provider.id;
-        if (!isSource && !isTarget) continue;
-        const peerId = isSource ? edge.target : edge.source;
-        if (peerId === provider.id || tier1.has(peerId) || seen.has(peerId)) continue;
-        const peer = nodeById.get(peerId);
-        if (!peer) continue;
-        seen.add(peerId);
-        directPeers.push(peer);
-      }
+      const directPeers = directPeersOf(nodes, edges, provider.id, tier1);
       return { provider, kind: provider.identityProviderKind, dependents, directPeers };
     });
 }

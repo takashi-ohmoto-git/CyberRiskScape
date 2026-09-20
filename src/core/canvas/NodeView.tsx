@@ -23,6 +23,12 @@ interface NodeViewProps {
   /** このノードに内包される子ノード（Canvas で集約してから渡す）。 */
   childNodes: DiagramNode[];
   isSelected: boolean;
+  /**
+   * 選択中の発行元（IdP）に対するこのノードの位置づけ（[[plan]] §2.40 ③）。
+   * `tier1` = `authProviderId` で発行元を宣言している（図に線が無い不可視の依存）、
+   * `tier2` = 実エッジで直接つながっている。該当しなければ undefined。
+   */
+  highlight?: 'tier1' | 'tier2';
   threats: DetectedThreat[];
   onMouseDown: (e: MouseEvent, nodeId: string) => void;
   /** 子バッジクリック時に呼ばれる。親 mousedown と分離するため stopPropagation 済み。 */
@@ -91,6 +97,7 @@ export function NodeView({
   node,
   childNodes,
   isSelected,
+  highlight,
   threats,
   onMouseDown,
   onSelectChild,
@@ -110,12 +117,19 @@ export function NodeView({
 
   const badgeColor = SEVERITY_BG[severity];
 
+  // 選択リングが最優先（選択中の発行元自身は Tier に含まれないので競合しない）。
+  const ring = isSelected
+    ? 'ring-4 ring-blue-500 z-30 scale-110 shadow-2xl shadow-blue-500/20'
+    : highlight === 'tier1'
+      ? 'ring-4 ring-amber-400 z-30'
+      : highlight === 'tier2'
+        ? 'ring-4 ring-amber-400/40 z-30'
+        : 'z-20';
+
   return (
     <div
       onMouseDown={(e) => onMouseDown(e, node.id)}
-      className={`absolute pointer-events-auto cursor-grab active:cursor-grabbing transition-[transform,box-shadow] group flex flex-col items-center justify-center gap-1 ${style.outer} ${
-        isSelected ? 'ring-4 ring-blue-500 z-30 scale-110 shadow-2xl shadow-blue-500/20' : 'z-20'
-      }`}
+      className={`absolute pointer-events-auto cursor-grab active:cursor-grabbing transition-[transform,box-shadow] group flex flex-col items-center justify-center gap-1 ${style.outer} ${ring}`}
       style={{
         left: node.x,
         top: node.y,

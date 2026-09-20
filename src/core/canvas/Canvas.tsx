@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import type { DiagramNode, ResizeHandle, ThreatView } from '../model/types';
-import { isSuppressed } from '../model/types';
+import { AUTH_PROVIDER_APPLICABLE, isSuppressed } from '../model/types';
+import {
+  buildAuthProviderClosure,
+  dependentsOf,
+  directPeersOf,
+} from '../threat-engine/authProviderClosure';
 import {
   selectActiveBoundaries,
   selectActiveEdges,
@@ -102,6 +107,21 @@ export function Canvas({ threats, children }: CanvasProps) {
     () => new Set(selectedBoundaryIds),
     [selectedBoundaryIds],
   );
+
+  // 発行元（IdP）を 1 つだけ選んでいる間、その影響範囲を光らせる（[[plan]] §2.40 ③）。
+  // Tier 1 は図に線が無い不可視の依存、Tier 2 は線で直接つながっている相手。
+  // 影響範囲が空なら null＝何も光らせない（選択リングだけが出る）。
+  const identityHighlight = useMemo(() => {
+    if (selectedNodeIds.length !== 1) return null;
+    const providerId = selectedNodeIds[0];
+    const provider = nodes.find((n) => n.id === providerId);
+    if (!provider || !AUTH_PROVIDER_APPLICABLE.has(provider.type)) return null;
+    const closure = buildAuthProviderClosure(nodes, edges);
+    const tier1 = new Set(dependentsOf(closure, providerId).map((n) => n.id));
+    const tier2 = new Set(directPeersOf(nodes, edges, providerId, tier1).map((n) => n.id));
+    if (tier1.size === 0 && tier2.size === 0) return null;
+    return { tier1, tier2 };
+  }, [nodes, edges, selectedNodeIds]);
 
   // 子バッジクリック：リンク作成中なら端点として確定（beginNodeInteraction にリンク完了処理が
   // 入っている）。それ以外は選択のみ（バッジはドラッグ対象にしない）。
@@ -215,12 +235,23 @@ export function Canvas({ threats, children }: CanvasProps) {
           const aggregatedThreats = threats.filter(
             (t) => !isSuppressed(t) && (t.nodeId === node.id || childThreatIds.has(t.nodeId)),
           );
+          // ハイライトも同じ集約規則。子が対象なら親のリングで見せる（子は線を持てるため）。
+          const inTier = (tier: Set<string>): boolean =>
+            tier.has(node.id) || children.some((c) => tier.has(c.id));
+          const highlight = !identityHighlight
+            ? undefined
+            : inTier(identityHighlight.tier1)
+              ? ('tier1' as const)
+              : inTier(identityHighlight.tier2)
+                ? ('tier2' as const)
+                : undefined;
           return (
             <NodeView
               key={node.id}
               node={node}
               childNodes={children}
               isSelected={selectedIdSet.has(node.id)}
+              highlight={highlight}
               threats={aggregatedThreats}
               onMouseDown={onNodeMouseDown}
               onSelectChild={onSelectChild}
