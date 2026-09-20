@@ -264,7 +264,7 @@ export function ManualThreatModal() {
               </optgroup>
             )}
           </select>
-          <span className="text-[9px] text-slate-500 leading-relaxed">
+          <span className="text-xs text-slate-500 leading-relaxed">
             {t('threats.manualThreatModal.targetTypeHint')}
           </span>
         </label>

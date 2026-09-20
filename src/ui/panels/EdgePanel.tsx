@@ -188,7 +188,7 @@ export function EdgePanel({ edge }: EdgePanelProps) {
             ))}
           </select>
           {recommended && edge.semantic === undefined && (
-            <p className="text-[9px] text-blue-400 mt-2 leading-relaxed">
+            <p className="text-xs text-blue-400 mt-2 leading-relaxed">
               {t('panels.edge.recommendedPrefix')}
               <code className="font-mono bg-slate-900/60 px-1.5 py-0.5 rounded">{recommended}</code>
               {t('panels.edge.recommendedSuffix', { sourceType: sourceType ?? '', targetType: targetType ?? '' })}

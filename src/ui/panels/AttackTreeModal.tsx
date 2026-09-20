@@ -66,7 +66,7 @@ function StepNodeChip({ node, isTarget }: { node: DiagramNode; isTarget: boolean
         {renderIcon(cfg?.icon ?? { kind: 'builtin', name: 'box' }, { size: 10 })}
       </span>
       {node.seq !== undefined && (
-        <span className="text-[9px] font-black text-slate-500">
+        <span className="text-xs font-black text-slate-500">
           {formatElementalId('node', node.seq)}
         </span>
       )}
@@ -231,14 +231,14 @@ function NodeCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1">
             {node.seq !== undefined && (
-              <span className="text-[8px] font-black text-slate-500 shrink-0">
+              <span className="text-xs font-black text-slate-500 shrink-0">
                 {formatElementalId('node', node.seq)}
               </span>
             )}
             <span className="text-[10px] font-bold truncate">{getNodeDisplayName(node)}</span>
             {isTarget && <Crosshair size={10} className="text-rose-400 shrink-0" />}
           </div>
-          <div className="flex items-center gap-1.5 text-[8px] font-bold text-slate-400">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
             <span>
               {evidence.difficultyBasis === 'dread'
                 ? t('attackTree.node.difficulty', { value: evidence.difficulty })
@@ -377,7 +377,7 @@ function ChokePointChip({
         <span className="truncate max-w-[220px]" title={label}>
           {label}
         </span>
-        <span className="flex items-center gap-1 text-[9px] font-normal opacity-80">
+        <span className="flex items-center gap-1 text-xs font-normal opacity-80">
           {t('attackTree.chokePoint.hits', { hits: chokePoint.routeHits, total: totalRoutes })}
           {CovIcon && (
             <CovIcon size={9} className={chokePoint.coverage === 'full' ? 'text-emerald-300' : 'text-amber-300'} />
@@ -838,7 +838,7 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
 
         {graph.truncated && <p className="text-[10px] text-amber-400/80 font-bold">⚠ {t('attackTree.truncated')}</p>}
 
-        <p className="text-[9px] text-slate-500 leading-relaxed">{t('attackTree.footnote')}</p>
+        <p className="text-xs text-slate-500 leading-relaxed">{t('attackTree.footnote')}</p>
       </div>
     </div>
   );
@@ -971,7 +971,7 @@ function DetailPanel({
         </button>
       </div>
       {body}
-      <p className="text-[9px] text-slate-500 leading-relaxed border-t border-white/5 pt-2 mt-auto">
+      <p className="text-xs text-slate-500 leading-relaxed border-t border-white/5 pt-2 mt-auto">
         {t('attackTree.detail.formula')}
       </p>
     </div>

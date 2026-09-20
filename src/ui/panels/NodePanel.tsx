@@ -341,7 +341,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
               placeholder={typeLabel}
               className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-slate-100 focus:outline-none focus:border-blue-500 placeholder:text-slate-600 placeholder:font-normal"
             />
-            <p className="text-[9px] text-slate-500 mt-1.5 leading-relaxed">
+            <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
               {t('panels.node.displayNamePlaceholderExample')}
             </p>
           </div>
@@ -420,7 +420,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                     <span className="text-xs font-bold text-slate-200 truncate flex-1">
                       {child.label || childConfig?.label || child.type}
                     </span>
-                    <span className="text-[9px] text-slate-500 shrink-0">
+                    <span className="text-xs text-slate-500 shrink-0">
                       {childConfig?.label ?? child.type}
                     </span>
                   </button>
@@ -457,7 +457,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                 );
               })}
             </div>
-            <p className="text-[9px] text-slate-500 mt-3 leading-relaxed">
+            <p className="text-xs text-slate-500 mt-3 leading-relaxed">
               {t('panels.node.userTrustNote')}
             </p>
           </div>
@@ -490,7 +490,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                 );
               })}
             </div>
-            <p className="text-[9px] text-slate-500 mt-3 leading-relaxed">
+            <p className="text-xs text-slate-500 mt-3 leading-relaxed">
               {t('panels.node.managedStateNote')}
             </p>
           </div>
@@ -547,7 +547,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                 );
               })}
             </div>
-            <p className="text-[9px] text-slate-500 mt-3 leading-relaxed">
+            <p className="text-xs text-slate-500 mt-3 leading-relaxed">
               {t('panels.node.cloudAttrsNote')}
             </p>
           </div>
@@ -634,7 +634,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                 <GitBranch size={16} /> {t('panels.node.attackTreeButton')}
               </button>
             </div>
-            <p className="text-[9px] text-slate-500 mt-3 leading-relaxed">
+            <p className="text-xs text-slate-500 mt-3 leading-relaxed">
               {t('panels.node.attackerNote')}
             </p>
           </div>
@@ -680,7 +680,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                 );
               })}
             </div>
-            <p className="text-[9px] text-slate-500 mt-3 leading-relaxed">
+            <p className="text-xs text-slate-500 mt-3 leading-relaxed">
               {t('panels.node.attackSurfaceNote')}
             </p>
           </div>
@@ -695,7 +695,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
             <span className="flex items-center gap-2">
               <Bot size={14} className="text-blue-500" /> {t('panels.node.agentAttrsToggle')}
               {node.agentAttributes && (
-                <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
+                <span className="text-xs font-black px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
                   {t('panels.node.agentAttrsConfigured')}
                 </span>
               )}
@@ -786,7 +786,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                   </select>
                 </div>
               )}
-              <p className="text-[9px] text-slate-500 leading-relaxed">
+              <p className="text-xs text-slate-500 leading-relaxed">
                 {t('panels.node.agentAttrsNote')}
               </p>
             </div>
@@ -803,7 +803,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
           >
             <Plus size={16} /> CREATE LINK
           </button>
-          <p className="text-[9px] text-slate-500 mt-3 leading-relaxed">
+          <p className="text-xs text-slate-500 mt-3 leading-relaxed">
             {t('panels.node.createEdgeNote')}
           </p>
         </div>

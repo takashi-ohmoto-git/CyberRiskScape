@@ -134,7 +134,7 @@ export function NodeView({
 
       {node.seq != null && (
         <span
-          className="absolute -bottom-2 -left-2 z-10 font-mono text-[9px] font-bold leading-none text-slate-200 bg-slate-950/90 border border-slate-700 rounded px-1 py-[2px] shadow pointer-events-none"
+          className="absolute -bottom-2 -left-2 z-10 font-mono text-xs font-bold leading-none text-slate-200 bg-slate-950/90 border border-slate-700 rounded px-1 py-[2px] shadow pointer-events-none"
           title="Analytics ID"
         >
           {formatElementalId('node', node.seq)}
@@ -167,7 +167,7 @@ export function NodeView({
           })}
           {overflowCount > 0 && (
             <span
-              className="bg-slate-700 text-slate-100 text-[9px] font-black px-1.5 py-[3px] rounded-md border border-slate-950 shadow"
+              className="bg-slate-700 text-slate-100 text-xs font-black px-1.5 py-[3px] rounded-md border border-slate-950 shadow"
               title={t('canvas.node.overflowCount', { count: overflowCount })}
             >
               +{overflowCount}
@@ -183,7 +183,7 @@ export function NodeView({
       </div>
 
       {style.showLabel && (
-        <span className="text-[9px] font-black text-center uppercase tracking-widest text-slate-400 px-1 leading-tight">
+        <span className="text-xs font-black text-center uppercase tracking-widest text-slate-400 px-1 leading-tight">
           {getNodeDisplayName(node)}
         </span>
       )}

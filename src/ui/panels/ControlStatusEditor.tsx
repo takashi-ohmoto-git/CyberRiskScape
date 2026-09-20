@@ -80,7 +80,7 @@ export function ControlStatusEditor({ threat }: { threat: ThreatView }) {
 
       <div className="flex items-center gap-2">
         {noteRequired && !canSave && (
-          <span className="text-[9px] text-amber-300/80">
+          <span className="text-xs text-amber-300/80">
             {t('threats.controlStatusEditor.noteRequiredWarning', {
               label: t(CONTROL_STATUS_LABEL_KEY[status]),
             })}

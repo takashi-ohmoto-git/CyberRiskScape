@@ -82,7 +82,7 @@ export function BundledRulePicker({
                 onClick={() => onPick(rule)}
                 className="w-full text-left flex items-center gap-2 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 transition-colors"
               >
-                <span className="shrink-0 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-700/70 text-slate-300">
+                <span className="shrink-0 text-xs font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-700/70 text-slate-300">
                   {rule.appliesTo.kind}
                 </span>
                 <div className="flex-1 min-w-0">

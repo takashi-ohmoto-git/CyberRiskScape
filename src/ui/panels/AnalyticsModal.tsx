@@ -466,12 +466,12 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
                         </span>
                       ) : (
                         <span
-                          className={`text-[9px] px-2 py-0.5 rounded border ${CONTROL_STATUS_BADGE[group]}`}
+                          className={`text-xs px-2 py-0.5 rounded border ${CONTROL_STATUS_BADGE[group]}`}
                         >
                           {controlGroupLabel(group, t)}
                         </span>
                       )}
-                      <span className="text-[9px] text-slate-600">{items.length}</span>
+                      <span className="text-xs text-slate-600">{items.length}</span>
                     </div>
                     <ul className="flex flex-col gap-1">
                       {items.map(({ threat, elementLabel }) => {
@@ -493,7 +493,7 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
                                 aria-hidden
                               />
                               <span className="min-w-0 flex-1">
-                                <span className="block text-[9px] text-slate-500 truncate">
+                                <span className="block text-xs text-slate-500 truncate">
                                   {elementLabel}
                                 </span>
                                 <span className="block text-xs text-slate-300 leading-snug line-clamp-2">
@@ -565,19 +565,19 @@ function ElementTreeNode({
         <span className="text-xs font-mono font-bold text-emerald-400 shrink-0">
           {row.elementalId}
         </span>
-        <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-400 border border-slate-700 shrink-0">
+        <span className="text-xs px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-400 border border-slate-700 shrink-0">
           {KIND_LABEL[row.kind]}
         </span>
         <span className="text-xs font-bold text-slate-100 flex-1 truncate">{label}</span>
         {row.maxSeverity && (
           <span
-            className={`text-[9px] px-1.5 py-0.5 rounded border shrink-0 ${SEVERITY_BADGE[row.maxSeverity]}`}
+            className={`text-xs px-1.5 py-0.5 rounded border shrink-0 ${SEVERITY_BADGE[row.maxSeverity]}`}
             title={t('analytics.tree.maxSeverityTooltip')}
           >
             {row.maxSeverity}
           </span>
         )}
-        <span className="text-[9px] text-slate-500 shrink-0">{total}</span>
+        <span className="text-xs text-slate-500 shrink-0">{total}</span>
       </button>
       {open && (
         <ul className="pb-1.5 pl-3 flex flex-col gap-1">
@@ -623,7 +623,7 @@ function CategoryTreeNode({
         <span className="text-[10px] font-semibold text-slate-400 flex-1 truncate">
           {category}
         </span>
-        <span className="text-[9px] text-slate-600 shrink-0">{threats.length}</span>
+        <span className="text-xs text-slate-600 shrink-0">{threats.length}</span>
       </button>
       {open && (
         <ul className="pl-4 flex flex-col gap-0.5">
@@ -684,7 +684,7 @@ function UnassignedTreeNode({
         <span className="text-[10px] font-semibold text-slate-400 flex-1 truncate">
           {t('analytics.unassigned.label')}
         </span>
-        <span className="text-[9px] text-slate-600 shrink-0">{threats.length}</span>
+        <span className="text-xs text-slate-600 shrink-0">{threats.length}</span>
       </button>
       {open && (
         <ul className="pb-1.5 pl-7 pr-2 flex flex-col gap-0.5">
@@ -874,7 +874,7 @@ function DreadEditor({ threat, t }: { threat: ThreatView; t: TFunc }) {
                 </button>
               ))}
             </div>
-            <span className="text-[9px] text-slate-600 flex-1 truncate">
+            <span className="text-xs text-slate-600 flex-1 truncate">
               {c.levels[draft[key] - 1]}
             </span>
           </div>
@@ -887,7 +887,7 @@ function DreadEditor({ threat, t }: { threat: ThreatView; t: TFunc }) {
         <span className={`text-[10px] px-2 py-0.5 rounded border ${SEVERITY_BADGE[rank]}`}>
           {rank}
         </span>
-        <span className="text-[9px] text-slate-600">
+        <span className="text-xs text-slate-600">
           {t('analytics.dread.ruleSeverityTooltip', { severity: threat.severity })}
         </span>
         <div className="flex gap-2 ml-auto">

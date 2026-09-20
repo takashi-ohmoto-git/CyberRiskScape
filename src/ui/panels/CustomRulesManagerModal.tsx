@@ -286,7 +286,7 @@ export function CustomRulesManagerModal() {
                             className="flex items-center gap-2 bg-slate-900/50 rounded-lg px-2.5 py-1.5"
                           >
                             <span
-                              className="shrink-0 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-700/70 text-slate-300"
+                              className="shrink-0 text-xs font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-700/70 text-slate-300"
                               title={isEdge ? t('ruleEditor.manager.ruleKindEdge') : t('ruleEditor.manager.ruleKindNode')}
                             >
                               {isEdge ? 'edge' : 'node'}

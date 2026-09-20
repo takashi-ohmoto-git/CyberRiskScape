@@ -221,7 +221,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                         <span className="flex-1 truncate text-slate-500 font-normal">
                           {t(LAYER_DESCRIPTION_KEYS[key])}
                         </span>
-                        <span className="text-[9px] text-slate-500 shrink-0">{count}</span>
+                        <span className="text-xs text-slate-500 shrink-0">{count}</span>
                       </button>
                     );
                   })}
@@ -239,7 +239,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
               />
               {openSections.has(REPORT_SUBMENU_KEY) && (
                 <div className="mt-1.5 ml-3 pl-3 border-l border-slate-700 space-y-1.5">
-                  <p className="text-[9px] text-slate-500 leading-snug">
+                  <p className="text-xs text-slate-500 leading-snug">
                     {t('project.sidebar.reportSummary', {
                       layer: activeLayer,
                       framework: activeFramework,
@@ -394,7 +394,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                   >
                     {isLocked && <Lock size={10} className="text-slate-500 shrink-0" />}
                     <span className="flex-1 truncate">{lib.title}</span>
-                    <span className="text-[9px] text-slate-500 shrink-0">v{lib.version}</span>
+                    <span className="text-xs text-slate-500 shrink-0">v{lib.version}</span>
                     {!isLocked && (
                       <span
                         className={`shrink-0 inline-block w-2 h-2 rounded-full ${
@@ -472,7 +472,7 @@ function ProjectMenuItem({
       </div>
       <span className="flex-1 truncate">{label}</span>
       {note && (
-        <span className="text-[9px] uppercase tracking-wider text-slate-500 shrink-0">
+        <span className="text-xs uppercase tracking-wider text-slate-500 shrink-0">
           {note}
         </span>
       )}

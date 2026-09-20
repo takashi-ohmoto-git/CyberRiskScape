@@ -88,20 +88,20 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
             {threat.severity}
           </span>
           {threat.name && (
-            <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-slate-700/60 text-slate-300 border border-slate-600">
+            <span className="text-xs font-bold px-2 py-0.5 rounded bg-slate-700/60 text-slate-300 border border-slate-600">
               {threat.category}
             </span>
           )}
         </div>
         <div className="flex items-center gap-1.5">
           {isManual && (
-            <span className="text-[9px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded font-bold uppercase">
+            <span className="text-xs bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded font-bold uppercase">
               Manual
             </span>
           )}
           {isManual && threat.manualTargetType && (
             <span
-              className="text-[9px] bg-indigo-500/10 text-indigo-300/80 px-2 py-0.5 rounded font-bold"
+              className="text-xs bg-indigo-500/10 text-indigo-300/80 px-2 py-0.5 rounded font-bold"
               title={t('threats.threatCard.manualTypeRuleHint')}
             >
               {t('threats.threatCard.manualTypeRuleLabel', {
@@ -112,18 +112,18 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
             </span>
           )}
           {!isManual && threat.isCustom && (
-            <span className="text-[9px] bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded font-bold uppercase">
+            <span className="text-xs bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded font-bold uppercase">
               Custom
             </span>
           )}
           {!isManual && threat.isDynamic && (
-            <span className="text-[9px] bg-white/10 text-slate-400 px-2 py-0.5 rounded font-bold uppercase">
+            <span className="text-xs bg-white/10 text-slate-400 px-2 py-0.5 rounded font-bold uppercase">
               Dynamic
             </span>
           )}
           {!isManual && threat.corroboration && threat.corroboration.ruleIds.length > 1 && (
             <span
-              className="text-[9px] bg-teal-500/20 text-teal-300 px-2 py-0.5 rounded font-bold inline-flex items-center gap-1"
+              className="text-xs bg-teal-500/20 text-teal-300 px-2 py-0.5 rounded font-bold inline-flex items-center gap-1"
               title={t('threats.threatCard.corroborationHint')}
             >
               <Layers size={10} />{' '}
@@ -134,7 +134,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
           )}
           {!isManual && threat.assumptionFlags && threat.assumptionFlags.length > 0 && (
             <span
-              className="text-[9px] bg-amber-500/15 text-amber-300 px-2 py-0.5 rounded font-bold inline-flex items-center gap-1 border border-amber-500/30"
+              className="text-xs bg-amber-500/15 text-amber-300 px-2 py-0.5 rounded font-bold inline-flex items-center gap-1 border border-amber-500/30"
               title={threat.assumptionFlags
                 .map((f: DetectionAssumptionFlag) =>
                   f === 'attackSurface'
@@ -148,7 +148,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
           )}
           {!isManual && threat.suppression && (
             <span
-              className={`text-[9px] px-2 py-0.5 rounded border font-bold ${RISK_TREATMENT_BADGE[threat.suppression.status]}`}
+              className={`text-xs px-2 py-0.5 rounded border font-bold ${RISK_TREATMENT_BADGE[threat.suppression.status]}`}
             >
               {t(RISK_TREATMENT_LABEL_KEY[threat.suppression.status])}
             </span>
@@ -191,7 +191,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
             return (
               <div key={tier} className="flex gap-2">
                 <span
-                  className={`shrink-0 h-fit text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${tierBadge}`}
+                  className={`shrink-0 h-fit text-xs font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${tierBadge}`}
                 >
                   {tierLabel}
                 </span>
@@ -308,7 +308,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
           </span>
           {threat.controlStatus && (
             <span
-              className={`text-[9px] px-2 py-0.5 rounded border ${CONTROL_STATUS_BADGE[threat.controlStatus.status]}`}
+              className={`text-xs px-2 py-0.5 rounded border ${CONTROL_STATUS_BADGE[threat.controlStatus.status]}`}
             >
               {t(CONTROL_STATUS_LABEL_KEY[threat.controlStatus.status])}
             </span>
@@ -326,7 +326,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
             </span>
             {threat.suppression && (
               <span
-                className={`text-[9px] px-2 py-0.5 rounded border ${RISK_TREATMENT_BADGE[threat.suppression.status]}`}
+                className={`text-xs px-2 py-0.5 rounded border ${RISK_TREATMENT_BADGE[threat.suppression.status]}`}
               >
                 {t(RISK_TREATMENT_LABEL_KEY[threat.suppression.status])}
               </span>
