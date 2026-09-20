@@ -4,6 +4,7 @@ import {
   crossedBoundaries,
   resolveNodeBoundaries,
 } from './boundaryCrossing';
+import { getNodeDimensions } from './nodeGeometry';
 import type { DiagramBoundary, DiagramNode } from '../model/types';
 
 /** 外側 400x400 の Internal ゾーン。 */
@@ -27,8 +28,14 @@ const inner: DiagramBoundary = {
   trustLevel: 'Partner',
 };
 
-function nodeAt(id: string, x: number, y: number): DiagramNode {
-  return { id, type: 'PROCESS', x, y };
+/**
+ * 中心が (cx, cy) に来るようノードを置く。包含判定はノード中心で行うため、
+ * テストの座標は「ノードの中心をどこに置くか」で書く。
+ */
+function nodeAt(id: string, cx: number, cy: number): DiagramNode {
+  const probe: DiagramNode = { id, type: 'PROCESS', x: 0, y: 0 };
+  const { w, h } = getNodeDimensions(probe);
+  return { ...probe, x: cx - w / 2, y: cy - h / 2 };
 }
 
 function owningOf(nodes: DiagramNode[], boundaries: DiagramBoundary[], id: string) {
@@ -45,6 +52,12 @@ describe('resolveNodeBoundaries', () => {
   it('どの境界にも属さないノードは空配列になる', () => {
     const nodes = [nodeAt('n1', 900, 900)];
     expect(owningOf(nodes, [outer, inner], 'n1')).toEqual([]);
+  });
+
+  it('左上が枠外でも中心が枠内なら所属とみなす', () => {
+    // PROCESS は 112×112。左上 (60,60) は outer の外だが中心 (116,116) は内側。
+    const nodes: DiagramNode[] = [{ id: 'n1', type: 'PROCESS', x: 60, y: 60 }];
+    expect(owningOf(nodes, [outer, inner], 'n1').map((b) => b.id)).toEqual(['b-outer']);
   });
 
   it('内包ノード（parentId 持ち）は親の座標で判定される', () => {

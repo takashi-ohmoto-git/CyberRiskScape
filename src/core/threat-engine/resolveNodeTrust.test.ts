@@ -53,10 +53,11 @@ describe('resolveNodeTrust', () => {
     expect(map.get('n1')).toBe('Partner');
   });
 
-  it('矩形境界上の座標も内側として扱う（包含）', () => {
+  it('中心が矩形の辺上にある場合も内側として扱う（包含）', () => {
+    // PROCESS は 112×112。中心がちょうど境界の角に載る位置へ置く。
     const nodes: DiagramNode[] = [
-      { id: 'tl', type: 'PROCESS', x: 100, y: 100 }, // 左上角
-      { id: 'br', type: 'PROCESS', x: 500, y: 500 }, // 右下角
+      { id: 'tl', type: 'PROCESS', x: 44, y: 44 }, // 中心 (100,100) = 左上角
+      { id: 'br', type: 'PROCESS', x: 444, y: 444 }, // 中心 (500,500) = 右下角
     ];
     const boundaries: DiagramBoundary[] = [
       { id: 'b1', type: 'RECT', x: 100, y: 100, width: 400, height: 400, trustLevel: 'Internal' },
@@ -64,6 +65,26 @@ describe('resolveNodeTrust', () => {
     const map = resolveNodeTrust(nodes, boundaries);
     expect(map.get('tl')).toBe('Internal');
     expect(map.get('br')).toBe('Internal');
+  });
+
+  it('左上が枠外でも中心が枠内なら内側として扱う', () => {
+    // PROCESS は 112×112。左上 (60,60) は境界外だが中心 (116,116) は境界内。
+    const nodes: DiagramNode[] = [{ id: 'n1', type: 'PROCESS', x: 60, y: 60 }];
+    const boundaries: DiagramBoundary[] = [
+      { id: 'b1', type: 'RECT', x: 100, y: 100, width: 400, height: 400, trustLevel: 'Internal' },
+    ];
+    const map = resolveNodeTrust(nodes, boundaries);
+    expect(map.get('n1')).toBe('Internal');
+  });
+
+  it('左上が枠内でも中心が枠外なら外側として扱う', () => {
+    // 左上 (470,470) は境界内だが中心 (526,526) は境界外。
+    const nodes: DiagramNode[] = [{ id: 'n1', type: 'PROCESS', x: 470, y: 470 }];
+    const boundaries: DiagramBoundary[] = [
+      { id: 'b1', type: 'RECT', x: 100, y: 100, width: 400, height: 400, trustLevel: 'Internal' },
+    ];
+    const map = resolveNodeTrust(nodes, boundaries);
+    expect(map.get('n1')).toBe('Internet');
   });
 
   it('内包ノード（parentId 持ち）は親の trustLevel を継承する', () => {

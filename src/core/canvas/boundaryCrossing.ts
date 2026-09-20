@@ -1,5 +1,6 @@
 import type { AuthType, DiagramBoundary, DiagramEdge, DiagramNode } from '../model/types';
 import { resolveDrawableAncestor } from '../model/parentChain';
+import { getNodeCenter } from './nodeGeometry';
 
 /**
  * エッジが信頼境界を越える箇所（クロッシング）を求める純関数群。
@@ -50,8 +51,8 @@ function area(b: DiagramBoundary): number {
 /**
  * 各ノードが属する境界の一覧を解決する（**面積昇順＝内側が先**）。
  *
- * 包含規則は `resolveNodeTrust` と同一：ノード座標の点包含、内包ノード（parentId 持ち）は
- * `resolveDrawableAncestor` で遡った祖先の座標で判定する。どの境界にも属さないノードは空配列
+ * 包含規則は `resolveNodeTrust` と同一：ノード中心の点包含、内包ノード（parentId 持ち）は
+ * `resolveDrawableAncestor` で遡った祖先の中心で判定する。どの境界にも属さないノードは空配列
  * （= Internet 扱い）。
  */
 export function resolveNodeBoundaries(
@@ -60,7 +61,7 @@ export function resolveNodeBoundaries(
 ): Map<string, DiagramBoundary[]> {
   const map = new Map<string, DiagramBoundary[]>();
   for (const node of nodes) {
-    const anchor = resolveDrawableAncestor(node, nodes);
+    const anchor = getNodeCenter(resolveDrawableAncestor(node, nodes));
     const owning = boundaries.filter((b) => contains(b, anchor));
     owning.sort((a, b) => area(a) - area(b));
     map.set(node.id, owning);
