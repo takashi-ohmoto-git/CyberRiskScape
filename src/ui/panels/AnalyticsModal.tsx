@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BarChart3, ChevronDown, ChevronRight, X } from 'lucide-react';
+import { BarChart3, ChevronDown, ChevronRight, ShieldCheck, X } from 'lucide-react';
 import {
   selectActiveBoundaries,
   selectActiveEdges,
@@ -7,6 +7,8 @@ import {
   useDiagramStore,
 } from '../../core/state/diagramStore';
 import { getNodeDisplayName } from '../../core/model/nodeDisplay';
+import { formatElementalId } from '../../core/model/elementalId';
+import { buildIdentityInventory } from '../../features/analytics/buildIdentityInventory';
 import {
   DREAD_KEYS,
   dreadRank,
@@ -166,6 +168,8 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
   const [selectedThreatId, setSelectedThreatId] = useState<string | null>(null);
   /** ID 振り直しのインライン確認待ち（ブラウザダイアログを使わない方針）。 */
   const [confirmingRenumber, setConfirmingRenumber] = useState(false);
+  /** 認証基盤インベントリ（[[plan]] §2.40 ②）の開閉。既定は閉じる（主線の脅威一覧を押し下げない）。 */
+  const [inventoryOpen, setInventoryOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -173,6 +177,7 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
       setPreset('all');
       setSelectedThreatId(null);
       setConfirmingRenumber(false);
+      setInventoryOpen(false);
     }
   }, [isOpen]);
 
@@ -196,6 +201,9 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
     () => buildElementAnalytics({ nodes, edges, boundaries, threats }),
     [nodes, edges, boundaries, threats],
   );
+
+  // 認証基盤インベントリ（[[plan]] §2.40 ②）。発行元になり得る型が図に無ければ節ごと出さない。
+  const inventory = useMemo(() => buildIdentityInventory(nodes, edges), [nodes, edges]);
 
   const labelOf = (row: ElementAnalyticsRow): string => {
     if (row.kind === 'node') {
@@ -416,6 +424,69 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
             </button>
           ))}
         </div>
+
+        {/* ②-a 認証基盤インベントリ（[[plan]] §2.40）。発行元が図に無ければ非表示 */}
+        {inventory.length > 0 && (
+          <div className="border-b border-slate-800 bg-slate-900/40">
+            <button
+              onClick={() => setInventoryOpen((v) => !v)}
+              className="w-full flex items-center gap-2 px-6 py-2 text-xs text-slate-400 hover:text-slate-200 transition-colors"
+            >
+              {inventoryOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              <ShieldCheck size={14} className="text-blue-500" />
+              <span className="uppercase tracking-widest">
+                {t('analytics.inventory.heading', { count: inventory.length })}
+              </span>
+            </button>
+            {inventoryOpen && (
+              <div className="px-6 pb-3 flex flex-col gap-2">
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  {t('analytics.inventory.note')}
+                </p>
+                {inventory.map((row) => (
+                  <div
+                    key={row.provider.id}
+                    className="rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2"
+                  >
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="font-mono text-xs text-slate-500">
+                        {row.provider.seq != null
+                          ? formatElementalId('node', row.provider.seq)
+                          : row.provider.id}
+                      </span>
+                      <span className="text-xs font-bold text-slate-200 truncate">
+                        {getNodeDisplayName(row.provider)}
+                      </span>
+                      {row.kind && (
+                        <span className="text-xs px-1.5 py-0.5 rounded border border-slate-700 text-slate-400">
+                          {row.kind}
+                        </span>
+                      )}
+                    </div>
+                    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+                      <dt className="text-xs text-slate-500 whitespace-nowrap">
+                        {t('analytics.inventory.tier1', { count: row.dependents.length })}
+                      </dt>
+                      <dd className="text-xs text-slate-300 min-w-0 break-words">
+                        {row.dependents.length > 0
+                          ? row.dependents.map(getNodeDisplayName).join('、')
+                          : t('analytics.inventory.none')}
+                      </dd>
+                      <dt className="text-xs text-slate-500 whitespace-nowrap">
+                        {t('analytics.inventory.tier2', { count: row.directPeers.length })}
+                      </dt>
+                      <dd className="text-xs text-slate-300 min-w-0 break-words">
+                        {row.directPeers.length > 0
+                          ? row.directPeers.map(getNodeDisplayName).join('、')
+                          : t('analytics.inventory.none')}
+                      </dd>
+                    </dl>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 3 ペイン本体 */}
         <div className="flex-1 flex min-h-0">

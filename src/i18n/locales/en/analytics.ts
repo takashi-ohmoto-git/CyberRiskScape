@@ -49,6 +49,12 @@ export const enAnalytics: Partial<Record<TranslationKey, string>> = {
 
   'analytics.renumber.tooltip':
     'Closes gaps left by deletions and renumbers ElementalIDs from 1 across all layers',
+  // Identity inventory ([[plan]] §2.40 step 2)
+  'analytics.inventory.heading': 'Identity inventory ({count})',
+  'analytics.inventory.note': 'Nodes in this diagram that can issue credentials, and what depends on them. Tier 1 is the components that declare this issuer (their authentication breaks if it falls); Tier 2 is what is directly connected by an edge. Relationships such as domain membership are not represented in the diagram, so the blast radius may be understated.',
+  'analytics.inventory.tier1': 'Tier 1 dependents ({count})',
+  'analytics.inventory.tier2': 'Tier 2 direct peers ({count})',
+  'analytics.inventory.none': 'none',
   'analytics.renumber.button': 'Renumber IDs',
   'analytics.renumber.confirmBody':
     'Renumbers ElementalIDs (C / DF / Z) from 1 across all layers. IDs referenced in past reports may then point to different elements, and undo history will be cleared.',

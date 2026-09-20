@@ -54,6 +54,12 @@ export const jaAnalytics = {
 
   'analytics.renumber.tooltip':
     '削除で生じた欠番を詰め、全レイヤーの ElementalID を 1 から振り直します',
+  // 認証基盤インベントリ（[[plan]] §2.40 ②）
+  'analytics.inventory.heading': '認証基盤インベントリ（{count} 件）',
+  'analytics.inventory.note': '図の中で資格情報の発行元になり得るノードと、その影響範囲。Tier 1 はこの発行元を宣言しているコンポーネント（落ちると認証が壊れる）、Tier 2 は線で直接つながっている相手。ドメイン参加のような関係は図に現れないため、影響範囲は過小評価になり得る。',
+  'analytics.inventory.tier1': 'Tier 1 依存（{count}）',
+  'analytics.inventory.tier2': 'Tier 2 直接接続（{count}）',
+  'analytics.inventory.none': 'なし',
   'analytics.renumber.button': 'ID を振り直す',
   'analytics.renumber.confirmBody':
     '全レイヤーの ElementalID（C / DF / Z）を 1 から振り直します。過去のレポート等で参照した ID は別の要素を指す可能性があり、Undo 履歴もクリアされます。',
