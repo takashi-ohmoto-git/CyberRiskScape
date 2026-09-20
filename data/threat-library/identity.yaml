@@ -11,6 +11,15 @@
 #   追加した。IdP 種別 `Hybrid` / `Social` の内在リスクと、発行元が宣言されていない
 #   認証＝ローカル資格情報がそれに当たる。
 #
+#   さらにコンポーネント型 `DIRECTORY`（AD / LDAP）の追加により、オンプレのディレクトリ
+#   そのものを subject にできるようになったため、ディレクトリ固有の脅威 4 件を追加した
+#   （Kerberos チケットのオフライン解析 / 複製権限の悪用 / 配布ポリシーの改ざん /
+#   委任の悪用）。`DIRECTORY` は `identityProviderKind` を持たない型なので
+#   （`IDP_KIND_APPLICABLE` は `IDENTITY_PROVIDER` のみ）、これらは `nodeType: DIRECTORY`
+#   で捕まえる。`identityProviderKind: [Directory]` は IdP を 1 箱で描く粗い図の表現であり、
+#   `DIRECTORY` ノードには当たらない（同じ理由で edge の `source|targetIdentityProviderKind`
+#   も当たらないため、エッジで DIRECTORY を指すなら `sourceType` / `targetType` を使う）。
+#
 #   発火範囲の注意（既存ダイアグラムへの影響）:
 #     - `semantic` 未指定のエッジは `data_flow` 既定で評価されるため、同期系ルールは
 #       **設計者が明示的に directory_sync をマークしたエッジでのみ発火**する。
@@ -21,6 +30,9 @@
 #       ローカル資格情報」という規約そのものが脅威シグナル）。したがって
 #       identity-local-credential-outside-idp-001 は**既存ダイアグラムでも発火し、
 #       検出件数を増やす**。これは仕様であり、発行元を宣言すれば消える。
+#     - `DIRECTORY` 系 4 件は `nodeType: DIRECTORY` の node ルールであり、**既存ダイアグラムに
+#       DIRECTORY ノードは存在しない**（型自体が新設）ため検出件数を変えない。設計者が
+#       Directory を置いた図でのみ発火する。エッジ軸の条件は一切使っていない。
 #
 # 出典:
 #   - MITRE ATT&CK (Enterprise) T1078.004 "Valid Accounts: Cloud Accounts"（同期用
@@ -36,6 +48,18 @@
 #     https://attack.mitre.org/techniques/T1556/007/
 #   - MITRE ATT&CK (Enterprise) T1078.003 "Valid Accounts: Local Accounts"（システム
 #     固有のローカルアカウントの悪用）。https://attack.mitre.org/techniques/T1078/003/
+#   - MITRE ATT&CK (Enterprise) T1558 "Steal or Forge Kerberos Tickets" および
+#     T1558.001 "Golden Ticket" / T1558.003 "Kerberoasting" / T1558.004 "AS-REP Roasting"
+#     （ディレクトリが発行するチケットの窃取・偽造・オフライン解析）。
+#     https://attack.mitre.org/techniques/T1558/
+#   - MITRE ATT&CK (Enterprise) T1003.006 "OS Credential Dumping: DCSync"（複製
+#     プロトコル経由の資格情報一括取得）。https://attack.mitre.org/techniques/T1003/006/
+#   - MITRE ATT&CK (Enterprise) T1484.001 "Domain or Tenant Policy Modification: Group
+#     Policy Modification"（配布ポリシーの改ざん）。
+#     https://attack.mitre.org/techniques/T1484/001/
+#   - MITRE ATT&CK (Enterprise) T1550.003 "Use Alternate Authentication Material: Pass
+#     the Ticket"（回収したチケットによる本人なりすまし）。
+#     https://attack.mitre.org/techniques/T1550/003/
 #   - NIST SP 800-207, "Zero Trust Architecture"（ポリシー判断点の保護・per-session 認可）。
 #     https://csrc.nist.gov/pubs/sp/800/207/final
 #   - NIST SP 800-63B, "Digital Identity Guidelines: Authentication and Lifecycle
@@ -90,8 +114,6 @@
 #     ルールは「同期エッジが持つ越境特権」という経路視点で subject が異なる。
 #   - AGENT 発の弱いサービス認証 → weak-service-auth 群でカバー済。本ファイルは
 #     sourceType に AGENT 系を含めない（ローカル資格情報ルールも同様に除外する）。
-#   - コンポーネント型 DIRECTORY（AD / LDAP）は未追加のため、オンプレ Directory も
-#     IDENTITY_PROVIDER で表現される前提（[[plan]] §2.39「詳細な図」の整理に従う）。
 #
 #   IdP 種別軸・発行元軸のルール（後から追加した 3 件）について:
 #
@@ -123,6 +145,39 @@
 #     （パスワードハッシュ同期・書き戻し・シームレス SSO 等）は既存 3 件の description /
 #     mitigation が既に内包している。逆に既存 3 件へ種別軸を足して絞る案も、種別未宣言の
 #     図で発火しなくなり検出が後退するため採らない。
+#
+#   DIRECTORY（AD / LDAP）ノードのルール（後から追加した 4 件）について:
+#
+#   - `nodeType: DIRECTORY` を subject とし、**エッジ軸は使わない**。既存の
+#     identity-directory-sync-* 3 件が `semantic:[directory_sync]` で経路側を既にカバー
+#     しており、エッジ条件を重ねると同一エッジで必ず併発するため。
+#   - 資格情報コーパスの一括取得（identity-directory-replication-credential-dump-001）は
+#     zt-credential-sprawl-static-secret-001（canonicalId: credential-sprawl）と近接するが、
+#     あちらは CREDENTIAL ノードが「保管場所に散在している」ことが subject で、静的な
+#     置き場からの窃取を扱う。こちらはディレクトリが持つ**複製インターフェースという
+#     正規機能**の悪用で、保管場所に触れずに全アカウント分を取得できる点が差分。
+#     subject（CREDENTIAL ノード vs DIRECTORY ノード）も攻撃機構も対策も異なるため別
+#     canonicalId とした。同じ理由で、チケットのオフライン解析
+#     （identity-directory-kerberos-offline-cracking-001）も credential-sprawl に畳まない
+#     （プロトコルが正規に返す暗号文の解析であり、保管の問題ではない）。
+#   - 配布ポリシーの改ざん（identity-directory-policy-object-tampering-001）は
+#     identity-directory-sync-object-tampering-001（canonicalId:
+#     directory-sync-object-tampering）と近接するが、あちらは**同期エッジ**が subject で
+#     「送信側の属性変更が受信側テナントで権限に変換される」経路の問題。こちらは
+#     ディレクトリノードが subject で「ポリシー編集権限が参加ホスト上の任意コード実行に
+#     等しい」という配布機能の問題であり、出典（T1098 vs T1484.001）も対策も異なる。
+#     同期アカウントの越境特権（directory-sync-privileged-bridge）とも subject が別。
+#   - 委任の悪用（identity-directory-kerberos-delegation-abuse-001）は
+#     identity-idp-federation-trust-tampering-001（信頼される発行者の追加）や
+#     zt-idp-signing-key-compromise-001（署名鍵の窃取）と「なりすまし」という結果が
+#     共通するが、いずれも別のノード型（IDENTITY_PROVIDER）を subject とし、攻撃機構は
+#     ディレクトリ上の委任属性の悪用＝構成変更も鍵窃取も伴わない正規手続きの利用である。
+#   - identity-local-credential-outside-idp-001（ローカル資格情報）は **発行元が宣言
+#     されていないエッジ**が subject。DIRECTORY を発行元として宣言した経路では発火せず、
+#     本 4 件とは条件が排他的に近い（重ならない）。
+#   - LDAP の匿名バインド・平文バインド等の**プロトコル設定**は本ファイルでは扱わない。
+#     平文通信は stride-edge-plain-encryption-001、無認証は
+#     stride-edge-unauth-internet-001 / zt-implicit-trust-network-location-001 の領分。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する（docs/threat-schema.md §7.5）。
@@ -370,3 +425,122 @@ rules:
         url: "https://www.cisa.gov/zero-trust-maturity-model"
       # USER ノード視点のアカウント乗っ取り一般は stride-user-spoofing-001、
       # IdP 発行トークンの受け側検証不備は zt-idp-token-validation-gap-001 が扱う。
+
+  # ── DIRECTORY: 発行チケットのオフライン解析（Kerberoasting / AS-REP）──────
+  - id: identity-directory-kerberos-offline-cracking-001
+    canonicalId: directory-offline-credential-cracking
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "ディレクトリ発行チケットのオフライン解析（Kerberoasting / AS-REP ロースティング）"
+    severity: High
+    description: "{{nodeName}} は Kerberos の仕様上、認証済みの一般アカウントが 1 つあれば、サービス識別子（SPN）が設定された任意のサービスアカウント宛のチケットを要求でき、そのチケットはサービスアカウントのパスワードから導出された鍵で暗号化されて要求元へ返される。攻撃者は低権限アカウントを 1 つ取得するだけで、権限昇格も追加の侵害も伴わずにこの暗号文を収集し、{{nodeName}} と一切通信しないオフライン環境で辞書攻撃・総当たりにかけられる（Can）。事前認証を無効化したアカウントが存在する場合は、アカウント名を列挙するだけで認証すら経ずに同種の暗号文を得られる（AS-REP ロースティング）。解析は {{nodeName}} 側のログにも失敗ログオン回数にも現れず、アカウントロックアウトも作動しないため、「試行回数を制限する」という防御が構造的に効かない。特にサービスアカウントは人が決めた固定パスワードを長期間変更せずに使い、かつ業務上の都合で高い権限を与えられていることが多い。一方、サービスアカウントを自動生成・自動ローテーションされる管理サービスアカウント（gMSA 等）へ移行し、RC4 等の脆弱な暗号タイプを無効化して AES のみを許可し、事前認証の無効化を構成上禁止していれば、返却された暗号文から元のパスワードを導出すること自体が計算量的に成立しない（Cannot）。blast radius は解析されたサービスアカウントの権限範囲で、当該アカウントが特権グループに属していればドメイン全体。"
+    mitigation: "[Foundation] SPN が設定されたアカウントと事前認証が無効なアカウントを棚卸しし、不要な SPN・不要な事前認証無効設定を削除する。残すサービスアカウントのパスワードを十分な長さのランダム文字列にし、特権グループから外す。 [Enterprise] サービスアカウントを gMSA 等の自動生成・自動ローテーション型へ移行し、RC4 を無効化して AES のみを許可する。SPN を持つアカウント宛のチケット要求の異常（短時間での大量要求・脆弱な暗号タイプでの要求）を SIEM で検知する。 [Advanced] 人が管理するパスワードを持つサービスアカウントを構成上存在させない。サービス間認証を証明書・マネージド ID へ移行し、特権アカウントは認証ポリシー（利用元ホストと委任可否の束縛）で保護する。"
+    appliesTo:
+      kind: node
+      nodeType: DIRECTORY
+      # 認証を依存する相手が接続されているとき発火（デフォルト接続要件）。
+      # 図に何も繋がっていないディレクトリでは低権限アカウントの起点が存在しないため
+      # 内在脅威にはしない。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "MITRE ATT&CK T1558.003 - Steal or Forge Kerberos Tickets: Kerberoasting（SPN 宛チケットのオフライン解析）"
+        url: "https://attack.mitre.org/techniques/T1558/003/"
+      - title: "MITRE ATT&CK T1558.004 - Steal or Forge Kerberos Tickets: AS-REP Roasting（事前認証無効アカウントの悪用）"
+        url: "https://attack.mitre.org/techniques/T1558/004/"
+      # 認証材料の静的保管・散在（CREDENTIAL ノード）は zt-credential-sprawl-static-secret-001
+      # が扱う（保管場所からの窃取 vs プロトコルが返す暗号文の解析で別 subject）。
+
+  # ── DIRECTORY: 複製権限の悪用による資格情報コーパスの一括取得（DCSync）────
+  - id: identity-directory-replication-credential-dump-001
+    canonicalId: directory-replication-credential-dump
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "ディレクトリ複製権限の悪用による資格情報コーパスの一括取得"
+    severity: Critical
+    description: "{{nodeName}} は配下の全アカウントのパスワード材料（現在および過去のハッシュ、Kerberos 鍵）を保持し、それをディレクトリサーバ間で複製するためのインターフェースを持つ。複製に必要な権限は本来ディレクトリサーバ自身だけが必要とするものだが、運用の都合で委任されたアカウント、過去の製品導入時に付与されたサービスアカウント、権限継承で意図せず該当する ACL などに残りやすい。攻撃者はそのいずれか 1 つを掌握すれば、ディレクトリサーバへログオンすることも、マルウェアを送り込むことも、ディスク上のディレクトリデータベースファイルに触れることもなく、複製要求という正規のプロトコル操作だけで全アカウントの資格情報を一括取得できる（Can）。取得物にはチケット発行アカウント（krbtgt）の鍵が含まれるため、以後は任意の利用者・任意のグループ所属を主張するチケットを {{nodeName}} の外で偽造でき、全利用者のパスワードを変更しても当該鍵を所定の手順で二重に失効させない限り権限は残り続ける。一方、複製権限を保持する主体をディレクトリサーバと明示的に承認された例外のみに限定して ACL を継続監査し、特権アカウントを利用元ホストに束縛し、ディレクトリサーバ以外からの複製要求をネットワークと監査ログの両面で遮断・検知していれば、単一アカウントの侵害がコーパス全体の取得へ変換されない（Cannot）。blast radius は {{nodeName}} が認証する全アカウントと、それらの資格情報が通用する全システムで、モデル上最大級。"
+    mitigation: "[Foundation] 複製関連の権限を持つ主体を列挙し、ディレクトリサーバと承認済みの例外以外から剥奪する。特権グループの常時メンバーを最小化し、チケット発行アカウント（krbtgt）の失効手順を文書化する。 [Enterprise] 複製要求の発生元を監視し、ディレクトリサーバ以外からの要求を SIEM で即時アラート化する。特権アカウントを特権アクセス管理（PAM）の時間制限付き昇格に限定し、専用管理端末からのみ利用可能にする。権限 ACL の変更を構成ドリフトとして検知する。 [Advanced] 管理階層（Tier 0）をネットワークと認証の両面で分離し、ディレクトリサーバへの管理経路を専用環境のハードウェア束縛資格情報からのみに限定する。チケット発行アカウントの鍵の定期的な二重ローテーションを運用に組み込み、偽造チケットの有効期間を構造的に限定する。"
+    appliesTo:
+      kind: node
+      nodeType: DIRECTORY
+      # 認証を依存する相手が接続されているとき発火（デフォルト接続要件）。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "MITRE ATT&CK T1003.006 - OS Credential Dumping: DCSync（複製プロトコル経由の資格情報取得）"
+        url: "https://attack.mitre.org/techniques/T1003/006/"
+      - title: "MITRE ATT&CK T1558.001 - Steal or Forge Kerberos Tickets: Golden Ticket（チケット発行アカウントの鍵による偽造）"
+        url: "https://attack.mitre.org/techniques/T1558/001/"
+      # 認証材料の静的保管・散在は zt-credential-sprawl-static-secret-001、
+      # 境界外への ID コーパス複製は identity-directory-sync-overscoped-corpus-001 が扱う
+      # （いずれも別 subject）。
+
+  # ── DIRECTORY: 配布ポリシー（GPO）の改ざんによる全参加ホストへの到達 ──────
+  - id: identity-directory-policy-object-tampering-001
+    canonicalId: directory-policy-object-tampering
+    framework: STRIDE
+    category: "Tampering"
+    name: "ディレクトリ配布ポリシーの改ざんによる横展開・永続化"
+    severity: High
+    description: "{{nodeName}} は利用者と権限の格納先であると同時に、参加ホストが起動時・ログオン時に自動取得して適用する構成ポリシー（グループポリシー、ログオンスクリプト、スケジュールタスク、ソフトウェア配布）の配布元でもある。ポリシーオブジェクトの編集権限は OU 単位・部門単位でヘルプデスクや運用チームへ委任されることが多く、組織上は「設定変更の権限」として扱われるが、実態は配布先ホスト上での任意コード実行権限に等しい。攻撃者は委任された一般管理者アカウントを 1 つ奪うか、ポリシー実体が置かれた共有フォルダへの書き込み権限を得るだけで、配布先の全ホストへローカル管理者アカウントの追加・端末側防御の無効化・任意スクリプトの定期実行を仕込め、マルウェアを個別に配布することなく横展開と永続化を同時に達成できる（Can）。適用は正規の管理操作として行われるため、各ホスト側には「ポリシーの正常な適用」としてしか記録されない。一方、ポリシーオブジェクトの編集・リンク権限を承認された主体に限定し、変更を承認ワークフローとバージョン管理の下に置き、ベースラインとの差分（新規スクリプト・権限グループの追加・セキュリティ設定の緩和）を継続監視していれば、委任された限定的な編集権限が全ホストへのコード実行へ変換されない（Cannot）。blast radius は当該ポリシーが適用される全ホストと、それらのホスト上で使用される全資格情報。"
+    mitigation: "[Foundation] ポリシーオブジェクトの編集権限・リンク権限を持つ主体を列挙して最小化し、委任範囲を OU 単位で明示する。ポリシー実体が置かれた共有フォルダの書き込み権限を棚卸しする。 [Enterprise] ポリシー変更を承認ワークフローとバージョン管理（変更前後の差分保全とロールバック）の下に置き、変更イベントを SIEM へ転送する。スクリプト実行の追加・権限グループへの追加・セキュリティ設定の緩和を高リスク変更として個別にアラート化する。 [Advanced] 重要ポリシーを宣言的なベースラインとして管理し、ドリフトを自動検知・自動復元する。ポリシー編集を専用管理環境とハードウェア束縛資格情報からの操作に限定し、日常業務用の管理アカウントでは編集できない構成にする。"
+    appliesTo:
+      kind: node
+      nodeType: DIRECTORY
+      # 配布先ホストが接続されているとき発火（デフォルト接続要件）。参加ホストを
+      # 図に描き切らない粒度もあるため peerType では絞らない（取りこぼしを避ける）。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "MITRE ATT&CK T1484.001 - Domain or Tenant Policy Modification: Group Policy Modification"
+        url: "https://attack.mitre.org/techniques/T1484/001/"
+      - title: "CISA - Zero Trust Maturity Model v2（Identity / Devices ピラー: 構成の統制と継続監視）"
+        url: "https://www.cisa.gov/zero-trust-maturity-model"
+      # 同期経路越しのオブジェクト改ざんは identity-directory-sync-object-tampering-001
+      # （エッジ subject・受信側での権限成立が焦点）、フェデレーション信頼の改ざんは
+      # identity-idp-federation-trust-tampering-001 が扱う（いずれも別 subject）。
+
+  # ── DIRECTORY: Kerberos 委任の悪用（任意ユーザへのなりすまし）────────────
+  - id: identity-directory-kerberos-delegation-abuse-001
+    canonicalId: directory-delegation-abuse
+    framework: STRIDE
+    category: "Spoofing"
+    name: "Kerberos 委任の悪用（任意ユーザへのなりすまし）"
+    severity: High
+    description: "{{nodeName}} には、サービスが利用者に代わって別のサービスへアクセスするための委任機能があり、その可否はディレクトリ上のアカウント属性として保持される。制約なし委任が有効なホストには、そこへ認証した利用者の再利用可能なチケットがメモリ上に保持されるため、攻撃者はそのホストを 1 台侵害し、特権アカウントによる認証を誘発（強制認証やファイルアクセスの誘導）するだけで、管理者を含む任意の利用者のチケットを回収して本人としてふるまえる（Can）。制約付き委任でもプロトコル移行が有効な場合、委任元アカウントを掌握した攻撃者は、実際には認証していない任意の利用者（管理者を含む）のチケットを自ら組み立てて委任先サービスへ提示でき、さらにリソースベースの委任では委任先オブジェクトへの書き込み権限だけで委任関係を後から作り出せる。いずれの経路も {{nodeName}} から見れば正規の Kerberos 手続きであり、対象利用者のパスワードも多要素認証も関与しないため、認証強度を上げても遮断できない。一方、委任属性を持つアカウントとホストを棚卸しして制約なし委任を全廃し、特権アカウントを「委任できない」構成（機密アカウント指定・保護グループ・認証ポリシー）に置き、委任先オブジェクトへの書き込み権限を Tier 0 の承認主体に限定していれば、ホスト 1 台の侵害が任意ユーザへのなりすましへ広がらない（Cannot）。blast radius は委任設定を持つホストから到達できる全サービスと、そこへ認証する全利用者の権限。"
+    mitigation: "[Foundation] 委任属性（制約なし / 制約付き / リソースベース）を持つアカウントとホストを棚卸しし、制約なし委任を廃止する。管理者等の特権アカウントを委任対象外として明示する。 [Enterprise] 残る委任を用途単位の制約付き委任に限定し、委任先オブジェクトへの書き込み権限を Tier 0 の承認主体のみに絞る。委任属性の変更と、委任を用いたチケット要求の異常を SIEM で検知する。 [Advanced] 委任を必要としないアーキテクチャ（サービスごとに独立した認可・明示的なトークン交換）へ移行し、特権アカウントを認証ポリシー（利用元ホストと有効期間の束縛）で保護して、委任経路そのものを存在させない。"
+    appliesTo:
+      kind: node
+      nodeType: DIRECTORY
+      # 委任は「利用者が認証し、サービスがその資格で別サービスへ進む」構成で意味を持つため、
+      # 接続があるときのみ発火させる（デフォルト接続要件）。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-04"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "MITRE ATT&CK T1550.003 - Use Alternate Authentication Material: Pass the Ticket（回収したチケットによる本人なりすまし）"
+        url: "https://attack.mitre.org/techniques/T1550/003/"
+      - title: "MITRE ATT&CK T1558 - Steal or Forge Kerberos Tickets（Kerberos チケットの窃取・偽造）"
+        url: "https://attack.mitre.org/techniques/T1558/"
+      # クラウド IdP の署名鍵窃取によるトークン偽造は zt-idp-signing-key-compromise-001、
+      # 信頼される発行者の追加は identity-idp-federation-trust-tampering-001 が扱う
+      # （いずれも別 subject）。
