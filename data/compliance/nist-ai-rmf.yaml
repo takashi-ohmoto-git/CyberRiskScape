@@ -4,6 +4,10 @@
 # ライセンス: U.S. 政府著作物（パブリックドメイン）。
 # title は公式表記を翻案、summary は独自要約（1〜2 行）。
 # 脅威ルール側 `complianceRefs.ref` と一致するキーは `ref:` フィールド。
+#
+# SPDX-License-Identifier: Apache-2.0
+#   本ファイル（マッピングと独自要約）は Apache License 2.0。
+#   参照先の規格そのもののライセンスは上記および standard.license を参照。
 
 schemaVersion: 1
 

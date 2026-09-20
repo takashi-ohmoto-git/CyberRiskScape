@@ -6,6 +6,10 @@
 # summary は CSF 2.0 (CSWP 29) Implementation Examples の独自要約 (日本語)、text は英語原文を保持。
 # 脅威ルール側 complianceRefs では subcategory ref (例: GV.OC-01) を参照すること。
 # このファイルは緩和策表示等の二次的リファレンス用。parent で対応 subcategory に紐付く。
+#
+# SPDX-License-Identifier: Apache-2.0
+#   本ファイルの構成・マッピング・日本語要約（summary）は Apache License 2.0。
+#   ただし `text` は NIST 原文そのままであり、米国政府著作物＝パブリックドメイン。
 
 schemaVersion: 1
 

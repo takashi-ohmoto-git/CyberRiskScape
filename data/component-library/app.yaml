@@ -10,6 +10,8 @@
 # 「アプリ型を使わない」運用を選べる。
 #
 # ライセンス: Apache-2.0（同梱）
+#
+# SPDX-License-Identifier: Apache-2.0
 
 schemaVersion: 1
 

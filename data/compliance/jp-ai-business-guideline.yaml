@@ -3,6 +3,10 @@
 #   https://www.meti.go.jp/shingikai/mono_info_service/ai_shakai_jisso/index.html
 # title は公式表記、summary は独自要約（1〜2 行）。本文の直接転載は行わない。
 # ref 命名規則: 共通の指針-N / 開発者-N / 提供者-N / 利用者-N
+#
+# SPDX-License-Identifier: Apache-2.0
+#   本ファイル（マッピングと独自要約）は Apache License 2.0。
+#   参照先の規格そのもののライセンスは上記および standard.license を参照。
 
 schemaVersion: 1
 

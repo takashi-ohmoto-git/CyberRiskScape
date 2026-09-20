@@ -6,6 +6,10 @@
 # title / summary は CSF 2.0 (CSWP 29) の独自翻案・要約。原文は出典 URL を参照。
 # Implementation Examples は `nist-csf-2.0-examples.yaml` を参照。
 # 脅威ルール側 `complianceRefs.ref` と一致するキーは `ref:` フィールド。
+#
+# SPDX-License-Identifier: Apache-2.0
+#   本ファイル（マッピングと独自要約）は Apache License 2.0。
+#   参照先の規格そのもののライセンスは上記および standard.license を参照。
 
 schemaVersion: 1
 

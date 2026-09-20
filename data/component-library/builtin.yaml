@@ -5,6 +5,8 @@
 # To add custom components, create a separate YAML in this directory or upload
 # from the UI (planned for a later phase). See docs/threat-schema.md for the
 # schema reference.
+#
+# SPDX-License-Identifier: Apache-2.0
 
 schemaVersion: 1
 
