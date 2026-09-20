@@ -50,7 +50,10 @@ export function BoundaryView({
   return (
     <div
       onMouseDown={(e) => onMouseDown(e, boundary.id)}
-      className={`absolute pointer-events-auto cursor-move transition-all flex flex-col p-2 group ${
+      // transition は box-shadow（選択リング）だけに絞る。`transition-all` だと
+      // left/top/width/height まで 150ms かけて補間されるため、ドラッグ中は枠が
+      // カーソルを追いかけ、特に動かし始めが引っかかって見える（NodeView と同方針）。
+      className={`absolute pointer-events-auto cursor-move transition-[box-shadow] flex flex-col p-2 group ${
         isSelected ? 'ring-2 ring-blue-500/50' : ''
       }`}
       style={{
