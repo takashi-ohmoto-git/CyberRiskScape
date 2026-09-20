@@ -11,6 +11,10 @@ import type { DiagramEdge, DiagramNode } from '../model/types';
  *   図と独立したレジストリ（[[plan]] §2.39 B-1 の案 B-2）のような二重管理・ドリフトが起きない。
  * - **依存先は target 側**を採る。エッジ `source → target` の認証が発行元 X に依っているとき、
  *   X の侵害で「なりすまされる／到達不能になる」のは資源側＝target であるため。
+ * - **ノード側の宣言（`node.authProviderId`）も同じ Tier 1 に合流させる**（[[plan]] §2.42）。
+ *   あちらは「このコンポーネント自身の認証の預け先」（ドメイン参加・SSO 連携）で、
+ *   エッジ宣言（経路ごとの資格情報）とは別の事実だが、「落ちると認証が壊れる」点は同じ。
+ *   由来を保存しないのは、表示時に `node.authProviderId === providerId` で判定できるため。
  * - スコープはアクティブ層（`detectThreats` が層単位の nodes / edges しか受け取らないため）。
  *
  * 閉包が求めるのは [[plan]] §2.40 の **Tier 1（宣言された依存）** と、論理接続の判定に使う
@@ -39,6 +43,33 @@ export function buildAuthProviderClosure(
   const referenced = new Set<string>();
   const seen = new Map<string, Set<string>>();
 
+  /** 発行元 → 依存先を重複排除しつつ積む。 */
+  const addDependent = (providerId: string, dependent: DiagramNode): void => {
+    let list = dependents.get(providerId);
+    let ids = seen.get(providerId);
+    if (!list || !ids) {
+      list = [];
+      ids = new Set<string>();
+      dependents.set(providerId, list);
+      seen.set(providerId, ids);
+    }
+    if (ids.has(dependent.id)) return;
+    ids.add(dependent.id);
+    list.push(dependent);
+  };
+
+  // ノード自身の認証の預け先（[[plan]] §2.42）。エッジより先に走査して、
+  // 「この機器は発行元 X に身元を預けている」を Tier 1 の先頭に置く。
+  for (const node of nodes) {
+    const providerId = node.authProviderId;
+    if (!providerId) continue;
+    // 参照先が削除済み（dangling）／自己参照は数えない。
+    if (!nodeById.has(providerId)) continue;
+    referenced.add(providerId);
+    if (node.id === providerId) continue;
+    addDependent(providerId, node);
+  }
+
   for (const edge of edges) {
     const providerId = edge.authProviderId;
     if (!providerId) continue;
@@ -52,17 +83,7 @@ export function buildAuthProviderClosure(
     // 発行元自身への依存は数えない（自己参照）。
     if (target.id === providerId) continue;
 
-    let list = dependents.get(providerId);
-    let ids = seen.get(providerId);
-    if (!list || !ids) {
-      list = [];
-      ids = new Set<string>();
-      dependents.set(providerId, list);
-      seen.set(providerId, ids);
-    }
-    if (ids.has(target.id)) continue;
-    ids.add(target.id);
-    list.push(target);
+    addDependent(providerId, target);
   }
 
   return { dependents, referenced };

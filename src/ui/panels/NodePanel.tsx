@@ -42,6 +42,7 @@ import type {
 import {
   AGENCY_APPLICABLE,
   ATTACK_OBJECTIVE_APPLICABLE,
+  AUTH_PROVIDER_APPLICABLE,
   IDP_KIND_APPLICABLE,
   IDENTITY_TIER_APPLICABLE,
   isSuppressed,
@@ -49,6 +50,7 @@ import {
   THREAT_ACTOR_TYPE_APPLICABLE,
 } from '../../core/model/types';
 import { formatElementalId } from '../../core/model/elementalId';
+import { getNodeDisplayName } from '../../core/model/nodeDisplay';
 import { getComponentRegistry } from '../../component-library/defaultRegistry';
 import { renderIcon } from '../../component-library/iconRegistry';
 import { selectActiveNodes, useDiagramStore } from '../../core/state/diagramStore';
@@ -57,6 +59,15 @@ import { ThreatCard } from './ThreatCard';
 import { AttackTreeModal } from './AttackTreeModal';
 
 type TFunc = ReturnType<typeof useT>;
+
+/**
+ * 「このコンポーネント自身の認証の預け先」を入力**できない**カテゴリ（[[plan]] §2.42 論点 2）。
+ *
+ * 型の許可リストを持たないのは、この属性が意味を持つ型の方が多数派で、include リストだと
+ * 新しい型を足すたびに更新漏れが起きるため。除外すべきはデータ資産と攻撃者の 2 カテゴリだけ。
+ * **エンジンは型で絞らない**（宣言されたものを読むだけ）。絞るのは入力 UI の責務。
+ */
+const AUTH_PROVIDER_EXCLUDED_CATEGORIES: ReadonlySet<string> = new Set(['DOCUMENTS', 'ATTACKER']);
 
 /** 管理状態（Managed/Unmanaged）を持つコンポーネント型。 */
 const MANAGED_STATE_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set([
@@ -259,6 +270,22 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
   const showAttacker = ATTACK_OBJECTIVE_APPLICABLE.has(node.type);
   const showThreatActorType = THREAT_ACTOR_TYPE_APPLICABLE.has(node.type);
   const showIdpKind = IDP_KIND_APPLICABLE.has(node.type);
+  // 認証の預け先：データ資産・攻撃者カテゴリ以外で入力できる（[[plan]] §2.42）。
+  // SHADOW / SHADOW_APP は定義上「未把握」なので SANCTION_ATTRIBUTE の前例に倣い除外。
+  const nodeCategory = registry.get(node.type)?.category;
+  const showAuthProvider =
+    nodeCategory !== undefined &&
+    !AUTH_PROVIDER_EXCLUDED_CATEGORIES.has(nodeCategory) &&
+    node.type !== 'SHADOW' &&
+    node.type !== 'SHADOW_APP';
+  // 発行元の候補：同一レイヤー上の自分以外の発行元になり得るノード（自己参照を弾く）。
+  const authProviderCandidates = allNodes.filter(
+    (n) => n.id !== node.id && AUTH_PROVIDER_APPLICABLE.has(n.type),
+  );
+  // 参照先が削除済み等で候補に無い場合は「未設定」表示にフォールバック。
+  const authProviderValue = authProviderCandidates.some((n) => n.id === node.authProviderId)
+    ? (node.authProviderId as string)
+    : '';
   // objective の候補：同一レイヤー上の自分以外の非攻撃者ノード。
   const objectiveCandidates = allNodes.filter(
     (n) => n.id !== node.id && !ATTACK_OBJECTIVE_APPLICABLE.has(n.type),
@@ -600,6 +627,45 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
             </select>
             <p className="text-xs text-slate-500 mt-3 leading-relaxed">
               {t('panels.node.idpKindNote')}
+            </p>
+          </div>
+        )}
+
+        {showAuthProvider && (
+          <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+            <h3 className="text-xs font-bold text-slate-300 mb-4 flex items-center gap-2">
+              <ShieldCheck size={14} className="text-blue-500" />{' '}
+              {t('panels.node.authProviderSection')}
+            </h3>
+            <label
+              htmlFor={`node-auth-provider-${node.id}`}
+              className="text-xs font-black text-slate-500 uppercase block mb-1.5"
+            >
+              {t('panels.node.authProviderLabel')}
+            </label>
+            <select
+              id={`node-auth-provider-${node.id}`}
+              value={authProviderValue}
+              disabled={authProviderCandidates.length === 0}
+              onChange={(e) =>
+                onUpdate(node.id, 'authProviderId', e.target.value === '' ? undefined : e.target.value)
+              }
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-blue-500 disabled:opacity-40"
+            >
+              <option value="">{t('panels.node.authProviderUnset')}</option>
+              {authProviderCandidates.map((n) => (
+                <option key={n.id} value={n.id}>
+                  {getNodeDisplayName(n)}
+                </option>
+              ))}
+            </select>
+            {authProviderCandidates.length === 0 && (
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                {t('panels.node.authProviderEmpty')}
+              </p>
+            )}
+            <p className="text-xs text-slate-500 mt-3 leading-relaxed">
+              {t('panels.node.authProviderNote')}
             </p>
           </div>
         )}

@@ -118,3 +118,69 @@ describe('authProviderId の参照整合性', () => {
     expect(edges()[0].authProviderId).toBeUndefined();
   });
 });
+
+describe('ノード側 authProviderId の参照整合性（[[plan]] §2.42）', () => {
+  /** ドメイン参加サーバ（エッジを持たない）と IdP を置く。 */
+  function seedNodeDeclaration(): { srv: DiagramNode; idp: DiagramNode } {
+    const srv: DiagramNode = {
+      id: 'n-srv',
+      type: 'FRONT_END_SERVER',
+      x: 0,
+      y: 0,
+      authProviderId: 'n-idp',
+    };
+    const idp: DiagramNode = { id: 'n-idp', type: 'IDENTITY_PROVIDER', x: 200, y: 0 };
+    useDiagramStore.setState((s) => ({
+      layers: { ...s.layers, L1: { nodes: [srv, idp], edges: [], boundaries: [] } },
+    }));
+    return { srv, idp };
+  }
+
+  it('発行元ノードを削除するとノードの authProviderId が解除される', () => {
+    const { idp } = seedNodeDeclaration();
+    useDiagramStore.getState().deleteNode(idp.id);
+    expect(nodes()).toHaveLength(1);
+    expect(nodes()[0].authProviderId).toBeUndefined();
+  });
+
+  it('無関係なノードの削除では保持する', () => {
+    seedNodeDeclaration();
+    useDiagramStore.setState((s) => ({
+      layers: {
+        ...s.layers,
+        L1: {
+          ...s.layers.L1,
+          nodes: [...s.layers.L1.nodes, { id: 'n-other', type: 'PROCESS', x: 400, y: 0 }],
+        },
+      },
+    }));
+    useDiagramStore.getState().deleteNode('n-other');
+    expect(nodes().find((n) => n.id === 'n-srv')?.authProviderId).toBe('n-idp');
+  });
+
+  it('テンプレート取込で新しい ID へ付け替えられる', () => {
+    const template: LayerData = {
+      nodes: [
+        { id: 'old-srv', type: 'FRONT_END_SERVER', x: 0, y: 0, authProviderId: 'old-idp' },
+        { id: 'old-idp', type: 'IDENTITY_PROVIDER', x: 200, y: 0 },
+      ],
+      edges: [],
+      boundaries: [],
+    };
+    useDiagramStore.getState().importTemplateToActiveLayer(template);
+    const idp = nodes().find((n) => n.type === 'IDENTITY_PROVIDER');
+    const srv = nodes().find((n) => n.type === 'FRONT_END_SERVER');
+    expect(srv?.authProviderId).toBe(idp?.id);
+    expect(srv?.authProviderId).not.toBe('old-idp');
+  });
+
+  it('テンプレート外を指す authProviderId は取込時に解除される', () => {
+    const template: LayerData = {
+      nodes: [{ id: 'old-srv', type: 'FRONT_END_SERVER', x: 0, y: 0, authProviderId: 'nope' }],
+      edges: [],
+      boundaries: [],
+    };
+    useDiagramStore.getState().importTemplateToActiveLayer(template);
+    expect(nodes()[0].authProviderId).toBeUndefined();
+  });
+});

@@ -751,13 +751,16 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       ...withActiveLayer(s, (l) => ({
         // 削除対象を除外し、子の parentId は解除してトップレベルに戻す。
         // 削除対象を標的にしていた攻撃者ノードの attackObjectiveId も解除する。
+        // 削除対象を認証の預け先にしていたノードの authProviderId も解除する（[[plan]] §2.42）。
         nodes: l.nodes
           .filter((n) => n.id !== id)
           .map((n) => {
-            if (n.parentId !== id && n.attackObjectiveId !== id) return n;
+            if (n.parentId !== id && n.attackObjectiveId !== id && n.authProviderId !== id)
+              return n;
             const rest = { ...n };
             if (rest.parentId === id) delete rest.parentId;
             if (rest.attackObjectiveId === id) delete rest.attackObjectiveId;
+            if (rest.authProviderId === id) delete rest.authProviderId;
             return rest;
           }),
         // 削除対象を資格情報の発行元にしていたエッジの authProviderId も解除する。
@@ -877,6 +880,12 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
           // 標的がテンプレート内に居れば付け替え、居なければ解除。
           if (mapped) next.attackObjectiveId = mapped;
           else delete next.attackObjectiveId;
+        }
+        if (next.authProviderId) {
+          const mapped = idMap.get(next.authProviderId);
+          // 発行元がテンプレート内に居れば付け替え、居なければ解除（[[plan]] §2.42）。
+          if (mapped) next.authProviderId = mapped;
+          else delete next.authProviderId;
         }
         return next;
       });

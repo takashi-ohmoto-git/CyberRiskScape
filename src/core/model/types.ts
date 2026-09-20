@@ -428,6 +428,18 @@ export interface DiagramNode {
    * 製品名は `label` に書く（"Entra ID (本番テナント)" 等）。未指定は「不明」扱い。
    */
   identityProviderKind?: IdentityProviderKind;
+  /**
+   * **このコンポーネント自身の認証**の預け先（発行元ノードへの参照。[[plan]] §2.42）。
+   * ドメイン参加・SSO フェデレーション・マネージド ID を表す。
+   *
+   * `DiagramEdge.authProviderId`（**経路ごとの資格情報**の発行元）とは**別の事実**。
+   * 「AD にドメイン参加したサーバ上で、アプリはローカルのサービスアカウントを使っている」は
+   * 両方が同時に成立する構図で、互いを打ち消さない。
+   *
+   * 入力できる型は UI 側で絞る（データ資産と攻撃者カテゴリを除く。[[plan]] §2.42 論点 2）。
+   * エンジンは型で絞らず、宣言されたものを読むだけ。発行元削除時は store 側で解除される。
+   */
+  authProviderId?: string;
 }
 
 export interface DiagramEdge {

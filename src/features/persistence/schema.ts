@@ -93,6 +93,8 @@ const PersistedNodeSchema = z.object({
   attackObjectiveId: z.string().min(1).optional(),
   /** IdP 種別（§2.39 B-1 拡張、IDENTITY_PROVIDER 型用。後方互換のため optional） */
   identityProviderKind: IdentityProviderKindSchema.optional(),
+  /** このコンポーネント自身の認証の預け先（[[plan]] §2.42）。optional のため schemaVersion 据え置き。 */
+  authProviderId: z.string().min(1).optional(),
   /** 攻撃面属性（FRONT_END_SERVER / GATEWAY 用、後方互換のため optional） */
   attackSurface: PersistedAttackSurfaceSchema.optional(),
   /** エージェント特有属性（AGENT/TOOL/CONNECTOR/USER 用、後方互換のため optional） */

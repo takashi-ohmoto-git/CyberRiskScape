@@ -553,4 +553,21 @@ describe('PersistedProjectSchema', () => {
     const r = PersistedProjectSchema.safeParse(VALID_PROJECT);
     expect(r.success).toBe(true);
   });
+
+  // ─── node.authProviderId（[[plan]] §2.42） ──────────
+  it('node.authProviderId: ノード id 文字列を受理する', () => {
+    const r = PersistedProjectSchema.safeParse({
+      ...VALID_PROJECT,
+      nodes: [{ ...VALID_PROJECT.nodes[0], authProviderId: 'n-idp-1' }],
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it('node.authProviderId: 空文字を拒否する（未設定は省略で表す）', () => {
+    const r = PersistedProjectSchema.safeParse({
+      ...VALID_PROJECT,
+      nodes: [{ ...VALID_PROJECT.nodes[0], authProviderId: '' }],
+    });
+    expect(r.success).toBe(false);
+  });
 });
