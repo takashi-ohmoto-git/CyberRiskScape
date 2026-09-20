@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Check, ChevronDown, ChevronRight, Crosshair, GitBranch, Lock, ShieldHalf, X } from 'lucide-react';
 import {
   selectActiveEdges,
@@ -503,11 +503,14 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
   );
 
   const evidenceMap = useMemo(() => buildHopEvidence(allThreats), [allThreats]);
-  const getEvidence = (key: string): HopEvidence => evidenceMap.get(key) ?? NEUTRAL_EVIDENCE;
+  const getEvidence = useCallback(
+    (key: string): HopEvidence => evidenceMap.get(key) ?? NEUTRAL_EVIDENCE,
+    [evidenceMap],
+  );
 
   const analysis: AnalyzeGraphResult = useMemo(
     () => analyzeAttackGraph(graph, getEvidence, residualOnly),
-    [graph, evidenceMap, residualOnly],
+    [graph, getEvidence, residualOnly],
   );
 
   const nodeById = useMemo(() => new Map(nodes.map((n) => [n.id, n] as const)), [nodes]);

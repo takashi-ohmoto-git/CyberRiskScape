@@ -6,7 +6,7 @@ import {
   selectActiveNodes,
   useDiagramStore,
 } from '../../core/state/diagramStore';
-import { useT } from '../../i18n';
+import { getLocale, translate, useT } from '../../i18n';
 import { triggerDownload } from '../../features/export/download';
 import {
   parseTemplateFromJson,
@@ -59,7 +59,7 @@ export function TemplateModal() {
     setName(
       projectName.trim() !== ''
         ? projectName.trim()
-        : t('project.templateModal.defaultName', { layer: activeLayer }),
+        : translate('project.templateModal.defaultName', getLocale(), { layer: activeLayer }),
     );
     setParsed(null);
     setImportedFileName(null);

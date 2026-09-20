@@ -184,7 +184,7 @@ export function LibraryInspectorModal({ onClose }: LibraryInspectorModalProps) {
   let intrinsicGroups: RuleGroup[] = [];
   let conditionalGroups: RuleGroup[] = [];
   let edgeGroups: RuleGroup[] = [];
-  let selectedTotal = 0;
+  let selectedTotal: number;
 
   if (selection.kind === 'node') {
     const forType = filteredRules.filter((r) => ruleAppliesToNodeType(r, selection.type));
