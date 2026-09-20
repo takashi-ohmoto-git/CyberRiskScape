@@ -33,15 +33,15 @@ export function RiskTreatmentEditor({ threat }: { threat: ThreatView }) {
     <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-700 flex flex-col gap-2">
       {/* 現方針表示 */}
       <div className="flex items-center gap-2">
-        <span className="text-[10px] text-slate-500">{t('threats.editor.current')}</span>
+        <span className="text-xs text-slate-500">{t('threats.editor.current')}</span>
         {current ? (
           <span
-            className={`text-[10px] px-2 py-0.5 rounded border ${RISK_TREATMENT_BADGE[current.status]}`}
+            className={`text-xs px-2 py-0.5 rounded border ${RISK_TREATMENT_BADGE[current.status]}`}
           >
             {t(RISK_TREATMENT_LABEL_KEY[current.status])}
           </span>
         ) : (
-          <span className="text-[10px] px-2 py-0.5 rounded border border-slate-700 text-slate-500">
+          <span className="text-xs px-2 py-0.5 rounded border border-slate-700 text-slate-500">
             {t('threats.editor.unset')}
           </span>
         )}
@@ -53,7 +53,7 @@ export function RiskTreatmentEditor({ threat }: { threat: ThreatView }) {
           <button
             key={v}
             onClick={() => setStatus(v)}
-            className={`text-[10px] px-2.5 py-1 rounded border transition-colors ${
+            className={`text-xs px-2.5 py-1 rounded border transition-colors ${
               status === v
                 ? RISK_TREATMENT_BADGE[v]
                 : 'border-slate-700 text-slate-500 hover:text-slate-300 hover:border-slate-500'
@@ -77,14 +77,14 @@ export function RiskTreatmentEditor({ threat }: { threat: ThreatView }) {
           {current && (
             <button
               onClick={() => clearSuppression(threat.id)}
-              className="flex items-center gap-1 text-[10px] px-2.5 py-1 rounded border border-slate-700 text-slate-500 hover:text-slate-200 hover:border-slate-500 transition-colors"
+              className="flex items-center gap-1 text-xs px-2.5 py-1 rounded border border-slate-700 text-slate-500 hover:text-slate-200 hover:border-slate-500 transition-colors"
             >
               <RotateCcw size={11} /> {t('threats.editor.reset')}
             </button>
           )}
           <button
             onClick={() => setSuppression(threat.id, status, trimmed === '' ? undefined : trimmed)}
-            className="text-[10px] px-2.5 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-500/30 transition-colors"
+            className="text-xs px-2.5 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-500/30 transition-colors"
           >
             {t('threats.editor.save')}
           </button>

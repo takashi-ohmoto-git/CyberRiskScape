@@ -340,7 +340,7 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
             <h2 className="text-sm font-bold uppercase tracking-widest text-slate-300">
               Analytics
             </h2>
-            <span className="text-[10px] text-slate-500 ml-2">
+            <span className="text-xs text-slate-500 ml-2">
               {t('analytics.header.summary', {
                 layer: activeLayer,
                 elements: rows.length,
@@ -399,14 +399,14 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
 
         {/* ① 上部フィルタバー（プリセットチップ） */}
         <div className="flex items-center gap-2 px-6 py-2.5 border-b border-slate-800 bg-slate-900/60">
-          <span className="text-[10px] uppercase tracking-widest text-slate-500 mr-1">
+          <span className="text-xs uppercase tracking-widest text-slate-500 mr-1">
             {t('analytics.filter.label')}
           </span>
           {(['all', 'highPlus', 'withMit', 'withoutMit'] as const).map((p) => (
             <button
               key={p}
               onClick={() => setPreset(p)}
-              className={`text-[10px] px-2.5 py-1 rounded-full border transition-colors ${
+              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
                 preset === p
                   ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-200'
                   : 'border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-500'
@@ -450,7 +450,7 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
 
           {/* ③ 中央ペイン: 対策一覧 */}
           <div className="w-[33%] min-w-0 border-r border-slate-800 overflow-y-auto px-3 py-3">
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 px-1">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 px-1">
               {t('analytics.countermeasures.heading', { count: countermeasures.length })}
             </h3>
             {countermeasures.length === 0 ? (
@@ -461,7 +461,7 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
                   <div key={group}>
                     <div className="flex items-center gap-2 mb-1 px-1">
                       {group === 'unset' ? (
-                        <span className="text-[10px] font-bold text-slate-500">
+                        <span className="text-xs font-bold text-slate-500">
                           {controlGroupLabel(group, t)}
                         </span>
                       ) : (
@@ -620,7 +620,7 @@ function CategoryTreeNode({
         ) : (
           <ChevronRight size={11} className="text-slate-600 shrink-0" />
         )}
-        <span className="text-[10px] font-semibold text-slate-400 flex-1 truncate">
+        <span className="text-xs font-semibold text-slate-400 flex-1 truncate">
           {category}
         </span>
         <span className="text-xs text-slate-600 shrink-0">{threats.length}</span>
@@ -644,7 +644,7 @@ function CategoryTreeNode({
                     className={`h-1.5 w-1.5 rounded-full shrink-0 ${SEVERITY_DOT[sev]}`}
                     aria-hidden
                   />
-                  <span className="text-[10px] text-slate-300 flex-1 truncate">
+                  <span className="text-xs text-slate-300 flex-1 truncate">
                     {t.name ?? t.category}
                   </span>
                 </button>
@@ -681,7 +681,7 @@ function UnassignedTreeNode({
         ) : (
           <ChevronRight size={12} className="text-slate-500 shrink-0" />
         )}
-        <span className="text-[10px] font-semibold text-slate-400 flex-1 truncate">
+        <span className="text-xs font-semibold text-slate-400 flex-1 truncate">
           {t('analytics.unassigned.label')}
         </span>
         <span className="text-xs text-slate-600 shrink-0">{threats.length}</span>
@@ -705,7 +705,7 @@ function UnassignedTreeNode({
                     className={`h-1.5 w-1.5 rounded-full shrink-0 ${SEVERITY_DOT[sev]}`}
                     aria-hidden
                   />
-                  <span className="text-[10px] text-slate-300 flex-1 truncate">
+                  <span className="text-xs text-slate-300 flex-1 truncate">
                     {t.name ?? t.category}
                   </span>
                 </button>
@@ -741,42 +741,42 @@ function ThreatDetail({
             {elementalId}
           </span>
         )}
-        <span className="text-[10px] text-slate-400 truncate" title={elementLabel}>
+        <span className="text-xs text-slate-400 truncate" title={elementLabel}>
           {elementLabel}
         </span>
       </div>
       <div>
         <h3 className="text-sm font-bold text-slate-100">{threat.name ?? threat.category}</h3>
-        <p className="text-[10px] text-slate-500 mt-0.5">{threat.category}</p>
+        <p className="text-xs text-slate-500 mt-0.5">{threat.category}</p>
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        <span className={`text-[10px] px-2 py-0.5 rounded border ${SEVERITY_BADGE[sev]}`}>
+        <span className={`text-xs px-2 py-0.5 rounded border ${SEVERITY_BADGE[sev]}`}>
           {sev}
         </span>
         {threat.dread && (
           <span
-            className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/40"
+            className="text-xs px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/40"
             title={t('analytics.dread.scoredTooltip', { severity: threat.severity })}
           >
             DREAD {dreadTotal(threat.dread)}
           </span>
         )}
         {threat.origin === 'manual' && (
-          <span className="text-[10px] px-2 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/40">
+          <span className="text-xs px-2 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/40">
             Manual
           </span>
         )}
         {threat.suppression && (
           <span
-            className={`text-[10px] px-2 py-0.5 rounded border ${RISK_TREATMENT_BADGE[threat.suppression.status]}`}
+            className={`text-xs px-2 py-0.5 rounded border ${RISK_TREATMENT_BADGE[threat.suppression.status]}`}
           >
             {t(RISK_TREATMENT_LABEL_KEY[threat.suppression.status])}
           </span>
         )}
         {threat.controlStatus && (
           <span
-            className={`text-[10px] px-2 py-0.5 rounded border ${CONTROL_STATUS_BADGE[threat.controlStatus.status]}`}
+            className={`text-xs px-2 py-0.5 rounded border ${CONTROL_STATUS_BADGE[threat.controlStatus.status]}`}
           >
             {t(CONTROL_STATUS_LABEL_KEY[threat.controlStatus.status])}
           </span>
@@ -795,7 +795,7 @@ function ThreatDetail({
       )}
 
       <div className="pt-2 border-t border-slate-800">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">
+        <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">
           {t('analytics.dread.heading')}
         </p>
         <DreadEditor threat={threat} t={t} />
@@ -803,7 +803,7 @@ function ThreatDetail({
 
       {threat.origin !== 'manual' && (
         <div className="pt-2 border-t border-slate-800">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">
             {t('analytics.detail.riskTreatmentHeading')}
           </p>
           <RiskTreatmentEditor key={threat.id} threat={threat} />
@@ -811,7 +811,7 @@ function ThreatDetail({
       )}
 
       <div className="pt-2 border-t border-slate-800">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">
+        <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">
           {t('analytics.detail.controlStatusHeading')}
         </p>
         <ControlStatusEditor key={threat.id} threat={threat} />
@@ -857,14 +857,14 @@ function DreadEditor({ threat, t }: { threat: ThreatView; t: TFunc }) {
         const c = criteria[key];
         return (
           <div key={key} className="flex items-center gap-2">
-            <span className="text-[10px] text-slate-400 w-56 shrink-0">{c.label}</span>
+            <span className="text-xs text-slate-400 w-56 shrink-0">{c.label}</span>
             <div className="flex gap-1">
               {([1, 2, 3] as const).map((v) => (
                 <button
                   key={v}
                   onClick={() => setDraft((d) => ({ ...d, [key]: v }))}
                   title={c.levels[v - 1]}
-                  className={`text-[10px] px-2.5 py-1 rounded border transition-colors ${
+                  className={`text-xs px-2.5 py-1 rounded border transition-colors ${
                     draft[key] === v
                       ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-200'
                       : 'border-slate-700 text-slate-500 hover:text-slate-300 hover:border-slate-500'
@@ -881,10 +881,10 @@ function DreadEditor({ threat, t }: { threat: ThreatView; t: TFunc }) {
         );
       })}
       <div className="flex items-center gap-3 pt-1 border-t border-slate-800">
-        <span className="text-[10px] text-slate-400">
+        <span className="text-xs text-slate-400">
           {t('analytics.dread.totalLabel')} <span className="font-bold text-slate-200">{total}</span> / 15 →
         </span>
-        <span className={`text-[10px] px-2 py-0.5 rounded border ${SEVERITY_BADGE[rank]}`}>
+        <span className={`text-xs px-2 py-0.5 rounded border ${SEVERITY_BADGE[rank]}`}>
           {rank}
         </span>
         <span className="text-xs text-slate-600">
@@ -894,14 +894,14 @@ function DreadEditor({ threat, t }: { threat: ThreatView; t: TFunc }) {
           {threat.dread && (
             <button
               onClick={() => clearDreadScore(threat.id)}
-              className="text-[10px] px-2.5 py-1 rounded border border-slate-700 text-slate-500 hover:text-red-300 hover:border-red-500/50 transition-colors"
+              className="text-xs px-2.5 py-1 rounded border border-slate-700 text-slate-500 hover:text-red-300 hover:border-red-500/50 transition-colors"
             >
               {t('analytics.dread.clearButton')}
             </button>
           )}
           <button
             onClick={() => setDreadScore(threat.id, draft)}
-            className="text-[10px] px-2.5 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-500/30 transition-colors"
+            className="text-xs px-2.5 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-500/30 transition-colors"
           >
             {t('analytics.dread.saveButton')}
           </button>

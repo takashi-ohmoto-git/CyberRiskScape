@@ -66,7 +66,7 @@ export function BoundaryView({
           config.rounded ? 'rounded-3xl' : 'rounded-none'
         } ${trustColor} bg-white/5 backdrop-blur-[1px]`}
       >
-        <div className="absolute top-2 left-4 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-slate-950/80 border border-inherit">
+        <div className="absolute top-2 left-4 flex items-center gap-1.5 text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded bg-slate-950/80 border border-inherit">
           {boundary.seq != null && (
             <span className="font-mono normal-case tracking-normal text-slate-300" title="Analytics ID">
               {formatElementalId('boundary', boundary.seq)}

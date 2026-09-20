@@ -318,7 +318,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
           </div>
           <h2 className="text-lg font-black tracking-tight">{typeLabel}</h2>
         </div>
-        <p className="text-[10px] text-slate-500 font-bold uppercase">ID: {node.id}</p>
+        <p className="text-xs text-slate-500 font-bold uppercase">ID: {node.id}</p>
       </div>
 
       <div className="p-6 flex-1 space-y-6 overflow-y-auto">
@@ -329,7 +329,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
           <div>
             <label
               htmlFor={`node-label-${node.id}`}
-              className="text-[10px] font-black text-slate-500 uppercase block mb-1.5"
+              className="text-xs font-black text-slate-500 uppercase block mb-1.5"
             >
               {t('panels.node.displayName')}
             </label>
@@ -348,7 +348,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
           <div>
             <label
               htmlFor={`node-desc-${node.id}`}
-              className="text-[10px] font-black text-slate-500 uppercase block mb-1.5"
+              className="text-xs font-black text-slate-500 uppercase block mb-1.5"
             >
               {t('panels.node.description')}
             </label>
@@ -388,7 +388,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
               </button>
               <button
                 onClick={handleDetach}
-                className="shrink-0 px-3 py-2 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-600/40 text-amber-300 rounded-lg text-[10px] font-black uppercase transition-colors flex items-center gap-1"
+                className="shrink-0 px-3 py-2 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-600/40 text-amber-300 rounded-lg text-xs font-black uppercase transition-colors flex items-center gap-1"
                 title={t('panels.node.detachTitle')}
               >
                 <PackageOpen size={12} /> {t('panels.node.detach')}
@@ -501,7 +501,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
             <h3 className="text-xs font-bold text-slate-300 mb-4 flex items-center gap-2">
               <Cloud size={14} className="text-blue-500" /> Sanction / Ownership Attribute
             </h3>
-            <p className="text-[10px] font-black text-slate-500 uppercase mb-2">{t('panels.node.sanctionStatusLabel')}</p>
+            <p className="text-xs font-black text-slate-500 uppercase mb-2">{t('panels.node.sanctionStatusLabel')}</p>
             <div className="grid grid-cols-1 gap-2 mb-4">
               {CLOUD_SANCTION_OPTIONS.map((opt) => {
                 const Icon = opt.icon;
@@ -524,7 +524,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                 );
               })}
             </div>
-            <p className="text-[10px] font-black text-slate-500 uppercase mb-2">{t('panels.node.ownershipStatusLabel')}</p>
+            <p className="text-xs font-black text-slate-500 uppercase mb-2">{t('panels.node.ownershipStatusLabel')}</p>
             <div className="grid grid-cols-1 gap-2">
               {CLOUD_OWNERSHIP_OPTIONS.map((opt) => {
                 const Icon = opt.icon;
@@ -563,7 +563,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                 <div>
                   <label
                     htmlFor={`node-actortype-${node.id}`}
-                    className="text-[10px] font-black text-slate-500 uppercase block mb-1.5"
+                    className="text-xs font-black text-slate-500 uppercase block mb-1.5"
                   >
                     {t('panels.node.actorTypeLabel')}
                   </label>
@@ -591,7 +591,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
               <div>
                 <label
                   htmlFor={`node-objective-${node.id}`}
-                  className="text-[10px] font-black text-slate-500 uppercase mb-1.5 flex items-center gap-1.5"
+                  className="text-xs font-black text-slate-500 uppercase mb-1.5 flex items-center gap-1.5"
                 >
                   <Crosshair size={12} className="text-rose-400" /> {t('panels.node.objectiveLabel')}
                 </label>
@@ -657,7 +657,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => onToggleAttackSurface(key, true)}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${
+                        className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all ${
                           value
                             ? 'bg-emerald-600 text-white border border-emerald-400'
                             : 'bg-slate-800 text-slate-500 border border-slate-700 hover:border-slate-500'
@@ -667,7 +667,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                       </button>
                       <button
                         onClick={() => onToggleAttackSurface(key, false)}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${
+                        className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all ${
                           !value
                             ? 'bg-rose-600 text-white border border-rose-400'
                             : 'bg-slate-800 text-slate-500 border border-slate-700 hover:border-slate-500'
@@ -708,7 +708,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                 <div>
                   <label
                     htmlFor={`node-agency-${node.id}`}
-                    className="text-[10px] font-black text-slate-500 uppercase block mb-1.5"
+                    className="text-xs font-black text-slate-500 uppercase block mb-1.5"
                   >
                     {t('panels.node.agencyLabel')}
                   </label>
@@ -735,7 +735,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
               <div>
                 <label
                   htmlFor={`node-blastradius-${node.id}`}
-                  className="text-[10px] font-black text-slate-500 uppercase block mb-1.5"
+                  className="text-xs font-black text-slate-500 uppercase block mb-1.5"
                 >
                   {t('panels.node.blastRadiusLabel')}
                 </label>
@@ -762,7 +762,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                 <div>
                   <label
                     htmlFor={`node-identitytier-${node.id}`}
-                    className="text-[10px] font-black text-slate-500 uppercase block mb-1.5"
+                    className="text-xs font-black text-slate-500 uppercase block mb-1.5"
                   >
                     {t('panels.node.identityTierLabel')}
                   </label>

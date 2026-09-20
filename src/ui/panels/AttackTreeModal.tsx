@@ -235,7 +235,7 @@ function NodeCard({
                 {formatElementalId('node', node.seq)}
               </span>
             )}
-            <span className="text-[10px] font-bold truncate">{getNodeDisplayName(node)}</span>
+            <span className="text-xs font-bold truncate">{getNodeDisplayName(node)}</span>
             {isTarget && <Crosshair size={10} className="text-rose-400 shrink-0" />}
           </div>
           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
@@ -290,7 +290,7 @@ function hopPath(
 function ThreatRefRow({ threat }: { threat: ThreatRef }) {
   const t = useT();
   return (
-    <div className="flex items-start justify-between gap-2 text-[10px]">
+    <div className="flex items-start justify-between gap-2 text-xs">
       <span className="text-slate-300 leading-snug">{threat.name}</span>
       <span className="flex items-center gap-1 shrink-0">
         <span className={`px-1.5 py-0.5 rounded font-black ${SEVERITY_BADGE_SOLID[threat.severity]}`}>
@@ -366,7 +366,7 @@ function ChokePointChip({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-left text-[10px] font-bold transition-colors ${
+      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-left text-xs font-bold transition-colors ${
         amber
           ? 'bg-amber-950/40 border-amber-600/60 text-amber-200 hover:border-amber-500'
           : 'bg-slate-800/60 border-slate-700 text-slate-300 hover:border-slate-500'
@@ -414,14 +414,14 @@ function RouteTable({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-1.5 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-300"
+        className="w-full flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-300"
       >
         {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         {t('attackTree.routeTable.heading')}
       </button>
       {open && (
         <div className="overflow-auto max-h-40 px-3 pb-3" onMouseLeave={() => onHoverRoute(null)}>
-          <table className="w-full text-[10px] text-slate-300">
+          <table className="w-full text-xs text-slate-300">
             <thead>
               <tr className="text-slate-500 text-left border-b border-slate-700">
                 <th className="py-1 pr-2 font-bold">#</th>
@@ -584,7 +584,7 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
           ) : (
             <span className="text-slate-500">{t('attackTree.targetMissing')}</span>
           )}
-          <span className="ml-auto flex items-center gap-3 text-[10px] font-black">
+          <span className="ml-auto flex items-center gap-3 text-xs font-black">
             <span className="text-slate-500">
               {t('attackTree.routesSummary', {
                 routes: graph.routes.length,
@@ -604,7 +604,7 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
 
         {/* 凡例 + トグル */}
         {hasPath && (
-          <div className="flex items-center gap-4 text-[10px] font-bold text-slate-400 flex-wrap">
+          <div className="flex items-center gap-4 text-xs font-bold text-slate-400 flex-wrap">
             <span className="flex items-center gap-1">
               <span className="w-3 h-0.5 bg-rose-500" /> {t('attackTree.legend.weakestRoute')}
             </span>
@@ -631,7 +631,7 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
 
         {hasPath && topChokePoints.length > 0 && (
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <span className="text-xs font-black uppercase tracking-widest text-slate-400">
               {t('attackTree.chokePoint.heading')}
             </span>
             {topChokePoints.map((cp) => (
@@ -808,7 +808,7 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
           ) : (
             <div className="bg-slate-800/40 border border-slate-700 rounded-xl p-6 text-center flex-1">
               <p className="text-xs text-slate-400 font-bold">{t('attackTree.noPath.title')}</p>
-              <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">{t('attackTree.noPath.body')}</p>
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">{t('attackTree.noPath.body')}</p>
             </div>
           )}
 
@@ -836,7 +836,7 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
           />
         )}
 
-        {graph.truncated && <p className="text-[10px] text-amber-400/80 font-bold">⚠ {t('attackTree.truncated')}</p>}
+        {graph.truncated && <p className="text-xs text-amber-400/80 font-bold">⚠ {t('attackTree.truncated')}</p>}
 
         <p className="text-xs text-slate-500 leading-relaxed">{t('attackTree.footnote')}</p>
       </div>
@@ -873,7 +873,7 @@ function DetailPanel({
     heading = t('attackTree.detail.nodeHeading', { name: node ? getNodeDisplayName(node) : selection.nodeId });
     body =
       evidence.threats.length === 0 ? (
-        <p className="text-[10px] text-slate-500">{t('attackTree.detail.noThreats')}</p>
+        <p className="text-xs text-slate-500">{t('attackTree.detail.noThreats')}</p>
       ) : (
         <div className="space-y-1.5">
           {evidence.threats.map((th) => (
@@ -905,21 +905,21 @@ function DetailPanel({
       <div className="space-y-3">
         {hop && (
           <div className="space-y-1">
-            <p className="text-[10px] font-bold text-slate-400">
+            <p className="text-xs font-bold text-slate-400">
               {t('attackTree.detail.hopEndpoints', {
                 a: nodeFullLabel(nodeById.get(hop.a), hop.a),
                 b: nodeFullLabel(nodeById.get(hop.b), hop.b),
               })}
             </p>
             {travelFrom && travelTo && (
-              <p className="text-[10px] text-rose-300/90 font-bold">
+              <p className="text-xs text-rose-300/90 font-bold">
                 {t('attackTree.detail.travelDirection', {
                   from: nodeFullLabel(nodeById.get(travelFrom), travelFrom),
                   to: nodeFullLabel(nodeById.get(travelTo), travelTo),
                 })}
               </p>
             )}
-            <p className="text-[10px] text-slate-500">
+            <p className="text-xs text-slate-500">
               {hopAgg.difficultyBasis === 'dread'
                 ? t('attackTree.node.difficulty', { value: hopAgg.difficulty })
                 : hopAgg.difficultyBasis === 'severity-soft'
@@ -937,7 +937,7 @@ function DetailPanel({
           const chosen = analysis.routes.some((r) => r.chosenChannels.get(selection.hopKey) === edgeId);
           return (
             <div key={edgeId} className="border-t border-white/5 pt-2 first:border-t-0 first:pt-0">
-              <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 mb-1">
+              <div className="flex items-center gap-1.5 text-xs font-black text-slate-400 mb-1">
                 {edge?.seq !== undefined && <span>{formatElementalId('edge', edge.seq)}</span>}
                 {edge?.dataFlowName && <span className="text-slate-500">{edge.dataFlowName}</span>}
                 {chosen && (
@@ -947,7 +947,7 @@ function DetailPanel({
                 )}
               </div>
               {evidence.threats.length === 0 ? (
-                <p className="text-[10px] text-slate-500">{t('attackTree.detail.noThreats')}</p>
+                <p className="text-xs text-slate-500">{t('attackTree.detail.noThreats')}</p>
               ) : (
                 <div className="space-y-1.5">
                   {evidence.threats.map((th) => (
@@ -965,7 +965,7 @@ function DetailPanel({
   return (
     <div className="w-72 shrink-0 overflow-y-auto bg-slate-800/40 border border-slate-700 rounded-xl p-3 flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-300">{heading}</h3>
+        <h3 className="text-xs font-black uppercase tracking-widest text-slate-300">{heading}</h3>
         <button onClick={onClose} className="text-slate-500 hover:text-slate-200" aria-label={t('attackTree.detail.close')}>
           <X size={14} />
         </button>

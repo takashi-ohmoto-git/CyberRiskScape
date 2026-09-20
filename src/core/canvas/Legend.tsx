@@ -66,7 +66,7 @@ export function Legend() {
         <div className="px-4 pb-3 space-y-3 max-h-[50vh] overflow-y-auto">
           {components.length > 0 && (
             <section className="space-y-1.5">
-              <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-500">
                 {t('canvas.legend.components')}
               </h4>
               {components.map(({ type, def }) => (
@@ -86,7 +86,7 @@ export function Legend() {
 
           {edgeNotations.length > 0 && (
             <section className="space-y-1.5">
-              <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-500">
                 {t('canvas.legend.dataFlow')}
               </h4>
               {edgeNotations.map((entry) => (
@@ -112,7 +112,7 @@ export function Legend() {
 
           {boundaryTypes.length > 0 && (
             <section className="space-y-1.5">
-              <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-500">
                 {t('canvas.legend.trustBoundary')}
               </h4>
               {boundaryTypes.map((type) => {

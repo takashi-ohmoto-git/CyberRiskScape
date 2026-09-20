@@ -205,7 +205,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                       <button
                         key={key}
                         onClick={() => setActiveLayer(key)}
-                        className={`w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-[10px] font-bold text-left ${
+                        className={`w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold text-left ${
                           isActive
                             ? 'bg-emerald-700/30 border-emerald-600 text-emerald-200'
                             : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
@@ -248,21 +248,21 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                   </p>
                   <button
                     onClick={() => handleExportReport('csv')}
-                    className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-[10px] font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
+                    className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
                   >
                     <Download size={12} className="text-emerald-400 shrink-0" />
                     {t('project.sidebar.exportCsv')}
                   </button>
                   <button
                     onClick={() => handleExportReport('json')}
-                    className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-[10px] font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
+                    className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
                   >
                     <Download size={12} className="text-emerald-400 shrink-0" />
                     {t('project.sidebar.exportJson')}
                   </button>
                   <button
                     onClick={() => handleExportReport('DCRH-threat-model')}
-                    className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-[10px] font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
+                    className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
                   >
                     <Download size={12} className="text-emerald-400 shrink-0" />
                     {t('project.sidebar.exportDcrh')}
@@ -303,7 +303,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
             <div key={category.id}>
               <button
                 onClick={() => toggleSection(category.id)}
-                className="w-full flex items-center justify-between text-[10px] text-slate-500 hover:text-slate-300 font-bold uppercase mb-2 transition-colors"
+                className="w-full flex items-center justify-between text-xs text-slate-500 hover:text-slate-300 font-bold uppercase mb-2 transition-colors"
                 aria-expanded={isOpen}
               >
                 <span>{category.label}</span>
@@ -334,7 +334,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
         <div>
           <button
             onClick={() => toggleSection(BOUNDARY_SECTION_KEY)}
-            className="w-full flex items-center justify-between text-[10px] text-slate-500 hover:text-slate-300 font-bold uppercase mb-2 transition-colors"
+            className="w-full flex items-center justify-between text-xs text-slate-500 hover:text-slate-300 font-bold uppercase mb-2 transition-colors"
             aria-expanded={openSections.has(BOUNDARY_SECTION_KEY)}
           >
             <span>Trust Boundaries</span>
@@ -363,7 +363,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
         <div>
           <button
             onClick={() => toggleSection(LIBRARY_MANAGER_KEY)}
-            className="w-full flex items-center justify-between text-[10px] text-slate-500 hover:text-slate-300 font-bold uppercase mb-2 transition-colors"
+            className="w-full flex items-center justify-between text-xs text-slate-500 hover:text-slate-300 font-bold uppercase mb-2 transition-colors"
             aria-expanded={openSections.has(LIBRARY_MANAGER_KEY)}
           >
             <span className="flex items-center gap-1.5">
@@ -381,7 +381,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                     key={lib.id}
                     onClick={() => !isLocked && toggleLibrary(lib.id)}
                     disabled={isLocked}
-                    className={`w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-[10px] font-bold text-left ${
+                    className={`w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold text-left ${
                       isDisabled
                         ? 'bg-slate-900 border-slate-800 text-slate-600'
                         : 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700'
@@ -413,7 +413,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
         <div>
           <button
             onClick={openCustomRulesManager}
-            className="w-full flex items-center justify-between text-[10px] text-slate-500 hover:text-slate-300 font-bold uppercase mb-2 transition-colors"
+            className="w-full flex items-center justify-between text-xs text-slate-500 hover:text-slate-300 font-bold uppercase mb-2 transition-colors"
           >
             <span className="flex items-center gap-1.5">
               <LibraryIcon size={12} /> Custom Rules ({customLibraryCount})
@@ -424,8 +424,8 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
       </div>
 
       <div className="mt-auto p-4 bg-slate-800/50 rounded-2xl border border-slate-700">
-        <p className="text-[10px] text-slate-500 font-bold uppercase mb-2">Usage</p>
-        <ul className="text-[10px] space-y-2 text-slate-400">
+        <p className="text-xs text-slate-500 font-bold uppercase mb-2">Usage</p>
+        <ul className="text-xs space-y-2 text-slate-400">
           <li className="flex gap-2">{t('project.sidebar.usageHint1')}</li>
           <li className="flex gap-2">{t('project.sidebar.usageHint2')}</li>
         </ul>

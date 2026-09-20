@@ -1,7 +1,7 @@
 // ESLint フラット設定（最小構成）
 //
-// 方針：目的は「新規混入の抑止」であり既存コードの一斉修正ではない。
-// 既に存在する違反（デザイン規約の極小文字など）は warn に留め、CI を止めない。
+// 方針：目的は「新規混入の抑止」。既存違反を抱えるルールは warn に留める。
+// デザイン規約 §6.1（本文最小 12px）は違反ゼロになったため error へ昇格済み。
 // Prettier は未導入（整形はエディタに委ねる）。
 
 import js from '@eslint/js';
@@ -38,8 +38,11 @@ export default tseslint.config(
 
       'no-useless-assignment': 'warn',
 
+      // §6.1 違反はゼロになったため error へ昇格（2026-09-20）。
+      // dangerouslySetInnerHTML ガードも同じルール名のため同時に error になる
+      // （既存 1 箇所は disable コメント済み）。
       'no-restricted-syntax': [
-        'warn',
+        'error',
         // docs/DesignPrinciples.md §6.1：本文の最小は 12px
         {
           selector: 'Literal[value=/text-\\[(8|9|10|11)px\\]/]',

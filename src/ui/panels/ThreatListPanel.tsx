@@ -35,12 +35,12 @@ export function ThreatListPanel({ threats }: ThreatListPanelProps) {
           </div>
           <button
             onClick={() => openManualThreatEditor()}
-            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-lg transition-colors"
           >
             <Plus size={14} /> {t('threats.list.addScenario')}
           </button>
         </div>
-        <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
+        <div className="flex justify-between items-center text-xs font-bold uppercase tracking-widest">
           <span className="text-slate-500">{t(FRAMEWORK_VIEW_LABEL_KEYS[framework])} MODE</span>
           <span className="bg-rose-500/20 text-rose-500 px-2 py-0.5 rounded-full">
             {activeCount} ISSUES
@@ -49,7 +49,7 @@ export function ThreatListPanel({ threats }: ThreatListPanelProps) {
         {suppressedCount > 0 && (
           <button
             onClick={() => setHideSuppressed((v) => !v)}
-            className="mt-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-300 transition-colors"
+            className="mt-3 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-300 transition-colors"
           >
             {hideSuppressed ? <Eye size={12} /> : <EyeOff size={12} />}
             {hideSuppressed

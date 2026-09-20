@@ -151,7 +151,7 @@ export function TemplateModal() {
               {t('project.templateModal.exportIntroAfter', { count: activeCount })}
             </p>
             <label className="flex flex-col gap-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
                 {t('project.templateModal.nameLabel')} <span className="text-rose-400">*</span>
               </span>
               <input

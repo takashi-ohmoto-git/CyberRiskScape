@@ -255,7 +255,7 @@ export function CustomRulesManagerModal() {
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-slate-100 truncate">{lib.name}</p>
-                      <p className="text-[10px] text-slate-500 uppercase tracking-wider">
+                      <p className="text-xs text-slate-500 uppercase tracking-wider">
                         {t('ruleEditor.manager.ruleCount', { count: lib.rules.length })}{' '}
                         {lib.enabled ? '' : t('ruleEditor.manager.disabledSuffix')}
                       </p>
@@ -295,7 +295,7 @@ export function CustomRulesManagerModal() {
                               <p className="text-[12px] text-slate-200 truncate font-mono">
                                 {rule.id}
                               </p>
-                              <p className="text-[10px] text-slate-500 truncate">
+                              <p className="text-xs text-slate-500 truncate">
                                 {rule.framework} · {rule.category} · {rule.severity}
                               </p>
                             </div>
@@ -338,7 +338,7 @@ export function CustomRulesManagerModal() {
           </div>
         )}
 
-        <p className="text-[10px] text-slate-600 leading-relaxed">
+        <p className="text-xs text-slate-600 leading-relaxed">
           {t('ruleEditor.manager.footerNote')}
         </p>
         </div>

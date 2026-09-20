@@ -122,7 +122,7 @@ export function EdgePanel({ edge }: EdgePanelProps) {
       </div>
       <div className="p-6 space-y-8 flex-1">
         <section>
-          <label className="text-[10px] font-black text-slate-500 uppercase mb-3 block">
+          <label className="text-xs font-black text-slate-500 uppercase mb-3 block">
             Data Flow
           </label>
           <div className="grid grid-cols-1 gap-2">
@@ -144,7 +144,7 @@ export function EdgePanel({ edge }: EdgePanelProps) {
             })}
           </div>
           <div className="mt-3">
-            <label className="text-[10px] font-black text-slate-500 uppercase mb-2 block">
+            <label className="text-xs font-black text-slate-500 uppercase mb-2 block">
               Data Flow Name
             </label>
             <input
@@ -164,7 +164,7 @@ export function EdgePanel({ edge }: EdgePanelProps) {
         <section>
           <label
             htmlFor={`edge-semantic-${edge.id}`}
-            className="text-[10px] font-black text-slate-500 uppercase mb-2 block"
+            className="text-xs font-black text-slate-500 uppercase mb-2 block"
           >
             {t('panels.edge.semanticLabel')}
           </label>
@@ -196,7 +196,7 @@ export function EdgePanel({ edge }: EdgePanelProps) {
           )}
         </section>
         <section>
-          <label className="text-[10px] font-black text-slate-500 uppercase mb-3 block">
+          <label className="text-xs font-black text-slate-500 uppercase mb-3 block">
             Authentication
           </label>
           <div className="grid grid-cols-1 gap-2">
@@ -216,7 +216,7 @@ export function EdgePanel({ edge }: EdgePanelProps) {
           </div>
         </section>
         <section>
-          <label className="text-[10px] font-black text-slate-500 uppercase mb-3 block">
+          <label className="text-xs font-black text-slate-500 uppercase mb-3 block">
             Network Path
           </label>
           <div className="grid grid-cols-1 gap-2">
@@ -236,7 +236,7 @@ export function EdgePanel({ edge }: EdgePanelProps) {
           </div>
         </section>
         <section>
-          <label className="text-[10px] font-black text-slate-500 uppercase mb-3 block">
+          <label className="text-xs font-black text-slate-500 uppercase mb-3 block">
             Encryption
           </label>
           <div className="grid grid-cols-1 gap-2">

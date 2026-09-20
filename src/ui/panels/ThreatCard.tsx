@@ -84,7 +84,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
     >
       <div className="flex justify-between items-start mb-2">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${badgeClass}`}>
+          <span className={`text-xs font-black px-2 py-0.5 rounded-md ${badgeClass}`}>
             {threat.severity}
           </span>
           {threat.name && (
@@ -175,7 +175,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
 
       {threat.mitigationTiers ? (
         <div className="mt-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 space-y-2">
-          <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-400 uppercase tracking-widest">
+          <div className="flex items-center gap-1.5 text-xs font-black text-emerald-400 uppercase tracking-widest">
             <ShieldCheck size={12} /> {t('threats.threatCard.mitigationHeadingTiered')}
           </div>
           {(['foundation', 'enterprise', 'advanced'] as const).map((tier) => {
@@ -203,7 +203,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
       ) : (
         threat.mitigation && (
           <div className="mt-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
-            <div className="flex items-center gap-1.5 mb-1 text-[10px] font-black text-emerald-400 uppercase tracking-widest">
+            <div className="flex items-center gap-1.5 mb-1 text-xs font-black text-emerald-400 uppercase tracking-widest">
               <ShieldCheck size={12} /> {t('threats.threatCard.mitigationHeading')}
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">{threat.mitigation}</p>
@@ -213,7 +213,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
 
       {threat.complianceRefs && threat.complianceRefs.length > 0 && (
         <div className="mt-3">
-          <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+          <div className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">
             {t('threats.threatCard.complianceHeading')}
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -223,7 +223,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
               return (
                 <span
                   key={`${c.standard}-${c.ref}-${i}`}
-                  className="text-[10px] font-bold bg-slate-800 border border-slate-700 text-slate-300 px-2 py-0.5 rounded"
+                  className="text-xs font-bold bg-slate-800 border border-slate-700 text-slate-300 px-2 py-0.5 rounded"
                   title={`${label} / ${refLabel}`}
                 >
                   {label} <span className="text-slate-500">·</span> {refLabel}
@@ -236,7 +236,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
 
       {threat.references && threat.references.length > 0 && (
         <div className="mt-3">
-          <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+          <div className="flex items-center gap-1.5 text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">
             <BookOpen size={12} /> {t('threats.threatCard.referencesHeading')}
           </div>
           <ul className="space-y-1">
@@ -267,7 +267,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
           <button
             type="button"
             onClick={() => setIsBasisOpen((v) => !v)}
-            className="flex items-center gap-1.5 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-300 transition-colors"
+            className="flex items-center gap-1.5 text-xs font-black text-slate-500 uppercase tracking-widest hover:text-slate-300 transition-colors"
           >
             {isBasisOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
             {t('threatCard.detectionBasis.heading')}
@@ -303,7 +303,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
       {/* ── 対策実装状況（リスク対応方針=suppression とは別レイヤー） ── */}
       <div className="mt-3 pt-3 border-t border-white/5">
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+          <span className="text-xs font-black text-slate-500 uppercase tracking-widest">
             {t('threats.threatCard.controlStatusHeading')}
           </span>
           {threat.controlStatus && (
@@ -321,7 +321,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
       {!isManual && (
         <div className="mt-3 pt-3 border-t border-white/5">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+            <span className="text-xs font-black text-slate-500 uppercase tracking-widest">
               {t('threats.threatCard.riskTreatmentHeading')}
             </span>
             {threat.suppression && (
@@ -341,13 +341,13 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
         <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-end gap-2">
           <button
             onClick={() => openManualThreatEditor(threat.manualId)}
-            className="flex items-center gap-1 text-[10px] font-bold uppercase text-slate-400 hover:text-slate-100 transition-colors"
+            className="flex items-center gap-1 text-xs font-bold uppercase text-slate-400 hover:text-slate-100 transition-colors"
           >
             <Pencil size={12} /> {t('threats.threatCard.editButton')}
           </button>
           <button
             onClick={() => removeManualThreat(threat.manualId!)}
-            className="flex items-center gap-1 text-[10px] font-bold uppercase text-rose-400 hover:text-rose-300 transition-colors"
+            className="flex items-center gap-1 text-xs font-bold uppercase text-rose-400 hover:text-rose-300 transition-colors"
           >
             <Trash2 size={12} /> {t('threats.threatCard.deleteButton')}
           </button>
@@ -355,7 +355,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
       )}
 
       {targetName && (
-        <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-[10px] font-black text-slate-500 uppercase">
+        <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-xs font-black text-slate-500 uppercase">
           <span className="flex items-center gap-1">
             <Target size={12} /> {targetName}
           </span>

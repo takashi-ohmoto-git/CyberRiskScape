@@ -161,7 +161,7 @@ export function ManualThreatModal() {
 
         {showFrameworkPicker ? (
           <div className="flex flex-col gap-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
               {t('threats.manualThreatModal.frameworkLabel')}
             </span>
             <div className="grid grid-cols-3 gap-2">
@@ -184,7 +184,7 @@ export function ManualThreatModal() {
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
             <span className="text-slate-500">{t('threats.manualThreatModal.frameworkLabel')}</span>
             <span className="bg-slate-800 border border-slate-700 text-slate-300 px-2 py-0.5 rounded">
               {t(FRAMEWORK_VIEW_LABEL_KEYS[draft.framework])}
@@ -196,7 +196,7 @@ export function ManualThreatModal() {
         )}
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
             {t('threats.manualThreatModal.categoryLabel')} <span className="text-rose-400">*</span>
           </span>
           <input
@@ -209,7 +209,7 @@ export function ManualThreatModal() {
         </label>
 
         <div className="flex flex-col gap-1.5">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
             {t('threats.manualThreatModal.severityLabel')}
           </span>
           <div className="grid grid-cols-4 gap-2">
@@ -233,7 +233,7 @@ export function ManualThreatModal() {
         </div>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
             {t('threats.manualThreatModal.targetLabel')}
           </span>
           <select
@@ -270,7 +270,7 @@ export function ManualThreatModal() {
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
             {t('threats.manualThreatModal.descriptionLabel')} <span className="text-rose-400">*</span>
           </span>
           <textarea
@@ -283,7 +283,7 @@ export function ManualThreatModal() {
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
             {t('threats.manualThreatModal.mitigationLabel')}
           </span>
           <textarea

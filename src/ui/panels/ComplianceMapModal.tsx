@@ -81,7 +81,7 @@ export function ComplianceMapModal() {
             <h2 className="text-sm font-bold uppercase tracking-widest text-slate-300">
               Compliance Map
             </h2>
-            <span className="text-[10px] text-slate-500 ml-2">
+            <span className="text-xs text-slate-500 ml-2">
               {t('analytics.compliance.standardsSummary', {
                 standards: standardIds.length,
                 total: complianceMap.index.size,
@@ -107,14 +107,14 @@ export function ComplianceMapModal() {
                   : 'border-transparent hover:bg-slate-800/60'
               }`}
             >
-              <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500 mb-0.5">
+              <div className="flex items-center gap-1.5 text-xs font-mono text-slate-500 mb-0.5">
                 <ShieldCheck size={11} className="text-emerald-400" />
                 FRAMEWORK
               </div>
               <div className="text-xs font-bold text-slate-100 leading-tight">
                 Zero Trust for AI Agents
               </div>
-              <div className="text-[10px] text-slate-500 mt-1">Anthropic eBook (2026)</div>
+              <div className="text-xs text-slate-500 mt-1">Anthropic eBook (2026)</div>
             </button>
             <div className="my-1 mx-4 border-t border-slate-800" />
             {standardIds.map((id) => {
@@ -131,7 +131,7 @@ export function ComplianceMapModal() {
                       : 'border-transparent hover:bg-slate-800/60'
                   }`}
                 >
-                  <div className="text-[10px] font-mono text-slate-500 mb-0.5">
+                  <div className="text-xs font-mono text-slate-500 mb-0.5">
                     {id}
                   </div>
                   <div className="text-xs font-bold text-slate-100 leading-tight">
@@ -142,7 +142,7 @@ export function ComplianceMapModal() {
                       </span>
                     )}
                   </div>
-                  <div className="text-[10px] text-slate-500 mt-1">
+                  <div className="text-xs text-slate-500 mt-1">
                     {t('analytics.compliance.itemsCount', { count })}
                   </div>
                 </button>
@@ -166,7 +166,7 @@ export function ComplianceMapModal() {
                           </span>
                         )}
                       </h3>
-                      <div className="mt-1 flex items-center gap-3 text-[10px] text-slate-500">
+                      <div className="mt-1 flex items-center gap-3 text-xs text-slate-500">
                         <a
                           href={selectedStandard.url}
                           target="_blank"
@@ -247,7 +247,7 @@ function ItemRow({ item, t }: { item: ComplianceItem; t: ReturnType<typeof useT>
           {item.relatedTo.map((rel) => (
             <span
               key={`${rel.standard}:${rel.ref}`}
-              className="text-[10px] px-2 py-0.5 rounded bg-slate-700/40 text-slate-400 border border-slate-700"
+              className="text-xs px-2 py-0.5 rounded bg-slate-700/40 text-slate-400 border border-slate-700"
               title={t('analytics.compliance.crosswalkTooltip')}
             >
               {rel.standard} / {rel.ref}

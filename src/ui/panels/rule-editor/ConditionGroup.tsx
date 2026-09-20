@@ -74,7 +74,7 @@ export function ConditionGroup({
           <div key={i} className="relative">
             {multi && (
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] uppercase tracking-wider text-slate-500">
+                <span className="text-xs uppercase tracking-wider text-slate-500">
                   {t('ruleEditor.condition.blockLabel', { index: i + 1 })}
                 </span>
                 <button

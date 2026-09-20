@@ -54,7 +54,7 @@ export function SeverityBranchEditor({
       {conditions.map((c, i) => (
         <div key={i} className="bg-slate-900/60 border border-slate-700/70 rounded-lg p-3 flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-wider text-amber-400 font-bold">
+            <span className="text-xs uppercase tracking-wider text-amber-400 font-bold">
               {i === 0 ? 'if' : 'else if'} #{i + 1}
             </span>
             <div className="flex items-center gap-0.5">
@@ -121,7 +121,7 @@ export function SeverityBranchEditor({
       ))}
 
       <div className="bg-slate-800/40 border border-dashed border-slate-700 rounded-lg p-3">
-        <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
+        <span className="text-xs uppercase tracking-wider text-slate-500 font-bold">
           {t('ruleEditor.severityBranch.elseDefault')}
         </span>
         <p className="text-[12px] text-slate-300 mt-1">

@@ -87,7 +87,7 @@ export function BundledRulePicker({
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="text-[12px] text-slate-200 truncate font-mono">{rule.id}</p>
-                  <p className="text-[10px] text-slate-500 truncate">
+                  <p className="text-xs text-slate-500 truncate">
                     {rule.framework} · {rule.category}
                     {rule.name ? ` · ${rule.name}` : ''} · {rule.severity}
                   </p>

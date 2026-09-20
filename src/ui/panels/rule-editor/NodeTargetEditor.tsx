@@ -103,7 +103,7 @@ export function NodeTargetEditor({
             className="accent-blue-600"
           />
           <span className="text-[12px] font-bold text-slate-200">{t('ruleEditor.nodeTarget.connectionEnabled')}</span>
-          <span className="text-[10px] text-slate-500">{t('ruleEditor.nodeTarget.connectionDefault')}</span>
+          <span className="text-xs text-slate-500">{t('ruleEditor.nodeTarget.connectionDefault')}</span>
         </label>
 
         {node.connection.enabled && (

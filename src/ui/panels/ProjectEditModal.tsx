@@ -119,7 +119,7 @@ interface FieldProps {
 function Field({ label, value, onChange, placeholder }: FieldProps) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+      <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
         {label}
       </span>
       <input
@@ -136,7 +136,7 @@ function Field({ label, value, onChange, placeholder }: FieldProps) {
 function FieldArea({ label, value, onChange, placeholder }: FieldProps) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+      <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
         {label}
       </span>
       <textarea

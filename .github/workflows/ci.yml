@@ -32,10 +32,10 @@ jobs:
       - name: 型チェック（strict）
         run: npx tsc --noEmit
 
-      # ラチェット：既存 157 件はグランドファザー扱いし、増えたら落とす。
+      # ラチェット：残り 3 件（§6.1 違反は 0）。増えたら落とす。
       # 警告を減らしたらこの数値も下げること。
       - name: Lint（警告がベースラインを超えたら失敗）
-        run: npm run lint -- --max-warnings 157
+        run: npm run lint -- --max-warnings 3
 
       - name: テスト
         run: npm test

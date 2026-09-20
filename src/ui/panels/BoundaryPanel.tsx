@@ -156,7 +156,7 @@ export function BoundaryPanel({ boundary }: BoundaryPanelProps) {
           <Box size={20} className="text-emerald-500" />
           <h2 className="text-lg font-black tracking-tight">Boundary Properties</h2>
         </div>
-        <p className="text-[10px] text-slate-500 font-bold uppercase">{typeName}</p>
+        <p className="text-xs text-slate-500 font-bold uppercase">{typeName}</p>
       </div>
       <div className="p-6 space-y-8 flex-1 overflow-y-auto">
         {boundary.type === 'RECT' && (
@@ -190,7 +190,7 @@ export function BoundaryPanel({ boundary }: BoundaryPanelProps) {
         )}
 
         <section>
-          <label className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
+          <label className="text-xs font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
             <Layers size={12} className="text-emerald-500" /> {t('panels.boundary.arrangeLabel')}
           </label>
           <div className="grid grid-cols-2 gap-2">
@@ -207,10 +207,10 @@ export function BoundaryPanel({ boundary }: BoundaryPanelProps) {
           </div>
         </section>
         <section>
-          <label className="text-[10px] font-black text-slate-500 uppercase block mb-3">
+          <label className="text-xs font-black text-slate-500 uppercase block mb-3">
             Dimensions
           </label>
-          <p className="text-[10px] text-slate-500 leading-relaxed">
+          <p className="text-xs text-slate-500 leading-relaxed">
             {t('panels.boundary.dimensionsNotePrefix')}
             <span className="inline-block w-2 h-2 bg-white border border-blue-500 mx-1 align-middle" />
             {t('panels.boundary.dimensionsNoteSuffix')}{' '}
@@ -240,7 +240,7 @@ function TrustLevelSection({
   const TRUST_OPTIONS = getTrustOptions(t);
   return (
     <section>
-      <label className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
+      <label className="text-xs font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
         Trust Attribute
       </label>
       <div className="grid grid-cols-1 gap-2">
@@ -284,17 +284,17 @@ function DmzSection({
 
   return (
     <section>
-      <label className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
+      <label className="text-xs font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
         Trust Attribute
       </label>
       <div className="flex items-center gap-3 p-3 rounded-xl border bg-emerald-600 border-emerald-400 text-white text-xs font-bold">
         <Globe size={14} />
         DMZ
-        <span className="ml-auto text-[10px] font-bold text-emerald-100/80">
+        <span className="ml-auto text-xs font-bold text-emerald-100/80">
           ≡ Internet
         </span>
       </div>
-      <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
+      <p className="text-xs text-slate-500 mt-2 leading-relaxed">
         {t('panels.boundary.dmzNote')}
       </p>
     </section>
@@ -318,7 +318,7 @@ function MacroSection({
   return (
     <>
       <section>
-        <label className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
+        <label className="text-xs font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
           Trust Attribute
         </label>
         <div className="grid grid-cols-1 gap-2">
@@ -341,12 +341,12 @@ function MacroSection({
         </div>
       </section>
       <section>
-        <label className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
+        <label className="text-xs font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
           <Network size={12} className="text-emerald-500" /> Network Attribute
         </label>
         <div className="space-y-3">
           <div>
-            <label className="text-[10px] text-slate-400 font-bold block mb-1">VLAN Name</label>
+            <label className="text-xs text-slate-400 font-bold block mb-1">VLAN Name</label>
             <input
               type="text"
               value={boundary.vlanName ?? ''}
@@ -392,7 +392,7 @@ function VlanIdInput({
     (Number.isInteger(parsed) && parsed >= 0 && parsed <= 4094);
   return (
     <div>
-      <label className="text-[10px] text-slate-400 font-bold block mb-1">VLAN ID</label>
+      <label className="text-xs text-slate-400 font-bold block mb-1">VLAN ID</label>
       <input
         type="number"
         inputMode="numeric"
@@ -419,7 +419,7 @@ function VlanIdInput({
         }`}
       />
       {!valid && (
-        <p className="text-[10px] text-rose-400 mt-1">
+        <p className="text-xs text-rose-400 mt-1">
           {t('panels.boundary.vlanIdInvalid')}
         </p>
       )}
@@ -443,7 +443,7 @@ function NetworkAddressInput({
   const valid = isValidCidr(draft);
   return (
     <div>
-      <label className="text-[10px] text-slate-400 font-bold block mb-1">
+      <label className="text-xs text-slate-400 font-bold block mb-1">
         Network Address (CIDR)
       </label>
       <input
@@ -462,7 +462,7 @@ function NetworkAddressInput({
         }`}
       />
       {!valid && (
-        <p className="text-[10px] text-rose-400 mt-1">
+        <p className="text-xs text-rose-400 mt-1">
           {t('panels.boundary.networkAddressInvalid')}
         </p>
       )}
@@ -489,7 +489,7 @@ function MicroSection({
   return (
     <>
       <section>
-        <label className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
+        <label className="text-xs font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
           Trust Attribute
         </label>
         <div className="grid grid-cols-1 gap-2">
@@ -510,7 +510,7 @@ function MicroSection({
         </div>
       </section>
       <section>
-        <label className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
+        <label className="text-xs font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
           <ShieldCheck size={12} className="text-emerald-500" /> Micro Segmentation Status
         </label>
         <div className="grid grid-cols-2 gap-2">
@@ -535,7 +535,7 @@ function MicroSection({
         </div>
       </section>
       <section>
-        <label className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
+        <label className="text-xs font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
           <Database size={12} className="text-emerald-500" /> Sensitive Data
         </label>
         <div className="grid grid-cols-1 gap-2">

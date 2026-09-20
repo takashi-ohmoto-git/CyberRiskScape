@@ -215,7 +215,7 @@ export function ProjectFileModal() {
             <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-3 flex items-center gap-3">
               <FolderOpen size={16} className="text-emerald-400 shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] uppercase tracking-wider text-slate-500">
+                <p className="text-xs uppercase tracking-wider text-slate-500">
                   {t('project.fileModal.saveFolder')}
                 </p>
                 <p className="text-[12px] text-slate-200 truncate">
@@ -228,7 +228,7 @@ export function ProjectFileModal() {
               {dir && needsReconnect && (
                 <button
                   onClick={handleReconnect}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition-colors"
                 >
                   <RefreshCw size={12} />
                   {t('project.fileModal.connect')}
@@ -236,7 +236,7 @@ export function ProjectFileModal() {
               )}
               <button
                 onClick={handlePick}
-                className="px-3 py-1.5 text-[10px] font-bold uppercase bg-slate-700 hover:bg-slate-600 text-slate-100 rounded-lg transition-colors"
+                className="px-3 py-1.5 text-xs font-bold uppercase bg-slate-700 hover:bg-slate-600 text-slate-100 rounded-lg transition-colors"
               >
                 {dir ? t('project.fileModal.change') : t('project.fileModal.select')}
               </button>
@@ -266,7 +266,7 @@ export function ProjectFileModal() {
             {tab === 'save' ? (
               <div className="flex flex-col gap-4">
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
                     {t('project.fileModal.filenameLabel')}
                   </span>
                   <input

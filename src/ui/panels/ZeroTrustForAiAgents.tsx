@@ -221,7 +221,7 @@ export function ZeroTrustForAiAgents() {
             href={SOURCE_URL}
             target="_blank"
             rel="noreferrer noopener"
-            className="inline-flex items-center gap-1 text-[10px] text-slate-500 hover:text-emerald-400 transition-colors mt-1"
+            className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-emerald-400 transition-colors mt-1"
           >
             {t('zeroTrust.header.source')} <ExternalLink size={10} />
           </a>
@@ -286,7 +286,7 @@ export function ZeroTrustForAiAgents() {
           <table className="w-full border-collapse text-left">
             <thead>
               <tr className="bg-slate-800/60">
-                <th className="p-3 text-[10px] font-bold uppercase tracking-wider text-slate-500 w-44 align-top">
+                <th className="p-3 text-xs font-bold uppercase tracking-wider text-slate-500 w-44 align-top">
                   {t('zeroTrust.matrix.domainHeader')}
                 </th>
                 {(['foundation', 'enterprise', 'advanced'] as Tier[]).map((tier) => (
@@ -295,7 +295,7 @@ export function ZeroTrustForAiAgents() {
                     className={`p-3 align-top border-l border-slate-800 border-t-2 ${TIER_META[tier].accent}`}
                   >
                     <div className="text-xs font-black">{t(TIER_META[tier].labelKey)}</div>
-                    <div className="text-[10px] font-normal text-slate-500 italic mt-0.5">
+                    <div className="text-xs font-normal text-slate-500 italic mt-0.5">
                       {t(TIER_META[tier].taglineKey)}
                     </div>
                   </th>
@@ -368,7 +368,7 @@ export function ZeroTrustForAiAgents() {
               <div className="text-xs font-bold text-slate-100">
                 {i + 1}. {t(p.titleKey)}
               </div>
-              <p className="text-[10px] text-slate-500 leading-relaxed mt-1">{t(p.bodyKey)}</p>
+              <p className="text-xs text-slate-500 leading-relaxed mt-1">{t(p.bodyKey)}</p>
             </div>
           ))}
         </div>
