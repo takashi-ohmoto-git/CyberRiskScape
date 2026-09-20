@@ -191,6 +191,35 @@ rules:
     if (appliesTo?.kind !== 'edge') throw new Error('expected an edge rule');
     expect(appliesTo.conditions?.[1]?.description).toBe('MFA のため深刻度を下げる。');
   });
+
+  it('node ルールの conditions も差し替える（[[plan]] §2.41）', () => {
+    const nodeConditionRule: ThreatRule = {
+      ...nodeRule,
+      appliesTo: {
+        kind: 'node',
+        nodeType: 'IDENTITY_PROVIDER',
+        conditions: [{ when: { authProviderRole: ['Sole'] }, severity: 'High', description: '単独依存。' }],
+      },
+    };
+    const nodeOverlay = parseThreatLibraryOverlayFile(
+      `
+schemaVersion: 1
+locale: en
+rules:
+  sample-node-001:
+    conditions:
+      - description: Sole dependency.
+`,
+      'en/node-conditions.yaml',
+    );
+    const [localized] = localizeRules([nodeConditionRule], nodeOverlay);
+    const appliesTo = localized?.appliesTo;
+    if (appliesTo?.kind !== 'node') throw new Error('expected a node rule');
+    expect(appliesTo.conditions?.[0]?.description).toBe('Sole dependency.');
+    // 判定部分と severity は変えない
+    expect(appliesTo.conditions?.[0]?.when).toEqual({ authProviderRole: ['Sole'] });
+    expect(appliesTo.conditions?.[0]?.severity).toBe('High');
+  });
 });
 
 describe('診断', () => {

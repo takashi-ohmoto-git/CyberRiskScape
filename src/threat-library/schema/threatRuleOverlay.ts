@@ -23,7 +23,7 @@ export const ThreatRuleOverlaySchema = z
      */
     mitigation: z.string().min(1).optional(),
     /**
-     * 動的ルールの条件別記述（原本の `appliesTo.conditions`、edge ルールのみ）。
+     * 条件別記述（原本の `appliesTo.conditions`）。node / edge の双方に効く。
      * **原本と同じ並び順**で対応させる
      * （添字が一致しないものは適用しない）。
      */

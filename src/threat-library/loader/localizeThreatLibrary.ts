@@ -129,18 +129,16 @@ export function localizeRules(
       localized.references = references as typeof rule.references;
     }
 
-    // 動的ルールの条件別記述は `appliesTo.conditions`（edge 側のみ）に置かれる。
+    // 条件別記述は `appliesTo.conditions` に置かれる。node / edge の双方が持つ
+    // （ノード側は [[plan]] §2.41 で追加）。要素の形は違うが description の差し替えは同じ。
     const appliesTo = localized.appliesTo;
-    if (t.conditions && appliesTo.kind === 'edge' && appliesTo.conditions) {
-      const conditions = appliesTo.conditions.map((c, i) => {
+    if (t.conditions && appliesTo.conditions) {
+      const conditions = (appliesTo.conditions as { description?: string }[]).map((c, i) => {
         const description = t.conditions?.[i]?.description;
         return description === undefined ? c : { ...c, description };
       });
       // map は非空タプル型を保てないため、要素数不変であることを根拠に元の型へ戻す。
-      localized.appliesTo = {
-        ...appliesTo,
-        conditions: conditions as typeof appliesTo.conditions,
-      };
+      localized.appliesTo = { ...appliesTo, conditions } as typeof appliesTo;
     }
 
     return localized;

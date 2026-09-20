@@ -73,6 +73,24 @@ describe('同梱の翻訳オーバーレイ', () => {
       expect(broken).toEqual([]);
     });
 
+    it('conditions[].description の {{token}} を原文どおり保持している', () => {
+      // 条件別記述は node / edge の双方が持つ（[[plan]] §2.41）。原本と同じ添字で対応する。
+      const broken: string[] = [];
+      for (const id of translatedIds) {
+        const translated = overlay[id]?.conditions;
+        const original = rulesById.get(id)?.appliesTo.conditions;
+        if (translated === undefined || original === undefined) continue;
+        translated.forEach((c, i) => {
+          const source = original[i]?.description;
+          if (source === undefined) return;
+          if (tokensOf(source).join(',') !== tokensOf(c.description).join(',')) {
+            broken.push(`${id}.conditions[${i}]: expected ${tokensOf(source).join(',') || '(none)'}`);
+          }
+        });
+      }
+      expect(broken).toEqual([]);
+    });
+
     it('mitigation の tier markup を原文どおり保持している', () => {
       const broken: string[] = [];
       for (const id of translatedIds) {
@@ -99,6 +117,9 @@ describe('同梱の翻訳オーバーレイ', () => {
         })) {
           if (typeof value === 'string' && japanese.test(value)) broken.push(`${id}.${field}`);
         }
+        t?.conditions?.forEach((c, i) => {
+          if (japanese.test(c.description)) broken.push(`${id}.conditions[${i}].description`);
+        });
       }
       expect(broken).toEqual([]);
     });
