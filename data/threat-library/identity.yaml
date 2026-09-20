@@ -6,9 +6,21 @@
 #   その同期経路と、IDENTITY_PROVIDER ノードに残っていた STRIDE 上の空白（Repudiation /
 #   フェデレーション信頼の改ざん）を埋める。
 #
-#   `semantic` 未指定のエッジは `data_flow` 既定で評価されるため、本ファイルの同期系
-#   ルールは**設計者が明示的に directory_sync をマークしたエッジでのみ発火**し、
-#   既存ダイアグラムの検出結果は変化しない。
+#   続けて [[plan]] §2.39 B-1 が開いた 3 軸（node `identityProviderKind` /
+#   edge `source|targetIdentityProviderKind` / edge `authProvider`）を条件に使うルールを
+#   追加した。IdP 種別 `Hybrid` / `Social` の内在リスクと、発行元が宣言されていない
+#   認証＝ローカル資格情報がそれに当たる。
+#
+#   発火範囲の注意（既存ダイアグラムへの影響）:
+#     - `semantic` 未指定のエッジは `data_flow` 既定で評価されるため、同期系ルールは
+#       **設計者が明示的に directory_sync をマークしたエッジでのみ発火**する。
+#     - `identityProviderKind` は**明示宣言時のみ発火**する（未宣言の IdP を Hybrid /
+#       Social と決めつけない）。よって種別ルールも既存ダイアグラムでは発火しない。
+#     - **`authProvider` だけは逆**で、`edge.authProviderId` 未設定を `Undeclared` として
+#       積極的にマッチさせる（[[plan]] §2.39 B-1「auth !== 'None' かつ発行元未設定 ＝
+#       ローカル資格情報」という規約そのものが脅威シグナル）。したがって
+#       identity-local-credential-outside-idp-001 は**既存ダイアグラムでも発火し、
+#       検出件数を増やす**。これは仕様であり、発行元を宣言すれば消える。
 #
 # 出典:
 #   - MITRE ATT&CK (Enterprise) T1078.004 "Valid Accounts: Cloud Accounts"（同期用
@@ -19,11 +31,19 @@
 #     https://attack.mitre.org/techniques/T1484/002/
 #   - MITRE ATT&CK (Enterprise) T1098 "Account Manipulation"（ディレクトリオブジェクト
 #     属性の改ざんによる永続化・権限取得）。https://attack.mitre.org/techniques/T1098/
+#   - MITRE ATT&CK (Enterprise) T1556.007 "Modify Authentication Process: Hybrid
+#     Identity"（オンプレ側の認証処理への介入によるクラウド認証の迂回）。
+#     https://attack.mitre.org/techniques/T1556/007/
+#   - MITRE ATT&CK (Enterprise) T1078.003 "Valid Accounts: Local Accounts"（システム
+#     固有のローカルアカウントの悪用）。https://attack.mitre.org/techniques/T1078/003/
 #   - NIST SP 800-207, "Zero Trust Architecture"（ポリシー判断点の保護・per-session 認可）。
 #     https://csrc.nist.gov/pubs/sp/800/207/final
 #   - NIST SP 800-63B, "Digital Identity Guidelines: Authentication and Lifecycle
 #     Management"（アサーション・認証イベントの記録要件）。
 #     https://pages.nist.gov/800-63-3/sp800-63b.html
+#   - NIST SP 800-63A, "Digital Identity Guidelines: Enrollment and Identity
+#     Proofing"（身元確認保証レベル IAL の考え方）。
+#     https://pages.nist.gov/800-63-3/sp800-63a.html
 #   - CISA, "Zero Trust Maturity Model v2"（Identity ピラー・可視性とアナリティクス）。
 #     https://www.cisa.gov/zero-trust-maturity-model
 #   本文は逐語転載せず日本語要約のみ。
@@ -44,7 +64,7 @@
 #     zt-idp-signing-key-compromise-001（canonicalId: idp-token-forgery）でカバー済。
 #     本ファイルの identity-idp-federation-trust-tampering-001 は**鍵を盗まずに
 #     「信頼される発行者」を追加する**管理面の構成改ざん（ATT&CK T1484.002）で、
-#     攻撃機構も対策も異なるため別 canonicalId とする（粒度判断は人間へエスカレーション中）。
+#     攻撃機構も対策も異なるため別 canonicalId とする。
 #   - IdP の単一障害点化・設定変更の全社波及 → zt-idp-single-point-of-failure-001
 #     （canonicalId: idp-single-point-of-failure）でカバー済。あちらは可用性
 #     （Denial of Service）軸。本ファイルは認証の完全性・追跡可能性の軸を扱う。
@@ -69,9 +89,40 @@
 #     secret-001（canonicalId: credential-sprawl）でカバー済。本ファイルの同期アカウント
 #     ルールは「同期エッジが持つ越境特権」という経路視点で subject が異なる。
 #   - AGENT 発の弱いサービス認証 → weak-service-auth 群でカバー済。本ファイルは
-#     sourceType に AGENT 系を含めない。
+#     sourceType に AGENT 系を含めない（ローカル資格情報ルールも同様に除外する）。
 #   - コンポーネント型 DIRECTORY（AD / LDAP）は未追加のため、オンプレ Directory も
 #     IDENTITY_PROVIDER で表現される前提（[[plan]] §2.39「詳細な図」の整理に従う）。
+#
+#   IdP 種別軸・発行元軸のルール（後から追加した 3 件）について:
+#
+#   - Hybrid（identity-hybrid-idp-onprem-cloud-coupling-001）は**粗い図（IdP を 1 箱で
+#     描く）**のための node ルール。同じ現実の脅威を**詳細な図（Directory と IDaaS を
+#     別ノードに割り、間を directory_sync エッジで描く）**で表したものが
+#     identity-directory-sync-privileged-bridge-001 にあたるが、前者の subject は
+#     「1 つの ID 基盤がオンプレとクラウドに跨るという構成上の信頼結合」、後者は
+#     「同期アカウントが持つ越境特権」で、対策も出典（T1556.007 / T1078.004）も異なる。
+#     node 視点とエッジ視点を別 canonicalId とする既存方針（shadow-asset-governance-gap
+#     vs shadow-service-sensitive-input、credential-sprawl vs weak-service-auth）に倣い
+#     別 canonicalId とした。
+#   - Social（identity-social-idp-assurance-gap-001）は「ID 保証レベルを組織が要求も強制も
+#     できない」点が subject。USER ノード視点のアカウント乗っ取り一般 →
+#     stride-user-spoofing-001（canonicalId: user-account-takeover）でカバー済で、
+#     あちらは端末・利用者側の認証の弱さ。こちらは IdP ノード側の統制不能性を扱う。
+#   - ローカル資格情報（identity-local-credential-outside-idp-001）は
+#     **認証の強度ではなく出自**が subject。強度側は既存がカバー済で、意図的に重ねない：
+#       * パスワード単独 × 公衆網 → stride-edge-password-internet-001
+#       * MFA でも phishing 耐性が無い → zt-aitm-session-token-theft-001
+#       * 静的 API キー・共有サービスアカウント → weak-service-auth 群
+#       * 認証材料の保管・散在（CREDENTIAL ノード）→ credential-sprawl
+#     本ルールは「発行元 IdP が無い＝組織がライフサイクル停止・条件付きアクセス・
+#     サインインログ集約のいずれも効かせられない」だけを主張し、MFA 済みのエッジでも
+#     発火する点が既存との差分。auth:[None] は対象外（既存の無認証系ルールの領分）。
+#   - **Directory → IDaaS へ方向を限定した同期ルールは見送った**。既存の
+#     directory_sync 3 件は `semantic: [directory_sync]` のみで発火するため、方向限定の
+#     ルールを足すと同一エッジで必ず併発する一方、方向限定でしか成立しない固有の subject
+#     （パスワードハッシュ同期・書き戻し・シームレス SSO 等）は既存 3 件の description /
+#     mitigation が既に内包している。逆に既存 3 件へ種別軸を足して絞る案も、種別未宣言の
+#     図で発火しなくなり検出が後退するため採らない。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する（docs/threat-schema.md §7.5）。
@@ -220,3 +271,102 @@ rules:
         url: "https://www.cisa.gov/zero-trust-maturity-model"
       # DATA_STORE / EXTERNAL_ENTITY の否認は stride-data-store-repudiation-001 /
       # stride-external-entity-repudiation-001 が扱う（ノード型が異なる別 subject）。
+
+  # ── IDENTITY_PROVIDER(Hybrid): オンプレ ⇄ クラウドの信頼結合（intrinsic）────
+  - id: identity-hybrid-idp-onprem-cloud-coupling-001
+    canonicalId: hybrid-identity-onprem-cloud-coupling
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "ハイブリッド ID 基盤の信頼結合（オンプレ侵害がクラウドテナントへ直結する）"
+    severity: High
+    description: "{{nodeName}} は種別 Hybrid、すなわちオンプレミスのディレクトリとクラウド側の IDaaS を同期して 1 つの ID 基盤として機能する構成として宣言されている。このとき両側の間には認証上の信頼境界が存在せず、オンプレ側で成立した認証結果がクラウド側でそのまま権威ある本人確認として受理される。攻撃者はオンプレ側で認証処理を担う資産（ドメインコントローラ、フェデレーションサーバ、パススルー認証・シームレス SSO の各エージェントが載るホスト）を 1 台侵害すれば、認証処理そのものに介入して、パスワードを知らないまま任意ユーザとしてクラウドテナントへサインインできる（Can）。この経路はクラウド側の MFA・条件付きアクセスが評価される前に完結するため、クラウド側だけを強化しても遮断できない。結合は逆方向にも効き、クラウド側のテナント管理者ロールを得た攻撃者は同期・管理エージェント経由でオンプレ側へ戻れる。一方、オンプレの Tier 0 資産と管理端末を分離し、クラウド側の特権ロールをオンプレ同期対象外のクラウド専用アカウント（phishing 耐性 MFA 必須）で保持し、認証処理を担うホストにクラウド特権を置かない構成であれば、オンプレ 1 台の侵害がテナント管理権限へ連鎖しない（Cannot）。blast radius は {{nodeName}} が認証を提供するオンプレ・クラウド両側の全アカウントと全サービス。"
+    mitigation: "[Foundation] オンプレ側で認証処理を担うホスト（ドメインコントローラ / フェデレーションサーバ / 同期・認証エージェント）を Tier 0 資産として列挙し、汎用サーバ・日常業務端末と同居させない。クラウド側の特権ロールはオンプレ同期対象外の専用アカウントで保持し、phishing 耐性 MFA を必須化する。 [Enterprise] オンプレ発行のアサーションに依存しない認証（クラウド側で完結する認証＋条件付きアクセス）へ移行し、フェデレーション用証明書と認証エージェントの構成変更を SIEM の監視対象にする。緊急用のブレークグラスアカウントはクラウド側のみで発行し、オフライン保管する。 [Advanced] オンプレ由来の認証経路を廃止してクラウド側を単一の権威とし、オンプレをその配下の資源として扱う。特権操作は専用管理環境（PAW）とハードウェア束縛資格情報からのみ許可し、オンプレ資格情報でクラウド特権へ到達する経路自体を存在させない。"
+    appliesTo:
+      kind: node
+      nodeType: IDENTITY_PROVIDER
+      # 種別 Hybrid を明示宣言したノードのみ対象（未宣言の IdP では発火しない）。
+      identityProviderKind: [Hybrid]
+      # オンプレとクラウドに跨るという構成そのものが脅威であり、図に何が繋がっているかに
+      # 依存しない。IdP を 1 箱で描く粗い図でも成立させるため内在脅威とする。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "MITRE ATT&CK T1556.007 - Modify Authentication Process: Hybrid Identity（オンプレ側の認証処理への介入によるクラウド認証の迂回）"
+        url: "https://attack.mitre.org/techniques/T1556/007/"
+      - title: "NIST SP 800-207 - Zero Trust Architecture（信頼境界とポリシー判断点の分離）"
+        url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+      # 署名鍵の窃取によるトークン偽造は zt-idp-signing-key-compromise-001、
+      # 同期エッジを明示した詳細な図での同期アカウント特権は
+      # identity-directory-sync-privileged-bridge-001 が扱う（いずれも別 subject）。
+
+  # ── エッジ: 発行元が宣言されていない認証＝ローカル資格情報 ──────────────
+  - id: identity-local-credential-outside-idp-001
+    canonicalId: local-credential-outside-idp
+    framework: STRIDE
+    category: "Spoofing"
+    name: "集中 IdP を経由しないローカル資格情報"
+    severity: Medium
+    description: "{{sourceName}} から {{targetName}} への認証には資格情報の発行元が宣言されていない。モデル上これは集中 IdP を経由しないローカル資格情報、すなわち {{targetName}} が自前で保持するアカウントを意味し、入退社・委託終了に連動した停止も、条件付きアクセスやパスワードポリシーの一括適用も、単一の場所からのセッション失効も効かない。攻撃者はこの経路のアカウントを、退職者・委託終了者の放置アカウントとして、あるいは他所から漏えいしたパスワードの使い回しとして入手し、IdP の認証ログには一切現れない形で {{targetName}} へ正規ログインできる（Can）。認証強度が MFA であっても、その MFA を有効化・失効させる主体が {{targetName}} 側にある限り、組織としての停止手段は各システムへの個別依頼に依存する。結果として「誰がこのシステムにログインできるのか」を IdP の棚卸しから把握できず、侵害の検知も事後の追跡も成立しない。一方、この経路の認証を集中 IdP 発行の資格情報へ寄せ（SSO / フェデレーション）、発行元を図と実構成の双方で明示していれば、退職時の一括停止・条件付きアクセス・サインインログの集約がそのまま効く（Cannot）。blast radius は {{targetName}} 上で当該アカウントが持つ権限範囲と、同じパスワードが使い回されている他システム。"
+    mitigation: "[Foundation] ローカルアカウントで認証している経路を洗い出し、発行元とすべき IdP を図と実構成の双方で明示する。退職・委託終了時の停止手順を対象システムごとに文書化し、アカウント棚卸しを定期化する。 [Enterprise] 当該経路を集中 IdP の SSO / フェデレーションへ移行し、アカウントのライフサイクルを人事イベントへ連動させる（SCIM 等による自動プロビジョニング・デプロビジョニング）。IdP を経由しないローカルログインは対象システム側で無効化する。 [Advanced] ローカル資格情報を構成上存在させない（緊急用ブレークグラスのみをオフライン保管の例外として残す）。認証を phishing 耐性・ハードウェア束縛の要素へ統一し、継続的アクセス評価（CAEP / Shared Signals）で失効を即時伝搬する。"
+    appliesTo:
+      kind: edge
+      when:
+        # 「認証はしているが発行元の宣言が無い」＝ローカル資格情報（[[plan]] §2.39 B-1）。
+        # auth:[None] は stride-edge-unauth-internet-001 /
+        # zt-implicit-trust-network-location-001 が扱うため対象外。
+        auth: [Password, MFA]
+        authProvider: [Undeclared]
+        # AGENT / SUB_AGENT 発のサービス間認証の弱さは weak-service-auth 群が扱うため
+        # source から除外する（zero-trust-access.yaml の暗黙信頼ルールと同じ方針）。
+        sourceType: [USER, PC, SMARTPHONE, PROCESS, EXTERNAL_ENTITY]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "MITRE ATT&CK T1078.003 - Valid Accounts: Local Accounts（システム固有のローカルアカウントの悪用）"
+        url: "https://attack.mitre.org/techniques/T1078/003/"
+      - title: "CISA - Zero Trust Maturity Model v2（Identity ピラー: ID ストアの統合と集中管理）"
+        url: "https://www.cisa.gov/zero-trust-maturity-model"
+      # 認証強度そのものの弱さ（パスワード単独 / 公衆網）は
+      # stride-edge-password-internet-001、MFA の phishing 耐性は
+      # zt-aitm-session-token-theft-001 が扱う（いずれも別 subject）。
+
+  # ── IDENTITY_PROVIDER(Social): 外部コンシューマ ID への認証依存 ────────────
+  - id: identity-social-idp-assurance-gap-001
+    canonicalId: social-idp-assurance-gap
+    framework: STRIDE
+    category: "Spoofing"
+    name: "ソーシャル ID への認証依存（保証レベルと失効手段の欠如）"
+    severity: Medium
+    description: "{{nodeName}} は種別 Social、すなわち外部のコンシューマ向け ID プロバイダとして宣言されている。この種別ではアカウント開設時の身元確認が実質的に行われておらず、MFA の要否・認証器の種類・セッション有効期間・失効のいずれも提供者側の設定であって、依存する組織からは要求も強制もできない。攻撃者は標的利用者のソーシャルアカウントを、フィッシング・パスワード使い回し・提供者側のアカウント復旧窓口の悪用のいずれかで奪えば、その波及として {{nodeName}} を信頼する全サービスへ本人として入れる（Can）。メールアドレスを突き合わせ鍵としたアカウント連携を許している場合は、標的が登録する前に当該アドレスでアカウントを作る先回り乗っ取り（pre-hijacking）や、後からのアドレス変更による乗っ取りも成立する。組織側には認証ログも失効手段も無く、退職・契約終了といった組織側の事象は外部アカウントの有効性に一切影響しない。一方、Social ID の受け入れを低保証で足りる用途（一般利用者向けの閲覧・問い合わせ等）に限定し、特権操作・従業員アクセス・機微データへの到達には組織が発行・失効できる資格情報を別途要求していれば、外部アカウントの乗っ取りが組織の資産へ到達しない（Cannot）。blast radius は {{nodeName}} を認証根拠として受け入れている全サービスの、当該アカウントが持つ権限範囲。"
+    mitigation: "[Foundation] Social ID を受け入れる用途を明示的に限定し、特権操作・従業員アクセス・機微データの参照には使わない。メールアドレスによる暗黙のアカウント連携を廃止し、連携には所有確認を伴う明示的な操作を要求する。 [Enterprise] 重要操作の直前に組織が発行・失効できる資格情報での再認証（step-up）を要求し、外部 ID は識別にのみ用いて認可の根拠にしない。外部 ID に紐づくセッションを短命化し、組織側で失効できるセッション管理を自前で持つ。 [Advanced] 用途ごとに必要な保証レベル（身元確認・認証器強度）を定義し、要件を満たさない外部 ID は受け入れない構成にする。組織資産へのアクセスには phishing 耐性・ハードウェア束縛の要素を必須化し、外部アカウントの乗っ取り単独では到達できない経路にする。"
+    appliesTo:
+      kind: node
+      nodeType: IDENTITY_PROVIDER
+      # 種別 Social を明示宣言したノードのみ対象（未宣言の IdP では発火しない）。
+      identityProviderKind: [Social]
+      # 認証を依存するサービスが接続されているとき発火（デフォルト接続要件）。
+      # 依存先が無ければ保証レベルの不足は実害を持たないため内在脅威にはしない。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+      - standard: nist-csf-2.0
+        ref: "GV.SC-07"
+    references:
+      - title: "NIST SP 800-63A - Digital Identity Guidelines: Enrollment and Identity Proofing（身元確認保証レベル IAL の考え方）"
+        url: "https://pages.nist.gov/800-63-3/sp800-63a.html"
+      - title: "CISA - Zero Trust Maturity Model v2（Identity ピラー: 認証と ID ストアの統制）"
+        url: "https://www.cisa.gov/zero-trust-maturity-model"
+      # USER ノード視点のアカウント乗っ取り一般は stride-user-spoofing-001、
+      # IdP 発行トークンの受け側検証不備は zt-idp-token-validation-gap-001 が扱う。
