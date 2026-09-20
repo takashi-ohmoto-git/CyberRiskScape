@@ -36,6 +36,16 @@ export const TrustLevelSchema = z.enum(['Internal', 'Partner', 'Internet']);
  */
 export const AuthProviderStateSchema = z.enum(['Declared', 'Undeclared']);
 
+/**
+ * ノードが図の中で**資格情報の発行元として占める位置づけ**（[[plan]] §2.41 案 A）。
+ *
+ * エッジ軸の `authProvider`（1 本のエッジが発行元を宣言しているか）と**別物**。
+ * こちらは `authProviderId` の参照グラフから導出するノード軸で、図に保存はしない。
+ * 値の定義は `authProviderRoleOf`（`src/core/threat-engine/authProviderClosure.ts`）を
+ * 一次ソースとする。
+ */
+export const AuthProviderRoleSchema = z.enum(['Sole', 'Shared', 'Unused']);
+
 export const IdentityProviderKindSchema = z.enum([
   'IDaaS',
   'Directory',
@@ -176,6 +186,54 @@ const ConnectionRequirementSchema = z
   });
 
 /**
+ * ノード属性に対する条件式（[[plan]] §2.41）。`conditions[].when` で使う。
+ *
+ * `appliesTo` のノード側絞り込み軸のミラー。各フィールドは OR（配列内のいずれか）、
+ * フィールド間は AND。評価の意味論（未宣言の扱い等）は `appliesTo` 側と完全に同じで、
+ * エンジンは同じ判定関数を共有する。
+ *
+ * **`connection` は入れない。** 接続要件は「発火するか」の問いであって
+ * 「どれくらい深刻か」の問いではないため、段階分けの軸に混ぜない。
+ *
+ * 少なくとも 1 軸の指定が必要（空オブジェクトは無意味なので拒否）。
+ */
+const NodeWhenSchema = z
+  .object({
+    /** ノード型（OR）。`appliesTo.anyOf` で複数型を対象にしたルールで効く。 */
+    nodeType: z.array(ComponentTypeIdSchema).nonempty().optional(),
+    attackSurface: AttackSurfaceMatchSchema.optional(),
+    agentAttributes: AgentAttributesMatchSchema.optional(),
+    identityProviderKind: z.array(IdentityProviderKindSchema).nonempty().optional(),
+    authProviderRole: z.array(AuthProviderRoleSchema).nonempty().optional(),
+  })
+  .refine(
+    (w) =>
+      w.nodeType !== undefined ||
+      w.attackSurface !== undefined ||
+      w.agentAttributes !== undefined ||
+      w.identityProviderKind !== undefined ||
+      w.authProviderRole !== undefined,
+    { message: 'node when must include at least one condition' },
+  );
+
+/**
+ * ノードルールの conditions の 1 ケース（[[plan]] §2.41）。
+ * `appliesTo` を通過したノードに追加の `when` でマッチ判定し、最初に一致したケースの
+ * severity / description でルールのデフォルトを上書きする（first-match-wins）。
+ *
+ * エッジルールの `EdgeConditionCaseSchema` と同じ形。
+ */
+const NodeConditionCaseSchema = z
+  .object({
+    when: NodeWhenSchema,
+    severity: SeveritySchema.optional(),
+    description: z.string().min(1).optional(),
+  })
+  .refine((c) => c.severity !== undefined || c.description !== undefined, {
+    message: 'condition must override at least one of severity / description',
+  });
+
+/**
  * 静的ルール: 特定のノード型が存在するだけで成立する。
  *
  * 表現の選択肢（互いに排他、ちょうど 1 つを指定）：
@@ -209,6 +267,23 @@ const NodeAppliesToSchema = z.object({
    * （「最悪を仮定」にしないのは、未宣言の IdP を Hybrid と決めつけると誤検知になるため）
    */
   identityProviderKind: z.array(IdentityProviderKindSchema).nonempty().optional(),
+  /**
+   * 発行元としての位置づけによる絞り込み（[[plan]] §2.41 案 A）。
+   *
+   * **ノード型では絞られない。** 発行元になり得ない型も誰からも参照されていないため
+   * `Unused` に該当する。「IdP のうち単独依存のもの」を指すには `nodeType` と併用すること。
+   *
+   * **既存ルールをこの軸で絞ってはいけない**（[[plan]] §2.41）。`authProviderId` が
+   * 1 つも宣言されていない図では全ノードが `Unused` になり、現在出ている検出が消える。
+   * 精密化は「新しいルールを足す」か「`conditions` で severity を上げる」で行う。
+   */
+  authProviderRole: z.array(AuthProviderRoleSchema).nonempty().optional(),
+  /**
+   * 同一ルール内で severity / description を分岐させる場合に使用（[[plan]] §2.41）。
+   * エッジルールの `conditions` と同じ first-match-wins。
+   * **発火の可否は変えない**（`appliesTo` を通過した後の上書きのみ）。
+   */
+  conditions: z.array(NodeConditionCaseSchema).nonempty().optional(),
 });
 
 /**

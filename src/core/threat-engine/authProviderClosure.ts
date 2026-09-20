@@ -84,6 +84,32 @@ export function isReferencedProvider(closure: AuthProviderClosure, nodeId: strin
 }
 
 /**
+ * ノードが図の中で発行元として占める位置づけ（[[plan]] §2.41 案 A）。
+ *
+ * - `Sole`: 発行元として参照されており、かつ**参照されている発行元がこの 1 つだけ**
+ * - `Shared`: 発行元として参照されているが、他にも参照されている発行元がある
+ * - `Unused`: 一度も発行元として参照されていない
+ *
+ * しきい値は無く、参照の有無と発行元の個数だけで決まる。
+ */
+export type AuthProviderRole = 'Sole' | 'Shared' | 'Unused';
+
+/**
+ * 発行元としての位置づけを導出する（[[plan]] §2.41）。
+ *
+ * **ノード型で絞らない。** 発行元になり得ない型（DB 等）も誰からも参照されていないので
+ * `Unused` になる。これは事実として正しく、エンジンに脅威知識を持ち込まないための選択。
+ * 「IdP のうち単独依存のもの」を指したいルールは `nodeType` と併用すること。
+ */
+export function authProviderRoleOf(
+  closure: AuthProviderClosure,
+  nodeId: string,
+): AuthProviderRole {
+  if (!closure.referenced.has(nodeId)) return 'Unused';
+  return closure.referenced.size === 1 ? 'Sole' : 'Shared';
+}
+
+/**
  * Tier 2：発行元ノードに**実エッジで直接接続する相手**（[[plan]] §2.40）。
  *
  * **閉包（`AuthProviderClosure`）からは導けない。** 閉包は `authProviderId` で参照されている

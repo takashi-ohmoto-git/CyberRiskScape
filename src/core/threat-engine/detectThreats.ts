@@ -13,10 +13,12 @@ import type { ThreatRule } from '../../threat-library/schema/threatRule';
 import { renderEdgeTemplate, renderNodeTemplate } from './renderTemplate';
 import { resolveNodeTrust } from './resolveNodeTrust';
 import {
+  authProviderRoleOf,
   buildAuthProviderClosure,
   dependentsOf,
   isReferencedProvider,
   type AuthProviderClosure,
+  type AuthProviderRole,
 } from './authProviderClosure';
 
 /**
@@ -27,8 +29,8 @@ import {
  * - 評価は `appliesTo.kind` による分岐のみ（'node' / 'edge'）。コンポーネント型や
  *   エッジ属性ごとの if 文をエンジンに書かないこと。新しい条件軸が必要になった場合は
  *   スキーマ（`ThreatRuleSchema.appliesTo`）側を拡張する。
- * - severity / description の段階分けは edge ルールの `conditions`（first-match-wins）
- *   で表現する。動的説明文は `{{sourceName}}` 等のテンプレで展開する。
+ * - severity / description の段階分けは `conditions`（first-match-wins）で表現する。
+ *   node / edge の双方が持つ。動的説明文は `{{sourceName}}` 等のテンプレで展開する。
  */
 export interface DetectThreatsInput {
   nodes: DiagramNode[];
@@ -48,6 +50,9 @@ export interface DetectThreatsInput {
 type EdgeAppliesTo = Extract<ThreatRule['appliesTo'], { kind: 'edge' }>;
 type EdgeWhenLeaf = NonNullable<EdgeAppliesTo['when']>;
 type NodeAppliesTo = Extract<ThreatRule['appliesTo'], { kind: 'node' }>;
+type NodeWhenLeaf = NonNullable<NodeAppliesTo['conditions']>[number]['when'];
+/** `appliesTo` と `conditions[].when` で共有するノード軸（`nodeType` だけは形が違うので除く）。 */
+type NodeAxisMatch = Omit<NodeWhenLeaf, 'nodeType'>;
 type ConnectionRequirement = NonNullable<NodeAppliesTo['connection']>;
 type AttackSurfaceMatch = NonNullable<NodeAppliesTo['attackSurface']>;
 type AgentAttributesMatch = NonNullable<NodeAppliesTo['agentAttributes']>;
@@ -246,6 +251,33 @@ function matchNodeApplies(applies: NodeAppliesTo, node: DiagramNode): boolean {
 }
 
 /**
+ * ノード属性の軸を評価する。`appliesTo`（発火判定）と `conditions[].when`
+ * （severity / description の段階分け）の**両方から呼ぶ**ため、意味論が一致する。
+ *
+ * `nodeType` はここでは見ない（`appliesTo` 側が単一文字列 / `anyOf`、`when` 側が配列で
+ * 形が違うため、それぞれの呼び出し側で判定する）。
+ */
+function matchNodeAxes(axes: NodeAxisMatch, node: DiagramNode, role: AuthProviderRole): boolean {
+  if (axes.attackSurface && !matchAttackSurface(node, axes.attackSurface)) return false;
+  if (axes.agentAttributes && !matchAgentAttributes(node, axes.agentAttributes)) return false;
+  if (axes.identityProviderKind) {
+    // 明示宣言時のみ発火。種別未宣言の IdP を Hybrid 等と決めつけない（[[plan]] §2.39）。
+    if (!node.identityProviderKind) return false;
+    if (!axes.identityProviderKind.includes(node.identityProviderKind)) return false;
+  }
+  // 発行元としての位置づけは参照グラフからの派生値なので、常にいずれかの値を持つ
+  //（誰からも参照されていなければ `Unused`）。[[plan]] §2.41。
+  if (axes.authProviderRole && !axes.authProviderRole.includes(role)) return false;
+  return true;
+}
+
+/** `conditions[].when` の評価（[[plan]] §2.41）。`nodeType` は配列で OR。 */
+function matchNodeWhen(when: NodeWhenLeaf, node: DiagramNode, role: AuthProviderRole): boolean {
+  if (when.nodeType && !when.nodeType.includes(node.type)) return false;
+  return matchNodeAxes(when, node, role);
+}
+
+/**
  * Node ルールの接続要件を評価する。`connection` 省略時は
  * `{ required: true, direction: 'any' }` と等価。
  *
@@ -309,19 +341,25 @@ export function detectThreats({
 
     if (rule.appliesTo.kind === 'node') {
       const nodeApplies = rule.appliesTo;
+      const { conditions: nodeConditions } = nodeApplies;
       for (const node of nodes) {
         if (!matchNodeApplies(nodeApplies, node)) continue;
         if (!matchNodeConnection(node, edges, nodeById, nodeApplies.connection, authProviderClosure))
           continue;
-        if (nodeApplies.attackSurface && !matchAttackSurface(node, nodeApplies.attackSurface))
-          continue;
-        if (nodeApplies.agentAttributes && !matchAgentAttributes(node, nodeApplies.agentAttributes))
-          continue;
-        if (nodeApplies.identityProviderKind) {
-          // 明示宣言時のみ発火。種別未宣言の IdP を Hybrid 等と決めつけない（[[plan]] §2.39）。
-          if (!node.identityProviderKind) continue;
-          if (!nodeApplies.identityProviderKind.includes(node.identityProviderKind)) continue;
+        const role = authProviderRoleOf(authProviderClosure, node.id);
+        if (!matchNodeAxes(nodeApplies, node, role)) continue;
+
+        let severity: Severity = rule.severity;
+        let description: string = rule.description;
+        if (nodeConditions) {
+          for (const cond of nodeConditions) {
+            if (!matchNodeWhen(cond.when, node, role)) continue;
+            if (cond.severity !== undefined) severity = cond.severity;
+            if (cond.description !== undefined) description = cond.description;
+            break;
+          }
         }
+
         threats.push({
           id: `${rule.id}-${node.id}`,
           ruleId: rule.id,
@@ -331,9 +369,9 @@ export function detectThreats({
           framework: rule.framework,
           category: rule.category,
           name: rule.name,
-          severity: rule.severity,
+          severity,
           description: renderNodeTemplate(
-            rule.description,
+            description,
             node,
             dependentsOf(authProviderClosure, node.id),
           ),
