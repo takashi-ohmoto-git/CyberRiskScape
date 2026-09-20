@@ -108,6 +108,7 @@ export const jaPanels = {
   'panels.edge.semantic.memoryRead': 'memory_read — メモリ読取',
   'panels.edge.semantic.memoryWrite': 'memory_write — メモリ書込',
   'panels.edge.semantic.ragRetrieval': 'rag_retrieval — RAG 取得',
+  'panels.edge.semantic.directorySync': 'directory_sync — Directory ⇄ IDaaS の ID 同期',
   'panels.edge.semanticUnset': '— 未設定（data_flow として扱われる）—',
   'panels.node.idpKindSection': 'IdP 属性',
   'panels.node.idpKindLabel': '種別',

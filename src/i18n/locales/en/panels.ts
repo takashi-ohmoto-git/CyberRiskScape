@@ -107,6 +107,7 @@ export const enPanels: Partial<Record<TranslationKey, string>> = {
   'panels.edge.semantic.memoryRead': 'memory_read — memory read',
   'panels.edge.semantic.memoryWrite': 'memory_write — memory write',
   'panels.edge.semantic.ragRetrieval': 'rag_retrieval — RAG retrieval',
+  'panels.edge.semantic.directorySync': 'directory_sync — Directory ⇄ IDaaS identity sync',
   'panels.edge.semanticUnset': '— Unset (treated as data_flow) —',
   'panels.node.idpKindSection': 'IdP attributes',
   'panels.node.idpKindLabel': 'Kind',

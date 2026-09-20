@@ -78,6 +78,7 @@ function getSemanticOptions(t: TFunc): { val: EdgeSemantic; label: string }[] {
     { val: 'memory_read', label: t('panels.edge.semantic.memoryRead') },
     { val: 'memory_write', label: t('panels.edge.semantic.memoryWrite') },
     { val: 'rag_retrieval', label: t('panels.edge.semantic.ragRetrieval') },
+    { val: 'directory_sync', label: t('panels.edge.semantic.directorySync') },
   ];
 }
 
@@ -93,6 +94,8 @@ function recommendSemantic(
   if (sourceType === 'AGENT' && targetType === 'TOOL') return 'tool_invocation';
   if (sourceType === 'AGENT' && targetType === 'AGENT') return 'delegation';
   if (sourceType === 'AGENT' && targetType === 'DB') return 'rag_retrieval';
+  if (sourceType === 'IDENTITY_PROVIDER' && targetType === 'IDENTITY_PROVIDER')
+    return 'directory_sync';
   return undefined;
 }
 

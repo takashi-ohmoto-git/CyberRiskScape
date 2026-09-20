@@ -489,6 +489,7 @@ describe('PersistedProjectSchema', () => {
       'memory_read',
       'memory_write',
       'rag_retrieval',
+      'directory_sync',
     ];
     for (const sem of semantics) {
       const r = PersistedProjectSchema.safeParse({

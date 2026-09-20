@@ -335,6 +335,8 @@ export type DataFlow = 'inbound' | 'outbound' | 'bidirectional';
  * - memory_read: エージェントメモリストアからの読取
  * - memory_write: エージェントメモリストアへの書込
  * - rag_retrieval: RAG 用ベクター DB からの取得
+ * - directory_sync: オンプレ Directory ⇄ IDaaS の ID 同期（AD Connect 等）。同期経路そのものを
+ *   攻撃面として扱うためのラベル（[[plan]] §2.39 B-1 拡張）
  *
  * 設計者が EdgePanel から明示宣言する情報。未指定エッジは脅威エンジンで
  * `data_flow` として評価される（既定値）。自動推論はしない。
@@ -345,7 +347,8 @@ export type EdgeSemantic =
   | 'delegation'
   | 'memory_read'
   | 'memory_write'
-  | 'rag_retrieval';
+  | 'rag_retrieval'
+  | 'directory_sync';
 
 export interface DiagramNode {
   id: string;

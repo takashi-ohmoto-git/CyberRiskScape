@@ -59,6 +59,7 @@ export const EdgeSemanticSchema = z.enum([
   'memory_read',
   'memory_write',
   'rag_retrieval',
+  'directory_sync',
 ]);
 
 /**
