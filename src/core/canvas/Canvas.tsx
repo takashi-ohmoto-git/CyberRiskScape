@@ -201,6 +201,7 @@ export function Canvas({ threats, children }: CanvasProps) {
         <EdgeLayer
           nodes={nodes}
           edges={edges}
+          boundaries={boundaries}
           selectedEdgeId={selectedEdgeId}
           onSelectEdge={selectEdge}
         />

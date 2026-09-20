@@ -76,3 +76,32 @@ export const EDGE_NOTATION_LEGEND: readonly EdgeNotationLegendEntry[] = [
     appliesTo: isHighRiskEdge,
   },
 ];
+
+/**
+ * 信頼境界クロッシングマーカーの寸法（[[plan]] §2.39 A-1）。
+ * 境界の矩形と経路の交点に、経路へ直交する**単線を 1 本**だけ引く。
+ */
+export const CROSSING_MARK = {
+  /** 経路に直交する線分の長さ。 */
+  length: 20,
+  strokeWidth: 3,
+} as const;
+
+/**
+ * `auth` → クロッシングマーカーの色（赤＝無認証 / 黄＝パスワード / 緑＝MFA の信号色）。
+ *
+ * 黄は amber ではなく yellow-500 を使う。Partner 境界の枠線（orange-500）と紛れないようにするため。
+ * 境界の `trustLevel` は矩形の枠線色とラベルが既に示しているので、マーカーは認証の軸だけを担う。
+ */
+export const CROSSING_AUTH_COLORS: Record<AuthType, string> = {
+  None: '#ef4444',
+  Password: '#eab308',
+  MFA: '#10b981',
+};
+
+/** クロッシング凡例の `auth` 行。図に実在する `auth` 値の行だけを出す。 */
+export const CROSSING_AUTH_LEGEND: readonly { auth: AuthType; labelKey: TranslationKey }[] = [
+  { auth: 'None', labelKey: 'canvas.edgeNotation.crossingAuthNone' },
+  { auth: 'Password', labelKey: 'canvas.edgeNotation.crossingAuthPassword' },
+  { auth: 'MFA', labelKey: 'canvas.edgeNotation.crossingAuthMfa' },
+];

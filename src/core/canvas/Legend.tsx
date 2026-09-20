@@ -14,6 +14,8 @@ import {
   presentComponentTypes,
   presentEdgeNotations,
 } from '../notation/legend';
+import { CROSSING_AUTH_COLORS, CROSSING_AUTH_LEGEND } from '../notation/edgeNotation';
+import { presentCrossingAuths } from './boundaryCrossing';
 import { useLocale, useT } from '../../i18n';
 
 /**
@@ -45,6 +47,9 @@ export function Legend() {
     });
   const edgeNotations = presentEdgeNotations(edges);
   const boundaryTypes = presentBoundaryTypes(boundaries);
+  // 越境マーカーは図に越境が実在するときだけ凡例化する（使っている記号だけを出す方針）。
+  const crossingAuths = presentCrossingAuths(nodes, edges, boundaries);
+  const crossingRows = CROSSING_AUTH_LEGEND.filter((row) => crossingAuths.has(row.auth));
 
   // 何も配置されていなければ凡例自体を出さない（空のパネルでキャンバスを汚さない）。
   if (components.length === 0 && edgeNotations.length === 0 && boundaryTypes.length === 0) {
@@ -104,6 +109,34 @@ export function Legend() {
                   </svg>
                   <span className="text-xs truncate" title={t(entry.labelKey)}>
                     {t(entry.labelKey)}
+                  </span>
+                </div>
+              ))}
+            </section>
+          )}
+
+          {crossingRows.length > 0 && (
+            <section className="space-y-1.5">
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-500">
+                {t('canvas.edgeNotation.crossing')}
+              </h4>
+              {crossingRows.map((row) => (
+                <div key={row.auth} className="flex items-center gap-2">
+                  {/* 描画と同じ「経路に直交する単線」の縮小版。色は認証状態。 */}
+                  <svg width="28" height="14" className="shrink-0" aria-hidden>
+                    <line x1="1" y1="7" x2="27" y2="7" stroke="#475569" strokeWidth="2" />
+                    <line
+                      x1="14"
+                      y1="1"
+                      x2="14"
+                      y2="13"
+                      stroke={CROSSING_AUTH_COLORS[row.auth]}
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <span className="text-xs truncate" title={t(row.labelKey)}>
+                    {t(row.labelKey)}
                   </span>
                 </div>
               ))}

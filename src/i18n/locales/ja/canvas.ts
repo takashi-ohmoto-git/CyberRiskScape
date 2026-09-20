@@ -23,4 +23,8 @@ export const jaCanvas = {
   'canvas.edgeNotation.plain': '平文（暗号化なし）',
   'canvas.edgeNotation.encrypted': '暗号化あり（TLS / E2EE）',
   'canvas.edgeNotation.highRisk': '高リスク経路（未認証 × Internet）',
+  'canvas.edgeNotation.crossing': '信頼境界の越境',
+  'canvas.edgeNotation.crossingAuthNone': '越境：認証なし',
+  'canvas.edgeNotation.crossingAuthPassword': '越境：パスワード認証',
+  'canvas.edgeNotation.crossingAuthMfa': '越境：多要素認証',
 } as const;

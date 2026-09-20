@@ -1,8 +1,11 @@
 import type { MouseEvent } from 'react';
-import type { DiagramEdge, DiagramNode } from '../model/types';
+import type { DiagramBoundary, DiagramEdge, DiagramNode } from '../model/types';
 import { getEdgeAnchorAt, getEdgeEndpointGeometry } from './nodeGeometry';
 import { formatElementalId } from '../model/elementalId';
+import { computeCrossings, crossedBoundaries, resolveNodeBoundaries } from './boundaryCrossing';
 import {
+  CROSSING_AUTH_COLORS,
+  CROSSING_MARK,
   EDGE_STROKE_COLORS,
   ENCRYPTION_DASH,
   isHighRiskEdge,
@@ -12,6 +15,8 @@ import {
 interface EdgeLayerProps {
   nodes: DiagramNode[];
   edges: DiagramEdge[];
+  /** 信頼境界。越境マーカーの算出に使う（未指定＝境界なしでマーカーは出ない）。 */
+  boundaries?: DiagramBoundary[];
   selectedEdgeId: string | null;
   onSelectEdge: (edgeId: string) => void;
 }
@@ -32,7 +37,15 @@ function pairKey(a: string, b: string): string {
   return a < b ? `${a}|${b}` : `${b}|${a}`;
 }
 
-export function EdgeLayer({ nodes, edges, selectedEdgeId, onSelectEdge }: EdgeLayerProps) {
+export function EdgeLayer({
+  nodes,
+  edges,
+  boundaries,
+  selectedEdgeId,
+  onSelectEdge,
+}: EdgeLayerProps) {
+  // 各ノードの所属境界。越境判定はこの集合の対称差で行う（`boundaryCrossing` 参照）。
+  const owningBoundaries = resolveNodeBoundaries(nodes, boundaries ?? []);
   // 同一ノードペア（向き無視）を共有するエッジ群を集計。
   // 兄弟が複数あれば、各エッジを線の垂直方向にオフセットして重なりを回避する。
   const siblingGroups = new Map<string, DiagramEdge[]>();
@@ -141,6 +154,20 @@ export function EdgeLayer({ nodes, edges, selectedEdgeId, onSelectEdge }: EdgeLa
           ? `M ${sAnchor.x} ${sAnchor.y} Q ${cx} ${cy} ${tAnchor.x} ${tAnchor.y}`
           : `M ${sAnchor.x} ${sAnchor.y} L ${tAnchor.x} ${tAnchor.y}`;
 
+        // 信頼境界の越境マーカー。判定は所属境界集合の対称差、位置は描画中の経路との幾何交点。
+        const crossings = computeCrossings(
+          crossedBoundaries(
+            owningBoundaries.get(edge.source) ?? [],
+            owningBoundaries.get(edge.target) ?? [],
+          ),
+          {
+            s: sAnchor,
+            t: tAnchor,
+            c: isCurved ? { x: cx, y: cy } : undefined,
+          },
+        );
+        const crossingColor = CROSSING_AUTH_COLORS[edge.auth];
+
         const elementalId = edge.seq != null ? formatElementalId('edge', edge.seq) : null;
         const dataFlowName = edge.dataFlowName;
         // ID（DFn）と任意のデータフロー名のどちらか一方でもあればラベルを描画する。
@@ -178,6 +205,34 @@ export function EdgeLayer({ nodes, edges, selectedEdgeId, onSelectEdge }: EdgeLa
               className="transition-all duration-300"
             />
             <path d={pathD} fill="none" stroke="transparent" strokeWidth={20} />
+            {crossings.map((crossing) => {
+              const boundaryId =
+                crossing.boundary.seq != null
+                  ? formatElementalId('boundary', crossing.boundary.seq)
+                  : null;
+              const half = CROSSING_MARK.length / 2;
+              return (
+                <g
+                  key={`${edge.id}:${crossing.boundary.id}`}
+                  transform={`translate(${crossing.x} ${crossing.y}) rotate(${crossing.angle})`}
+                >
+                  <title>
+                    {[boundaryId, crossing.boundary.trustLevel].filter(Boolean).join(' ')}
+                    {` · ${edge.auth}`}
+                  </title>
+                  {/* 経路に直交する単線 1 本。色は認証状態（赤＝無認証 / 黄＝PW / 緑＝MFA）。 */}
+                  <line
+                    x1={0}
+                    y1={-half}
+                    x2={0}
+                    y2={half}
+                    stroke={crossingColor}
+                    strokeWidth={CROSSING_MARK.strokeWidth}
+                    strokeLinecap="round"
+                  />
+                </g>
+              );
+            })}
             {hasLabel && (
               <text
                 x={labelX}
