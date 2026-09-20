@@ -1,0 +1,36 @@
+# English overlay for `data/component-library/app.yaml`.
+#
+# The Japanese file is the source of truth: only `label` and `description` are
+# translated here, keyed by component type id. Anything omitted falls back to the
+# original text, so `label` is listed only where the English differs.
+#
+# Conventions:
+#   - `label` shows in the palette, on canvas, in the library inspector and wherever a
+#     threat description expands `{{nodeType}}` / `{{sourceType}}` / `{{targetType}}`.
+#     Keep it short enough for a palette row and a canvas chip.
+#   - `description` is the palette tooltip. One sentence, same level of detail as the
+#     original.
+#   - SHADOW_APP is renamed here because the original label collides with SHADOW in
+#     `cloud.yaml`, and the palette shows both side by side.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+components:
+  CHAT:
+    description: "A chat or messaging app. Use the attributes to set whether it is sanctioned and who owns it."
+
+  MAIL:
+    description: "A mail service or mail client. Use the attributes to set whether it is sanctioned and who owns it."
+
+  CRM:
+    description: "A CRM (customer relationship management) app. Use the attributes to set whether it is sanctioned and who owns it."
+
+  OTHER_APP:
+    description: "Any other business app not covered above. Use the attributes to set whether it is sanctioned and who owns it."
+
+  SHADOW_APP:
+    label: "Shadow app"
+    description: "A shadow IT app the organization neither tracks nor controls."

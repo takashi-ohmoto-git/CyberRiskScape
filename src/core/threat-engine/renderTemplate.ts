@@ -1,9 +1,11 @@
 import type { DiagramEdge, DiagramNode } from '../model/types';
 import { getNodeDisplayName } from '../model/nodeDisplay';
-import { componentRegistry } from '../../component-library/defaultRegistry';
+import { getComponentRegistry } from '../../component-library/defaultRegistry';
+import { getLocale } from '../../i18n';
 
+// 型ラベルは現在の locale で解決する（`getNodeDisplayName` と同じ方針）。
 function getTypeLabel(typeId: string): string {
-  return componentRegistry.get(typeId)?.label ?? typeId;
+  return getComponentRegistry(getLocale()).get(typeId)?.label ?? typeId;
 }
 
 /**

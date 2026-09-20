@@ -26,12 +26,12 @@ import {
   useDiagramStore,
 } from '../core/state/diagramStore';
 import { useCustomRulesStore } from '../features/custom-rules/store';
-import { componentRegistry } from '../component-library/defaultRegistry';
+import { componentRegistry, getComponentRegistry } from '../component-library/defaultRegistry';
 import { renderIcon } from '../component-library/iconRegistry';
 import { saveProject } from '../features/persistence/repository';
 import { buildThreatReport, toCsv, toJson, toDCRHThreatModelMarkdown } from '../features/export/threatReport';
 import { triggerDownload } from '../features/export/download';
-import { useT, type TranslationKey } from '../i18n';
+import { useLocale, useT, type TranslationKey } from '../i18n';
 
 const BOUNDARY_SECTION_KEY = 'BOUNDARIES';
 const LIBRARY_MANAGER_KEY = '__LIBRARY_MANAGER__';
@@ -60,6 +60,7 @@ interface LeftSidebarProps {
 
 export function LeftSidebar({ threats }: LeftSidebarProps) {
   const t = useT();
+  const [locale] = useLocale();
   const addNode = useDiagramStore((s) => s.addNode);
   const addBoundary = useDiagramStore((s) => s.addBoundary);
   const disabledLibraryIds = useDiagramStore((s) => s.disabledLibraryIds);
@@ -128,8 +129,8 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
   };
 
   const sections = useMemo(
-    () => componentRegistry.listByCategory(disabledLibraryIds),
-    [disabledLibraryIds],
+    () => getComponentRegistry(locale).listByCategory(disabledLibraryIds),
+    [disabledLibraryIds, locale],
   );
   const libraries = useMemo(() => componentRegistry.getLibraries(), []);
   const customLibraryCount = useCustomRulesStore((s) => s.libraries.length);

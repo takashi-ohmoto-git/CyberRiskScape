@@ -1,0 +1,27 @@
+# English overlay for `data/component-library/attacker.yaml`.
+#
+# The Japanese file is the source of truth: only `label` and `description` are
+# translated here, keyed by component type id. Anything omitted falls back to the
+# original text, so `label` is listed only where the English differs.
+#
+# Conventions:
+#   - `label` shows in the palette, on canvas, in the library inspector and wherever a
+#     threat description expands `{{nodeType}}` / `{{sourceType}}` / `{{targetType}}`.
+#     Keep it short enough for a palette row and a canvas chip.
+#   - `description` is the palette tooltip. One sentence, same level of detail as the
+#     original.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+components:
+  THREAT_ACTOR:
+    description: "An external threat actor. Use the Type attribute to set motivation and capability, and objective to name the component being targeted."
+
+  INSIDER_THREAT:
+    description: "An insider threat — an attacker who already holds legitimate access, such as an employee or a contractor. Use objective to name the component being targeted."
+
+  AGENTIC_ATTACKER:
+    description: "An attacker who abuses an AI agent, or an autonomous agent acting as the attacker itself. Use objective to name the component being targeted."

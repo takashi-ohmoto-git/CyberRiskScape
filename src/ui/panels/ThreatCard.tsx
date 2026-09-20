@@ -14,7 +14,7 @@ import {
 import { isSuppressed, type DetectionAssumptionFlag, type ThreatView } from '../../core/model/types';
 import { useDiagramStore } from '../../core/state/diagramStore';
 import { SEVERITY_BADGE_SOLID, SEVERITY_CONTAINER } from '../../core/model/severityColors';
-import { componentRegistry } from '../../component-library/defaultRegistry';
+import { getComponentRegistry } from '../../component-library/defaultRegistry';
 import { ControlStatusEditor } from './ControlStatusEditor';
 import { CONTROL_STATUS_BADGE, CONTROL_STATUS_LABEL_KEY } from './controlStatusStyle';
 import { RiskTreatmentEditor } from './RiskTreatmentEditor';
@@ -95,7 +95,9 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
               title={t('threats.threatCard.manualTypeRuleHint')}
             >
               {t('threats.threatCard.manualTypeRuleLabel', {
-                label: componentRegistry.get(threat.manualTargetType)?.label ?? threat.manualTargetType,
+                label:
+                  getComponentRegistry(locale).get(threat.manualTargetType)?.label ??
+                  threat.manualTargetType,
               })}
             </span>
           )}

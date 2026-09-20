@@ -5,7 +5,7 @@ import {
   selectActiveNodes,
   useDiagramStore,
 } from '../../core/state/diagramStore';
-import { componentRegistry } from '../../component-library/defaultRegistry';
+import { getComponentRegistry } from '../../component-library/defaultRegistry';
 import { renderIcon } from '../../component-library/iconRegistry';
 import { getNodeDisplayName } from '../../core/model/nodeDisplay';
 import { formatElementalId } from '../../core/model/elementalId';
@@ -29,7 +29,7 @@ import {
 } from '../../features/attack-tree/analyzeAttackGraph';
 import { SEVERITY_BADGE_SOLID } from '../../core/model/severityColors';
 import { CONTROL_STATUS_BADGE, CONTROL_STATUS_LABEL_KEY } from './controlStatusStyle';
-import { useT } from '../../i18n';
+import { useLocale, useT } from '../../i18n';
 
 /** i18n の t() 関数の型（useT の戻り値）。 */
 type TFunc = ReturnType<typeof useT>;
@@ -52,7 +52,8 @@ type Selection = { kind: 'node'; nodeId: string } | { kind: 'hop'; hopKey: strin
 
 /** ノード 1 件分の表示（アイコン + 表示名 + ElementalID）。ヘッダの攻撃者/標的チップに使用。 */
 function StepNodeChip({ node, isTarget }: { node: DiagramNode; isTarget: boolean }) {
-  const cfg = componentRegistry.get(node.type);
+  const [locale] = useLocale();
+  const cfg = getComponentRegistry(locale).get(node.type);
   return (
     <span
       className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-[11px] font-bold ${
@@ -204,7 +205,8 @@ function NodeCard({
   onSelect: () => void;
   t: TFunc;
 }) {
-  const cfg = componentRegistry.get(node.type);
+  const [locale] = useLocale();
+  const cfg = getComponentRegistry(locale).get(node.type);
   const CovIcon = COVERAGE_ICON[evidence.coverage];
 
   let frame = 'bg-slate-800 border-slate-700 text-slate-200';

@@ -4,7 +4,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Threat rules](https://img.shields.io/badge/threat%20rules-113-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-468%20passing-brightgreen.svg)](#development)
+[![Tests](https://img.shields.io/badge/tests-514%20passing-brightgreen.svg)](#development)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 **English** | [日本語](README.ja.md)
@@ -19,10 +19,9 @@ leaves your machine.
 **▶ Live demo: https://takashi-ohmoto-git.github.io/CyberRiskScape/** (nothing to install)
 
 > **Interface language.** English and Japanese are both supported — use the JA / EN switch
-> in the top bar, and your choice is remembered. The interface and all 113 threat rules
-> (name, category, description, mitigations) are translated. Component type labels in the
-> palette are still Japanese; that is the last piece — see [Roadmap](#roadmap).
-> Help is welcome.
+> in the top bar, and your choice is remembered. The interface, all 113 threat rules
+> (name, category, description, mitigations) and every component type label are
+> translated. Help is welcome.
 
 ---
 
@@ -132,7 +131,7 @@ npm run test:watch   # watch mode
 npx tsc --noEmit     # type check (strict)
 ```
 
-The standard check after a change is `npx tsc --noEmit` plus the test suite. 468 tests
+The standard check after a change is `npx tsc --noEmit` plus the test suite. 514 tests
 currently pass.
 
 ---
@@ -141,13 +140,12 @@ currently pass.
 
 Near-term priorities, in order:
 
-1. **English component library** — translate the component type labels that still render in
-   Japanese, using the same overlay approach as the threat library
-2. **Structured audit report** — PDF / HTML output fit to serve as audit evidence, with
+1. **Structured audit report** — PDF / HTML output fit to serve as audit evidence, with
    detection confidence stated explicitly
 
-Done recently: an English UI with a language switcher, and an English translation overlay
-for all 113 threat rules that leaves the existing schema unchanged.
+Done recently: an English UI with a language switcher, plus English translation overlays
+for all 113 threat rules and every component type label, all leaving the existing schemas
+unchanged.
 
 ---
 

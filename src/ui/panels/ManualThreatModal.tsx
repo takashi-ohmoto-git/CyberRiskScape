@@ -7,10 +7,10 @@ import {
   useDiagramStore,
 } from '../../core/state/diagramStore';
 import { getNodeDisplayName } from '../../core/model/nodeDisplay';
-import { componentRegistry } from '../../component-library/defaultRegistry';
+import { getComponentRegistry } from '../../component-library/defaultRegistry';
 import type { ComponentTypeId, Framework, Severity } from '../../core/model/types';
 import { FRAMEWORK_VIEW_LABEL_KEYS, MANUAL_THREAT_FRAMEWORKS } from '../frameworkLabels';
-import { useT } from '../../i18n';
+import { useLocale, useT } from '../../i18n';
 
 interface ManualThreatDraft {
   /** 対象の符号化値。'' = 全体 / 'type:<id>' = コンポーネント型 / 'node:<id>' = 配置済みノード。 */
@@ -60,6 +60,7 @@ const SEVERITY_OPTIONS: { val: Severity; label: string; activeClass: string }[] 
  */
 export function ManualThreatModal() {
   const t = useT();
+  const [locale] = useLocale();
   const isOpen = useDiagramStore((s) => s.isManualThreatModalOpen);
   const editingId = useDiagramStore((s) => s.editingManualThreatId);
   const activeFramework = useDiagramStore((s) => s.activeFramework);
@@ -72,8 +73,8 @@ export function ManualThreatModal() {
   const close = useDiagramStore((s) => s.closeManualThreatEditor);
 
   const typeSections = useMemo(
-    () => componentRegistry.listByCategory(disabledLibraryIds),
-    [disabledLibraryIds],
+    () => getComponentRegistry(locale).listByCategory(disabledLibraryIds),
+    [disabledLibraryIds, locale],
   );
 
   const editing = editingId ? (manualThreats.find((m) => m.id === editingId) ?? null) : null;

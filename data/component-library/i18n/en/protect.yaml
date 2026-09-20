@@ -1,0 +1,24 @@
+# English overlay for `data/component-library/protect.yaml`.
+#
+# The Japanese file is the source of truth: only `label` and `description` are
+# translated here, keyed by component type id. Anything omitted falls back to the
+# original text, so `label` is listed only where the English differs.
+#
+# Conventions:
+#   - `label` shows in the palette, on canvas, in the library inspector and wherever a
+#     threat description expands `{{nodeType}}` / `{{sourceType}}` / `{{targetType}}`.
+#     Keep it short enough for a palette row and a canvas chip.
+#   - `description` is the palette tooltip. One sentence, same level of detail as the
+#     original.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+components:
+  AI_GATEWAY:
+    description: "An AI gateway or LLM proxy. The central control point for AI traffic: prompt and response inspection, rate limiting, model routing, and usage logging."
+
+  GUARDRAIL:
+    description: "A guardrail or LLM firewall. The content-level policy enforcement point for prompt injection detection, output filtering, and PII masking."

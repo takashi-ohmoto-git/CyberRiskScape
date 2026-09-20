@@ -1,4 +1,4 @@
-import { componentRegistry } from '../../../component-library/defaultRegistry';
+import { getComponentRegistry } from '../../../component-library/defaultRegistry';
 import { renderIcon } from '../../../component-library/iconRegistry';
 import type { AppliesTo } from '../../../threat-library/schema/threatRule';
 import { resolveFieldLabel } from '../appliesToSummary';
@@ -6,7 +6,8 @@ import { useLocale, useT } from '../../../i18n';
 
 /** 型アイコン + ラベルの小さなチップ。`type` 未指定なら `label` をそのまま表示する。 */
 function TypeChip({ type, label }: { type?: string; label?: string }) {
-  const cfg = type ? componentRegistry.get(type) : undefined;
+  const [locale] = useLocale();
+  const cfg = type ? getComponentRegistry(locale).get(type) : undefined;
   return (
     <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-slate-700 bg-slate-800 text-xs font-bold text-slate-200 whitespace-nowrap">
       <span className={`${cfg?.color ?? 'bg-slate-500'} p-1 rounded text-white shrink-0`}>

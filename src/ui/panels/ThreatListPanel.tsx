@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { Eye, EyeOff, Plus, ShieldAlert } from 'lucide-react';
 import { isSuppressed, type ThreatView } from '../../core/model/types';
 import { getNodeDisplayName } from '../../core/model/nodeDisplay';
-import { componentRegistry } from '../../component-library/defaultRegistry';
+import { getComponentRegistry } from '../../component-library/defaultRegistry';
 import { selectActiveNodes, useDiagramStore } from '../../core/state/diagramStore';
 import { FRAMEWORK_VIEW_LABEL_KEYS } from '../frameworkLabels';
 import { ThreatCard } from './ThreatCard';
-import { useT } from '../../i18n';
+import { useLocale, useT } from '../../i18n';
 
 interface ThreatListPanelProps {
   threats: ThreatView[];
@@ -14,6 +14,7 @@ interface ThreatListPanelProps {
 
 export function ThreatListPanel({ threats }: ThreatListPanelProps) {
   const t = useT();
+  const [locale] = useLocale();
   const nodes = useDiagramStore(selectActiveNodes);
   const framework = useDiagramStore((s) => s.activeFramework);
   const openManualThreatEditor = useDiagramStore((s) => s.openManualThreatEditor);
@@ -71,7 +72,8 @@ export function ThreatListPanel({ threats }: ThreatListPanelProps) {
               targetName = targetNode ? getNodeDisplayName(targetNode) : 'Unknown';
             } else if (threat.manualTargetType) {
               const typeLabel =
-                componentRegistry.get(threat.manualTargetType)?.label ?? threat.manualTargetType;
+                getComponentRegistry(locale).get(threat.manualTargetType)?.label ??
+                threat.manualTargetType;
               targetName = t('threats.list.typeTarget', { type: typeLabel });
             } else {
               targetName = t('threats.list.wholeProject');

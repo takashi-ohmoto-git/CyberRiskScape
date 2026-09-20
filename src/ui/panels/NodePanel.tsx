@@ -47,10 +47,10 @@ import {
   THREAT_ACTOR_TYPE_APPLICABLE,
 } from '../../core/model/types';
 import { formatElementalId } from '../../core/model/elementalId';
-import { componentRegistry } from '../../component-library/defaultRegistry';
+import { getComponentRegistry } from '../../component-library/defaultRegistry';
 import { renderIcon } from '../../component-library/iconRegistry';
 import { selectActiveNodes, useDiagramStore } from '../../core/state/diagramStore';
-import { useT } from '../../i18n';
+import { useLocale, useT } from '../../i18n';
 import { ThreatCard } from './ThreatCard';
 import { AttackTreeModal } from './AttackTreeModal';
 
@@ -218,6 +218,8 @@ interface NodePanelProps {
 
 export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
   const t = useT();
+  const [locale] = useLocale();
+  const registry = getComponentRegistry(locale);
   const MANAGED_OPTIONS = getManagedOptions(t);
   const USER_TRUST_OPTIONS = getUserTrustOptions(t);
   const CLOUD_SANCTION_OPTIONS = getCloudSanctionOptions(t);
@@ -234,7 +236,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
   const setNodePosition = useDiagramStore((s) => s.setNodePosition);
   const selectNode = useDiagramStore((s) => s.selectNode);
   const allNodes = useDiagramStore(selectActiveNodes);
-  const config = componentRegistry.get(node.type);
+  const config = registry.get(node.type);
   const typeLabel = config?.label ?? node.type;
   const colorClass = config?.color ?? 'bg-slate-500';
   const showManagedState = MANAGED_STATE_APPLICABLE.has(node.type);
@@ -373,15 +375,15 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                 title={t('panels.node.selectParentTitle')}
               >
                 <div
-                  className={`${componentRegistry.get(parentNode.type)?.color ?? 'bg-slate-500'} p-1 rounded text-white shrink-0`}
+                  className={`${registry.get(parentNode.type)?.color ?? 'bg-slate-500'} p-1 rounded text-white shrink-0`}
                 >
                   {renderIcon(
-                    componentRegistry.get(parentNode.type)?.icon ?? { kind: 'builtin', name: 'box' },
+                    registry.get(parentNode.type)?.icon ?? { kind: 'builtin', name: 'box' },
                     { size: 10 },
                   )}
                 </div>
                 <span className="text-[11px] font-bold text-slate-200 truncate">
-                  {parentNode.label || componentRegistry.get(parentNode.type)?.label || parentNode.type}
+                  {parentNode.label || registry.get(parentNode.type)?.label || parentNode.type}
                 </span>
               </button>
               <button
@@ -403,7 +405,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
             </h3>
             <div className="space-y-1.5">
               {childNodes.map((child) => {
-                const childConfig = componentRegistry.get(child.type);
+                const childConfig = registry.get(child.type);
                 return (
                   <button
                     key={child.id}
@@ -607,7 +609,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                 >
                   <option value="">{t('panels.node.unset')}</option>
                   {objectiveCandidates.map((n) => {
-                    const cfg = componentRegistry.get(n.type);
+                    const cfg = registry.get(n.type);
                     const name = n.label || cfg?.label || n.type;
                     const prefix = n.seq !== undefined ? `${formatElementalId('node', n.seq)}: ` : '';
                     return (

@@ -6,7 +6,7 @@ import {
   selectActiveNodes,
   useDiagramStore,
 } from '../state/diagramStore';
-import { componentRegistry } from '../../component-library/defaultRegistry';
+import { getComponentRegistry } from '../../component-library/defaultRegistry';
 import { renderIcon } from '../../component-library/iconRegistry';
 import { BOUNDARY_TYPES } from '../constants/boundaryTypes';
 import {
@@ -14,7 +14,7 @@ import {
   presentComponentTypes,
   presentEdgeNotations,
 } from '../notation/legend';
-import { useT } from '../../i18n';
+import { useLocale, useT } from '../../i18n';
 
 /**
  * 凡例（Legend）。キャンバスで実際に使われているコンポーネント型・線記法・境界型だけを
@@ -25,6 +25,8 @@ import { useT } from '../../i18n';
  */
 export function Legend() {
   const t = useT();
+  const [locale] = useLocale();
+  const registry = getComponentRegistry(locale);
   const nodes = useDiagramStore(selectActiveNodes);
   const edges = useDiagramStore(selectActiveEdges);
   const boundaries = useDiagramStore(selectActiveBoundaries);
@@ -32,14 +34,14 @@ export function Legend() {
 
   // 描画前に「使われている記号」を集計。カテゴリ順→ラベル順でコンポーネントを安定整列する。
   const componentTypes = presentComponentTypes(nodes);
-  const categoryOrder = new Map(componentRegistry.getCategories().map((c) => [c.id, c.order]));
+  const categoryOrder = new Map(registry.getCategories().map((c) => [c.id, c.order]));
   const components = componentTypes
-    .map((type) => ({ type, def: componentRegistry.get(type) }))
+    .map((type) => ({ type, def: registry.get(type) }))
     .sort((a, b) => {
       const ao = a.def ? (categoryOrder.get(a.def.category) ?? Number.MAX_SAFE_INTEGER) : Number.MAX_SAFE_INTEGER;
       const bo = b.def ? (categoryOrder.get(b.def.category) ?? Number.MAX_SAFE_INTEGER) : Number.MAX_SAFE_INTEGER;
       if (ao !== bo) return ao - bo;
-      return (a.def?.label ?? a.type).localeCompare(b.def?.label ?? b.type, 'ja');
+      return (a.def?.label ?? a.type).localeCompare(b.def?.label ?? b.type, locale);
     });
   const edgeNotations = presentEdgeNotations(edges);
   const boundaryTypes = presentBoundaryTypes(boundaries);

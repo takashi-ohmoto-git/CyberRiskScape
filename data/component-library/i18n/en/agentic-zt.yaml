@@ -1,0 +1,33 @@
+# English overlay for `data/component-library/agentic-zt.yaml`.
+#
+# The Japanese file is the source of truth: only `label` and `description` are
+# translated here, keyed by component type id. Anything omitted falls back to the
+# original text, so `label` is listed only where the English differs.
+#
+# Conventions:
+#   - `label` shows in the palette, on canvas, in the library inspector and wherever a
+#     threat description expands `{{nodeType}}` / `{{sourceType}}` / `{{targetType}}`.
+#     Keep it short enough for a palette row and a canvas chip.
+#   - `description` is the palette tooltip. One sentence, same level of detail as the
+#     original.
+#   - Use the original English terminology from the Model Context Protocol spec and
+#     Anthropic "Zero Trust for AI Agents" (tool poisoning, rug pull, memory poisoning,
+#     confused deputy) rather than ad hoc phrasing.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+components:
+  MCP_SERVER:
+    label: "MCP server"
+    description: "A Model Context Protocol server. Supplies tool descriptors, schemas, and metadata to the agent, which makes it a ready target for tool poisoning and rug pulls."
+
+  MEMORY_STORE:
+    label: "Agent memory"
+    description: "An agent's long-term memory, summaries, and statistical recall. Where memory poisoning and cross-session privilege retention start."
+
+  SUB_AGENT:
+    label: "Sub-agent"
+    description: "A subordinate agent in a multi-agent setup (the delegate). The path for confused deputy and unscoped privilege inheritance."

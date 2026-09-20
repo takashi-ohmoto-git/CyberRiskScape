@@ -1,0 +1,102 @@
+# English overlay for `data/component-library/builtin.yaml`.
+#
+# The Japanese file is the source of truth: only `label` and `description` are
+# translated here, keyed by component type id. Anything omitted falls back to the
+# original text, so `label` is listed only where the English differs.
+#
+# Conventions:
+#   - `label` shows in the palette, on canvas, in the library inspector and wherever a
+#     threat description expands `{{nodeType}}` / `{{sourceType}}` / `{{targetType}}`.
+#     Keep it short enough for a palette row and a canvas chip.
+#   - `description` is the palette tooltip. One sentence, same level of detail as the
+#     original.
+#   - `icon` / `shape` / `color` / `category` / `canContain` are language-independent
+#     and are never carried here.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+components:
+  EXTERNAL_ENTITY:
+    label: "External entity"
+    description: "An actor outside the system boundary (a customer, an external system, a regulator)."
+
+  PROCESS:
+    label: "Process"
+    description: "A functional element that transforms or processes data. Drawn as a circle in Yourdon notation."
+
+  DATA_STORE:
+    label: "Data store"
+    description: "Somewhere persisted data lives (a database, a file store, a cache)."
+
+  LLM:
+    label: "LLM model"
+    description: "A large language model, whether reached through an inference API, hosted, or run locally."
+
+  DB:
+    label: "Vector DB / RAG"
+    description: "A store holding embedding vectors or a RAG index."
+
+  TOOL:
+    label: "External tool / API"
+    description: "An external tool or API the agent calls (the target of function calling)."
+
+  AGENT:
+    label: "AI agent"
+    description: "An AI agent that plans, selects tools, and reasons autonomously."
+
+  USER:
+    label: "User"
+    description: "A human end user. Use userTrustAttribute to classify their trust level."
+
+  PC:
+    label: "PC"
+    description: "A PC endpoint. Use managedState to say whether it is MDM-managed or BYOD."
+
+  SMARTPHONE:
+    label: "Smartphone"
+    description: "A mobile device. Use managedState to say whether it is MDM-managed or BYOD."
+
+  IOT:
+    description: "An IoT or embedded device. Usually treated as unmanaged."
+
+  GATEWAY:
+    label: "API gateway"
+    description: "An API gateway, reverse proxy, or WAF. Handles authorization and ingress control at the boundary."
+
+  FRONT_END_SERVER:
+    description: "An internet-facing entry point such as a web server or reverse proxy. Use the attackSurface attribute to state how it is exposed and what defenses are in place."
+
+  CONNECTOR:
+    label: "Connector"
+    description: "A relay node (a message broker, an iPaaS, a sidecar proxy)."
+
+  IDENTITY_PROVIDER:
+    description: "An identity provider (IdP). Handles SSO, federation, and token issuance, and is the core of authentication and authorization. Under Zero Trust it is where policy decisions begin."
+
+  PERSONAL_INFO:
+    label: "Personal data"
+    description: "Information that can identify an individual (PII), such as a name, address, or contact details."
+
+  CONFIDENTIAL_INFO:
+    label: "Confidential information"
+    description: "Trade secrets, contract terms, unpublished material — anything whose disclosure would hurt."
+
+  SOURCE_CODE:
+    label: "Source code"
+    description: "Application and infrastructure source code, IaC, and configuration files."
+
+  CREDENTIAL:
+    label: "Credentials"
+    description: "Authentication material such as API keys, tokens, passwords, private keys, and certificates."
+
+  LOG:
+    label: "Logs"
+    description: "Recorded information such as audit logs, access logs, and application logs."
+
+  OTHER_DOCUMENT:
+    # 原本は「その他」だが、`app.yaml` の OTHER_APP が英語で "Other" のため衝突する。
+    label: "Other document"
+    description: "A document or data asset that does not fit the categories above."

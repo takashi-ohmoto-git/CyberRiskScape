@@ -5,7 +5,7 @@ import { selectCustomLibraries, useCustomRulesStore } from '../../../features/cu
 import { mergeThreatRules } from '../../../features/custom-rules/mergeRules';
 import type { Framework, Severity } from '../../../core/model/types';
 import type { ThreatRule } from '../../../threat-library/schema/threatRule';
-import { componentRegistry } from '../../../component-library/defaultRegistry';
+import { getComponentRegistry } from '../../../component-library/defaultRegistry';
 import type { CategoryDefinition } from '../../../component-library/schema/component';
 import { renderIcon } from '../../../component-library/iconRegistry';
 import { FRAMEWORK_VIEW_LABEL_KEYS } from '../../frameworkLabels';
@@ -85,6 +85,7 @@ interface LibraryInspectorModalProps {
 export function LibraryInspectorModal({ onClose }: LibraryInspectorModalProps) {
   const t = useT();
   const [locale] = useLocale();
+  const registry = getComponentRegistry(locale);
   const customLibraries = useCustomRulesStore(selectCustomLibraries);
   const { getSource } = useRuleLookup();
 
@@ -144,11 +145,11 @@ export function LibraryInspectorModal({ onClose }: LibraryInspectorModalProps) {
   );
 
   const nodeTypeGroups = useMemo(() => {
-    const categories = componentRegistry.getCategories();
+    const categories = registry.getCategories();
     const byCategory = new Map<string, typeof nodeTypeCounts>();
     const uncategorized: typeof nodeTypeCounts = [];
     for (const entry of nodeTypeCounts) {
-      const category = componentRegistry.get(entry.type)?.category;
+      const category = registry.get(entry.type)?.category;
       if (category && categories.some((c) => c.id === category)) {
         const arr = byCategory.get(category) ?? [];
         arr.push(entry);
@@ -159,9 +160,9 @@ export function LibraryInspectorModal({ onClose }: LibraryInspectorModalProps) {
     }
     const sortByLabel = (items: typeof nodeTypeCounts) =>
       [...items].sort((a, b) =>
-        (componentRegistry.get(a.type)?.label ?? a.type).localeCompare(
-          componentRegistry.get(b.type)?.label ?? b.type,
-          'ja',
+        (registry.get(a.type)?.label ?? a.type).localeCompare(
+          registry.get(b.type)?.label ?? b.type,
+          locale,
         ),
       );
     const groups: Array<{ category: CategoryDefinition | null; items: typeof nodeTypeCounts }> = categories
@@ -171,7 +172,7 @@ export function LibraryInspectorModal({ onClose }: LibraryInspectorModalProps) {
       groups.push({ category: null, items: sortByLabel(uncategorized) });
     }
     return groups;
-  }, [nodeTypeCounts]);
+  }, [nodeTypeCounts, registry, locale]);
 
   const edgeRuleCount = useMemo(
     () => filteredRules.filter((r) => r.appliesTo.kind === 'edge').length,
@@ -277,7 +278,7 @@ export function LibraryInspectorModal({ onClose }: LibraryInspectorModalProps) {
                   {category?.label ?? t('libraryInspector.leftColumn.uncategorized')}
                 </div>
                 {items.map(({ type, count }) => {
-                  const cfg = componentRegistry.get(type);
+                  const cfg = registry.get(type);
                   const isSelected = selection.kind === 'node' && selection.type === type;
                   return (
                     <button
@@ -320,7 +321,7 @@ export function LibraryInspectorModal({ onClose }: LibraryInspectorModalProps) {
             <div className="text-xs font-black text-slate-500 uppercase tracking-widest">
               {selection.kind === 'node'
                 ? t('libraryInspector.rightPane.nodeHeading', {
-                    type: componentRegistry.get(selection.type)?.label ?? selection.type,
+                    type: registry.get(selection.type)?.label ?? selection.type,
                     count: selectedTotal,
                   })
                 : t('libraryInspector.rightPane.edgeHeading', { count: selectedTotal })}

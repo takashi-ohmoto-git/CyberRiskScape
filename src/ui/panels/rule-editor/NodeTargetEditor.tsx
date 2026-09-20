@@ -4,13 +4,13 @@ import {
   ConnectionDirectionSchema,
   IdentityTierSchema,
 } from '../../../threat-library/schema/threatRule';
-import { componentRegistry } from '../../../component-library/defaultRegistry';
+import { getComponentRegistry } from '../../../component-library/defaultRegistry';
 import type {
   AgentAttributesDraft,
   ConnectionDraft,
   NodeDraft,
 } from '../../../features/custom-rules/editor/draft';
-import { useT, type TranslationKey } from '../../../i18n';
+import { useLocale, useT, type TranslationKey } from '../../../i18n';
 import { ChipGroup, toggleInArray } from './ChipGroup';
 import { AttackSurfaceEditor } from './AttackSurfaceEditor';
 
@@ -41,8 +41,10 @@ export function NodeTargetEditor({
   onChange: (next: NodeDraft) => void;
 }) {
   const t = useT();
-  const componentIds = componentRegistry.getAll().map((c) => c.id);
-  const labelOf = (id: string) => componentRegistry.get(id)?.label ?? id;
+  const [locale] = useLocale();
+  const registry = getComponentRegistry(locale);
+  const componentIds = registry.getAll().map((c) => c.id);
+  const labelOf = (id: string) => registry.get(id)?.label ?? id;
   const setConn = (next: ConnectionDraft) => onChange({ ...node, connection: next });
 
   return (

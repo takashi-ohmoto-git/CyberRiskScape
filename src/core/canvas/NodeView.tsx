@@ -6,13 +6,13 @@ import type {
   Severity,
   ShapeKind,
 } from '../model/types';
-import { componentRegistry } from '../../component-library/defaultRegistry';
+import { getComponentRegistry } from '../../component-library/defaultRegistry';
 import { renderIcon } from '../../component-library/iconRegistry';
 import { SEVERITY_BG } from '../model/severityColors';
 import { getNodeDisplayName } from '../model/nodeDisplay';
 import { formatElementalId } from '../model/elementalId';
 import { SHAPE_DIMENSIONS } from './nodeGeometry';
-import { useT } from '../../i18n';
+import { useLocale, useT } from '../../i18n';
 
 /** 未登録コンポーネント型のフォールバック表示。 */
 const FALLBACK_SHAPE: ShapeKind = 'rounded';
@@ -97,7 +97,9 @@ export function NodeView({
   onDelete,
 }: NodeViewProps) {
   const t = useT();
-  const config = componentRegistry.get(node.type);
+  const [locale] = useLocale();
+  const registry = getComponentRegistry(locale);
+  const config = registry.get(node.type);
   const shape: ShapeKind = config?.shape ?? FALLBACK_SHAPE;
   const color = config?.color ?? FALLBACK_COLOR;
   const style = SHAPE_STYLES[shape];
@@ -146,7 +148,7 @@ export function NodeView({
           onMouseDown={(e) => e.stopPropagation()}
         >
           {visibleChildren.map((child) => {
-            const childConfig = componentRegistry.get(child.type);
+            const childConfig = registry.get(child.type);
             const childColor = childConfig?.color ?? FALLBACK_COLOR;
             const title = `${childConfig?.label ?? child.type}${child.label ? `: ${child.label}` : ''}`;
             return (

@@ -1,0 +1,33 @@
+# English overlay for `data/component-library/cloud.yaml`.
+#
+# The Japanese file is the source of truth: only `label` and `description` are
+# translated here, keyed by component type id. Anything omitted falls back to the
+# original text, so `label` is listed only where the English differs.
+#
+# Conventions:
+#   - `label` shows in the palette, on canvas, in the library inspector and wherever a
+#     threat description expands `{{nodeType}}` / `{{sourceType}}` / `{{targetType}}`.
+#     Keep it short enough for a palette row and a canvas chip.
+#   - `description` is the palette tooltip. One sentence, same level of detail as the
+#     original.
+#   - SHADOW is renamed here because the original label collides with SHADOW_APP in
+#     `app.yaml`, and the palette shows both side by side.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+components:
+  SAAS:
+    description: "SaaS (Software as a Service). Use the attributes to set whether it is sanctioned and who owns it."
+
+  IAAS:
+    description: "IaaS (Infrastructure as a Service). Use the attributes to set whether it is sanctioned and who owns it."
+
+  PAAS:
+    description: "PaaS (Platform as a Service). Use the attributes to set whether it is sanctioned and who owns it."
+
+  SHADOW:
+    label: "Shadow cloud"
+    description: "Shadow IT or shadow cloud the organization neither tracks nor controls."

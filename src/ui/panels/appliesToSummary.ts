@@ -1,5 +1,5 @@
 import { translate, type Locale, type TranslationKey } from '../../i18n';
-import { componentRegistry } from '../../component-library/defaultRegistry';
+import { getComponentRegistry } from '../../component-library/defaultRegistry';
 import type { AppliesTo, AttackSurfaceMatch } from '../../threat-library/schema/threatRule';
 
 /**
@@ -13,12 +13,14 @@ import type { AppliesTo, AttackSurfaceMatch } from '../../threat-library/schema/
 type EdgeWhenLike = Record<string, unknown>;
 
 /** ノード型 ID を表示名へ解決する（ThreatCard.tsx と同じパターン）。 */
-function resolveTypeLabel(type: string): string {
-  return componentRegistry.get(type)?.label ?? type;
+function resolveTypeLabel(type: string, locale: Locale): string {
+  return getComponentRegistry(locale).get(type)?.label ?? type;
 }
 
 function formatTypeList(types: readonly string[], locale: Locale): string {
-  return types.map(resolveTypeLabel).join(translate('appliesToSummary.join.or', locale));
+  return types
+    .map((t) => resolveTypeLabel(t, locale))
+    .join(translate('appliesToSummary.join.or', locale));
 }
 
 /**
@@ -72,7 +74,9 @@ function formatArrayMap(match: EdgeWhenLike, locale: Locale, typeKeys: readonly 
     .filter(([, v]) => v !== undefined)
     .map(([k, v]) => {
       const values = v as string[];
-      const rendered = typeKeys.includes(k) ? values.map(resolveTypeLabel) : values;
+      const rendered = typeKeys.includes(k)
+        ? values.map((t) => resolveTypeLabel(t, locale))
+        : values;
       return `${resolveFieldLabel(k, locale)}=${rendered.join('/')}`;
     })
     .join('、');
@@ -129,7 +133,7 @@ function summarizeNode(appliesTo: Extract<AppliesTo, { kind: 'node' }>, locale: 
   if (appliesTo.nodeType) {
     parts.push(
       translate('appliesToSummary.node.target.single', locale, {
-        type: resolveTypeLabel(appliesTo.nodeType),
+        type: resolveTypeLabel(appliesTo.nodeType, locale),
       }),
     );
   } else if (appliesTo.anyOf) {

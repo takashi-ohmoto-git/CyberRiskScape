@@ -7,9 +7,9 @@ import {
   TrustLevelSchema,
   UserTrustAttributeSchema,
 } from '../../../threat-library/schema/threatRule';
-import { componentRegistry } from '../../../component-library/defaultRegistry';
+import { getComponentRegistry } from '../../../component-library/defaultRegistry';
 import type { EdgeLeafDraft } from '../../../features/custom-rules/editor/draft';
-import { useT, type TranslationKey } from '../../../i18n';
+import { useLocale, useT, type TranslationKey } from '../../../i18n';
 import { ChipGroup, toggleInArray } from './ChipGroup';
 
 /**
@@ -56,8 +56,10 @@ export function EdgeWhenLeafEditor({
   onChange: (next: EdgeLeafDraft) => void;
 }) {
   const t = useT();
-  const componentIds = componentRegistry.getAll().map((c) => c.id);
-  const labelOf = (id: string) => componentRegistry.get(id)?.label ?? id;
+  const [locale] = useLocale();
+  const registry = getComponentRegistry(locale);
+  const componentIds = registry.getAll().map((c) => c.id);
+  const labelOf = (id: string) => registry.get(id)?.label ?? id;
 
   return (
     <div className="flex flex-col gap-2 bg-slate-900/60 border border-slate-700/70 rounded-lg p-3">
