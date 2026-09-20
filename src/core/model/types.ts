@@ -212,12 +212,23 @@ export const SANCTION_ATTRIBUTE_APPLICABLE: ReadonlySet<ComponentTypeId> = new S
 export type IdentityProviderKind = 'IDaaS' | 'Directory' | 'Hybrid' | 'Social' | 'Custom';
 
 /**
- * エッジの `authProviderId` が参照でき、`identityProviderKind` を持てるノード型
- * （資格情報の発行元になり得る型）。
+ * エッジの `authProviderId` が参照できるノード型（資格情報の発行元になり得る型）。
+ * `DIRECTORY`（AD / LDAP）は Kerberos 等で自ら認証するため発行元になり得る。
  */
 export const AUTH_PROVIDER_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set([
   'IDENTITY_PROVIDER',
+  'DIRECTORY',
 ]);
+
+/**
+ * `identityProviderKind` を持てるノード型。
+ *
+ * `AUTH_PROVIDER_APPLICABLE` と**意図的に別集合**にしている。`DIRECTORY` は型それ自体が
+ * 「ディレクトリである」ことを表すため、`identityProviderKind: 'Directory'` を重ねると
+ * 同じ事実を 2 か所で宣言することになる（粗い図では IdP 1 箱＋種別、詳細な図では
+ * DIRECTORY / IDENTITY_PROVIDER を分けて描く、という [[plan]] §2.39 の整理）。
+ */
+export const IDP_KIND_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set(['IDENTITY_PROVIDER']);
 
 /** Type 属性（threatActorType）の適用対象ノード型。 */
 export const THREAT_ACTOR_TYPE_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set([
@@ -413,7 +424,7 @@ export interface DiagramNode {
    */
   attackObjectiveId?: string;
   /**
-   * IdP ノードの種別（[[AUTH_PROVIDER_APPLICABLE]] の型用）。
+   * IdP ノードの種別（[[IDP_KIND_APPLICABLE]] の型用）。
    * 製品名は `label` に書く（"Entra ID (本番テナント)" 等）。未指定は「不明」扱い。
    */
   identityProviderKind?: IdentityProviderKind;

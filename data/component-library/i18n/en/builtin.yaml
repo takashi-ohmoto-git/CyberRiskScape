@@ -76,6 +76,9 @@ components:
   IDENTITY_PROVIDER:
     description: "An identity provider (IdP). Handles SSO, federation, and token issuance, and is the core of authentication and authorization. Under Zero Trust it is where policy decisions begin."
 
+  DIRECTORY:
+    description: "A directory service (Active Directory / LDAP). It is the identity store holding users, groups, entitlements and their credentials, and it authenticates in its own right (Kerberos and the like). Use IdP instead when the node issues tokens or handles federation."
+
   PERSONAL_INFO:
     label: "Personal data"
     description: "Information that can identify an individual (PII), such as a name, address, or contact details."

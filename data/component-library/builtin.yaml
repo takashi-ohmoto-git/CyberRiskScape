@@ -161,6 +161,15 @@ components:
     color: "bg-fuchsia-600"
     description: "アイデンティティプロバイダ（IdP）。SSO・フェデレーション・トークン発行を担う認証認可の中核。Zero Trust ではポリシー判断の起点となる。"
 
+  - id: DIRECTORY
+    label: "Directory"
+    category: INFRASTRUCTURE
+    icon: { kind: builtin, name: "users" }
+    shape: rounded
+    color: "bg-fuchsia-700"
+    description: "ディレクトリサービス（Active Directory / LDAP）。利用者・グループ・権限とその資格情報を保持する ID の格納先であり、自身も認証（Kerberos 等）を行う。トークン発行やフェデレーションを担う場合は IdP を使う。"
+    canContain: [PERSONAL_INFO, CREDENTIAL]
+
   # ── Documents ───────────────────────────────────────────────
   - id: PERSONAL_INFO
     label: "個人情報"

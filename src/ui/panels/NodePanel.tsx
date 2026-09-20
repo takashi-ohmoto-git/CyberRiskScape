@@ -42,7 +42,7 @@ import type {
 import {
   AGENCY_APPLICABLE,
   ATTACK_OBJECTIVE_APPLICABLE,
-  AUTH_PROVIDER_APPLICABLE,
+  IDP_KIND_APPLICABLE,
   IDENTITY_TIER_APPLICABLE,
   isSuppressed,
   SANCTION_ATTRIBUTE_APPLICABLE,
@@ -258,7 +258,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
   const showCloudAttrs = SANCTION_ATTRIBUTE_APPLICABLE.has(node.type);
   const showAttacker = ATTACK_OBJECTIVE_APPLICABLE.has(node.type);
   const showThreatActorType = THREAT_ACTOR_TYPE_APPLICABLE.has(node.type);
-  const showIdpKind = AUTH_PROVIDER_APPLICABLE.has(node.type);
+  const showIdpKind = IDP_KIND_APPLICABLE.has(node.type);
   // objective の候補：同一レイヤー上の自分以外の非攻撃者ノード。
   const objectiveCandidates = allNodes.filter(
     (n) => n.id !== node.id && !ATTACK_OBJECTIVE_APPLICABLE.has(n.type),
