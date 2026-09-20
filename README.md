@@ -18,10 +18,11 @@ leaves your machine.
 
 **▶ Live demo: https://takashi-ohmoto-git.github.io/CyberRiskScape/** (nothing to install)
 
-> **Interface language.** The UI is currently Japanese-first. An English locale exists in
-> `src/i18n/locales/en.ts` but covers only part of the interface, and there is no language
-> switcher yet, so the demo runs in Japanese. Threat rule text is Japanese as well.
-> English coverage is the project's top priority — see [Roadmap](#roadmap). Help is welcome.
+> **Interface language.** English and Japanese are both supported — use the JA / EN switch
+> in the top bar, and your choice is remembered. The interface and all 113 threat rules
+> (name, category, description, mitigations) are translated. Component type labels in the
+> palette are still Japanese; that is the last piece — see [Roadmap](#roadmap).
+> Help is welcome.
 
 ---
 
@@ -140,11 +141,13 @@ currently pass.
 
 Near-term priorities, in order:
 
-1. **English UI** — complete the English locale and add a language switcher
+1. **English component library** — translate the component type labels that still render in
+   Japanese, using the same overlay approach as the threat library
 2. **Structured audit report** — PDF / HTML output fit to serve as audit evidence, with
    detection confidence stated explicitly
-3. **English threat library** — a translation overlay for the 113 rules, starting with the
-   `AgenticAI` set, leaving the existing schema unchanged
+
+Done recently: an English UI with a language switcher, and an English translation overlay
+for all 113 threat rules that leaves the existing schema unchanged.
 
 ---
 
