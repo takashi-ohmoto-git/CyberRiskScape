@@ -208,7 +208,7 @@ export function ZeroTrustForAiAgents() {
             <h3 className="text-xl font-black tracking-tight text-slate-100">
               ZERO TRUST FOR AI AGENTS
             </h3>
-            <p className="text-[11px] text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5">
               {t('zeroTrust.header.subtitle')}
             </p>
           </div>
@@ -241,7 +241,7 @@ export function ZeroTrustForAiAgents() {
                 className="p-3 rounded-lg bg-slate-800/40 border-l-2 border-emerald-500/60"
               >
                 <div className="text-xs font-bold text-slate-100">{t(p.titleKey)}</div>
-                <p className="text-[11px] text-slate-400 leading-relaxed mt-1">
+                <p className="text-xs text-slate-400 leading-relaxed mt-1">
                   {t(p.bodyKey)}
                 </p>
               </div>
@@ -250,7 +250,7 @@ export function ZeroTrustForAiAgents() {
               <div className="text-xs font-bold text-amber-400">
                 {t('zeroTrust.principles.designTest.title')}
               </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed mt-1">
+              <p className="text-xs text-slate-400 leading-relaxed mt-1">
                 {t('zeroTrust.principles.designTest.body')}
               </p>
             </div>
@@ -270,7 +270,7 @@ export function ZeroTrustForAiAgents() {
                 <span className="text-sm font-black text-sky-400 shrink-0 w-28 tabular-nums">
                   {t(w.statKey)}
                 </span>
-                <p className="text-[11px] text-slate-400 leading-relaxed">{t(w.bodyKey)}</p>
+                <p className="text-xs text-slate-400 leading-relaxed">{t(w.bodyKey)}</p>
               </div>
             ))}
           </div>
@@ -308,13 +308,13 @@ export function ZeroTrustForAiAgents() {
                   <td className="p-3 text-xs font-bold text-slate-200 align-top">
                     {t(d.nameKey)}
                   </td>
-                  <td className="p-3 text-[11px] text-slate-400 leading-relaxed align-top border-l border-slate-800">
+                  <td className="p-3 text-xs text-slate-400 leading-relaxed align-top border-l border-slate-800">
                     {t(d.foundationKey)}
                   </td>
-                  <td className="p-3 text-[11px] text-slate-400 leading-relaxed align-top border-l border-slate-800">
+                  <td className="p-3 text-xs text-slate-400 leading-relaxed align-top border-l border-slate-800">
                     {t(d.enterpriseKey)}
                   </td>
-                  <td className="p-3 text-[11px] text-slate-400 leading-relaxed align-top border-l border-slate-800">
+                  <td className="p-3 text-xs text-slate-400 leading-relaxed align-top border-l border-slate-800">
                     {t(d.advancedKey)}
                   </td>
                 </tr>
@@ -322,7 +322,7 @@ export function ZeroTrustForAiAgents() {
             </tbody>
           </table>
         </div>
-        <p className="text-[11px] text-slate-500 italic mt-2">
+        <p className="text-xs text-slate-500 italic mt-2">
           {t('zeroTrust.matrix.footnote.lead')}{' '}
           <span className="font-bold text-slate-400">
             {t('zeroTrust.matrix.footnote.emphasis')}
@@ -342,11 +342,11 @@ export function ZeroTrustForAiAgents() {
               <div className="text-xs font-bold text-slate-100">
                 {i + 1}. {t(thr.titleKey)}
               </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed mt-1">{t(thr.bodyKey)}</p>
+              <p className="text-xs text-slate-400 leading-relaxed mt-1">{t(thr.bodyKey)}</p>
             </div>
           ))}
           <div className="p-3 rounded-lg border border-emerald-500/40 bg-emerald-500/5">
-            <p className="text-[11px] text-emerald-300/90 leading-relaxed">
+            <p className="text-xs text-emerald-300/90 leading-relaxed">
               <span className="font-bold">{t('zeroTrust.threats.baselineRising.label')}</span>
               {t('zeroTrust.threats.baselineRising.body')}
             </p>

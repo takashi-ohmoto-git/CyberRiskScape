@@ -222,7 +222,7 @@ export function RuleEditorModal({
         </Section>
 
         {issues.length > 0 && (
-          <div className="text-[11px] text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3 py-2 leading-relaxed">
+          <div className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3 py-2 leading-relaxed">
             <p className="font-bold mb-1">{t('ruleEditor.modal.issues.heading')}</p>
             <ul className="list-disc list-inside space-y-0.5">
               {issues.map((m, i) => (
@@ -235,13 +235,13 @@ export function RuleEditorModal({
         <div className="flex justify-end gap-2 pt-1">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-wider bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200"
+            className="px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200"
           >
             {t('ruleEditor.modal.cancel')}
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-wider bg-blue-600 hover:bg-blue-500 text-white"
+            className="px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider bg-blue-600 hover:bg-blue-500 text-white"
           >
             {t('ruleEditor.modal.save')}
           </button>
@@ -266,7 +266,7 @@ function Section({
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-md bg-blue-600/20 text-blue-300 text-[11px] font-black">
+        <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-md bg-blue-600/20 text-blue-300 text-xs font-black">
           {step}
         </span>
         <h3 className="text-[12px] font-bold text-slate-200 uppercase tracking-wider">{title}</h3>
@@ -279,7 +279,7 @@ function Section({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-[11px] text-slate-500">{label}</span>
+      <span className="text-xs text-slate-500">{label}</span>
       {children}
     </label>
   );
@@ -298,7 +298,7 @@ function KindButton({
     <button
       type="button"
       onClick={onClick}
-      className={`px-3 py-1.5 rounded-md text-[11px] font-bold border transition-colors ${
+      className={`px-3 py-1.5 rounded-md text-xs font-bold border transition-colors ${
         active
           ? 'bg-blue-600 border-blue-500 text-white'
           : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'
@@ -326,7 +326,7 @@ function RepeatableRows<T extends Record<string, string | undefined>>({
   const t = useT();
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-[11px] text-slate-500">{label}</span>
+      <span className="text-xs text-slate-500">{label}</span>
       {rows.map((row, i) => (
         <div key={i} className="flex gap-1.5 items-center">
           {cols.map((c) => (
@@ -354,7 +354,7 @@ function RepeatableRows<T extends Record<string, string | undefined>>({
       <button
         type="button"
         onClick={() => onChange([...rows, makeEmpty()])}
-        className="self-start flex items-center gap-1 text-[11px] font-bold text-blue-400 hover:text-blue-300"
+        className="self-start flex items-center gap-1 text-xs font-bold text-blue-400 hover:text-blue-300"
       >
         <Plus size={13} /> {t('ruleEditor.modal.repeatableRows.addRow')}
       </button>

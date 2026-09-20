@@ -176,7 +176,7 @@ export function CustomRulesManagerModal() {
           </button>
         </div>
 
-        <p className="text-[11px] text-slate-500 leading-relaxed">
+        <p className="text-xs text-slate-500 leading-relaxed">
           {t('ruleEditor.manager.scopeNote.before')}
           <strong className="text-slate-400">{t('ruleEditor.manager.scopeNote.strong')}</strong>
           {t('ruleEditor.manager.scopeNote.after')}
@@ -195,13 +195,13 @@ export function CustomRulesManagerModal() {
           <button
             onClick={handleCreate}
             disabled={newName.trim() === ''}
-            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-black uppercase tracking-wider px-3 py-2 rounded-lg transition-colors"
           >
             <Plus size={14} /> {t('ruleEditor.manager.create')}
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-black uppercase tracking-wider px-3 py-2 rounded-lg transition-colors"
           >
             <FileUp size={14} /> {t('ruleEditor.manager.importJson')}
           </button>
@@ -219,7 +219,7 @@ export function CustomRulesManagerModal() {
         </div>
 
         {importError && (
-          <p className="text-[11px] text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3 py-2 leading-relaxed">
+          <p className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3 py-2 leading-relaxed">
             {t('ruleEditor.manager.importFailed', { error: importError })}
           </p>
         )}
@@ -319,13 +319,13 @@ export function CustomRulesManagerModal() {
                       <div className="flex items-center gap-4 pt-1">
                         <button
                           onClick={() => setEditing({ libraryId: lib.id, rule: null })}
-                          className="flex items-center gap-1 text-[11px] font-bold text-blue-400 hover:text-blue-300"
+                          className="flex items-center gap-1 text-xs font-bold text-blue-400 hover:text-blue-300"
                         >
                           <Plus size={13} /> {t('ruleEditor.manager.addRule')}
                         </button>
                         <button
                           onClick={() => setCloneTargetLibId(lib.id)}
-                          className="flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-slate-200"
+                          className="flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-slate-200"
                         >
                           <Copy size={13} /> {t('ruleEditor.manager.cloneFromBundled')}
                         </button>

@@ -191,7 +191,7 @@ export function ComplianceMapModal() {
                     />
                   </div>
                   {selectedStandard.disclaimer && (
-                    <p className="mt-3 text-[11px] text-slate-500 leading-relaxed border-l-2 border-slate-700 pl-3">
+                    <p className="mt-3 text-xs text-slate-500 leading-relaxed border-l-2 border-slate-700 pl-3">
                       {selectedStandard.disclaimer}
                     </p>
                   )}
@@ -225,7 +225,7 @@ function ItemRow({ item, t }: { item: ComplianceItem; t: ReturnType<typeof useT>
   return (
     <li className="p-3 rounded-lg bg-slate-800/40 border border-slate-800">
       <div className="flex items-baseline gap-3 flex-wrap">
-        <span className="text-[11px] font-mono font-bold text-emerald-400 shrink-0">
+        <span className="text-xs font-mono font-bold text-emerald-400 shrink-0">
           {item.ref}
         </span>
         <span className="text-xs font-bold text-slate-100">{item.title}</span>
@@ -241,7 +241,7 @@ function ItemRow({ item, t }: { item: ComplianceItem; t: ReturnType<typeof useT>
           </a>
         )}
       </div>
-      <p className="mt-1.5 text-[11px] text-slate-400 leading-relaxed">{item.summary}</p>
+      <p className="mt-1.5 text-xs text-slate-400 leading-relaxed">{item.summary}</p>
       {item.relatedTo && item.relatedTo.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {item.relatedTo.map((rel) => (

@@ -198,7 +198,7 @@ export function BoundaryPanel({ boundary }: BoundaryPanelProps) {
               <button
                 key={opt.action}
                 onClick={() => onReorder(boundary.id, opt.action)}
-                className="flex items-center gap-2 p-2.5 rounded-xl border bg-slate-800 border-slate-700 text-slate-300 hover:border-emerald-500 hover:text-emerald-400 transition-all text-[11px] font-bold"
+                className="flex items-center gap-2 p-2.5 rounded-xl border bg-slate-800 border-slate-700 text-slate-300 hover:border-emerald-500 hover:text-emerald-400 transition-all text-xs font-bold"
               >
                 <span className="text-slate-400">{opt.icon}</span>
                 {opt.label}

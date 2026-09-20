@@ -252,7 +252,7 @@ export function ProjectFileModal() {
                     setStatus(IDLE);
                     setOverwriting(false);
                   }}
-                  className={`px-2 py-2 rounded-lg text-[11px] font-black border transition-all ${
+                  className={`px-2 py-2 rounded-lg text-xs font-black border transition-all ${
                     tab === tabKey
                       ? 'bg-blue-600 border-blue-400 text-white'
                       : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'
@@ -281,7 +281,7 @@ export function ProjectFileModal() {
                   />
                 </label>
                 {overwriting && (
-                  <div className="rounded-lg border border-amber-600/60 bg-amber-900/20 p-3 text-[11px] text-amber-200 leading-relaxed">
+                  <div className="rounded-lg border border-amber-600/60 bg-amber-900/20 p-3 text-xs text-amber-200 leading-relaxed">
                     {t('project.fileModal.overwriteWarning')}
                   </div>
                 )}
@@ -307,15 +307,15 @@ export function ProjectFileModal() {
             ) : (
               <div className="flex flex-col gap-3">
                 {!dir ? (
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-xs text-slate-400">
                     {t('project.fileModal.selectFolderFirst')}
                   </p>
                 ) : needsReconnect ? (
-                  <p className="text-[11px] text-amber-200">
+                  <p className="text-xs text-amber-200">
                     {t('project.fileModal.reconnectNeeded')}
                   </p>
                 ) : files.length === 0 ? (
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-xs text-slate-400">
                     {t('project.fileModal.noFiles')}
                   </p>
                 ) : (
@@ -341,7 +341,7 @@ export function ProjectFileModal() {
 
         {status.kind !== 'idle' && (
           <p
-            className={`text-[11px] leading-relaxed break-words ${
+            className={`text-xs leading-relaxed break-words ${
               status.kind === 'ok' ? 'text-emerald-300' : 'text-rose-400'
             }`}
           >

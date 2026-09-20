@@ -42,7 +42,7 @@ const TYPE_AXES = [
 function AxisRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="grid grid-cols-[120px_1fr] gap-2 items-start">
-      <span className="text-[11px] text-slate-500 pt-1">{label}</span>
+      <span className="text-xs text-slate-500 pt-1">{label}</span>
       {children}
     </div>
   );

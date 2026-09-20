@@ -30,7 +30,7 @@ const AGENT_AXES = [
 ] as const satisfies readonly { key: keyof AgentAttributesDraft; labelKey: TranslationKey; options: readonly string[] }[];
 
 function SubLabel({ children }: { children: React.ReactNode }) {
-  return <span className="text-[11px] text-slate-500">{children}</span>;
+  return <span className="text-xs text-slate-500">{children}</span>;
 }
 
 export function NodeTargetEditor({
@@ -185,7 +185,7 @@ export function NodeTargetEditor({
         <SubLabel>{t('ruleEditor.nodeTarget.agentAttributesLabel')}</SubLabel>
         {AGENT_AXES.map((axis) => (
           <div key={axis.key} className="grid grid-cols-[160px_1fr] gap-2 items-start">
-            <span className="text-[11px] text-slate-500 pt-0.5">{t(axis.labelKey)}</span>
+            <span className="text-xs text-slate-500 pt-0.5">{t(axis.labelKey)}</span>
             <ChipGroup
               options={axis.options}
               selected={node.agentAttributes[axis.key]}
@@ -207,7 +207,7 @@ export function NodeTargetEditor({
 }
 
 function modeCls(active: boolean): string {
-  return `px-2.5 py-1 rounded-md text-[11px] font-bold border transition-colors ${
+  return `px-2.5 py-1 rounded-md text-xs font-bold border transition-colors ${
     active
       ? 'bg-blue-600 border-blue-500 text-white'
       : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'

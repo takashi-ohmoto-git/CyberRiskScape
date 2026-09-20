@@ -22,7 +22,7 @@ export function ChipGroup<T extends string>({
             key={o}
             type="button"
             onClick={() => onToggle(o)}
-            className={`px-2 py-0.5 rounded-md text-[11px] font-medium border transition-colors ${
+            className={`px-2 py-0.5 rounded-md text-xs font-medium border transition-colors ${
               on
                 ? 'bg-blue-600 border-blue-500 text-white'
                 : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'

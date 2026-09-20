@@ -241,7 +241,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
           </div>
           <ul className="space-y-1">
             {threat.references.map((r, i) => (
-              <li key={`${r.title}-${i}`} className="text-[11px] text-slate-400 leading-snug">
+              <li key={`${r.title}-${i}`} className="text-xs text-slate-400 leading-snug">
                 {r.url ? (
                   <a
                     href={r.url}

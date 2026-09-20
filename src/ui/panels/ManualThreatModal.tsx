@@ -171,7 +171,7 @@ export function ManualThreatModal() {
                   <button
                     key={fw}
                     onClick={() => setDraft((p) => ({ ...p, framework: fw }))}
-                    className={`px-2 py-2 rounded-lg text-[11px] font-black border transition-all ${
+                    className={`px-2 py-2 rounded-lg text-xs font-black border transition-all ${
                       selected
                         ? 'bg-blue-600 border-blue-400 text-white'
                         : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'

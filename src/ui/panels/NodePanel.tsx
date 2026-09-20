@@ -382,7 +382,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                     { size: 10 },
                   )}
                 </div>
-                <span className="text-[11px] font-bold text-slate-200 truncate">
+                <span className="text-xs font-bold text-slate-200 truncate">
                   {parentNode.label || registry.get(parentNode.type)?.label || parentNode.type}
                 </span>
               </button>
@@ -417,7 +417,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                     >
                       {renderIcon(childConfig?.icon ?? { kind: 'builtin', name: 'box' }, { size: 10 })}
                     </div>
-                    <span className="text-[11px] font-bold text-slate-200 truncate flex-1">
+                    <span className="text-xs font-bold text-slate-200 truncate flex-1">
                       {child.label || childConfig?.label || child.type}
                     </span>
                     <span className="text-[9px] text-slate-500 shrink-0">
@@ -653,7 +653,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                     key={key}
                     className="flex items-center justify-between gap-3 bg-slate-900/60 rounded-xl border border-slate-700 px-3 py-2"
                   >
-                    <span className="text-[11px] font-bold text-slate-300 leading-tight">{label}</span>
+                    <span className="text-xs font-bold text-slate-300 leading-tight">{label}</span>
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => onToggleAttackSurface(key, true)}

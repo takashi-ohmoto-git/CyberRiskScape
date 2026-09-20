@@ -58,7 +58,7 @@ export function ConditionGroup({
             type="button"
             onClick={() => setMode(m.value)}
             title={t(m.hintKey)}
-            className={`px-2.5 py-1 rounded-md text-[11px] font-bold border transition-colors ${
+            className={`px-2.5 py-1 rounded-md text-xs font-bold border transition-colors ${
               edge.mode === m.value
                 ? 'bg-blue-600 border-blue-500 text-white'
                 : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'
@@ -97,7 +97,7 @@ export function ConditionGroup({
         <button
           type="button"
           onClick={addLeaf}
-          className="self-start flex items-center gap-1 text-[11px] font-bold text-blue-400 hover:text-blue-300"
+          className="self-start flex items-center gap-1 text-xs font-bold text-blue-400 hover:text-blue-300"
         >
           <Plus size={13} /> {t('ruleEditor.condition.addBlock')}
         </button>

@@ -134,12 +134,12 @@ export function NewProjectModal() {
         <p className="text-[12px] text-slate-300 leading-relaxed">
           {t('project.newModal.confirmMessage')}
         </p>
-        <p className="text-[11px] text-amber-200 leading-relaxed rounded-lg border border-amber-600/60 bg-amber-900/20 p-3">
+        <p className="text-xs text-amber-200 leading-relaxed rounded-lg border border-amber-600/60 bg-amber-900/20 p-3">
           {t('project.newModal.warning')}
         </p>
 
         {status.kind === 'error' && (
-          <p className="text-[11px] leading-relaxed break-words text-rose-400">{status.message}</p>
+          <p className="text-xs leading-relaxed break-words text-rose-400">{status.message}</p>
         )}
 
         <div className="flex justify-end gap-2 pt-2">

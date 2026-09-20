@@ -34,7 +34,7 @@ export function AttackSurfaceEditor({
     <div className="flex flex-col gap-1.5">
       {SURFACE_ROWS.map((row) => (
         <div key={row.key} className="grid grid-cols-[150px_1fr] gap-2 items-center">
-          <span className="text-[11px] text-slate-500">{t(row.labelKey)}</span>
+          <span className="text-xs text-slate-500">{t(row.labelKey)}</span>
           <div className="flex gap-1">
             {TRISTATE.map((ts) => {
               const on = value[row.key] === ts.value;
@@ -43,7 +43,7 @@ export function AttackSurfaceEditor({
                   key={ts.labelKey}
                   type="button"
                   onClick={() => onChange({ ...value, [row.key]: ts.value })}
-                  className={`px-2 py-0.5 rounded-md text-[11px] font-medium border transition-colors ${
+                  className={`px-2 py-0.5 rounded-md text-xs font-medium border transition-colors ${
                     on
                       ? 'bg-blue-600 border-blue-500 text-white'
                       : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'

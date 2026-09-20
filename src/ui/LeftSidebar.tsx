@@ -315,7 +315,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                     <button
                       key={comp.id}
                       onClick={() => addNode(comp.id)}
-                      className="w-full flex items-center gap-3 p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-all border border-slate-700 text-[11px] font-bold group"
+                      className="w-full flex items-center gap-3 p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-all border border-slate-700 text-xs font-bold group"
                       title={comp.description}
                     >
                       <div className={`${comp.color} p-1.5 rounded-md text-white`}>
@@ -346,7 +346,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                 <button
                   key={key}
                   onClick={() => addBoundary(key as BoundaryTypeId)}
-                  className="w-full flex items-center gap-3 p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-all border border-slate-700 text-[11px] font-bold group"
+                  className="w-full flex items-center gap-3 p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-all border border-slate-700 text-xs font-bold group"
                 >
                   <div className="bg-slate-600 p-1.5 rounded-md">
                     <Square size={14} className={boundary.isDashed ? 'stroke-dasharray-2' : ''} />
@@ -456,7 +456,7 @@ function ProjectMenuItem({
       type="button"
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
-      className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all border text-[11px] font-bold text-left ${
+      className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all border text-xs font-bold text-left ${
         disabled
           ? 'bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed'
           : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-100 cursor-pointer'

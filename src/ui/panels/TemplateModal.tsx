@@ -130,7 +130,7 @@ export function TemplateModal() {
             <button
               key={tabKey}
               onClick={() => setTab(tabKey)}
-              className={`px-2 py-2 rounded-lg text-[11px] font-black border transition-all ${
+              className={`px-2 py-2 rounded-lg text-xs font-black border transition-all ${
                 tab === tabKey
                   ? 'bg-blue-600 border-blue-400 text-white'
                   : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'
@@ -145,7 +145,7 @@ export function TemplateModal() {
 
         {tab === 'export' ? (
           <div className="flex flex-col gap-4">
-            <p className="text-[11px] text-slate-400 leading-relaxed">
+            <p className="text-xs text-slate-400 leading-relaxed">
               {t('project.templateModal.exportIntroBefore')}
               <span className="font-bold text-slate-200">{activeLayer}</span>
               {t('project.templateModal.exportIntroAfter', { count: activeCount })}
@@ -181,7 +181,7 @@ export function TemplateModal() {
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            <p className="text-[11px] text-slate-400 leading-relaxed">
+            <p className="text-xs text-slate-400 leading-relaxed">
               {t('project.templateModal.importIntro1')}
               <span className="font-bold text-slate-200">{activeLayer}</span>
               {t('project.templateModal.importIntro2')}
@@ -211,7 +211,7 @@ export function TemplateModal() {
             </button>
 
             {importedFileName && parsed && (
-              <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-3 text-[11px]">
+              <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-3 text-xs">
                 <p className="text-slate-500 mb-1 truncate">{importedFileName}</p>
                 {parsed.ok ? (
                   <p className="text-slate-200">
@@ -230,7 +230,7 @@ export function TemplateModal() {
             )}
 
             {confirming && (
-              <div className="rounded-lg border border-amber-600/60 bg-amber-900/20 p-3 text-[11px] text-amber-200 leading-relaxed">
+              <div className="rounded-lg border border-amber-600/60 bg-amber-900/20 p-3 text-xs text-amber-200 leading-relaxed">
                 {t('project.templateModal.confirmReplace', {
                   layer: activeLayer,
                   count: activeCount,

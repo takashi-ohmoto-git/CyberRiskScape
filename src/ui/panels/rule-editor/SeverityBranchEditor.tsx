@@ -47,7 +47,7 @@ export function SeverityBranchEditor({
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-[11px] text-slate-500 leading-relaxed">
+      <p className="text-xs text-slate-500 leading-relaxed">
         {t('ruleEditor.severityBranch.description')}
       </p>
 
@@ -90,7 +90,7 @@ export function SeverityBranchEditor({
           <EdgeWhenLeafEditor leaf={c.when} onChange={(when) => setCase(i, { ...c, when })} />
 
           <div className="grid grid-cols-[120px_1fr] gap-2 items-center">
-            <span className="text-[11px] text-slate-500">{t('ruleEditor.severityBranch.severityLabel')}</span>
+            <span className="text-xs text-slate-500">{t('ruleEditor.severityBranch.severityLabel')}</span>
             <select
               value={c.severity}
               onChange={(e) =>
@@ -108,7 +108,7 @@ export function SeverityBranchEditor({
           </div>
 
           <div className="grid grid-cols-[120px_1fr] gap-2 items-start">
-            <span className="text-[11px] text-slate-500 pt-1">{t('ruleEditor.severityBranch.descriptionLabel')}</span>
+            <span className="text-xs text-slate-500 pt-1">{t('ruleEditor.severityBranch.descriptionLabel')}</span>
             <textarea
               value={c.description}
               onChange={(e) => setCase(i, { ...c, description: e.target.value })}
@@ -138,7 +138,7 @@ export function SeverityBranchEditor({
       <button
         type="button"
         onClick={addCase}
-        className="self-start flex items-center gap-1 text-[11px] font-bold text-amber-400 hover:text-amber-300"
+        className="self-start flex items-center gap-1 text-xs font-bold text-amber-400 hover:text-amber-300"
       >
         <Plus size={13} /> {t('ruleEditor.severityBranch.addCase')}
       </button>

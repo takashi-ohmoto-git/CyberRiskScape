@@ -76,7 +76,7 @@ export function Legend() {
                   >
                     {renderIcon(def?.icon ?? { kind: 'builtin', name: 'box' }, { size: 12 })}
                   </span>
-                  <span className="text-[11px] truncate" title={def?.label ?? type}>
+                  <span className="text-xs truncate" title={def?.label ?? type}>
                     {def?.label ?? type}
                   </span>
                 </div>
@@ -102,7 +102,7 @@ export function Legend() {
                       strokeDasharray={entry.swatch.dash}
                     />
                   </svg>
-                  <span className="text-[11px] truncate" title={t(entry.labelKey)}>
+                  <span className="text-xs truncate" title={t(entry.labelKey)}>
                     {t(entry.labelKey)}
                   </span>
                 </div>
@@ -124,7 +124,7 @@ export function Legend() {
                         config.isDashed ? 'border-dashed' : 'border-solid'
                       } ${config.rounded ? 'rounded-lg' : 'rounded-none'}`}
                     />
-                    <span className="text-[11px] truncate" title={t(config.nameKey)}>
+                    <span className="text-xs truncate" title={t(config.nameKey)}>
                       {t(config.nameKey)}
                     </span>
                   </div>

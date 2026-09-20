@@ -56,7 +56,7 @@ function StepNodeChip({ node, isTarget }: { node: DiagramNode; isTarget: boolean
   const cfg = getComponentRegistry(locale).get(node.type);
   return (
     <span
-      className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-[11px] font-bold ${
+      className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs font-bold ${
         isTarget
           ? 'bg-rose-600/20 border-rose-500/60 text-rose-200'
           : 'bg-slate-800 border-slate-700 text-slate-200'
@@ -576,7 +576,7 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
           </button>
         </div>
 
-        <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 flex-wrap">
+        <div className="flex items-center gap-2 text-xs font-bold text-slate-400 flex-wrap">
           <StepNodeChip node={attacker} isTarget={false} />
           <span className="text-slate-600">→</span>
           {target ? (
