@@ -18,6 +18,7 @@ export const enCanvas: Partial<Record<TranslationKey, string>> = {
   'canvas.boundaryType.dmz': 'DMZ',
   'canvas.boundaryType.macro': 'Macro segmentation',
   'canvas.boundaryType.micro': 'Micro segmentation',
+  'canvas.boundaryType.blastRadius': 'Blast radius',
 
   'canvas.edgeNotation.plain': 'Plaintext (unencrypted)',
   'canvas.edgeNotation.encrypted': 'Encrypted (TLS / E2EE)',

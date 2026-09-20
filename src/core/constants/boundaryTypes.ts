@@ -9,20 +9,41 @@ import type { TranslationKey } from '../../i18n';
 export interface BoundaryTypeConfig {
   id: BoundaryTypeId;
   nameKey: TranslationKey;
-  isDashed: boolean;
+  /**
+   * 枠線の破線指定。`fine` はマイクロセグメンテーション相当、`coarse` はそれより粗い。
+   * CSS の `border-style: dashed` は破線長を直接指定できず線幅に比例するため、
+   * `coarse` は線幅を上げて表現する（クラスへの解決は `BOUNDARY_DASH_CLASS`）。
+   */
+  dash: 'none' | 'fine' | 'coarse';
   rounded: boolean;
 }
 
 export const BOUNDARY_TYPES: Record<BoundaryTypeId, BoundaryTypeConfig> = {
-  RECT: { id: 'RECT', nameKey: 'canvas.boundaryType.rect', isDashed: false, rounded: false },
-  RECT_DASHED: { id: 'RECT_DASHED', nameKey: 'canvas.boundaryType.dmz', isDashed: true, rounded: false },
-  ROUNDED: { id: 'ROUNDED', nameKey: 'canvas.boundaryType.macro', isDashed: false, rounded: true },
+  RECT: { id: 'RECT', nameKey: 'canvas.boundaryType.rect', dash: 'none', rounded: false },
+  RECT_DASHED: { id: 'RECT_DASHED', nameKey: 'canvas.boundaryType.dmz', dash: 'fine', rounded: false },
+  ROUNDED: { id: 'ROUNDED', nameKey: 'canvas.boundaryType.macro', dash: 'none', rounded: true },
   ROUNDED_DASHED: {
     id: 'ROUNDED_DASHED',
     nameKey: 'canvas.boundaryType.micro',
-    isDashed: true,
+    dash: 'fine',
     rounded: true,
   },
+  BLAST_RADIUS: {
+    id: 'BLAST_RADIUS',
+    nameKey: 'canvas.boundaryType.blastRadius',
+    dash: 'coarse',
+    rounded: true,
+  },
+};
+
+/**
+ * 枠線の破線指定を Tailwind クラスへ解決する（キャンバス描画と凡例で共有）。
+ * JIT の purge 対策でクラス名は合成せずフル文字列で持つ（DesignPrinciples §4.1）。
+ */
+export const BOUNDARY_DASH_CLASS: Record<BoundaryTypeConfig['dash'], string> = {
+  none: 'border-2 border-solid',
+  fine: 'border-2 border-dashed',
+  coarse: 'border-4 border-dashed',
 };
 
 /**

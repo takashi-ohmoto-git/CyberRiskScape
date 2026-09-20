@@ -12,7 +12,26 @@ export type ComponentTypeId = string;
  */
 export type ShapeKind = 'rectangle' | 'circle' | 'data-store' | 'rounded' | 'connector';
 
-export type BoundaryTypeId = 'RECT' | 'RECT_DASHED' | 'ROUNDED' | 'ROUNDED_DASHED';
+export type BoundaryTypeId =
+  | 'RECT'
+  | 'RECT_DASHED'
+  | 'ROUNDED'
+  | 'ROUNDED_DASHED'
+  | 'BLAST_RADIUS';
+
+/**
+ * 信頼レベルを持つ境界型（`resolveNodeTrust` / `resolveNodeBoundaries` の判定対象）。
+ *
+ * `BLAST_RADIUS` は侵害時の影響範囲を示す**注記**であって信頼境界ではないため含めない。
+ * 含めてしまうと、数個のコンポーネントを囲む小さな枠が「最内側の境界」になって
+ * 囲んだ相手の trustLevel を黙って上書きし、越境マーカーも誤って出る。
+ */
+export const TRUST_BEARING_BOUNDARY_TYPES: ReadonlySet<BoundaryTypeId> = new Set([
+  'RECT',
+  'RECT_DASHED',
+  'ROUNDED',
+  'ROUNDED_DASHED',
+]);
 
 export type Framework = 'STRIDE' | 'AI' | 'AgenticAI';
 
@@ -515,6 +534,13 @@ export interface DiagramBoundary {
   microSegmentationStatus?: MicroSegmentationStatus;
   /** 取り扱い機密データ区分。 */
   sensitiveData?: SensitiveData;
+
+  // ── BLAST_RADIUS（侵害時の影響範囲）専用属性 ──
+  /**
+   * 影響範囲の自由記述ラベル（例：「決済系の侵害範囲」）。
+   * 区分の語彙を固定しない方針のため enum にしない。未入力なら型名だけを表示する。
+   */
+  blastRadiusLabel?: string;
 }
 
 import type { ComplianceRef, MitigationTiers, Reference } from '../../threat-library/schema/threatRule';

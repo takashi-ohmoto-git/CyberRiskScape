@@ -349,7 +349,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                   className="w-full flex items-center gap-3 p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-all border border-slate-700 text-xs font-bold group"
                 >
                   <div className="bg-slate-600 p-1.5 rounded-md">
-                    <Square size={14} className={boundary.isDashed ? 'stroke-dasharray-2' : ''} />
+                    <Square size={14} className={boundary.dash !== 'none' ? 'stroke-dasharray-2' : ''} />
                   </div>
                   {t(boundary.nameKey)}
                   <Plus size={12} className="ml-auto opacity-40 group-hover:opacity-100" />

@@ -19,6 +19,7 @@ export const jaCanvas = {
   'canvas.boundaryType.dmz': 'DMZ',
   'canvas.boundaryType.macro': 'マクロセグメンテーション',
   'canvas.boundaryType.micro': 'マイクロセグメンテーション',
+  'canvas.boundaryType.blastRadius': '影響範囲 (Blast Radius)',
 
   'canvas.edgeNotation.plain': '平文（暗号化なし）',
   'canvas.edgeNotation.encrypted': '暗号化あり（TLS / E2EE）',

@@ -1,4 +1,5 @@
 import type { DiagramBoundary, DiagramNode, TrustLevel } from '../model/types';
+import { TRUST_BEARING_BOUNDARY_TYPES } from '../model/types';
 import { resolveDrawableAncestor } from '../model/parentChain';
 import { getNodeCenter } from '../canvas/nodeGeometry';
 
@@ -10,6 +11,8 @@ import { getNodeCenter } from '../canvas/nodeGeometry';
  *   左上座標で判定すると、見た目は枠内なのに左上角だけ枠外へはみ出したノードが
  *   枠外（= Internet）扱いになるため、中心で判定する。
  * - 入れ子境界を許可。複数に含まれる場合は **面積最小（= 最内側）** の trustLevel を採用。
+ * - 信頼境界ではない型（`BLAST_RADIUS`）は判定から除外する。小さく囲むほど最内側になり、
+ *   囲んだ相手の trustLevel を上書きしてしまうため（`TRUST_BEARING_BOUNDARY_TYPES`）。
  * - どの境界にも属さないノードは `'Internet'` 扱い（= 信頼できない外部）。
  * - 内包ノード（parentId 持ち）は描画上は親に従属するため、判定座標は
  *   `resolveDrawableAncestor` で遡った祖先の中心を用いる。これにより親と子は
@@ -22,11 +25,12 @@ export function resolveNodeTrust(
   boundaries: DiagramBoundary[],
 ): Map<string, TrustLevel> {
   const map = new Map<string, TrustLevel>();
+  const trustBoundaries = boundaries.filter((b) => TRUST_BEARING_BOUNDARY_TYPES.has(b.type));
   for (const node of nodes) {
     const anchor = getNodeCenter(resolveDrawableAncestor(node, nodes));
     let inner: DiagramBoundary | null = null;
     let innerArea = Infinity;
-    for (const b of boundaries) {
+    for (const b of trustBoundaries) {
       if (
         anchor.x >= b.x &&
         anchor.x <= b.x + b.width &&

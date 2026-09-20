@@ -1,4 +1,5 @@
 import type { AuthType, DiagramBoundary, DiagramEdge, DiagramNode } from '../model/types';
+import { TRUST_BEARING_BOUNDARY_TYPES } from '../model/types';
 import { resolveDrawableAncestor } from '../model/parentChain';
 import { getNodeCenter } from './nodeGeometry';
 
@@ -53,16 +54,17 @@ function area(b: DiagramBoundary): number {
  *
  * 包含規則は `resolveNodeTrust` と同一：ノード中心の点包含、内包ノード（parentId 持ち）は
  * `resolveDrawableAncestor` で遡った祖先の中心で判定する。どの境界にも属さないノードは空配列
- * （= Internet 扱い）。
+ * （= Internet 扱い）。信頼境界ではない型（`BLAST_RADIUS`）は対象外＝越境マーカーを出さない。
  */
 export function resolveNodeBoundaries(
   nodes: readonly DiagramNode[],
   boundaries: readonly DiagramBoundary[],
 ): Map<string, DiagramBoundary[]> {
   const map = new Map<string, DiagramBoundary[]>();
+  const trustBoundaries = boundaries.filter((b) => TRUST_BEARING_BOUNDARY_TYPES.has(b.type));
   for (const node of nodes) {
     const anchor = getNodeCenter(resolveDrawableAncestor(node, nodes));
-    const owning = boundaries.filter((b) => contains(b, anchor));
+    const owning = trustBoundaries.filter((b) => contains(b, anchor));
     owning.sort((a, b) => area(a) - area(b));
     map.set(node.id, owning);
   }

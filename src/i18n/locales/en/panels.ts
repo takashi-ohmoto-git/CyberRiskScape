@@ -150,5 +150,9 @@ export const enPanels: Partial<Record<TranslationKey, string>> = {
   'panels.boundary.vlanIdPlaceholder': 'e.g. 100',
   'panels.boundary.vlanIdInvalid': 'Enter an integer between 0 and 4094',
   'panels.boundary.networkAddressPlaceholder': 'e.g. 10.0.0.0/24',
+  'panels.boundary.blastRadiusLabelField': 'Blast radius label',
+  'panels.boundary.blastRadiusPlaceholder': 'e.g. Payment systems impact scope',
+  'panels.boundary.blastRadiusNote':
+    'This frame annotates the impact scope of a compromise. It is not a trust boundary, so it does not affect the trust level of the components it encloses, threat detection, or crossing markers.',
   'panels.boundary.networkAddressInvalid': 'Enter CIDR notation (e.g. 10.0.0.0/24)',
 };

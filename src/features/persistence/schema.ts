@@ -34,7 +34,13 @@ export const PERSISTED_PROJECT_SCHEMA_VERSION = 1 as const;
  */
 const FrameworkViewSchema = z.enum(['STRIDE', 'AI', 'AgenticAI', 'ALL']);
 
-const BoundaryTypeIdSchema = z.enum(['RECT', 'RECT_DASHED', 'ROUNDED', 'ROUNDED_DASHED']);
+const BoundaryTypeIdSchema = z.enum([
+  'RECT',
+  'RECT_DASHED',
+  'ROUNDED',
+  'ROUNDED_DASHED',
+  'BLAST_RADIUS',
+]);
 
 /**
  * クラウド属性（SAAS/IAAS/PAAS 用）。値の意味は `src/core/model/types.ts` の
@@ -144,6 +150,8 @@ const PersistedBoundarySchema = z.object({
   microTrust: MicroTrustAttributeSchema.optional(),
   microSegmentationStatus: MicroSegmentationStatusSchema.optional(),
   sensitiveData: SensitiveDataSchema.optional(),
+  // ── BLAST_RADIUS 専用属性（後方互換のため optional） ──
+  blastRadiusLabel: z.string().max(64).optional(),
 });
 
 const PersistedProjectMetaSchema = z.object({

@@ -1,7 +1,7 @@
 import type { MouseEvent } from 'react';
 import { Trash2 } from 'lucide-react';
 import type { DiagramBoundary, ResizeHandle } from '../model/types';
-import { BOUNDARY_TYPES } from '../constants/boundaryTypes';
+import { BOUNDARY_DASH_CLASS, BOUNDARY_TYPES } from '../constants/boundaryTypes';
 import { formatElementalId } from '../model/elementalId';
 import { useT } from '../../i18n';
 
@@ -40,12 +40,22 @@ export function BoundaryView({
 }: BoundaryViewProps) {
   const t = useT();
   const config = BOUNDARY_TYPES[boundary.type];
-  const trustColor =
-    boundary.trustLevel === 'Internal'
+  // BLAST_RADIUS は信頼境界ではないので trustLevel の色体系（emerald/orange/blue）に載せない。
+  const isBlastRadius = boundary.type === 'BLAST_RADIUS';
+  const frameColor = isBlastRadius
+    ? 'border-fuchsia-500/60 text-fuchsia-400'
+    : boundary.trustLevel === 'Internal'
       ? 'border-emerald-500/50 text-emerald-500'
       : boundary.trustLevel === 'Partner'
         ? 'border-orange-500/50 text-orange-500'
         : 'border-blue-500/50 text-blue-500';
+  const blastLabel = boundary.blastRadiusLabel?.trim();
+  // 信頼境界は「trustLevel: 型名」、BLAST_RADIUS は「型名: 自由記述ラベル」。
+  const caption = isBlastRadius
+    ? blastLabel
+      ? `${t(config.nameKey)}: ${blastLabel}`
+      : t(config.nameKey)
+    : `${boundary.trustLevel}: ${t(config.nameKey)}`;
 
   return (
     <div
@@ -65,9 +75,9 @@ export function BoundaryView({
       }}
     >
       <div
-        className={`w-full h-full border-2 ${config.isDashed ? 'border-dashed' : 'border-solid'} ${
+        className={`w-full h-full ${BOUNDARY_DASH_CLASS[config.dash]} ${
           config.rounded ? 'rounded-3xl' : 'rounded-none'
-        } ${trustColor} bg-white/5 backdrop-blur-[1px]`}
+        } ${frameColor} bg-white/5 backdrop-blur-[1px]`}
       >
         <div className="absolute top-2 left-4 flex items-center gap-1.5 text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded bg-slate-950/80 border border-inherit">
           {boundary.seq != null && (
@@ -75,7 +85,7 @@ export function BoundaryView({
               {formatElementalId('boundary', boundary.seq)}
             </span>
           )}
-          {boundary.trustLevel}: {t(config.nameKey)}
+          {caption}
         </div>
         <button
           onClick={(e) => {

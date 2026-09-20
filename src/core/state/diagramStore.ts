@@ -732,6 +732,10 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
           microSegmentationStatus: '未適用',
           sensitiveData: '無し',
         };
+      } else if (type === 'BLAST_RADIUS') {
+        // 影響範囲の注記。trustLevel は判定に使われない（TRUST_BEARING_BOUNDARY_TYPES から
+        // 除外済み）が、必須フィールドなので既定値を入れておく。
+        boundary = { ...base, trustLevel: 'Internal' };
       } else if (type === 'RECT_DASHED') {
         // DMZ は Internet 相当の固定トラスト。
         boundary = { ...base, trustLevel: 'Internet' };

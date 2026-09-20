@@ -68,6 +68,34 @@ describe('resolveNodeBoundaries', () => {
   });
 });
 
+describe('BLAST_RADIUS（信頼境界ではない枠）', () => {
+  /** outer の内側に重なる、より小さい影響範囲の枠。 */
+  const blast: DiagramBoundary = {
+    id: 'b-blast',
+    type: 'BLAST_RADIUS',
+    x: 150,
+    y: 150,
+    width: 300,
+    height: 300,
+    trustLevel: 'Internal',
+  };
+
+  it('所属境界に数えない', () => {
+    const nodes = [nodeAt('n1', 250, 250)];
+    expect(owningOf(nodes, [outer, blast], 'n1').map((b) => b.id)).toEqual(['b-outer']);
+  });
+
+  it('枠の内外をまたぐエッジでも越境マーカーを出さない', () => {
+    // 両端とも outer の中。blast の内と外に分かれているが、越境はゼロであるべき。
+    const nodes = [nodeAt('in', 250, 250), nodeAt('out', 480, 480)];
+    const crossed = crossedBoundaries(
+      owningOf(nodes, [outer, blast], 'in'),
+      owningOf(nodes, [outer, blast], 'out'),
+    );
+    expect(crossed).toEqual([]);
+  });
+});
+
 describe('crossedBoundaries', () => {
   it('単一境界を 1 枚越えるエッジは 1 件を返す', () => {
     const nodes = [nodeAt('in', 150, 150), nodeAt('out', 900, 900)];

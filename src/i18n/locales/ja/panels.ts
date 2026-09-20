@@ -152,4 +152,8 @@ export const jaPanels = {
   'panels.boundary.vlanIdInvalid': '0〜4094 の整数で入力してください',
   'panels.boundary.networkAddressPlaceholder': '例: 10.0.0.0/24',
   'panels.boundary.networkAddressInvalid': 'CIDR 形式で入力してください（例: 10.0.0.0/24）',
+  'panels.boundary.blastRadiusLabelField': '影響範囲ラベル',
+  'panels.boundary.blastRadiusPlaceholder': '例: 決済系の侵害範囲',
+  'panels.boundary.blastRadiusNote':
+    'この枠は侵害時の影響範囲を示す注記です。信頼境界ではないため、囲んだコンポーネントの信頼レベル・脅威検出・越境マーカーには影響しません。',
 } as const;

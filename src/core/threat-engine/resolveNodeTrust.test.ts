@@ -87,6 +87,43 @@ describe('resolveNodeTrust', () => {
     expect(map.get('n1')).toBe('Internet');
   });
 
+  it('BLAST_RADIUS は最内側でも trustLevel を上書きしない', () => {
+    // Internal 境界の内側に、より小さい BLAST_RADIUS 枠を重ねる。
+    // 面積最小は BLAST_RADIUS 側だが、信頼境界ではないので Internal のままであるべき。
+    const nodes: DiagramNode[] = [{ id: 'n1', type: 'PROCESS', x: 250, y: 250 }];
+    const boundaries: DiagramBoundary[] = [
+      { id: 'trust', type: 'RECT', x: 100, y: 100, width: 400, height: 400, trustLevel: 'Internal' },
+      {
+        id: 'blast',
+        type: 'BLAST_RADIUS',
+        x: 200,
+        y: 200,
+        width: 250,
+        height: 250,
+        trustLevel: 'Internet',
+      },
+    ];
+    const map = resolveNodeTrust(nodes, boundaries);
+    expect(map.get('n1')).toBe('Internal');
+  });
+
+  it('BLAST_RADIUS しか囲んでいないノードは未所属（Internet）扱い', () => {
+    const nodes: DiagramNode[] = [{ id: 'n1', type: 'PROCESS', x: 250, y: 250 }];
+    const boundaries: DiagramBoundary[] = [
+      {
+        id: 'blast',
+        type: 'BLAST_RADIUS',
+        x: 100,
+        y: 100,
+        width: 400,
+        height: 400,
+        trustLevel: 'Internal',
+      },
+    ];
+    const map = resolveNodeTrust(nodes, boundaries);
+    expect(map.get('n1')).toBe('Internet');
+  });
+
   it('内包ノード（parentId 持ち）は親の trustLevel を継承する', () => {
     // 親は境界内（Internal）、子の x/y はスタールで境界外（Internet 相当）
     const nodes: DiagramNode[] = [

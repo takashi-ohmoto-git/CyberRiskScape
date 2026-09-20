@@ -8,7 +8,7 @@ import {
 } from '../state/diagramStore';
 import { getComponentRegistry } from '../../component-library/defaultRegistry';
 import { renderIcon } from '../../component-library/iconRegistry';
-import { BOUNDARY_TYPES } from '../constants/boundaryTypes';
+import { BOUNDARY_DASH_CLASS, BOUNDARY_TYPES } from '../constants/boundaryTypes';
 import {
   presentBoundaryTypes,
   presentComponentTypes,
@@ -153,8 +153,8 @@ export function Legend() {
                 return (
                   <div key={type} className="flex items-center gap-2">
                     <span
-                      className={`w-6 h-4 shrink-0 border-2 border-slate-400 ${
-                        config.isDashed ? 'border-dashed' : 'border-solid'
+                      className={`w-6 h-4 shrink-0 border-slate-400 ${
+                        BOUNDARY_DASH_CLASS[config.dash]
                       } ${config.rounded ? 'rounded-lg' : 'rounded-none'}`}
                     />
                     <span className="text-xs truncate" title={t(config.nameKey)}>

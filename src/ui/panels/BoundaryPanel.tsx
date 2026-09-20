@@ -13,6 +13,7 @@ import {
   Layers,
   Lock,
   Network,
+  Radius,
   ShieldAlert,
   ShieldCheck,
   Users,
@@ -189,6 +190,10 @@ export function BoundaryPanel({ boundary }: BoundaryPanelProps) {
           />
         )}
 
+        {boundary.type === 'BLAST_RADIUS' && (
+          <BlastRadiusSection boundary={boundary} onUpdateField={onUpdate} />
+        )}
+
         <section>
           <label className="text-xs font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
             <Layers size={12} className="text-emerald-500" /> {t('panels.boundary.arrangeLabel')}
@@ -259,6 +264,45 @@ function TrustLevelSection({
           </button>
         ))}
       </div>
+    </section>
+  );
+}
+
+/**
+ * BLAST_RADIUS（侵害時の影響範囲）の属性。信頼境界ではないので Trust Attribute は持たず、
+ * 区分の語彙も固定しない（自由記述のラベル 1 本だけ）。
+ */
+function BlastRadiusSection({
+  boundary,
+  onUpdateField,
+}: {
+  boundary: DiagramBoundary;
+  onUpdateField: <K extends keyof DiagramBoundary>(
+    id: string,
+    field: K,
+    value: DiagramBoundary[K],
+  ) => void;
+}) {
+  const t = useT();
+  return (
+    <section>
+      <label className="text-xs font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
+        <Radius size={12} className="text-fuchsia-400" />
+        {t('panels.boundary.blastRadiusLabelField')}
+      </label>
+      <input
+        type="text"
+        value={boundary.blastRadiusLabel ?? ''}
+        onChange={(e) =>
+          onUpdateField(boundary.id, 'blastRadiusLabel', e.target.value || undefined)
+        }
+        placeholder={t('panels.boundary.blastRadiusPlaceholder')}
+        maxLength={64}
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-fuchsia-500"
+      />
+      <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+        {t('panels.boundary.blastRadiusNote')}
+      </p>
     </section>
   );
 }
