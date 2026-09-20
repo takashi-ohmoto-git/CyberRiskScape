@@ -342,6 +342,40 @@ rules:
       - title: "CISA - Zero Trust Maturity Model v2（Identity ピラー）"
         url: "https://www.cisa.gov/zero-trust-maturity-model"
 
+  # ── 認証の単独依存（単一発行元に全依存）─────────────────────────
+  #   zt-idp-single-point-of-failure-001 と**同じ canonicalId** を共有する。
+  #   あちらは「IdP が存在する」だけで発火する近似。こちらは図の中で
+  #   `authProviderId` として参照されている発行元がこの 1 つだけ（authProviderRole: Sole）
+  #   という構造的事実で発火する精密版（[[plan]] §2.41）。提示層は (canonicalId, subject)
+  #   で畳み込み severity 最大を採るため、単独依存の図では High のこの文面 1 枚になり、
+  #   そうでない図では従来どおり Medium の近似 1 枚になる（カードは増えない）。
+  - id: zt-idp-sole-authentication-dependency-001
+    canonicalId: idp-single-point-of-failure
+    framework: STRIDE
+    category: "Denial of Service"
+    name: "認証の単独依存（図の中で唯一の資格情報発行元）"
+    severity: High
+    description: "この図で資格情報の発行元として宣言されているのは {{nodeName}} ただ 1 つであり、認証を伴う経路のすべてが単一の発行元に依存している。攻撃者は {{nodeName}} への DoS・管理者アカウントの乗っ取り・ポリシー設定の改ざんのいずれか 1 点の作用で、配下の全サービスの認証可否を同時に操作でき、代替の認証経路が図に存在しないため業務は全面停止に至る（Can）。同じ構造は誤設定・証明書失効・テナント側障害といった攻撃以外の事象にも等しく効き、いずれも全社同時に波及する。一方、重要系に対して発行元から独立した代替の認証手段（オフライン保管のブレークグラス、別発行元による限定的な縮退運転）が用意され、発行元の停止時に何を止め何を縮退させるかが事前に決められていれば、単一の障害・改ざんが全面停止へ直結しない（Cannot）。blast radius は認証を伴う全経路。この図で {{nodeName}} を資格情報の発行元として宣言しているコンポーネントは {{dependentCount}} 件（{{dependentNames}}）。"
+    mitigation: "[Foundation] {{nodeName}} の停止・乗っ取りを想定し、オフライン保管のブレークグラスアカウント（使用時アラート付き）と、復旧までに何を止め何を縮退運転させるかの判断基準を文書化する。 [Enterprise] 重要系については発行元から独立した代替の認証経路を用意し、平時から到達性を確認する。発行元の冗長化・地理分散に加え、ポリシー変更を IaC ＋レビュー＋段階的ロールアウトで適用し即時ロールバックできるようにする。 [Advanced] 発行元の停止を前提にしたフェイルセーフ挙動（既存セッションの維持・新規は最小権限）を設計し、単独依存の解消（用途別の発行元分離）をロードマップに載せた上で、停止演習で縮退運転の成立を定期的に検証する。"
+    appliesTo:
+      kind: node
+      nodeType: IDENTITY_PROVIDER
+      # 図の中で参照されている発行元がこの 1 つだけのときのみ発火（[[plan]] §2.41）。
+      # 発行元が 1 つも宣言されていない図では全ノードが Unused になり発火しない。
+      authProviderRole: [Sole]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-03"
+      - standard: nist-csf-2.0
+        ref: "RC.RP-01"
+      - standard: nist-csf-2.0
+        ref: "ID.AM-04"
+    references:
+      - title: "NIST SP 800-207 - Zero Trust Architecture（ポリシー決定点の可用性と単一障害点）"
+        url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+      - title: "CISA - Zero Trust Maturity Model v2（Identity ピラー）"
+        url: "https://www.cisa.gov/zero-trust-maturity-model"
+
   # ── IdP 発行トークンの受け側（relying party）検証不備 ─────────────
   - id: zt-idp-token-validation-gap-001
     canonicalId: idp-relying-party-validation-gap

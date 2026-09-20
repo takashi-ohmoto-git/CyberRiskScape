@@ -106,6 +106,17 @@ rules:
       "1":
         title: "NIST SP 800-207 - Zero Trust Architecture (protecting the policy decision point)"
 
+  zt-idp-sole-authentication-dependency-001:
+    category: "Denial of Service"
+    name: "Sole authentication dependency (the only credential issuer in the diagram)"
+    description: "{{nodeName}} is the only credential issuer declared anywhere in this diagram, so every path that involves authentication depends on a single issuer. Through one action against {{nodeName}}, DoS, takeover of an administrator account, or tampering with its policy configuration, an attacker can control the authentication outcome of every downstream service at once, and because no alternative authentication path exists in the diagram, operations stop entirely (Can). The same structure applies just as well to events that are not attacks, misconfiguration, certificate expiry, or an outage on the provider's side, and each of them propagates across the whole organization simultaneously. If, on the other hand, critical systems have an alternative means of authentication independent of that issuer (an offline break-glass account, or limited degraded operation through a second issuer), and it has been decided in advance what stops and what degrades when the issuer is down, a single failure or act of tampering does not translate directly into a total outage (Cannot). The blast radius is every path that involves authentication. In this diagram, {{dependentCount}} component(s) declare {{nodeName}} as their credential issuer ({{dependentNames}})."
+    mitigation: "[Foundation] Assume {{nodeName}} will go down or be taken over: document a break-glass account stored offline (alerting on use), and the criteria for what to stop and what to run degraded until recovery. [Enterprise] Provide critical systems with an alternative authentication path independent of the issuer, and verify its reachability in normal times. Make the issuer redundant and geographically distributed, and apply policy changes through IaC plus review plus staged rollout so they can be rolled back immediately. [Advanced] Design fail-safe behavior on the assumption that the issuer is down (preserve existing sessions, grant only minimal privilege to new ones), put the removal of the sole dependency (separate issuers per use) on the roadmap, and verify through outage exercises that degraded operation actually holds."
+    references:
+      "0":
+        title: "NIST SP 800-207 - Zero Trust Architecture (availability of the policy decision point and single points of failure)"
+      "1":
+        title: "CISA - Zero Trust Maturity Model v2 (Identity pillar)"
+
   zt-idp-single-point-of-failure-001:
     category: "Denial of Service"
     name: "IdP as a single point of failure and organization-wide blast radius of misconfiguration"

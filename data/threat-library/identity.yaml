@@ -89,9 +89,10 @@
 #     本ファイルの identity-idp-federation-trust-tampering-001 は**鍵を盗まずに
 #     「信頼される発行者」を追加する**管理面の構成改ざん（ATT&CK T1484.002）で、
 #     攻撃機構も対策も異なるため別 canonicalId とする。
-#   - IdP の単一障害点化・設定変更の全社波及 → zt-idp-single-point-of-failure-001
-#     （canonicalId: idp-single-point-of-failure）でカバー済。あちらは可用性
-#     （Denial of Service）軸。本ファイルは認証の完全性・追跡可能性の軸を扱う。
+#   - IdP の単一障害点化・設定変更の全社波及 → canonicalId: idp-single-point-of-failure
+#     でカバー済（zt-idp-single-point-of-failure-001 ＝ IdP があれば発火する近似と、
+#     zt-idp-sole-authentication-dependency-001 ＝ 発行元が 1 つだけのときの精密版）。
+#     あちらは可用性（Denial of Service）軸。本ファイルは認証の完全性・追跡可能性の軸を扱う。
 #   - IdP 発行トークンの受け側検証不備 → zt-idp-token-validation-gap-001
 #     （canonicalId: idp-relying-party-validation-gap、edge sourceType:[IDENTITY_PROVIDER]）
 #     でカバー済。**IdP を source とするエッジ条件は本ファイルでは使わない**
@@ -411,6 +412,13 @@ rules:
       identityProviderKind: [Social]
       # 認証を依存するサービスが接続されているとき発火（デフォルト接続要件）。
       # 依存先が無ければ保証レベルの不足は実害を持たないため内在脅威にはしない。
+      conditions:
+        # この Social IdP が図の中で唯一の資格情報発行元なら、組織は統制不能な外部 ID に
+        # 認証を単独で預けている。発火条件は変えず severity と文面だけ上げる（[[plan]] §2.41）。
+        - when:
+            authProviderRole: [Sole]
+          severity: High
+          description: "{{nodeName}} は種別 Social として宣言されており、かつこの図で資格情報の発行元として宣言されているのは {{nodeName}} ただ 1 つである。すなわち組織は、身元確認も MFA の要否も認証器の種類もセッション有効期間も失効も自ら決められない外部のコンシューマ向け ID に、認証を単独で預けている。攻撃者は標的利用者のソーシャルアカウントを、フィッシング・パスワード使い回し・提供者側のアカウント復旧窓口の悪用のいずれかで奪えば、代替の認証経路が存在しないため {{nodeName}} を信頼する全サービスへ本人として入れる（Can）。メールアドレスを突き合わせ鍵としたアカウント連携を許している場合は、標的が登録する前に当該アドレスでアカウントを作る先回り乗っ取り（pre-hijacking）も成立する。組織側には認証ログも失効手段も無く、退職・契約終了といった組織側の事象は外部アカウントの有効性に一切影響せず、提供者側の障害やアカウント凍結はそのまま全面的なアクセス不能になる。一方、組織が発行・失効できる資格情報を別の発行元として持ち、特権操作・従業員アクセス・機微データへの到達にはそちらを要求していれば、外部アカウントの乗っ取りも提供者側の障害も組織の資産へ到達しない（Cannot）。blast radius は認証を伴う全経路。この図で {{nodeName}} を資格情報の発行元として宣言しているコンポーネントは {{dependentCount}} 件（{{dependentNames}}）。"
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.AA-01"
