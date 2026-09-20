@@ -12,6 +12,12 @@ import type {
 import type { ThreatRule } from '../../threat-library/schema/threatRule';
 import { renderEdgeTemplate, renderNodeTemplate } from './renderTemplate';
 import { resolveNodeTrust } from './resolveNodeTrust';
+import {
+  buildAuthProviderClosure,
+  dependentsOf,
+  isReferencedProvider,
+  type AuthProviderClosure,
+} from './authProviderClosure';
 
 /**
  * 脅威検出エンジン。
@@ -252,11 +258,20 @@ function matchNodeConnection(
   edges: DiagramEdge[],
   nodeById: Map<string, DiagramNode>,
   conn: ConnectionRequirement | undefined,
+  closure: AuthProviderClosure,
 ): boolean {
   if (conn?.required === false) return true;
   const direction = conn?.direction ?? 'any';
   const peerType = conn?.peerType;
   const peerAttackSurface = conn?.peerAttackSurface;
+  // 資格情報の発行元として参照されているノードは**論理的に接続されている**とみなす
+  // （[[plan]] §2.40）。全コンポーネントを IdP へ線で繋ぐのは実務上非現実的なため。
+  //
+  // ただし認めるのは「素の接続要件」のときだけ。`direction` / `peerType` /
+  // `peerAttackSurface` を指定するルールは**実際のデータフローの形**を問うており、
+  // 参照には向きも相手型も無いため、それらを参照で満たしたことにはしない。
+  const isBareRequirement = direction === 'any' && !peerType && !peerAttackSurface;
+  if (isBareRequirement && isReferencedProvider(closure, node.id)) return true;
   for (const edge of edges) {
     const isSource = edge.source === node.id;
     const isTarget = edge.target === node.id;
@@ -285,6 +300,9 @@ export function detectThreats({
   const threats: DetectedThreat[] = [];
   const nodeById = new Map(nodes.map((n) => [n.id, n] as const));
   const trustByNodeId = resolveNodeTrust(nodes, boundaries ?? []);
+  // 発行元ごとの依存コンポーネント（[[plan]] §2.40）。説明文の `{{dependentCount}}` /
+  // `{{dependentNames}}` 展開に使う。境界と同じく図全体から 1 回だけ導出する。
+  const authProviderClosure = buildAuthProviderClosure(nodes, edges);
 
   for (const rule of rules) {
     if (framework !== 'ALL' && rule.framework !== framework) continue;
@@ -293,7 +311,8 @@ export function detectThreats({
       const nodeApplies = rule.appliesTo;
       for (const node of nodes) {
         if (!matchNodeApplies(nodeApplies, node)) continue;
-        if (!matchNodeConnection(node, edges, nodeById, nodeApplies.connection)) continue;
+        if (!matchNodeConnection(node, edges, nodeById, nodeApplies.connection, authProviderClosure))
+          continue;
         if (nodeApplies.attackSurface && !matchAttackSurface(node, nodeApplies.attackSurface))
           continue;
         if (nodeApplies.agentAttributes && !matchAgentAttributes(node, nodeApplies.agentAttributes))
@@ -313,7 +332,11 @@ export function detectThreats({
           category: rule.category,
           name: rule.name,
           severity: rule.severity,
-          description: renderNodeTemplate(rule.description, node),
+          description: renderNodeTemplate(
+            rule.description,
+            node,
+            dependentsOf(authProviderClosure, node.id),
+          ),
           mitigation: rule.mitigation,
           mitigationTiers: rule.mitigationTiers,
           complianceRefs: rule.complianceRefs,

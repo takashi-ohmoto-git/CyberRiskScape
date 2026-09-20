@@ -173,6 +173,9 @@ const jaCore = {
   'appliesToSummary.join.or': ' または ',
   'appliesToSummary.join.allOf': '、かつ ',
   'appliesToSummary.join.anyOf': '、または ',
+  // 脅威説明文のトークン展開（[[plan]] §2.40）。
+  'threat.template.nameSeparator': '、',
+  'threat.template.noDependents': 'この図では宣言なし',
 } as const;
 
 /**

@@ -151,6 +151,9 @@ const enCore: Partial<Record<TranslationKey, string>> = {
   'appliesToSummary.join.or': ' or ',
   'appliesToSummary.join.allOf': ', and ',
   'appliesToSummary.join.anyOf': ', or ',
+  // Token expansion in threat descriptions ([[plan]] §2.40).
+  'threat.template.nameSeparator': ', ',
+  'threat.template.noDependents': 'none declared in this diagram',
 };
 
 /** 領域別モジュールを集約した英語ロケール。 */

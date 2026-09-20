@@ -1,7 +1,7 @@
 import type { DiagramEdge, DiagramNode } from '../model/types';
 import { getNodeDisplayName } from '../model/nodeDisplay';
 import { getComponentRegistry } from '../../component-library/defaultRegistry';
-import { getLocale } from '../../i18n';
+import { getLocale, translate } from '../../i18n';
 
 // 型ラベルは現在の locale で解決する（`getNodeDisplayName` と同じ方針）。
 function getTypeLabel(typeId: string): string {
@@ -18,7 +18,15 @@ function getTypeLabel(typeId: string): string {
  */
 
 export type TemplateContext =
-  | { kind: 'node'; node: DiagramNode }
+  | {
+      kind: 'node';
+      node: DiagramNode;
+      /**
+       * この発行元に依存するコンポーネント（[[plan]] §2.40 Tier 1）。
+       * `{{dependentCount}}` / `{{dependentNames}}` の展開に使う。省略時は依存ゼロ扱い。
+       */
+      dependents?: readonly DiagramNode[];
+    }
   | { kind: 'edge'; source: DiagramNode; target: DiagramNode };
 
 const TOKEN_RE = /\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}/g;
@@ -30,6 +38,16 @@ function resolveToken(token: string, ctx: TemplateContext): string | undefined {
         return getNodeDisplayName(ctx.node);
       case 'nodeType':
         return getTypeLabel(ctx.node.type);
+      case 'dependentCount':
+        // 依存ゼロでも "0" を返す。トークンを原文のまま残すと文が壊れるため。
+        return String(ctx.dependents?.length ?? 0);
+      case 'dependentNames': {
+        const names = (ctx.dependents ?? []).map(getNodeDisplayName);
+        // 依存ゼロのときは列挙が空になり「（）」のような文になるため、明示的な語を返す。
+        return names.length > 0
+          ? names.join(translate('threat.template.nameSeparator', getLocale()))
+          : translate('threat.template.noDependents', getLocale());
+      }
       default:
         return undefined;
     }
@@ -64,9 +82,16 @@ export function renderEdgeTemplate(
   return renderTemplate(template, { kind: 'edge', source, target });
 }
 
-/** node ルール向けの便宜関数。 */
-export function renderNodeTemplate(template: string, node: DiagramNode): string {
-  return renderTemplate(template, { kind: 'node', node });
+/**
+ * node ルール向けの便宜関数。
+ * `dependents`（[[plan]] §2.40）は任意。渡さない呼び出しは依存ゼロとして展開される。
+ */
+export function renderNodeTemplate(
+  template: string,
+  node: DiagramNode,
+  dependents?: readonly DiagramNode[],
+): string {
+  return renderTemplate(template, { kind: 'node', node, dependents });
 }
 
 // edge は将来別のメタに直接触れる可能性に備えて受け取れるよう公開する。
