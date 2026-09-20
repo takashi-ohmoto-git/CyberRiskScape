@@ -1,0 +1,62 @@
+# English overlay for `data/compliance/jp-ai-business-guideline.yaml`.
+#
+# The Japanese file is the source of truth. This standard is a Japanese government
+# document, so its name and section names stay in the original and carry an English
+# gloss — the same treatment the threat library gives the CRYPTREC citations. A reader
+# must still be able to find the cited section in the official text.
+#
+# `ref` itself is the lookup key that threat rules point at and is never replaced;
+# `refLabels` only supplies what to *display*.
+#
+# Source: METI / MIC "AI 事業者ガイドライン" v1.01 (April 2024)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+standard: jp-ai-business-guideline
+
+title: "AI 事業者ガイドライン (METI/MIC AI Guidelines for Business, in Japanese)"
+
+refLabels:
+  # 第2部 共通の指針（全主体共通の 10 原則）
+  "共通の指針-1": "共通の指針-1 (Common Guiding Principle 1)"
+  "共通の指針-2": "共通の指針-2 (Common Guiding Principle 2)"
+  "共通の指針-3": "共通の指針-3 (Common Guiding Principle 3)"
+  "共通の指針-4": "共通の指針-4 (Common Guiding Principle 4)"
+  "共通の指針-5": "共通の指針-5 (Common Guiding Principle 5)"
+  "共通の指針-6": "共通の指針-6 (Common Guiding Principle 6)"
+  "共通の指針-7": "共通の指針-7 (Common Guiding Principle 7)"
+  "共通の指針-8": "共通の指針-8 (Common Guiding Principle 8)"
+  "共通の指針-9": "共通の指針-9 (Common Guiding Principle 9)"
+  "共通の指針-10": "共通の指針-10 (Common Guiding Principle 10)"
+
+  # 第3部 開発者に関する事項
+  "開発者-1": "開発者-1 (Developers 1)"
+  "開発者-2": "開発者-2 (Developers 2)"
+  "開発者-3": "開発者-3 (Developers 3)"
+  "開発者-4": "開発者-4 (Developers 4)"
+  "開発者-5": "開発者-5 (Developers 5)"
+  "開発者-6": "開発者-6 (Developers 6)"
+  "開発者-7": "開発者-7 (Developers 7)"
+  "開発者-8": "開発者-8 (Developers 8)"
+  "開発者-9": "開発者-9 (Developers 9)"
+
+  # 第4部 提供者に関する事項
+  "提供者-1": "提供者-1 (Providers 1)"
+  "提供者-2": "提供者-2 (Providers 2)"
+  "提供者-3": "提供者-3 (Providers 3)"
+  "提供者-4": "提供者-4 (Providers 4)"
+  "提供者-5": "提供者-5 (Providers 5)"
+  "提供者-6": "提供者-6 (Providers 6)"
+  "提供者-7": "提供者-7 (Providers 7)"
+  "提供者-8": "提供者-8 (Providers 8)"
+
+  # 第5部 利用者に関する事項
+  "利用者-1": "利用者-1 (Users 1)"
+  "利用者-2": "利用者-2 (Users 2)"
+  "利用者-3": "利用者-3 (Users 3)"
+  "利用者-4": "利用者-4 (Users 4)"
+  "利用者-5": "利用者-5 (Users 5)"
+  "利用者-6": "利用者-6 (Users 6)"
+  "利用者-7": "利用者-7 (Users 7)"

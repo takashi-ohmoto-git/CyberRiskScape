@@ -41,6 +41,11 @@ export interface LoadedComplianceMap {
   index: ReadonlyMap<ComplianceKey, ComplianceItem>;
   /** ロードしたソース一覧（診断用）。 */
   sources: readonly string[];
+  /**
+   * `(standard.id, ref)` → ref の表示ラベル（翻訳オーバーレイ由来）。
+   * 原本（ja）では常に空。収録の無い ref は `ref` をそのまま表示する。
+   */
+  refLabels?: ReadonlyMap<ComplianceKey, string>;
 }
 
 /** 1 件の item を一意に表すキーを生成する。 */

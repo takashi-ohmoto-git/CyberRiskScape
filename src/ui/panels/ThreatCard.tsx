@@ -19,19 +19,29 @@ import { ControlStatusEditor } from './ControlStatusEditor';
 import { CONTROL_STATUS_BADGE, CONTROL_STATUS_LABEL_KEY } from './controlStatusStyle';
 import { RiskTreatmentEditor } from './RiskTreatmentEditor';
 import { RISK_TREATMENT_BADGE, RISK_TREATMENT_LABEL_KEY } from './riskTreatmentStyle';
-import { BUNDLED_COMPLIANCE_MAP } from '../../compliance/loader/bundledComplianceMap';
+import { getComplianceMap } from '../../compliance/loader/bundledComplianceMap';
+import { makeComplianceKey } from '../../compliance/loader/loadComplianceMap';
 import type { StandardId } from '../../compliance/schema/complianceItem';
 import { summarizeAppliesTo } from './appliesToSummary';
 import { useRuleLookup } from './useRuleLookup';
-import { useLocale, useT } from '../../i18n';
+import { useLocale, useT, type Locale } from '../../i18n';
 
 /**
  * `complianceRefs.standard` の ID（例: `nist-ai-rmf`）を表示用の正式名称に解決する。
  * マップ未収録の ID（外部参照や旧表記）はそのまま返してフォールバック表示する。
  */
-function resolveStandardLabel(standardId: string): string {
-  const meta = BUNDLED_COMPLIANCE_MAP.standards.get(standardId as StandardId);
+function resolveStandardLabel(standardId: string, locale: Locale): string {
+  const meta = getComplianceMap(locale).standards.get(standardId as StandardId);
   return meta?.title ?? standardId;
+}
+
+/**
+ * ref の表示文字列を解決する。日本語の節名を持つ規格（AI 事業者ガイドライン）だけが
+ * 翻訳オーバーレイに表示ラベルを持ち、それ以外は ref をそのまま表示する。
+ */
+function resolveRefLabel(standardId: string, ref: string, locale: Locale): string {
+  const labels = getComplianceMap(locale).refLabels;
+  return labels?.get(makeComplianceKey(standardId as StandardId, ref)) ?? ref;
 }
 
 interface ThreatCardProps {
@@ -208,14 +218,15 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
           </div>
           <div className="flex flex-wrap gap-1.5">
             {threat.complianceRefs.map((c, i) => {
-              const label = resolveStandardLabel(c.standard);
+              const label = resolveStandardLabel(c.standard, locale);
+              const refLabel = resolveRefLabel(c.standard, c.ref, locale);
               return (
                 <span
                   key={`${c.standard}-${c.ref}-${i}`}
                   className="text-[10px] font-bold bg-slate-800 border border-slate-700 text-slate-300 px-2 py-0.5 rounded"
-                  title={`${label} / ${c.ref}`}
+                  title={`${label} / ${refLabel}`}
                 >
-                  {label} <span className="text-slate-500">·</span> {c.ref}
+                  {label} <span className="text-slate-500">·</span> {refLabel}
                 </span>
               );
             })}
