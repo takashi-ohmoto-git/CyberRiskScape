@@ -1,0 +1,449 @@
+# English overlay for `data/compliance/nist-csf-2.0.yaml`.
+#
+# The Japanese file is the source of truth: only `title` and `summary` are translated
+# here, keyed by the item's `ref`. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - `title` uses NIST's official English wording for that Function / Category /
+#     Subcategory where it is known.
+#   - `summary` is this project's own one-to-two line summary, as in the original —
+#     never a verbatim reproduction of the standard's text.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+standard: nist-csf-2.0
+
+disclaimer: "title / summary are this project's own adaptation and summary of CSF 2.0 (CSWP 29, February 2024). See the source URL for the original text."
+
+items:
+  # ════════════════════════════════════════════════════════════════
+  # GOVERN (GV)
+  # ════════════════════════════════════════════════════════════════
+
+  "GV.OC":
+    title: "Organizational Context"
+    summary: "Understand the mission, stakeholder expectations, dependencies, and legal/regulatory and contractual requirements that shape the organization's cybersecurity risk management decisions."
+  "GV.OC-01":
+    title: "The organizational mission is understood and informs cybersecurity risk management"
+    summary: "Understand the organization's mission and reflect it in cybersecurity risk management."
+  "GV.OC-02":
+    title: "Internal and external stakeholders are understood, and their needs and expectations regarding cybersecurity risk management are understood and considered"
+    summary: "Understand and consider the cybersecurity risk management needs and expectations of internal and external stakeholders."
+  "GV.OC-03":
+    title: "Legal, regulatory, and contractual requirements regarding cybersecurity, including privacy and civil liberties obligations, are understood and managed"
+    summary: "Understand and manage legal, regulatory, and contractual cybersecurity requirements, including privacy and civil liberties."
+  "GV.OC-04":
+    title: "Critical objectives, capabilities, and services that external stakeholders depend on or expect from the organization are understood and communicated"
+    summary: "Understand and communicate the critical objectives, capabilities, and services that external stakeholders expect from the organization."
+  "GV.OC-05":
+    title: "Outcomes, capabilities, and services that the organization depends on are understood and communicated"
+    summary: "Understand and communicate the outcomes, capabilities, and services the organization depends on."
+
+  "GV.RM":
+    title: "Risk Management Strategy"
+    summary: "Establish and communicate the organization's priorities, constraints, risk tolerance, and assumptions, and use them to inform operational risk decisions."
+  "GV.RM-01":
+    title: "Risk management objectives are established and agreed to by organizational stakeholders"
+    summary: "Establish risk management objectives and gain agreement from relevant stakeholders."
+  "GV.RM-02":
+    title: "Risk appetite and risk tolerance statements are established, communicated, and maintained"
+    summary: "Establish, communicate, and maintain risk appetite and risk tolerance statements."
+  "GV.RM-03":
+    title: "Cybersecurity risk management activities and outcomes are included in enterprise risk management processes"
+    summary: "Integrate cybersecurity risk management activities and outcomes into enterprise risk management (ERM) processes."
+  "GV.RM-04":
+    title: "Strategic direction that describes appropriate risk response options is established and communicated"
+    summary: "Establish and communicate strategic direction that lays out appropriate risk response options."
+  "GV.RM-05":
+    title: "Lines of communication across the organization are established for cybersecurity risks, including risks from suppliers and other third parties"
+    summary: "Establish internal communication channels for cyber risk, including those involving suppliers and other third parties."
+  "GV.RM-06":
+    title: "A standardized method for calculating, documenting, categorizing, and prioritizing cybersecurity risks is established and communicated"
+    summary: "Establish and communicate a standardized method for calculating, recording, categorizing, and prioritizing cyber risk."
+  "GV.RM-07":
+    title: "Strategic opportunities (i.e., positive risks) are characterized and are included in organizational cybersecurity risk discussions"
+    summary: "Characterize strategic opportunities (positive risk) and include them in the organization's cyber risk discussions."
+
+  "GV.RR":
+    title: "Roles, Responsibilities, and Authorities"
+    summary: "Establish and communicate cybersecurity roles, responsibilities, and authorities to promote accountability, performance evaluation, and continuous improvement."
+  "GV.RR-01":
+    title: "Organizational leadership is responsible and accountable for cybersecurity risk and fosters a culture that is risk-aware, ethical, and continually improving"
+    summary: "Leadership takes responsibility for cybersecurity risk and fosters a culture of risk awareness, ethics, and continuous improvement."
+  "GV.RR-02":
+    title: "Roles, responsibilities, and authorities related to cybersecurity risk management are established, communicated, understood, and enforced"
+    summary: "Establish, communicate, ensure understanding of, and enforce cybersecurity risk management roles, responsibilities, and authorities."
+  "GV.RR-03":
+    title: "Adequate resources are allocated commensurate with the cybersecurity risk strategy, roles, responsibilities, and policies"
+    summary: "Allocate resources commensurate with strategy, roles, responsibilities, and policies."
+  "GV.RR-04":
+    title: "Cybersecurity is included in human resources practices"
+    summary: "Incorporate cybersecurity into human resources practices."
+
+  "GV.PO":
+    title: "Policy"
+    summary: "Establish, communicate, and enforce the organization's cybersecurity policies."
+  "GV.PO-01":
+    title: "Policy for managing cybersecurity risks is established based on organizational context, cybersecurity strategy, and priorities and is communicated and enforced"
+    summary: "Establish risk management policy based on organizational context, strategy, and priorities, and communicate and enforce it."
+  "GV.PO-02":
+    title: "Policy for managing cybersecurity risks is reviewed, updated, communicated, and enforced to reflect changes in requirements, threats, technology, and organizational mission"
+    summary: "Review, update, communicate, and enforce policy to reflect changes in requirements, threats, technology, and mission."
+
+  "GV.OV":
+    title: "Oversight"
+    summary: "Use organization-wide risk management activities and outcomes to review, improve, and adjust strategy."
+  "GV.OV-01":
+    title: "Cybersecurity risk management strategy outcomes are reviewed to inform and adjust strategy and direction"
+    summary: "Review the outcomes of the risk management strategy and reflect them in strategy and direction."
+  "GV.OV-02":
+    title: "The cybersecurity risk management strategy is reviewed and adjusted to ensure coverage of organizational requirements and risks"
+    summary: "Review and adjust the risk management strategy to ensure it covers organizational requirements and risks."
+  "GV.OV-03":
+    title: "Organizational cybersecurity risk management performance is evaluated and reviewed for adjustments needed"
+    summary: "Evaluate and review the organization's cybersecurity risk management performance, and make adjustments as needed."
+
+  "GV.SC":
+    title: "Cybersecurity Supply Chain Risk Management"
+    summary: "Identify, establish, operate, monitor, and improve cyber supply chain risk management processes."
+  "GV.SC-01":
+    title: "A cybersecurity supply chain risk management program, strategy, objectives, policies, and processes are established and agreed to by organizational stakeholders"
+    summary: "Establish a cyber supply chain risk management program, strategy, objectives, policies, and processes, and gain stakeholder agreement."
+  "GV.SC-02":
+    title: "Cybersecurity roles and responsibilities for suppliers, customers, and partners are established, communicated, and coordinated internally and externally"
+    summary: "Establish, communicate, and coordinate, internally and externally, the cybersecurity roles and responsibilities of suppliers, customers, and partners."
+  "GV.SC-03":
+    title: "Cybersecurity supply chain risk management is integrated into cybersecurity and enterprise risk management, risk assessment, and improvement processes"
+    summary: "Integrate cyber supply chain risk management into cyber/enterprise risk management, risk assessment, and improvement processes."
+  "GV.SC-04":
+    title: "Suppliers are known and prioritized by criticality"
+    summary: "Identify suppliers and prioritize them by criticality."
+  "GV.SC-05":
+    title: "Requirements to address cybersecurity risks in supply chains are established, prioritized, and integrated into contracts and other types of agreements with suppliers and other relevant third parties"
+    summary: "Establish and prioritize supply-chain-related cybersecurity requirements, and incorporate them into contracts and agreements with suppliers and other relevant third parties."
+  "GV.SC-06":
+    title: "Planning and due diligence are performed to reduce risks before entering into formal supplier or other third-party relationships"
+    summary: "Perform planning and due diligence to reduce risk before entering into a formal supplier relationship."
+  "GV.SC-07":
+    title: "The risks posed by a supplier, their products and services, and other third parties are understood, recorded, prioritized, assessed, responded to, and monitored over the course of the relationship"
+    summary: "Understand, record, prioritize, assess, respond to, and monitor the risks of suppliers, products, and services throughout the relationship."
+  "GV.SC-08":
+    title: "Relevant suppliers and other third parties are included in incident planning, response, and recovery activities"
+    summary: "Include relevant suppliers and third parties in incident planning, response, and recovery activities."
+  "GV.SC-09":
+    title: "Supply chain security practices are integrated into cybersecurity and enterprise risk management programs, and their performance is monitored throughout the technology product and service life cycle"
+    summary: "Integrate supply chain security practices into the risk management program and monitor performance throughout the technology product/service life cycle."
+  "GV.SC-10":
+    title: "Cybersecurity supply chain risk management plans include provisions for activities that occur after the conclusion of a partnership or service agreement"
+    summary: "Include in the SCRM plan the activities to perform after a partnership or service agreement ends."
+
+  # ════════════════════════════════════════════════════════════════
+  # IDENTIFY (ID)
+  # ════════════════════════════════════════════════════════════════
+
+  "ID.AM":
+    title: "Asset Management"
+    summary: "Identify and manage the assets (data, hardware, software, systems, facilities, services, and people) that support business objectives, in line with their criticality and the risk strategy."
+  "ID.AM-01":
+    title: "Inventories of hardware managed by the organization are maintained"
+    summary: "Maintain an inventory of hardware managed by the organization."
+  "ID.AM-02":
+    title: "Inventories of software, services, and systems managed by the organization are maintained"
+    summary: "Maintain an inventory of software, services, and systems managed by the organization."
+  "ID.AM-03":
+    title: "Representations of the organization's authorized network communication and internal and external network data flows are maintained"
+    summary: "Maintain visibility into authorized network communications and internal/external network data flows."
+  "ID.AM-04":
+    title: "Inventories of services provided by suppliers are maintained"
+    summary: "Maintain an inventory of services provided by suppliers."
+  "ID.AM-05":
+    title: "Assets are prioritized based on classification, criticality, resources, and impact on the mission"
+    summary: "Prioritize assets based on classification, criticality, resources, and mission impact."
+  "ID.AM-07":
+    title: "Inventories of data and corresponding metadata for designated data types are maintained"
+    summary: "Maintain an inventory of data and its corresponding metadata for designated data types."
+  "ID.AM-08":
+    title: "Systems, hardware, software, services, and data are managed throughout their life cycles"
+    summary: "Manage systems, hardware, software, services, and data throughout their life cycle."
+
+  "ID.RA":
+    title: "Risk Assessment"
+    summary: "Understand, as an organization, the cybersecurity risk to the organization, assets, and individuals."
+  "ID.RA-01":
+    title: "Vulnerabilities in assets are identified, validated, and recorded"
+    summary: "Identify, validate, and record vulnerabilities in assets."
+  "ID.RA-02":
+    title: "Cyber threat intelligence is received from information sharing forums and sources"
+    summary: "Receive cyber threat intelligence from information-sharing forums and sources."
+  "ID.RA-03":
+    title: "Internal and external threats to the organization are identified and recorded"
+    summary: "Identify and record internal and external threats to the organization."
+  "ID.RA-04":
+    title: "Potential impacts and likelihoods of threats exploiting vulnerabilities are identified and recorded"
+    summary: "Identify and record the potential impact and likelihood of threats exploiting vulnerabilities."
+  "ID.RA-05":
+    title: "Threats, vulnerabilities, likelihoods, and impacts are used to understand inherent risk and inform risk response prioritization"
+    summary: "Understand inherent risk using threats, vulnerabilities, likelihood, and impact, and use it to prioritize risk response."
+  "ID.RA-06":
+    title: "Risk responses are chosen, prioritized, planned, tracked, and communicated"
+    summary: "Select, prioritize, plan, track, and communicate risk responses."
+  "ID.RA-07":
+    title: "Changes and exceptions are managed, assessed for risk impact, recorded, and tracked"
+    summary: "Manage changes and exceptions, and assess, record, and track their risk impact."
+  "ID.RA-08":
+    title: "Processes for receiving, analyzing, and responding to vulnerability disclosures are established"
+    summary: "Establish a process for receiving, analyzing, and responding to vulnerability disclosures."
+  "ID.RA-09":
+    title: "The authenticity and integrity of hardware and software are assessed prior to acquisition and use"
+    summary: "Assess the authenticity and integrity of hardware and software before acquisition and use."
+  "ID.RA-10":
+    title: "Critical suppliers are assessed prior to acquisition"
+    summary: "Assess critical suppliers before acquisition."
+
+  "ID.IM":
+    title: "Improvement"
+    summary: "Identify improvements to risk management processes, procedures, and activities across all CSF functions."
+  "ID.IM-01":
+    title: "Improvements are identified from evaluations"
+    summary: "Identify improvements from evaluation results."
+  "ID.IM-02":
+    title: "Improvements are identified from security tests and exercises, including those done in coordination with suppliers and relevant third parties"
+    summary: "Identify improvements from security tests and exercises, including those conducted with suppliers and third parties."
+  "ID.IM-03":
+    title: "Improvements are identified from execution of operational processes, procedures, and activities"
+    summary: "Identify improvements from the execution of operational processes, procedures, and activities."
+  "ID.IM-04":
+    title: "Incident response plans and other cybersecurity plans that affect operations are established, communicated, maintained, and improved"
+    summary: "Establish, communicate, maintain, and improve incident response plans and other cybersecurity plans that affect operations."
+
+  # ════════════════════════════════════════════════════════════════
+  # PROTECT (PR)
+  # ════════════════════════════════════════════════════════════════
+
+  "PR.AA":
+    title: "Identity Management, Authentication, and Access Control"
+    summary: "Limit access to physical and logical assets to authorized users, services, and hardware, and manage it commensurate with the risk of unauthorized access."
+  "PR.AA-01":
+    title: "Identities and credentials for authorized users, services, and hardware are managed by the organization"
+    summary: "Manage the identities and credentials of authorized users, services, and hardware."
+  "PR.AA-02":
+    title: "Identities are proofed and bound to credentials based on the context of interactions"
+    summary: "Proof identities and bind them to credentials based on the context of the interaction."
+  "PR.AA-03":
+    title: "Users, services, and hardware are authenticated"
+    summary: "Authenticate users, services, and hardware."
+  "PR.AA-04":
+    title: "Identity assertions are protected, conveyed, and verified"
+    summary: "Protect, convey, and verify identity assertions."
+  "PR.AA-05":
+    title: "Access permissions, entitlements, and authorizations are defined in a policy, managed, enforced, and reviewed, and incorporate the principles of least privilege and separation of duties"
+    summary: "Define, manage, enforce, and review access rights, privileges, and authorizations in policy, incorporating least privilege and separation of duties."
+  "PR.AA-06":
+    title: "Physical access to assets is managed, monitored, and enforced commensurate with risk"
+    summary: "Manage, monitor, and enforce physical access to assets commensurate with risk."
+
+  "PR.AT":
+    title: "Awareness and Training"
+    summary: "Provide awareness education and training so employees can perform cybersecurity-related tasks."
+  "PR.AT-01":
+    title: "Personnel are provided with awareness and training so that they possess the knowledge and skills to perform general tasks with cybersecurity risks in mind"
+    summary: "Provide awareness education and training so employees can perform general duties with cyber risk in mind."
+  "PR.AT-02":
+    title: "Individuals in specialized roles are provided with awareness and training so that they possess the knowledge and skills to perform relevant tasks with cybersecurity risks in mind"
+    summary: "Provide awareness education and training so people in specialized roles can perform related duties with cyber risk in mind."
+
+  "PR.DS":
+    title: "Data Security"
+    summary: "Manage data in line with the risk strategy to protect the confidentiality, integrity, and availability of information."
+  "PR.DS-01":
+    title: "The confidentiality, integrity, and availability of data-at-rest are protected"
+    summary: "Protect the confidentiality, integrity, and availability of data at rest."
+  "PR.DS-02":
+    title: "The confidentiality, integrity, and availability of data-in-transit are protected"
+    summary: "Protect the confidentiality, integrity, and availability of data in transit."
+  "PR.DS-10":
+    title: "The confidentiality, integrity, and availability of data-in-use are protected"
+    summary: "Protect the confidentiality, integrity, and availability of data in use."
+  "PR.DS-11":
+    title: "Backups of data are created, protected, maintained, and tested"
+    summary: "Create, protect, maintain, and test data backups."
+
+  "PR.PS":
+    title: "Platform Security"
+    summary: "Manage the hardware, software (including firmware, OS, and applications), and services of physical and virtual platforms for confidentiality, integrity, and availability, in line with the risk strategy."
+  "PR.PS-01":
+    title: "Configuration management practices are established and applied"
+    summary: "Establish and apply configuration management practices."
+  "PR.PS-02":
+    title: "Software is maintained, replaced, and removed commensurate with risk"
+    summary: "Maintain, replace, and decommission software commensurate with risk."
+  "PR.PS-03":
+    title: "Hardware is maintained, replaced, and removed commensurate with risk"
+    summary: "Maintain, replace, and decommission hardware commensurate with risk."
+  "PR.PS-04":
+    title: "Log records are generated and made available for continuous monitoring"
+    summary: "Generate and make available log records for continuous monitoring."
+  "PR.PS-05":
+    title: "Installation and execution of unauthorized software are prevented"
+    summary: "Prevent the installation and execution of unauthorized software."
+  "PR.PS-06":
+    title: "Secure software development practices are integrated, and their performance is monitored throughout the software development life cycle"
+    summary: "Embed secure software development practices and monitor performance throughout the SDLC."
+
+  "PR.IR":
+    title: "Technology Infrastructure Resilience"
+    summary: "Manage the security architecture to protect the confidentiality, integrity, and availability of assets and organizational resilience."
+  "PR.IR-01":
+    title: "Networks and environments are protected from unauthorized logical access and usage"
+    summary: "Protect networks and environments from unauthorized logical access and use."
+  "PR.IR-02":
+    title: "The organization's technology assets are protected from environmental threats"
+    summary: "Protect the organization's technology assets from environmental threats (e.g., disasters)."
+  "PR.IR-03":
+    title: "Mechanisms are implemented to achieve resilience requirements in normal and adverse situations"
+    summary: "Implement mechanisms to meet resilience requirements in both normal and adverse conditions."
+  "PR.IR-04":
+    title: "Adequate resource capacity to ensure availability is maintained"
+    summary: "Maintain sufficient resource capacity to ensure availability."
+
+  # ════════════════════════════════════════════════════════════════
+  # DETECT (DE)
+  # ════════════════════════════════════════════════════════════════
+
+  "DE.CM":
+    title: "Continuous Monitoring"
+    summary: "Monitor assets to discover anomalies, indicators of compromise, and other potentially adverse events."
+  "DE.CM-01":
+    title: "Networks and network services are monitored to find potentially adverse events"
+    summary: "Monitor networks and network services to discover potentially adverse events."
+  "DE.CM-02":
+    title: "The physical environment is monitored to find potentially adverse events"
+    summary: "Monitor the physical environment to discover potentially adverse events."
+  "DE.CM-03":
+    title: "Personnel activity and technology usage are monitored to find potentially adverse events"
+    summary: "Monitor personnel activity and technology use to discover potentially adverse events."
+  "DE.CM-06":
+    title: "External service provider activities and services are monitored to find potentially adverse events"
+    summary: "Monitor external service provider activities and services to discover potentially adverse events."
+  "DE.CM-09":
+    title: "Computing hardware and software, runtime environments, and their data are monitored to find potentially adverse events"
+    summary: "Monitor computing hardware, software, runtime environments, and data to discover potentially adverse events."
+
+  "DE.AE":
+    title: "Adverse Event Analysis"
+    summary: "Analyze anomalies, indicators of compromise, and other potentially adverse events to characterize events and detect incidents."
+  "DE.AE-02":
+    title: "Potentially adverse events are analyzed to better understand associated activities"
+    summary: "Analyze potentially adverse events to understand the associated activity."
+  "DE.AE-03":
+    title: "Information is correlated from multiple sources"
+    summary: "Correlate information from multiple sources."
+  "DE.AE-04":
+    title: "The estimated impact and scope of adverse events are understood"
+    summary: "Determine the estimated impact and scope of adverse events."
+  "DE.AE-06":
+    title: "Information on adverse events is provided to authorized staff and tools"
+    summary: "Provide information about adverse events to authorized staff and tools."
+  "DE.AE-07":
+    title: "Cyber threat intelligence and other contextual information are integrated into the analysis"
+    summary: "Integrate cyber threat intelligence into analysis."
+  "DE.AE-08":
+    title: "Incidents are declared when adverse events meet the defined incident criteria"
+    summary: "Declare an incident when an adverse event meets defined criteria."
+
+  # ════════════════════════════════════════════════════════════════
+  # RESPOND (RS)
+  # ════════════════════════════════════════════════════════════════
+
+  "RS.MA":
+    title: "Incident Management"
+    summary: "Manage the response to detected cybersecurity incidents."
+  "RS.MA-01":
+    title: "The incident response plan is executed in coordination with relevant third parties once an incident is declared"
+    summary: "Once an incident is declared, execute the incident response plan in coordination with relevant third parties."
+  "RS.MA-02":
+    title: "Incident reports are triaged and validated"
+    summary: "Triage and validate incoming incident reports."
+  "RS.MA-03":
+    title: "Incidents are categorized and prioritized"
+    summary: "Categorize and prioritize incidents."
+  "RS.MA-04":
+    title: "Incidents are escalated or elevated as needed"
+    summary: "Escalate incidents as needed."
+  "RS.MA-05":
+    title: "The criteria for initiating incident recovery are applied"
+    summary: "Apply the criteria for initiating incident recovery."
+
+  "RS.AN":
+    title: "Incident Analysis"
+    summary: "Conduct investigations to support effective response and forensic/recovery activities."
+  "RS.AN-03":
+    title: "Analysis is performed to establish what has taken place during an incident and the root cause of the incident"
+    summary: "Perform analysis to establish what happened during the incident and its root cause."
+  "RS.AN-06":
+    title: "Actions performed during an investigation are recorded, and the records' integrity and provenance are preserved"
+    summary: "Record activities performed during the investigation and preserve the integrity and provenance of those records."
+  "RS.AN-07":
+    title: "Incident data and metadata are collected, and their integrity and provenance are preserved"
+    summary: "Collect incident data and metadata, preserving their integrity and provenance."
+  "RS.AN-08":
+    title: "An incident's magnitude is estimated and validated"
+    summary: "Estimate and validate the scale of the incident."
+
+  "RS.CO":
+    title: "Incident Response Reporting and Communication"
+    summary: "Coordinate response activities with internal and external stakeholders in accordance with laws, regulations, and policy."
+  "RS.CO-02":
+    title: "Internal and external stakeholders are notified of incidents"
+    summary: "Notify internal and external stakeholders about incidents."
+  "RS.CO-03":
+    title: "Information is shared with designated internal and external stakeholders"
+    summary: "Share information with designated internal and external stakeholders."
+
+  "RS.MI":
+    title: "Incident Mitigation"
+    summary: "Take action to prevent an event from expanding and to mitigate its impact."
+  "RS.MI-01":
+    title: "Incidents are contained"
+    summary: "Contain the incident."
+  "RS.MI-02":
+    title: "Incidents are eradicated"
+    summary: "Eradicate the incident."
+
+  # ════════════════════════════════════════════════════════════════
+  # RECOVER (RC)
+  # ════════════════════════════════════════════════════════════════
+
+  "RC.RP":
+    title: "Incident Recovery Plan Execution"
+    summary: "Perform recovery activities to restore operational availability of affected systems and services."
+  "RC.RP-01":
+    title: "The recovery portion of the incident response plan is executed once initiated from the incident response process"
+    summary: "Execute the recovery portion of the incident response plan once initiated from the incident response process."
+  "RC.RP-02":
+    title: "Recovery actions are selected, scoped, prioritized, and executed"
+    summary: "Select, scope, prioritize, and execute recovery actions."
+  "RC.RP-03":
+    title: "The integrity of backups and other restoration assets is verified before using them for recovery"
+    summary: "Verify the integrity of backups and restoration assets before using them for recovery."
+  "RC.RP-04":
+    title: "Critical mission functions and cybersecurity risk management are considered to establish post-incident operational norms"
+    summary: "Establish post-incident operating norms that account for critical mission functions and cybersecurity risk management."
+  "RC.RP-05":
+    title: "The integrity of restored assets is verified, systems and services are restored, and normal operating status is confirmed"
+    summary: "Verify the integrity of restored assets, restore systems and services, and confirm normal status."
+  "RC.RP-06":
+    title: "The end of incident recovery is declared based on criteria, and incident-related documentation is completed"
+    summary: "Declare the end of recovery based on criteria and complete incident-related documentation."
+
+  "RC.CO":
+    title: "Incident Recovery Communication"
+    summary: "Coordinate recovery activities with internal and external parties."
+  "RC.CO-03":
+    title: "Recovery activities and progress in restoring operational capabilities are communicated to designated internal and external stakeholders"
+    summary: "Communicate recovery activities and the progress of restoring operational capability to designated internal and external stakeholders."
+  "RC.CO-04":
+    title: "Public updates on incident recovery are shared using approved methods and messaging"
+    summary: "Share official updates on incident recovery through approved methods and messaging."

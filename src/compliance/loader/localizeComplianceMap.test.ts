@@ -71,9 +71,27 @@ standard: not-a-standard
 schemaVersion: 1
 locale: en
 standard: jp-ai-business-guideline
-items: {}
+notAField: {}
 `,
         'en/bad.yaml',
+      ),
+    ).toThrow(ComplianceMapLoadError);
+  });
+});
+
+describe('items 配下の未知フィールドも拒否する', () => {
+  it('strict なので summary/title 以外は通さない', () => {
+    expect(() =>
+      parseComplianceOverlayFile(
+        `
+schemaVersion: 1
+locale: en
+standard: nist-ai-rmf
+items:
+  "GOVERN 1.1":
+    note: nope
+`,
+        'en/bad-item.yaml',
       ),
     ).toThrow(ComplianceMapLoadError);
   });
@@ -178,5 +196,113 @@ describe('同梱のコンプライアンス翻訳オーバーレイ', () => {
       if (japanese.test(meta.title) && !/[A-Za-z]{3,}/.test(meta.title)) broken.push(id);
     }
     expect(broken).toEqual([]);
+  });
+});
+
+describe('項目本文（title / summary）の解決', () => {
+  const withText: ComplianceItem = {
+    ref: 'GV.OC-01.001',
+    title: 'Ex1',
+    summary: 'ビジョン・ミッション声明を通じて組織ミッションを共有する。',
+    text: "Share the organization's mission to provide a basis for identifying risks",
+  };
+  const plain: ComplianceItem = {
+    ref: 'GOVERN 1.1',
+    title: '法令・規制の理解',
+    summary: '適用される法令を理解し方針へ反映する。',
+  };
+
+  const base: LoadedComplianceMap = {
+    standards: new Map([
+      [
+        'nist-csf-2.0-examples' as StandardId,
+        {
+          id: 'nist-csf-2.0-examples' as StandardId,
+          title: 'NIST CSF — Implementation Examples',
+          url: 'https://example.test/',
+        },
+      ],
+      [
+        'nist-ai-rmf' as StandardId,
+        { id: 'nist-ai-rmf' as StandardId, title: 'NIST AI RMF', url: 'https://example.test/' },
+      ],
+    ]),
+    itemsByStandard: new Map([
+      ['nist-csf-2.0-examples' as StandardId, [withText]],
+      ['nist-ai-rmf' as StandardId, [plain]],
+    ]),
+    index: new Map([
+      [makeComplianceKey('nist-csf-2.0-examples', withText.ref), withText],
+      [makeComplianceKey('nist-ai-rmf', plain.ref), plain],
+    ]),
+    sources: [],
+  };
+
+  it('原本の text を英語の summary として使う（訳を書かなくてよい）', () => {
+    const localized = localizeComplianceMap(base, {});
+    const item = localized.index.get(makeComplianceKey('nist-csf-2.0-examples', withText.ref));
+    expect(item?.summary).toBe(withText.text);
+  });
+
+  it('オーバーレイの summary は text より優先される', () => {
+    const overlay = loadComplianceOverlay([
+      {
+        source: 'en/ex.yaml',
+        text: `
+schemaVersion: 1
+locale: en
+standard: nist-csf-2.0-examples
+items:
+  "GV.OC-01.001":
+    summary: An overlay summary wins.
+`,
+      },
+    ]);
+    const localized = localizeComplianceMap(base, overlay);
+    expect(
+      localized.index.get(makeComplianceKey('nist-csf-2.0-examples', withText.ref))?.summary,
+    ).toBe('An overlay summary wins.');
+  });
+
+  it('text も訳も無ければ原文のまま残す', () => {
+    const localized = localizeComplianceMap(base, {});
+    const item = localized.index.get(makeComplianceKey('nist-ai-rmf', plain.ref));
+    expect(item?.summary).toBe(plain.summary);
+    expect(item?.title).toBe(plain.title);
+  });
+
+  it('title と summary を訳文へ差し替える', () => {
+    const overlay = loadComplianceOverlay([
+      {
+        source: 'en/rmf.yaml',
+        text: `
+schemaVersion: 1
+locale: en
+standard: nist-ai-rmf
+items:
+  "GOVERN 1.1":
+    title: Legal and regulatory requirements are understood
+    summary: Understand the applicable laws and reflect them in policy.
+`,
+      },
+    ]);
+    const localized = localizeComplianceMap(base, overlay);
+    const item = localized.index.get(makeComplianceKey('nist-ai-rmf', plain.ref));
+    expect(item?.title).toBe('Legal and regulatory requirements are understood');
+    expect(item?.summary).toBe('Understand the applicable laws and reflect them in policy.');
+  });
+
+  it('itemsByStandard と index が同じ訳済みオブジェクトを指す', () => {
+    const localized = localizeComplianceMap(base, {});
+    const fromList = localized.itemsByStandard.get('nist-csf-2.0-examples' as StandardId)?.[0];
+    const fromIndex = localized.index.get(
+      makeComplianceKey('nist-csf-2.0-examples', withText.ref),
+    );
+    expect(fromList).toBe(fromIndex);
+  });
+
+  it('原本のオブジェクトを書き換えない', () => {
+    localizeComplianceMap(base, {});
+    expect(withText.summary).toBe('ビジョン・ミッション声明を通じて組織ミッションを共有する。');
   });
 });

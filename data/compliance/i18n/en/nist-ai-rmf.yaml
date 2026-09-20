@@ -1,0 +1,310 @@
+# English overlay for `data/compliance/nist-ai-rmf.yaml`.
+#
+# The Japanese file is the source of truth: only `title` and `summary` are translated
+# here, keyed by the item's `ref`. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - `title` uses NIST's official English wording for that subcategory where it is known.
+#   - `summary` is this project's own one-to-two line summary, as in the original —
+#     never a verbatim reproduction of the standard's text.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+standard: nist-ai-rmf
+
+disclaimer: "title / summary are this project's own adaptation and summary of AI 100-1 (January 2023). See the source URL for the original text."
+
+items:
+  # GOVERN
+  "GOVERN 1.1":
+    title: "Legal and regulatory requirements are understood and documented"
+    summary: "Continuously identify and document the legal and regulatory requirements that apply to AI, and manage them as an organization."
+
+  "GOVERN 1.2":
+    title: "Trustworthy AI characteristics are integrated into policies"
+    summary: "Build characteristics such as trustworthiness, fairness, and safety into organizational policies, procedures, and practices."
+
+  "GOVERN 1.3":
+    title: "Processes calibrate risk management activities to risk tolerance"
+    summary: "Establish a process for setting the intensity of AI risk management activities based on the organization's risk tolerance."
+
+  "GOVERN 1.4":
+    title: "Risk management processes are transparent and prioritized"
+    summary: "Establish transparent policies and procedures for risk management processes and their outcomes, and operate them according to organizational risk priorities."
+
+  "GOVERN 1.5":
+    title: "Ongoing monitoring and periodic review of risk management processes"
+    summary: "Plan for ongoing monitoring and periodic review of risk management processes, and document the review cadence and accountable roles."
+
+  "GOVERN 1.6":
+    title: "An AI system inventory is maintained"
+    summary: "Maintain a mechanism for inventorying AI systems, and allocate resources according to risk priority."
+
+  "GOVERN 1.7":
+    title: "Safe decommissioning and phase-out processes"
+    summary: "Establish a process for decommissioning and phasing out AI systems that avoids introducing new risks or degrading trustworthiness."
+
+  "GOVERN 2.1":
+    title: "Roles, responsibilities, and lines of communication for MAP, MEASURE, and MANAGE"
+    summary: "Document the roles, responsibilities, and communication channels involved in risk management activities across the organization."
+
+  "GOVERN 2.2":
+    title: "AI risk management training is provided"
+    summary: "Provide employees and partners with training relevant to their AI risk management responsibilities."
+
+  "GOVERN 2.3":
+    title: "Senior leadership is accountable for risk decisions"
+    summary: "Senior leadership takes accountability for decisions about risk in the development and deployment of AI systems."
+
+  "GOVERN 3.1":
+    title: "Decision-making is informed by a diverse team"
+    summary: "Risk management decisions are made by a team with diverse backgrounds, expertise, and experience."
+
+  "GOVERN 3.2":
+    title: "Human-AI configuration and roles for human oversight are defined"
+    summary: "Define and, through policy, separate the roles and responsibilities for human involvement in and oversight of AI systems."
+
+  "GOVERN 4.1":
+    title: "A culture of critical thinking and safety is cultivated"
+    summary: "Organizationally cultivate a culture of critical thinking and safety-first practice across design, development, deployment, and use."
+
+  "GOVERN 4.2":
+    title: "Risks and impacts are documented and communicated"
+    summary: "Document the risks and potential impacts of AI being developed or deployed, and share them broadly with stakeholders."
+
+  "GOVERN 4.3":
+    title: "Testing, incident identification, and information sharing practices"
+    summary: "Establish organizational practices that enable AI testing, incident identification, and information sharing."
+
+  "GOVERN 5.1":
+    title: "External feedback is gathered and incorporated"
+    summary: "Collect and prioritize external feedback on impacts to individuals and society, and incorporate it into risk management."
+
+  "GOVERN 5.2":
+    title: "Vetted feedback is fed back into design and implementation"
+    summary: "Maintain a mechanism for regularly incorporating vetted stakeholder feedback into system design and implementation."
+
+  "GOVERN 6.1":
+    title: "Supply chain risk and intellectual property"
+    summary: "Establish policies and procedures for handling risks (including IP infringement) that arise from third-party data, models, and components."
+
+  "GOVERN 6.2":
+    title: "Contingency plans for high-risk third-party dependencies"
+    summary: "Maintain contingency plans for failures or incidents involving third-party data or AI systems assessed as high risk."
+
+  # MAP
+  "MAP 1.1":
+    title: "Intended purpose and context of use are documented"
+    summary: "Understand and document the AI system's intended use, expected deployment context, and the applicable laws, norms, and expectations."
+
+  "MAP 1.2":
+    title: "Interdisciplinary, diverse teams establish context"
+    summary: "AI actors involved in context-setting are cross-disciplinary and diverse, and their participation is documented."
+
+  "MAP 1.3":
+    title: "Organizational mission and AI use goals are aligned"
+    summary: "Understand and document the organizational mission and goals related to the use of AI technology."
+
+  "MAP 1.4":
+    title: "Business value and context of use are specified"
+    summary: "Clearly define the business value and context of use, re-evaluating this when assessing an existing system."
+
+  "MAP 1.5":
+    title: "Organizational risk tolerance is determined and documented"
+    summary: "Determine and document the level of risk the organization is willing to accept."
+
+  "MAP 1.6":
+    title: "System requirements are elicited from stakeholders"
+    summary: "Elicit and understand system requirements (e.g., respecting privacy) from relevant AI actors."
+
+  "MAP 2.1":
+    title: "Tasks the AI system supports are defined"
+    summary: "Define the specific tasks the AI system supports and how it implements them."
+
+  "MAP 2.2":
+    title: "Knowledge limits and human oversight of outputs"
+    summary: "Document the AI system's knowledge limits and how its outputs are used and overseen by humans."
+
+  "MAP 2.3":
+    title: "Scientific integrity and TEVV considerations"
+    summary: "Document scientific integrity and TEVV considerations concerning experimental design, data collection, reliability, and construct validity."
+
+  "MAP 3.1":
+    title: "Benefits of intended functionality and performance are examined"
+    summary: "Examine and document the benefits expected from the AI system's intended functionality and performance."
+
+  "MAP 3.2":
+    title: "Costs of malfunction and reduced trustworthiness are examined"
+    summary: "Examine and document the costs, including non-monetary ones, of expected or realized AI errors or reduced trustworthiness."
+
+  "MAP 3.3":
+    title: "Targeted application scope is specified"
+    summary: "Identify and document the intended scope of application based on system capabilities, context, and categorization."
+
+  "MAP 3.4":
+    title: "Processes for operator and practitioner proficiency"
+    summary: "Define processes for ensuring operators and practitioners are proficient with the AI system's performance and trustworthiness."
+
+  "MAP 3.5":
+    title: "Human oversight processes are defined and assessed"
+    summary: "Define, assess, and document human oversight processes consistent with applicable policy."
+
+  "MAP 4.1":
+    title: "Technical and legal risks are mapped"
+    summary: "Map the technical and legal risks (including IP infringement) of AI components, including those sourced from third parties."
+
+  "MAP 4.2":
+    title: "Internal risk controls are identified"
+    summary: "Identify and document internal controls for AI system components, including third-party AI technology."
+
+  "MAP 5.1":
+    title: "Likelihood and magnitude of impacts are identified"
+    summary: "Identify the likelihood and magnitude of each impact, based on intended use, prior incidents, public incidents, and external feedback."
+
+  "MAP 5.2":
+    title: "Practices for ongoing engagement with stakeholders"
+    summary: "Resource and staff regular engagement with AI actors, and incorporate feedback on impacts."
+
+  # MEASURE
+  "MEASURE 1.1":
+    title: "Measurement approaches and metrics are selected"
+    summary: "Select measurement approaches and metrics for the risks identified in MAP, prioritizing the most significant risks first."
+
+  "MEASURE 1.2":
+    title: "Metrics and existing controls are periodically assessed"
+    summary: "Periodically assess and update the adequacy of AI metrics and the effectiveness of existing controls, reporting errors and impacts."
+
+  "MEASURE 1.3":
+    title: "Independent evaluators are involved"
+    summary: "Involve internal experts who are not developers, or independent evaluators, in periodic assessment and updates."
+
+  "MEASURE 2.1":
+    title: "Test sets, metrics, and tools used in TEVV are documented"
+    summary: "Document the test sets, metrics, and tools used in TEVV."
+
+  "MEASURE 2.2":
+    title: "Human-subject evaluation requirements and representativeness"
+    summary: "Ensure human-subject evaluations meet applicable requirements (such as subject protection) and represent the relevant population."
+
+  "MEASURE 2.3":
+    title: "Performance and assurance criteria are demonstrated under deployment conditions"
+    summary: "Demonstrate the AI system's performance or assurance criteria qualitatively and quantitatively under conditions similar to deployment."
+
+  "MEASURE 2.4":
+    title: "Functionality and behavior are monitored in production"
+    summary: "Monitor the AI system's functionality and behavior identified in MAP while it is in production."
+
+  "MEASURE 2.5":
+    title: "Validity and reliability are demonstrated"
+    summary: "Demonstrate that the deployed AI system is valid and reliable."
+
+  "MEASURE 2.6":
+    title: "Safety risks are periodically assessed"
+    summary: "Periodically assess the AI system against the safety risks identified in MAP."
+
+  "MEASURE 2.7":
+    title: "Security and resilience are evaluated"
+    summary: "Evaluate and document the security and resilience of the AI system as identified in MAP."
+
+  "MEASURE 2.8":
+    title: "Transparency and accountability risks are examined"
+    summary: "Examine and document the transparency and accountability risks identified in MAP."
+
+  "MEASURE 2.9":
+    title: "Models are explained, validated, and outputs are interpreted in context"
+    summary: "Explain, validate, and document the AI model, and interpret its outputs within the context of use."
+
+  "MEASURE 2.10":
+    title: "Privacy risks are examined"
+    summary: "Examine and document the AI system's privacy risks identified in MAP."
+
+  "MEASURE 2.11":
+    title: "Fairness and bias are evaluated"
+    summary: "Evaluate the fairness and bias issues identified in MAP, and document the results."
+
+  "MEASURE 2.12":
+    title: "Environmental impact and sustainability are assessed"
+    summary: "Assess and document the environmental impact and sustainability of training and operating the AI model."
+
+  "MEASURE 2.13":
+    title: "Effectiveness of the TEVV metrics and processes themselves is evaluated"
+    summary: "Evaluate and document the effectiveness of the TEVV metrics and processes used in the MEASURE function itself."
+
+  "MEASURE 3.1":
+    title: "Known, unknown, and emergent risks are continuously tracked"
+    summary: "Maintain a mechanism to continuously identify and track known, unexpected, and emergent risks based on the deployed AI's actual performance."
+
+  "MEASURE 3.2":
+    title: "Approaches for hard-to-measure risks are tracked"
+    summary: "Examine tracking approaches for risks that are difficult to measure with current methods or lack established metrics."
+
+  "MEASURE 3.3":
+    title: "Feedback from end users and affected communities"
+    summary: "Establish a mechanism for end users and affected communities to report problems and appeal outcomes, and incorporate it into evaluation metrics."
+
+  "MEASURE 4.1":
+    title: "Measurement approaches are aligned with deployment context"
+    summary: "Connect AI risk measurement approaches to the deployment context, refining them through consultation with domain experts and end users."
+
+  "MEASURE 4.2":
+    title: "Reliability measurement results are validated by experts"
+    summary: "Validate reliability measurement results under the deployment context with input from domain experts and relevant AI actors."
+
+  "MEASURE 4.3":
+    title: "Performance changes are identified and documented"
+    summary: "Identify measurable performance improvements or degradations based on consultation with stakeholders, including affected communities, and field data."
+
+  # MANAGE
+  "MANAGE 1.1":
+    title: "Determination of whether the intended purpose is met, and go/no-go decisions"
+    summary: "Determine whether the AI system meets its intended purpose and goals, and whether development or deployment should continue."
+
+  "MANAGE 1.2":
+    title: "Risk responses are prioritized"
+    summary: "Prioritize responses to documented AI risks based on factors such as impact, likelihood, and available resources."
+
+  "MANAGE 1.3":
+    title: "Responses to high-priority risks are planned"
+    summary: "Develop, plan, and document responses to the risks identified as high priority in MAP."
+
+  "MANAGE 1.4":
+    title: "Residual risk is documented"
+    summary: "Document negative residual risk (the sum of unmitigated risk) to downstream acquirers and end users."
+
+  "MANAGE 2.1":
+    title: "Risk management resources and non-AI alternatives are considered"
+    summary: "Identify the resources needed for AI risk management, and also consider non-AI alternatives that reduce the magnitude or likelihood of impacts."
+
+  "MANAGE 2.2":
+    title: "Mechanisms to sustain the value of deployed AI"
+    summary: "Establish and operate mechanisms to sustain the value of deployed AI systems."
+
+  "MANAGE 2.3":
+    title: "Procedures for responding to and recovering from unknown risks"
+    summary: "Establish and operate procedures for responding to and recovering from newly identified, previously unknown risks."
+
+  "MANAGE 2.4":
+    title: "Mechanisms to override, disable, or deactivate AI systems"
+    summary: "Establish mechanisms, with clear accountability, to override, disable, or deactivate AI systems that behave contrary to their intended purpose."
+
+  "MANAGE 3.1":
+    title: "Third-party resources are continuously monitored"
+    summary: "Regularly monitor risks and benefits from third-party sources, and apply and document risk controls."
+
+  "MANAGE 3.2":
+    title: "Pre-trained models are monitored"
+    summary: "Include pre-trained models used in development within the AI system's regular monitoring and maintenance."
+
+  "MANAGE 4.1":
+    title: "Post-deployment monitoring plans are implemented"
+    summary: "Implement post-deployment monitoring plans covering feedback collection, appeals, decommissioning, incident response, and change management."
+
+  "MANAGE 4.2":
+    title: "Continual improvement activities are incorporated"
+    summary: "Incorporate measurable, ongoing improvement activities, including continuous stakeholder engagement, into AI system updates."
+
+  "MANAGE 4.3":
+    title: "Incidents and errors are communicated and tracked"
+    summary: "Communicate incidents and errors to relevant AI actors, including affected communities, and document processes for tracking, response, and recovery."

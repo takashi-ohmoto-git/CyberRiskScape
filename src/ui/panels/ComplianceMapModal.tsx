@@ -1,27 +1,29 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ExternalLink, Library, ShieldCheck, X } from 'lucide-react';
 import { useDiagramStore } from '../../core/state/diagramStore';
-import { BUNDLED_COMPLIANCE_MAP } from '../../compliance/loader/bundledComplianceMap';
+import { getComplianceMap } from '../../compliance/loader/bundledComplianceMap';
 import type { ComplianceItem, StandardId } from '../../compliance/schema/complianceItem';
 import { ZeroTrustForAiAgents } from './ZeroTrustForAiAgents';
-import { useT } from '../../i18n';
+import { useLocale, useT } from '../../i18n';
 
 /** 規格リストの一番上に固定表示する「Zero Trust for AI Agents」ビューのセンチネル ID。 */
 const ZERO_TRUST_VIEW = '__zero-trust-ai-agents__' as const;
 
 /**
  * コンプライアンスマップ閲覧モーダル。
- * `BUNDLED_COMPLIANCE_MAP` の規格メタと items を、左ペイン（規格選択）＋
+ * ロケール解決済みの規格メタと items を、左ペイン（規格選択）＋
  * 右ペイン（items 一覧）で閲覧できる読み取り専用ビューア。
  */
 export function ComplianceMapModal() {
   const isOpen = useDiagramStore((s) => s.isComplianceMapOpen);
   const closeComplianceMap = useDiagramStore((s) => s.closeComplianceMap);
   const t = useT();
+  const [locale] = useLocale();
+  const complianceMap = getComplianceMap(locale);
 
   const standardIds = useMemo(
-    () => Array.from(BUNDLED_COMPLIANCE_MAP.standards.keys()),
-    [],
+    () => Array.from(complianceMap.standards.keys()),
+    [complianceMap],
   );
   const [selectedId, setSelectedId] = useState<StandardId | typeof ZERO_TRUST_VIEW | null>(
     ZERO_TRUST_VIEW,
@@ -49,11 +51,9 @@ export function ComplianceMapModal() {
 
   const isZeroTrust = selectedId === ZERO_TRUST_VIEW;
   const standardId = isZeroTrust ? null : selectedId;
-  const selectedStandard = standardId
-    ? BUNDLED_COMPLIANCE_MAP.standards.get(standardId)
-    : undefined;
+  const selectedStandard = standardId ? complianceMap.standards.get(standardId) : undefined;
   const selectedItems = standardId
-    ? (BUNDLED_COMPLIANCE_MAP.itemsByStandard.get(standardId) ?? [])
+    ? (complianceMap.itemsByStandard.get(standardId) ?? [])
     : [];
 
   const q = filter.trim().toLowerCase();
@@ -84,7 +84,7 @@ export function ComplianceMapModal() {
             <span className="text-[10px] text-slate-500 ml-2">
               {t('analytics.compliance.standardsSummary', {
                 standards: standardIds.length,
-                total: BUNDLED_COMPLIANCE_MAP.index.size,
+                total: complianceMap.index.size,
               })}
             </span>
           </div>
@@ -118,8 +118,8 @@ export function ComplianceMapModal() {
             </button>
             <div className="my-1 mx-4 border-t border-slate-800" />
             {standardIds.map((id) => {
-              const meta = BUNDLED_COMPLIANCE_MAP.standards.get(id);
-              const count = BUNDLED_COMPLIANCE_MAP.itemsByStandard.get(id)?.length ?? 0;
+              const meta = complianceMap.standards.get(id);
+              const count = complianceMap.itemsByStandard.get(id)?.length ?? 0;
               const isActive = id === selectedId;
               return (
                 <button

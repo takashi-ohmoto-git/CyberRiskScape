@@ -17,6 +17,8 @@ locale: en
 standard: jp-ai-business-guideline
 
 title: "AI 事業者ガイドライン (METI/MIC AI Guidelines for Business, in Japanese)"
+license: "METI / MIC (summaries permitted with attribution)"
+disclaimer: "title / summary are this project's own summaries of v1.01 (April 2024). See the source URL for the original text."
 
 refLabels:
   # 第2部 共通の指針（全主体共通の 10 原則）
@@ -60,3 +62,110 @@ refLabels:
   "利用者-5": "利用者-5 (Users 5)"
   "利用者-6": "利用者-6 (Users 6)"
   "利用者-7": "利用者-7 (Users 7)"
+
+items:
+  "共通の指針-1":
+    title: "Human-centric"
+    summary: "Design and operate AI so it respects human dignity and autonomy, without unduly manipulating people's decisions or emotions."
+  "共通の指針-2":
+    title: "Safety"
+    summary: "Ensure the safety of AI systems so they do not cause harm to life, body, property, mental wellbeing, or the environment."
+  "共通の指針-3":
+    title: "Fairness"
+    summary: "Build fair AI that avoids unjust discrimination against individuals or groups and minimizes bias."
+  "共通の指針-4":
+    title: "Privacy protection"
+    summary: "Appropriately protect personal information and privacy, complying with relevant laws such as the Act on the Protection of Personal Information."
+  "共通の指針-5":
+    title: "Security assurance"
+    summary: "Prevent attacks, tampering, and data leakage against AI systems, maintaining confidentiality, integrity, and availability."
+  "共通の指針-6":
+    title: "Transparency"
+    summary: "Disclose information about an AI system's basis for decisions, usage status, and limitations in a form stakeholders can understand."
+  "共通の指針-7":
+    title: "Accountability"
+    summary: "Establish arrangements so every party involved can give a responsible account of the results and impacts of AI systems."
+  "共通の指針-8":
+    title: "Education and literacy"
+    summary: "Provide stakeholders who handle AI with education and opportunities to build the literacy needed for appropriate use and risk awareness."
+  "共通の指針-9":
+    title: "Fair competition"
+    summary: "Prevent AI from being used to dominate markets or distort competition, preserving conditions for new entrants and healthy competition."
+  "共通の指針-10":
+    title: "Innovation"
+    summary: "Foster AI innovation while building development and use environments that balance social benefit with risk reduction."
+
+  "開発者-1":
+    title: "Human-centric design"
+    summary: "Incorporate respect for human dignity and autonomy from the earliest stages of training data and algorithm selection, and suppress functions open to misuse."
+  "開発者-2":
+    title: "Selecting and validating appropriate training data"
+    summary: "Verify the representativeness, legality, and quality of training data to prevent bias and rights infringement from entering the model."
+  "開発者-3":
+    title: "Safety-conscious development"
+    summary: "Develop AI that is robust against anticipated malfunctions and adversarial inputs, and carry out safety testing."
+  "開発者-4":
+    title: "Ensuring fairness"
+    summary: "Design to avoid unjust discrimination or bias, and apply bias assessment and mitigation measures during development."
+  "開発者-5":
+    title: "Consideration for privacy protection"
+    summary: "Apply measures such as lawfulness, data minimization, and anonymization when handling training data that includes personal information."
+  "開発者-6":
+    title: "Security measures"
+    summary: "Build in defenses against model extraction, data poisoning, and adversarial inputs, and ensure the integrity of the supply chain."
+  "開発者-7":
+    title: "Ensuring transparency"
+    summary: "Disclose the model's purpose, performance, constraints, and an outline of its training data at a level of detail that lets providers and users make informed judgments."
+  "開発者-8":
+    title: "Ensuring verifiability"
+    summary: "Maintain evaluation metrics, test methods, and output logs so third parties can evaluate and audit the AI."
+  "開発者-9":
+    title: "Explanation to relevant stakeholders"
+    summary: "Explain the AI's characteristics, intended use, and residual risks to providers, users, and the general public."
+
+  "提供者-1":
+    title: "Providing a human-centric usage environment"
+    summary: "Provide a usage environment where users do not blindly follow AI decisions and humans can intervene or override outcomes when necessary."
+  "提供者-2":
+    title: "Mechanisms that support appropriate use"
+    summary: "Implement guidance, terms of use, and guardrails that prevent unintended use, misuse, and over-reliance."
+  "提供者-3":
+    title: "Privacy protection"
+    summary: "Protect the privacy of input data and interaction history, and clearly disclose retention periods and whether the data is used for training."
+  "提供者-4":
+    title: "Security measures"
+    summary: "Implement security measures that prevent unauthorized access to, and abuse of, APIs, data, and models."
+  "提供者-5":
+    title: "Ensuring transparency"
+    summary: "Clearly disclose to users that a service is AI-based, along with its terms of use and expected risks."
+  "提供者-6":
+    title: "Operational verification and monitoring"
+    summary: "Verify AI system behavior both before launch and during operation, and establish mechanisms to intervene when anomalies occur."
+  "提供者-7":
+    title: "Reviewing service content"
+    summary: "Continuously review service content and guardrails based on user feedback and incidents."
+  "提供者-8":
+    title: "Explanation to relevant stakeholders"
+    summary: "Explain the characteristics, terms of use, and support contacts of the AI service to developers, users, and third parties."
+
+  "利用者-1":
+    title: "Safe use"
+    summary: "Follow the terms of use and limitations set by the provider, and avoid unintended or hazardous uses."
+  "利用者-2":
+    title: "Care with input data"
+    summary: "Limit the personal or confidential information entered into AI to the minimum necessary, and check the provider's data handling terms."
+  "利用者-3":
+    title: "Consideration for fairness"
+    summary: "When using AI output in decision-making, check that it does not cause unjust impact on specific individuals or groups."
+  "利用者-4":
+    title: "Privacy protection"
+    summary: "Give due consideration to the privacy of third parties whose data is acquired or processed through AI use."
+  "利用者-5":
+    title: "Security measures"
+    summary: "When using output or code obtained via AI, check for the risk of embedded malware or tampering."
+  "利用者-6":
+    title: "Explanation to relevant stakeholders"
+    summary: "When incorporating AI into business operations, explain the fact and limitations of AI use to relevant parties and customers."
+  "利用者-7":
+    title: "Providing appropriate feedback to providers"
+    summary: "Feed back abnormal behavior, defects, and incidents in the AI system to the provider to contribute to improvement."

@@ -22,11 +22,32 @@ export const ComplianceOverlayFileSchema = z
     standard: StandardIdSchema,
     /** 規格の正式名称の訳（任意）。 */
     title: z.string().min(1).optional(),
+    /** 著作権・ライセンス区分の注記の訳（任意）。 */
+    license: z.string().min(1).optional(),
+    /** 引用条件・要約スタンスの注記の訳（任意）。 */
+    disclaimer: z.string().min(1).optional(),
     /**
      * ref → 表示ラベル。日本語の節名を持つ規格向け。
      * 収録の無い ref は原本の `ref` をそのまま表示する。
      */
     refLabels: z.record(z.string(), z.string().min(1)).optional(),
+    /**
+     * ref → 項目本文の訳（コンプライアンス一覧モーダル用）。
+     * `summary` は原本と同じく**独自要約**であること（規格本文の転載は不可）。
+     * 原本が `text`（パブリックドメインの英語原文）を持つ項目は、訳を書かずとも
+     * そちらが使われるため収録しなくてよい。
+     */
+    items: z
+      .record(
+        z.string(),
+        z
+          .object({
+            title: z.string().min(1).optional(),
+            summary: z.string().min(1).optional(),
+          })
+          .strict(),
+      )
+      .optional(),
   })
   .strict();
 
@@ -35,5 +56,11 @@ export type ComplianceOverlayFile = z.infer<typeof ComplianceOverlayFileSchema>;
 /** 規格 ID → その規格の訳。複数ファイル分をマージしたもの。 */
 export type ComplianceOverlayMap = Record<
   string,
-  { title?: string; refLabels?: Record<string, string> }
+  {
+    title?: string;
+    license?: string;
+    disclaimer?: string;
+    refLabels?: Record<string, string>;
+    items?: Record<string, { title?: string; summary?: string }>;
+  }
 >;

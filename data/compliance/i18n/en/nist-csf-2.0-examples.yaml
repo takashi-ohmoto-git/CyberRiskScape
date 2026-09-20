@@ -1,0 +1,18 @@
+# English overlay for `data/compliance/nist-csf-2.0-examples.yaml`.
+#
+# This file carries no `items`, and that is deliberate. Every item in the source
+# already holds NIST's own English wording in its `text` field, which the loader uses
+# as the English summary — so there is nothing to translate, and copying 363 strings
+# in here would only create something that goes stale when the source is corrected.
+#
+# Only the disclaimer changes: in Japanese the displayed summary is this project's own
+# summary, whereas in English it is NIST's Implementation Example text verbatim. The
+# note has to say which one the reader is looking at.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+standard: nist-csf-2.0-examples
+
+disclaimer: "Each example below is NIST's own Implementation Example text from CSF 2.0 (CSWP 29, February 2024), reproduced verbatim as a U.S. Government work."

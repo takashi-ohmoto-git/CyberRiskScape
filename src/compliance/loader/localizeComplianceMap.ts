@@ -3,7 +3,7 @@ import {
   ComplianceOverlayFileSchema,
   type ComplianceOverlayMap,
 } from '../schema/complianceOverlay';
-import type { StandardId } from '../schema/complianceItem';
+import type { ComplianceItem, StandardId } from '../schema/complianceItem';
 import {
   ComplianceMapLoadError,
   makeComplianceKey,
@@ -23,7 +23,14 @@ import {
 export function parseComplianceOverlayFile(
   yamlText: string,
   source: string,
-): { standard: StandardId; title?: string; refLabels?: Record<string, string> } {
+): {
+  standard: StandardId;
+  title?: string;
+  license?: string;
+  disclaimer?: string;
+  refLabels?: Record<string, string>;
+  items?: Record<string, { title?: string; summary?: string }>;
+} {
   let parsed: unknown;
   try {
     parsed = parseYaml(yamlText);
@@ -47,8 +54,8 @@ export function parseComplianceOverlayFile(
     );
   }
 
-  const { standard, title, refLabels } = result.data;
-  return { standard, title, refLabels };
+  const { standard, title, license, disclaimer, refLabels, items } = result.data;
+  return { standard, title, license, disclaimer, refLabels, items };
 }
 
 /**
@@ -60,7 +67,8 @@ export function loadComplianceOverlay(files: readonly RawYamlFile[]): Compliance
   const seenIn: Record<string, string> = {};
 
   for (const file of files) {
-    const { standard, title, refLabels } = parseComplianceOverlayFile(file.text, file.source);
+    const { standard, title, license, disclaimer, refLabels, items } =
+      parseComplianceOverlayFile(file.text, file.source);
     const previous = seenIn[standard];
     if (previous !== undefined) {
       throw new ComplianceMapLoadError(
@@ -69,7 +77,7 @@ export function loadComplianceOverlay(files: readonly RawYamlFile[]): Compliance
       );
     }
     seenIn[standard] = file.source;
-    merged[standard] = { title, refLabels };
+    merged[standard] = { title, license, disclaimer, refLabels, items };
   }
 
   return merged;
@@ -89,7 +97,11 @@ export function findOrphanOverlayRefs(
       orphans.push(standard);
       continue;
     }
-    for (const ref of Object.keys(entry.refLabels ?? {})) {
+    const refs = new Set([
+      ...Object.keys(entry.refLabels ?? {}),
+      ...Object.keys(entry.items ?? {}),
+    ]);
+    for (const ref of refs) {
       if (!map.index.has(makeComplianceKey(standard as StandardId, ref))) {
         orphans.push(`${standard} / ${ref}`);
       }
@@ -101,9 +113,13 @@ export function findOrphanOverlayRefs(
 /**
  * ロード結果へ訳文を適用する。指定の無いものは原文のまま残す。
  *
- * `items` の `title` / `summary` は対象外（規格本文の要約であり、訳すなら別途
- * 全 597 項目の作業になる）。ここで扱うのは**脅威カードのチップに出る**
- * 規格名と ref の表示ラベルのみ。
+ * 項目本文（`title` / `summary`）の解決順：
+ *   1. オーバーレイの訳
+ *   2. 原本の `text`（パブリックドメイン規格の英語原文。summary のみ）
+ *   3. 原文（日本語）
+ *
+ * 2 があるのは NIST CSF 2.0 Implementation Examples で、`summary` はその日本語要約に
+ * あたる。英語原文が既にデータにあるものを訳し直す必要はないので、そのまま使う。
  */
 export function localizeComplianceMap(
   map: LoadedComplianceMap,
@@ -115,13 +131,36 @@ export function localizeComplianceMap(
   for (const [standardId, entry] of Object.entries(overlay)) {
     const id = standardId as StandardId;
     const original = standards.get(id);
-    if (original && entry.title !== undefined) {
-      standards.set(id, { ...original, title: entry.title });
+    if (original) {
+      standards.set(id, {
+        ...original,
+        ...(entry.title !== undefined && { title: entry.title }),
+        ...(entry.license !== undefined && { license: entry.license }),
+        ...(entry.disclaimer !== undefined && { disclaimer: entry.disclaimer }),
+      });
     }
     for (const [ref, label] of Object.entries(entry.refLabels ?? {})) {
       refLabels.set(makeComplianceKey(id, ref), label);
     }
   }
 
-  return { ...map, standards, refLabels };
+  const localizeItem = (standardId: StandardId, item: ComplianceItem): ComplianceItem => {
+    const t = overlay[standardId]?.items?.[item.ref];
+    const title = t?.title ?? item.title;
+    const summary = t?.summary ?? item.text ?? item.summary;
+    if (title === item.title && summary === item.summary) return item;
+    return { ...item, title, summary };
+  };
+
+  const itemsByStandard = new Map<StandardId, readonly ComplianceItem[]>();
+  const index = new Map<ComplianceKey, ComplianceItem>();
+  for (const [standardId, items] of map.itemsByStandard) {
+    const localized = items.map((item) => localizeItem(standardId, item));
+    itemsByStandard.set(standardId, localized);
+    for (const item of localized) {
+      index.set(makeComplianceKey(standardId, item.ref), item);
+    }
+  }
+
+  return { ...map, standards, refLabels, itemsByStandard, index };
 }

@@ -39,6 +39,12 @@ export const ComplianceItemSchema = z.object({
   title: z.string().min(1),
   /** 1〜2 行の独自要約。規格本文の転載は不可。 */
   summary: z.string().min(1),
+  /**
+   * 規格本文の英語原文（任意）。**パブリックドメインの規格に限る**
+   * （現状 NIST CSF 2.0 Implementation Examples のみ。ファイル冒頭の license 参照）。
+   * `summary` がその日本語要約にあたるため、英語ロケールではこちらを表示に使う。
+   */
+  text: z.string().min(1).optional(),
   /** 当該項目への深リンク（任意）。 */
   url: z.string().url().optional(),
   /** 他規格との対応関係（任意）。 */
