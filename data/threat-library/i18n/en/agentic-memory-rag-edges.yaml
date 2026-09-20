@@ -1,0 +1,42 @@
+# English overlay for `data/threat-library/agentic-memory-rag-edges.yaml`.
+#
+# The Japanese file is the source of truth: only `name` / `category` / `description` /
+# `mitigation` (plus `conditions[].description` and `references[].title` where present)
+# are translated here, keyed by rule id. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - Keep `{{token}}` placeholders exactly as they appear in the original.
+#   - Keep the `[Foundation]` / `[Enterprise]` / `[Advanced]` markup — the maturity
+#     tiers are re-derived from this text.
+#   - Preserve the Can / Cannot pair and the blast radius statement in `description`
+#     (docs/threat-schema.md §7.5).
+#   - `references` is keyed by the index in the original array, and only the entries
+#     that need translating are listed. Keep a genuinely Japanese document title as
+#     its original title and add an English gloss; `url` is never translated.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+rules:
+  agentic-memory-write-untrusted-persistence-001:
+    category: "Memory"
+    name: "Persistence of Untrusted Input into Long-Term Memory"
+    description: "When there is an edge explicitly marked as memory_write from {{sourceName}} to {{targetName}}, and {{sourceName}} itself accepts inbound input (potentially untrusted) from a USER, EXTERNAL_ENTITY, TOOL, or similar, an attacker can inject malicious instructions or data into that input path and have the agent persist it into long-term memory as something it has \"learned\" (Can). The persisted poisoned data is then reused as context across all subsequent sessions, continuously inducing misjudgment, impersonation, and instruction overwrites. On the other hand, if source-trust evaluation (trusted/untrusted tagging) and content sanitization are performed before writing, persistence does not succeed even when the input path is untrusted (Cannot). The blast radius is the future responses of every session and every user that reference that MEMORY_STORE."
+    mitigation: "[Foundation] Require a source-attribute tag (trusted/untrusted) on all content written via a memory_write path, and do not persist untrusted writes until they have been sanitized by summarization and instruction stripping. [Enterprise] Screen content with a classifier before writing, and route it to a quarantine queue for human review when instruction patterns or sensitive categories are detected. [Advanced] Record a provenance chain (which input edge it originated from) on every write, so a contamination source can be identified later and only records from that source can be bulk-rolled-back."
+
+  agentic-memory-read-unverified-ingestion-001:
+    category: "Tampering"
+    name: "Unverified Ingestion of Poisoned Memory into Context"
+    description: "When there is an edge explicitly marked as memory_read from {{sourceName}} to {{targetName}}, {{targetName}} ingests memory records written in past sessions directly into the current context without integrity verification (Can). If a record whose contamination went undetected at write time (for example, when memory_write-side controls only partially worked) also goes unverified at read time, the contamination surfaces only after a delay and the originating write session becomes hard to trace. On the other hand, if per-record integrity hashes and signatures are verified at read time, with records that fail verification excluded or flagged before use, a miss at write time is double-checked at read time (Cannot). The blast radius is the response quality and decision-making of every agent session that reads that memory."
+    mitigation: "[Foundation] Check each record's source-attribute tag (trusted/untrusted) at memory_read time, and explicitly distinguish untrusted records before including them in context (do not interpret them as raw instructions). [Enterprise] Re-verify per-record integrity hashes at read time, excluding tampered or verification-failed records and raising an alert. [Advanced] Continuously apply anomaly detection (statistical deviation, known contamination patterns) to read results as well, and on detection quarantine the record back to its write source."
+
+  agentic-rag-retrieval-provenance-gap-001:
+    category: "Tampering"
+    name: "Missing Provenance and Signature Verification for RAG-Retrieved Documents"
+    description: "When there is an edge explicitly marked as rag_retrieval from {{sourceName}} to {{targetName}}, {{targetName}} ingests the body of retrieved documents into context without provenance information about their origin, last editor, or whether they have been tampered with (Can). If an attacker plants an indirect prompt injection payload in an indexed document (an internal wiki, a shared drive, a web-crawl target, etc.), it can be interpreted as an instruction to the agent as soon as it is retrieved as a search hit. On the other hand, if retrieved documents carry source-signature, last-editor, and update-time metadata, and a design explicitly labels unsigned documents or documents from sources outside the allow-list as \"data\" rather than interpreting them as instructions, embedded instruction text does not lead to execution even if present in the document (Cannot). The blast radius is the responses and subsequent tool calls of every agent session that searches that index."
+    mitigation: "[Foundation] Explicitly label document bodies retrieved via rag_retrieval as untrusted data, and detect and neutralize instruction patterns within documents before passing them into context. [Enterprise] Require source, editor, and update-time metadata at index-registration time, and exclude documents from sources outside the allow-list from search results, or mark them low-trust. [Advanced] Attach cryptographic signatures and a hash chain to documents, and disallow use of any document that fails signature verification at retrieval time. Detect anomalies in index updates (mass or rapid changes) and auto-quarantine."
+    references:
+      "0":
+        title: "MITRE ATLAS AML.T0051 LLM Prompt Injection (related mapping; indirect prompt injection in general)"

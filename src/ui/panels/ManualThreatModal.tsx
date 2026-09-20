@@ -9,7 +9,8 @@ import {
 import { getNodeDisplayName } from '../../core/model/nodeDisplay';
 import { componentRegistry } from '../../component-library/defaultRegistry';
 import type { ComponentTypeId, Framework, Severity } from '../../core/model/types';
-import { FRAMEWORK_VIEW_LABELS, MANUAL_THREAT_FRAMEWORKS } from '../frameworkLabels';
+import { FRAMEWORK_VIEW_LABEL_KEYS, MANUAL_THREAT_FRAMEWORKS } from '../frameworkLabels';
+import { useT } from '../../i18n';
 
 interface ManualThreatDraft {
   /** 対象の符号化値。'' = 全体 / 'type:<id>' = コンポーネント型 / 'node:<id>' = 配置済みノード。 */
@@ -58,6 +59,7 @@ const SEVERITY_OPTIONS: { val: Severity; label: string; activeClass: string }[] 
  * プロジェクトローカルなカスタムルール）/ 配置済みノード（特定インスタンス）。
  */
 export function ManualThreatModal() {
+  const t = useT();
   const isOpen = useDiagramStore((s) => s.isManualThreatModalOpen);
   const editingId = useDiagramStore((s) => s.editingManualThreatId);
   const activeFramework = useDiagramStore((s) => s.activeFramework);
@@ -143,12 +145,14 @@ export function ManualThreatModal() {
       >
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold uppercase tracking-widest text-slate-300">
-            {editingId ? 'シナリオを編集' : 'シナリオを追加'}
+            {editingId
+              ? t('threats.manualThreatModal.editTitle')
+              : t('threats.manualThreatModal.addTitle')}
           </h2>
           <button
             onClick={close}
             className="text-slate-500 hover:text-slate-200 transition-colors"
-            aria-label="閉じる"
+            aria-label={t('threats.manualThreatModal.close')}
           >
             <X size={16} />
           </button>
@@ -157,7 +161,7 @@ export function ManualThreatModal() {
         {showFrameworkPicker ? (
           <div className="flex flex-col gap-1.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              フレームワーク
+              {t('threats.manualThreatModal.frameworkLabel')}
             </span>
             <div className="grid grid-cols-3 gap-2">
               {MANUAL_THREAT_FRAMEWORKS.map((fw) => {
@@ -172,7 +176,7 @@ export function ManualThreatModal() {
                         : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'
                     }`}
                   >
-                    {FRAMEWORK_VIEW_LABELS[fw]}
+                    {t(FRAMEWORK_VIEW_LABEL_KEYS[fw])}
                   </button>
                 );
               })}
@@ -180,30 +184,32 @@ export function ManualThreatModal() {
           </div>
         ) : (
           <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider">
-            <span className="text-slate-500">フレームワーク</span>
+            <span className="text-slate-500">{t('threats.manualThreatModal.frameworkLabel')}</span>
             <span className="bg-slate-800 border border-slate-700 text-slate-300 px-2 py-0.5 rounded">
-              {FRAMEWORK_VIEW_LABELS[draft.framework]}
+              {t(FRAMEWORK_VIEW_LABEL_KEYS[draft.framework])}
             </span>
-            <span className="text-slate-600 normal-case font-normal">作成時に固定されます</span>
+            <span className="text-slate-600 normal-case font-normal">
+              {t('threats.manualThreatModal.frameworkFixedHint')}
+            </span>
           </div>
         )}
 
         <label className="flex flex-col gap-1.5">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-            脅威カテゴリ / タイトル <span className="text-rose-400">*</span>
+            {t('threats.manualThreatModal.categoryLabel')} <span className="text-rose-400">*</span>
           </span>
           <input
             type="text"
             value={draft.category}
             onChange={(e) => setDraft((p) => ({ ...p, category: e.target.value }))}
-            placeholder="例: 内部不正による顧客データ持ち出し"
+            placeholder={t('threats.manualThreatModal.categoryPlaceholder')}
             className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
           />
         </label>
 
         <div className="flex flex-col gap-1.5">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-            深刻度
+            {t('threats.manualThreatModal.severityLabel')}
           </span>
           <div className="grid grid-cols-4 gap-2">
             {SEVERITY_OPTIONS.map((opt) => {
@@ -227,16 +233,19 @@ export function ManualThreatModal() {
 
         <label className="flex flex-col gap-1.5">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-            対象
+            {t('threats.manualThreatModal.targetLabel')}
           </span>
           <select
             value={draft.target}
             onChange={(e) => setDraft((p) => ({ ...p, target: e.target.value }))}
             className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-blue-500 transition-colors"
           >
-            <option value="">プロジェクト全体（ノード未指定）</option>
+            <option value="">{t('threats.manualThreatModal.targetOptionWhole')}</option>
             {typeSections.map((s) => (
-              <optgroup key={s.category.id} label={`型: ${s.category.label}（同型ノード全てに適用）`}>
+              <optgroup
+                key={s.category.id}
+                label={t('threats.manualThreatModal.targetGroupType', { label: s.category.label })}
+              >
                 {s.components.map((c) => (
                   <option key={c.id} value={`type:${c.id}`}>
                     {c.label}
@@ -245,7 +254,7 @@ export function ManualThreatModal() {
               </optgroup>
             ))}
             {nodes.length > 0 && (
-              <optgroup label="配置済みノード（このインスタンスのみ）">
+              <optgroup label={t('threats.manualThreatModal.targetGroupNode')}>
                 {nodes.map((n) => (
                   <option key={n.id} value={`node:${n.id}`}>
                     {getNodeDisplayName(n)}
@@ -255,33 +264,32 @@ export function ManualThreatModal() {
             )}
           </select>
           <span className="text-[9px] text-slate-500 leading-relaxed">
-            型を選ぶと、アクティブレイヤー上の同型ノード全てに適用されるプロジェクトローカルな
-            カスタムルールになります。
+            {t('threats.manualThreatModal.targetTypeHint')}
           </span>
         </label>
 
         <label className="flex flex-col gap-1.5">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-            脅威の内容 <span className="text-rose-400">*</span>
+            {t('threats.manualThreatModal.descriptionLabel')} <span className="text-rose-400">*</span>
           </span>
           <textarea
             rows={4}
             value={draft.description}
             onChange={(e) => setDraft((p) => ({ ...p, description: e.target.value }))}
-            placeholder="想定される攻撃シナリオ・前提条件・影響を記述します。"
+            placeholder={t('threats.manualThreatModal.descriptionPlaceholder')}
             className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-colors resize-y"
           />
         </label>
 
         <label className="flex flex-col gap-1.5">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-            緩和策（任意）
+            {t('threats.manualThreatModal.mitigationLabel')}
           </span>
           <textarea
             rows={3}
             value={draft.mitigation}
             onChange={(e) => setDraft((p) => ({ ...p, mitigation: e.target.value }))}
-            placeholder="この脅威への対策・統制を記述します。"
+            placeholder={t('threats.manualThreatModal.mitigationPlaceholder')}
             className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-colors resize-y"
           />
         </label>
@@ -291,14 +299,14 @@ export function ManualThreatModal() {
             onClick={close}
             className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-white transition-colors"
           >
-            キャンセル
+            {t('threats.manualThreatModal.cancel')}
           </button>
           <button
             onClick={handleSave}
             disabled={!canSave}
             className="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            保存
+            {t('threats.editor.save')}
           </button>
         </div>
       </div>

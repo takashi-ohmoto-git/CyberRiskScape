@@ -10,6 +10,7 @@ import type {
 } from '../../core/model/types';
 import { formatElementalId } from '../../core/model/elementalId';
 import { BRANDING } from '../../core/branding';
+import { getLocale, translate, type Locale, type TranslationKey } from '../../i18n';
 
 /**
  * 脅威レポート（案B）。社内 TM Excel テンプレート「Project Specific Threats」シートの
@@ -106,21 +107,21 @@ function assetLabel(threat: ThreatView, index: Map<string, AssetEntry>): string 
   return entry.name ? `${entry.elementalId} ${entry.name}` : entry.elementalId;
 }
 
-function statusLabel(threat: ThreatView): string {
+function statusLabel(threat: ThreatView, locale: Locale): string {
   // 手動脅威は対応状況（抑制注記）の対象外＝空欄。
   if (threat.origin === 'manual') return '';
-  if (!threat.suppression) return '未対応';
+  if (!threat.suppression) return translate('report.status.unaddressed', locale);
   switch (threat.suppression.status) {
     case 'avoid':
-      return '回避';
+      return translate('report.status.avoid', locale);
     case 'reduce':
-      return '低減';
+      return translate('report.status.reduce', locale);
     case 'transfer':
-      return '移転';
+      return translate('report.status.transfer', locale);
     case 'accepted':
-      return 'リスク受容';
+      return translate('report.status.accepted', locale);
     case 'false-positive':
-      return '誤検知';
+      return translate('report.status.falsePositive', locale);
   }
 }
 
@@ -133,6 +134,7 @@ export function buildThreatReport({
   framework,
   layer,
 }: BuildThreatReportInput): ThreatReport {
+  const locale = getLocale();
   const index = buildAssetIndex(nodes, edges, boundaries);
   const rows: ThreatReportRow[] = threats.map((t) => ({
     id: t.id,
@@ -142,9 +144,12 @@ export function buildThreatReport({
     threat: t.description,
     severity: t.severity,
     countermeasure: t.mitigation ?? '',
-    status: statusLabel(t),
+    status: statusLabel(t, locale),
     comments: t.origin === 'detected' ? (t.suppression?.note ?? '') : '',
-    origin: t.origin === 'manual' ? '手動' : '自動検出',
+    origin:
+      t.origin === 'manual'
+        ? translate('report.origin.manual', locale)
+        : translate('report.origin.detected', locale),
   }));
   return { project: projectMeta, framework, layer, rows };
 }
@@ -160,18 +165,18 @@ function csvRow(cells: string[]): string {
   return cells.map(csvCell).join(',');
 }
 
-const CSV_COLUMNS = [
-  'ID',
-  '対象要素',
-  'フレームワーク',
-  'カテゴリ',
-  '脅威',
-  '深刻度',
-  '緩和策',
-  'ステータス',
-  'コメント',
-  '種別',
-] as const;
+const CSV_COLUMN_KEYS: readonly TranslationKey[] = [
+  'report.csv.col.id',
+  'report.csv.col.asset',
+  'report.csv.col.framework',
+  'report.csv.col.category',
+  'report.csv.col.threat',
+  'report.csv.col.severity',
+  'report.csv.col.mitigation',
+  'report.csv.col.status',
+  'report.csv.col.comments',
+  'report.csv.col.origin',
+];
 
 /**
  * レポートを CSV 文字列へ変換する（UTF-8 / CRLF 改行）。
@@ -179,18 +184,19 @@ const CSV_COLUMNS = [
  * BOM は付与しない（Excel 向け BOM はダウンロード時に付与する。[[download]]）。
  */
 export function toCsv(report: ThreatReport): string {
+  const locale = getLocale();
   const { project } = report;
   const lines: string[] = [
-    csvRow(['プロジェクト名', project.name]),
-    csvRow(['システム名称', project.systemName]),
-    csvRow(['システム目的', project.purpose]),
-    csvRow(['ビジネスインパクト', project.businessImpact]),
-    csvRow(['セキュリティ目標', project.securityObjectives]),
-    csvRow(['フレームワーク', report.framework]),
-    csvRow(['レイヤー', report.layer]),
-    csvRow(['脅威件数', String(report.rows.length)]),
+    csvRow([translate('report.csv.meta.projectName', locale), project.name]),
+    csvRow([translate('report.csv.meta.systemName', locale), project.systemName]),
+    csvRow([translate('report.csv.meta.purpose', locale), project.purpose]),
+    csvRow([translate('report.csv.meta.businessImpact', locale), project.businessImpact]),
+    csvRow([translate('report.csv.meta.securityObjectives', locale), project.securityObjectives]),
+    csvRow([translate('report.csv.meta.framework', locale), report.framework]),
+    csvRow([translate('report.csv.meta.layer', locale), report.layer]),
+    csvRow([translate('report.csv.meta.threatCount', locale), String(report.rows.length)]),
     '',
-    csvRow([...CSV_COLUMNS]),
+    csvRow(CSV_COLUMN_KEYS.map((k) => translate(k, locale))),
   ];
   for (const r of report.rows) {
     lines.push(
@@ -301,8 +307,9 @@ function dcrhLikelihood(t: ThreatView): DcrhLikelihood {
   }
 }
 
-function dcrhReason(label: string, note?: string): string {
-  return note && note.trim() ? `${label}：${note.trim()}` : label;
+function dcrhReason(locale: Locale, label: string, note?: string): string {
+  const trimmed = note?.trim();
+  return trimmed ? translate('report.dcrh.reasonWithNote', locale, { label, note: trimmed }) : label;
 }
 
 /** 脅威の処遇：section 4 に載せる（status 付き）か、section 5 へ落とすか。 */
@@ -319,16 +326,19 @@ type DcrhDisposition =
  * 5. suppression=accepted → risk_accepted（section 5 にも理由付きで載せる）。
  * 6. どれも無し → unmitigated。
  */
-function dcrhDisposition(t: ThreatView): DcrhDisposition {
+function dcrhDisposition(t: ThreatView, locale: Locale): DcrhDisposition {
   const sup = t.suppression?.status;
   const ctrl = t.controlStatus?.status;
   if (sup === 'false-positive') {
-    return { kind: 'deprioritized', reason: dcrhReason('誤検知として除外', t.suppression?.note) };
+    return {
+      kind: 'deprioritized',
+      reason: dcrhReason(locale, translate('report.dcrh.reason.falsePositive', locale), t.suppression?.note),
+    };
   }
   if (ctrl === 'not-applicable') {
     return {
       kind: 'deprioritized',
-      reason: dcrhReason('対策対象外（not-applicable）', t.controlStatus?.note),
+      reason: dcrhReason(locale, translate('report.dcrh.reason.notApplicable', locale), t.controlStatus?.note),
     };
   }
   if (ctrl === 'implemented') return { kind: 'threat', status: 'mitigated' };
@@ -340,20 +350,23 @@ function dcrhDisposition(t: ThreatView): DcrhDisposition {
 }
 
 /** controls 列：緩和策＋（partially_mitigated 時は対応方針注記）。空なら `none`。 */
-function dcrhControls(t: ThreatView, status: DcrhStatus): string {
+function dcrhControls(t: ThreatView, status: DcrhStatus, locale: Locale): string {
   let controls = t.mitigation?.trim() ?? '';
   if (status === 'partially_mitigated' && t.suppression) {
-    const label =
+    const labelKey: TranslationKey | undefined =
       t.suppression.status === 'reduce'
-        ? '低減'
+        ? 'report.status.reduce'
         : t.suppression.status === 'avoid'
-          ? '回避'
+          ? 'report.status.avoid'
           : t.suppression.status === 'transfer'
-            ? '移転'
-            : '';
+            ? 'report.status.transfer'
+            : undefined;
+    const label = labelKey ? translate(labelKey, locale) : '';
     const note = t.suppression.note?.trim();
-    const extra = note ? `${label}：${note}` : label;
-    controls = controls ? `${controls}（${extra}）` : extra;
+    const extra = note ? translate('report.dcrh.reasonWithNote', locale, { label, note }) : label;
+    controls = controls
+      ? translate('report.dcrh.controlsWithNote', locale, { controls, extra })
+      : extra;
   }
   return controls || 'none';
 }
@@ -382,6 +395,7 @@ export function toDCRHThreatModelMarkdown(
   exportDate?: string,
 ): string {
   const { threats, nodes, edges, boundaries, projectMeta, framework, layer } = input;
+  const locale = getLocale();
   const index = buildAssetIndex(nodes, edges, boundaries);
   const edgeById = new Map(edges.map((e) => [e.id, e]));
 
@@ -391,7 +405,7 @@ export function toDCRHThreatModelMarkdown(
   let usedDefaultLikelihood = false;
 
   for (const t of threats) {
-    const disp = dcrhDisposition(t);
+    const disp = dcrhDisposition(t, locale);
     if (disp.kind === 'deprioritized') {
       deprioritized.push({ threat: t.description, reason: disp.reason });
       continue;
@@ -412,10 +426,13 @@ export function toDCRHThreatModelMarkdown(
       impact: DCRH_IMPACT[t.severity],
       likelihood: dcrhLikelihood(t),
       status: disp.status,
-      controls: dcrhControls(t, disp.status),
+      controls: dcrhControls(t, disp.status, locale),
     });
     if (disp.status === 'risk_accepted') {
-      deprioritized.push({ threat: t.description, reason: dcrhReason('リスク受容', t.suppression?.note) });
+      deprioritized.push({
+        threat: t.description,
+        reason: dcrhReason(locale, translate('report.status.accepted', locale), t.suppression?.note),
+      });
     }
   }
 
@@ -443,10 +460,22 @@ export function toDCRHThreatModelMarkdown(
   out.push('', '## 1. System context', '');
   const ctx: string[] = [];
   if (projectMeta.purpose.trim()) ctx.push(projectMeta.purpose.trim());
-  if (projectMeta.businessImpact.trim()) ctx.push(`ビジネスインパクト：${projectMeta.businessImpact.trim()}`);
+  if (projectMeta.businessImpact.trim())
+    ctx.push(
+      translate('report.dcrh.businessImpactLine', locale, {
+        value: projectMeta.businessImpact.trim(),
+      }),
+    );
   if (projectMeta.securityObjectives.trim())
-    ctx.push(`セキュリティ目標：${projectMeta.securityObjectives.trim()}`);
-  if (ctx.length === 0) ctx.push(`${systemName} の脅威モデル（CyberRiskScape からエクスポート）。`);
+    ctx.push(
+      translate('report.dcrh.securityObjectivesLine', locale, {
+        value: projectMeta.securityObjectives.trim(),
+      }),
+    );
+  if (ctx.length === 0)
+    ctx.push(
+      translate('report.dcrh.defaultContext', locale, { name: systemName, brand: BRANDING.name }),
+    );
   out.push(ctx.join('\n\n'));
 
   // 2. Assets
@@ -475,7 +504,10 @@ export function toDCRHThreatModelMarkdown(
     out.push(
       mdRow([
         ep,
-        `データフロー（${e.network} / ${e.encryption}）`,
+        translate('report.dcrh.dataFlowDescription', locale, {
+          network: e.network,
+          encryption: e.encryption,
+        }),
         `network=${e.network}, auth=${e.auth}`,
         elementLabel(index, 'node', e.target),
       ]),
@@ -515,13 +547,12 @@ export function toDCRHThreatModelMarkdown(
 
   // 6. Open questions（ロス変換で埋められなかった列を正直に明示）
   out.push('', '## 6. Open questions', '');
-  out.push('- actor は CyberRiskScape では未モデル化。section 4 の actor 列は空欄。要レビュー。');
-  if (usedDefaultLikelihood)
-    out.push('- likelihood は DREAD 未評価の脅威で既定 `possible` を採用している。');
-  out.push('- evidence（CVE / 所見リンク等）は本ツールが未保持のため常に空。');
-  out.push('- sensitivity は対応データが無いため全資産で既定 `medium`。');
-  out.push('- entry point は脅威が紐づくデータフローのみを列挙（未割当のエッジは省略）。');
-  out.push('- section 8 の closes_class / effort は暫定値（要レビュー）。');
+  out.push(translate('report.dcrh.openQuestions.actor', locale, { brand: BRANDING.name }));
+  if (usedDefaultLikelihood) out.push(translate('report.dcrh.openQuestions.likelihood', locale));
+  out.push(translate('report.dcrh.openQuestions.evidence', locale));
+  out.push(translate('report.dcrh.openQuestions.sensitivity', locale));
+  out.push(translate('report.dcrh.openQuestions.entryPoint', locale));
+  out.push(translate('report.dcrh.openQuestions.section8', locale));
 
   // 7. Provenance
   out.push('', '## 7. Provenance', '');

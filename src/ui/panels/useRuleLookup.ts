@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import type { ThreatRule } from '../../threat-library/schema/threatRule';
-import { BUNDLED_THREAT_LIBRARY } from '../../threat-library/loader/bundledLibrary';
+import { getThreatLibrary } from '../../threat-library/loader/bundledLibrary';
 import { selectCustomLibraries, useCustomRulesStore } from '../../features/custom-rules/store';
 import { mergeThreatRules } from '../../features/custom-rules/mergeRules';
-import { useT } from '../../i18n';
+import { useLocale, useT } from '../../i18n';
 
 /**
  * ThreatCard の「検出根拠」表示用に、ruleId からルール定義とソース（定義元）を
@@ -15,11 +15,12 @@ export function useRuleLookup(): {
   getSource(ruleId: string): string | undefined;
 } {
   const t = useT();
+  const [locale] = useLocale();
   const customLibraries = useCustomRulesStore(selectCustomLibraries);
 
   const merged = useMemo(
-    () => mergeThreatRules(BUNDLED_THREAT_LIBRARY.rules, customLibraries),
-    [customLibraries],
+    () => mergeThreatRules(getThreatLibrary(locale).rules, customLibraries),
+    [customLibraries, locale],
   );
 
   const ruleMap = useMemo(() => {
@@ -43,7 +44,7 @@ export function useRuleLookup(): {
   }
 
   function getSource(ruleId: string): string | undefined {
-    const bundledSource = BUNDLED_THREAT_LIBRARY.ruleSources[ruleId];
+    const bundledSource = getThreatLibrary(locale).ruleSources[ruleId];
     if (bundledSource) return bundledSource;
     if (!merged.customRuleIds.has(ruleId)) return undefined;
     return customSourceMap.get(ruleId) ?? t('threatCard.detectionBasis.customRuleFallback');

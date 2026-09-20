@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ThreatRuleSchema } from '../../threat-library/schema/threatRule';
 import { createEmptyLibrary, type CustomRuleLibrary } from './schema';
+import { getLocale, translate } from '../../i18n';
 
 /**
  * カスタムルールライブラリの **可搬な** エクスポート形式（JSON）。
@@ -60,7 +61,10 @@ export function parseLibraryFromJson(text: string): ParseLibraryResult {
   try {
     parsed = JSON.parse(text);
   } catch (e) {
-    return { ok: false, error: `JSON 構文エラー: ${(e as Error).message}` };
+    return {
+      ok: false,
+      error: translate('io.jsonSyntaxError', getLocale(), { message: (e as Error).message }),
+    };
   }
 
   const result = CustomRuleLibraryExportSchema.safeParse(parsed);
@@ -68,7 +72,7 @@ export function parseLibraryFromJson(text: string): ParseLibraryResult {
     const issues = result.error.issues
       .map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`)
       .join('; ');
-    return { ok: false, error: `検証エラー: ${issues}` };
+    return { ok: false, error: translate('io.validationError', getLocale(), { issues }) };
   }
 
   const library: CustomRuleLibrary = {

@@ -10,6 +10,7 @@ import type {
   ConnectionDraft,
   NodeDraft,
 } from '../../../features/custom-rules/editor/draft';
+import { useT, type TranslationKey } from '../../../i18n';
 import { ChipGroup, toggleInArray } from './ChipGroup';
 import { AttackSurfaceEditor } from './AttackSurfaceEditor';
 
@@ -23,10 +24,10 @@ const inputCls =
   'bg-slate-800 border border-slate-700 rounded-md px-2 py-1 text-[12px] text-slate-100 focus:outline-none focus:border-blue-500';
 
 const AGENT_AXES = [
-  { key: 'agency', label: 'agency（自律度）', options: AgencyLevelSchema.options },
-  { key: 'blastRadius', label: 'blastRadius（影響範囲）', options: BlastRadiusSchema.options },
-  { key: 'identityTier', label: 'identityTier（同一性）', options: IdentityTierSchema.options },
-] as const satisfies readonly { key: keyof AgentAttributesDraft; label: string; options: readonly string[] }[];
+  { key: 'agency', labelKey: 'ruleEditor.nodeTarget.agentAxis.agency', options: AgencyLevelSchema.options },
+  { key: 'blastRadius', labelKey: 'ruleEditor.nodeTarget.agentAxis.blastRadius', options: BlastRadiusSchema.options },
+  { key: 'identityTier', labelKey: 'ruleEditor.nodeTarget.agentAxis.identityTier', options: IdentityTierSchema.options },
+] as const satisfies readonly { key: keyof AgentAttributesDraft; labelKey: TranslationKey; options: readonly string[] }[];
 
 function SubLabel({ children }: { children: React.ReactNode }) {
   return <span className="text-[11px] text-slate-500">{children}</span>;
@@ -39,6 +40,7 @@ export function NodeTargetEditor({
   node: NodeDraft;
   onChange: (next: NodeDraft) => void;
 }) {
+  const t = useT();
   const componentIds = componentRegistry.getAll().map((c) => c.id);
   const labelOf = (id: string) => componentRegistry.get(id)?.label ?? id;
   const setConn = (next: ConnectionDraft) => onChange({ ...node, connection: next });
@@ -53,14 +55,14 @@ export function NodeTargetEditor({
             onClick={() => onChange({ ...node, mode: 'single' })}
             className={modeCls(node.mode === 'single')}
           >
-            単一型
+            {t('ruleEditor.nodeTarget.mode.single')}
           </button>
           <button
             type="button"
             onClick={() => onChange({ ...node, mode: 'anyOf' })}
             className={modeCls(node.mode === 'anyOf')}
           >
-            いずれかの型 (anyOf)
+            {t('ruleEditor.nodeTarget.mode.anyOf')}
           </button>
         </div>
         {node.mode === 'single' ? (
@@ -69,7 +71,7 @@ export function NodeTargetEditor({
             onChange={(e) => onChange({ ...node, nodeTypes: e.target.value ? [e.target.value] : [] })}
             className={inputCls}
           >
-            <option value="">（型を選択）</option>
+            <option value="">{t('ruleEditor.nodeTarget.selectType')}</option>
             {componentIds.map((id) => (
               <option key={id} value={id}>
                 {labelOf(id)}（{id}）
@@ -78,7 +80,7 @@ export function NodeTargetEditor({
           </select>
         ) : (
           <div className="flex flex-col gap-1">
-            <SubLabel>2 つ以上の型を選択</SubLabel>
+            <SubLabel>{t('ruleEditor.nodeTarget.selectTwoOrMore')}</SubLabel>
             <ChipGroup
               options={componentIds}
               selected={node.nodeTypes}
@@ -98,8 +100,8 @@ export function NodeTargetEditor({
             onChange={(e) => setConn({ ...node.connection, enabled: e.target.checked })}
             className="accent-blue-600"
           />
-          <span className="text-[12px] font-bold text-slate-200">接続要件を指定する</span>
-          <span className="text-[10px] text-slate-500">未指定 = 既定（任意方向のエッジ1本以上）</span>
+          <span className="text-[12px] font-bold text-slate-200">{t('ruleEditor.nodeTarget.connectionEnabled')}</span>
+          <span className="text-[10px] text-slate-500">{t('ruleEditor.nodeTarget.connectionDefault')}</span>
         </label>
 
         {node.connection.enabled && (
@@ -110,22 +112,22 @@ export function NodeTargetEditor({
                 onClick={() => setConn({ ...node.connection, required: true })}
                 className={modeCls(node.connection.required)}
               >
-                接続が必要
+                {t('ruleEditor.nodeTarget.connectionRequired')}
               </button>
               <button
                 type="button"
                 onClick={() => setConn({ ...node.connection, required: false })}
                 className={modeCls(!node.connection.required)}
-                title="接続有無に関係なく発火（内在的脅威）"
+                title={t('ruleEditor.nodeTarget.connectionIntrinsicTitle')}
               >
-                内在的（接続不問）
+                {t('ruleEditor.nodeTarget.connectionIntrinsic')}
               </button>
             </div>
 
             {node.connection.required && (
               <>
                 <div className="grid grid-cols-[120px_1fr] gap-2 items-center">
-                  <SubLabel>方向</SubLabel>
+                  <SubLabel>{t('ruleEditor.nodeTarget.direction')}</SubLabel>
                   <select
                     value={node.connection.direction}
                     onChange={(e) =>
@@ -144,7 +146,7 @@ export function NodeTargetEditor({
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <SubLabel>接続先（ピア）の型（任意・OR）</SubLabel>
+                  <SubLabel>{t('ruleEditor.nodeTarget.peerTypeLabel')}</SubLabel>
                   <ChipGroup
                     options={componentIds}
                     selected={node.connection.peerType}
@@ -155,7 +157,7 @@ export function NodeTargetEditor({
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <SubLabel>接続先（ピア）の攻撃面（任意）</SubLabel>
+                  <SubLabel>{t('ruleEditor.nodeTarget.peerAttackSurfaceLabel')}</SubLabel>
                   <AttackSurfaceEditor
                     value={node.connection.peerAttackSurface}
                     onChange={(peerAttackSurface) => setConn({ ...node.connection, peerAttackSurface })}
@@ -169,7 +171,7 @@ export function NodeTargetEditor({
 
       {/* attackSurface */}
       <div className="flex flex-col gap-2 border-t border-slate-700/60 pt-3">
-        <SubLabel>このノードの攻撃面（任意・FRONT_END_SERVER / GATEWAY 等で意味を持つ）</SubLabel>
+        <SubLabel>{t('ruleEditor.nodeTarget.attackSurfaceLabel')}</SubLabel>
         <AttackSurfaceEditor
           value={node.attackSurface}
           onChange={(attackSurface) => onChange({ ...node, attackSurface })}
@@ -178,10 +180,10 @@ export function NodeTargetEditor({
 
       {/* agentAttributes */}
       <div className="flex flex-col gap-2 border-t border-slate-700/60 pt-3">
-        <SubLabel>エージェント属性（任意・未指定属性は「最悪を仮定」評価）</SubLabel>
+        <SubLabel>{t('ruleEditor.nodeTarget.agentAttributesLabel')}</SubLabel>
         {AGENT_AXES.map((axis) => (
           <div key={axis.key} className="grid grid-cols-[160px_1fr] gap-2 items-start">
-            <span className="text-[11px] text-slate-500 pt-0.5">{axis.label}</span>
+            <span className="text-[11px] text-slate-500 pt-0.5">{t(axis.labelKey)}</span>
             <ChipGroup
               options={axis.options}
               selected={node.agentAttributes[axis.key]}

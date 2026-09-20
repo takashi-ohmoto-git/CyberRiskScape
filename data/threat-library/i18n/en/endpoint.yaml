@@ -1,0 +1,42 @@
+# English overlay for `data/threat-library/endpoint.yaml`.
+#
+# The Japanese file is the source of truth: only `name` / `category` / `description` /
+# `mitigation` (plus `conditions[].description` and `references[].title` where present)
+# are translated here, keyed by rule id. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - Keep `{{token}}` placeholders exactly as they appear in the original.
+#   - Keep the `[Foundation]` / `[Enterprise]` / `[Advanced]` markup — the maturity
+#     tiers are re-derived from this text.
+#   - Preserve the Can / Cannot pair and the blast radius statement in `description`
+#     (docs/threat-schema.md §7.5).
+#   - `references` is keyed by the index in the original array, and only the entries
+#     that need translating are listed. Keep a genuinely Japanese document title as
+#     its original title and add an English gloss; `url` is never translated.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+rules:
+  endpoint-iot-default-credentials-unpatchable-001:
+    category: "Spoofing"
+    name: "Default credentials and unpatchable firmware on IoT devices"
+    description: "IoT and embedded devices such as {{nodeName}} are often run with factory default credentials left unchanged, or have no firmware update mechanism at all, leaving known vulnerabilities in place for years (Can). An attacker who authenticates with default credentials or exploits a published CVE gains a botnet foothold and a starting point for lateral movement into the internal network. If, on the other hand, the device forces a unique password at first boot and ships with signed over-the-air firmware updates, compromise through factory settings does not succeed (Cannot). The blast radius is the entire network segment the device sits on, since the compromised device becomes a pivot."
+    mitigation: "[Foundation] Force factory default credentials to be replaced with a unique password during first-time setup, and keep the device off external networks until that happens. Maintain a device inventory and check it against published CVEs on a regular schedule. [Enterprise] Ship signed over-the-air firmware updates and define an SLA for applying them after a critical CVE is disclosed. Isolate devices on a dedicated VLAN and use micro segmentation to limit how far they can reach internally. [Advanced] Authenticate devices with hardware-attested identity (TPM or secure element) under zero trust, and quarantine a device from the network automatically when its traffic pattern deviates."
+
+  endpoint-device-loss-local-credential-exposure-001:
+    category: "Information Disclosure"
+    name: "Local credential exposure from a lost or stolen device"
+    description: "If a PC or mobile device such as {{nodeName}} is lost or stolen, whoever physically holds it can abuse the session tokens cached on it, the stored credentials, and any local application left signed in (Can). Once the lock screen is bypassed, the cloud services and internal systems that device is already authenticated to are reachable as-is. If full-disk encryption (FileVault, BitLocker, or equivalent) and strong lock-screen authentication are enforced, and remote wipe clears the device promptly once the loss is reported, physical possession alone is not enough to steal credentials or impersonate the user (Cannot). The blast radius is every account whose session or credentials were cached on that device."
+    mitigation: "[Foundation] Require full-disk encryption (FileVault, BitLocker, or equivalent) and a screen lock (PIN or biometric), and bar devices without them from business use. [Enterprise] Enable remote lock and remote wipe through MDM, and define and rehearse the process from loss report to wipe. Shorten session token lifetimes so they can be revoked when a device goes missing. [Advanced] Bind credentials to a hardware security module (TPM or Secure Enclave) so they cannot be decrypted off the device, and apply access control dynamically from a continuous device posture score."
+
+  agentic-endpoint-command-unmanaged-target-001:
+    category: "Tampering"
+    name: "Unverified delivery of commands to unmanaged endpoints"
+    description: "When an edge from {{sourceName}} to {{targetName}} terminates on an Unmanaged endpoint, the configuration changes, control commands, and payloads that {{sourceName}} (an agent, tool, or connector) sends bypass the verification, recording, and rollback that MDM or EDR would provide on the receiving side (Can). If {{sourceName}} is compromised, an attacker can push arbitrary commands to the unmanaged endpoint through that path one-way, and no audit trail of the delivery is left on the device. If only allow-listed commands are permitted and each delivery is signature-verified before it is sent, with the sender keeping a complete delivery log, arbitrary commands from a compromised source are rejected at the destination (Cannot). The blast radius is every Unmanaged endpoint reachable over that path."
+    mitigation: "[Foundation] Inventory the control-command and configuration-delivery paths that target Unmanaged endpoints, and restrict them to an allow-list of command types. Log both the content and the result of every delivery on the sending side. [Enterprise] Require commands to be signed, and reject unsigned ones at the endpoint agent where one exists or at the relaying connector otherwise. Give deliveries to Unmanaged endpoints a narrower privilege scope than those to MDM-enrolled devices. [Advanced] Shrink the delivery path itself, moving to a zero trust architecture in which unmanaged devices receive read-only notifications and nothing else."
+    references:
+      "0":
+        title: "NIST SP 800-46 Rev.2 - Guide to Enterprise Telework, Remote Access, and BYOD Security (controlling delivery to unmanaged devices)"

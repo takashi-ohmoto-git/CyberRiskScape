@@ -5,6 +5,7 @@ import {
   type ConditionCaseDraft,
   type RuleDraft,
 } from '../../../features/custom-rules/editor/draft';
+import { useT } from '../../../i18n';
 import { EdgeWhenLeafEditor } from './EdgeWhenLeafEditor';
 
 /**
@@ -27,6 +28,7 @@ export function SeverityBranchEditor({
   defaultDescription: string;
   onChange: (next: ConditionCaseDraft[]) => void;
 }) {
+  const t = useT();
   const setCase = (i: number, next: ConditionCaseDraft) =>
     onChange(conditions.map((c, idx) => (idx === i ? next : c)));
 
@@ -46,8 +48,7 @@ export function SeverityBranchEditor({
   return (
     <div className="flex flex-col gap-2">
       <p className="text-[11px] text-slate-500 leading-relaxed">
-        上から順に評価し、最初に一致したケースで重大度・説明を上書きします（任意）。どのケースにも
-        一致しなければ下の「デフォルト」が使われます。
+        {t('ruleEditor.severityBranch.description')}
       </p>
 
       {conditions.map((c, i) => (
@@ -61,7 +62,7 @@ export function SeverityBranchEditor({
                 type="button"
                 onClick={() => move(i, -1)}
                 disabled={i === 0}
-                title="上へ"
+                title={t('ruleEditor.severityBranch.moveUp')}
                 className="p-1 text-slate-400 hover:text-slate-100 disabled:opacity-30"
               >
                 <ArrowUp size={13} />
@@ -70,7 +71,7 @@ export function SeverityBranchEditor({
                 type="button"
                 onClick={() => move(i, 1)}
                 disabled={i === conditions.length - 1}
-                title="下へ"
+                title={t('ruleEditor.severityBranch.moveDown')}
                 className="p-1 text-slate-400 hover:text-slate-100 disabled:opacity-30"
               >
                 <ArrowDown size={13} />
@@ -78,7 +79,7 @@ export function SeverityBranchEditor({
               <button
                 type="button"
                 onClick={() => removeCase(i)}
-                title="ケースを削除"
+                title={t('ruleEditor.severityBranch.deleteCase')}
                 className="p-1 text-rose-400 hover:text-rose-300"
               >
                 <Trash2 size={13} />
@@ -89,7 +90,7 @@ export function SeverityBranchEditor({
           <EdgeWhenLeafEditor leaf={c.when} onChange={(when) => setCase(i, { ...c, when })} />
 
           <div className="grid grid-cols-[120px_1fr] gap-2 items-center">
-            <span className="text-[11px] text-slate-500">→ 重大度</span>
+            <span className="text-[11px] text-slate-500">{t('ruleEditor.severityBranch.severityLabel')}</span>
             <select
               value={c.severity}
               onChange={(e) =>
@@ -97,7 +98,7 @@ export function SeverityBranchEditor({
               }
               className="bg-slate-800 border border-slate-700 rounded-md px-2 py-1 text-[12px] text-slate-100 focus:outline-none focus:border-blue-500"
             >
-              <option value="">（据え置き）</option>
+              <option value="">{t('ruleEditor.severityBranch.keepSeverity')}</option>
               {SeveritySchema.options.map((s) => (
                 <option key={s} value={s}>
                   {s}
@@ -107,12 +108,12 @@ export function SeverityBranchEditor({
           </div>
 
           <div className="grid grid-cols-[120px_1fr] gap-2 items-start">
-            <span className="text-[11px] text-slate-500 pt-1">→ 説明（上書き）</span>
+            <span className="text-[11px] text-slate-500 pt-1">{t('ruleEditor.severityBranch.descriptionLabel')}</span>
             <textarea
               value={c.description}
               onChange={(e) => setCase(i, { ...c, description: e.target.value })}
               rows={2}
-              placeholder="空 = 据え置き"
+              placeholder={t('ruleEditor.severityBranch.descriptionPlaceholder')}
               className="bg-slate-800 border border-slate-700 rounded-md px-2 py-1 text-[12px] text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 resize-y"
             />
           </div>
@@ -121,12 +122,13 @@ export function SeverityBranchEditor({
 
       <div className="bg-slate-800/40 border border-dashed border-slate-700 rounded-lg p-3">
         <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
-          else（デフォルト）
+          {t('ruleEditor.severityBranch.elseDefault')}
         </span>
         <p className="text-[12px] text-slate-300 mt-1">
-          重大度 <span className="font-bold">{defaultSeverity}</span> ／{' '}
+          {t('ruleEditor.severityBranch.severityPrefix')} <span className="font-bold">{defaultSeverity}</span>{' '}
+          {t('ruleEditor.severityBranch.separator')}{' '}
           {defaultDescription.trim() === '' ? (
-            <span className="text-slate-600">説明未設定</span>
+            <span className="text-slate-600">{t('ruleEditor.severityBranch.noDescription')}</span>
           ) : (
             defaultDescription
           )}
@@ -138,7 +140,7 @@ export function SeverityBranchEditor({
         onClick={addCase}
         className="self-start flex items-center gap-1 text-[11px] font-bold text-amber-400 hover:text-amber-300"
       >
-        <Plus size={13} /> 分岐ケースを追加
+        <Plus size={13} /> {t('ruleEditor.severityBranch.addCase')}
       </button>
     </div>
   );

@@ -3,6 +3,7 @@ import { Trash2 } from 'lucide-react';
 import type { DiagramBoundary, ResizeHandle } from '../model/types';
 import { BOUNDARY_TYPES } from '../constants/boundaryTypes';
 import { formatElementalId } from '../model/elementalId';
+import { useT } from '../../i18n';
 
 interface BoundaryViewProps {
   boundary: DiagramBoundary;
@@ -37,6 +38,7 @@ export function BoundaryView({
   onResizeStart,
   onDelete,
 }: BoundaryViewProps) {
+  const t = useT();
   const config = BOUNDARY_TYPES[boundary.type];
   const trustColor =
     boundary.trustLevel === 'Internal'
@@ -70,7 +72,7 @@ export function BoundaryView({
               {formatElementalId('boundary', boundary.seq)}
             </span>
           )}
-          {boundary.trustLevel}: {config.name}
+          {boundary.trustLevel}: {t(config.nameKey)}
         </div>
         <button
           onClick={(e) => {

@@ -16,9 +16,9 @@ import { useDiagramStore } from '../../core/state/diagramStore';
 import { SEVERITY_BADGE_SOLID, SEVERITY_CONTAINER } from '../../core/model/severityColors';
 import { componentRegistry } from '../../component-library/defaultRegistry';
 import { ControlStatusEditor } from './ControlStatusEditor';
-import { CONTROL_STATUS_BADGE, CONTROL_STATUS_LABEL } from './controlStatusStyle';
+import { CONTROL_STATUS_BADGE, CONTROL_STATUS_LABEL_KEY } from './controlStatusStyle';
 import { RiskTreatmentEditor } from './RiskTreatmentEditor';
-import { RISK_TREATMENT_BADGE, RISK_TREATMENT_LABEL } from './riskTreatmentStyle';
+import { RISK_TREATMENT_BADGE, RISK_TREATMENT_LABEL_KEY } from './riskTreatmentStyle';
 import { BUNDLED_COMPLIANCE_MAP } from '../../compliance/loader/bundledComplianceMap';
 import type { StandardId } from '../../compliance/schema/complianceItem';
 import { summarizeAppliesTo } from './appliesToSummary';
@@ -92,9 +92,11 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
           {isManual && threat.manualTargetType && (
             <span
               className="text-[9px] bg-indigo-500/10 text-indigo-300/80 px-2 py-0.5 rounded font-bold"
-              title="同型ノード全てに適用されるカスタムルール。編集／削除はルール全体に効きます。"
+              title={t('threats.threatCard.manualTypeRuleHint')}
             >
-              型ルール: {componentRegistry.get(threat.manualTargetType)?.label ?? threat.manualTargetType}
+              {t('threats.threatCard.manualTypeRuleLabel', {
+                label: componentRegistry.get(threat.manualTargetType)?.label ?? threat.manualTargetType,
+              })}
             </span>
           )}
           {!isManual && threat.isCustom && (
@@ -110,9 +112,12 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
           {!isManual && threat.corroboration && threat.corroboration.ruleIds.length > 1 && (
             <span
               className="text-[9px] bg-teal-500/20 text-teal-300 px-2 py-0.5 rounded font-bold inline-flex items-center gap-1"
-              title="複数ソースが同一脅威を指摘しています（出典欄に全て掲載）。"
+              title={t('threats.threatCard.corroborationHint')}
             >
-              <Layers size={10} /> {threat.corroboration.ruleIds.length} ソース
+              <Layers size={10} />{' '}
+              {t('threats.threatCard.corroborationSources', {
+                count: threat.corroboration.ruleIds.length,
+              })}
             </span>
           )}
           {!isManual && threat.assumptionFlags && threat.assumptionFlags.length > 0 && (
@@ -133,7 +138,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
             <span
               className={`text-[9px] px-2 py-0.5 rounded border font-bold ${RISK_TREATMENT_BADGE[threat.suppression.status]}`}
             >
-              {RISK_TREATMENT_LABEL[threat.suppression.status]}
+              {t(RISK_TREATMENT_LABEL_KEY[threat.suppression.status])}
             </span>
           )}
         </div>
@@ -159,7 +164,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
       {threat.mitigationTiers ? (
         <div className="mt-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 space-y-2">
           <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-400 uppercase tracking-widest">
-            <ShieldCheck size={12} /> 緩和策（3 段階成熟度）
+            <ShieldCheck size={12} /> {t('threats.threatCard.mitigationHeadingTiered')}
           </div>
           {(['foundation', 'enterprise', 'advanced'] as const).map((tier) => {
             const value = threat.mitigationTiers?.[tier];
@@ -187,7 +192,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
         threat.mitigation && (
           <div className="mt-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
             <div className="flex items-center gap-1.5 mb-1 text-[10px] font-black text-emerald-400 uppercase tracking-widest">
-              <ShieldCheck size={12} /> 緩和策
+              <ShieldCheck size={12} /> {t('threats.threatCard.mitigationHeading')}
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">{threat.mitigation}</p>
           </div>
@@ -197,7 +202,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
       {threat.complianceRefs && threat.complianceRefs.length > 0 && (
         <div className="mt-3">
           <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
-            コンプライアンス
+            {t('threats.threatCard.complianceHeading')}
           </div>
           <div className="flex flex-wrap gap-1.5">
             {threat.complianceRefs.map((c, i) => {
@@ -219,7 +224,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
       {threat.references && threat.references.length > 0 && (
         <div className="mt-3">
           <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
-            <BookOpen size={12} /> 出典
+            <BookOpen size={12} /> {t('threats.threatCard.referencesHeading')}
           </div>
           <ul className="space-y-1">
             {threat.references.map((r, i) => (
@@ -286,13 +291,13 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
       <div className="mt-3 pt-3 border-t border-white/5">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-            対策実装状況
+            {t('threats.threatCard.controlStatusHeading')}
           </span>
           {threat.controlStatus && (
             <span
               className={`text-[9px] px-2 py-0.5 rounded border ${CONTROL_STATUS_BADGE[threat.controlStatus.status]}`}
             >
-              {CONTROL_STATUS_LABEL[threat.controlStatus.status]}
+              {t(CONTROL_STATUS_LABEL_KEY[threat.controlStatus.status])}
             </span>
           )}
         </div>
@@ -304,13 +309,13 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
         <div className="mt-3 pt-3 border-t border-white/5">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-              リスク対応方針
+              {t('threats.threatCard.riskTreatmentHeading')}
             </span>
             {threat.suppression && (
               <span
                 className={`text-[9px] px-2 py-0.5 rounded border ${RISK_TREATMENT_BADGE[threat.suppression.status]}`}
               >
-                {RISK_TREATMENT_LABEL[threat.suppression.status]}
+                {t(RISK_TREATMENT_LABEL_KEY[threat.suppression.status])}
               </span>
             )}
           </div>
@@ -325,13 +330,13 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
             onClick={() => openManualThreatEditor(threat.manualId)}
             className="flex items-center gap-1 text-[10px] font-bold uppercase text-slate-400 hover:text-slate-100 transition-colors"
           >
-            <Pencil size={12} /> 編集
+            <Pencil size={12} /> {t('threats.threatCard.editButton')}
           </button>
           <button
             onClick={() => removeManualThreat(threat.manualId!)}
             className="flex items-center gap-1 text-[10px] font-bold uppercase text-rose-400 hover:text-rose-300 transition-colors"
           >
-            <Trash2 size={12} /> 削除
+            <Trash2 size={12} /> {t('threats.threatCard.deleteButton')}
           </button>
         </div>
       )}

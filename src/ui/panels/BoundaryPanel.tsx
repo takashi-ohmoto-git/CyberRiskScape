@@ -31,6 +31,9 @@ import {
   MACRO_TRUST_TO_TRUST_LEVEL,
   MICRO_TRUST_TO_TRUST_LEVEL,
 } from '../../core/constants/boundaryTypes';
+import { useT } from '../../i18n';
+
+type TFunc = ReturnType<typeof useT>;
 
 interface BoundaryPanelProps {
   boundary: DiagramBoundary;
@@ -42,12 +45,14 @@ interface ReorderOption {
   icon: ReactNode;
 }
 
-const REORDER_OPTIONS: ReorderOption[] = [
-  { action: 'front', label: '最前面へ移動', icon: <ChevronsUp size={14} /> },
-  { action: 'forward', label: '前面へ移動', icon: <ChevronUp size={14} /> },
-  { action: 'backward', label: '背面へ移動', icon: <ChevronDown size={14} /> },
-  { action: 'back', label: '最背面へ移動', icon: <ChevronsDown size={14} /> },
-];
+function getReorderOptions(t: TFunc): ReorderOption[] {
+  return [
+    { action: 'front', label: t('panels.boundary.reorder.front'), icon: <ChevronsUp size={14} /> },
+    { action: 'forward', label: t('panels.boundary.reorder.forward'), icon: <ChevronUp size={14} /> },
+    { action: 'backward', label: t('panels.boundary.reorder.backward'), icon: <ChevronDown size={14} /> },
+    { action: 'back', label: t('panels.boundary.reorder.back'), icon: <ChevronsDown size={14} /> },
+  ];
+}
 
 interface TrustOption {
   val: TrustLevel;
@@ -56,11 +61,13 @@ interface TrustOption {
   color: string;
 }
 
-const TRUST_OPTIONS: TrustOption[] = [
-  { val: 'Internal', label: '社内 (Internal)', icon: <Building size={14} />, color: 'text-emerald-400' },
-  { val: 'Partner', label: '取引先 (Partner)', icon: <Users size={14} />, color: 'text-orange-400' },
-  { val: 'Internet', label: 'インターネット (Internet)', icon: <Globe size={14} />, color: 'text-blue-400' },
-];
+function getTrustOptions(t: TFunc): TrustOption[] {
+  return [
+    { val: 'Internal', label: t('panels.boundary.trust.internal'), icon: <Building size={14} />, color: 'text-emerald-400' },
+    { val: 'Partner', label: t('panels.boundary.trust.partner'), icon: <Users size={14} />, color: 'text-orange-400' },
+    { val: 'Internet', label: t('panels.boundary.trust.internet'), icon: <Globe size={14} />, color: 'text-blue-400' },
+  ];
+}
 
 interface MacroTrustOption {
   val: MacroTrustAttribute;
@@ -94,10 +101,12 @@ interface MicroStatusOption {
   color: string;
 }
 
-const MICRO_STATUS_OPTIONS: MicroStatusOption[] = [
-  { val: '適用済み', label: '適用済み', icon: <ShieldCheck size={14} />, color: 'text-emerald-400' },
-  { val: '未適用', label: '未適用', icon: <ShieldAlert size={14} />, color: 'text-rose-400' },
-];
+function getMicroStatusOptions(t: TFunc): MicroStatusOption[] {
+  return [
+    { val: '適用済み', label: t('panels.boundary.microStatus.applied'), icon: <ShieldCheck size={14} />, color: 'text-emerald-400' },
+    { val: '未適用', label: t('panels.boundary.microStatus.notApplied'), icon: <ShieldAlert size={14} />, color: 'text-rose-400' },
+  ];
+}
 
 interface SensitiveDataOption {
   val: SensitiveData;
@@ -106,11 +115,13 @@ interface SensitiveDataOption {
   color: string;
 }
 
-const SENSITIVE_DATA_OPTIONS: SensitiveDataOption[] = [
-  { val: '無し', label: '無し', icon: <EyeOff size={14} />, color: 'text-slate-400' },
-  { val: '個人情報', label: '個人情報', icon: <Eye size={14} />, color: 'text-amber-400' },
-  { val: '機密情報', label: '機密情報', icon: <Lock size={14} />, color: 'text-rose-400' },
-];
+function getSensitiveDataOptions(t: TFunc): SensitiveDataOption[] {
+  return [
+    { val: '無し', label: t('panels.boundary.sensitiveData.none'), icon: <EyeOff size={14} />, color: 'text-slate-400' },
+    { val: '個人情報', label: t('panels.boundary.sensitiveData.pii'), icon: <Eye size={14} />, color: 'text-amber-400' },
+    { val: '機密情報', label: t('panels.boundary.sensitiveData.confidential'), icon: <Lock size={14} />, color: 'text-rose-400' },
+  ];
+}
 
 /** IPv4 CIDR の簡易検証（例: 10.0.0.0/24）。空文字は valid 扱い（未入力）。 */
 const CIDR_RE =
@@ -122,10 +133,12 @@ function isValidCidr(input: string): boolean {
 }
 
 export function BoundaryPanel({ boundary }: BoundaryPanelProps) {
+  const t = useT();
+  const REORDER_OPTIONS = getReorderOptions(t);
   const onUpdate = useDiagramStore((s) => s.updateBoundary);
   const onReorder = useDiagramStore((s) => s.reorderBoundary);
   const onClose = useDiagramStore((s) => s.clearSelection);
-  const typeName = BOUNDARY_TYPES[boundary.type].name;
+  const typeName = t(BOUNDARY_TYPES[boundary.type].nameKey);
 
   const onSelectMacro = (val: MacroTrustAttribute) => {
     onUpdate(boundary.id, 'macroTrust', val);
@@ -178,7 +191,7 @@ export function BoundaryPanel({ boundary }: BoundaryPanelProps) {
 
         <section>
           <label className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
-            <Layers size={12} className="text-emerald-500" /> Arrange (重なり順)
+            <Layers size={12} className="text-emerald-500" /> {t('panels.boundary.arrangeLabel')}
           </label>
           <div className="grid grid-cols-2 gap-2">
             {REORDER_OPTIONS.map((opt) => (
@@ -198,9 +211,9 @@ export function BoundaryPanel({ boundary }: BoundaryPanelProps) {
             Dimensions
           </label>
           <p className="text-[10px] text-slate-500 leading-relaxed">
-            キャンバス上で境界を選択し、四隅または辺中央のハンドル
+            {t('panels.boundary.dimensionsNotePrefix')}
             <span className="inline-block w-2 h-2 bg-white border border-blue-500 mx-1 align-middle" />
-            をドラッグしてサイズを変更できます。現在のサイズ:{' '}
+            {t('panels.boundary.dimensionsNoteSuffix')}{' '}
             <span className="text-slate-300 font-bold">
               {Math.round(boundary.width)} × {Math.round(boundary.height)}
             </span>
@@ -209,7 +222,7 @@ export function BoundaryPanel({ boundary }: BoundaryPanelProps) {
       </div>
       <div className="p-6 border-t border-slate-800">
         <button onClick={onClose} className="w-full bg-slate-800 py-3 rounded-xl font-bold text-xs">
-          閉じる
+          {t('panels.common.close')}
         </button>
       </div>
     </div>
@@ -223,6 +236,8 @@ function TrustLevelSection({
   value: TrustLevel;
   onChange: (val: TrustLevel) => void;
 }) {
+  const t = useT();
+  const TRUST_OPTIONS = getTrustOptions(t);
   return (
     <section>
       <label className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
@@ -259,6 +274,7 @@ function DmzSection({
     value: DiagramBoundary[K],
   ) => void;
 }) {
+  const t = useT();
   // DMZ は trustLevel='Internet' 固定。旧データで他値が入っていれば即時補正する。
   useEffect(() => {
     if (boundary.trustLevel !== 'Internet') {
@@ -279,7 +295,7 @@ function DmzSection({
         </span>
       </div>
       <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
-        DMZ 境界は Internet 相当の信頼レベルとして脅威判定に使われます。
+        {t('panels.boundary.dmzNote')}
       </p>
     </section>
   );
@@ -298,6 +314,7 @@ function MacroSection({
     value: DiagramBoundary[K],
   ) => void;
 }) {
+  const t = useT();
   return (
     <>
       <section>
@@ -336,7 +353,7 @@ function MacroSection({
               onChange={(e) =>
                 onUpdateField(boundary.id, 'vlanName', e.target.value || undefined)
               }
-              placeholder="例: vlan-office-01"
+              placeholder={t('panels.boundary.vlanNamePlaceholder')}
               maxLength={64}
               className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500"
             />
@@ -362,6 +379,7 @@ function VlanIdInput({
   value: number | undefined;
   onChange: (val: number | undefined) => void;
 }) {
+  const t = useT();
   // 入力中の文字列を保持し、空欄や入力途中の状態も維持する。
   const [draft, setDraft] = useState(value === undefined ? '' : String(value));
   useEffect(() => {
@@ -395,14 +413,14 @@ function VlanIdInput({
             onChange(n);
           }
         }}
-        placeholder="例: 100"
+        placeholder={t('panels.boundary.vlanIdPlaceholder')}
         className={`w-full bg-slate-800 border rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none ${
           valid ? 'border-slate-700 focus:border-emerald-500' : 'border-rose-500'
         }`}
       />
       {!valid && (
         <p className="text-[10px] text-rose-400 mt-1">
-          0〜4094 の整数で入力してください
+          {t('panels.boundary.vlanIdInvalid')}
         </p>
       )}
     </div>
@@ -416,6 +434,7 @@ function NetworkAddressInput({
   value: string;
   onChange: (val: string) => void;
 }) {
+  const t = useT();
   // 入力中の見た目を確定するためのローカル state。store には valid 値のみ反映。
   const [draft, setDraft] = useState(value);
   useEffect(() => {
@@ -436,7 +455,7 @@ function NetworkAddressInput({
             onChange(e.target.value.trim());
           }
         }}
-        placeholder="例: 10.0.0.0/24"
+        placeholder={t('panels.boundary.networkAddressPlaceholder')}
         maxLength={64}
         className={`w-full bg-slate-800 border rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none ${
           valid ? 'border-slate-700 focus:border-emerald-500' : 'border-rose-500'
@@ -444,7 +463,7 @@ function NetworkAddressInput({
       />
       {!valid && (
         <p className="text-[10px] text-rose-400 mt-1">
-          CIDR 形式で入力してください（例: 10.0.0.0/24）
+          {t('panels.boundary.networkAddressInvalid')}
         </p>
       )}
     </div>
@@ -464,6 +483,9 @@ function MicroSection({
     value: DiagramBoundary[K],
   ) => void;
 }) {
+  const t = useT();
+  const MICRO_STATUS_OPTIONS = getMicroStatusOptions(t);
+  const SENSITIVE_DATA_OPTIONS = getSensitiveDataOptions(t);
   return (
     <>
       <section>

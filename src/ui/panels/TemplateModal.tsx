@@ -6,6 +6,7 @@ import {
   selectActiveNodes,
   useDiagramStore,
 } from '../../core/state/diagramStore';
+import { useT } from '../../i18n';
 import { triggerDownload } from '../../features/export/download';
 import {
   parseTemplateFromJson,
@@ -31,6 +32,7 @@ function templateFilename(name: string, layer: string): string {
  * - Import：JSON を検証し、アクティブレイヤーを**置換適用**（既存要素ありなら確認）。
  */
 export function TemplateModal() {
+  const t = useT();
   const isOpen = useDiagramStore((s) => s.isTemplateModalOpen);
   const close = useDiagramStore((s) => s.closeTemplate);
   const activeLayer = useDiagramStore((s) => s.activeLayer);
@@ -54,7 +56,11 @@ export function TemplateModal() {
   useEffect(() => {
     if (!isOpen) return;
     setTab('export');
-    setName(projectName.trim() !== '' ? projectName.trim() : `${activeLayer} テンプレート`);
+    setName(
+      projectName.trim() !== ''
+        ? projectName.trim()
+        : t('project.templateModal.defaultName', { layer: activeLayer }),
+    );
     setParsed(null);
     setImportedFileName(null);
     setConfirming(false);
@@ -112,7 +118,7 @@ export function TemplateModal() {
           <button
             onClick={close}
             className="text-slate-500 hover:text-slate-200 transition-colors"
-            aria-label="閉じる"
+            aria-label={t('project.common.close')}
           >
             <X size={16} />
           </button>
@@ -120,17 +126,19 @@ export function TemplateModal() {
 
         {/* タブ切替 */}
         <div className="grid grid-cols-2 gap-2">
-          {(['export', 'import'] as const).map((t) => (
+          {(['export', 'import'] as const).map((tabKey) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
+              key={tabKey}
+              onClick={() => setTab(tabKey)}
               className={`px-2 py-2 rounded-lg text-[11px] font-black border transition-all ${
-                tab === t
+                tab === tabKey
                   ? 'bg-blue-600 border-blue-400 text-white'
                   : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'
               }`}
             >
-              {t === 'export' ? 'Export（書き出し）' : 'Import（読み込み）'}
+              {tabKey === 'export'
+                ? t('project.templateModal.tabExport')
+                : t('project.templateModal.tabImport')}
             </button>
           ))}
         </div>
@@ -138,18 +146,19 @@ export function TemplateModal() {
         {tab === 'export' ? (
           <div className="flex flex-col gap-4">
             <p className="text-[11px] text-slate-400 leading-relaxed">
-              現在のアクティブレイヤー（<span className="font-bold text-slate-200">{activeLayer}</span>
-              ・{activeCount} 件）の図をテンプレートとして書き出します。
+              {t('project.templateModal.exportIntroBefore')}
+              <span className="font-bold text-slate-200">{activeLayer}</span>
+              {t('project.templateModal.exportIntroAfter', { count: activeCount })}
             </p>
             <label className="flex flex-col gap-1.5">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                テンプレート名 <span className="text-rose-400">*</span>
+                {t('project.templateModal.nameLabel')} <span className="text-rose-400">*</span>
               </span>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="例: 標準 Web 三層構成"
+                placeholder={t('project.templateModal.namePlaceholder')}
                 className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
               />
             </label>
@@ -158,7 +167,7 @@ export function TemplateModal() {
                 onClick={close}
                 className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-white transition-colors"
               >
-                キャンセル
+                {t('project.common.cancel')}
               </button>
               <button
                 onClick={handleExport}
@@ -166,17 +175,20 @@ export function TemplateModal() {
                 className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Download size={14} />
-                ダウンロード
+                {t('project.templateModal.download')}
               </button>
             </div>
           </div>
         ) : (
           <div className="flex flex-col gap-4">
             <p className="text-[11px] text-slate-400 leading-relaxed">
-              テンプレート JSON を読み込み、アクティブレイヤー（
-              <span className="font-bold text-slate-200">{activeLayer}</span>）に
-              <span className="font-bold text-amber-300"> 置き換え </span>
-              で適用します。既存要素があるときは確認します。
+              {t('project.templateModal.importIntro1')}
+              <span className="font-bold text-slate-200">{activeLayer}</span>
+              {t('project.templateModal.importIntro2')}
+              <span className="font-bold text-amber-300">
+                {t('project.templateModal.replaceWord')}
+              </span>
+              {t('project.templateModal.importIntro3')}
             </p>
 
             <input
@@ -195,7 +207,7 @@ export function TemplateModal() {
               className="flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-wider bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg transition-colors"
             >
               <Upload size={14} />
-              JSON ファイルを選択
+              {t('project.templateModal.selectFile')}
             </button>
 
             {importedFileName && parsed && (
@@ -203,9 +215,13 @@ export function TemplateModal() {
                 <p className="text-slate-500 mb-1 truncate">{importedFileName}</p>
                 {parsed.ok ? (
                   <p className="text-slate-200">
-                    「<span className="font-bold">{parsed.name}</span>」 — ノード{' '}
-                    {parsed.layer.nodes.length} / エッジ {parsed.layer.edges.length} / 境界{' '}
-                    {parsed.layer.boundaries.length}
+                    {t('project.templateModal.importedOpenQuote')}
+                    <span className="font-bold">{parsed.name}</span>
+                    {t('project.templateModal.importedStats', {
+                      nodes: parsed.layer.nodes.length,
+                      edges: parsed.layer.edges.length,
+                      boundaries: parsed.layer.boundaries.length,
+                    })}
                   </p>
                 ) : (
                   <p className="text-rose-400 break-words">{parsed.error}</p>
@@ -215,8 +231,10 @@ export function TemplateModal() {
 
             {confirming && (
               <div className="rounded-lg border border-amber-600/60 bg-amber-900/20 p-3 text-[11px] text-amber-200 leading-relaxed">
-                {activeLayer} には既に {activeCount} 件の要素があります。これらを破棄してテンプレートで
-                置き換えます。「置き換える」を押すと適用します（元に戻すで復元できます）。
+                {t('project.templateModal.confirmReplace', {
+                  layer: activeLayer,
+                  count: activeCount,
+                })}
               </div>
             )}
 
@@ -225,7 +243,7 @@ export function TemplateModal() {
                 onClick={close}
                 className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-white transition-colors"
               >
-                キャンセル
+                {t('project.common.cancel')}
               </button>
               <button
                 onClick={handleApplyImport}
@@ -234,7 +252,11 @@ export function TemplateModal() {
                   confirming ? 'bg-amber-600 hover:bg-amber-500' : 'bg-blue-600 hover:bg-blue-500'
                 }`}
               >
-                {confirming ? '置き換える' : activeCount > 0 ? '置き換えて適用' : '適用'}
+                {confirming
+                  ? t('project.templateModal.replaceButton')
+                  : activeCount > 0
+                    ? t('project.templateModal.replaceAndApply')
+                    : t('project.templateModal.apply')}
               </button>
             </div>
           </div>

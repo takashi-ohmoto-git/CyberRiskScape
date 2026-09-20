@@ -17,8 +17,8 @@ function resolveTypeLabel(type: string): string {
   return componentRegistry.get(type)?.label ?? type;
 }
 
-function formatTypeList(types: readonly string[]): string {
-  return types.map(resolveTypeLabel).join(' または ');
+function formatTypeList(types: readonly string[], locale: Locale): string {
+  return types.map(resolveTypeLabel).join(translate('appliesToSummary.join.or', locale));
 }
 
 /**
@@ -107,7 +107,7 @@ function summarizeConnection(
     if (conn.peerType) {
       parts.push(
         translate('appliesToSummary.node.connection.peerType', locale, {
-          types: formatTypeList(conn.peerType),
+          types: formatTypeList(conn.peerType, locale),
         }),
       );
     }
@@ -120,7 +120,7 @@ function summarizeConnection(
     }
   }
 
-  return parts.join('');
+  return parts.join(translate('appliesToSummary.join.sentence', locale));
 }
 
 function summarizeNode(appliesTo: Extract<AppliesTo, { kind: 'node' }>, locale: Locale): string {
@@ -135,7 +135,10 @@ function summarizeNode(appliesTo: Extract<AppliesTo, { kind: 'node' }>, locale: 
   } else if (appliesTo.anyOf) {
     parts.push(
       translate('appliesToSummary.node.target.anyOf', locale, {
-        types: appliesTo.anyOf.map((leaf) => resolveTypeLabel(leaf.nodeType)).join(' または '),
+        types: formatTypeList(
+          appliesTo.anyOf.map((leaf) => leaf.nodeType),
+          locale,
+        ),
       }),
     );
   }
@@ -158,7 +161,7 @@ function summarizeNode(appliesTo: Extract<AppliesTo, { kind: 'node' }>, locale: 
     );
   }
 
-  return parts.join('');
+  return parts.join(translate('appliesToSummary.join.sentence', locale));
 }
 
 function summarizeEdge(appliesTo: Extract<AppliesTo, { kind: 'edge' }>, locale: Locale): string {
@@ -169,12 +172,16 @@ function summarizeEdge(appliesTo: Extract<AppliesTo, { kind: 'edge' }>, locale: 
   }
   if (appliesTo.allOf) {
     return translate('appliesToSummary.edge.allOf', locale, {
-      groups: appliesTo.allOf.map((leaf) => formatEdgeWhen(leaf, locale)).join('、かつ '),
+      groups: appliesTo.allOf
+        .map((leaf) => formatEdgeWhen(leaf, locale))
+        .join(translate('appliesToSummary.join.allOf', locale)),
     });
   }
   if (appliesTo.anyOf) {
     return translate('appliesToSummary.edge.anyOf', locale, {
-      groups: appliesTo.anyOf.map((leaf) => formatEdgeWhen(leaf, locale)).join('、または '),
+      groups: appliesTo.anyOf
+        .map((leaf) => formatEdgeWhen(leaf, locale))
+        .join(translate('appliesToSummary.join.anyOf', locale)),
     });
   }
   return '';

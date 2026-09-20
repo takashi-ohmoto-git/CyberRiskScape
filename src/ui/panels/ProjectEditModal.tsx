@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useDiagramStore } from '../../core/state/diagramStore';
 import type { ProjectMeta } from '../../core/model/types';
+import { useT } from '../../i18n';
 
 export function ProjectEditModal() {
+  const t = useT();
   const isOpen = useDiagramStore((s) => s.isProjectEditOpen);
   const projectMeta = useDiagramStore((s) => s.projectMeta);
   const setProjectMeta = useDiagramStore((s) => s.setProjectMeta);
@@ -51,41 +53,41 @@ export function ProjectEditModal() {
           <button
             onClick={closeProjectEdit}
             className="text-slate-500 hover:text-slate-200 transition-colors"
-            aria-label="閉じる"
+            aria-label={t('project.common.close')}
           >
             <X size={16} />
           </button>
         </div>
 
         <Field
-          label="プロジェクト名"
+          label={t('project.editModal.nameLabel')}
           value={draft.name}
           onChange={(v) => update('name', v)}
-          placeholder="例: 与信判定サービス 脅威モデリング"
+          placeholder={t('project.editModal.namePlaceholder')}
         />
         <Field
-          label="システム名称"
+          label={t('project.editModal.systemNameLabel')}
           value={draft.systemName}
           onChange={(v) => update('systemName', v)}
-          placeholder="例: CreditScoringAPI v2"
+          placeholder={t('project.editModal.systemNamePlaceholder')}
         />
         <FieldArea
-          label="システム目的"
+          label={t('project.editModal.purposeLabel')}
           value={draft.purpose}
           onChange={(v) => update('purpose', v)}
-          placeholder="このシステムが解決する課題・提供する価値を簡潔に。"
+          placeholder={t('project.editModal.purposePlaceholder')}
         />
         <FieldArea
-          label="ビジネスインパクト"
+          label={t('project.editModal.businessImpactLabel')}
           value={draft.businessImpact}
           onChange={(v) => update('businessImpact', v)}
-          placeholder="停止・侵害が発生した場合の事業影響（金額・期間・対象顧客数など）。"
+          placeholder={t('project.editModal.businessImpactPlaceholder')}
         />
         <FieldArea
-          label="セキュリティ目標"
+          label={t('project.editModal.securityObjectivesLabel')}
           value={draft.securityObjectives}
           onChange={(v) => update('securityObjectives', v)}
-          placeholder="守るべき機密性・完全性・可用性などの到達目標。脅威の優先度付けの基準になります。"
+          placeholder={t('project.editModal.securityObjectivesPlaceholder')}
         />
 
         <div className="flex justify-end gap-2 pt-2">
@@ -93,13 +95,13 @@ export function ProjectEditModal() {
             onClick={closeProjectEdit}
             className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-white transition-colors"
           >
-            キャンセル
+            {t('project.common.cancel')}
           </button>
           <button
             onClick={handleSave}
             className="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
           >
-            保存
+            {t('project.common.save')}
           </button>
         </div>
       </div>

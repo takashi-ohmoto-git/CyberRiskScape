@@ -31,6 +31,7 @@ import { renderIcon } from '../component-library/iconRegistry';
 import { saveProject } from '../features/persistence/repository';
 import { buildThreatReport, toCsv, toJson, toDCRHThreatModelMarkdown } from '../features/export/threatReport';
 import { triggerDownload } from '../features/export/download';
+import { useT, type TranslationKey } from '../i18n';
 
 const BOUNDARY_SECTION_KEY = 'BOUNDARIES';
 const LIBRARY_MANAGER_KEY = '__LIBRARY_MANAGER__';
@@ -45,11 +46,11 @@ function reportFilename(systemName: string, layer: LayerKey): string {
   return ['threat-report', slug, layer, date].filter(Boolean).join('_');
 }
 
-const LAYER_DESCRIPTIONS: Record<LayerKey, string> = {
-  L0: 'ビジネスロジック中心（ビジネスサイドが記載）',
-  L1: '詳細設計（セキュリティ担当者、通常はここまで）',
-  L2: '機密性が高い場合の追加詳細',
-  L3: '更に厳密な内容',
+const LAYER_DESCRIPTION_KEYS: Record<LayerKey, TranslationKey> = {
+  L0: 'project.sidebar.layerDesc.L0',
+  L1: 'project.sidebar.layerDesc.L1',
+  L2: 'project.sidebar.layerDesc.L2',
+  L3: 'project.sidebar.layerDesc.L3',
 };
 
 interface LeftSidebarProps {
@@ -58,6 +59,7 @@ interface LeftSidebarProps {
 }
 
 export function LeftSidebar({ threats }: LeftSidebarProps) {
+  const t = useT();
   const addNode = useDiagramStore((s) => s.addNode);
   const addBoundary = useDiagramStore((s) => s.addBoundary);
   const disabledLibraryIds = useDiagramStore((s) => s.disabledLibraryIds);
@@ -151,11 +153,11 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
 
   const saveLabel =
     saveState === 'saving'
-      ? '保存中…'
+      ? t('project.common.saving')
       : saveState === 'saved'
-        ? '保存しました'
+        ? t('project.sidebar.saveStateSaved')
         : saveState === 'error'
-          ? '保存に失敗'
+          ? t('project.sidebar.saveStateError')
           : 'SAVE';
 
   return (
@@ -179,7 +181,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
           <div className="space-y-1.5">
             <ProjectMenuItem
               icon={Pencil}
-              label={projectName.trim().length > 0 ? projectName : 'プロジェクト未設定'}
+              label={projectName.trim().length > 0 ? projectName : t('project.sidebar.untitled')}
               onClick={openProjectEdit}
             />
 
@@ -187,7 +189,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
             <div>
               <ProjectMenuItem
                 icon={Layers3}
-                label={`深度レイヤー（${activeLayer}）`}
+                label={t('project.sidebar.depthLayer', { layer: activeLayer })}
                 onClick={() => toggleSection(LAYER_SUBMENU_KEY)}
                 rightIcon={renderToggleIcon(openSections.has(LAYER_SUBMENU_KEY))}
               />
@@ -207,7 +209,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                             ? 'bg-emerald-700/30 border-emerald-600 text-emerald-200'
                             : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
                         }`}
-                        title={LAYER_DESCRIPTIONS[key]}
+                        title={t(LAYER_DESCRIPTION_KEYS[key])}
                       >
                         <span
                           className={`shrink-0 inline-block w-1.5 h-1.5 rounded-full ${
@@ -216,7 +218,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                         />
                         <span className="font-black tracking-wider">{key}</span>
                         <span className="flex-1 truncate text-slate-500 font-normal">
-                          {LAYER_DESCRIPTIONS[key]}
+                          {t(LAYER_DESCRIPTION_KEYS[key])}
                         </span>
                         <span className="text-[9px] text-slate-500 shrink-0">{count}</span>
                       </button>
@@ -237,35 +239,47 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
               {openSections.has(REPORT_SUBMENU_KEY) && (
                 <div className="mt-1.5 ml-3 pl-3 border-l border-slate-700 space-y-1.5">
                   <p className="text-[9px] text-slate-500 leading-snug">
-                    表示中の脅威一覧（{activeLayer} / {activeFramework}・{threats.length} 件）を出力
+                    {t('project.sidebar.reportSummary', {
+                      layer: activeLayer,
+                      framework: activeFramework,
+                      count: threats.length,
+                    })}
                   </p>
                   <button
                     onClick={() => handleExportReport('csv')}
                     className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-[10px] font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
                   >
                     <Download size={12} className="text-emerald-400 shrink-0" />
-                    CSV ダウンロード
+                    {t('project.sidebar.exportCsv')}
                   </button>
                   <button
                     onClick={() => handleExportReport('json')}
                     className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-[10px] font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
                   >
                     <Download size={12} className="text-emerald-400 shrink-0" />
-                    JSON ダウンロード
+                    {t('project.sidebar.exportJson')}
                   </button>
                   <button
                     onClick={() => handleExportReport('DCRH-threat-model')}
                     className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-[10px] font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
                   >
                     <Download size={12} className="text-emerald-400 shrink-0" />
-                    DCRH THREAT_MODEL.md（Anthropic 公式互換）
+                    {t('project.sidebar.exportDcrh')}
                   </button>
                 </div>
               )}
             </div>
             <ProjectMenuItem icon={LibraryIcon} label="Template" onClick={openTemplate} />
-            <ProjectMenuItem icon={FilePlus} label="新規作成" onClick={openNewProjectConfirm} />
-            <ProjectMenuItem icon={FolderOpen} label="ファイル（保存 / 開く）" onClick={openProjectFile} />
+            <ProjectMenuItem
+              icon={FilePlus}
+              label={t('project.sidebar.newProject')}
+              onClick={openNewProjectConfirm}
+            />
+            <ProjectMenuItem
+              icon={FolderOpen}
+              label={t('project.sidebar.fileMenu')}
+              onClick={openProjectFile}
+            />
             <ProjectMenuItem
               icon={Save}
               label={saveLabel}
@@ -336,7 +350,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                   <div className="bg-slate-600 p-1.5 rounded-md">
                     <Square size={14} className={boundary.isDashed ? 'stroke-dasharray-2' : ''} />
                   </div>
-                  {boundary.name}
+                  {t(boundary.nameKey)}
                   <Plus size={12} className="ml-auto opacity-40 group-hover:opacity-100" />
                 </button>
               ))}
@@ -411,8 +425,8 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
       <div className="mt-auto p-4 bg-slate-800/50 rounded-2xl border border-slate-700">
         <p className="text-[10px] text-slate-500 font-bold uppercase mb-2">Usage</p>
         <ul className="text-[10px] space-y-2 text-slate-400">
-          <li className="flex gap-2">🔹 パーツを選択して "Create Link" で接続</li>
-          <li className="flex gap-2">🔹 コネクタを中継点として利用可能</li>
+          <li className="flex gap-2">{t('project.sidebar.usageHint1')}</li>
+          <li className="flex gap-2">{t('project.sidebar.usageHint2')}</li>
         </ul>
       </div>
     </aside>

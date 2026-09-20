@@ -4,14 +4,16 @@ import { isSuppressed, type ThreatView } from '../../core/model/types';
 import { getNodeDisplayName } from '../../core/model/nodeDisplay';
 import { componentRegistry } from '../../component-library/defaultRegistry';
 import { selectActiveNodes, useDiagramStore } from '../../core/state/diagramStore';
-import { FRAMEWORK_VIEW_LABELS } from '../frameworkLabels';
+import { FRAMEWORK_VIEW_LABEL_KEYS } from '../frameworkLabels';
 import { ThreatCard } from './ThreatCard';
+import { useT } from '../../i18n';
 
 interface ThreatListPanelProps {
   threats: ThreatView[];
 }
 
 export function ThreatListPanel({ threats }: ThreatListPanelProps) {
+  const t = useT();
   const nodes = useDiagramStore(selectActiveNodes);
   const framework = useDiagramStore((s) => s.activeFramework);
   const openManualThreatEditor = useDiagramStore((s) => s.openManualThreatEditor);
@@ -34,11 +36,11 @@ export function ThreatListPanel({ threats }: ThreatListPanelProps) {
             onClick={() => openManualThreatEditor()}
             className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg transition-colors"
           >
-            <Plus size={14} /> シナリオ追加
+            <Plus size={14} /> {t('threats.list.addScenario')}
           </button>
         </div>
         <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
-          <span className="text-slate-500">{FRAMEWORK_VIEW_LABELS[framework]} MODE</span>
+          <span className="text-slate-500">{t(FRAMEWORK_VIEW_LABEL_KEYS[framework])} MODE</span>
           <span className="bg-rose-500/20 text-rose-500 px-2 py-0.5 rounded-full">
             {activeCount} ISSUES
           </span>
@@ -49,7 +51,9 @@ export function ThreatListPanel({ threats }: ThreatListPanelProps) {
             className="mt-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-300 transition-colors"
           >
             {hideSuppressed ? <Eye size={12} /> : <EyeOff size={12} />}
-            抑制済み {suppressedCount} 件を{hideSuppressed ? '表示' : '非表示'}
+            {hideSuppressed
+              ? t('threats.list.suppressedShow', { count: suppressedCount })
+              : t('threats.list.suppressedHide', { count: suppressedCount })}
           </button>
         )}
       </div>
@@ -57,7 +61,7 @@ export function ThreatListPanel({ threats }: ThreatListPanelProps) {
         {visible.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-slate-700 opacity-50 p-8 text-center">
             <Eye size={64} className="mb-4" />
-            <p className="text-sm font-bold">脅威は検出されませんでした</p>
+            <p className="text-sm font-bold">{t('threats.list.empty')}</p>
           </div>
         ) : (
           visible.map((threat) => {
@@ -68,9 +72,9 @@ export function ThreatListPanel({ threats }: ThreatListPanelProps) {
             } else if (threat.manualTargetType) {
               const typeLabel =
                 componentRegistry.get(threat.manualTargetType)?.label ?? threat.manualTargetType;
-              targetName = `${typeLabel}型（該当ノードなし）`;
+              targetName = t('threats.list.typeTarget', { type: typeLabel });
             } else {
-              targetName = 'プロジェクト全体';
+              targetName = t('threats.list.wholeProject');
             }
             return <ThreatCard key={threat.id} threat={threat} targetName={targetName} />;
           })

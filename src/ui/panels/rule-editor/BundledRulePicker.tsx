@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
-import { BUNDLED_THREAT_LIBRARY } from '../../../threat-library/loader/bundledLibrary';
+import { getThreatLibrary } from '../../../threat-library/loader/bundledLibrary';
 import type { ThreatRule } from '../../../threat-library/schema/threatRule';
+import { useLocale, useT } from '../../../i18n';
 
 /**
  * 出荷（bundled）ルールの複製ピッカー（§2.25 Phase D / D4）。
@@ -16,6 +17,8 @@ export function BundledRulePicker({
   onPick: (rule: ThreatRule) => void;
   onClose: () => void;
 }) {
+  const t = useT();
+  const [locale] = useLocale();
   const [query, setQuery] = useState('');
 
   useEffect(() => {
@@ -28,7 +31,7 @@ export function BundledRulePicker({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const rules = BUNDLED_THREAT_LIBRARY.rules;
+    const rules = getThreatLibrary(locale).rules;
     if (q === '') return rules;
     return rules.filter(
       (r) =>
@@ -37,7 +40,7 @@ export function BundledRulePicker({
         (r.name?.toLowerCase().includes(q) ?? false) ||
         r.description.toLowerCase().includes(q),
     );
-  }, [query]);
+  }, [query, locale]);
 
   return (
     <div
@@ -50,9 +53,13 @@ export function BundledRulePicker({
       >
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold uppercase tracking-widest text-slate-300">
-            出荷ルールを複製
+            {t('ruleEditor.bundledPicker.title')}
           </h2>
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-200" aria-label="閉じる">
+          <button
+            onClick={onClose}
+            className="text-slate-500 hover:text-slate-200"
+            aria-label={t('ruleEditor.bundledPicker.close')}
+          >
             <X size={16} />
           </button>
         </div>
@@ -61,13 +68,13 @@ export function BundledRulePicker({
           autoFocus
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="id / カテゴリ / 説明で検索"
+          placeholder={t('ruleEditor.bundledPicker.searchPlaceholder')}
           className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500"
         />
 
         <div className="overflow-y-auto space-y-1.5 pr-1">
           {filtered.length === 0 ? (
-            <p className="text-xs text-slate-600 py-8 text-center">該当するルールがありません。</p>
+            <p className="text-xs text-slate-600 py-8 text-center">{t('ruleEditor.bundledPicker.empty')}</p>
           ) : (
             filtered.map((rule) => (
               <button

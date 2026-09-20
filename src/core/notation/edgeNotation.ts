@@ -1,4 +1,5 @@
 import type { AuthType, EncryptionType, NetworkType } from '../model/types';
+import type { TranslationKey } from '../../i18n';
 
 /**
  * エッジ（データフロー）の視覚記法を **単一の宣言** に集約するモジュール。
@@ -45,7 +46,7 @@ export function isHighRiskEdge(edge: { auth: AuthType; network: NetworkType }): 
  */
 export interface EdgeNotationLegendEntry {
   id: string;
-  label: string;
+  labelKey: TranslationKey;
   /** 凡例スウォッチの描画ヒント（線の dash と色）。 */
   swatch: { dash: string; stroke: string };
   appliesTo: (edge: { auth: AuthType; network: NetworkType; encryption: EncryptionType }) => boolean;
@@ -58,19 +59,19 @@ export interface EdgeNotationLegendEntry {
 export const EDGE_NOTATION_LEGEND: readonly EdgeNotationLegendEntry[] = [
   {
     id: 'plain',
-    label: '平文（暗号化なし）',
+    labelKey: 'canvas.edgeNotation.plain',
     swatch: { dash: ENCRYPTION_DASH.Plain, stroke: EDGE_STROKE_COLORS.normal },
     appliesTo: (e) => e.encryption === 'Plain',
   },
   {
     id: 'encrypted',
-    label: '暗号化あり（TLS / E2EE）',
+    labelKey: 'canvas.edgeNotation.encrypted',
     swatch: { dash: '0', stroke: EDGE_STROKE_COLORS.normal },
     appliesTo: (e) => e.encryption !== 'Plain',
   },
   {
     id: 'high-risk',
-    label: '高リスク経路（未認証 × Internet）',
+    labelKey: 'canvas.edgeNotation.highRisk',
     swatch: { dash: '0', stroke: EDGE_STROKE_COLORS.risk },
     appliesTo: isHighRiskEdge,
   },

@@ -18,6 +18,9 @@ import type {
   NetworkType,
 } from '../../core/model/types';
 import { selectActiveNodes, useDiagramStore } from '../../core/state/diagramStore';
+import { useT } from '../../i18n';
+
+type TFunc = ReturnType<typeof useT>;
 
 interface EdgePanelProps {
   edge: DiagramEdge;
@@ -29,42 +32,52 @@ interface OptionDef<T extends string> {
   icon?: ReactNode;
 }
 
-const AUTH_OPTIONS: OptionDef<AuthType>[] = [
-  { val: 'None', label: 'なし (None)', icon: <Unlock size={14} /> },
-  { val: 'Password', label: 'ID/パスワード', icon: <Lock size={14} /> },
-  { val: 'MFA', label: '多要素認証 (MFA)', icon: <ShieldCheck size={14} /> },
-];
+function getAuthOptions(t: TFunc): OptionDef<AuthType>[] {
+  return [
+    { val: 'None', label: t('panels.edge.auth.none'), icon: <Unlock size={14} /> },
+    { val: 'Password', label: t('panels.edge.auth.password'), icon: <Lock size={14} /> },
+    { val: 'MFA', label: t('panels.edge.auth.mfa'), icon: <ShieldCheck size={14} /> },
+  ];
+}
 
-const NETWORK_OPTIONS: OptionDef<NetworkType>[] = [
-  { val: 'Internet', label: '公衆網 (Internet)' },
-  { val: 'VPN', label: '専用線 (VPN)' },
-  { val: 'VPC', label: '閉域網 (VPC/Private)' },
-];
+function getNetworkOptions(t: TFunc): OptionDef<NetworkType>[] {
+  return [
+    { val: 'Internet', label: t('panels.edge.network.internet') },
+    { val: 'VPN', label: t('panels.edge.network.vpn') },
+    { val: 'VPC', label: t('panels.edge.network.vpc') },
+  ];
+}
 
-const ENCRYPTION_OPTIONS: OptionDef<EncryptionType>[] = [
-  { val: 'Plain', label: 'なし (Plain Text)' },
-  { val: 'TLS', label: 'TLS 1.2+' },
-  { val: 'E2EE', label: 'エンドツーエンド (E2EE)' },
-];
+function getEncryptionOptions(t: TFunc): OptionDef<EncryptionType>[] {
+  return [
+    { val: 'Plain', label: t('panels.edge.encryption.plain') },
+    { val: 'TLS', label: 'TLS 1.2+' },
+    { val: 'E2EE', label: t('panels.edge.encryption.e2ee') },
+  ];
+}
 
-const DATA_FLOW_OPTIONS: OptionDef<DataFlow>[] = [
-  { val: 'outbound', label: '順方向 (Outbound)', icon: <ArrowRight size={14} /> },
-  { val: 'inbound', label: '逆方向 (Inbound)', icon: <ArrowLeft size={14} /> },
-  { val: 'bidirectional', label: '双方向 (Bidirectional)', icon: <ArrowLeftRight size={14} /> },
-];
+function getDataFlowOptions(t: TFunc): OptionDef<DataFlow>[] {
+  return [
+    { val: 'outbound', label: t('panels.edge.dataFlow.outbound'), icon: <ArrowRight size={14} /> },
+    { val: 'inbound', label: t('panels.edge.dataFlow.inbound'), icon: <ArrowLeft size={14} /> },
+    { val: 'bidirectional', label: t('panels.edge.dataFlow.bidirectional'), icon: <ArrowLeftRight size={14} /> },
+  ];
+}
 
 /**
  * エッジ意味論（[[plan]] §2.22 1.6d）の選択肢。
  * 値の意味は src/core/model/types.ts の EdgeSemantic を参照。
  */
-const SEMANTIC_OPTIONS: { val: EdgeSemantic; label: string }[] = [
-  { val: 'data_flow', label: 'data_flow — 既定（通常のデータ転送）' },
-  { val: 'tool_invocation', label: 'tool_invocation — ツール呼出' },
-  { val: 'delegation', label: 'delegation — エージェント間タスク委譲' },
-  { val: 'memory_read', label: 'memory_read — メモリ読取' },
-  { val: 'memory_write', label: 'memory_write — メモリ書込' },
-  { val: 'rag_retrieval', label: 'rag_retrieval — RAG 取得' },
-];
+function getSemanticOptions(t: TFunc): { val: EdgeSemantic; label: string }[] {
+  return [
+    { val: 'data_flow', label: t('panels.edge.semantic.dataFlow') },
+    { val: 'tool_invocation', label: t('panels.edge.semantic.toolInvocation') },
+    { val: 'delegation', label: t('panels.edge.semantic.delegation') },
+    { val: 'memory_read', label: t('panels.edge.semantic.memoryRead') },
+    { val: 'memory_write', label: t('panels.edge.semantic.memoryWrite') },
+    { val: 'rag_retrieval', label: t('panels.edge.semantic.ragRetrieval') },
+  ];
+}
 
 /**
  * source / target 型から推奨される semantic 値を返す。
@@ -82,6 +95,12 @@ function recommendSemantic(
 }
 
 export function EdgePanel({ edge }: EdgePanelProps) {
+  const t = useT();
+  const AUTH_OPTIONS = getAuthOptions(t);
+  const NETWORK_OPTIONS = getNetworkOptions(t);
+  const ENCRYPTION_OPTIONS = getEncryptionOptions(t);
+  const DATA_FLOW_OPTIONS = getDataFlowOptions(t);
+  const SEMANTIC_OPTIONS = getSemanticOptions(t);
   const onUpdate = useDiagramStore((s) => s.updateEdge);
   const deleteEdge = useDiagramStore((s) => s.deleteEdge);
   const onClose = useDiagramStore((s) => s.clearSelection);
@@ -137,7 +156,7 @@ export function EdgePanel({ edge }: EdgePanelProps) {
                 onUpdate(edge.id, 'dataFlowName', v.length > 0 ? v : undefined);
               }}
               maxLength={80}
-              placeholder="例: Bearer Token, Query"
+              placeholder={t('panels.edge.dataFlowNamePlaceholder')}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white placeholder-slate-500 focus:outline-none focus:border-blue-400"
             />
           </div>
@@ -147,7 +166,7 @@ export function EdgePanel({ edge }: EdgePanelProps) {
             htmlFor={`edge-semantic-${edge.id}`}
             className="text-[10px] font-black text-slate-500 uppercase mb-2 block"
           >
-            Semantic（エッジ意味論）
+            {t('panels.edge.semanticLabel')}
           </label>
           <select
             id={`edge-semantic-${edge.id}`}
@@ -161,7 +180,7 @@ export function EdgePanel({ edge }: EdgePanelProps) {
             }
             className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-blue-400"
           >
-            <option value="">— 未設定（data_flow として扱われる）—</option>
+            <option value="">{t('panels.edge.semanticUnset')}</option>
             {SEMANTIC_OPTIONS.map((opt) => (
               <option key={opt.val} value={opt.val}>
                 {opt.label}
@@ -170,7 +189,9 @@ export function EdgePanel({ edge }: EdgePanelProps) {
           </select>
           {recommended && edge.semantic === undefined && (
             <p className="text-[9px] text-blue-400 mt-2 leading-relaxed">
-              推奨：<code className="font-mono bg-slate-900/60 px-1.5 py-0.5 rounded">{recommended}</code>（{sourceType} → {targetType} の典型パターン）
+              {t('panels.edge.recommendedPrefix')}
+              <code className="font-mono bg-slate-900/60 px-1.5 py-0.5 rounded">{recommended}</code>
+              {t('panels.edge.recommendedSuffix', { sourceType: sourceType ?? '', targetType: targetType ?? '' })}
             </p>
           )}
         </section>
@@ -243,7 +264,7 @@ export function EdgePanel({ edge }: EdgePanelProps) {
       </div>
       <div className="p-6 border-t border-slate-800">
         <button onClick={onClose} className="w-full bg-slate-800 py-3 rounded-xl font-bold text-xs">
-          閉じる
+          {t('panels.common.close')}
         </button>
       </div>
     </div>

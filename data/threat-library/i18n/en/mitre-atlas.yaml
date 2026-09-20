@@ -1,0 +1,100 @@
+# English overlay for `data/threat-library/mitre-atlas.yaml`.
+#
+# The Japanese file is the source of truth: only `name` / `category` / `description` /
+# `mitigation` (plus `conditions[].description` and `references[].title` where present)
+# are translated here, keyed by rule id. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - Keep `{{token}}` placeholders exactly as they appear in the original.
+#   - Keep the `[Foundation]` / `[Enterprise]` / `[Advanced]` markup — the maturity
+#     tiers are re-derived from this text.
+#   - Preserve the Can / Cannot pair and the blast radius statement in `description`
+#     (docs/threat-schema.md §7.5).
+#   - `references` is keyed by the index in the original array, and only the entries
+#     that need translating are listed. Keep a genuinely Japanese document title as
+#     its original title and add an English gloss; `url` is never translated.
+#   - Source is MITRE ATLAS; tactic/technique names follow the official ATLAS wording.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+rules:
+  atlas-aml-t0040-inference-api-access-001:
+    category: "Information Disclosure"
+    name: "Inference API reconnaissance"
+    description: "Sending a high volume of queries to a public inference API lets an attacker observe the decision boundary, confidence distribution, and prompt template, giving them a foothold for follow-on attacks such as evasion or extraction."
+    mitigation: "Rate-limit queries per API key, coarsen responses to blunt the decision boundary (top-1 label only, rounded confidence), and detect anomalous query patterns."
+
+  atlas-aml-t0044-full-model-access-001:
+    category: "Information Disclosure"
+    name: "Full model access"
+    description: "Cloud console privileges, container compromise, or a misconfigured public storage bucket can give an attacker direct access to the full set of model weights, tokenizer, and system prompt."
+    mitigation: "Apply least-privilege IAM to model artifacts, use an encrypted artifact registry, require MFA and audit logging for privileged operations, and continuously scan for public bucket exposure."
+
+  atlas-aml-t0024-001-membership-inference-001:
+    category: "Information Disclosure"
+    name: "Membership inference"
+    description: "Fluctuations in inference API responses let an attacker estimate whether a specific record was part of the training data, leaking membership in a sensitive cohort such as patients or contract holders."
+    mitigation: "Train with differential privacy, quantize confidence values, detect anomalous query patterns by frequency, and strip labels for sensitive attributes."
+
+  atlas-aml-t0024-002-model-inversion-001:
+    category: "Information Disclosure"
+    name: "Model inversion"
+    description: "Inversion attacks that exploit outputs and confidence scores can reconstruct representative samples from the training data, such as faces, medical records, or code fragments."
+    mitigation: "Coarsen outputs, control temperature and top-k, restrict the scope of generative API usage, and log outputs to detect inversion attempts."
+
+  atlas-aml-t0005-create-proxy-model-001:
+    category: "Resource Development"
+    name: "Proxy model construction"
+    description: "Distilling the target model's inputs and outputs lets an attacker build a proxy (surrogate) model, which is then repurposed for white-box adversarial example design or jailbreak testing."
+    mitigation: "Rate-limit and reduce the diversity of response output, add anti-distillation clauses to API usage agreements, and detect imitation through anomalous query distribution analysis."
+
+  atlas-aml-t0051-indirect-prompt-injection-001:
+    category: "Tampering"
+    name: "Indirect prompt injection"
+    description: "Instructions embedded in retrieved RAG documents, web pages, email bodies, tool responses, or long-term memory are pulled into the LLM's or agent's input, triggering responses or side-effect calls that go against the user's intent."
+    mitigation: "Label retrieved content as untrusted, normalize HTML/code blocks, detect and neutralize embedded instructions, and permit sensitive tool calls only on explicit user instruction."
+    references:
+      "1":
+        title: "OWASP Top 10 for Agentic Applications 2026 - ASI01: Agent Goal Hijack (related mapping)"
+
+  atlas-aml-t0054-llm-jailbreak-001:
+    category: "Defense Evasion"
+    name: "Jailbreak"
+    description: "Role-play framing, multi-step prompting, or obfuscated instructions bypass guardrails, causing generation of harmful content or policy-violating responses that would otherwise be blocked."
+    mitigation: "Layer guardrails (pre-processing, post-processing, and sample audits), keep known jailbreak patterns continuously updated, and route risky responses to human review."
+
+  atlas-aml-t0029-denial-of-ml-service-001:
+    category: "Denial of Service"
+    name: "Denial of ML service"
+    description: "Inputs designed to deliberately inflate compute cost, such as long text, recursion-inducing prompts, or heavy reasoning chains, can destroy the availability and cost efficiency of the ML inference platform."
+    mitigation: "Cap input length and inference time, use cost-based circuit breakers, and isolate rate limiting for attack patterns."
+
+  atlas-aml-t0019-publish-poisoned-datasets-001:
+    category: "Resource Development"
+    name: "Publish poisoned datasets"
+    description: "An attacker uploads a poisoned dataset (hidden triggers, biased labels) to a public repository; malicious behavior gets embedded in downstream training or RAG construction that ingests it."
+    mitigation: "Use trusted registries, verify dataset provenance and signatures, detect poisoning (outlier and trigger-pattern inspection), and continuously monitor community reports."
+
+  atlas-aml-t0010-003-ml-supply-chain-model-001:
+    category: "Supply Chain"
+    name: "ML supply chain compromise: model"
+    description: "Model weights, LoRA adapters, or tokenizers pulled from a public model hub such as Hugging Face may carry a backdoor or malicious payload."
+    mitigation: "Verify model signatures, pin SBOMs and hashes, run behavioral tests in an internal validation pipeline, and restrict sourcing to trusted vendors only."
+    references:
+      "1":
+        title: "OWASP Top 10 for Agentic Applications 2026 - ASI04: Agentic Supply Chain Vulnerabilities (related mapping)"
+
+  atlas-aml-t0048-external-harms-001:
+    category: "Impact"
+    name: "External harms"
+    description: "A malfunctioning or abused AI system reaches external parties (users, customers, society, third-party systems), causing financial loss, discrimination, the spread of misinformation, or regulatory violations."
+    mitigation: "Classify output risk and set thresholds for human approval, define SLAs and incident-response playbooks by impact scope, and continuously monitor for external impact."
+
+  atlas-aml-t0050-command-and-control-001:
+    category: "Command and Control"
+    name: "Command and control via LLM"
+    description: "Through a trigger planted in advance, an attacker uses the agent as a C2 node, continuously performing reconnaissance, lateral movement, and data collection against internal systems."
+    mitigation: "Allow-list the agent's long-term memory and external communication destinations, audit persistent context that spans sessions, and detect anomalies in tool call history."

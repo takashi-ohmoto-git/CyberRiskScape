@@ -4,10 +4,11 @@ import type { ControlStatusValue, ThreatView } from '../../core/model/types';
 import { useDiagramStore } from '../../core/state/diagramStore';
 import {
   CONTROL_STATUS_BADGE,
-  CONTROL_STATUS_LABEL,
+  CONTROL_STATUS_LABEL_KEY,
   CONTROL_STATUS_NOTE_REQUIRED,
   CONTROL_STATUS_ORDER,
 } from './controlStatusStyle';
+import { useT } from '../../i18n';
 
 /**
  * 対策実装状況（Control Implementation Status）の編集フォーム。
@@ -18,6 +19,7 @@ import {
  * - 脅威切替で draft を作り直すため、呼び出し側で key を threat.id に紐づけること。
  */
 export function ControlStatusEditor({ threat }: { threat: ThreatView }) {
+  const t = useT();
   const setControlStatus = useDiagramStore((s) => s.setControlStatus);
   const clearControlStatus = useDiagramStore((s) => s.clearControlStatus);
 
@@ -33,16 +35,16 @@ export function ControlStatusEditor({ threat }: { threat: ThreatView }) {
     <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-700 flex flex-col gap-2">
       {/* 現ステータス表示 */}
       <div className="flex items-center gap-2">
-        <span className="text-[10px] text-slate-500">現在:</span>
+        <span className="text-[10px] text-slate-500">{t('threats.editor.current')}</span>
         {current ? (
           <span
             className={`text-[10px] px-2 py-0.5 rounded border ${CONTROL_STATUS_BADGE[current.status]}`}
           >
-            {CONTROL_STATUS_LABEL[current.status]}
+            {t(CONTROL_STATUS_LABEL_KEY[current.status])}
           </span>
         ) : (
           <span className="text-[10px] px-2 py-0.5 rounded border border-slate-700 text-slate-500">
-            未設定
+            {t('threats.editor.unset')}
           </span>
         )}
       </div>
@@ -59,7 +61,7 @@ export function ControlStatusEditor({ threat }: { threat: ThreatView }) {
                 : 'border-slate-700 text-slate-500 hover:text-slate-300 hover:border-slate-500'
             }`}
           >
-            {CONTROL_STATUS_LABEL[v]}
+            {t(CONTROL_STATUS_LABEL_KEY[v])}
           </button>
         ))}
       </div>
@@ -68,14 +70,20 @@ export function ControlStatusEditor({ threat }: { threat: ThreatView }) {
         rows={2}
         value={note}
         onChange={(e) => setNote(e.target.value)}
-        placeholder={noteRequired ? '理由・実装方法を記録（必須）' : '補足（任意）'}
+        placeholder={
+          noteRequired
+            ? t('threats.controlStatusEditor.notePlaceholderRequired')
+            : t('threats.controlStatusEditor.notePlaceholderOptional')
+        }
         className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 resize-y"
       />
 
       <div className="flex items-center gap-2">
         {noteRequired && !canSave && (
           <span className="text-[9px] text-amber-300/80">
-            「{CONTROL_STATUS_LABEL[status]}」は note が必須です。
+            {t('threats.controlStatusEditor.noteRequiredWarning', {
+              label: t(CONTROL_STATUS_LABEL_KEY[status]),
+            })}
           </span>
         )}
         <div className="flex gap-2 ml-auto">
@@ -84,7 +92,7 @@ export function ControlStatusEditor({ threat }: { threat: ThreatView }) {
               onClick={() => clearControlStatus(threat.id)}
               className="flex items-center gap-1 text-[10px] px-2.5 py-1 rounded border border-slate-700 text-slate-500 hover:text-slate-200 hover:border-slate-500 transition-colors"
             >
-              <RotateCcw size={11} /> 解除
+              <RotateCcw size={11} /> {t('threats.editor.reset')}
             </button>
           )}
           <button
@@ -92,7 +100,7 @@ export function ControlStatusEditor({ threat }: { threat: ThreatView }) {
             disabled={!canSave}
             className="text-[10px] px-2.5 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-500/30 transition-colors disabled:opacity-40 disabled:hover:bg-emerald-500/20"
           >
-            保存
+            {t('threats.editor.save')}
           </button>
         </div>
       </div>

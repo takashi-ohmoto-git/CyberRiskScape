@@ -15,6 +15,7 @@ import { createEmptyLibrary, type CustomRuleLibrary } from '../../features/custo
 import { parseLibraryFromJson, serializeLibraryToJson } from '../../features/custom-rules/io';
 import { BUNDLED_THREAT_LIBRARY } from '../../threat-library/loader/bundledLibrary';
 import type { ThreatRule } from '../../threat-library/schema/threatRule';
+import { useT } from '../../i18n';
 import { RuleEditorModal } from './RuleEditorModal';
 import { BundledRulePicker } from './rule-editor/BundledRulePicker';
 
@@ -64,6 +65,7 @@ function safeFilename(name: string): string {
  * 各ルールの編集（フォーム）は Phase D で追加予定。
  */
 export function CustomRulesManagerModal() {
+  const t = useT();
   const isOpen = useCustomRulesStore((s) => s.isManagerOpen);
   const close = useCustomRulesStore((s) => s.closeManager);
   const libraries = useCustomRulesStore((s) => s.libraries);
@@ -163,20 +165,21 @@ export function CustomRulesManagerModal() {
         >
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold uppercase tracking-widest text-slate-300">
-            カスタム脅威ルール
+            {t('ruleEditor.manager.title')}
           </h2>
           <button
             onClick={close}
             className="text-slate-500 hover:text-slate-200 transition-colors"
-            aria-label="閉じる"
+            aria-label={t('ruleEditor.manager.close')}
           >
             <X size={16} />
           </button>
         </div>
 
         <p className="text-[11px] text-slate-500 leading-relaxed">
-          ここで作成・取り込んだルールは<strong className="text-slate-400">全プロジェクト共通</strong>
-          で評価されます（出荷ルールとは別系統のユーザーデータ）。
+          {t('ruleEditor.manager.scopeNote.before')}
+          <strong className="text-slate-400">{t('ruleEditor.manager.scopeNote.strong')}</strong>
+          {t('ruleEditor.manager.scopeNote.after')}
         </p>
 
         {/* 新規作成 / インポート */}
@@ -186,7 +189,7 @@ export function CustomRulesManagerModal() {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-            placeholder="新規ライブラリ名"
+            placeholder={t('ruleEditor.manager.newLibraryPlaceholder')}
             className="flex-1 min-w-[180px] bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500"
           />
           <button
@@ -194,13 +197,13 @@ export function CustomRulesManagerModal() {
             disabled={newName.trim() === ''}
             className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-lg transition-colors"
           >
-            <Plus size={14} /> 作成
+            <Plus size={14} /> {t('ruleEditor.manager.create')}
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
             className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-lg transition-colors"
           >
-            <FileUp size={14} /> JSON インポート
+            <FileUp size={14} /> {t('ruleEditor.manager.importJson')}
           </button>
           <input
             ref={fileInputRef}
@@ -217,14 +220,14 @@ export function CustomRulesManagerModal() {
 
         {importError && (
           <p className="text-[11px] text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3 py-2 leading-relaxed">
-            インポート失敗 — {importError}
+            {t('ruleEditor.manager.importFailed', { error: importError })}
           </p>
         )}
 
         {/* ライブラリ一覧 */}
         {libraries.length === 0 ? (
           <p className="text-xs text-slate-600 py-8 text-center">
-            まだカスタムルールライブラリはありません。
+            {t('ruleEditor.manager.empty')}
           </p>
         ) : (
           <div className="space-y-2">
@@ -238,14 +241,14 @@ export function CustomRulesManagerModal() {
                   <div className="flex items-center gap-2 px-3 py-2.5">
                     <button
                       onClick={() => toggleExpand(lib.id)}
-                      title={isOpen ? '折りたたむ' : 'ルールを表示'}
+                      title={isOpen ? t('ruleEditor.manager.collapse') : t('ruleEditor.manager.expand')}
                       className="shrink-0 p-1 text-slate-400 hover:text-slate-100"
                     >
                       {isOpen ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
                     </button>
                     <button
                       onClick={() => toggleLibrary(lib.id)}
-                      title={lib.enabled ? '有効（クリックで無効化）' : '無効（クリックで有効化）'}
+                      title={lib.enabled ? t('ruleEditor.manager.enabled') : t('ruleEditor.manager.disabled')}
                       className={`shrink-0 inline-block w-2.5 h-2.5 rounded-full ${
                         lib.enabled ? 'bg-emerald-500' : 'bg-slate-600'
                       }`}
@@ -253,19 +256,20 @@ export function CustomRulesManagerModal() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-slate-100 truncate">{lib.name}</p>
                       <p className="text-[10px] text-slate-500 uppercase tracking-wider">
-                        ルール {lib.rules.length} 件 {lib.enabled ? '' : '· 無効'}
+                        {t('ruleEditor.manager.ruleCount', { count: lib.rules.length })}{' '}
+                        {lib.enabled ? '' : t('ruleEditor.manager.disabledSuffix')}
                       </p>
                     </div>
                     <button
                       onClick={() => handleExport(lib)}
-                      title="JSON エクスポート"
+                      title={t('ruleEditor.manager.exportJson')}
                       className="shrink-0 p-2 text-slate-400 hover:text-slate-100 transition-colors"
                     >
                       <Download size={15} />
                     </button>
                     <button
                       onClick={() => deleteLibrary(lib.id)}
-                      title="削除"
+                      title={t('ruleEditor.manager.deleteLibrary')}
                       className="shrink-0 p-2 text-rose-400 hover:text-rose-300 transition-colors"
                     >
                       <Trash2 size={15} />
@@ -283,7 +287,7 @@ export function CustomRulesManagerModal() {
                           >
                             <span
                               className="shrink-0 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-700/70 text-slate-300"
-                              title={isEdge ? 'エッジルール' : 'ノードルール'}
+                              title={isEdge ? t('ruleEditor.manager.ruleKindEdge') : t('ruleEditor.manager.ruleKindNode')}
                             >
                               {isEdge ? 'edge' : 'node'}
                             </span>
@@ -297,14 +301,14 @@ export function CustomRulesManagerModal() {
                             </div>
                             <button
                               onClick={() => setEditing({ libraryId: lib.id, rule })}
-                              title="編集"
+                              title={t('ruleEditor.manager.editRule')}
                               className="shrink-0 p-1.5 text-slate-400 hover:text-slate-100"
                             >
                               <Pencil size={13} />
                             </button>
                             <button
                               onClick={() => handleDeleteRule(lib, rule.id)}
-                              title="ルールを削除"
+                              title={t('ruleEditor.manager.deleteRule')}
                               className="shrink-0 p-1.5 text-rose-400 hover:text-rose-300"
                             >
                               <Trash2 size={13} />
@@ -317,13 +321,13 @@ export function CustomRulesManagerModal() {
                           onClick={() => setEditing({ libraryId: lib.id, rule: null })}
                           className="flex items-center gap-1 text-[11px] font-bold text-blue-400 hover:text-blue-300"
                         >
-                          <Plus size={13} /> ルールを追加
+                          <Plus size={13} /> {t('ruleEditor.manager.addRule')}
                         </button>
                         <button
                           onClick={() => setCloneTargetLibId(lib.id)}
                           className="flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-slate-200"
                         >
-                          <Copy size={13} /> 出荷ルールから複製
+                          <Copy size={13} /> {t('ruleEditor.manager.cloneFromBundled')}
                         </button>
                       </div>
                     </div>
@@ -335,8 +339,7 @@ export function CustomRulesManagerModal() {
         )}
 
         <p className="text-[10px] text-slate-600 leading-relaxed">
-          ライブラリを展開してルール（エッジ／ノード）を追加・編集できます。JSON
-          インポートでの取り込みも引き続き利用できます。
+          {t('ruleEditor.manager.footerNote')}
         </p>
         </div>
       </div>

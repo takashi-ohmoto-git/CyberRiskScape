@@ -1,0 +1,58 @@
+# English overlay for `data/threat-library/pqc.yaml`.
+#
+# The Japanese file is the source of truth: only `name` / `category` / `description` /
+# `mitigation` (plus `conditions[].description` and `references[].title` where present)
+# are translated here, keyed by rule id. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - Keep `{{token}}` placeholders exactly as they appear in the original.
+#   - Keep the `[Foundation]` / `[Enterprise]` / `[Advanced]` markup — the maturity
+#     tiers are re-derived from this text.
+#   - Preserve the Can / Cannot pair and the blast radius statement in `description`
+#     (docs/threat-schema.md §7.5).
+#   - `references` is keyed by the index in the original array, and only the entries
+#     that need translating are listed. Keep a genuinely Japanese document title as
+#     its original title and add an English gloss; `url` is never translated.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+rules:
+  pqc-harvest-now-decrypt-later-001:
+    category: "Information Disclosure"
+    name: "Harvest Now, Decrypt Later"
+    description: "When data requiring long-term confidentiality (sensitive information, personal data, or a path to/from a store that may hold credentials) flows from {{sourceName}} to {{targetName}} in plaintext or over TLS using classical key exchange (ECDHE/RSA, etc.), an attacker can collect and store the ciphertext now and decrypt it retroactively once a cryptographically relevant quantum computer (CRQC) becomes available. If the required confidentiality window for that long-lived data spans the arrival of a CRQC, being encrypted today does not guarantee future confidentiality. On the other hand, this path concerns future decryption and does not by itself enable real-time eavesdropping or tampering with the current session (that immediate risk is covered separately by the plaintext-path rule)."
+    mitigation: "[Foundation] Encrypt paths carrying long-term-sensitive data with TLS, eliminating plaintext paths (a prerequisite). Inventory data flows with long confidentiality requirements and identify them as harvest now decrypt later (HNDL) targets. [Enterprise] Migrate TLS key exchange to a PQC hybrid (ML-KEM combined with classical ECDHE, e.g. X25519MLKEM768), making already-collected ciphertext undecryptable in the future. [Advanced] Seal long-term-sensitive data at the application layer too with PQC/hybrid KEM, and keep key management crypto-agile so re-encryption is possible when an algorithm is compromised."
+
+  pqc-crypto-inventory-cbom-gap-001:
+    category: "Cryptographic Governance"
+    name: "Absence of a cryptographic inventory (CBOM)"
+    description: "When an asset holding or brokering sensitive data, such as {{nodeName}}, has no systematic inventory of the cryptographic algorithms, key lengths, certificates, and libraries in use, a cryptographic bill of materials (CBOM), the organization cannot know where quantum-vulnerable classical cryptography (RSA/ECDSA/ECDH) still remains, and so cannot plan a post-quantum migration. This is not a direct attack vector by itself, but the migration gaps it leaves let compromised algorithms sit unaddressed for long periods, widening the risk surface for harvest now decrypt later (HNDL) and signature forgery (the blast radius is all sensitive data handled by that asset). On the other hand, the absence of a CBOM is not by itself a confidentiality-breaking vulnerability, it only becomes real harm in combination with the emergence of the quantum threat or another cryptographic weakness."
+    mitigation: "[Foundation] Inventory the cryptographic algorithms, key lengths, certificates, and libraries used by the asset, and explicitly identify where quantum-vulnerable classical cryptography (RSA/ECDSA/ECDH) resides. [Enterprise] Auto-generate and continuously update the CBOM (integrated with dependency and TLS scanning), and detect and block new introductions of quantum-vulnerable algorithms in CI/CD. [Advanced] Integrate the CBOM with the asset inventory and post-quantum migration roadmap, so that when compromise occurs, affected assets can be identified immediately and prioritized re-encryption triggered."
+    references:
+      "0":
+        title: "NIST IR 8547 - Transition to Post-Quantum Cryptography Standards (the need for a cryptographic inventory)"
+      "1":
+        title: "CRYPTREC - 耐量子計算機暗号の研究動向調査報告書 (Survey Report on Research Trends in Post-Quantum Cryptography, in Japanese)"
+
+  pqc-long-lived-device-signature-001:
+    category: "Tampering"
+    name: "Non-PQC signature verification on long-lived devices"
+    description: "When an IOT device such as {{nodeName}} that will remain deployed in the field for a long period verifies its firmware signatures or device certificates using only classical signature algorithms (RSA/ECDSA), and the validity period of that key or certificate spans the post-quantum migration deadline, an attacker will be able to derive the signing key once a future CRQC arrives, sign counterfeit firmware with a valid-looking signature, get it past verification, and take over the device. For long-lived devices that are hard to physically recover and reprovision, updates cannot keep pace, and the compromise stays fixed for the remainder of the device's deployed life. On the other hand, this is forgery at a future point in time, and a crypto-agile boot chain able to verify post-quantum signatures (ML-DSA/SLH-DSA) can switch signature schemes before the current key is compromised, preventing the forgery."
+    mitigation: "[Foundation] Inventory the signature algorithm and validity period used for each device's firmware signature and certificates, and identify devices whose deployed life spans the post-quantum migration deadline. [Enterprise] Design secure boot / firmware-update verification to be crypto-agile, able to verify post-quantum signatures (ML-DSA / SLH-DSA) or hybrid signatures. [Advanced] Anchor post-quantum signature verification to a hardware root of trust (TPM / secure element), and enforce signature-algorithm migration and rollback prevention in the field through attestation."
+    references:
+      "0":
+        title: "NSA CNSA 2.0 - Commercial National Security Algorithm Suite 2.0 (PQC migration deadlines for long-lived systems)"
+
+  pqc-crypto-agility-gap-001:
+    category: "Cryptographic Governance"
+    name: "Lack of crypto-agility"
+    description: "When the cryptographic processing in {{nodeName}} is hardcoded to a specific algorithm, key length, and protocol version, with no way to swap the cryptographic scheme through configuration or key management, migrating to post-quantum standards (ML-KEM/ML-DSA) or making an emergency switch when a classical algorithm is compromised requires code changes, redeployment, and in some cases re-encrypting all data. This is not a direct attack vector by itself, but it substantially lengthens recovery time after a compromise and widens the exposure window for harvest now decrypt later (HNDL) and signature forgery (the blast radius is all data and sessions that asset protects). On the other hand, if the cryptographic scheme is abstracted and switchable through configuration, migration to post-quantum / hybrid can happen quickly after a compromise is detected, limiting the exposure window."
+    mitigation: "[Foundation] Move the cryptographic algorithm, key length, and protocol version out of the code and make them switchable at the configuration/key-management layer (eliminate hardcoding). [Enterprise] Call cryptographic processing through an abstraction layer (a crypto provider) so multiple schemes, including post-quantum hybrids, can be negotiated or fallen back to, and verify switching in CI. [Advanced] Maintain a crypto-agile foundation where a configuration change alone can migrate every path to post-quantum cryptography on a compromise trigger, with re-encryption and key rotation orchestrated automatically."
+    references:
+      "0":
+        title: "NIST IR 8547 - Transition to Post-Quantum Cryptography Standards (the call for crypto-agility)"
+      "1":
+        title: "CRYPTREC - 電子政府推奨暗号リスト / 耐量子計算機暗号の移行に関する報告 (e-Government Recommended Ciphers List / report on migration to post-quantum cryptography, in Japanese)"

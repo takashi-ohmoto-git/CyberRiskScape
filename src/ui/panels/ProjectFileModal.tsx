@@ -93,7 +93,10 @@ export function ProjectFileModal() {
       setDir(handle);
       await refresh(handle);
     } catch (e) {
-      setStatus({ kind: 'error', message: `フォルダ選択に失敗: ${(e as Error).message}` });
+      setStatus({
+        kind: 'error',
+        message: t('project.fileModal.pickFailed', { message: (e as Error).message }),
+      });
     }
   };
 
@@ -102,7 +105,7 @@ export function ProjectFileModal() {
     setStatus(IDLE);
     const ok = await ensurePermission(dir);
     if (!ok) {
-      setStatus({ kind: 'error', message: 'フォルダへのアクセスが許可されませんでした。' });
+      setStatus({ kind: 'error', message: t('project.fileModal.permissionDenied') });
       return;
     }
     await refresh(dir);
@@ -121,7 +124,7 @@ export function ProjectFileModal() {
     setStatus(IDLE);
     try {
       if (!(await ensurePermission(dir))) {
-        setStatus({ kind: 'error', message: 'フォルダへのアクセスが許可されませんでした。' });
+        setStatus({ kind: 'error', message: t('project.fileModal.permissionDenied') });
         return;
       }
       const s = useDiagramStore.getState();
@@ -140,9 +143,12 @@ export function ProjectFileModal() {
       await writeProjectFile(dir, name, project);
       await refresh(dir);
       setOverwriting(false);
-      setStatus({ kind: 'ok', message: `「${name}」に保存しました。` });
+      setStatus({ kind: 'ok', message: t('project.fileModal.saved', { name }) });
     } catch (e) {
-      setStatus({ kind: 'error', message: `保存に失敗: ${(e as Error).message}` });
+      setStatus({
+        kind: 'error',
+        message: t('project.fileModal.saveFailed', { message: (e as Error).message }),
+      });
     } finally {
       setBusy(false);
     }
@@ -154,7 +160,7 @@ export function ProjectFileModal() {
     setStatus(IDLE);
     try {
       if (!(await ensurePermission(dir))) {
-        setStatus({ kind: 'error', message: 'フォルダへのアクセスが許可されませんでした。' });
+        setStatus({ kind: 'error', message: t('project.fileModal.permissionDenied') });
         return;
       }
       const project = await readProjectFile(dir, name);
@@ -168,7 +174,10 @@ export function ProjectFileModal() {
       hydrateFromPersisted(project);
       close();
     } catch (e) {
-      setStatus({ kind: 'error', message: `読み込みに失敗: ${(e as Error).message}` });
+      setStatus({
+        kind: 'error',
+        message: t('project.fileModal.readFailed', { message: (e as Error).message }),
+      });
     } finally {
       setBusy(false);
     }
@@ -185,12 +194,12 @@ export function ProjectFileModal() {
       >
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold uppercase tracking-widest text-slate-300">
-            ファイル（保存 / 開く）
+            {t('project.fileModal.title')}
           </h2>
           <button
             onClick={close}
             className="text-slate-500 hover:text-slate-200 transition-colors"
-            aria-label="閉じる"
+            aria-label={t('project.common.close')}
           >
             <X size={16} />
           </button>
@@ -198,9 +207,7 @@ export function ProjectFileModal() {
 
         {!supported ? (
           <p className="text-[12px] text-amber-200 leading-relaxed rounded-lg border border-amber-600/60 bg-amber-900/20 p-3">
-            このブラウザはフォルダ保存（File System Access API）に対応していません。
-            Chrome または Edge をご利用ください。なお作業内容はブラウザ内（IndexedDB）に
-            自動保存されており、再読み込みしても失われません。
+            {t('project.fileModal.unsupported')}
           </p>
         ) : (
           <>
@@ -208,10 +215,14 @@ export function ProjectFileModal() {
             <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-3 flex items-center gap-3">
               <FolderOpen size={16} className="text-emerald-400 shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] uppercase tracking-wider text-slate-500">保存先フォルダ</p>
+                <p className="text-[10px] uppercase tracking-wider text-slate-500">
+                  {t('project.fileModal.saveFolder')}
+                </p>
                 <p className="text-[12px] text-slate-200 truncate">
-                  {dir ? dir.name : '未選択'}
-                  {needsReconnect && <span className="text-amber-300">（要再接続）</span>}
+                  {dir ? dir.name : t('project.fileModal.notSelected')}
+                  {needsReconnect && (
+                    <span className="text-amber-300">{t('project.fileModal.needsReconnect')}</span>
+                  )}
                 </p>
               </div>
               {dir && needsReconnect && (
@@ -220,34 +231,34 @@ export function ProjectFileModal() {
                   className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition-colors"
                 >
                   <RefreshCw size={12} />
-                  接続
+                  {t('project.fileModal.connect')}
                 </button>
               )}
               <button
                 onClick={handlePick}
                 className="px-3 py-1.5 text-[10px] font-bold uppercase bg-slate-700 hover:bg-slate-600 text-slate-100 rounded-lg transition-colors"
               >
-                {dir ? '変更' : '選択'}
+                {dir ? t('project.fileModal.change') : t('project.fileModal.select')}
               </button>
             </div>
 
             {/* タブ切替 */}
             <div className="grid grid-cols-2 gap-2">
-              {(['save', 'open'] as const).map((t) => (
+              {(['save', 'open'] as const).map((tabKey) => (
                 <button
-                  key={t}
+                  key={tabKey}
                   onClick={() => {
-                    setTab(t);
+                    setTab(tabKey);
                     setStatus(IDLE);
                     setOverwriting(false);
                   }}
                   className={`px-2 py-2 rounded-lg text-[11px] font-black border transition-all ${
-                    tab === t
+                    tab === tabKey
                       ? 'bg-blue-600 border-blue-400 text-white'
                       : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'
                   }`}
                 >
-                  {t === 'save' ? '保存（このプロジェクト）' : '開く（一覧から）'}
+                  {tabKey === 'save' ? t('project.fileModal.tabSave') : t('project.fileModal.tabOpen')}
                 </button>
               ))}
             </div>
@@ -256,7 +267,7 @@ export function ProjectFileModal() {
               <div className="flex flex-col gap-4">
                 <label className="flex flex-col gap-1.5">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                    ファイル名
+                    {t('project.fileModal.filenameLabel')}
                   </span>
                   <input
                     type="text"
@@ -265,13 +276,13 @@ export function ProjectFileModal() {
                       setFilename(e.target.value);
                       setOverwriting(false);
                     }}
-                    placeholder="例: CreditScoringAPI.json"
+                    placeholder={t('project.fileModal.filenamePlaceholder')}
                     className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
                   />
                 </label>
                 {overwriting && (
                   <div className="rounded-lg border border-amber-600/60 bg-amber-900/20 p-3 text-[11px] text-amber-200 leading-relaxed">
-                    同名のファイルが既に存在します。「上書き保存」を押すと置き換えます。
+                    {t('project.fileModal.overwriteWarning')}
                   </div>
                 )}
                 <div className="flex justify-end gap-2 pt-2">
@@ -279,7 +290,7 @@ export function ProjectFileModal() {
                     onClick={close}
                     className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-white transition-colors"
                   >
-                    キャンセル
+                    {t('project.common.cancel')}
                   </button>
                   <button
                     onClick={handleSave}
@@ -289,7 +300,7 @@ export function ProjectFileModal() {
                     }`}
                   >
                     <Save size={14} />
-                    {overwriting ? '上書き保存' : '保存'}
+                    {overwriting ? t('project.fileModal.overwriteButton') : t('project.common.save')}
                   </button>
                 </div>
               </div>
@@ -297,15 +308,15 @@ export function ProjectFileModal() {
               <div className="flex flex-col gap-3">
                 {!dir ? (
                   <p className="text-[11px] text-slate-400">
-                    まず保存先フォルダを選択してください。
+                    {t('project.fileModal.selectFolderFirst')}
                   </p>
                 ) : needsReconnect ? (
                   <p className="text-[11px] text-amber-200">
-                    フォルダへのアクセスが切れています。上の「接続」を押してから一覧を表示します。
+                    {t('project.fileModal.reconnectNeeded')}
                   </p>
                 ) : files.length === 0 ? (
                   <p className="text-[11px] text-slate-400">
-                    このフォルダに保存済みのプロジェクト（.json）はありません。
+                    {t('project.fileModal.noFiles')}
                   </p>
                 ) : (
                   <ul className="flex flex-col gap-1.5 max-h-[40vh] overflow-y-auto">

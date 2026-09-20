@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Search, ScanSearch, X } from 'lucide-react';
-import { BUNDLED_THREAT_LIBRARY } from '../../../threat-library/loader/bundledLibrary';
+import { getThreatLibrary } from '../../../threat-library/loader/bundledLibrary';
 import { selectCustomLibraries, useCustomRulesStore } from '../../../features/custom-rules/store';
 import { mergeThreatRules } from '../../../features/custom-rules/mergeRules';
 import type { Framework, Severity } from '../../../core/model/types';
@@ -8,10 +8,10 @@ import type { ThreatRule } from '../../../threat-library/schema/threatRule';
 import { componentRegistry } from '../../../component-library/defaultRegistry';
 import type { CategoryDefinition } from '../../../component-library/schema/component';
 import { renderIcon } from '../../../component-library/iconRegistry';
-import { FRAMEWORK_VIEW_LABELS } from '../../frameworkLabels';
+import { FRAMEWORK_VIEW_LABEL_KEYS } from '../../frameworkLabels';
 import { useRuleLookup } from '../useRuleLookup';
 import { RuleCard } from './RuleCard';
-import { useT } from '../../../i18n';
+import { useLocale, useT } from '../../../i18n';
 
 /** severity の強さ順位。canonicalId 畳み込みの代表選定（最大値採用）に使う。buildThreatViews と同じ規則。 */
 const SEVERITY_RANK: Record<Severity, number> = { Low: 0, Medium: 1, High: 2, Critical: 3 };
@@ -84,12 +84,13 @@ interface LibraryInspectorModalProps {
  */
 export function LibraryInspectorModal({ onClose }: LibraryInspectorModalProps) {
   const t = useT();
+  const [locale] = useLocale();
   const customLibraries = useCustomRulesStore(selectCustomLibraries);
   const { getSource } = useRuleLookup();
 
   const merged = useMemo(
-    () => mergeThreatRules(BUNDLED_THREAT_LIBRARY.rules, customLibraries),
-    [customLibraries],
+    () => mergeThreatRules(getThreatLibrary(locale).rules, customLibraries),
+    [customLibraries, locale],
   );
 
   const nodeTypes = useMemo(() => collectNodeTypes(merged.rules), [merged.rules]);
@@ -238,7 +239,7 @@ export function LibraryInspectorModal({ onClose }: LibraryInspectorModalProps) {
               <option value="ALL">{t('libraryInspector.filter.frameworkAll')}</option>
               {FRAMEWORK_OPTIONS.map((f) => (
                 <option key={f} value={f}>
-                  {FRAMEWORK_VIEW_LABELS[f]}
+                  {t(FRAMEWORK_VIEW_LABEL_KEYS[f])}
                 </option>
               ))}
             </select>

@@ -28,7 +28,7 @@ import {
   type ChokePoint,
 } from '../../features/attack-tree/analyzeAttackGraph';
 import { SEVERITY_BADGE_SOLID } from '../../core/model/severityColors';
-import { CONTROL_STATUS_BADGE, CONTROL_STATUS_LABEL } from './controlStatusStyle';
+import { CONTROL_STATUS_BADGE, CONTROL_STATUS_LABEL_KEY } from './controlStatusStyle';
 import { useT } from '../../i18n';
 
 /** i18n の t() 関数の型（useT の戻り値）。 */
@@ -286,6 +286,7 @@ function hopPath(
 
 /** 検出根拠一覧の 1 行（脅威名 + severity + Exploitability + controlStatus）。 */
 function ThreatRefRow({ threat }: { threat: ThreatRef }) {
+  const t = useT();
   return (
     <div className="flex items-start justify-between gap-2 text-[10px]">
       <span className="text-slate-300 leading-snug">{threat.name}</span>
@@ -300,7 +301,7 @@ function ThreatRefRow({ threat }: { threat: ThreatRef }) {
         )}
         {threat.controlStatus && (
           <span className={`px-1.5 py-0.5 rounded border font-bold ${CONTROL_STATUS_BADGE[threat.controlStatus]}`}>
-            {CONTROL_STATUS_LABEL[threat.controlStatus]}
+            {t(CONTROL_STATUS_LABEL_KEY[threat.controlStatus])}
           </span>
         )}
       </span>
@@ -567,7 +568,7 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
           <button
             onClick={onClose}
             className="text-slate-500 hover:text-slate-200 transition-colors"
-            aria-label="閉じる"
+            aria-label={t('analytics.close')}
           >
             <X size={16} />
           </button>

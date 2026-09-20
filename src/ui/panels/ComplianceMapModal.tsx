@@ -4,6 +4,7 @@ import { useDiagramStore } from '../../core/state/diagramStore';
 import { BUNDLED_COMPLIANCE_MAP } from '../../compliance/loader/bundledComplianceMap';
 import type { ComplianceItem, StandardId } from '../../compliance/schema/complianceItem';
 import { ZeroTrustForAiAgents } from './ZeroTrustForAiAgents';
+import { useT } from '../../i18n';
 
 /** 規格リストの一番上に固定表示する「Zero Trust for AI Agents」ビューのセンチネル ID。 */
 const ZERO_TRUST_VIEW = '__zero-trust-ai-agents__' as const;
@@ -16,6 +17,7 @@ const ZERO_TRUST_VIEW = '__zero-trust-ai-agents__' as const;
 export function ComplianceMapModal() {
   const isOpen = useDiagramStore((s) => s.isComplianceMapOpen);
   const closeComplianceMap = useDiagramStore((s) => s.closeComplianceMap);
+  const t = useT();
 
   const standardIds = useMemo(
     () => Array.from(BUNDLED_COMPLIANCE_MAP.standards.keys()),
@@ -80,13 +82,16 @@ export function ComplianceMapModal() {
               Compliance Map
             </h2>
             <span className="text-[10px] text-slate-500 ml-2">
-              {standardIds.length} 規格 / 合計 {BUNDLED_COMPLIANCE_MAP.index.size} 項目
+              {t('analytics.compliance.standardsSummary', {
+                standards: standardIds.length,
+                total: BUNDLED_COMPLIANCE_MAP.index.size,
+              })}
             </span>
           </div>
           <button
             onClick={closeComplianceMap}
             className="text-slate-500 hover:text-slate-200 transition-colors"
-            aria-label="閉じる"
+            aria-label={t('analytics.close')}
           >
             <X size={16} />
           </button>
@@ -137,7 +142,9 @@ export function ComplianceMapModal() {
                       </span>
                     )}
                   </div>
-                  <div className="text-[10px] text-slate-500 mt-1">{count} 項目</div>
+                  <div className="text-[10px] text-slate-500 mt-1">
+                    {t('analytics.compliance.itemsCount', { count })}
+                  </div>
                 </button>
               );
             })}
@@ -166,10 +173,12 @@ export function ComplianceMapModal() {
                           rel="noreferrer noopener"
                           className="inline-flex items-center gap-1 text-slate-400 hover:text-emerald-400 transition-colors"
                         >
-                          公式情報 <ExternalLink size={10} />
+                          {t('analytics.compliance.officialLink')} <ExternalLink size={10} />
                         </a>
                         {selectedStandard.license && (
-                          <span>ライセンス: {selectedStandard.license}</span>
+                          <span>
+                            {t('analytics.compliance.license', { license: selectedStandard.license })}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -177,7 +186,7 @@ export function ComplianceMapModal() {
                       type="text"
                       value={filter}
                       onChange={(e) => setFilter(e.target.value)}
-                      placeholder="ref / 名称 / 要約 で絞り込み"
+                      placeholder={t('analytics.compliance.filterPlaceholder')}
                       className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-colors w-[260px]"
                     />
                   </div>
@@ -190,11 +199,11 @@ export function ComplianceMapModal() {
 
                 <div className="flex-1 overflow-y-auto px-6 py-4">
                   {filteredItems.length === 0 ? (
-                    <p className="text-xs text-slate-500">該当する項目はありません。</p>
+                    <p className="text-xs text-slate-500">{t('analytics.compliance.noItems')}</p>
                   ) : (
                     <ul className="flex flex-col gap-2">
                       {filteredItems.map((item) => (
-                        <ItemRow key={item.ref} item={item} />
+                        <ItemRow key={item.ref} item={item} t={t} />
                       ))}
                     </ul>
                   )}
@@ -202,7 +211,7 @@ export function ComplianceMapModal() {
               </>
             ) : (
               <div className="flex-1 flex items-center justify-center text-xs text-slate-500">
-                左のリストから規格を選択してください。
+                {t('analytics.compliance.selectPrompt')}
               </div>
             )}
           </section>
@@ -212,7 +221,7 @@ export function ComplianceMapModal() {
   );
 }
 
-function ItemRow({ item }: { item: ComplianceItem }) {
+function ItemRow({ item, t }: { item: ComplianceItem; t: ReturnType<typeof useT> }) {
   return (
     <li className="p-3 rounded-lg bg-slate-800/40 border border-slate-800">
       <div className="flex items-baseline gap-3 flex-wrap">
@@ -226,7 +235,7 @@ function ItemRow({ item }: { item: ComplianceItem }) {
             target="_blank"
             rel="noreferrer noopener"
             className="text-slate-500 hover:text-emerald-400 transition-colors"
-            title="原文リンク"
+            title={t('analytics.compliance.originalLinkTooltip')}
           >
             <ExternalLink size={11} />
           </a>
@@ -239,7 +248,7 @@ function ItemRow({ item }: { item: ComplianceItem }) {
             <span
               key={`${rel.standard}:${rel.ref}`}
               className="text-[10px] px-2 py-0.5 rounded bg-slate-700/40 text-slate-400 border border-slate-700"
-              title="対応する他規格項目（クロスウォーク）"
+              title={t('analytics.compliance.crosswalkTooltip')}
             >
               {rel.standard} / {rel.ref}
             </span>

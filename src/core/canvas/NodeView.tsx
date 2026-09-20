@@ -12,6 +12,7 @@ import { SEVERITY_BG } from '../model/severityColors';
 import { getNodeDisplayName } from '../model/nodeDisplay';
 import { formatElementalId } from '../model/elementalId';
 import { SHAPE_DIMENSIONS } from './nodeGeometry';
+import { useT } from '../../i18n';
 
 /** 未登録コンポーネント型のフォールバック表示。 */
 const FALLBACK_SHAPE: ShapeKind = 'rounded';
@@ -95,6 +96,7 @@ export function NodeView({
   onSelectChild,
   onDelete,
 }: NodeViewProps) {
+  const t = useT();
   const config = componentRegistry.get(node.type);
   const shape: ShapeKind = config?.shape ?? FALLBACK_SHAPE;
   const color = config?.color ?? FALLBACK_COLOR;
@@ -164,7 +166,7 @@ export function NodeView({
           {overflowCount > 0 && (
             <span
               className="bg-slate-700 text-slate-100 text-[9px] font-black px-1.5 py-[3px] rounded-md border border-slate-950 shadow"
-              title={`他 ${overflowCount} 件`}
+              title={t('canvas.node.overflowCount', { count: overflowCount })}
             >
               +{overflowCount}
             </span>

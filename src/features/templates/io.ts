@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { LayerData } from '../../core/model/types';
 import { PersistedLayerDataSchema } from '../persistence/schema';
+import { getLocale, translate } from '../../i18n';
 
 /**
  * レイヤーテンプレートの **可搬な** エクスポート形式（JSON）。
@@ -59,7 +60,10 @@ export function parseTemplateFromJson(text: string): ParseTemplateResult {
   try {
     parsed = JSON.parse(text);
   } catch (e) {
-    return { ok: false, error: `JSON 構文エラー: ${(e as Error).message}` };
+    return {
+      ok: false,
+      error: translate('io.jsonSyntaxError', getLocale(), { message: (e as Error).message }),
+    };
   }
 
   const result = TemplateExportSchema.safeParse(parsed);
@@ -67,7 +71,7 @@ export function parseTemplateFromJson(text: string): ParseTemplateResult {
     const issues = result.error.issues
       .map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`)
       .join('; ');
-    return { ok: false, error: `検証エラー: ${issues}` };
+    return { ok: false, error: translate('io.validationError', getLocale(), { issues }) };
   }
 
   return { ok: true, name: result.data.name, layer: result.data.layer as LayerData };

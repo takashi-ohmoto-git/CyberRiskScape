@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FilePlus, Save, X } from 'lucide-react';
 import { useDiagramStore } from '../../core/state/diagramStore';
+import { useT } from '../../i18n';
 import { serializeProject } from '../../features/persistence/serialize';
 import {
   ensurePermission,
@@ -34,6 +35,7 @@ function uniqueFilename(existing: string[], base: string): string {
  * 非対応ブラウザでは JSON ダウンロードにフォールバックする。
  */
 export function NewProjectModal() {
+  const t = useT();
   const isOpen = useDiagramStore((s) => s.isNewProjectConfirmOpen);
   const close = useDiagramStore((s) => s.closeNewProjectConfirm);
   const newProject = useDiagramStore((s) => s.newProject);
@@ -81,7 +83,7 @@ export function NewProjectModal() {
       dir = await pickDirectory();
       if (!dir) return false; // ユーザーキャンセル
       if (!(await ensurePermission(dir))) {
-        throw new Error('フォルダへのアクセスが許可されませんでした。');
+        throw new Error(t('project.fileModal.permissionDenied'));
       }
     }
     // 同名ファイルを黙って上書きしないよう、衝突時は連番を付ける
@@ -98,7 +100,10 @@ export function NewProjectModal() {
       if (!saved) return; // キャンセル時はモーダルを開いたまま
       newProject();
     } catch (e) {
-      setStatus({ kind: 'error', message: `保存に失敗: ${(e as Error).message}` });
+      setStatus({
+        kind: 'error',
+        message: t('project.fileModal.saveFailed', { message: (e as Error).message }),
+      });
     } finally {
       setBusy(false);
     }
@@ -115,23 +120,22 @@ export function NewProjectModal() {
       >
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold uppercase tracking-widest text-slate-300">
-            新規プロジェクト
+            {t('project.newModal.title')}
           </h2>
           <button
             onClick={close}
             className="text-slate-500 hover:text-slate-200 transition-colors"
-            aria-label="閉じる"
+            aria-label={t('project.common.close')}
           >
             <X size={16} />
           </button>
         </div>
 
         <p className="text-[12px] text-slate-300 leading-relaxed">
-          現在の作業内容を消去して、まっさらな新規プロジェクトを作成します。
-          作成する前に、現在のプロジェクトをファイルへ保存しますか？
+          {t('project.newModal.confirmMessage')}
         </p>
         <p className="text-[11px] text-amber-200 leading-relaxed rounded-lg border border-amber-600/60 bg-amber-900/20 p-3">
-          保存せずに作成すると、現在の図・手動脅威・DREAD 評価などは失われます。
+          {t('project.newModal.warning')}
         </p>
 
         {status.kind === 'error' && (
@@ -144,7 +148,7 @@ export function NewProjectModal() {
             disabled={busy}
             className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-white transition-colors disabled:opacity-40"
           >
-            キャンセル
+            {t('project.common.cancel')}
           </button>
           <button
             onClick={() => newProject()}
@@ -152,7 +156,7 @@ export function NewProjectModal() {
             className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white rounded-lg transition-colors bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <FilePlus size={14} />
-            保存せずに作成
+            {t('project.newModal.createWithoutSaving')}
           </button>
           <button
             onClick={() => void handleSaveAndCreate()}
@@ -160,7 +164,7 @@ export function NewProjectModal() {
             className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white rounded-lg transition-colors bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Save size={14} />
-            {busy ? '保存中…' : '保存して作成'}
+            {busy ? t('project.common.saving') : t('project.newModal.saveAndCreate')}
           </button>
         </div>
       </div>

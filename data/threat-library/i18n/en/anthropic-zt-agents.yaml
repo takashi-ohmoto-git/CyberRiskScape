@@ -1,0 +1,124 @@
+# English overlay for `data/threat-library/anthropic-zt-agents.yaml`.
+#
+# The Japanese file is the source of truth: only `name` / `category` / `description` /
+# `mitigation` (plus `conditions[].description` and `references[].title` where present)
+# are translated here, keyed by rule id. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - Keep `{{token}}` placeholders exactly as they appear in the original.
+#   - Keep the `[Foundation]` / `[Enterprise]` / `[Advanced]` markup — the maturity
+#     tiers are re-derived from this text.
+#   - Preserve the Can / Cannot pair and the blast radius statement in `description`
+#     where the original states them (docs/threat-schema.md §7.5).
+#   - `references` is keyed by the index in the original array, and only the entries
+#     that need translating are listed. Keep a genuinely Japanese document title as
+#     its original title and add an English gloss; `url` is never translated.
+#   - This source is based on Anthropic "Zero Trust for AI Agents" — use the
+#     original English terminology (blast radius, least agency, confused deputy,
+#     Foundation/Enterprise/Advanced, agent identity, delegation, etc.) rather
+#     than ad hoc phrasing.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+rules:
+  anthropic-zt-agent-identity-attribution-001:
+    category: "Identity"
+    name: "Absence of agent identity"
+    description: "When {{nodeName}} is not assigned a persistent, cryptographically backed unique identifier, there is no basis for log correlation, action attribution, or access control, making it impossible to reconstruct who did what during an incident."
+    mitigation: "[Foundation] Assign each agent instance a persistent ID backed by key material rather than a label, and manage its lifecycle. [Enterprise] Authenticate service-to-service connections with X.509 certificates, and operate rotation and revocation. [Advanced] Store keys in an HSM or TPM and verify agent integrity via attestation before granting access."
+    references:
+      "1":
+        title: "OWASP Top 10 for Agentic Applications 2026 - ASI03: Identity and Privilege Abuse (related mapping)"
+
+  anthropic-zt-static-api-key-001:
+    category: "Credentials"
+    name: "Static API keys"
+    description: "Calls from {{sourceName}} to {{targetName}} are made without authentication or with long-lived shared credentials. For an attacker equipped with model-assisted code analysis, a static API key is a first target, and it fails to meet even the minimum Foundation-tier bar."
+    mitigation: "[Foundation] Issue minute-scale short-lived tokens via OAuth 2.0 or equivalent with automatic refresh. Prohibit embedding credentials in code or configuration files. [Enterprise] Use mTLS with certificate pinning and certificate transparency monitoring. [Advanced] Root credentials in hardware-attested storage that cannot be exported from a compromised host."
+
+  anthropic-zt-confused-deputy-001:
+    category: "Identity"
+    name: "Confused deputy / privilege inheritance on delegation"
+    description: "When {{nodeName}} delegates a task to another agent and passes its own full privilege context along unchanged, the lower-privileged worker can perform actions it would not otherwise be allowed to, acting under the delegator's privileges. The same root cause underlies the reverse confused deputy pattern, where a lower-privileged agent hands a seemingly legitimate instruction to a higher-privileged one."
+    mitigation: "[Foundation] Re-verify the calling user's intent on every delegation, and design the worker side to be re-granted only a minimal privilege scope. [Enterprise] Sign inter-agent messages, carry the original claims, and re-evaluate authorization at every step. [Advanced] Elevate privileges only for the duration of the delegation using JIT/JEA (Just-In-Time / Just-Enough-Administration), and revoke them automatically as soon as it completes."
+    references:
+      "1":
+        title: "OWASP Top 10 for Agentic Applications 2026 - ASI03: Identity and Privilege Abuse (related mapping)"
+
+  anthropic-zt-memory-privilege-retention-001:
+    category: "Memory"
+    name: "Cross-session privilege retention"
+    description: "When {{nodeName}} caches credentials or API keys in memory for context reuse without proper segmentation, an attacker can extract the cached credentials through a prompt in a separate session and perform actions the attacker could never obtain on their own — a privilege escalation that crosses session boundaries."
+    mitigation: "[Foundation] Mandate per-session memory isolation and prohibit persisting sensitive categories such as credentials and tokens. [Enterprise] Tag memory writes with source attribution and apply a TTL to memory originating from unverified external input. [Advanced] Verify integrity with cryptographic hashing and force re-authentication whenever memory is reused across a trust boundary."
+    references:
+      "1":
+        title: "OWASP Top 10 for Agentic Applications 2026 - ASI03: Identity and Privilege Abuse (related mapping)"
+
+  anthropic-zt-tool-poisoning-rug-pull-001:
+    category: "Supply Chain"
+    name: "Tool poisoning / rug pull"
+    description: "If the tool descriptor (such as an MCP descriptor), schema, or metadata of {{nodeName}} is tampered with, the agent invokes the tool based on a spoofed capability. The same family includes the rug pull pattern, where a legitimate tool is later swapped for a malicious version. The world's first known malicious MCP server impersonated a legitimate email service and covertly copied outgoing mail."
+    mitigation: "[Foundation] Require signature verification on tool descriptors and reject calls with a missing or invalid signature. [Enterprise] Self-host MCP servers, run them on an immutable platform, and re-sign and re-review code before every update. [Advanced] Integrate deployment verification and integrity attestation for tool descriptors into CI, and quarantine automatically when a change is detected."
+    references:
+      "1":
+        title: "OWASP Top 10 for Agentic Applications 2026 - ASI04: Agentic Supply Chain Vulnerabilities (related mapping)"
+
+  anthropic-zt-tool-chaining-001:
+    category: "Tool"
+    name: "Chained abuse of legitimate tools"
+    description: "When {{nodeName}} holds both an internally trusted tool such as a CRM and an external tool such as one for sending email, an attacker can chain a path that neither tool alone would expose — retrieving customer data and then sending it out — to exfiltrate data. Because each command runs with a legitimate binary and legitimate credentials, host-centric monitoring cannot detect it."
+    mitigation: "[Foundation] Declare tool allow-lists per agent capability, and block internal-read and external-send tools from coexisting by design. [Enterprise] Detect patterns in tool call sequences and apply ABAC to evaluate data sensitivity against destination context. [Advanced] Compartmentalize agents by function and place an independent authorization gate on every cross-call."
+    references:
+      "1":
+        title: "OWASP Top 10 for Agentic Applications 2026 - ASI02: Tool Misuse and Exploitation (related mapping)"
+
+  anthropic-zt-untrusted-input-sandbox-001:
+    category: "Isolation"
+    name: "Missing sandbox for untrusted input"
+    description: "When {{nodeName}} processes untrusted input such as web content, documents, or fetched results without running inside a sandbox, a successful indirect prompt injection puts the host OS, file system, and network at the attacker's disposal. Sandboxing is not aspirational for an agent that handles untrusted input — it is mandatory."
+    mitigation: "[Foundation] Run in a container with network and mount restrictions. [Enterprise] Use a container runtime with syscall filtering such as gVisor, with restricted mount volumes and network access. [Advanced] Isolate at the hardware level with AMD SEV, Intel TDX, or a microVM, and attest the integrity of the execution environment."
+
+  anthropic-zt-config-integrity-001:
+    category: "Tampering"
+    name: "Agent configuration integrity"
+    description: "If the configuration files of {{nodeName}} — prompts, allow-lists, tool settings — are tampered with, an attacker can expand privileges, disable security controls, or substitute instructions without changing a single line of code. Configuration must be treated as an attack surface with the same rigor as code."
+    mitigation: "[Foundation] Store configuration in version control and require review. [Enterprise] Cryptographically sign approved configuration and verify the signature at deploy time; reject deployment on a missing or invalid signature. [Advanced] Deploy the agent as an immutable image, verify integrity via attestation, and update only by replacement, never in-place modification."
+
+  anthropic-zt-memory-store-tampering-001:
+    category: "Tampering"
+    name: "Agent memory store integrity"
+    description: "{{nodeName}} holds the agent's long-term memory, summaries, and statistical recall. Without trust evaluation of write sources or integrity verification, poisoned data can persist and continue to cause misjudgment, impersonation, and data leakage across later sessions — an attack surface on the store itself, distinct from memory poisoning on the agent side."
+    mitigation: "[Foundation] Require a source attribution tag (trusted/untrusted) on every memory write, and apply a TTL to untrusted entries. [Enterprise] Verify integrity with a cryptographic hash at read time, and quarantine and alert when poisoning is detected. [Advanced] Use a version-controlled memory store that supports rollback and forensic analysis, and monitor for drift with ML-based deviation detection."
+    references:
+      "1":
+        title: "OWASP Top 10 for Agentic Applications 2026 - ASI06: Memory & Context Poisoning (related mapping)"
+
+  anthropic-zt-delegation-integrity-001:
+    category: "Identity"
+    name: "Lack of integrity in delegation messages"
+    description: "When the delegation path from {{sourceName}} to {{targetName}} lacks authentication or encryption, it becomes a route for message tampering, spoofed delegation, or forged original claims. Combined with a confused deputy, a lower-privileged worker ends up acting with the delegator's privileges."
+    mitigation: "[Foundation] Require an authentication token on every delegation message and prohibit plaintext. [Enterprise] Use HMAC signatures and carry the original claims, re-evaluating authorization at every step. [Advanced] Trace the entire delegation chain with OpenTelemetry, detect anomalous patterns in the SOC, and quarantine automatically."
+
+  anthropic-zt-shared-context-poisoning-001:
+    category: "Tampering"
+    name: "Shared context poisoning"
+    description: "In a multi-tenant environment, when poisoned data disguised as ordinary conversation is injected into shared context reused across sessions — summaries, peer-agent feedback, statistics-based knowledge — a new user session inherits the poisoned context, causing misinformation, unsafe code execution, or incorrect tool invocation. Detection is difficult because no single change looks malicious on its own — it is a gradual drift."
+    mitigation: "[Foundation] Require per-tenant context isolation, with sharing disabled by default. [Enterprise] Evaluate the trust of shared-memory write sources and monitor drift with statistical deviation detection. [Advanced] Record a provenance chain for every context element and use ML-based behavioral analysis to surface latent poisoning."
+    references:
+      "1":
+        title: "OWASP Top 10 for Agentic Applications 2026 - ASI06: Memory & Context Poisoning (related mapping)"
+
+  anthropic-zt-agent-observability-gap-001:
+    category: "Observability"
+    name: "Gap in agent action logging and traceability"
+    description: "When the tool calls, data access, and outbound communications of {{nodeName}} are not comprehensively logged, a compromise cannot be detected, dwell time grows, and incident investigation and compliance evidence become impossible. Even when an agent has an assigned identity, if its actions are not logged, there is no way to later reconstruct who did what — a visibility gap distinct from the attribution gap."
+    mitigation: "[Foundation] Log every tool call, data access, and external communication in full, including agent ID, timestamp, and request context, retained per regulatory requirements. [Enterprise] Write to append-only storage and cryptographically verify log integrity. [Advanced] Stream in real time to a SIEM to correlate with other security events, and achieve distributed tracing across multiple agents with OpenTelemetry."
+
+  anthropic-zt-agent-recovery-gap-001:
+    category: "Recovery"
+    name: "Gap in recovery to a known-good state"
+    description: "When {{nodeName}} has no documented, tested rollback procedure or means of restoring a known-good state, a compromise caused by configuration tampering, memory poisoning, or a malicious update cannot be recovered from quickly, extending both dwell time and blast radius. A lack of recovery capability does not by itself constitute a successful attack, but it is a secondary risk that prolongs the damage once an attack does succeed."
+    mitigation: "[Foundation] Document restoration procedures to a prior version, test them regularly, and retain the immediately preceding version. [Enterprise] Implement automated rollback with health checks, restoring automatically when an anomaly is detected. [Advanced] Implement self-healing — isolation via circuit breaker plus automatic provisioning of a replacement agent — verifying backup integrity before restoration."

@@ -14,6 +14,7 @@ import {
   presentComponentTypes,
   presentEdgeNotations,
 } from '../notation/legend';
+import { useT } from '../../i18n';
 
 /**
  * 凡例（Legend）。キャンバスで実際に使われているコンポーネント型・線記法・境界型だけを
@@ -23,6 +24,7 @@ import {
  * 図とズレない単一ソースを保つ。
  */
 export function Legend() {
+  const t = useT();
   const nodes = useDiagramStore(selectActiveNodes);
   const edges = useDiagramStore(selectActiveEdges);
   const boundaries = useDiagramStore(selectActiveBoundaries);
@@ -52,9 +54,9 @@ export function Legend() {
       <button
         onClick={() => setCollapsed((v) => !v)}
         className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-100 transition-colors"
-        title={collapsed ? '凡例を開く' : '凡例を閉じる'}
+        title={collapsed ? t('canvas.legend.open') : t('canvas.legend.close')}
       >
-        凡例
+        {t('canvas.legend.title')}
         {collapsed ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
       </button>
 
@@ -63,7 +65,7 @@ export function Legend() {
           {components.length > 0 && (
             <section className="space-y-1.5">
               <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                コンポーネント
+                {t('canvas.legend.components')}
               </h4>
               {components.map(({ type, def }) => (
                 <div key={type} className="flex items-center gap-2">
@@ -83,7 +85,7 @@ export function Legend() {
           {edgeNotations.length > 0 && (
             <section className="space-y-1.5">
               <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                データフロー
+                {t('canvas.legend.dataFlow')}
               </h4>
               {edgeNotations.map((entry) => (
                 <div key={entry.id} className="flex items-center gap-2">
@@ -98,8 +100,8 @@ export function Legend() {
                       strokeDasharray={entry.swatch.dash}
                     />
                   </svg>
-                  <span className="text-[11px] truncate" title={entry.label}>
-                    {entry.label}
+                  <span className="text-[11px] truncate" title={t(entry.labelKey)}>
+                    {t(entry.labelKey)}
                   </span>
                 </div>
               ))}
@@ -109,7 +111,7 @@ export function Legend() {
           {boundaryTypes.length > 0 && (
             <section className="space-y-1.5">
               <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                トラスト境界
+                {t('canvas.legend.trustBoundary')}
               </h4>
               {boundaryTypes.map((type) => {
                 const config = BOUNDARY_TYPES[type];
@@ -120,8 +122,8 @@ export function Legend() {
                         config.isDashed ? 'border-dashed' : 'border-solid'
                       } ${config.rounded ? 'rounded-lg' : 'rounded-none'}`}
                     />
-                    <span className="text-[11px] truncate" title={config.name}>
-                      {config.name}
+                    <span className="text-[11px] truncate" title={t(config.nameKey)}>
+                      {t(config.nameKey)}
                     </span>
                   </div>
                 );

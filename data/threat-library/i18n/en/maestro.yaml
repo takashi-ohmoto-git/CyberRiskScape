@@ -1,0 +1,98 @@
+# English overlay for `data/threat-library/maestro.yaml`.
+#
+# The Japanese file is the source of truth: only `name` / `category` / `description` /
+# `mitigation` (plus `conditions[].description` and `references[].title` where present)
+# are translated here, keyed by rule id. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - Keep `{{token}}` placeholders exactly as they appear in the original.
+#   - Keep the `[Foundation]` / `[Enterprise]` / `[Advanced]` markup — the maturity
+#     tiers are re-derived from this text.
+#   - Preserve the Can / Cannot pair and the blast radius statement in `description`
+#     (docs/threat-schema.md §7.5).
+#   - `references` is keyed by the index in the original array, and only the entries
+#     that need translating are listed. Keep a genuinely Japanese document title as
+#     its original title and add an English gloss; `url` is never translated.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+rules:
+  maestro-agent-runaway-001:
+    category: "Agent"
+    name: "Runaway Autonomous Action"
+    description: "Risk that prompt injection or similar attacks cause the agent to take unintended actions."
+    mitigation: "Make prompt boundaries explicit, require human approval for dangerous actions, and introduce guardrails (allow-lists)."
+
+  maestro-tool-edge-001:
+    category: "Tool"
+    name: "Privilege Escalation Risk"
+    description: "Authentication for tool execution privileges is insufficient. The call from the agent to {{targetName}} is not adequately protected, creating a risk of privilege escalation and lateral movement."
+    mitigation: "Require strong authentication such as MFA before the tool call, and minimize the execution scope."
+    conditions:
+      - description: "The call to {{targetName}} is protected by MFA."
+
+  maestro-agent-memory-poisoning-001:
+    category: "Memory"
+    name: "Long-Term Memory Poisoning"
+    description: "Risk that malicious content is written into the agent's long-term memory, summaries, or vector memory, continuing to induce misjudgment, impersonation, and information disclosure across subsequent sessions."
+    mitigation: "Evaluate the trust level of memory-write sources, prohibit memory for sensitive categories, take generational snapshots with diff auditing, and expire memory originating from external input."
+
+  maestro-agent-goal-misalignment-001:
+    category: "Reasoning"
+    name: "Goal Misalignment"
+    description: "Risk that ambiguous instructions, reward hacking, or misled chain-of-thought reasoning cause the agent to continue acting outside its intended business goal (excessive exploration, unauthorized optimization, loops)."
+    mitigation: "Make goal specifications explicit with verifiable completion conditions, cap step counts and budgets, detect drift with an external evaluation function, and keep a human in the loop."
+
+  maestro-multi-agent-collusion-001:
+    category: "Multi-agent"
+    name: "Multi-Agent Collusion"
+    description: "Risk that as multiple agents exchange dialogue, their individual safety constraints are mutually disabled (collusive jailbreaking, shifting responsibility onto each other)."
+    mitigation: "Audit-log inter-agent messages, clarify roles and separate privileges, apply independent guardrails to final actions, and require human approval of consensus outcomes."
+
+  maestro-tool-output-handling-001:
+    category: "Tool"
+    name: "Output Trust Boundary Violation"
+    description: "Risk that responses from external tools/APIs (fetched web pages, email bodies, search results) are pulled into the agent's reasoning while still untrusted, becoming a vector for indirect prompt injection and misjudgment."
+    mitigation: "Isolate tool responses with an untrusted label, detect and neutralize embedded instructions, enforce a response schema, and trigger sensitive actions only on explicit user request."
+    references:
+      "1":
+        title: "OWASP Top 10 for Agentic Applications 2026 - ASI02: Tool Misuse and Exploitation (related mapping)"
+
+  maestro-agent-internet-egress-001:
+    category: "Agent"
+    name: "Uncontrolled Egress"
+    description: "The connection from agent {{sourceName}} to {{targetName}} traverses the public network. It risks being abused as a destination outside the allow-list or as a data exfiltration path."
+    mitigation: "Allow-list the agent's egress destinations, audit traffic through a DLP proxy, and block access to unapproved domains."
+    references:
+      "0":
+        title: "OWASP AI Exchange - Agentic AI (egress control and allow-listing)"
+
+  maestro-lethal-trifecta-001:
+    category: "Agent"
+    name: "Lethal Trifecta"
+    description: "{{nodeName}} is configured with the risk that the Lethal Trifecta (ingestion of attacker-controlled data x access to sensitive data x the ability to exfiltrate externally) holds simultaneously. Confirm across the entire diagram that at least one of the three elements is broken."
+    mitigation: "Break at least one of the three elements: (1) isolate external input with an untrusted label and detect/neutralize embedded instructions, (2) restrict sensitive data access to least privilege with human approval, (3) allow-list egress and block unapproved domains."
+
+  maestro-agent-untrusted-ingress-001:
+    category: "Agent"
+    name: "Prompt Input from Outside the Trust Boundary"
+    description: "The prompt input path from {{sourceName}} to {{targetName}} (an agent) passes outside the trust boundary. It risks becoming an entry point for indirect prompt injection or instruction substitution."
+    mitigation: "Protect ingress with MFA or an authenticated token, and label input as untrusted. Enable sensitive tool calls only on explicit user request. Relocate the AGENT inside the Internal boundary where possible."
+    references:
+      "1":
+        title: "OWASP Top 10 for Agentic Applications 2026 - ASI01: Agent Goal Hijack (related mapping)"
+
+  maestro-partner-supply-chain-tool-001:
+    category: "Supply Chain"
+    name: "Poisoning via a Partner Tool"
+    description: "The call from {{sourceName}} to {{targetName}} (within the Partner boundary) risks becoming a propagation path for supply-chain compromise (tampered dependencies, third-party account takeover)."
+    mitigation: "Verify the partner's SBOM, SLA, and audit trail, and call with a least-privilege scoped token. Treat responses as untrusted, and require schema validation and integrity verification."
+
+  maestro-agent-untrusted-response-001:
+    category: "Agent"
+    name: "Response Outside the Trust Boundary"
+    description: "The response from agent {{sourceName}} reaches {{targetName}} over a path with neither authentication nor encryption. This poses a serious risk of response tampering, eavesdropping, and misinformation spread."
+    mitigation: "Sign responses (HMAC) and require TLS. Add schema validation and integrity verification on the destination side. Relocate the AGENT inside the Internal boundary where possible."

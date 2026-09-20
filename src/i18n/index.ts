@@ -48,12 +48,21 @@ export function getLocale(): Locale {
 export function setLocale(locale: Locale): void {
   if (locale === currentLocale) return;
   currentLocale = locale;
+  // 支援技術と検索エンジンのために、文書の言語属性も実際の表示言語へ揃える。
+  if (typeof document !== 'undefined') {
+    document.documentElement.lang = locale;
+  }
   listeners.forEach((fn) => fn());
 }
 
 function subscribe(onChange: () => void): () => void {
   listeners.add(onChange);
   return () => listeners.delete(onChange);
+}
+
+/** locale 変更を React 外から購読する（永続化層が使う）。解除関数を返す。 */
+export function subscribeLocale(onChange: () => void): () => void {
+  return subscribe(onChange);
 }
 
 /** 現在の locale を購読する。locale 変更で再レンダーされる。 */

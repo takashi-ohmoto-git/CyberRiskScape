@@ -1,4 +1,5 @@
 import type { Framework, FrameworkView } from '../core/model/types';
+import type { TranslationKey } from '../i18n';
 
 /**
  * CANVAS のフレームワーク切替タブ。`'ALL'` を既定の先頭に置く。
@@ -11,11 +12,11 @@ export const FRAMEWORK_VIEWS: FrameworkView[] = ['ALL', 'STRIDE', 'AI', 'Agentic
  * 成熟度の対比を表現する。STRIDE のみ権威付けで元フレームワーク名を併記し、AI/AgenticAI は
  * 特定フレームワークではなく概念カテゴリのため併記しない。
  */
-export const FRAMEWORK_VIEW_LABELS: Record<FrameworkView, string> = {
-  ALL: 'ALL',
-  STRIDE: 'Human Centric (STRIDE)',
-  AI: 'AI・LLM',
-  AgenticAI: 'Agent-Centric',
+export const FRAMEWORK_VIEW_LABEL_KEYS: Record<FrameworkView, TranslationKey> = {
+  ALL: 'framework.label.ALL',
+  STRIDE: 'framework.label.STRIDE',
+  AI: 'framework.label.AI',
+  AgenticAI: 'framework.label.AgenticAI',
 };
 
 /** 手動脅威作成ピッカーの選択肢（具体的な `Framework` 値のみ。`'ALL'` は含めない）。 */

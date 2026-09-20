@@ -25,10 +25,11 @@ import {
 import { ControlStatusEditor } from './ControlStatusEditor';
 import {
   CONTROL_STATUS_BADGE,
-  CONTROL_STATUS_LABEL,
+  CONTROL_STATUS_LABEL_KEY,
 } from './controlStatusStyle';
 import { RiskTreatmentEditor } from './RiskTreatmentEditor';
-import { RISK_TREATMENT_BADGE, RISK_TREATMENT_LABEL } from './riskTreatmentStyle';
+import { RISK_TREATMENT_BADGE, RISK_TREATMENT_LABEL_KEY } from './riskTreatmentStyle';
+import { useT } from '../../i18n';
 import type {
   ControlStatusValue,
   DiagramBoundary,
@@ -41,46 +42,73 @@ import type {
 
 const SEVERITY_RANK: Record<Severity, number> = { Low: 1, Medium: 2, High: 3, Critical: 4 };
 
+/** i18n の t() 関数の型（useT の戻り値）。 */
+type TFunc = ReturnType<typeof useT>;
+
 const KIND_LABEL: Record<ElementAnalyticsRow['kind'], string> = {
   node: 'Component',
   edge: 'Data Flow',
   boundary: 'Boundary',
 };
 
-/** DREAD 評価フォームの項目定義（表示ラベルと 1/2/3 の判断基準）。 */
-const DREAD_CRITERIA: Record<DreadKey, { label: string; levels: [string, string, string] }> = {
-  damage: {
-    label: 'D: 損害（Damage）',
-    levels: ['軽微な障害・限定的な情報露出', '一部データの漏えい・改ざん', '全データ侵害・システム全停止'],
-  },
-  reproducibility: {
-    label: 'R: 再現性（Reproducibility）',
-    levels: ['特定条件下でまれに成立', '条件が揃えば成立', '常に成立'],
-  },
-  exploitability: {
-    label: 'E: 攻撃容易性（Exploitability）',
-    levels: ['高度な技術・内部知識が必要', 'ツール・手順が一部公開', '既製ツールで容易に攻撃可能'],
-  },
-  affectedUsers: {
-    label: 'A: 影響範囲（Affected Users）',
-    levels: ['ごく一部のユーザー', '相当数のユーザー・テナント', '全ユーザー・管理者を含む'],
-  },
-  discoverability: {
-    label: 'D: 発見容易性（Discoverability）',
-    levels: ['内部知識がないと発見困難', '注意深い調査で発見可能', '外部から容易に発見可能'],
-  },
-};
+/** DREAD 評価フォームの項目定義（表示ラベルと 1/2/3 の判断基準）。t() で locale 依存に解決する。 */
+function dreadCriteria(t: TFunc): Record<DreadKey, { label: string; levels: [string, string, string] }> {
+  return {
+    damage: {
+      label: t('analytics.dread.damage.label'),
+      levels: [
+        t('analytics.dread.damage.level1'),
+        t('analytics.dread.damage.level2'),
+        t('analytics.dread.damage.level3'),
+      ],
+    },
+    reproducibility: {
+      label: t('analytics.dread.reproducibility.label'),
+      levels: [
+        t('analytics.dread.reproducibility.level1'),
+        t('analytics.dread.reproducibility.level2'),
+        t('analytics.dread.reproducibility.level3'),
+      ],
+    },
+    exploitability: {
+      label: t('analytics.dread.exploitability.label'),
+      levels: [
+        t('analytics.dread.exploitability.level1'),
+        t('analytics.dread.exploitability.level2'),
+        t('analytics.dread.exploitability.level3'),
+      ],
+    },
+    affectedUsers: {
+      label: t('analytics.dread.affectedUsers.label'),
+      levels: [
+        t('analytics.dread.affectedUsers.level1'),
+        t('analytics.dread.affectedUsers.level2'),
+        t('analytics.dread.affectedUsers.level3'),
+      ],
+    },
+    discoverability: {
+      label: t('analytics.dread.discoverability.label'),
+      levels: [
+        t('analytics.dread.discoverability.level1'),
+        t('analytics.dread.discoverability.level2'),
+        t('analytics.dread.discoverability.level3'),
+      ],
+    },
+  };
+}
 
-const DREAD_LEVEL_LABEL = ['低', '中', '高'] as const;
+function dreadLevelLabel(t: TFunc): readonly [string, string, string] {
+  return [t('analytics.dread.level.low'), t('analytics.dread.level.medium'), t('analytics.dread.level.high')];
+}
 
 /** 上部フィルタバーのプリセット種別（ローカル state のみ。保存機能はなし）。 */
 type Preset = 'all' | 'highPlus' | 'withMit' | 'withoutMit';
 
-const PRESET_LABEL: Record<Preset, string> = {
-  all: '全件',
-  highPlus: 'High 以上',
-  withMit: '緩和策あり',
-  withoutMit: '緩和策なし',
+const PRESET_LABEL_KEY: Record<Preset, 'analytics.preset.all' | 'analytics.preset.highPlus' | 'analytics.preset.withMit' | 'analytics.preset.withoutMit'> = {
+  all: 'analytics.preset.all',
+  highPlus: 'analytics.preset.highPlus',
+  withMit: 'analytics.preset.withMit',
+  withoutMit: 'analytics.preset.withoutMit',
 };
 
 /** 対策ペインの実装状況グループ（未設定を含む。表示順は CONTROL_GROUP_ORDER）。 */
@@ -94,13 +122,11 @@ const CONTROL_GROUP_ORDER: ControlStatusGroup[] = [
   'implemented',
 ];
 
-const CONTROL_GROUP_LABEL: Record<ControlStatusGroup, string> = {
-  unset: '未設定',
-  required: CONTROL_STATUS_LABEL.required,
-  implemented: CONTROL_STATUS_LABEL.implemented,
-  'not-applicable': CONTROL_STATUS_LABEL['not-applicable'],
-  rejected: CONTROL_STATUS_LABEL.rejected,
-};
+/** 実装状況グループの表示ラベル。unset のみ i18n、他は CONTROL_STATUS_LABEL（別ファイル）を流用。 */
+function controlGroupLabel(group: ControlStatusGroup, t: TFunc): string {
+  if (group === 'unset') return t('analytics.controlGroup.unset');
+  return t(CONTROL_STATUS_LABEL_KEY[group]);
+}
 
 /** プリセット 1 件分の脅威マッチ判定。 */
 function matchesPreset(t: ThreatView, preset: Preset): boolean {
@@ -132,6 +158,7 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
   const edges = useDiagramStore(selectActiveEdges);
   const boundaries = useDiagramStore(selectActiveBoundaries);
   const renumber = useDiagramStore((s) => s.renumberElementalIds);
+  const t = useT();
 
   const [filter, setFilter] = useState('');
   const [preset, setPreset] = useState<Preset>('all');
@@ -178,10 +205,10 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
     if (row.kind === 'edge') {
       const e = edgeById.get(row.id);
       if (!e) return row.id;
-      return edgeLabel(e, nodeById);
+      return edgeLabel(e, nodeById, t);
     }
     const b = boundaryById.get(row.id);
-    return b ? boundaryLabel(b) : row.id;
+    return b ? boundaryLabel(b, t) : row.id;
   };
 
   // 検索文字列フィルタ（脅威 1 件単位）。要素ラベル・ElementalID は行側で付き合わせる。
@@ -227,9 +254,9 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
       out.push({ row, label, total: kept.length, categories });
     }
     return out;
-    // labelOf / matchesQuery は rows/q/各 Map に依存。eslint 簡略化のため依存は実体で列挙。
+    // labelOf / matchesQuery は rows/q/各 Map/t に依存。eslint 簡略化のため依存は実体で列挙。
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, preset, q, nodeById, edgeById, boundaryById]);
+  }, [rows, preset, q, nodeById, edgeById, boundaryById, t]);
 
   // 要素に紐づかない脅威（unassigned）も同じフィルタを通す。
   const visibleUnassigned = useMemo(
@@ -252,14 +279,14 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
       }
     }
     for (const th of visibleUnassigned) {
-      if (th.mitigation) list.push({ threat: th, elementLabel: '（要素に紐づかない脅威）' });
+      if (th.mitigation) list.push({ threat: th, elementLabel: t('analytics.unassigned.parenLabel') });
     }
     // 重大度降順で優先度の高い対策を上に。
     return list.sort(
       (a, b) =>
         SEVERITY_RANK[effectiveSeverity(b.threat)] - SEVERITY_RANK[effectiveSeverity(a.threat)],
     );
-  }, [tree, visibleUnassigned]);
+  }, [tree, visibleUnassigned, t]);
 
   // 対策を実装状況グループに振り分ける（未設定 → 必須 → 実装済み → 適用外 → 拒否）。
   const countermeasureGroups = useMemo(() => {
@@ -290,8 +317,8 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
       }
     }
     const u = visibleUnassigned.find((th) => th.id === selectedThreatId);
-    return u ? { threat: u, elementalId: null, elementLabel: '要素に紐づかない脅威' } : null;
-  }, [selectedThreatId, tree, visibleUnassigned]);
+    return u ? { threat: u, elementalId: null, elementLabel: t('analytics.unassigned.label') } : null;
+  }, [selectedThreatId, tree, visibleUnassigned, t]);
 
   if (!isOpen) return null;
 
@@ -314,7 +341,11 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
               Analytics
             </h2>
             <span className="text-[10px] text-slate-500 ml-2">
-              レイヤー {activeLayer} / {rows.length} 要素 / 脅威 {totalThreats} 件
+              {t('analytics.header.summary', {
+                layer: activeLayer,
+                elements: rows.length,
+                threats: totalThreats,
+              })}
             </span>
           </div>
           <div className="flex items-center gap-3">
@@ -322,21 +353,21 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
               type="text"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              placeholder="ElementalID / 名称 / カテゴリ"
+              placeholder={t('analytics.filter.placeholder')}
               className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-colors w-[240px]"
             />
             <button
               onClick={() => setConfirmingRenumber(true)}
               disabled={confirmingRenumber}
               className="text-[11px] px-3 py-1.5 rounded-lg border border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-500 transition-colors disabled:opacity-40 shrink-0"
-              title="削除で生じた欠番を詰め、全レイヤーの ElementalID を 1 から振り直します"
+              title={t('analytics.renumber.tooltip')}
             >
-              ID を振り直す
+              {t('analytics.renumber.button')}
             </button>
             <button
               onClick={close}
               className="text-slate-500 hover:text-slate-200 transition-colors"
-              aria-label="閉じる"
+              aria-label={t('analytics.close')}
             >
               <X size={16} />
             </button>
@@ -346,9 +377,7 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
         {confirmingRenumber && (
           <div className="flex items-center gap-3 px-6 py-3 bg-amber-500/10 border-b border-amber-500/30">
             <p className="text-[11px] text-amber-200 flex-1">
-              全レイヤーの ElementalID（C / DF / Z）を 1
-              から振り直します。過去のレポート等で参照した ID
-              は別の要素を指す可能性があり、Undo 履歴もクリアされます。
+              {t('analytics.renumber.confirmBody')}
             </p>
             <button
               onClick={() => {
@@ -357,13 +386,13 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
               }}
               className="text-[11px] px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-200 hover:bg-amber-500/30 transition-colors shrink-0"
             >
-              振り直しを実行
+              {t('analytics.renumber.confirmButton')}
             </button>
             <button
               onClick={() => setConfirmingRenumber(false)}
               className="text-[11px] px-3 py-1.5 rounded-lg border border-slate-700 text-slate-400 hover:text-slate-200 transition-colors shrink-0"
             >
-              キャンセル
+              {t('analytics.renumber.cancelButton')}
             </button>
           </div>
         )}
@@ -371,7 +400,7 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
         {/* ① 上部フィルタバー（プリセットチップ） */}
         <div className="flex items-center gap-2 px-6 py-2.5 border-b border-slate-800 bg-slate-900/60">
           <span className="text-[10px] uppercase tracking-widest text-slate-500 mr-1">
-            フィルタ
+            {t('analytics.filter.label')}
           </span>
           {(['all', 'highPlus', 'withMit', 'withoutMit'] as const).map((p) => (
             <button
@@ -383,7 +412,7 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
                   : 'border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-500'
               }`}
             >
-              {PRESET_LABEL[p]}
+              {t(PRESET_LABEL_KEY[p])}
             </button>
           ))}
         </div>
@@ -393,7 +422,7 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
           {/* ② 左ペイン: 脅威ツリー */}
           <div className="w-[34%] min-w-0 border-r border-slate-800 overflow-y-auto px-3 py-3">
             {tree.length === 0 && visibleUnassigned.length === 0 ? (
-              <p className="text-xs text-slate-500 px-2">該当する脅威はありません。</p>
+              <p className="text-xs text-slate-500 px-2">{t('analytics.tree.empty')}</p>
             ) : (
               <ul className="flex flex-col gap-1.5">
                 {tree.map((t) => (
@@ -412,6 +441,7 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
                     threats={visibleUnassigned}
                     selectedThreatId={selectedThreatId}
                     onSelect={setSelectedThreatId}
+                    t={t}
                   />
                 )}
               </ul>
@@ -421,10 +451,10 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
           {/* ③ 中央ペイン: 対策一覧 */}
           <div className="w-[33%] min-w-0 border-r border-slate-800 overflow-y-auto px-3 py-3">
             <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 px-1">
-              対策 {countermeasures.length} 件
+              {t('analytics.countermeasures.heading', { count: countermeasures.length })}
             </h3>
             {countermeasures.length === 0 ? (
-              <p className="text-xs text-slate-500 px-1">緩和策のある脅威はありません。</p>
+              <p className="text-xs text-slate-500 px-1">{t('analytics.countermeasures.empty')}</p>
             ) : (
               <div className="flex flex-col gap-3">
                 {countermeasureGroups.map(({ group, items }) => (
@@ -432,13 +462,13 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
                     <div className="flex items-center gap-2 mb-1 px-1">
                       {group === 'unset' ? (
                         <span className="text-[10px] font-bold text-slate-500">
-                          {CONTROL_GROUP_LABEL[group]}
+                          {controlGroupLabel(group, t)}
                         </span>
                       ) : (
                         <span
                           className={`text-[9px] px-2 py-0.5 rounded border ${CONTROL_STATUS_BADGE[group]}`}
                         >
-                          {CONTROL_GROUP_LABEL[group]}
+                          {controlGroupLabel(group, t)}
                         </span>
                       )}
                       <span className="text-[9px] text-slate-600">{items.length}</span>
@@ -456,7 +486,7 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
                                   ? 'bg-emerald-500/10 border-emerald-500/40'
                                   : 'border-transparent hover:bg-slate-800/60 hover:border-slate-800'
                               }`}
-                              title={`${sev} ・ ${elementLabel}`}
+                              title={t('analytics.countermeasureItem.title', { severity: sev, element: elementLabel })}
                             >
                               <span
                                 className={`mt-1 h-2 w-2 rounded-full shrink-0 ${SEVERITY_DOT[sev]}`}
@@ -489,10 +519,11 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
                 threat={selectedThreat.threat}
                 elementalId={selectedThreat.elementalId}
                 elementLabel={selectedThreat.elementLabel}
+                t={t}
               />
             ) : (
               <div className="h-full flex items-center justify-center">
-                <p className="text-xs text-slate-600">脅威を選択してください。</p>
+                <p className="text-xs text-slate-600">{t('analytics.detail.empty')}</p>
               </div>
             )}
           </div>
@@ -519,6 +550,7 @@ function ElementTreeNode({
   onSelect: (id: string) => void;
 }) {
   const [open, setOpen] = useState(true);
+  const t = useT();
   return (
     <li className="rounded-lg bg-slate-800/40 border border-slate-800">
       <button
@@ -540,7 +572,7 @@ function ElementTreeNode({
         {row.maxSeverity && (
           <span
             className={`text-[9px] px-1.5 py-0.5 rounded border shrink-0 ${SEVERITY_BADGE[row.maxSeverity]}`}
-            title="この要素の最大リスク"
+            title={t('analytics.tree.maxSeverityTooltip')}
           >
             {row.maxSeverity}
           </span>
@@ -630,10 +662,12 @@ function UnassignedTreeNode({
   threats,
   selectedThreatId,
   onSelect,
+  t,
 }: {
   threats: ThreatView[];
   selectedThreatId: string | null;
   onSelect: (id: string) => void;
+  t: TFunc;
 }) {
   const [open, setOpen] = useState(true);
   return (
@@ -648,7 +682,7 @@ function UnassignedTreeNode({
           <ChevronRight size={12} className="text-slate-500 shrink-0" />
         )}
         <span className="text-[10px] font-semibold text-slate-400 flex-1 truncate">
-          要素に紐づかない脅威
+          {t('analytics.unassigned.label')}
         </span>
         <span className="text-[9px] text-slate-600 shrink-0">{threats.length}</span>
       </button>
@@ -689,11 +723,13 @@ function ThreatDetail({
   threat,
   elementalId,
   elementLabel,
+  t,
 }: {
   threat: ThreatView;
   /** 対象要素の ElementalID（要素に紐づかない脅威では null）。 */
   elementalId: string | null;
   elementLabel: string;
+  t: TFunc;
 }) {
   const sev = effectiveSeverity(threat);
   return (
@@ -721,7 +757,7 @@ function ThreatDetail({
         {threat.dread && (
           <span
             className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/40"
-            title={`DREAD 評価済み（元の severity: ${threat.severity}）`}
+            title={t('analytics.dread.scoredTooltip', { severity: threat.severity })}
           >
             DREAD {dreadTotal(threat.dread)}
           </span>
@@ -735,14 +771,14 @@ function ThreatDetail({
           <span
             className={`text-[10px] px-2 py-0.5 rounded border ${RISK_TREATMENT_BADGE[threat.suppression.status]}`}
           >
-            {RISK_TREATMENT_LABEL[threat.suppression.status]}
+            {t(RISK_TREATMENT_LABEL_KEY[threat.suppression.status])}
           </span>
         )}
         {threat.controlStatus && (
           <span
             className={`text-[10px] px-2 py-0.5 rounded border ${CONTROL_STATUS_BADGE[threat.controlStatus.status]}`}
           >
-            {CONTROL_STATUS_LABEL[threat.controlStatus.status]}
+            {t(CONTROL_STATUS_LABEL_KEY[threat.controlStatus.status])}
           </span>
         )}
       </div>
@@ -753,22 +789,22 @@ function ThreatDetail({
 
       {threat.mitigation && (
         <div className="text-[11px] leading-relaxed">
-          <p className="text-slate-300 font-bold mb-1">緩和策</p>
+          <p className="text-slate-300 font-bold mb-1">{t('analytics.detail.mitigationLabel')}</p>
           <p className="text-slate-400">{threat.mitigation}</p>
         </div>
       )}
 
       <div className="pt-2 border-t border-slate-800">
         <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">
-          DREAD 評価
+          {t('analytics.dread.heading')}
         </p>
-        <DreadEditor threat={threat} />
+        <DreadEditor threat={threat} t={t} />
       </div>
 
       {threat.origin !== 'manual' && (
         <div className="pt-2 border-t border-slate-800">
           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">
-            リスク対応方針
+            {t('analytics.detail.riskTreatmentHeading')}
           </p>
           <RiskTreatmentEditor key={threat.id} threat={threat} />
         </div>
@@ -776,7 +812,7 @@ function ThreatDetail({
 
       <div className="pt-2 border-t border-slate-800">
         <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">
-          対策実装状況
+          {t('analytics.detail.controlStatusHeading')}
         </p>
         <ControlStatusEditor key={threat.id} threat={threat} />
       </div>
@@ -789,7 +825,7 @@ function ThreatDetail({
  * store へ明示コミットする（項目選択ごとの自動保存はしない＝Undo 1 ステップ化）。
  * 右ペインに常時配置するため、脅威切替で draft を作り直すよう key を threat.id に紐づける。
  */
-function DreadEditor({ threat }: { threat: ThreatView }) {
+function DreadEditor({ threat, t }: { threat: ThreatView; t: TFunc }) {
   const setDreadScore = useDiagramStore((s) => s.setDreadScore);
   const clearDreadScore = useDiagramStore((s) => s.clearDreadScore);
   const [draft, setDraft] = useState<Record<DreadKey, DreadValue>>(() =>
@@ -812,11 +848,13 @@ function DreadEditor({ threat }: { threat: ThreatView }) {
 
   const total = DREAD_KEYS.reduce((acc, k) => acc + draft[k], 0);
   const rank = dreadRank(total);
+  const criteria = dreadCriteria(t);
+  const levelLabel = dreadLevelLabel(t);
 
   return (
     <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-700 flex flex-col gap-2">
       {DREAD_KEYS.map((key) => {
-        const c = DREAD_CRITERIA[key];
+        const c = criteria[key];
         return (
           <div key={key} className="flex items-center gap-2">
             <span className="text-[10px] text-slate-400 w-56 shrink-0">{c.label}</span>
@@ -832,7 +870,7 @@ function DreadEditor({ threat }: { threat: ThreatView }) {
                       : 'border-slate-700 text-slate-500 hover:text-slate-300 hover:border-slate-500'
                   }`}
                 >
-                  {v} {DREAD_LEVEL_LABEL[v - 1]}
+                  {v} {levelLabel[v - 1]}
                 </button>
               ))}
             </div>
@@ -844,26 +882,28 @@ function DreadEditor({ threat }: { threat: ThreatView }) {
       })}
       <div className="flex items-center gap-3 pt-1 border-t border-slate-800">
         <span className="text-[10px] text-slate-400">
-          合計 <span className="font-bold text-slate-200">{total}</span> / 15 →
+          {t('analytics.dread.totalLabel')} <span className="font-bold text-slate-200">{total}</span> / 15 →
         </span>
         <span className={`text-[10px] px-2 py-0.5 rounded border ${SEVERITY_BADGE[rank]}`}>
           {rank}
         </span>
-        <span className="text-[9px] text-slate-600">（ルール由来: {threat.severity}）</span>
+        <span className="text-[9px] text-slate-600">
+          {t('analytics.dread.ruleSeverityTooltip', { severity: threat.severity })}
+        </span>
         <div className="flex gap-2 ml-auto">
           {threat.dread && (
             <button
               onClick={() => clearDreadScore(threat.id)}
               className="text-[10px] px-2.5 py-1 rounded border border-slate-700 text-slate-500 hover:text-red-300 hover:border-red-500/50 transition-colors"
             >
-              評価をクリア
+              {t('analytics.dread.clearButton')}
             </button>
           )}
           <button
             onClick={() => setDreadScore(threat.id, draft)}
             className="text-[10px] px-2.5 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-500/30 transition-colors"
           >
-            保存
+            {t('analytics.dread.saveButton')}
           </button>
         </div>
       </div>
@@ -871,15 +911,15 @@ function DreadEditor({ threat }: { threat: ThreatView }) {
   );
 }
 
-function edgeLabel(edge: DiagramEdge, nodeById: Map<string, DiagramNode>): string {
+function edgeLabel(edge: DiagramEdge, nodeById: Map<string, DiagramNode>, t: TFunc): string {
   const name = (id: string) => {
     const n = nodeById.get(id);
     return n ? getNodeDisplayName(n) : id;
   };
   const base = `${name(edge.source)} → ${name(edge.target)}`;
-  return edge.dataFlowName ? `${base}（${edge.dataFlowName}）` : base;
+  return edge.dataFlowName ? t('analytics.edgeLabelWithFlow', { base, flow: edge.dataFlowName }) : base;
 }
 
-function boundaryLabel(b: DiagramBoundary): string {
-  return b.vlanName || b.microTrust || b.macroTrust || `${b.trustLevel} 境界`;
+function boundaryLabel(b: DiagramBoundary, t: TFunc): string {
+  return b.vlanName || b.microTrust || b.macroTrust || t('analytics.boundaryFallbackLabel', { trustLevel: b.trustLevel });
 }

@@ -1,15 +1,19 @@
 import type { ControlStatusValue } from '../../core/model/types';
+import type { TranslationKey } from '../../i18n';
 
 /**
  * 対策実装状況（Control Implementation Status）のラベルとバッジ class。
  * リスク対応方針（suppression）・重大度色（severityColors）とは別レイヤーのため、
  * トーンを意図的に分けている。ThreatCard と AnalyticsModal で共用する。
+ *
+ * ラベルはモジュールレベル定数（フック不可）のため i18n キーで保持し、
+ * 表示側で `t(CONTROL_STATUS_LABEL_KEY[status])` として解決する。
  */
-export const CONTROL_STATUS_LABEL: Record<ControlStatusValue, string> = {
-  implemented: '実装済み',
-  required: '必須',
-  'not-applicable': '適用外',
-  rejected: '拒否',
+export const CONTROL_STATUS_LABEL_KEY: Record<ControlStatusValue, TranslationKey> = {
+  implemented: 'threats.controlStatus.implemented',
+  required: 'threats.controlStatus.required',
+  'not-applicable': 'threats.controlStatus.notApplicable',
+  rejected: 'threats.controlStatus.rejected',
 };
 
 export const CONTROL_STATUS_BADGE: Record<ControlStatusValue, string> = {

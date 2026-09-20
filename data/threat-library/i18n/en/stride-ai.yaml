@@ -1,0 +1,216 @@
+# English overlay for `data/threat-library/stride-ai.yaml`.
+#
+# The Japanese file is the source of truth: only `name` / `category` / `description` /
+# `mitigation` (plus `conditions[].description` and `references[].title` where present)
+# are translated here, keyed by rule id. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - Keep `{{token}}` placeholders exactly as they appear in the original.
+#   - Keep the `[Foundation]` / `[Enterprise]` / `[Advanced]` markup — the maturity
+#     tiers are re-derived from this text.
+#   - Preserve the Can / Cannot pair and the blast radius statement in `description`
+#     (docs/threat-schema.md §7.5).
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+rules:
+  stride-ai-llm-evasion-001:
+    category: "Tampering"
+    name: "Evasion Attack"
+    description: "The risk that an attacker adds small, carefully crafted perturbations to input in order to deliberately trigger misclassification or harmful output."
+    mitigation: "Normalize and sanitize input, detect adversarial examples, and deploy inference guardrails."
+
+  stride-ai-llm-model-extraction-001:
+    category: "Information Disclosure"
+    name: "Model Extraction"
+    description: "The risk that an attacker steals model weights or proprietary algorithms by issuing a large volume of queries."
+    mitigation: "Rate limiting, query anomaly detection, and per-API-key usage monitoring."
+
+  stride-ai-db-data-poisoning-001:
+    category: "Tampering"
+    name: "Data Poisoning"
+    description: "The risk that an attacker poisons training data or RAG source data so that the system makes incorrect decisions under specific conditions."
+    mitigation: "Verify the integrity of the data ingestion pipeline, operate with signed datasets, and maintain provenance traceability."
+
+  stride-external-entity-spoofing-001:
+    category: "Spoofing"
+    name: "Spoofing"
+    description: "If the authenticity of an external entity is not verified, an attacker can impersonate a legitimate user, organization, or system."
+    mitigation: "Strong authentication (MFA, mutual TLS, signature verification) and clearly defined authorization boundaries."
+
+  stride-external-entity-repudiation-001:
+    category: "Repudiation"
+    name: "Repudiation"
+    description: "If audit logs, digital signatures, or timestamps are insufficient, an external entity can later deny having performed an action."
+    mitigation: "Tamper-resistant audit logs, signed events, and a trusted time source."
+
+  stride-process-tampering-001:
+    category: "Tampering"
+    name: "Tampering"
+    description: "The risk that a process's logic, configuration, or execution context is maliciously tampered with, distorting business outcomes."
+    mitigation: "Code signing, configuration change management, and integrity verification of the execution environment."
+
+  stride-process-dos-001:
+    category: "Denial of Service"
+    name: "Denial of Service"
+    description: "The risk that a process is brought down by resource exhaustion, infinite loops, or a flood of requests, threatening business continuity."
+    mitigation: "Rate limiting, timeouts, circuit breakers, and resource caps."
+
+  stride-process-elevation-of-privilege-001:
+    category: "Elevation of Privilege"
+    name: "Elevation of Privilege"
+    description: "The risk that gaps in a process's authorization controls allow operations or data access that should not be permitted."
+    mitigation: "The principle of least privilege, role-based access control, and multi-party approval for privileged operations."
+
+  stride-data-store-info-disclosure-001:
+    category: "Information Disclosure"
+    name: "Information Disclosure"
+    description: "The risk that gaps in access control or encryption at rest allow stored data to be viewed or leaked without authorization."
+    mitigation: "Encryption at rest, column-level encryption, and minimizing access control lists."
+
+  stride-data-store-tampering-001:
+    category: "Tampering"
+    name: "Data Tampering"
+    description: "The risk that improperly granted write permissions or a lack of integrity checks allow stored data to be tampered with."
+    mitigation: "Integrity verification with hashes or MACs, and preservation of change history."
+
+  stride-data-store-repudiation-001:
+    category: "Repudiation"
+    name: "Loss of Audit Trail"
+    description: "If audit logs, change history, or WORM protection are insufficient, data operations can become untraceable."
+    mitigation: "WORM storage, tamper-evident logging, and forwarding logs to an external system."
+
+  stride-edge-unauth-internet-001:
+    category: "Spoofing"
+    name: "Spoofing"
+    description: "The connection path is unauthenticated and runs over a public network. The risk of unauthorized external access and spoofing is extremely high."
+    mitigation: "Adopt strong authentication including MFA, and route traffic over a closed network such as a VPN/VPC."
+
+  stride-edge-plain-encryption-001:
+    category: "Information Disclosure"
+    name: "Eavesdropping"
+    description: "The communication is not encrypted. Data flowing from {{sourceName}} to {{targetName}} risks being intercepted."
+    mitigation: "Implement communication encryption using TLS or end-to-end encryption."
+
+  stride-user-spoofing-001:
+    category: "Spoofing"
+    name: "Account Takeover"
+    description: "If authentication on the client or user device is weak, the account risks being taken over through phishing, credential-stuffing attacks, or session hijacking."
+    mitigation: "MFA (especially phishing-resistant WebAuthn/FIDO2), device binding, anomalous login detection, and short-lived session tokens."
+
+  stride-user-info-disclosure-001:
+    category: "Information Disclosure"
+    name: "Client-Side Information Disclosure"
+    description: "The risk that user actions and response content are stored in plaintext in browser caches, device storage, or logs, and leak through a lost device or a malicious browser extension."
+    mitigation: "Suppress caching of sensitive responses, use IndexedDB with encryption for client storage, operate screen lock and remote wipe, and maintain an allow-list for browser extensions."
+
+  stride-gateway-elevation-of-privilege-001:
+    category: "Elevation of Privilege"
+    name: "Authorization Boundary Gap"
+    description: "If authorization checks at the API gateway are incomplete, an attacker can cross tenant boundaries (IDOR) or pivot laterally into administrative APIs."
+    mitigation: "Enforce schemas at the gateway layer, check resource ownership, validate token scopes, and detect tampering with tenant identifiers."
+
+  stride-gateway-dos-001:
+    category: "Denial of Service"
+    name: "Gateway Exhaustion"
+    description: "If the gateway's rate limits or connection caps are too loose, volumetric attacks or Slowloris-style attacks can take down the entire downstream service."
+    mitigation: "Adaptive rate limiting, connection caps, buffering via an upstream WAF/CDN, and circuit breakers with auto-scaling."
+
+  stride-connector-tampering-001:
+    category: "Tampering"
+    name: "In-Transit Connector Tampering"
+    description: "If a connector (message broker, iPaaS, sidecar proxy) relays payloads without integrity verification, the payload risks being tampered with, replayed, or reordered in transit."
+    mitigation: "Message signing or MACs, sequence numbers with duplicate detection, least-privilege connectors, and audit logging of configuration changes."
+
+  stride-edge-password-internet-001:
+    category: "Spoofing"
+    name: "Password-Only Authentication over a Public Network"
+    description: "Communication from {{sourceName}} to {{targetName}} over the public network is protected by a password alone, which is not resilient against brute-force attacks, credential-stuffing attacks, or phishing."
+    mitigation: "Add MFA and, where possible, switch to a closed network path (VPN/VPC). Prefer phishing-resistant authentication such as WebAuthn."
+
+  stride-edge-unmanaged-device-sensitive-001:
+    category: "Spoofing/Tampering"
+    name: "Sensitive Access from an Unmanaged Device"
+    description: "{{sourceName}} is an unmanaged device accessing {{targetName}}. With no EDR/MDM in place, it risks becoming the starting point for malware infection or session theft."
+    mitigation: "Enroll the device in MDM and deploy EDR. For BYOD, operate risk-based access control (device posture verification) and prohibit direct access to sensitive resources."
+
+  stride-edge-internet-exposed-sensitive-001:
+    category: "Spoofing/Tampering"
+    name: "Direct Exposure Across a Trust Boundary"
+    description: "{{sourceName}} sits outside the trust boundary (treated as Internet) and can reach {{targetName}} directly. This configuration carries an extremely high risk of becoming the starting point for prompt injection, model extraction, or data exfiltration."
+    mitigation: "Place a Gateway/WAF in front of the boundary to block direct external access. Switch to a closed network path (VPC/PrivateLink), or relocate the sensitive component inside the Internal boundary."
+
+  stride-ai-supplier-model-input-log-leak-001:
+    category: "Information Disclosure"
+    name: "Supplier-Hosted Model Input Log Leakage"
+    description: "The input path from {{sourceName}} to {{targetName}} meets one or more vulnerable conditions, risking sensitive information in the input prompt being retained in, and leaking from, the supplier's logs."
+    mitigation: "Review the contractual terms on vendor log retention and use for training, and require PII/secret masking on input. Enforce TLS, and switch to a closed connection (PrivateLink / VPC endpoint) where possible."
+
+  stride-web-global-ip-exposure-001:
+    category: "Information Disclosure"
+    name: "Direct Global IP Exposure"
+    description: "{{nodeName}} holds a global IP address directly, making it a target for port scanning and exploitation of known vulnerabilities from anywhere on the internet."
+    mitigation: "Place it behind a load balancer / CDN / API gateway wherever possible, so the origin server cannot be reached directly."
+
+  stride-web-no-source-ip-restriction-001:
+    category: "Spoofing"
+    name: "Unrestricted Source IP Access"
+    description: "{{nodeName}} has no source IP restriction and accepts access from attack sources with no geographic or organizational relationship to it."
+    mitigation: "Introduce an IP allow-list scoped to the CIDR ranges/regions expected for business use, geo-blocking at the WAF, and a bastion host for the admin console."
+
+  stride-web-remote-mgmt-exposed-001:
+    category: "Elevation of Privilege"
+    name: "Exposed Remote Management Interface"
+    description: "{{nodeName}} has no remote-access restriction, and privileged interfaces such as SSH, RDP, or the admin console may be exposed to the internet."
+    mitigation: "Restrict the management plane to behind a bastion / VPN / IAP (Identity-Aware Proxy), and block TCP/22, 3389, and other admin ports from the public side."
+
+  stride-web-no-user-auth-001:
+    category: "Spoofing"
+    name: "Missing Authentication"
+    description: "{{nodeName}} has no user authentication, risking anonymous access to sensitive functions and data."
+    mitigation: "Adopt a standard authentication platform such as OAuth/OIDC or SAML, and require MFA for privileged operations."
+
+  stride-web-no-access-log-001:
+    category: "Repudiation"
+    name: "Missing Access Log"
+    description: "{{nodeName}} does not capture access logs, so detection, tracing, and non-repudiation of unauthorized access are not possible."
+    mitigation: "Collect structured logs of L7 access, authentication events, and administrative operations, and aggregate them into a SIEM. Retain for at least 90 days, with privileged operations retained for a year or more as a guideline."
+
+  stride-web-no-waf-001:
+    category: "Tampering"
+    name: "Missing Application-Layer Attack Protection"
+    description: "{{nodeName}} has no protection from a WAF/WAP and is directly exposed to application-layer attacks such as SQL injection, XSS, and command injection."
+    mitigation: "Place a WAF (managed or OSS) in front of it and enable standard signature sets such as the OWASP Core Rule Set. Combine with CSP, input validation, and parameterized queries."
+
+  stride-web-no-ddos-protection-001:
+    category: "Denial of Service"
+    name: "Missing DoS/DDoS Protection"
+    description: "{{nodeName}} has no DoS/DDoS protection, risking service outage from volumetric attacks or L7 resource-exhaustion attacks."
+    mitigation: "Place a CDN / managed DDoS protection (Anycast / scrubbing) in front of it, combined with L7 rate limiting, bot detection, and CAPTCHA."
+
+  stride-web-anonymous-on-public-001:
+    category: "Elevation of Privilege"
+    name: "Combined Anonymous Public Access"
+    description: "{{nodeName}} runs on a global IP with neither user authentication nor source IP restriction, leaving it open to anonymous operation by any party worldwide."
+    mitigation: "Require at least one of authentication or a source IP allow-list at every public entry point. Isolate the management plane with a VPN/bastion."
+
+  stride-web-blind-perimeter-001:
+    category: "Repudiation"
+    name: "Blind Perimeter: Public and Unlogged"
+    description: "{{nodeName}} is exposed on a global IP yet does not capture access logs, becoming a blind spot where a breach could go undetected."
+    mitigation: "Require access logging at every public entry point and aggregate it into a SIEM. Alert on spikes in failed authentication, 5xx errors, and geographic anomalies."
+
+  stride-web-unprotected-traffic-from-user-001:
+    category: "Information Disclosure"
+    name: "Plaintext Traffic into the Front-End"
+    description: "Communication from {{sourceName}} to {{targetName}} (a Front-end Server) is in plaintext, risking eavesdropping or tampering of credentials, session tokens, and PII."
+    mitigation: "Enforce HTTPS/HSTS on the front-end, enabling HTTP-to-HTTPS redirects and HSTS preload. mTLS is also recommended for internal traffic."
+
+  stride-web-unauth-internet-ingress-001:
+    category: "Spoofing"
+    name: "Unauthenticated Internet Ingress into the Front-End"
+    description: "Unauthenticated access is flowing in over the internet to {{targetName}} (a Front-end Server), making it a target for brute force, scraping, and vulnerability scanning."
+    mitigation: "Require authentication, rate limiting, and bot detection. Even when anonymous public access is intended, combine it with CAPTCHA, a WAF, and rate limiting at minimum."

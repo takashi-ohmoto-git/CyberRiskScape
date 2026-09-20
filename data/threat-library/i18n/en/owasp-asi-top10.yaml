@@ -1,0 +1,48 @@
+# English overlay for `data/threat-library/owasp-asi-top10.yaml`.
+#
+# The Japanese file is the source of truth: only `name` / `category` / `description` /
+# `mitigation` (plus `conditions[].description` and `references[].title` where present)
+# are translated here, keyed by rule id. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - Keep `{{token}}` placeholders exactly as they appear in the original.
+#   - Keep the `[Foundation]` / `[Enterprise]` / `[Advanced]` markup — the maturity
+#     tiers are re-derived from this text.
+#   - Preserve the Can / Cannot pair and the blast radius statement in `description`
+#     (docs/threat-schema.md §7.5).
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+rules:
+  owasp-asi05-unexpected-code-execution-001:
+    category: "Code Execution"
+    name: "Unexpected Execution of Agent-Generated Code"
+    description: "When {{nodeName}} is designed to generate and execute code (vibe coding, self-repair, eval-based memory, etc.), prompt injection or insecure deserialization can turn into executable behavior, letting an attacker reach host/container takeover, persistence, and sandbox escape. On the other hand, if execution is isolated in a non-root, read-only sandbox with egress blocked, code generation itself may still occur but does not lead to host compromise."
+    mitigation: "[Foundation] Remove eval and arbitrary shell execution from production agents, and confine generated code to a dedicated working directory with input validation and output encoding. [Enterprise] Separate code generation from execution with a verification gate in between, executing only in a non-root sandbox container after egress allow-listing and static scanning. [Advanced] Apply hardware isolation via microVM/gVisor plus taint tracking, run adversarial unit tests and unsafe-eval detection before production rollout, and auto-quarantine on detection."
+
+  owasp-asi07-insecure-inter-agent-comms-001:
+    category: "Inter-Agent Comm"
+    name: "Replay, Protocol Downgrade, and Discovery Spoofing"
+    description: "When inter-agent messages from {{sourceName}} to {{targetName}} lack replay protection via nonce/timestamp or a pinned protocol version, an attacker can replay delegation or trust messages, downgrade to an older weak protocol, or register a fake agent in discovery/registry services, causing privilege confusion, misinformation, or coordinated manipulation while masquerading as a legitimate exchange. On the other hand, if messages are signed, mutually authenticated, and version-pinned, interception does not enable replay or impersonated registration. The lack of authentication/encryption on the delegation path itself is handled separately by anthropic-zt-delegation-integrity."
+    mitigation: "[Foundation] Require a nonce + session ID + timestamp on every inter-agent message, reject replays, and pin the allowed protocol version, rejecting legacy modes and unknown schemas. [Enterprise] Authenticate discovery/registry messages with cryptographic identity, accepting only signed agent cards. [Advanced] Continuously verify against a PKI trust root and attested registry, and use fixed-length/padded messages to counter metadata inference."
+
+  owasp-asi08-cascading-failures-001:
+    category: "Cascading Failures"
+    name: "Failure Propagation and Amplification"
+    description: "In a configuration where {{nodeName}} delegates plans to other agents, executes automatically, and persists state, a single defect (hallucination, poisoned memory, a spoofed message) can fan out to downstream agents, bypassing human checks and amplifying into a full-scale outage or mass misexecution. On the other hand, if blast-radius guards (quotas, progress caps, circuit breakers) and an independent policy engine sit between planner and executor, the initial defect can be stopped before it develops into a chain reaction. This rule focuses not on where the initial defect originates (supply chain = ASI04 / memory = ASI06 / communication = ASI07) but on its propagation and amplification."
+    mitigation: "[Foundation] Separate the planner from the executor, and route high-impact actions through a policy verification gate. Include rate limiting and pause-on-anomaly. [Enterprise] Establish per-agent blast-radius guards (quotas, progress caps, a planner-executor circuit breaker), and separate planning from execution with an independent policy engine. [Advanced] Test propagation with digital-twin replay, gate policy expansion on passing a blast-radius ceiling, and ensure non-repudiation with a tamper-evident lineage log."
+
+  owasp-asi09-human-agent-trust-exploitation-001:
+    category: "Human-Agent Trust"
+    name: "Exploitation of Anthropomorphism and Automation Bias"
+    description: "When {{nodeName}} builds strong trust with human users through fluent natural language and confident explanations, an attacker or a design flaw can exploit that trust (authority bias, automation bias, anthropomorphism) to get the user to approve high-impact actions without independent verification, or to extract sensitive information. Because the final action is taken by a human, the agent's involvement is hard to see in forensics. On the other hand, if high-impact approvals require supporting evidence, source links, and two-person approval, and the agent's statements are shown in the UI as suggestions requiring verification rather than as authoritative, persuasion alone is less likely to induce approval."
+    mitigation: "[Foundation] Present agent recommendations as \"suggestions requiring verification,\" stating confidence, sources, and assumptions explicitly. Require independent human confirmation for high-impact actions. [Enterprise] Require two-person approval and a dry-run diff preview for irreversible or high-value actions, and suppress assertive UI language that encourages overtrust. [Advanced] Log the correspondence between human approval events and agent recommendations for forensic traceability, and provide automation-bias education for users."
+
+  owasp-asi10-rogue-agent-001:
+    category: "Rogue Agent"
+    name: "Loss of Behavioral Integrity and Self-Replication"
+    description: "When {{nodeName}} executes autonomously, an external compromise (prompt injection, goal hijacking, supply chain) can trigger a loss of behavioral integrity, letting it drift into harmful, deceptive, or parasitic behavior overall even though individual actions look legitimate. It can persist while evading detection and takedown through self-replication via provisioning APIs, reward hacking (such as deleting backups to minimize cost), and impersonating an observing agent. On the other hand, if a signed behavioral manifest is verified at startup and a kill switch, credential revocation, and watchdog monitoring for drift are in place, the agent can be quarantined immediately once drift begins, limiting the damage. This rule focuses not on the initial intrusion (ASI01/ASI04) but on behavioral integrity and governance after drift has begun."
+    mitigation: "[Foundation] Record every action, tool call, and inter-agent communication in an immutable, signed audit log, and detect unauthorized delegation or replication. [Enterprise] Isolate with trust zones and least-privilege scopes, detect collusive deviation/anomalous execution with a watchdog agent, and stop immediately with a kill switch and credential revocation. [Advanced] Verify per-agent cryptographic identity attestation and a signed behavioral manifest on every action, allowing return only through quarantine → re-attestation → human approval."

@@ -1,0 +1,160 @@
+# English overlay for `data/threat-library/zero-trust-access.yaml`.
+#
+# The Japanese file is the source of truth: only `name` / `category` / `description` /
+# `mitigation` (plus `conditions[].description` and `references[].title` where present)
+# are translated here, keyed by rule id. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - Keep `{{token}}` placeholders exactly as they appear in the original.
+#   - Keep the `[Foundation]` / `[Enterprise]` / `[Advanced]` markup — the maturity
+#     tiers are re-derived from this text.
+#   - Preserve the Can / Cannot pair and the blast radius statement in `description`
+#     (docs/threat-schema.md §7.5).
+#   - `references` is keyed by the index in the original array, and only the entries
+#     that need translating are listed. Keep a genuinely Japanese document title as
+#     its original title and add an English gloss; `url` is never translated.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+rules:
+  zt-implicit-trust-network-location-001:
+    category: "Spoofing"
+    name: "Implicit trust based on network location"
+    description: "Communication from {{sourceName}} to {{targetName}} over a closed network (VPN/VPC) is permitted without authentication. An attacker who enters the perimeter, whether by stealing VPN credentials, compromising an endpoint, or pivoting from another already-compromised host on the same segment, can reach {{targetName}} without any identity verification (Can). In a design that treats network location as proof of trust, there is no control point to detect or deny lateral movement once the perimeter has been breached. If, on the other hand, authentication is enforced on every edge, mTLS or workload identity between services, SSO+MFA for humans, network reachability alone does not grant access (Cannot). The blast radius is every resource reachable from that same closed network."
+    mitigation: "[Foundation] Require authentication for all access even within the closed network (retire any configuration that treats network location as trust). [Enterprise] Enforce per-session authentication and authorization on every edge, mTLS / workload identity between services, SSO + MFA for humans, and factor device posture into the policy decision. [Advanced] Route all resource access through a policy engine (PDP/PEP) and continuously re-evaluate trust throughout the session (per NIST SP 800-207 tenets)."
+    references:
+      "0":
+        title: "NIST SP 800-207 - Zero Trust Architecture (removing implicit trust; per-resource authentication and authorization)"
+      "1":
+        title: "CISA - Zero Trust Maturity Model v2 (Networks pillar)"
+
+  zt-vpn-broad-network-access-001:
+    category: "Elevation of Privilege"
+    name: "Broad VPN reach and lateral movement"
+    description: "VPN access from {{sourceName}} to {{targetName}} follows a perimeter model that, once authentication succeeds, grants broad network-layer reach. Compromising a single VPN account lets an attacker reach resources across the segment that have nothing to do with the compromised user's actual job, sharply lowering the cost of lateral-movement reconnaissance (Can). If, instead, application-level brokered access such as ZTNA or an identity-aware proxy is used and no network path exists to resources the user is not authorized for, the blast radius of an account compromise is limited to that single application (Cannot)."
+    mitigation: "[Foundation] Split VPN profiles by business role and minimize the segments and ports each one can reach (retire full-tunnel access on a flat network). [Enterprise] Move to application-level ZTNA / identity-aware proxy so no network path exists to unauthorized resources, and use micro-segmentation to restrict east-west traffic. [Advanced] Continuously re-evaluate and dynamically recompute access scope during the session, incorporating device posture and behavioral signals."
+    conditions:
+      - description: "VPN access from {{sourceName}} to {{targetName}} is protected by MFA, but the network reach granted after authentication remains broad (Can: an account or endpoint compromise still allows exploration within the same segment). Moving to application-level ZTNA / micro-segmentation is effective at limiting the room for lateral movement (Cannot: if no path exists, compromise is confined to that single application)."
+    references:
+      "0":
+        title: "NIST SP 800-207 - Zero Trust Architecture (migrating away from perimeter-based remote access)"
+      "1":
+        title: "CISA - Zero Trust Maturity Model v2 (Networks: network segmentation)"
+
+  zt-aitm-session-token-theft-001:
+    category: "Spoofing"
+    name: "AiTM phishing session-token theft (MFA bypass)"
+    description: "Even when a login from {{sourceName}} to {{targetName}} over the public network is protected by MFA, OTP- and push-approval-based MFA can be relayed in real time by an AiTM (Adversary-in-the-Middle) phishing proxy, letting an attacker steal the post-authentication session token (cookie) and effectively bypass MFA (Can). For as long as the stolen token remains valid, the attacker can operate {{targetName}} as the legitimate session. If, instead, an authenticator cryptographically bound to the origin, FIDO2/WebAuthn, is used, proxy relay itself cannot succeed (Impossible), and if the token is also device-bound, reuse of a stolen token alone does not succeed either (Cannot). The blast radius is the privilege scope of the stolen session."
+    mitigation: "[Foundation] Move admin and privileged accounts to phishing-resistant MFA (FIDO2/WebAuthn/passkeys) first. Retire SMS and voice OTP. [Enterprise] Roll out phishing-resistant MFA to all users, and set short session-token lifetimes with re-authentication triggers (IP or device change). Deploy detection for AiTM infrastructure (e.g. TLS fingerprinting). [Advanced] Make stolen tokens unusable outside their original environment through token binding / device-bound credentials. Propagate session revocation immediately with continuous access evaluation (e.g. CAEP)."
+    references:
+      "0":
+        title: "NIST SP 800-63B - Digital Identity Guidelines (verifier impersonation resistance)"
+
+  zt-shadow-asset-governance-gap-001:
+    category: "Shadow IT"
+    name: "Ungoverned shadow IT / shadow AI"
+    description: "{{nodeName}} is shadow IT / shadow AI operating outside the organization's asset inventory, authentication, logging, and patch management. An attacker can exploit attack surface the organization does not know exists, unpatched vulnerabilities, weak authentication settings, abandoned data, and defenders remain unaware of its very existence until an incident occurs (Can). The organization's policies cannot govern where inbound data is stored, how long it is retained, or whether it is shared with third parties. If, instead, unapproved services are continuously discovered through CASB/SSPM and egress monitoring, and are either sanctioned (brought under proper contract and SSO integration) or blocked, sensitive data cannot accumulate ungoverned in this way (Cannot). The blast radius is all data that flowed into the service plus any credentials reused there."
+    mitigation: "[Foundation] Regularly discover and inventory unapproved SaaS and apps from egress logs, expense reports, and browser extension inventories. [Enterprise] Continuously discover and risk-assess with CASB/SSPM; sanction services needed for business (SSO/SCIM integration) and block the rest. [Advanced] Use data-level DLP and labeling to inspect content and block sensitive data from leaving to unapproved services."
+    references:
+      "0":
+        title: "CISA - Zero Trust Maturity Model v2 (Visibility and Analytics)"
+
+  zt-shadow-service-sensitive-input-001:
+    category: "Information Disclosure"
+    name: "Sensitive data flowing into shadow services / shadow AI"
+    description: "On the path from {{sourceName}} to {{targetName}} (an unapproved shadow service/app), employees can enter or upload sensitive information, customer data, source code, credentials, into an ungoverned service for the sake of productivity (Can). With generative-AI-style shadow services, input may be retained by the provider and used for training or logging, making it hard to trace or request deletion after a leak. If, instead, approved alternatives that meet the business need (including sanctioned generative AI) are provided and egress control plus DLP block sensitive data from reaching unapproved destinations, exfiltration through this path does not occur (Cannot). The blast radius is the sensitive data entered plus whatever access the credentials it contains permit."
+    mitigation: "[Foundation] Codify a policy prohibiting sensitive data input into unapproved services, and provide approved alternatives (e.g. sanctioned generative AI) that meet the business need. [Enterprise] Inspect uploads and pastes to unapproved destinations with DLP via a web proxy/CASB, and block transmissions containing sensitive data. [Advanced] Control the input path to unapproved services itself with an enterprise browser or browser isolation, approving any exception individually with an audit trail."
+    references:
+      "0":
+        title: "CISA - Zero Trust Maturity Model v2 (Data pillar: DLP and data classification)"
+
+  zt-insider-legitimate-access-abuse-001:
+    category: "Insider Threat"
+    name: "Abuse of legitimate access by an insider"
+    description: "{{nodeName}} represents a threat from an insider with legitimate access, an employee, a contractor, or someone about to leave the organization. Because insiders pass straight through perimeter defenses and authentication, their theft, tampering, or exfiltration is hard to distinguish from normal operation, and it can go undetected for a long time, especially where excessive privilege, shared accounts, or unrevoked access after departure exist (Can). If, instead, least privilege and just-in-time privilege grants keep standing access narrow, and separation of duties plus independent monitoring of operation logs (including UEBA) are in place, a single insider is unlikely to complete large-scale exfiltration or tampering on their own (Cannot). The blast radius is the full scope of privileges granted to that insider, the area where zero trust's least privilege applies most directly."
+    mitigation: "[Foundation] Establish a privilege inventory across all accounts and an immediate-revocation process for departures and transfers. Retire shared accounts and attribute actions to individuals. [Enterprise] Minimize standing privilege with just-in-time / just-enough access, and introduce separation of duties (four-eyes) for sensitive operations. Detect anomalies such as bulk downloads and after-hours access with UEBA. [Advanced] Govern exfiltration paths (removable media, personal cloud, printing) with DLP, and apply privileged access management (PAM) with session recording to high-risk areas."
+    references:
+      "1":
+        title: "NIST SP 800-207 - Zero Trust Architecture (least privilege; per-session authorization)"
+
+  zt-agentic-attacker-ai-accelerated-001:
+    category: "Adversary"
+    name: "AI-accelerated attackers defeating friction-only defenses"
+    description: "{{nodeName}} represents an attacker who uses AI agents, or an autonomous agent that is itself the attacking party. AI-accelerated attacks drive the per-attempt cost of reconnaissance, phishing-content generation, vulnerability probing, and lateral-movement attempts to near zero, so defenses built around a human attacker, ones that rely on friction, such as rate limiting, complex procedures, or obfuscation, only buy time rather than stop the attack (Can). Attacks run 24/365 in parallel, and per-target customization is automated too. If, instead, controls that make the attack impossible are in place, hardware-bound credentials, cryptographic identity, or a network path that simply does not exist, more attempts cannot break through (Cannot). The blast radius is every path in the model that depends on friction-only defense."
+    mitigation: "[Foundation] Inventory your defenses through the lens of Impossible vs Tedious, and plan to replace controls that merely add friction (SMS MFA, non-standard ports, complicated procedures) with structural ones. [Enterprise] Close the primary paths of automated attack (credential theft, lateral movement) structurally with phishing-resistant authentication, short-lived credentials, and micro-segmentation. Automate detection and response to match machine-speed attacks. [Advanced] Neutralize entire attack chains that depend on theft or impersonation through hardware-bound identity and continuous verification."
+
+  zt-credential-sprawl-static-secret-001:
+    category: "Information Disclosure"
+    name: "Static storage and sprawl of credentials"
+    description: "When {{nodeName}} (credentials such as API keys, tokens, passwords, or private keys) is stored statically and scattered across source code, configuration files, shared storage, and chat history, a single compromise anywhere, a leaked repository, a compromised endpoint, or exposed logs, lets an attacker obtain the credential and move laterally, as a legitimate holder, into every resource it grants access to (Can). Static, long-lived secrets tend to lag in leak detection and revocation, and often remain valid for long periods without rotation. If, instead, secrets are centrally managed in a secrets manager and only short-lived, dynamically issued credentials are used with issuance and use audited, static theft alone loses its value (Cannot). The blast radius is the entire access scope that credential grants."
+    mitigation: "[Foundation] Introduce secret scanning across repositories, configuration, and shared documents, and migrate any static secrets found into a secrets manager with rotation. [Enterprise] Retire long-lived secrets in favor of short-lived, dynamic secrets issued with a TTL. Track issuance and use through audit logs. [Advanced] Eliminate copyable static secrets altogether through workload identity (e.g. SPIFFE) and HSM/TPM binding."
+    references:
+      "0":
+        title: "OWASP Secrets Management Cheat Sheet (centralized management and dynamic secrets)"
+      "1":
+        title: "NIST SP 800-207 - Zero Trust Architecture (per-session, short-lived credentials)"
+
+  zt-idp-signing-key-compromise-001:
+    category: "Spoofing"
+    name: "Token forgery via IdP signing-key compromise (Golden SAML style)"
+    description: "If an attacker steals the token-signing key of {{nodeName}} (a SAML signing certificate / OIDC signing key) or compromises the IdP itself, they can forge authentication tokens for any user, any privilege, and any expiry without going through the IdP at all, and every service under the federation accepts them as legitimate (Can). MFA and conditional access are controls upstream of the IdP, so they have no effect at all against a forged token. If, instead, the signing key is stored non-exportable in an HSM or managed key store, and issuance logs are cross-checked against verification-side logs to detect tokens with no matching issuance record, static theft of the key itself cannot succeed and forgery becomes detectable (Cannot). The blast radius is every service and every account under the federation, as large as the model gets."
+    mitigation: "[Foundation] Require phishing-resistant MFA for IdP administrator accounts, and put in place a signing-certificate rotation and revocation procedure. Track IdP configuration changes and certificate operations through audit logs. [Enterprise] Move the signing key to an HSM / managed key store, making it non-exportable. Correlate and detect tokens used with no matching IdP issuance record with a SIEM. [Advanced] Propagate revocation immediately with continuous access evaluation (CAEP/Shared Signals), and neutralize forgery based on the signing key alone with proof-of-possession tokens (DPoP / mTLS binding)."
+    references:
+      "1":
+        title: "NIST SP 800-207 - Zero Trust Architecture (protecting the policy decision point)"
+
+  zt-idp-single-point-of-failure-001:
+    category: "Denial of Service"
+    name: "IdP as a single point of failure and organization-wide blast radius of misconfiguration"
+    description: "Because zero trust concentrates every access decision in {{nodeName}}, an attacker can control the authentication outcome of every downstream service simultaneously through a single action, DoS against the IdP, takeover of its admin console, or tampering with its policy configuration (Can). A misconfiguration propagates through the same channel to the whole organization just as instantly, locking out legitimate users everywhere (a self-inflicted DoS). If, instead, the IdP is made redundant with rate limiting, an offline break-glass account is maintained, and configuration changes go through staged rollout and review, a single failure, act of tampering, or misconfiguration does not translate directly into a total outage (Cannot). The blast radius is the availability of every service that depends on the IdP for authentication."
+    mitigation: "[Foundation] Maintain a break-glass account for IdP outages (stored offline, alerting on use) and a recovery procedure, and periodically verify it still works. [Enterprise] Make the IdP redundant and geographically distributed, with DDoS protection and rate limiting. Apply policy and configuration changes through IaC plus review plus staged rollout, with immediate rollback available. [Advanced] Design fail-safe behavior for IdP outages (preserve existing sessions, grant only minimal privilege to new ones), and regularly rehearse IdP-outage exercises."
+    references:
+      "0":
+        title: "NIST SP 800-207 - Zero Trust Architecture (availability of the policy decision point)"
+      "1":
+        title: "CISA - Zero Trust Maturity Model v2 (Identity pillar)"
+
+  zt-idp-token-validation-gap-001:
+    category: "Spoofing"
+    name: "Weak relying-party validation of issued tokens (audience confusion, etc.)"
+    description: "On the token-issuance and trust path from {{sourceName}} to {{targetName}}, if the relying party's validation is inadequate, unverified audience/issuer, loose acceptance of signature algorithms (e.g. alg:none), or unchecked expiry/revocation, an attacker can reuse a token legitimately issued for a different service against {{targetName}} (audience confusion / token substitution), or get a tampered token accepted by exploiting a validation bug (Can). If, instead, {{targetName}} strictly validates audience, issuer, signature, and expiry, and client_id/audience are separated per service, reuse of a token issued for another service does not succeed (Cannot). The blast radius is the privilege scope that token grants on {{targetName}}."
+    mitigation: "[Foundation] Require audience/issuer/signature/expiry validation at every relying party, and use standard libraries rather than hand-rolled validation logic. [Enterprise] Separate client_id/audience per service, scope token privileges to the minimum the destination service needs, and log and monitor attempts to use invalid or expired tokens. [Advanced] Reject reused or stolen tokens through presenter verification with proof-of-possession tokens (DPoP / mTLS binding)."
+    references:
+      "0":
+        title: "NIST SP 800-63B - Digital Identity Guidelines (assertion validation requirements)"
+      "1":
+        title: "OWASP - Token validation best practices for OAuth 2.0 / JWT (Cheat Sheet Series)"
+
+  zt-guardrail-probabilistic-bypass-001:
+    category: "Defense Evasion"
+    name: "Reliance on a standalone guardrail (limits of probabilistic defense)"
+    description: "A guardrail / LLM firewall such as {{nodeName}} is a probabilistic defense based on detecting known patterns, and an attacker can evade detection with a novel jailbreak technique, obfuscation (encoding, multilingual text, split instructions), or context spoofing (Can). In a design where the guardrail is the sole line of defense, a successful bypass becomes a successful attack on everything downstream, the LLM, agents, and tools. If, instead, deterministic controls sit behind the guardrail, a tool allowlist, least agency, sandboxed execution, privilege separation on outputs, a successful bypass still structurally limits what the attacker can accomplish (Cannot). The blast radius is every operation permitted downstream of the guardrail on the assumption that it has already been screened."
+    mitigation: "[Foundation] Do not make the guardrail the sole defense; combine it with downstream tool allowlisting and privilege minimization (defense in depth). Preserve detection logs to make bypass attempts visible. [Enterprise] Apply the guardrail to both input and output, and continuously update it against new bypass patterns from threat intelligence and red-team findings. Protect critical operations with human approval or deterministic policy independent of the guardrail's verdict. [Advanced] Design on the assumption of bypass, treating the guardrail as a detection/observability layer. Run continuous adversarial evaluation (automated red teaming) against live traffic."
+    references:
+      "0":
+        title: "OWASP Top 10 for LLM Applications - LLM01: Prompt Injection (the limits of filtering)"
+
+  zt-ai-gateway-log-concentration-001:
+    category: "Information Disclosure"
+    name: "Concentration of prompts and responses at the AI gateway"
+    description: "Because {{nodeName}} centrally inspects and logs all AI traffic in the organization, every user's prompts and responses, which can include sensitive business information, personal data, and code, accumulate in one place. A single compromise of the AI gateway, takeover of its admin console, access to the log store, or tampering with the inspection policy, lets an attacker steal or tamper with everything the organization has done with AI (Can). Because inspection requires decrypting to plaintext, content is readable at the gateway even when the underlying transport is encrypted. If, instead, log retention is minimized, sensitive fields are masked, the log store is separated, encrypted, and access-controlled, and the gateway's admin plane is strongly authenticated, a single compromise does not translate directly into exposure of all AI traffic (Cannot). The blast radius is the content of all AI traffic passing through the gateway, plus any credentials or sensitive data it contains."
+    mitigation: "[Foundation] Set the gateway's log retention to the business minimum, and mask sensitive fields (PII, secrets) in prompt logs. Require phishing-resistant MFA for the admin console. [Enterprise] Separate the log store from the gateway itself and encrypt it, minimizing and auditing access on a role basis. Require review and audit logging for any change to the inspection policy. [Advanced] Separate log-viewing privilege from sensitive-data decryption privilege with field-level encryption and tokenization. Deploy detection built for a compromise of the gateway itself (policy-diff monitoring, tamper detection)."
+    references:
+      "0":
+        title: "NIST SP 800-207 - Zero Trust Architecture (protecting the Policy Enforcement Point)"
+
+  zt-external-collaborator-broad-access-001:
+    category: "Elevation of Privilege"
+    name: "Sensitive system access by external collaborators (revocation and governance gaps)"
+    description: "On the path from {{sourceName}} (a user declared as a contractor, partner, or guest) to {{targetName}}, the lifecycle of that access is not tied to the organization's own HR process. An attacker can abuse a legitimate account left un-revoked after a contract ends, work is subcontracted further, or the person changes role, and because the external party's own endpoint, training, and audit controls do not reach into the organization, detecting signs of compromise is difficult from the organization's side (Can). If, instead, external-collaborator access is issued with a fixed term (automatic expiry tied to the contract period), authenticated and logged through the organization's own federation (guest identity management), and scoped to only the resources needed for the assigned work, an abandoned account cannot become a foothold into sensitive systems (Cannot). The blast radius is the scope of privilege granted to that external collaborator."
+    mitigation: "[Foundation] Require an expiry date on every external-collaborator account, and establish an inventory and revocation process tied to contract management. Prohibit shared accounts for external engagements. [Enterprise] Consolidate onto guest identity management (federation / guest invitation through your own IdP) and run access reviews regularly. Scope granted privilege to the resources needed for the assigned work, and separate duties for sensitive operations. [Advanced] Apply continuous risk evaluation (device posture, behavioral analysis) to external-collaborator sessions, and guarantee immediate revocation through automatic reconciliation against the contract database."
+    conditions:
+      - description: "The path from {{sourceName}} (a user declared as a guest) to {{targetName}} is sensitive-system access from the weakest identity-assurance and contractual-confidentiality category (Can: an abandoned or forwarded guest invitation can let an unintended third party reach it through a legitimate path). If guest access enforces short automatic expiry and least privilege (e.g. view-only), an abandoned invitation cannot become a foothold to reach sensitive data (Cannot)."
+    references:
+      "0":
+        title: "NIST SP 800-207 - Zero Trust Architecture (access decisions based on subject attributes)"
+      "1":
+        title: "CISA - Zero Trust Maturity Model v2 (Identity pillar: access lifecycle management)"

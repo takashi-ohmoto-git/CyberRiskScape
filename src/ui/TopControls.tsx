@@ -15,11 +15,14 @@ import {
   selectCanUndo,
   useDiagramStore,
 } from '../core/state/diagramStore';
-import { FRAMEWORK_VIEWS, FRAMEWORK_VIEW_LABELS } from './frameworkLabels';
-import { useT } from '../i18n';
+import { FRAMEWORK_VIEWS, FRAMEWORK_VIEW_LABEL_KEYS } from './frameworkLabels';
+import { useLocale, useT } from '../i18n';
+
+const LOCALES = ['ja', 'en'] as const;
 
 export function TopControls() {
   const t = useT();
+  const [locale, setLocale] = useLocale();
   const activeFramework = useDiagramStore((s) => s.activeFramework);
   const isFocusMode = useDiagramStore((s) => s.isFocusMode);
   const setActiveFramework = useDiagramStore((s) => s.setActiveFramework);
@@ -51,7 +54,7 @@ export function TopControls() {
                 : 'hover:bg-slate-800 text-slate-500'
             }`}
           >
-            {FRAMEWORK_VIEW_LABELS[f]}
+            {t(FRAMEWORK_VIEW_LABEL_KEYS[f])}
           </button>
         ))}
       </div>
@@ -61,7 +64,7 @@ export function TopControls() {
           onClick={undo}
           disabled={!canUndo}
           className="flex items-center justify-center p-2 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-all active:scale-95 disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
-          title="元に戻す (Ctrl+Z)"
+          title={t('project.topControls.undo')}
         >
           <Undo2 size={18} />
         </button>
@@ -69,7 +72,7 @@ export function TopControls() {
           onClick={redo}
           disabled={!canRedo}
           className="flex items-center justify-center p-2 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-all active:scale-95 disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
-          title="やり直し (Ctrl+Shift+Z)"
+          title={t('project.topControls.redo')}
         >
           <Redo2 size={18} />
         </button>
@@ -78,7 +81,7 @@ export function TopControls() {
       <button
         onClick={openAnalytics}
         className="flex items-center justify-center bg-slate-900/90 backdrop-blur-xl p-2.5 rounded-2xl border border-slate-700 shadow-2xl hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition-all active:scale-95"
-        title="Analytics（アクティブレイヤーの分析）を開く"
+        title={t('project.topControls.openAnalytics')}
       >
         <BarChart3 size={18} />
       </button>
@@ -86,7 +89,7 @@ export function TopControls() {
       <button
         onClick={openComplianceMap}
         className="flex items-center justify-center bg-slate-900/90 backdrop-blur-xl p-2.5 rounded-2xl border border-slate-700 shadow-2xl hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition-all active:scale-95"
-        title="コンプライアンスマップを開く"
+        title={t('project.topControls.openComplianceMap')}
       >
         <Library size={18} />
       </button>
@@ -98,6 +101,26 @@ export function TopControls() {
       >
         <ScanSearch size={18} />
       </button>
+
+      <div
+        className="flex gap-1 bg-slate-900/90 backdrop-blur-xl p-1.5 rounded-2xl border border-slate-700 shadow-2xl"
+        title={t('topbar.language')}
+      >
+        {LOCALES.map((l) => (
+          <button
+            key={l}
+            onClick={() => setLocale(l)}
+            aria-pressed={locale === l}
+            className={`px-3 py-2 rounded-xl text-xs font-black transition-all ${
+              locale === l
+                ? 'bg-blue-600 text-white shadow-lg'
+                : 'hover:bg-slate-800 text-slate-500'
+            }`}
+          >
+            {l.toUpperCase()}
+          </button>
+        ))}
+      </div>
 
       <button
         onClick={toggleFocusMode}
@@ -113,21 +136,21 @@ export function TopControls() {
       <button
         onClick={zoomOut}
         className="flex items-center justify-center p-2 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-all active:scale-95"
-        title="縮小"
+        title={t('project.topControls.zoomOut')}
       >
         <ZoomOut size={18} />
       </button>
       <button
         onClick={resetZoom}
         className="min-w-[3.5rem] px-2 py-1 rounded-xl text-xs font-black tabular-nums text-slate-300 hover:bg-slate-800 hover:text-slate-100 transition-all active:scale-95"
-        title="100% に戻す"
+        title={t('project.topControls.resetZoom')}
       >
         {Math.round(scale * 100)}%
       </button>
       <button
         onClick={zoomIn}
         className="flex items-center justify-center p-2 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-all active:scale-95"
-        title="拡大"
+        title={t('project.topControls.zoomIn')}
       >
         <ZoomIn size={18} />
       </button>
@@ -135,7 +158,7 @@ export function TopControls() {
       <button
         onClick={fitToContent}
         className="flex items-center justify-center p-2 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-all active:scale-95"
-        title="全体表示（Fit）"
+        title={t('project.topControls.fitToContent')}
       >
         <Scan size={18} />
       </button>

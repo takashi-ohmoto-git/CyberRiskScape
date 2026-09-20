@@ -1,11 +1,20 @@
 import type { TranslationKey } from './ja';
+import { enCanvas } from './en/canvas';
+import { enPanels } from './en/panels';
+import { enZeroTrust } from './en/zeroTrust';
+import { enAnalytics } from './en/analytics';
+import { enRuleEditor } from './en/ruleEditor';
+import { enProject } from './en/project';
+import { enThreats } from './en/threats';
+import { enReport } from './en/report';
+
 
 /**
  * 英語ロケール（スタブ）。英語対応は「予定」段階のため、翻訳済みキーのみを持つ。
  * 未定義キーは index.ts が ja にフォールバックするので、Partial で問題ない。
  * 翻訳が決まったキーから順次このオブジェクトへ追加していく。
  */
-export const en: Partial<Record<TranslationKey, string>> = {
+const enCore: Partial<Record<TranslationKey, string>> = {
   'app.loading': 'Loading…',
 
   // ── AttackTreeModal ──
@@ -59,4 +68,96 @@ export const en: Partial<Record<TranslationKey, string>> = {
     'Attack surface is unset; evaluation used open-by-default baselines. Set attack surface on the node for higher precision.',
   'threatCard.assumption.agentAttributes':
     'Agent attributes are unset; evaluation used worst-case defaults (Autonomous / Admin / LabelOnly). Set attributes for higher precision.',
+
+  // ── 既存 ja キーの英訳（2026-09-19 に一括補完） ──
+  'topbar.focusMode': 'Focus mode',
+  'topbar.showSidebar': 'Show sidebar',
+  'topbar.language': 'Interface language',
+  'projectFile.loadFailed': '“{name}” could not be loaded (it may not be a {brand} project file).',
+  'appliesToSummary.node.target.single': 'Applies to {type}.',
+  'appliesToSummary.node.target.anyOf': 'Applies to any of {types}.',
+  'appliesToSummary.node.connection.default': 'Fires when the target node has any connection.',
+  'appliesToSummary.node.connection.intrinsic': 'Fires regardless of connections (an inherent threat).',
+  'appliesToSummary.node.connection.inbound': 'Fires when the target node has an inbound connection.',
+  'appliesToSummary.node.connection.outbound': 'Fires when the target node has an outbound connection.',
+  'appliesToSummary.node.connection.peerType': 'Requires the peer to be one of {types}.',
+  'appliesToSummary.node.connection.peerAttackSurface': 'Attack surface of the peer: {conditions}',
+  'appliesToSummary.node.attackSurface': 'Attack surface of the target node: {conditions}',
+  'appliesToSummary.node.agentAttributes': 'Agent attributes: {conditions}',
+  'appliesToSummary.edge.when': 'Edge conditions: {conditions}',
+  'appliesToSummary.edge.allOf': 'Edge conditions (all must hold): {groups}',
+  'appliesToSummary.edge.anyOf': 'Edge conditions (any may hold): {groups}',
+  'appliesToSummary.field.hasGlobalIp': 'Global IP',
+  'appliesToSummary.field.hasSourceIpRestriction': 'Source IP restriction',
+  'appliesToSummary.field.hasRemoteAccessRestriction': 'Remote access restriction',
+  'appliesToSummary.field.hasUserAuthentication': 'User authentication',
+  'appliesToSummary.field.hasAccessLog': 'Access logging',
+  'appliesToSummary.field.hasWafProtection': 'WAF protection',
+  'appliesToSummary.field.hasDdosProtection': 'DDoS protection',
+  'appliesToSummary.field.auth': 'Authentication',
+  'appliesToSummary.field.network': 'Network',
+  'appliesToSummary.field.encryption': 'Encryption',
+  'appliesToSummary.field.sourceType': 'Source',
+  'appliesToSummary.field.targetType': 'Target',
+  'appliesToSummary.field.sourceTrust': 'Source trust level',
+  'appliesToSummary.field.targetTrust': 'Target trust level',
+  'appliesToSummary.field.sourceManagedState': 'Source managed state',
+  'appliesToSummary.field.targetManagedState': 'Target managed state',
+  'appliesToSummary.field.sourceUserTrust': 'Source user trust',
+  'appliesToSummary.field.targetUserTrust': 'Target user trust',
+  'appliesToSummary.field.semantic': 'Edge semantics',
+  'appliesToSummary.field.agency': 'Agency',
+  'appliesToSummary.field.blastRadius': 'Blast radius',
+  'appliesToSummary.field.identityTier': 'Identity tier',
+  'threatCard.detectionBasis.heading': 'Why this fired',
+  'threatCard.detectionBasis.ruleLabel': 'Rule',
+  'threatCard.detectionBasis.customRuleFallback': 'Custom rule',
+  'threatCard.detectionBasis.corroboratedRules': 'All folded rules',
+  'topbar.libraryInspector': 'Open the threat library inspector',
+  'libraryInspector.title': 'Threat library inspector',
+  'libraryInspector.close': 'Close',
+  'libraryInspector.searchPlaceholder': 'Search rules…',
+  'libraryInspector.filter.sourceAll': 'Source: all',
+  'libraryInspector.filter.frameworkAll': 'Framework: all',
+  'libraryInspector.filter.severityAll': 'Severity: all',
+  'libraryInspector.leftColumn.nodeTypesHeading': 'Node types',
+  'libraryInspector.leftColumn.edgeRules': 'Connection (edge) rules',
+  'libraryInspector.leftColumn.uncategorized': 'Other',
+  'libraryInspector.rightPane.nodeHeading': '{count} threats can fire on {type}',
+  'libraryInspector.rightPane.edgeHeading': '{count} connection (edge) rules',
+  'libraryInspector.rightPane.empty': 'No rules match these filters.',
+  'libraryInspector.section.intrinsic': 'Fires on placement (inherent threat)',
+  'libraryInspector.section.conditional': 'Fires when connected',
+  'libraryInspector.card.detailsShow': 'Show details',
+  'libraryInspector.card.detailsHide': 'Hide details',
+  'libraryInspector.card.descriptionHeading': 'Description',
+  'libraryInspector.card.mitigationHeading': 'Mitigation',
+  'libraryInspector.card.referencesHeading': 'Sources',
+  'libraryInspector.card.sourceLabel': 'Source',
+  'libraryInspector.card.corroborationBadge': '{count} sources',
+  'libraryInspector.diagram.anyType': 'Any',
+  'libraryInspector.emptyLibrary': 'The library contains no rules.',
+  'framework.label.ALL': 'ALL',
+  'framework.label.STRIDE': 'Human Centric (STRIDE)',
+  'framework.label.AI': 'AI / LLM',
+  'framework.label.AgenticAI': 'Agent-Centric',
+  'io.jsonSyntaxError': 'JSON syntax error: {message}',
+  'io.validationError': 'Validation error: {issues}',
+  'appliesToSummary.join.sentence': ' ',
+  'appliesToSummary.join.or': ' or ',
+  'appliesToSummary.join.allOf': ', and ',
+  'appliesToSummary.join.anyOf': ', or ',
+};
+
+/** 領域別モジュールを集約した英語ロケール。 */
+export const en: Partial<Record<TranslationKey, string>> = {
+  ...enCore,
+  ...enCanvas,
+  ...enPanels,
+  ...enZeroTrust,
+  ...enAnalytics,
+  ...enRuleEditor,
+  ...enProject,
+  ...enThreats,
+  ...enReport,
 };

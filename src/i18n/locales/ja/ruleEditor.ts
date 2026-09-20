@@ -1,0 +1,156 @@
+/**
+ * ルールエディタとカスタムルール管理 の文言（日本語 = 真実）。
+ * 集約は ../ja.ts。キー規約（`<領域>.<用途>`、プレースホルダ `{name}`）は
+ * そちらの冒頭コメントを参照。
+ */
+export const jaRuleEditor = {
+  // ── RuleEditorModal ──
+  'ruleEditor.modal.titleEdit': 'ルール編集',
+  'ruleEditor.modal.titleNew': '新規ルール',
+  'ruleEditor.modal.close': '閉じる',
+  'ruleEditor.modal.section.basic.step': '基本',
+  'ruleEditor.modal.section.basic.title': 'ルール情報',
+  'ruleEditor.modal.field.id.label': 'id（一意）',
+  'ruleEditor.modal.field.name.label': '脅威名（タイトル・任意）',
+  'ruleEditor.modal.field.name.placeholder': '間接プロンプトインジェクション 等',
+  'ruleEditor.modal.field.category.label': 'カテゴリ（分類）',
+  'ruleEditor.modal.field.category.placeholder': 'Tampering 等',
+  'ruleEditor.modal.field.framework.label': 'フレームワーク',
+  'ruleEditor.modal.field.severity.label': '重大度（デフォルト）',
+  'ruleEditor.modal.field.description.label':
+    '説明（{{sourceName}} / {{targetName}} 等のトークン可）',
+  'ruleEditor.modal.field.mitigation.label':
+    '緩和策（[Foundation] / [Enterprise] / [Advanced] markup 可）',
+  'ruleEditor.modal.field.mitigation.placeholder': '空 = 未設定',
+  'ruleEditor.modal.section.target.title': '対象',
+  'ruleEditor.modal.kind.edge': 'エッジ（接続）',
+  'ruleEditor.modal.kind.node': 'ノード（コンポーネント）',
+  'ruleEditor.modal.section.matchEdge.title': 'マッチ条件（発火するか）',
+  'ruleEditor.modal.section.severityBranch.title': '重大度の分岐（任意）',
+  'ruleEditor.modal.section.matchNode.title': 'マッチ条件（対象ノード）',
+  'ruleEditor.modal.section.references.step': '出典',
+  'ruleEditor.modal.section.references.title': '参照・コンプライアンス（任意）',
+  'ruleEditor.modal.references.label': 'references（出典）',
+  'ruleEditor.modal.references.titlePlaceholder': 'タイトル',
+  'ruleEditor.modal.references.urlPlaceholder': 'https://…（任意）',
+  'ruleEditor.modal.complianceRefs.label': 'complianceRefs（規制対応）',
+  'ruleEditor.modal.complianceRefs.standardPlaceholder': 'nist-ai-rmf 等',
+  'ruleEditor.modal.complianceRefs.refPlaceholder': 'GOVERN 1.1 等',
+  'ruleEditor.modal.issues.heading': '保存できません：',
+  'ruleEditor.modal.issues.duplicateId':
+    'id "{id}" は既存ルール（出荷 / 他の有効ライブラリ / 同一ライブラリ）と重複しています。一意な id にしてください。',
+  'ruleEditor.modal.cancel': 'キャンセル',
+  'ruleEditor.modal.save': '保存',
+  'ruleEditor.modal.repeatableRows.deleteRow': '行を削除',
+  'ruleEditor.modal.repeatableRows.addRow': '行を追加',
+
+  // ── CustomRulesManagerModal ──
+  'ruleEditor.manager.title': 'カスタム脅威ルール',
+  'ruleEditor.manager.close': '閉じる',
+  'ruleEditor.manager.scopeNote.before': 'ここで作成・取り込んだルールは',
+  'ruleEditor.manager.scopeNote.strong': '全プロジェクト共通',
+  'ruleEditor.manager.scopeNote.after':
+    'で評価されます（出荷ルールとは別系統のユーザーデータ）。',
+  'ruleEditor.manager.newLibraryPlaceholder': '新規ライブラリ名',
+  'ruleEditor.manager.create': '作成',
+  'ruleEditor.manager.importJson': 'JSON インポート',
+  'ruleEditor.manager.importFailed': 'インポート失敗 — {error}',
+  'ruleEditor.manager.empty': 'まだカスタムルールライブラリはありません。',
+  'ruleEditor.manager.collapse': '折りたたむ',
+  'ruleEditor.manager.expand': 'ルールを表示',
+  'ruleEditor.manager.enabled': '有効（クリックで無効化）',
+  'ruleEditor.manager.disabled': '無効（クリックで有効化）',
+  'ruleEditor.manager.ruleCount': 'ルール {count} 件',
+  'ruleEditor.manager.disabledSuffix': '· 無効',
+  'ruleEditor.manager.exportJson': 'JSON エクスポート',
+  'ruleEditor.manager.deleteLibrary': '削除',
+  'ruleEditor.manager.ruleKindEdge': 'エッジルール',
+  'ruleEditor.manager.ruleKindNode': 'ノードルール',
+  'ruleEditor.manager.editRule': '編集',
+  'ruleEditor.manager.deleteRule': 'ルールを削除',
+  'ruleEditor.manager.addRule': 'ルールを追加',
+  'ruleEditor.manager.cloneFromBundled': '出荷ルールから複製',
+  'ruleEditor.manager.footerNote':
+    'ライブラリを展開してルール（エッジ／ノード）を追加・編集できます。JSON インポートでの取り込みも引き続き利用できます。',
+
+  // ── BundledRulePicker ──
+  'ruleEditor.bundledPicker.title': '出荷ルールを複製',
+  'ruleEditor.bundledPicker.close': '閉じる',
+  'ruleEditor.bundledPicker.searchPlaceholder': 'id / カテゴリ / 説明で検索',
+  'ruleEditor.bundledPicker.empty': '該当するルールがありません。',
+
+  // ── AttackSurfaceEditor ──
+  'ruleEditor.attackSurface.field.hasGlobalIp': 'グローバル IP',
+  'ruleEditor.attackSurface.field.hasSourceIpRestriction': '送信元 IP 制限',
+  'ruleEditor.attackSurface.field.hasRemoteAccessRestriction': 'リモートアクセス制限',
+  'ruleEditor.attackSurface.field.hasUserAuthentication': 'ユーザー認証',
+  'ruleEditor.attackSurface.field.hasAccessLog': 'アクセスログ',
+  'ruleEditor.attackSurface.field.hasWafProtection': 'WAF',
+  'ruleEditor.attackSurface.field.hasDdosProtection': 'DDoS 防御',
+  'ruleEditor.attackSurface.tristate.unspecified': '不問',
+  'ruleEditor.attackSurface.tristate.yes': '有',
+  'ruleEditor.attackSurface.tristate.no': '無',
+
+  // ── ConditionGroup ──
+  'ruleEditor.condition.mode.when.label': '単一条件',
+  'ruleEditor.condition.mode.when.hint': '1 つの条件ブロック（軸は AND）',
+  'ruleEditor.condition.mode.allOf.label': 'すべて満たす (AND)',
+  'ruleEditor.condition.mode.allOf.hint': '全ブロックを同時に満たすと発火',
+  'ruleEditor.condition.mode.anyOf.label': 'いずれか満たす (OR)',
+  'ruleEditor.condition.mode.anyOf.hint': 'どれか 1 ブロックを満たすと発火',
+  'ruleEditor.condition.blockLabel': 'ブロック {index}',
+  'ruleEditor.condition.minBlocks': '最低 2 ブロック必要',
+  'ruleEditor.condition.deleteBlock': 'ブロックを削除',
+  'ruleEditor.condition.addBlock': 'ブロックを追加',
+
+  // ── EdgeWhenLeafEditor ──
+  'ruleEditor.edgeLeaf.axis.auth': '認証',
+  'ruleEditor.edgeLeaf.axis.network': 'ネットワーク',
+  'ruleEditor.edgeLeaf.axis.encryption': '暗号化',
+  'ruleEditor.edgeLeaf.axis.sourceTrust': 'source 信頼境界',
+  'ruleEditor.edgeLeaf.axis.targetTrust': 'target 信頼境界',
+  'ruleEditor.edgeLeaf.axis.sourceManagedState': 'source 端末管理',
+  'ruleEditor.edgeLeaf.axis.targetManagedState': 'target 端末管理',
+  'ruleEditor.edgeLeaf.axis.sourceUserTrust': 'source ユーザー信頼',
+  'ruleEditor.edgeLeaf.axis.targetUserTrust': 'target ユーザー信頼',
+  'ruleEditor.edgeLeaf.axis.semantic': 'エッジ意味論',
+  'ruleEditor.edgeLeaf.axis.sourceType': 'source 型',
+  'ruleEditor.edgeLeaf.axis.targetType': 'target 型',
+
+  // ── NodeTargetEditor ──
+  'ruleEditor.nodeTarget.mode.single': '単一型',
+  'ruleEditor.nodeTarget.mode.anyOf': 'いずれかの型 (anyOf)',
+  'ruleEditor.nodeTarget.selectType': '（型を選択）',
+  'ruleEditor.nodeTarget.selectTwoOrMore': '2 つ以上の型を選択',
+  'ruleEditor.nodeTarget.connectionEnabled': '接続要件を指定する',
+  'ruleEditor.nodeTarget.connectionDefault': '未指定 = 既定（任意方向のエッジ1本以上）',
+  'ruleEditor.nodeTarget.connectionRequired': '接続が必要',
+  'ruleEditor.nodeTarget.connectionIntrinsic': '内在的（接続不問）',
+  'ruleEditor.nodeTarget.connectionIntrinsicTitle': '接続有無に関係なく発火（内在的脅威）',
+  'ruleEditor.nodeTarget.direction': '方向',
+  'ruleEditor.nodeTarget.peerTypeLabel': '接続先（ピア）の型（任意・OR）',
+  'ruleEditor.nodeTarget.peerAttackSurfaceLabel': '接続先（ピア）の攻撃面（任意）',
+  'ruleEditor.nodeTarget.attackSurfaceLabel':
+    'このノードの攻撃面（任意・FRONT_END_SERVER / GATEWAY 等で意味を持つ）',
+  'ruleEditor.nodeTarget.agentAttributesLabel':
+    'エージェント属性（任意・未指定属性は「最悪を仮定」評価）',
+  'ruleEditor.nodeTarget.agentAxis.agency': 'agency（自律度）',
+  'ruleEditor.nodeTarget.agentAxis.blastRadius': 'blastRadius（影響範囲）',
+  'ruleEditor.nodeTarget.agentAxis.identityTier': 'identityTier（同一性）',
+
+  // ── SeverityBranchEditor ──
+  'ruleEditor.severityBranch.description':
+    '上から順に評価し、最初に一致したケースで重大度・説明を上書きします（任意）。どのケースにも一致しなければ下の「デフォルト」が使われます。',
+  'ruleEditor.severityBranch.moveUp': '上へ',
+  'ruleEditor.severityBranch.moveDown': '下へ',
+  'ruleEditor.severityBranch.deleteCase': 'ケースを削除',
+  'ruleEditor.severityBranch.severityLabel': '→ 重大度',
+  'ruleEditor.severityBranch.keepSeverity': '（据え置き）',
+  'ruleEditor.severityBranch.descriptionLabel': '→ 説明（上書き）',
+  'ruleEditor.severityBranch.descriptionPlaceholder': '空 = 据え置き',
+  'ruleEditor.severityBranch.elseDefault': 'else（デフォルト）',
+  'ruleEditor.severityBranch.severityPrefix': '重大度',
+  'ruleEditor.severityBranch.separator': '／',
+  'ruleEditor.severityBranch.noDescription': '説明未設定',
+  'ruleEditor.severityBranch.addCase': '分岐ケースを追加',
+} as const;

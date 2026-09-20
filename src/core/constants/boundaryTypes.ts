@@ -4,21 +4,22 @@ import type {
   MicroTrustAttribute,
   TrustLevel,
 } from '../model/types';
+import type { TranslationKey } from '../../i18n';
 
 export interface BoundaryTypeConfig {
   id: BoundaryTypeId;
-  name: string;
+  nameKey: TranslationKey;
   isDashed: boolean;
   rounded: boolean;
 }
 
 export const BOUNDARY_TYPES: Record<BoundaryTypeId, BoundaryTypeConfig> = {
-  RECT: { id: 'RECT', name: '外部境界', isDashed: false, rounded: false },
-  RECT_DASHED: { id: 'RECT_DASHED', name: 'DMZ', isDashed: true, rounded: false },
-  ROUNDED: { id: 'ROUNDED', name: 'マクロセグメンテーション', isDashed: false, rounded: true },
+  RECT: { id: 'RECT', nameKey: 'canvas.boundaryType.rect', isDashed: false, rounded: false },
+  RECT_DASHED: { id: 'RECT_DASHED', nameKey: 'canvas.boundaryType.dmz', isDashed: true, rounded: false },
+  ROUNDED: { id: 'ROUNDED', nameKey: 'canvas.boundaryType.macro', isDashed: false, rounded: true },
   ROUNDED_DASHED: {
     id: 'ROUNDED_DASHED',
-    name: 'マイクロセグメンテーション',
+    nameKey: 'canvas.boundaryType.micro',
     isDashed: true,
     rounded: true,
   },

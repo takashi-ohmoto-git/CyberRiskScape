@@ -1,0 +1,156 @@
+import type { TranslationKey } from '../ja';
+
+/** Rule editor and custom rule management (English). Missing keys fall back to Japanese. */
+export const enRuleEditor: Partial<Record<TranslationKey, string>> = {
+  // ── RuleEditorModal ──
+  'ruleEditor.modal.titleEdit': 'Edit Rule',
+  'ruleEditor.modal.titleNew': 'New Rule',
+  'ruleEditor.modal.close': 'Close',
+  'ruleEditor.modal.section.basic.step': 'Basics',
+  'ruleEditor.modal.section.basic.title': 'Rule Info',
+  'ruleEditor.modal.field.id.label': 'id (unique)',
+  'ruleEditor.modal.field.name.label': 'Threat name (title, optional)',
+  'ruleEditor.modal.field.name.placeholder': 'e.g. Indirect prompt injection',
+  'ruleEditor.modal.field.category.label': 'Category',
+  'ruleEditor.modal.field.category.placeholder': 'e.g. Tampering',
+  'ruleEditor.modal.field.framework.label': 'Framework',
+  'ruleEditor.modal.field.severity.label': 'Severity (default)',
+  'ruleEditor.modal.field.description.label':
+    'Description ({{sourceName}} / {{targetName}} tokens allowed)',
+  'ruleEditor.modal.field.mitigation.label':
+    'Mitigation ([Foundation] / [Enterprise] / [Advanced] markup allowed)',
+  'ruleEditor.modal.field.mitigation.placeholder': 'Empty = not set',
+  'ruleEditor.modal.section.target.title': 'Target',
+  'ruleEditor.modal.kind.edge': 'Edge (connection)',
+  'ruleEditor.modal.kind.node': 'Node (component)',
+  'ruleEditor.modal.section.matchEdge.title': 'Firing condition',
+  'ruleEditor.modal.section.severityBranch.title': 'Severity branching (optional)',
+  'ruleEditor.modal.section.matchNode.title': 'Firing condition (target node)',
+  'ruleEditor.modal.section.references.step': 'Sources',
+  'ruleEditor.modal.section.references.title': 'References & compliance (optional)',
+  'ruleEditor.modal.references.label': 'references (sources)',
+  'ruleEditor.modal.references.titlePlaceholder': 'Title',
+  'ruleEditor.modal.references.urlPlaceholder': 'https://… (optional)',
+  'ruleEditor.modal.complianceRefs.label': 'complianceRefs (regulatory mapping)',
+  'ruleEditor.modal.complianceRefs.standardPlaceholder': 'e.g. nist-ai-rmf',
+  'ruleEditor.modal.complianceRefs.refPlaceholder': 'e.g. GOVERN 1.1',
+  'ruleEditor.modal.issues.heading': 'Cannot save:',
+  'ruleEditor.modal.issues.duplicateId':
+    'id "{id}" collides with an existing rule (bundled / another enabled library / same library). Use a unique id.',
+  'ruleEditor.modal.cancel': 'Cancel',
+  'ruleEditor.modal.save': 'Save',
+  'ruleEditor.modal.repeatableRows.deleteRow': 'Delete row',
+  'ruleEditor.modal.repeatableRows.addRow': 'Add row',
+
+  // ── CustomRulesManagerModal ──
+  'ruleEditor.manager.title': 'Custom Threat Rules',
+  'ruleEditor.manager.close': 'Close',
+  'ruleEditor.manager.scopeNote.before': 'Rules created or imported here are evaluated ',
+  'ruleEditor.manager.scopeNote.strong': 'across all projects',
+  'ruleEditor.manager.scopeNote.after':
+    ' (user data kept separate from bundled rules).',
+  'ruleEditor.manager.newLibraryPlaceholder': 'New library name',
+  'ruleEditor.manager.create': 'Create',
+  'ruleEditor.manager.importJson': 'Import JSON',
+  'ruleEditor.manager.importFailed': 'Import failed — {error}',
+  'ruleEditor.manager.empty': 'No custom rule libraries yet.',
+  'ruleEditor.manager.collapse': 'Collapse',
+  'ruleEditor.manager.expand': 'Show rules',
+  'ruleEditor.manager.enabled': 'Enabled (click to disable)',
+  'ruleEditor.manager.disabled': 'Disabled (click to enable)',
+  'ruleEditor.manager.ruleCount': '{count} rule(s)',
+  'ruleEditor.manager.disabledSuffix': '· disabled',
+  'ruleEditor.manager.exportJson': 'Export JSON',
+  'ruleEditor.manager.deleteLibrary': 'Delete',
+  'ruleEditor.manager.ruleKindEdge': 'Edge rule',
+  'ruleEditor.manager.ruleKindNode': 'Node rule',
+  'ruleEditor.manager.editRule': 'Edit',
+  'ruleEditor.manager.deleteRule': 'Delete rule',
+  'ruleEditor.manager.addRule': 'Add rule',
+  'ruleEditor.manager.cloneFromBundled': 'Clone from bundled rules',
+  'ruleEditor.manager.footerNote':
+    'Expand a library to add or edit rules (edge / node). JSON import is still available.',
+
+  // ── BundledRulePicker ──
+  'ruleEditor.bundledPicker.title': 'Clone a Bundled Rule',
+  'ruleEditor.bundledPicker.close': 'Close',
+  'ruleEditor.bundledPicker.searchPlaceholder': 'Search by id / category / description',
+  'ruleEditor.bundledPicker.empty': 'No matching rules.',
+
+  // ── AttackSurfaceEditor ──
+  'ruleEditor.attackSurface.field.hasGlobalIp': 'Global IP',
+  'ruleEditor.attackSurface.field.hasSourceIpRestriction': 'Source IP restriction',
+  'ruleEditor.attackSurface.field.hasRemoteAccessRestriction': 'Remote access restriction',
+  'ruleEditor.attackSurface.field.hasUserAuthentication': 'User authentication',
+  'ruleEditor.attackSurface.field.hasAccessLog': 'Access log',
+  'ruleEditor.attackSurface.field.hasWafProtection': 'WAF',
+  'ruleEditor.attackSurface.field.hasDdosProtection': 'DDoS protection',
+  'ruleEditor.attackSurface.tristate.unspecified': 'Any',
+  'ruleEditor.attackSurface.tristate.yes': 'Yes',
+  'ruleEditor.attackSurface.tristate.no': 'No',
+
+  // ── ConditionGroup ──
+  'ruleEditor.condition.mode.when.label': 'Single condition',
+  'ruleEditor.condition.mode.when.hint': 'One condition block (axes are AND-ed)',
+  'ruleEditor.condition.mode.allOf.label': 'Match all (AND)',
+  'ruleEditor.condition.mode.allOf.hint': 'Fires only when every block matches',
+  'ruleEditor.condition.mode.anyOf.label': 'Match any (OR)',
+  'ruleEditor.condition.mode.anyOf.hint': 'Fires when any one block matches',
+  'ruleEditor.condition.blockLabel': 'Block {index}',
+  'ruleEditor.condition.minBlocks': 'At least 2 blocks required',
+  'ruleEditor.condition.deleteBlock': 'Delete block',
+  'ruleEditor.condition.addBlock': 'Add block',
+
+  // ── EdgeWhenLeafEditor ──
+  'ruleEditor.edgeLeaf.axis.auth': 'Auth',
+  'ruleEditor.edgeLeaf.axis.network': 'Network',
+  'ruleEditor.edgeLeaf.axis.encryption': 'Encryption',
+  'ruleEditor.edgeLeaf.axis.sourceTrust': 'source trust boundary',
+  'ruleEditor.edgeLeaf.axis.targetTrust': 'target trust boundary',
+  'ruleEditor.edgeLeaf.axis.sourceManagedState': 'source device management',
+  'ruleEditor.edgeLeaf.axis.targetManagedState': 'target device management',
+  'ruleEditor.edgeLeaf.axis.sourceUserTrust': 'source user trust',
+  'ruleEditor.edgeLeaf.axis.targetUserTrust': 'target user trust',
+  'ruleEditor.edgeLeaf.axis.semantic': 'Edge semantic',
+  'ruleEditor.edgeLeaf.axis.sourceType': 'source type',
+  'ruleEditor.edgeLeaf.axis.targetType': 'target type',
+
+  // ── NodeTargetEditor ──
+  'ruleEditor.nodeTarget.mode.single': 'Single type',
+  'ruleEditor.nodeTarget.mode.anyOf': 'Any of the types (anyOf)',
+  'ruleEditor.nodeTarget.selectType': '(select a type)',
+  'ruleEditor.nodeTarget.selectTwoOrMore': 'Select two or more types',
+  'ruleEditor.nodeTarget.connectionEnabled': 'Specify a connection requirement',
+  'ruleEditor.nodeTarget.connectionDefault':
+    'Unspecified = default (at least one edge in any direction)',
+  'ruleEditor.nodeTarget.connectionRequired': 'Connection required',
+  'ruleEditor.nodeTarget.connectionIntrinsic': 'Inherent (no connection needed)',
+  'ruleEditor.nodeTarget.connectionIntrinsicTitle':
+    'Fires regardless of connections (inherent threat)',
+  'ruleEditor.nodeTarget.direction': 'Direction',
+  'ruleEditor.nodeTarget.peerTypeLabel': 'Peer type (optional, OR)',
+  'ruleEditor.nodeTarget.peerAttackSurfaceLabel': 'Peer attack surface (optional)',
+  'ruleEditor.nodeTarget.attackSurfaceLabel':
+    'This node\'s attack surface (optional; meaningful for FRONT_END_SERVER / GATEWAY etc.)',
+  'ruleEditor.nodeTarget.agentAttributesLabel':
+    'Agent attributes (optional; unset attributes assume worst case)',
+  'ruleEditor.nodeTarget.agentAxis.agency': 'agency (autonomy level)',
+  'ruleEditor.nodeTarget.agentAxis.blastRadius': 'blastRadius (impact scope)',
+  'ruleEditor.nodeTarget.agentAxis.identityTier': 'identityTier (identity distinctness)',
+
+  // ── SeverityBranchEditor ──
+  'ruleEditor.severityBranch.description':
+    'Evaluated top to bottom; the first matching case overrides severity/description (optional). If no case matches, the "default" below is used.',
+  'ruleEditor.severityBranch.moveUp': 'Move up',
+  'ruleEditor.severityBranch.moveDown': 'Move down',
+  'ruleEditor.severityBranch.deleteCase': 'Delete case',
+  'ruleEditor.severityBranch.severityLabel': '→ Severity',
+  'ruleEditor.severityBranch.keepSeverity': '(keep as-is)',
+  'ruleEditor.severityBranch.descriptionLabel': '→ Description (override)',
+  'ruleEditor.severityBranch.descriptionPlaceholder': 'Empty = keep as-is',
+  'ruleEditor.severityBranch.elseDefault': 'else (default)',
+  'ruleEditor.severityBranch.severityPrefix': 'Severity',
+  'ruleEditor.severityBranch.separator': '/',
+  'ruleEditor.severityBranch.noDescription': 'No description set',
+  'ruleEditor.severityBranch.addCase': 'Add branch case',
+};

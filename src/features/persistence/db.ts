@@ -9,7 +9,7 @@ import { openDB, type IDBPDatabase } from 'idb';
  */
 
 const DB_NAME = 'cyberriskscape';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 export const PROJECTS_STORE = 'projects';
 export const DEFAULT_PROJECT_KEY = 'default';
 /**
@@ -24,6 +24,11 @@ export const CUSTOM_RULE_LIBRARIES_STORE = 'customRuleLibraries';
  * 「保存先フォルダ」をリロードを跨いで記憶できる（権限は再アクセス時に再取得）。
  */
 export const FS_HANDLES_STORE = 'fsHandles';
+/**
+ * アプリ設定のストア（v4 で追加）。現状は UI ロケールのみを固定キーで保持する。
+ * localStorage は使用禁止のため、設定類もすべて IndexedDB に置く。
+ */
+export const SETTINGS_STORE = 'settings';
 
 let dbPromise: Promise<IDBPDatabase> | null = null;
 
@@ -39,6 +44,9 @@ export function getDb(): Promise<IDBPDatabase> {
         }
         if (!db.objectStoreNames.contains(FS_HANDLES_STORE)) {
           db.createObjectStore(FS_HANDLES_STORE);
+        }
+        if (!db.objectStoreNames.contains(SETTINGS_STORE)) {
+          db.createObjectStore(SETTINGS_STORE);
         }
       },
     });

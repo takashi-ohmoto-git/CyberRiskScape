@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { detectThreats } from './core/threat-engine/detectThreats';
 import { buildThreatViews } from './core/threat-engine/buildThreatViews';
-import { BUNDLED_THREAT_LIBRARY } from './threat-library/loader/bundledLibrary';
+import { getThreatLibrary } from './threat-library/loader/bundledLibrary';
 import {
   selectActiveBoundaries,
   selectActiveEdges,
@@ -12,10 +12,11 @@ import {
 import { useDragInteractions } from './core/state/useDragInteractions';
 import { useUndoRedo } from './core/state/useUndoRedo';
 import { usePersistence } from './features/persistence/usePersistence';
+import { useLocalePersistence } from './features/persistence/useLocalePersistence';
 import { useCustomRules } from './features/custom-rules/useCustomRules';
 import { selectCustomLibraries, useCustomRulesStore } from './features/custom-rules/store';
 import { mergeThreatRules } from './features/custom-rules/mergeRules';
-import { useT } from './i18n';
+import { useLocale, useT } from './i18n';
 import { Canvas } from './core/canvas/Canvas';
 import { Legend } from './core/canvas/Legend';
 import { LeftSidebar } from './ui/LeftSidebar';
@@ -34,9 +35,11 @@ import { LibraryInspectorModal } from './ui/panels/library-inspector/LibraryInsp
 
 export default function App() {
   const t = useT();
+  const [locale] = useLocale();
   useDragInteractions();
   useUndoRedo();
   usePersistence();
+  useLocalePersistence();
   useCustomRules();
 
   const isHydrated = useDiagramStore((s) => s.isHydrated);
@@ -56,8 +59,8 @@ export default function App() {
 
   // 出荷ルール + 有効なカスタムルールライブラリを合流（id 衝突は bundled 優先で除外）。
   const merged = useMemo(
-    () => mergeThreatRules(BUNDLED_THREAT_LIBRARY.rules, customLibraries),
-    [customLibraries],
+    () => mergeThreatRules(getThreatLibrary(locale).rules, customLibraries),
+    [customLibraries, locale],
   );
 
   const threats = useMemo(

@@ -9,6 +9,7 @@ import {
 } from '../../../threat-library/schema/threatRule';
 import { componentRegistry } from '../../../component-library/defaultRegistry';
 import type { EdgeLeafDraft } from '../../../features/custom-rules/editor/draft';
+import { useT, type TranslationKey } from '../../../i18n';
 import { ChipGroup, toggleInArray } from './ChipGroup';
 
 /**
@@ -21,22 +22,22 @@ import { ChipGroup, toggleInArray } from './ChipGroup';
 
 /** 文字列 enum 軸の設定（型軸は別扱い）。 */
 const ENUM_AXES = [
-  { key: 'auth', label: '認証', options: AuthTypeSchema.options },
-  { key: 'network', label: 'ネットワーク', options: NetworkTypeSchema.options },
-  { key: 'encryption', label: '暗号化', options: EncryptionTypeSchema.options },
-  { key: 'sourceTrust', label: 'source 信頼境界', options: TrustLevelSchema.options },
-  { key: 'targetTrust', label: 'target 信頼境界', options: TrustLevelSchema.options },
-  { key: 'sourceManagedState', label: 'source 端末管理', options: ManagedStateSchema.options },
-  { key: 'targetManagedState', label: 'target 端末管理', options: ManagedStateSchema.options },
-  { key: 'sourceUserTrust', label: 'source ユーザー信頼', options: UserTrustAttributeSchema.options },
-  { key: 'targetUserTrust', label: 'target ユーザー信頼', options: UserTrustAttributeSchema.options },
-  { key: 'semantic', label: 'エッジ意味論', options: EdgeSemanticSchema.options },
-] as const;
+  { key: 'auth', labelKey: 'ruleEditor.edgeLeaf.axis.auth', options: AuthTypeSchema.options },
+  { key: 'network', labelKey: 'ruleEditor.edgeLeaf.axis.network', options: NetworkTypeSchema.options },
+  { key: 'encryption', labelKey: 'ruleEditor.edgeLeaf.axis.encryption', options: EncryptionTypeSchema.options },
+  { key: 'sourceTrust', labelKey: 'ruleEditor.edgeLeaf.axis.sourceTrust', options: TrustLevelSchema.options },
+  { key: 'targetTrust', labelKey: 'ruleEditor.edgeLeaf.axis.targetTrust', options: TrustLevelSchema.options },
+  { key: 'sourceManagedState', labelKey: 'ruleEditor.edgeLeaf.axis.sourceManagedState', options: ManagedStateSchema.options },
+  { key: 'targetManagedState', labelKey: 'ruleEditor.edgeLeaf.axis.targetManagedState', options: ManagedStateSchema.options },
+  { key: 'sourceUserTrust', labelKey: 'ruleEditor.edgeLeaf.axis.sourceUserTrust', options: UserTrustAttributeSchema.options },
+  { key: 'targetUserTrust', labelKey: 'ruleEditor.edgeLeaf.axis.targetUserTrust', options: UserTrustAttributeSchema.options },
+  { key: 'semantic', labelKey: 'ruleEditor.edgeLeaf.axis.semantic', options: EdgeSemanticSchema.options },
+] as const satisfies readonly { key: string; labelKey: TranslationKey; options: readonly string[] }[];
 
 const TYPE_AXES = [
-  { key: 'sourceType', label: 'source 型' },
-  { key: 'targetType', label: 'target 型' },
-] as const;
+  { key: 'sourceType', labelKey: 'ruleEditor.edgeLeaf.axis.sourceType' },
+  { key: 'targetType', labelKey: 'ruleEditor.edgeLeaf.axis.targetType' },
+] as const satisfies readonly { key: string; labelKey: TranslationKey }[];
 
 function AxisRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -54,13 +55,14 @@ export function EdgeWhenLeafEditor({
   leaf: EdgeLeafDraft;
   onChange: (next: EdgeLeafDraft) => void;
 }) {
+  const t = useT();
   const componentIds = componentRegistry.getAll().map((c) => c.id);
   const labelOf = (id: string) => componentRegistry.get(id)?.label ?? id;
 
   return (
     <div className="flex flex-col gap-2 bg-slate-900/60 border border-slate-700/70 rounded-lg p-3">
       {ENUM_AXES.map((axis) => (
-        <AxisRow key={axis.key} label={axis.label}>
+        <AxisRow key={axis.key} label={t(axis.labelKey)}>
           <ChipGroup
             options={axis.options}
             selected={leaf[axis.key]}
@@ -69,7 +71,7 @@ export function EdgeWhenLeafEditor({
         </AxisRow>
       ))}
       {TYPE_AXES.map((axis) => (
-        <AxisRow key={axis.key} label={axis.label}>
+        <AxisRow key={axis.key} label={t(axis.labelKey)}>
           <ChipGroup
             options={componentIds}
             selected={leaf[axis.key]}

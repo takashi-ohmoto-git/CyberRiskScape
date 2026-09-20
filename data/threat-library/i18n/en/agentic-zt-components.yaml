@@ -1,0 +1,72 @@
+# English overlay for `data/threat-library/agentic-zt-components.yaml`.
+#
+# The Japanese file is the source of truth: only `name` / `category` / `description` /
+# `mitigation` (plus `conditions[].description` and `references[].title` where present)
+# are translated here, keyed by rule id. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - Keep `{{token}}` placeholders exactly as they appear in the original.
+#   - Keep the `[Foundation]` / `[Enterprise]` / `[Advanced]` markup — the maturity
+#     tiers are re-derived from this text.
+#   - Preserve the Can / Cannot pair and the blast radius statement in `description`
+#     (docs/threat-schema.md §7.5).
+#   - `references` is keyed by the index in the original array, and only the entries
+#     that need translating are listed. Keep a genuinely Japanese document title as
+#     its original title and add an English gloss; `url` is never translated.
+#   - This source is based on the Model Context Protocol official "Security Best
+#     Practices" and Anthropic "Zero Trust for AI Agents" — use the original English
+#     terminology (tool poisoning, line jumping, typosquatting, token passthrough,
+#     confused deputy, blast radius, Foundation/Enterprise/Advanced) rather than
+#     ad hoc phrasing.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+rules:
+  mcp-tool-descriptor-poisoning-001:
+    category: "Supply Chain"
+    name: "Tool descriptor poisoning / line jumping"
+    description: "If hidden instructions are embedded in the tool descriptors {{nodeName}} exposes — name, description, input schema, annotations — the agent pulls that descriptor into its context the moment it fetches the tool list via tools/list, and prompt injection succeeds before the tool is ever called (line jumping) (Can). An attacker can use this to swap arguments on other tools, exfiltrate sensitive data, or bypass approval flows. If, on the other hand, descriptors are signature-verified, the client rejects unsigned or altered descriptors, and descriptor text is kept separated from instructions as untrusted data, fetching the list alone does not achieve injection (Cannot). The blast radius is every agent session connected to that MCP server."
+    mitigation: "[Foundation] Allow-list the MCP servers an agent connects to, treat tool descriptors (description text, schema) as untrusted data, and detect and neutralize embedded instructions. Require approval for descriptor changes and prohibit silent updates. [Enterprise] Require signatures on tool descriptors and reject anything unsigned, invalidly signed, or changed from the last known hash without authorization. Route descriptors through a sanitization gate before they reach the model. [Advanced] Integrate deployment verification and integrity attestation for descriptors into CI, and quarantine the server automatically when a change is detected."
+    references:
+      "0":
+        title: "Model Context Protocol - Security Best Practices (tool descriptor / prompt injection via tool definitions)"
+      "1":
+        title: "Anthropic - Zero Trust for AI Agents (Tool poisoning) (related mapping)"
+
+  mcp-server-impersonation-typosquatting-001:
+    category: "Supply Chain"
+    name: "MCP server impersonation / typosquatting"
+    description: "If the MCP server {{nodeName}} connects to has been spoofed as a legitimate server through registry, package-name, or discovery-response impersonation — typosquatting, name collision, registry poisoning — the agent connects to the malicious server and hands over its input prompts, arguments, and fetched results to the attacker (Can). The attacker can impersonate the legitimate server while tampering with or stealing tool output. If, on the other hand, server identity is cryptographically verified (a signed server card, or a fixed endpoint with certificate pinning) and connections to servers outside the allow-list are rejected, name similarity alone cannot hijack the connection (Cannot). The blast radius is every request sent to that server and every agent behavior that depends on its responses."
+    mitigation: "[Foundation] Allow-list the MCP servers an agent connects to by ID and endpoint, resolving them by a fixed identifier rather than name similarity. [Enterprise] Cryptographically verify server identity — signed server metadata, or mTLS with certificate pinning — and reject tampered or falsely registered registry responses. [Advanced] Continuously verify servers against a PKI trust root and an attested registry, and automatically revoke connections when compromise or impersonation is detected."
+    references:
+      "0":
+        title: "Model Context Protocol - Security Best Practices (server identity / discovery spoofing)"
+
+  mcp-oauth-token-confused-deputy-001:
+    category: "Identity"
+    name: "MCP OAuth token theft / confused deputy"
+    description: "When {{nodeName}} is designed to hold and relay OAuth access and refresh tokens for downstream APIs, a server compromise lets an attacker steal long-lived tokens for many users and many downstream services at once, then move laterally into each downstream API with a legitimate token (Can). Worse, if downstream calls are made under the server's own privileges rather than the end user's intent, a confused deputy results, where even a low-privileged request exercises broad downstream privileges. If, on the other hand, tokens are short-lived and scoped per user — token passthrough is prohibited and each downstream call goes through an on-behalf-of exchange — and the server never holds credentials in plaintext, sealing them in a KMS or HSM, a server compromise does not readily yield a bulk takeover of downstream privileges (Cannot). The blast radius is every downstream API this server brokers and every user's tokens."
+    mitigation: "[Foundation] Do not let the MCP server hold long-lived or shared tokens; limit downstream calls to short-lived, per-user scoped tokens. Prohibit raw token passthrough. [Enterprise] Perform an on-behalf-of token exchange for each downstream call, verifying the end user's claims on every call to prevent a confused deputy. Seal tokens in a KMS and prohibit holding them in plaintext. [Advanced] Root credentials in hardware-attested storage that cannot be exported from a compromised host, and issue tokens via JIT/JEA — elevating only when needed and revoking automatically as soon as the task completes."
+    references:
+      "0":
+        title: "Model Context Protocol - Security Best Practices (token passthrough / confused deputy)"
+      "1":
+        title: "Anthropic - Zero Trust for AI Agents (Service authentication / Identity and privilege abuse) (related mapping)"
+
+  memory-store-cross-tenant-bleed-001:
+    category: "Information Disclosure"
+    name: "Cross-tenant / cross-session memory bleed and retention"
+    description: "If {{nodeName}} stores an agent's long-term memory, summaries, and search index without a tenant, session, or user-level separation key, content written in one tenant's session can be surfaced in another tenant's or session's search or summary, letting sensitive data, conversation content, and intermediate results bleed across and linger (Can). An attacker can deliberately induce cross-tenant leakage with a prompt that draws out another tenant's memory. If, on the other hand, memory records are physically or logically separated by tenant/session ID and reads enforce an ACL matched against the caller's scope, records outside that scope never appear in search results and bleed does not occur (Cannot). The blast radius is the retained memory content of every tenant and every session sharing that store."
+    mitigation: "[Foundation] Require a tenant/session/user ID on every memory record and restrict reads and search to the caller's scope, with sharing disabled by default. Discard volatile memory when a session ends. [Enterprise] Separate indexes/namespaces per tenant and enforce an attribute-based ACL at read time. Operate a retention period (TTL) and verified soft-deletion as a control against lingering data. [Advanced] Separate per-record encryption keys by tenant key (enabling crypto-shredding), and detect and alert on attempted cross-scope access."
+
+  memory-store-sensitive-data-accumulation-001:
+    category: "Information Disclosure"
+    name: "Unbounded accumulation of PII and credentials in long-term memory"
+    description: "If {{nodeName}} accumulates personal information (PERSONAL_INFO), credentials (CREDENTIAL), and other sensitive data straight into long-term memory from conversations, tool responses, and intermediate results without filtering, the store becomes a high-value concentration point for sensitive data over time, and once a leak or unauthorized access occurs, the impact extends well beyond a single session (Can). An attacker who compromises the store can harvest cached credentials and historical PII in bulk. If, on the other hand, sensitive categories are detected and masked or excluded at write time, and persisting credentials is prohibited, the sensitive data an attacker can recover from a compromised store is limited (Cannot). The blast radius is all the sensitive data accumulated in that store over its entire retention period."
+    mitigation: "[Foundation] Detect sensitive categories (PII, credentials, confidential data) before writing to long-term memory; prohibit persisting credentials and mask or refuse to retain PII. [Enterprise] Minimize what is remembered to business-necessary summaries, applying a short TTL and automatic expiry to sensitive categories. Periodically inventory and audit accumulated content. [Advanced] Tokenize or encrypt sensitive data at rest, and maintain an erasable memory design that can honor a data subject's deletion (right to erasure) request."
+    references:
+      "1":
+        title: "OWASP LLM02:2025 Sensitive Information Disclosure (related mapping)"

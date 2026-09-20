@@ -11,11 +11,21 @@
  * 現状は基盤確立のためのパイロット文言のみ。既存の直書き文言は今後の差分で
  * 順次このファイルへ集約していく（一括移行はしない）。
  */
-export const ja = {
+import { jaCanvas } from './ja/canvas';
+import { jaPanels } from './ja/panels';
+import { jaZeroTrust } from './ja/zeroTrust';
+import { jaAnalytics } from './ja/analytics';
+import { jaRuleEditor } from './ja/ruleEditor';
+import { jaProject } from './ja/project';
+import { jaThreats } from './ja/threats';
+import { jaReport } from './ja/report';
+
+const jaCore = {
   'app.loading': '読み込み中…',
 
   'topbar.focusMode': '集中モード',
   'topbar.showSidebar': 'サイドバーを表示',
+  'topbar.language': '表示言語',
 
   // {name}=ファイル名, {brand}=BRANDING.name
   'projectFile.loadFailed':
@@ -149,6 +159,32 @@ export const ja = {
   'attackTree.routeTable.blocked': '遮断',
   'attackTree.routeTable.statusFeasible': '到達可能',
   'attackTree.routeTable.statusBlocked': '遮断済み',
+  'framework.label.ALL': 'ALL',
+  'framework.label.STRIDE': 'Human Centric (STRIDE)',
+  'framework.label.AI': 'AI・LLM',
+  'framework.label.AgenticAI': 'Agent-Centric',
+  'io.jsonSyntaxError': 'JSON 構文エラー: {message}',
+  'io.validationError': '検証エラー: {issues}',
+  'appliesToSummary.join.sentence': '',
+  'appliesToSummary.join.or': ' または ',
+  'appliesToSummary.join.allOf': '、かつ ',
+  'appliesToSummary.join.anyOf': '、または ',
+} as const;
+
+/**
+ * 全領域の辞書を集約したもの。領域別モジュールは並列編集時の衝突を避けるため
+ * 分割している（as const のスプレッドなのでキーのリテラル型は保たれる）。
+ */
+export const ja = {
+  ...jaCore,
+  ...jaCanvas,
+  ...jaPanels,
+  ...jaZeroTrust,
+  ...jaAnalytics,
+  ...jaRuleEditor,
+  ...jaProject,
+  ...jaThreats,
+  ...jaReport,
 } as const;
 
 /** 全翻訳キーの型。en 等の他ロケールはこの部分集合を持つ。 */

@@ -50,8 +50,11 @@ import { formatElementalId } from '../../core/model/elementalId';
 import { componentRegistry } from '../../component-library/defaultRegistry';
 import { renderIcon } from '../../component-library/iconRegistry';
 import { selectActiveNodes, useDiagramStore } from '../../core/state/diagramStore';
+import { useT } from '../../i18n';
 import { ThreatCard } from './ThreatCard';
 import { AttackTreeModal } from './AttackTreeModal';
+
+type TFunc = ReturnType<typeof useT>;
 
 /** 管理状態（Managed/Unmanaged）を持つコンポーネント型。 */
 const MANAGED_STATE_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set([
@@ -60,10 +63,14 @@ const MANAGED_STATE_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set([
   'IOT',
 ]);
 
-const MANAGED_OPTIONS: { val: ManagedState; label: string; icon: typeof ShieldCheck; color: string }[] = [
-  { val: 'Managed', label: 'Managed (管理下)', icon: ShieldCheck, color: 'text-emerald-400' },
-  { val: 'Unmanaged', label: 'Unmanaged (未管理)', icon: ShieldOff, color: 'text-rose-400' },
-];
+function getManagedOptions(
+  t: TFunc,
+): { val: ManagedState; label: string; icon: typeof ShieldCheck; color: string }[] {
+  return [
+    { val: 'Managed', label: t('panels.node.managedState.managed'), icon: ShieldCheck, color: 'text-emerald-400' },
+    { val: 'Unmanaged', label: t('panels.node.managedState.unmanaged'), icon: ShieldOff, color: 'text-rose-400' },
+  ];
+}
 
 /** USER ノードに Trust Attribute（信頼区分）UI を表示する。 */
 const USER_TRUST_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set(['USER']);
@@ -79,48 +86,62 @@ const USER_TRUST_TO_MANAGED: Record<UserTrustAttribute, ManagedState> = {
   Partner: 'Managed',
 };
 
-const USER_TRUST_OPTIONS: {
+function getUserTrustOptions(
+  t: TFunc,
+): {
   val: UserTrustAttribute;
   label: string;
   icon: typeof UserCheck;
   color: string;
-}[] = [
-  { val: 'Guest', label: 'Guest (来訪者)', icon: UserX, color: 'text-rose-400' },
-  { val: 'Employee', label: '正社員', icon: UserCheck, color: 'text-emerald-400' },
-  { val: 'Contractor', label: '契約社員', icon: UserCog, color: 'text-amber-400' },
-  { val: 'Partner', label: '取引先', icon: Briefcase, color: 'text-indigo-400' },
-];
+}[] {
+  return [
+    { val: 'Guest', label: t('panels.node.userTrust.guest'), icon: UserX, color: 'text-rose-400' },
+    { val: 'Employee', label: t('panels.node.userTrust.employee'), icon: UserCheck, color: 'text-emerald-400' },
+    { val: 'Contractor', label: t('panels.node.userTrust.contractor'), icon: UserCog, color: 'text-amber-400' },
+    { val: 'Partner', label: t('panels.node.userTrust.partner'), icon: Briefcase, color: 'text-indigo-400' },
+  ];
+}
 
 /** 認可状況・所有状況属性の選択肢。適用対象は SANCTION_ATTRIBUTE_APPLICABLE（Cloud / App 型）。 */
-const CLOUD_SANCTION_OPTIONS: {
+function getCloudSanctionOptions(
+  t: TFunc,
+): {
   val: CloudSanctionStatus;
   label: string;
   icon: typeof ShieldCheck;
   color: string;
-}[] = [
-  { val: 'Sanctioned', label: 'Sanctioned (認可済み)', icon: ShieldCheck, color: 'text-emerald-400' },
-  { val: 'Unsanctioned', label: 'Unsanctioned (未認可)', icon: ShieldOff, color: 'text-rose-400' },
-];
+}[] {
+  return [
+    { val: 'Sanctioned', label: t('panels.node.cloudSanction.sanctioned'), icon: ShieldCheck, color: 'text-emerald-400' },
+    { val: 'Unsanctioned', label: t('panels.node.cloudSanction.unsanctioned'), icon: ShieldOff, color: 'text-rose-400' },
+  ];
+}
 
-const CLOUD_OWNERSHIP_OPTIONS: {
+function getCloudOwnershipOptions(
+  t: TFunc,
+): {
   val: CloudOwnership;
   label: string;
   icon: typeof Building2;
   color: string;
-}[] = [
-  { val: 'Company', label: '自社', icon: Building2, color: 'text-emerald-400' },
-  { val: 'ThirdParty', label: '他社', icon: Briefcase, color: 'text-amber-400' },
-  { val: 'Personal', label: '個人', icon: User, color: 'text-rose-400' },
-];
+}[] {
+  return [
+    { val: 'Company', label: t('panels.node.cloudOwnership.company'), icon: Building2, color: 'text-emerald-400' },
+    { val: 'ThirdParty', label: t('panels.node.cloudOwnership.thirdParty'), icon: Briefcase, color: 'text-amber-400' },
+    { val: 'Personal', label: t('panels.node.cloudOwnership.personal'), icon: User, color: 'text-rose-400' },
+  ];
+}
 
 /** 攻撃者区分（THREAT_ACTOR の Type 属性）の選択肢。 */
-const THREAT_ACTOR_TYPE_OPTIONS: { val: ThreatActorType; label: string }[] = [
-  { val: 'CyberCriminals', label: 'Cyber Criminals — サイバー犯罪者' },
-  { val: 'NationStateActors', label: 'Nation-State Actors — 国家支援型' },
-  { val: 'FinanciallyMotivatedActors', label: 'Financially motivated actors — 金銭目的' },
-  { val: 'Hacktivists', label: 'Hacktivists — 思想・主張目的' },
-  { val: 'ScriptKiddies', label: 'Script Kiddies — 低スキル・既製ツール' },
-];
+function getThreatActorTypeOptions(t: TFunc): { val: ThreatActorType; label: string }[] {
+  return [
+    { val: 'CyberCriminals', label: t('panels.node.actorType.cyberCriminals') },
+    { val: 'NationStateActors', label: t('panels.node.actorType.nationState') },
+    { val: 'FinanciallyMotivatedActors', label: t('panels.node.actorType.financiallyMotivated') },
+    { val: 'Hacktivists', label: t('panels.node.actorType.hacktivists') },
+    { val: 'ScriptKiddies', label: t('panels.node.actorType.scriptKiddies') },
+  ];
+}
 
 /**
  * Attack Surface Attribute を表示するコンポーネント型。
@@ -145,40 +166,48 @@ const ATTACK_SURFACE_DEFAULTS: Required<AttackSurfaceAttribute> = {
   hasDdosProtection: false,
 };
 
-const ATTACK_SURFACE_FIELDS: { key: AttackSurfaceKey; label: string }[] = [
-  { key: 'hasGlobalIp', label: 'Global IP の割り当て' },
-  { key: 'hasSourceIpRestriction', label: '送信元 IP アクセス制限' },
-  { key: 'hasRemoteAccessRestriction', label: 'リモートアクセス制限' },
-  { key: 'hasUserAuthentication', label: 'ユーザー認証' },
-  { key: 'hasAccessLog', label: 'アクセスログ' },
-  { key: 'hasWafProtection', label: 'WAF / WAP による保護' },
-  { key: 'hasDdosProtection', label: 'DoS / DDoS 保護' },
-];
+function getAttackSurfaceFields(t: TFunc): { key: AttackSurfaceKey; label: string }[] {
+  return [
+    { key: 'hasGlobalIp', label: t('panels.node.attackSurface.globalIp') },
+    { key: 'hasSourceIpRestriction', label: t('panels.node.attackSurface.sourceIpRestriction') },
+    { key: 'hasRemoteAccessRestriction', label: t('panels.node.attackSurface.remoteAccessRestriction') },
+    { key: 'hasUserAuthentication', label: t('panels.node.attackSurface.userAuthentication') },
+    { key: 'hasAccessLog', label: t('panels.node.attackSurface.accessLog') },
+    { key: 'hasWafProtection', label: t('panels.node.attackSurface.wafProtection') },
+    { key: 'hasDdosProtection', label: t('panels.node.attackSurface.ddosProtection') },
+  ];
+}
 
 /**
  * エージェント特有属性（[[plan]] §2.22 1.6b）の選択肢。
  * 値の意味は src/core/model/types.ts を参照。
  */
-const AGENCY_OPTIONS: { val: AgencyLevel; label: string }[] = [
-  { val: 'None', label: 'None — エージェント性なし' },
-  { val: 'Advisory', label: 'Advisory — 提案のみ' },
-  { val: 'Bounded', label: 'Bounded — 許可リスト内 + HITL' },
-  { val: 'Autonomous', label: 'Autonomous — 複数ツール自律' },
-];
+function getAgencyOptions(t: TFunc): { val: AgencyLevel; label: string }[] {
+  return [
+    { val: 'None', label: t('panels.node.agency.none') },
+    { val: 'Advisory', label: t('panels.node.agency.advisory') },
+    { val: 'Bounded', label: t('panels.node.agency.bounded') },
+    { val: 'Autonomous', label: t('panels.node.agency.autonomous') },
+  ];
+}
 
-const BLAST_RADIUS_OPTIONS: { val: BlastRadius; label: string }[] = [
-  { val: 'ReadOnly', label: 'ReadOnly — 読取専用' },
-  { val: 'Self', label: 'Self — 自ノードに閉じる' },
-  { val: 'Tenant', label: 'Tenant — 同一テナント内' },
-  { val: 'CrossTenant', label: 'CrossTenant — 顧客境界越え' },
-  { val: 'Admin', label: 'Admin — 管理者 / インフラ全体' },
-];
+function getBlastRadiusOptions(t: TFunc): { val: BlastRadius; label: string }[] {
+  return [
+    { val: 'ReadOnly', label: t('panels.node.blastRadius.readOnly') },
+    { val: 'Self', label: t('panels.node.blastRadius.self') },
+    { val: 'Tenant', label: t('panels.node.blastRadius.tenant') },
+    { val: 'CrossTenant', label: t('panels.node.blastRadius.crossTenant') },
+    { val: 'Admin', label: t('panels.node.blastRadius.admin') },
+  ];
+}
 
-const IDENTITY_TIER_OPTIONS: { val: IdentityTier; label: string }[] = [
-  { val: 'LabelOnly', label: 'LabelOnly — 文字列 ID のみ' },
-  { val: 'Cryptographic', label: 'Cryptographic — X.509 等' },
-  { val: 'HardwareBound', label: 'HardwareBound — HSM / TPM' },
-];
+function getIdentityTierOptions(t: TFunc): { val: IdentityTier; label: string }[] {
+  return [
+    { val: 'LabelOnly', label: t('panels.node.identityTier.labelOnly') },
+    { val: 'Cryptographic', label: t('panels.node.identityTier.cryptographic') },
+    { val: 'HardwareBound', label: t('panels.node.identityTier.hardwareBound') },
+  ];
+}
 
 interface NodePanelProps {
   node: DiagramNode;
@@ -188,6 +217,16 @@ interface NodePanelProps {
 }
 
 export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
+  const t = useT();
+  const MANAGED_OPTIONS = getManagedOptions(t);
+  const USER_TRUST_OPTIONS = getUserTrustOptions(t);
+  const CLOUD_SANCTION_OPTIONS = getCloudSanctionOptions(t);
+  const CLOUD_OWNERSHIP_OPTIONS = getCloudOwnershipOptions(t);
+  const THREAT_ACTOR_TYPE_OPTIONS = getThreatActorTypeOptions(t);
+  const ATTACK_SURFACE_FIELDS = getAttackSurfaceFields(t);
+  const AGENCY_OPTIONS = getAgencyOptions(t);
+  const BLAST_RADIUS_OPTIONS = getBlastRadiusOptions(t);
+  const IDENTITY_TIER_OPTIONS = getIdentityTierOptions(t);
   const onUpdate = useDiagramStore((s) => s.updateNode);
   const onStartLinking = useDiagramStore((s) => s.setLinkingFromId);
   const onClose = useDiagramStore((s) => s.clearSelection);
@@ -283,14 +322,14 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
       <div className="p-6 flex-1 space-y-6 overflow-y-auto">
         <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700 space-y-4">
           <h3 className="text-xs font-bold text-slate-300 flex items-center gap-2">
-            <Tag size={14} className="text-blue-500" /> プロパティ
+            <Tag size={14} className="text-blue-500" /> {t('panels.node.properties')}
           </h3>
           <div>
             <label
               htmlFor={`node-label-${node.id}`}
               className="text-[10px] font-black text-slate-500 uppercase block mb-1.5"
             >
-              表示名
+              {t('panels.node.displayName')}
             </label>
             <input
               id={`node-label-${node.id}`}
@@ -301,7 +340,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
               className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-slate-100 focus:outline-none focus:border-blue-500 placeholder:text-slate-600 placeholder:font-normal"
             />
             <p className="text-[9px] text-slate-500 mt-1.5 leading-relaxed">
-              例: "与信判定サービス" / "顧客マスターDB"
+              {t('panels.node.displayNamePlaceholderExample')}
             </p>
           </div>
           <div>
@@ -309,13 +348,13 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
               htmlFor={`node-desc-${node.id}`}
               className="text-[10px] font-black text-slate-500 uppercase block mb-1.5"
             >
-              説明
+              {t('panels.node.description')}
             </label>
             <textarea
               id={`node-desc-${node.id}`}
               value={node.description ?? ''}
               onChange={(e) => onUpdate(node.id, 'description', e.target.value)}
-              placeholder="このコンポーネントの責務・業務ルール・取扱データ等..."
+              placeholder={t('panels.node.descriptionPlaceholder')}
               rows={4}
               className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-blue-500 placeholder:text-slate-600 resize-y"
             />
@@ -325,13 +364,13 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
         {parentNode && (
           <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
             <h3 className="text-xs font-bold text-slate-300 mb-3 flex items-center gap-2">
-              <Package size={14} className="text-amber-500" /> 内包元
+              <Package size={14} className="text-amber-500" /> {t('panels.node.containedFrom')}
             </h3>
             <div className="flex items-center justify-between gap-2">
               <button
                 onClick={() => selectNode(parentNode.id)}
                 className="flex items-center gap-2 flex-1 min-w-0 bg-slate-900 hover:bg-slate-800 px-3 py-2 rounded-lg border border-slate-700 text-left transition-colors"
-                title="親ノードを選択"
+                title={t('panels.node.selectParentTitle')}
               >
                 <div
                   className={`${componentRegistry.get(parentNode.type)?.color ?? 'bg-slate-500'} p-1 rounded text-white shrink-0`}
@@ -348,9 +387,9 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
               <button
                 onClick={handleDetach}
                 className="shrink-0 px-3 py-2 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-600/40 text-amber-300 rounded-lg text-[10px] font-black uppercase transition-colors flex items-center gap-1"
-                title="親から外してトップレベルに戻す"
+                title={t('panels.node.detachTitle')}
               >
-                <PackageOpen size={12} /> 外す
+                <PackageOpen size={12} /> {t('panels.node.detach')}
               </button>
             </div>
           </div>
@@ -359,7 +398,8 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
         {childNodes.length > 0 && (
           <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
             <h3 className="text-xs font-bold text-slate-300 mb-3 flex items-center gap-2">
-              <Package size={14} className="text-blue-500" /> 内包コンポーネント ({childNodes.length})
+              <Package size={14} className="text-blue-500" />{' '}
+              {t('panels.node.containedComponents', { count: childNodes.length })}
             </h3>
             <div className="space-y-1.5">
               {childNodes.map((child) => {
@@ -416,8 +456,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
               })}
             </div>
             <p className="text-[9px] text-slate-500 mt-3 leading-relaxed">
-              ユーザーの信頼区分。Guest は未管理（Untrusted）、その他は組織統制下として
-              管理状態が自動設定される。
+              {t('panels.node.userTrustNote')}
             </p>
           </div>
         )}
@@ -450,7 +489,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
               })}
             </div>
             <p className="text-[9px] text-slate-500 mt-3 leading-relaxed">
-              MDM・EDR 等の組織統制下にあるかどうか。未管理端末は攻撃面が大きい。
+              {t('panels.node.managedStateNote')}
             </p>
           </div>
         )}
@@ -460,7 +499,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
             <h3 className="text-xs font-bold text-slate-300 mb-4 flex items-center gap-2">
               <Cloud size={14} className="text-blue-500" /> Sanction / Ownership Attribute
             </h3>
-            <p className="text-[10px] font-black text-slate-500 uppercase mb-2">認可状況</p>
+            <p className="text-[10px] font-black text-slate-500 uppercase mb-2">{t('panels.node.sanctionStatusLabel')}</p>
             <div className="grid grid-cols-1 gap-2 mb-4">
               {CLOUD_SANCTION_OPTIONS.map((opt) => {
                 const Icon = opt.icon;
@@ -483,7 +522,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                 );
               })}
             </div>
-            <p className="text-[10px] font-black text-slate-500 uppercase mb-2">所有状況</p>
+            <p className="text-[10px] font-black text-slate-500 uppercase mb-2">{t('panels.node.ownershipStatusLabel')}</p>
             <div className="grid grid-cols-1 gap-2">
               {CLOUD_OWNERSHIP_OPTIONS.map((opt) => {
                 const Icon = opt.icon;
@@ -507,8 +546,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
               })}
             </div>
             <p className="text-[9px] text-slate-500 mt-3 leading-relaxed">
-              クラウドサービス / 業務アプリの認可状況（組織が認可・統制しているか）と
-              所有状況（自社契約 / 他社所有 / 個人アカウント）。未設定は「不明」扱い。
+              {t('panels.node.cloudAttrsNote')}
             </p>
           </div>
         )}
@@ -525,7 +563,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                     htmlFor={`node-actortype-${node.id}`}
                     className="text-[10px] font-black text-slate-500 uppercase block mb-1.5"
                   >
-                    Type（攻撃者区分）
+                    {t('panels.node.actorTypeLabel')}
                   </label>
                   <select
                     id={`node-actortype-${node.id}`}
@@ -539,7 +577,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                     }
                     className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-blue-500"
                   >
-                    <option value="">— 未設定 —</option>
+                    <option value="">{t('panels.node.unset')}</option>
                     {THREAT_ACTOR_TYPE_OPTIONS.map((opt) => (
                       <option key={opt.val} value={opt.val}>
                         {opt.label}
@@ -553,7 +591,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                   htmlFor={`node-objective-${node.id}`}
                   className="text-[10px] font-black text-slate-500 uppercase mb-1.5 flex items-center gap-1.5"
                 >
-                  <Crosshair size={12} className="text-rose-400" /> Objective（標的コンポーネント）
+                  <Crosshair size={12} className="text-rose-400" /> {t('panels.node.objectiveLabel')}
                 </label>
                 <select
                   id={`node-objective-${node.id}`}
@@ -567,7 +605,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                   }
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-blue-500"
                 >
-                  <option value="">— 未設定 —</option>
+                  <option value="">{t('panels.node.unset')}</option>
                   {objectiveCandidates.map((n) => {
                     const cfg = componentRegistry.get(n.type);
                     const name = n.label || cfg?.label || n.type;
@@ -587,17 +625,15 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                 className="w-full bg-rose-600 hover:bg-rose-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed py-3 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-rose-900/20"
                 title={
                   objectiveValue === ''
-                    ? 'Objective（標的）を設定すると攻撃経路分析を表示できます'
-                    : '攻撃者から標的までの攻撃経路分析を表示'
+                    ? t('panels.node.attackTreeTitleDisabled')
+                    : t('panels.node.attackTreeTitleEnabled')
                 }
               >
-                <GitBranch size={16} /> 攻撃経路分析
+                <GitBranch size={16} /> {t('panels.node.attackTreeButton')}
               </button>
             </div>
             <p className="text-[9px] text-slate-500 mt-3 leading-relaxed">
-              攻撃者の区分と objective（標的とするコンポーネント）。標的に指定したノードが
-              削除されると objective は自動解除される。攻撃経路分析はエッジを辿って
-              攻撃者から標的までの到達経路を表示する。
+              {t('panels.node.attackerNote')}
             </p>
           </div>
         )}
@@ -625,7 +661,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                             : 'bg-slate-800 text-slate-500 border border-slate-700 hover:border-slate-500'
                         }`}
                       >
-                        有り
+                        {t('panels.node.attackSurface.yes')}
                       </button>
                       <button
                         onClick={() => onToggleAttackSurface(key, false)}
@@ -635,7 +671,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                             : 'bg-slate-800 text-slate-500 border border-slate-700 hover:border-slate-500'
                         }`}
                       >
-                        無し
+                        {t('panels.node.attackSurface.no')}
                       </button>
                     </div>
                   </div>
@@ -643,8 +679,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
               })}
             </div>
             <p className="text-[9px] text-slate-500 mt-3 leading-relaxed">
-              Web サーバー等の公開ポイントの攻撃面構成。未設定時は Global IP=有り、その他=無し
-              の insecure baseline として脅威評価される。
+              {t('panels.node.attackSurfaceNote')}
             </p>
           </div>
         )}
@@ -656,10 +691,10 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
             aria-expanded={agentAttrsOpen}
           >
             <span className="flex items-center gap-2">
-              <Bot size={14} className="text-blue-500" /> エージェント属性
+              <Bot size={14} className="text-blue-500" /> {t('panels.node.agentAttrsToggle')}
               {node.agentAttributes && (
                 <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
-                  設定済み
+                  {t('panels.node.agentAttrsConfigured')}
                 </span>
               )}
             </span>
@@ -673,7 +708,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                     htmlFor={`node-agency-${node.id}`}
                     className="text-[10px] font-black text-slate-500 uppercase block mb-1.5"
                   >
-                    Agency（自律度）
+                    {t('panels.node.agencyLabel')}
                   </label>
                   <select
                     id={`node-agency-${node.id}`}
@@ -686,7 +721,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                     }
                     className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-blue-500"
                   >
-                    <option value="">— 未設定 —</option>
+                    <option value="">{t('panels.node.unset')}</option>
                     {AGENCY_OPTIONS.map((opt) => (
                       <option key={opt.val} value={opt.val}>
                         {opt.label}
@@ -700,7 +735,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                   htmlFor={`node-blastradius-${node.id}`}
                   className="text-[10px] font-black text-slate-500 uppercase block mb-1.5"
                 >
-                  Blast Radius（侵害時の影響範囲）
+                  {t('panels.node.blastRadiusLabel')}
                 </label>
                 <select
                   id={`node-blastradius-${node.id}`}
@@ -713,7 +748,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                   }
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-blue-500"
                 >
-                  <option value="">— 未設定 —</option>
+                  <option value="">{t('panels.node.unset')}</option>
                   {BLAST_RADIUS_OPTIONS.map((opt) => (
                     <option key={opt.val} value={opt.val}>
                       {opt.label}
@@ -727,7 +762,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                     htmlFor={`node-identitytier-${node.id}`}
                     className="text-[10px] font-black text-slate-500 uppercase block mb-1.5"
                   >
-                    Identity Tier（アイデンティティの根付き方）
+                    {t('panels.node.identityTierLabel')}
                   </label>
                   <select
                     id={`node-identitytier-${node.id}`}
@@ -740,7 +775,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                     }
                     className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-blue-500"
                   >
-                    <option value="">— 未設定 —</option>
+                    <option value="">{t('panels.node.unset')}</option>
                     {IDENTITY_TIER_OPTIONS.map((opt) => (
                       <option key={opt.val} value={opt.val}>
                         {opt.label}
@@ -750,7 +785,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                 </div>
               )}
               <p className="text-[9px] text-slate-500 leading-relaxed">
-                Anthropic "Zero Trust for AI Agents" 由来の設計者宣言属性。未設定属性は将来の脅威エンジンで「最悪を仮定」評価される予定（[[plan]] §2.22 1.6c）。
+                {t('panels.node.agentAttrsNote')}
               </p>
             </div>
           )}
@@ -758,7 +793,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
 
         <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
           <h3 className="text-xs font-bold text-slate-300 mb-4 flex items-center gap-2">
-            <LinkIcon size={14} className="text-blue-500" /> エッジの作成
+            <LinkIcon size={14} className="text-blue-500" /> {t('panels.node.createEdgeHeading')}
           </h3>
           <button
             onClick={() => onStartLinking(node.id)}
@@ -767,7 +802,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
             <Plus size={16} /> CREATE LINK
           </button>
           <p className="text-[9px] text-slate-500 mt-3 leading-relaxed">
-            このパーツから別のパーツへの接続線を作成します。
+            {t('panels.node.createEdgeNote')}
           </p>
         </div>
 
@@ -787,7 +822,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
 
       <div className="p-6 border-t border-slate-800">
         <button onClick={onClose} className="w-full bg-slate-800 py-3 rounded-xl font-bold text-xs">
-          閉じる
+          {t('panels.common.close')}
         </button>
       </div>
 
