@@ -47,6 +47,16 @@ export const BOUNDARY_DASH_CLASS: Record<BoundaryTypeConfig['dash'], string> = {
 };
 
 /**
+ * 同じ破線指定を SVG アイコン用の `stroke-dasharray` へ解決する（パレットのアイコン）。
+ * 単位は lucide の viewBox（24）基準。`none` は実線なので undefined を返す。
+ */
+export const BOUNDARY_DASH_ARRAY: Record<BoundaryTypeConfig['dash'], string | undefined> = {
+  none: undefined,
+  fine: '3 3',
+  coarse: '7 4',
+};
+
+/**
  * マクロセグメンテーションの TRUST ATTRIBUTE → 脅威エンジン内部の TrustLevel マッピング。
  * Public Area は外部接点扱い (Internet)、Office/Security は社内扱い (Internal)。
  */

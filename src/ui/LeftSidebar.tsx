@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import type { BoundaryTypeId, LayerKey, ThreatView } from '../core/model/types';
 import { LAYER_KEYS } from '../core/model/types';
-import { BOUNDARY_TYPES } from '../core/constants/boundaryTypes';
+import { BOUNDARY_DASH_ARRAY, BOUNDARY_TYPES } from '../core/constants/boundaryTypes';
 import {
   selectActiveBoundaries,
   selectActiveEdges,
@@ -349,7 +349,10 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                   className="w-full flex items-center gap-3 p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-all border border-slate-700 text-xs font-bold group"
                 >
                   <div className="bg-slate-600 p-1.5 rounded-md">
-                    <Square size={14} className={boundary.dash !== 'none' ? 'stroke-dasharray-2' : ''} />
+                    {/* 破線は SVG の stroke-dasharray で描く。Tailwind に破線パターンを
+                        指定するユーティリティは無い（旧 `stroke-dasharray-2` は実在せず
+                        全て実線で表示されていた）。 */}
+                    <Square size={14} strokeDasharray={BOUNDARY_DASH_ARRAY[boundary.dash]} />
                   </div>
                   {t(boundary.nameKey)}
                   <Plus size={12} className="ml-auto opacity-40 group-hover:opacity-100" />
