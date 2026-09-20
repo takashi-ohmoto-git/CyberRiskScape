@@ -158,6 +158,9 @@ export function emptyLeaf(): EdgeLeafDraft {
     sourceUserTrust: [],
     targetUserTrust: [],
     semantic: [],
+    sourceIdentityProviderKind: [],
+    targetIdentityProviderKind: [],
+    authProvider: [],
   };
 }
 

@@ -30,6 +30,12 @@ export const NetworkTypeSchema = z.enum(['Internet', 'VPN', 'VPC']);
 export const EncryptionTypeSchema = z.enum(['Plain', 'TLS', 'E2EE']);
 export const DataFlowSchema = z.enum(['inbound', 'outbound', 'bidirectional']);
 export const TrustLevelSchema = z.enum(['Internal', 'Partner', 'Internet']);
+/**
+ * エッジの資格情報発行元（`authProviderId`）の宣言状態（[[plan]] §2.39 B-1）。
+ * 値の意味は `EdgeWhenSchema.authProvider` のコメントを参照。
+ */
+export const AuthProviderStateSchema = z.enum(['Declared', 'Undeclared']);
+
 export const IdentityProviderKindSchema = z.enum([
   'IDaaS',
   'Directory',
@@ -197,6 +203,12 @@ const NodeAppliesToSchema = z.object({
    * 未指定属性は「最悪を仮定」評価。詳細は AgentAttributesMatchSchema。
    */
   agentAttributes: AgentAttributesMatchSchema.optional(),
+  /**
+   * IdP 種別による絞り込み（[[plan]] §2.39）。IDENTITY_PROVIDER 系ノードで意味を持つ。
+   * `managedState` / `userTrust` と同じ**明示宣言時のみ発火**方式で、種別未宣言のノードは不成立。
+   * （「最悪を仮定」にしないのは、未宣言の IdP を Hybrid と決めつけると誤検知になるため）
+   */
+  identityProviderKind: z.array(IdentityProviderKindSchema).nonempty().optional(),
 });
 
 /**
@@ -233,6 +245,25 @@ const EdgeWhenSchema = z
      * 未指定エッジは `data_flow`（既定）として評価される。
      */
     semantic: z.array(EdgeSemanticSchema).nonempty().optional(),
+    /**
+     * source ノードの IdP 種別（IDENTITY_PROVIDER 系のみ意味を持つ）。未宣言は不成立。
+     * 例：Directory → IDaaS の ID 同期を捕まえる（[[plan]] §2.39）。
+     */
+    sourceIdentityProviderKind: z.array(IdentityProviderKindSchema).nonempty().optional(),
+    /** target ノードの IdP 種別（IDENTITY_PROVIDER 系のみ意味を持つ）。未宣言は不成立。 */
+    targetIdentityProviderKind: z.array(IdentityProviderKindSchema).nonempty().optional(),
+    /**
+     * 資格情報の発行元（`authProviderId`）の宣言状態（[[plan]] §2.39 B-1）。
+     *
+     * - `Declared`: 発行元ノードへの参照がある＝集中 IdP 経由の認証
+     * - `Undeclared`: 参照が無い。`auth: [Password, MFA]` と組み合わせると
+     *   **ローカル資格情報**（集中 IdP を経由しない認証）を捕まえられる
+     *
+     * 他の軸と違い id そのものではなく**宣言状態**を見る。特定の IdP を名指しするルールは
+     * 環境固有になりライブラリに載らないため。boolean ではなく enum 配列にしているのは、
+     * 他の全エッジ軸と同じ形にしてルールエディタの汎用機構に乗せるため。
+     */
+    authProvider: z.array(AuthProviderStateSchema).nonempty().optional(),
   })
   .refine(
     (w) =>
@@ -247,7 +278,10 @@ const EdgeWhenSchema = z
       w.targetManagedState !== undefined ||
       w.sourceUserTrust !== undefined ||
       w.targetUserTrust !== undefined ||
-      w.semantic !== undefined,
+      w.semantic !== undefined ||
+      w.sourceIdentityProviderKind !== undefined ||
+      w.targetIdentityProviderKind !== undefined ||
+      w.authProvider !== undefined,
     { message: 'edge when must include at least one condition' },
   );
 

@@ -6,6 +6,8 @@ import {
   NetworkTypeSchema,
   TrustLevelSchema,
   UserTrustAttributeSchema,
+  AuthProviderStateSchema,
+  IdentityProviderKindSchema,
 } from '../../../threat-library/schema/threatRule';
 import { getComponentRegistry } from '../../../component-library/defaultRegistry';
 import type { EdgeLeafDraft } from '../../../features/custom-rules/editor/draft';
@@ -32,6 +34,9 @@ const ENUM_AXES = [
   { key: 'sourceUserTrust', labelKey: 'ruleEditor.edgeLeaf.axis.sourceUserTrust', options: UserTrustAttributeSchema.options },
   { key: 'targetUserTrust', labelKey: 'ruleEditor.edgeLeaf.axis.targetUserTrust', options: UserTrustAttributeSchema.options },
   { key: 'semantic', labelKey: 'ruleEditor.edgeLeaf.axis.semantic', options: EdgeSemanticSchema.options },
+  { key: 'sourceIdentityProviderKind', labelKey: 'ruleEditor.edgeLeaf.axis.sourceIdentityProviderKind', options: IdentityProviderKindSchema.options },
+  { key: 'targetIdentityProviderKind', labelKey: 'ruleEditor.edgeLeaf.axis.targetIdentityProviderKind', options: IdentityProviderKindSchema.options },
+  { key: 'authProvider', labelKey: 'ruleEditor.edgeLeaf.axis.authProvider', options: AuthProviderStateSchema.options },
 ] as const satisfies readonly { key: string; labelKey: TranslationKey; options: readonly string[] }[];
 
 const TYPE_AXES = [

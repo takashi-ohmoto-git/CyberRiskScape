@@ -188,6 +188,20 @@ function matchEdgeWhen(
     const value = edge.semantic ?? 'data_flow';
     if (!when.semantic.includes(value)) return false;
   }
+  if (when.sourceIdentityProviderKind) {
+    // managedState / userTrust と同じ「明示宣言時のみ発火」方式（[[plan]] §2.39）。
+    if (!source.identityProviderKind) return false;
+    if (!when.sourceIdentityProviderKind.includes(source.identityProviderKind)) return false;
+  }
+  if (when.targetIdentityProviderKind) {
+    if (!target.identityProviderKind) return false;
+    if (!when.targetIdentityProviderKind.includes(target.identityProviderKind)) return false;
+  }
+  if (when.authProvider) {
+    // 発行元は id ではなく宣言状態で見る。未設定＝Undeclared（[[plan]] §2.39 B-1）。
+    const state = edge.authProviderId ? 'Declared' : 'Undeclared';
+    if (!when.authProvider.includes(state)) return false;
+  }
   return true;
 }
 
@@ -284,6 +298,11 @@ export function detectThreats({
           continue;
         if (nodeApplies.agentAttributes && !matchAgentAttributes(node, nodeApplies.agentAttributes))
           continue;
+        if (nodeApplies.identityProviderKind) {
+          // 明示宣言時のみ発火。種別未宣言の IdP を Hybrid 等と決めつけない（[[plan]] §2.39）。
+          if (!node.identityProviderKind) continue;
+          if (!nodeApplies.identityProviderKind.includes(node.identityProviderKind)) continue;
+        }
         threats.push({
           id: `${rule.id}-${node.id}`,
           ruleId: rule.id,
