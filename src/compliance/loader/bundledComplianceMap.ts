@@ -39,7 +39,6 @@ const unresolved = findUnresolvedComplianceRefs(
   BUNDLED_THREAT_LIBRARY.rules,
 );
 if (unresolved.length > 0) {
-  // eslint-disable-next-line no-console
   console.warn(
     `[compliance] ${unresolved.length} threat rule complianceRefs are not in the compliance map:\n` +
       unresolved

@@ -17,6 +17,7 @@ Issue と Pull Request を歓迎します。
 npm install
 npm run dev          # 開発サーバ起動
 npx tsc --noEmit     # 型チェック（strict）
+npm run lint         # ESLint（warn のみ。CI は総数の上限で判定。設定は eslint.config.js）
 npm test             # テスト一括実行
 npm run build        # 本番ビルド
 ```

@@ -17,6 +17,7 @@ Issues and pull requests are welcome.
 npm install
 npm run dev          # dev server
 npx tsc --noEmit     # type check (strict)
+npm run lint         # ESLint (warnings only; CI caps the total, see eslint.config.js)
 npm test             # run all tests
 npm run build        # production build
 ```

@@ -113,7 +113,7 @@ export function renderIcon(spec: IconSpec, props?: { size?: number; className?: 
     <span
       className={props?.className}
       style={props?.size ? { width: props.size, height: props.size, display: 'inline-block' } : undefined}
-      // eslint-disable-next-line react/no-danger
+      // eslint-disable-next-line no-restricted-syntax
       dangerouslySetInnerHTML={{ __html: spec.svg }}
     />
   );
