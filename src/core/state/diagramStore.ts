@@ -760,6 +760,13 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
             if (rest.attackObjectiveId === id) delete rest.attackObjectiveId;
             return rest;
           }),
+        // 削除対象を資格情報の発行元にしていたエッジの authProviderId も解除する。
+        edges: l.edges.map((e) => {
+          if (e.authProviderId !== id) return e;
+          const rest = { ...e };
+          delete rest.authProviderId;
+          return rest;
+        }),
       })),
       selectedNodeIds: s.selectedNodeIds.filter((nid) => nid !== id),
     }));
@@ -880,13 +887,20 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
         .filter((e) => idMap.has(e.source) && idMap.has(e.target))
         .map((e) => {
           edgeSeq += 1;
-          return {
+          const next: DiagramEdge = {
             ...e,
             id: nextId('e'),
             seq: edgeSeq,
             source: idMap.get(e.source) as string,
             target: idMap.get(e.target) as string,
           };
+          if (next.authProviderId) {
+            const mapped = idMap.get(next.authProviderId);
+            // 発行元がテンプレート内に居れば付け替え、居なければ解除。
+            if (mapped) next.authProviderId = mapped;
+            else delete next.authProviderId;
+          }
+          return next;
         });
 
       let boundarySeq = counters.boundary;

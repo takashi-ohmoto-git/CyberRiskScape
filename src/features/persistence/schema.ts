@@ -8,6 +8,7 @@ import {
   EdgeSemanticSchema,
   EncryptionTypeSchema,
   FrameworkSchema,
+  IdentityProviderKindSchema,
   IdentityTierSchema,
   ManagedStateSchema,
   NetworkTypeSchema,
@@ -90,6 +91,8 @@ const PersistedNodeSchema = z.object({
   threatActorType: ThreatActorTypeSchema.optional(),
   /** 攻撃者の objective（標的ノード id 参照。Attacker 型用、後方互換のため optional） */
   attackObjectiveId: z.string().min(1).optional(),
+  /** IdP 種別（§2.39 B-1 拡張、IDENTITY_PROVIDER 型用。後方互換のため optional） */
+  identityProviderKind: IdentityProviderKindSchema.optional(),
   /** 攻撃面属性（FRONT_END_SERVER / GATEWAY 用、後方互換のため optional） */
   attackSurface: PersistedAttackSurfaceSchema.optional(),
   /** エージェント特有属性（AGENT/TOOL/CONNECTOR/USER 用、後方互換のため optional） */
@@ -111,6 +114,8 @@ const PersistedEdgeSchema = z.object({
   dataFlowName: z.string().min(1).max(80).optional(),
   /** エッジ意味論ラベル（§2.22 1.6d、後方互換のため optional。未指定は 'data_flow' 相当）。 */
   semantic: EdgeSemanticSchema.optional(),
+  /** 資格情報の発行元ノード id（§2.39 B-1、後方互換のため optional。未設定＝ローカル資格情報）。 */
+  authProviderId: z.string().min(1).optional(),
 });
 
 const MacroTrustAttributeSchema = z.enum(['Public Area', 'Office Area', 'Security Zone']);

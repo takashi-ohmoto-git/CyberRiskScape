@@ -17,6 +17,8 @@ import type {
   EncryptionType,
   NetworkType,
 } from '../../core/model/types';
+import { AUTH_PROVIDER_APPLICABLE } from '../../core/model/types';
+import { getNodeDisplayName } from '../../core/model/nodeDisplay';
 import { selectActiveNodes, useDiagramStore } from '../../core/state/diagramStore';
 import { useT } from '../../i18n';
 
@@ -108,6 +110,8 @@ export function EdgePanel({ edge }: EdgePanelProps) {
   const sourceType = allNodes.find((n) => n.id === edge.source)?.type;
   const targetType = allNodes.find((n) => n.id === edge.target)?.type;
   const recommended = recommendSemantic(sourceType, targetType);
+  // 資格情報の発行元にできるノード（同一レイヤー上の IdP 系）。
+  const authProviders = allNodes.filter((n) => AUTH_PROVIDER_APPLICABLE.has(n.type));
   const onDelete = (id: string) => {
     deleteEdge(id);
     onClose();
@@ -213,6 +217,47 @@ export function EdgePanel({ edge }: EdgePanelProps) {
                 {opt.icon} {opt.label}
               </button>
             ))}
+          </div>
+          <div className="mt-3">
+            <label
+              htmlFor={`edge-auth-provider-${edge.id}`}
+              className="text-xs font-black text-slate-500 uppercase mb-2 block"
+            >
+              {t('panels.edge.authProviderLabel')}
+            </label>
+            <select
+              id={`edge-auth-provider-${edge.id}`}
+              value={edge.authProviderId ?? ''}
+              disabled={edge.auth === 'None' || authProviders.length === 0}
+              onChange={(e) =>
+                onUpdate(
+                  edge.id,
+                  'authProviderId',
+                  e.target.value === '' ? undefined : e.target.value,
+                )
+              }
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-blue-400 disabled:opacity-40"
+            >
+              <option value="">{t('panels.edge.authProviderUnset')}</option>
+              {authProviders.map((n) => (
+                <option key={n.id} value={n.id}>
+                  {/* 表示名が曖昧でも区別できるよう、設定済みなら種別を併記する。 */}
+                  {n.identityProviderKind
+                    ? `${getNodeDisplayName(n)}（${n.identityProviderKind}）`
+                    : getNodeDisplayName(n)}
+                </option>
+              ))}
+            </select>
+            {edge.auth !== 'None' && authProviders.length === 0 && (
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                {t('panels.edge.authProviderEmpty')}
+              </p>
+            )}
+            {edge.auth !== 'None' && authProviders.length > 0 && !edge.authProviderId && (
+              <p className="text-xs text-amber-400 mt-2 leading-relaxed">
+                {t('panels.edge.authProviderLocalHint')}
+              </p>
+            )}
           </div>
         </section>
         <section>

@@ -30,6 +30,13 @@ export const NetworkTypeSchema = z.enum(['Internet', 'VPN', 'VPC']);
 export const EncryptionTypeSchema = z.enum(['Plain', 'TLS', 'E2EE']);
 export const DataFlowSchema = z.enum(['inbound', 'outbound', 'bidirectional']);
 export const TrustLevelSchema = z.enum(['Internal', 'Partner', 'Internet']);
+export const IdentityProviderKindSchema = z.enum([
+  'IDaaS',
+  'Directory',
+  'Hybrid',
+  'Social',
+  'Custom',
+]);
 export const ManagedStateSchema = z.enum(['Managed', 'Unmanaged']);
 export const UserTrustAttributeSchema = z.enum(['Guest', 'Employee', 'Contractor', 'Partner']);
 

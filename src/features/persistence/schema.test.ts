@@ -511,4 +511,45 @@ describe('PersistedProjectSchema', () => {
     const r = PersistedProjectSchema.safeParse(VALID_PROJECT);
     expect(r.success).toBe(true);
   });
+
+  // ─── node.identityProviderKind（[[plan]] §2.39 B-1 拡張） ──────────
+  it('node.identityProviderKind: 全ての有効値を受理する', () => {
+    for (const kind of ['IDaaS', 'Directory', 'Hybrid', 'Social', 'Custom']) {
+      const r = PersistedProjectSchema.safeParse({
+        ...VALID_PROJECT,
+        nodes: [{ ...VALID_PROJECT.nodes[0], identityProviderKind: kind }],
+      });
+      expect(r.success, `kind "${kind}" should be valid`).toBe(true);
+    }
+  });
+
+  it('node.identityProviderKind: 未知の値を拒否する', () => {
+    const r = PersistedProjectSchema.safeParse({
+      ...VALID_PROJECT,
+      nodes: [{ ...VALID_PROJECT.nodes[0], identityProviderKind: 'Kerberos' }],
+    });
+    expect(r.success).toBe(false);
+  });
+
+  // ─── edge.authProviderId（[[plan]] §2.39 B-1） ──────────
+  it('edge.authProviderId: ノード id 文字列を受理する', () => {
+    const r = PersistedProjectSchema.safeParse({
+      ...VALID_PROJECT,
+      edges: [{ ...VALID_PROJECT.edges[0], authProviderId: 'n-idp-1' }],
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it('edge.authProviderId: 空文字を拒否する（未設定は省略で表す）', () => {
+    const r = PersistedProjectSchema.safeParse({
+      ...VALID_PROJECT,
+      edges: [{ ...VALID_PROJECT.edges[0], authProviderId: '' }],
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it('edge.authProviderId 未設定の旧データを受理する（後方互換）', () => {
+    const r = PersistedProjectSchema.safeParse(VALID_PROJECT);
+    expect(r.success).toBe(true);
+  });
 });

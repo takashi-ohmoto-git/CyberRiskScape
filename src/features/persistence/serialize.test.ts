@@ -63,6 +63,20 @@ describe('serializeProject / deserializeProject', () => {
     expect(restored?.activeFramework).toBe(STATE.activeFramework);
   });
 
+  it('edge.authProviderId を round-trip で保持する（[[plan]] §2.39 B-1）', () => {
+    const withProvider: LayerData = {
+      ...L1_DATA,
+      nodes: [...L1_DATA.nodes, { id: 'n3', type: 'IDENTITY_PROVIDER', x: 0, y: 300 }],
+      edges: [{ ...L1_DATA.edges[0], authProviderId: 'n3' }],
+    };
+    const persisted = serializeProject({
+      ...STATE,
+      layers: { L0: EMPTY_LAYER, L1: withProvider, L2: EMPTY_LAYER, L3: EMPTY_LAYER },
+    });
+    const restored = deserializeProject(persisted);
+    expect(restored?.layers?.L1.edges[0].authProviderId).toBe('n3');
+  });
+
   it('dreadScores を round-trip で保持し、空なら出力しない', () => {
     const score = {
       damage: 3,

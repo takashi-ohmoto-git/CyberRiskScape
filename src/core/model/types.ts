@@ -194,6 +194,31 @@ export const SANCTION_ATTRIBUTE_APPLICABLE: ReadonlySet<ComponentTypeId> = new S
   'OTHER_APP',
 ]);
 
+/**
+ * IdP ノードの種別（[[plan]] §2.39 B-1 拡張）。**提供形態の軸**であり、製品名は `label` に書く。
+ *
+ * 型名を `IDaaS` / `Directory` に分けないのは、Entra ID のように 1 製品が IdP かつ IDaaS かつ
+ * Directory を兼ねるため。DFD で安定しているのは「認証してトークンを出す」という**役割**
+ * （= `IDENTITY_PROVIDER`）で、提供形態はその属性として表す。
+ *
+ * - IDaaS: クラウドでホストされた ID 基盤（Entra ID / Okta 等）
+ * - Directory: オンプレの ID 格納先（Active Directory / LDAP 等）
+ * - Hybrid: オンプレ Directory と IDaaS を同期し、1 つの ID 基盤として機能している状態（AD Connect 等）。
+ *   **「同期」という処理ではなくノードの正体**を指す。同期経路そのものを攻撃面として扱いたい場合は、
+ *   Directory ノードと IDaaS ノードを分けて描き、その間のエッジで表現する
+ * - Social: 外部ソーシャル ID（Google / Apple 等）
+ * - Custom: 自前実装の認証基盤
+ */
+export type IdentityProviderKind = 'IDaaS' | 'Directory' | 'Hybrid' | 'Social' | 'Custom';
+
+/**
+ * エッジの `authProviderId` が参照でき、`identityProviderKind` を持てるノード型
+ * （資格情報の発行元になり得る型）。
+ */
+export const AUTH_PROVIDER_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set([
+  'IDENTITY_PROVIDER',
+]);
+
 /** Type 属性（threatActorType）の適用対象ノード型。 */
 export const THREAT_ACTOR_TYPE_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set([
   'THREAT_ACTOR',
@@ -384,6 +409,11 @@ export interface DiagramNode {
    * 適用対象は [[ATTACK_OBJECTIVE_APPLICABLE]]。標的ノード削除時は store 側で解除される。
    */
   attackObjectiveId?: string;
+  /**
+   * IdP ノードの種別（[[AUTH_PROVIDER_APPLICABLE]] の型用）。
+   * 製品名は `label` に書く（"Entra ID (本番テナント)" 等）。未指定は「不明」扱い。
+   */
+  identityProviderKind?: IdentityProviderKind;
 }
 
 export interface DiagramEdge {
@@ -412,6 +442,15 @@ export interface DiagramEdge {
    * 未指定エッジは脅威エンジンで `data_flow`（既定）として評価される。
    */
   semantic?: EdgeSemantic;
+  /**
+   * 認証に用いる資格情報の発行元（[[plan]] §2.39 B-1）。
+   * 同一レイヤー上の `AUTH_PROVIDER_APPLICABLE` なノード id を指す。参照先ノード削除時は
+   * store 側で解除される。
+   *
+   * `auth !== 'None'` なのに未設定のエッジは **ローカル資格情報**（集中 IdP を経由しない認証）
+   * と解釈する。フィールドを増やさずに Zero Trust の identity 脅威シグナルを表現するための規約。
+   */
+  authProviderId?: string;
 }
 
 export interface DiagramBoundary {

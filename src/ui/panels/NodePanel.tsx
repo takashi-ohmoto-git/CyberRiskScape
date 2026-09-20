@@ -32,6 +32,7 @@ import type {
   CloudSanctionStatus,
   ComponentTypeId,
   DiagramNode,
+  IdentityProviderKind,
   IdentityTier,
   ManagedState,
   ThreatActorType,
@@ -41,6 +42,7 @@ import type {
 import {
   AGENCY_APPLICABLE,
   ATTACK_OBJECTIVE_APPLICABLE,
+  AUTH_PROVIDER_APPLICABLE,
   IDENTITY_TIER_APPLICABLE,
   isSuppressed,
   SANCTION_ATTRIBUTE_APPLICABLE,
@@ -216,6 +218,16 @@ interface NodePanelProps {
   allThreats: ThreatView[];
 }
 
+function getIdpKindOptions(t: TFunc): { val: IdentityProviderKind; label: string }[] {
+  return [
+    { val: 'IDaaS', label: t('panels.node.idpKind.idaas') },
+    { val: 'Directory', label: t('panels.node.idpKind.directory') },
+    { val: 'Hybrid', label: t('panels.node.idpKind.hybrid') },
+    { val: 'Social', label: t('panels.node.idpKind.social') },
+    { val: 'Custom', label: t('panels.node.idpKind.custom') },
+  ];
+}
+
 export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
   const t = useT();
   const [locale] = useLocale();
@@ -229,6 +241,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
   const AGENCY_OPTIONS = getAgencyOptions(t);
   const BLAST_RADIUS_OPTIONS = getBlastRadiusOptions(t);
   const IDENTITY_TIER_OPTIONS = getIdentityTierOptions(t);
+  const IDP_KIND_OPTIONS = getIdpKindOptions(t);
   const onUpdate = useDiagramStore((s) => s.updateNode);
   const onStartLinking = useDiagramStore((s) => s.setLinkingFromId);
   const onClose = useDiagramStore((s) => s.clearSelection);
@@ -245,6 +258,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
   const showCloudAttrs = SANCTION_ATTRIBUTE_APPLICABLE.has(node.type);
   const showAttacker = ATTACK_OBJECTIVE_APPLICABLE.has(node.type);
   const showThreatActorType = THREAT_ACTOR_TYPE_APPLICABLE.has(node.type);
+  const showIdpKind = AUTH_PROVIDER_APPLICABLE.has(node.type);
   // objective の候補：同一レイヤー上の自分以外の非攻撃者ノード。
   const objectiveCandidates = allNodes.filter(
     (n) => n.id !== node.id && !ATTACK_OBJECTIVE_APPLICABLE.has(n.type),
@@ -549,6 +563,43 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
             </div>
             <p className="text-xs text-slate-500 mt-3 leading-relaxed">
               {t('panels.node.cloudAttrsNote')}
+            </p>
+          </div>
+        )}
+
+        {showIdpKind && (
+          <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+            <h3 className="text-xs font-bold text-slate-300 mb-4 flex items-center gap-2">
+              <ShieldCheck size={14} className="text-blue-500" />{' '}
+              {t('panels.node.idpKindSection')}
+            </h3>
+            <label
+              htmlFor={`node-idpkind-${node.id}`}
+              className="text-xs font-black text-slate-500 uppercase block mb-1.5"
+            >
+              {t('panels.node.idpKindLabel')}
+            </label>
+            <select
+              id={`node-idpkind-${node.id}`}
+              value={node.identityProviderKind ?? ''}
+              onChange={(e) =>
+                onUpdate(
+                  node.id,
+                  'identityProviderKind',
+                  e.target.value === '' ? undefined : (e.target.value as IdentityProviderKind),
+                )
+              }
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-blue-500"
+            >
+              <option value="">{t('panels.node.unset')}</option>
+              {IDP_KIND_OPTIONS.map((opt) => (
+                <option key={opt.val} value={opt.val}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-slate-500 mt-3 leading-relaxed">
+              {t('panels.node.idpKindNote')}
             </p>
           </div>
         )}

@@ -2,6 +2,7 @@ import type { MouseEvent } from 'react';
 import type { DiagramBoundary, DiagramEdge, DiagramNode } from '../model/types';
 import { getEdgeAnchorAt, getEdgeEndpointGeometry } from './nodeGeometry';
 import { formatElementalId } from '../model/elementalId';
+import { getNodeDisplayName } from '../model/nodeDisplay';
 import { computeCrossings, crossedBoundaries, resolveNodeBoundaries } from './boundaryCrossing';
 import {
   CROSSING_AUTH_COLORS,
@@ -167,6 +168,10 @@ export function EdgeLayer({
           },
         );
         const crossingColor = CROSSING_AUTH_COLORS[edge.auth];
+        // 資格情報の発行元（[[plan]] §2.39 B-1）。キャンバスには字を出さずツールチップに載せる。
+        const authProvider = edge.authProviderId
+          ? nodes.find((n) => n.id === edge.authProviderId)
+          : undefined;
 
         const elementalId = edge.seq != null ? formatElementalId('edge', edge.seq) : null;
         const dataFlowName = edge.dataFlowName;
@@ -217,8 +222,13 @@ export function EdgeLayer({
                   transform={`translate(${crossing.x} ${crossing.y}) rotate(${crossing.angle})`}
                 >
                   <title>
-                    {[boundaryId, crossing.boundary.trustLevel].filter(Boolean).join(' ')}
-                    {` · ${edge.auth}`}
+                    {[
+                      [boundaryId, crossing.boundary.trustLevel].filter(Boolean).join(' '),
+                      edge.auth,
+                      authProvider ? getNodeDisplayName(authProvider) : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
                   </title>
                   {/* 経路に直交する単線 1 本。色は認証状態（赤＝無認証 / 黄＝PW / 緑＝MFA）。 */}
                   <line
