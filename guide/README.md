@@ -14,6 +14,7 @@ Nothing here needs to be installed — you can follow along in the
 |---|---|
 | **[Getting Started](getting-started.md)** | What the tool does, what you would use it for, how the screen is laid out, and every canvas operation — placing components, drawing connections and trust boundaries, zooming and panning — with screenshots |
 | **[Your First Threat Model](first-threat-model.md)** | A full walkthrough using an AI chatbot: creating a project, choosing a depth layer, placing components, connecting them and setting trust boundaries |
+| **[Creating and Using Templates](templates.md)** | Exporting and importing diagrams as JSON, plus the AI chatbot template this guide uses |
 | **[Reading the Threat Panel](reading-threats.md)** | How to read what was detected, prioritize with DREAD, record your treatment decisions, and export the result |
 | **[Assessing Risk in Analytics](analytics-assessment.md)** | Scoring DREAD and recording risk treatment and control implementation status, all on one screen |
 | **[Attack Path Analysis](attack-paths.md)** | Enumerate the routes from attacker to target and find the choke points where one control covers the most routes |
@@ -24,6 +25,7 @@ Nothing here needs to be installed — you can follow along in the
 
 - **You want to try the tool** — start with [Getting Started](getting-started.md).
 - **You want to build one end to end** — go to [Your First Threat Model](first-threat-model.md).
+- **You would rather skip the drawing** — import the [template](templates.md).
 - **You have a diagram but do not know what to do with the findings** — read [Reading the Threat Panel](reading-threats.md).
 - **You need to assess and record the findings** — see [Assessing Risk in Analytics](analytics-assessment.md).
 - **You need to decide where to start mitigating** — read [Attack Path Analysis](attack-paths.md).
@@ -33,6 +35,6 @@ Nothing here needs to be installed — you can follow along in the
 
 Every page is available in both English and Japanese; use the language links at the top of each one.
 
-From "Your First Threat Model" onward, every chapter works on **the same AI chatbot diagram**, so the
-same components and threats carry across chapters. ("Getting Started" is the exception: it uses the
+From "Your First Threat Model" onward, every chapter works on **the same AI chatbot diagram**
+(round-trip flows, 48 threats), so the same components and threats carry across chapters. ("Getting Started" is the exception: it uses the
 sample diagram the app opens with.)

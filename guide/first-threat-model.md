@@ -16,9 +16,13 @@ It takes about 15 minutes. Nothing to install — you can follow the same steps 
 We are going to draw this:
 
 ```
-USER ──▶ Front-end Server ──▶ LLM ──▶ RAG ──▶ STORAGE
-(Internet)       (DMZ)         (internal network)
+USER ⇄ Front-end Server ⇄ LLM ⇄ RAG ⇄ STORAGE
+(Internet)   (DMZ)      (internal network)
 ```
+
+We draw **the response flows as well as the request flows**. Threat detection reads the direction of
+each edge, so a request-only diagram never reports the threats that assume "retrieved content enters
+the LLM" (see §5.4).
 
 It is about the smallest RAG chatbot you can draw, and it still raises the full set of threat
 modeling questions. The finished diagram looks like this:
@@ -131,14 +135,24 @@ next step easier.
 
 ## 5. Connecting the components
 
-Draw four data flows. For each: select the source, press **CREATE LINK**, click the target.
+First draw the four request flows. For each: select the source, press **CREATE LINK**, click the
+target.
 
 1. User → Front-end Server
 2. Front-end Server → LLM model
 3. LLM model → Vector DB / RAG
 4. Vector DB / RAG → Data store
 
-![The four connections](../assets/guide/en/chatbot/05-connections.png)
+Then draw **four response flows in the opposite direction**.
+
+5. Data store → Vector DB / RAG
+6. Vector DB / RAG → LLM model
+7. LLM model → Front-end Server
+8. Front-end Server → User
+
+Lines joining the same pair are automatically drawn curved to either side.
+
+![All eight connections](../assets/guide/en/chatbot/05-connections.png)
 
 ### Make each line match reality
 
@@ -155,6 +169,23 @@ Click the User → Front-end Server line and change, in the right pane:
 What you set here is **not cosmetic — it is the firing condition for threats**. The moment the path
 becomes "public network with a password", the threats that assume those conditions (phishing,
 credential stuffing and so on) appear in the right pane.
+
+The response flow, Front-end Server → User, travels the same path, so set it the same way.
+
+### 5.4 Why draw the return path
+
+A rule's connection requirement reads **edge source → target**. The forward / reverse / bidirectional
+setting only changes how arrows are drawn; the engine does not use it.
+
+**Indirect prompt injection**, for instance, fires when an LLM has an inbound edge from a RAG, a data
+store or a similar tamperable source. With only the request path (LLM → RAG) drawn, it never appears.
+Draw the return path (RAG → LLM) and the defining threat of a RAG design —
+**instructions planted in the retrieved documents** — shows up.
+
+In this diagram, the four return flows took detection from **43 threats to 48**.
+
+It is also worth setting the **`rag_retrieval` semantic** on Vector DB / RAG → LLM model, which says
+explicitly that the path carries retrieved content.
 
 Fix the other lines the same way wherever the defaults do not match. **Where you do not know, ask
 someone who does** — producing that list of questions is itself an outcome of threat modeling.
@@ -206,7 +237,7 @@ edge of the box, a component whose center is inside counts as inside.
 
 ## 7. Reading the result
 
-The right pane now lists the threats — 43 of them in this example (the count depends on which
+The right pane now lists the threats — 48 of them in this example (the count depends on which
 attributes you set).
 
 ![The detected threats](../assets/guide/en/chatbot/09-threats.png)
@@ -230,8 +261,14 @@ Your work is saved in the browser automatically, but keep anything you care abou
 
 ---
 
+Export what you have built as a [template](templates.md) and you can reuse it next time. The same
+configuration is available at [`templates/ai-chatbot.en.json`](templates/ai-chatbot.en.json).
+
+---
+
 ## Where to go next
 
+- Reuse the diagram — [Creating and Using Templates](templates.md)
 - What to do with the findings — [Reading the Threat Panel](reading-threats.md)
 - Assessing and recording them — [Assessing Risk in Analytics](analytics-assessment.md)
 - Deciding where to put controls — [Attack Path Analysis](attack-paths.md)

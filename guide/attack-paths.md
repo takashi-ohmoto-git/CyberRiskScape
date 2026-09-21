@@ -64,10 +64,11 @@ Press "Attack path analysis" and the analysis opens.
 
 ### The header
 
-- **2 route(s) (2 channel combinations)** — two routes reach the target (the data store). The number in parentheses
-  counts combinations of parallel data flows and is **informational only**: routes through the same
-  sequence of components count as **one route**, however many channels connect them.
-- **Min cost 13** — the cost of the easiest route. Lower means easier for the attacker.
+- **2 route(s) (24 channel combinations)** — two routes reach the target (the data store). The number
+  in parentheses counts combinations of parallel data flows and is **informational only**: routes
+  through the same sequence of components count as **one route**, however many channels connect them.
+  The round-trip flows make 24 combinations here, but there are still two routes.
+- **Min cost 12** — the cost of the easiest route. Lower means easier for the attacker.
 - **DREAD not scored…** — the note shown while no DREAD assessment exists (see below).
 
 ### The graph
@@ -85,8 +86,9 @@ Every card shows the element's **difficulty** and **how many threats fired on it
 | Unscored | Nothing to judge from |
 
 The small chips between cards are **logical hops**. Where several parallel channels connect the same
-two elements they collapse into one hop labelled `×2`. The reasoning is that **the attacker picks
-whichever channel is easiest**, so covering one of them does not close the hop.
+two elements they collapse into one hop labelled `×2` — every hop shows `×2` here, because the
+diagram carries both directions. The reasoning is that **the attacker picks whichever channel is
+easiest**, so covering one of them does not close the hop.
 
 ---
 
@@ -121,8 +123,8 @@ Below the graph is the list of routes.
 | Weakest hop | The easiest step on that route — **the first candidate for a control** |
 | Status | Reachable or blocked |
 
-Work from the cheapest row down. Above, `C6 → C2 → C3 → C4 → C5` (cost 13) is the easiest route,
-which the attacker would prefer over the one through the user (cost 15).
+Work from the cheapest row down. Above, `C6 → C2 → C3 → C4 → C5` (cost 12) is the easiest route,
+which the attacker would prefer over the one through the user (cost 14).
 
 ---
 

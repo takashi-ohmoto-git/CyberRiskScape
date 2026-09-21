@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "kind": "cyberriskscape-template",
+  "name": "AI チャットボット 標準構成（往復フロー）",
+  "layer": {
+    "nodes": [
+      {
+        "id": "nmuaqo2ae0",
+        "type": "USER",
+        "x": 80,
+        "y": 532
+      },
+      {
+        "id": "nmuaqo3f61",
+        "type": "FRONT_END_SERVER",
+        "x": 320,
+        "y": 532
+      },
+      {
+        "id": "nmuaqo4v22",
+        "type": "LLM",
+        "x": 580,
+        "y": 532
+      },
+      {
+        "id": "nmuaqo64w3",
+        "type": "DB",
+        "x": 800,
+        "y": 532
+      },
+      {
+        "id": "nmuaqo7go4",
+        "type": "DATA_STORE",
+        "x": 1020,
+        "y": 532
+      }
+    ],
+    "edges": [
+      {
+        "id": "emuaqo9ag5",
+        "source": "nmuaqo2ae0",
+        "target": "nmuaqo3f61",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "emuaqob376",
+        "source": "nmuaqo3f61",
+        "target": "nmuaqo4v22",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "emuaqoc1j7",
+        "source": "nmuaqo4v22",
+        "target": "nmuaqo64w3",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "検索クエリ"
+      },
+      {
+        "id": "emuaqodjc8",
+        "source": "nmuaqo64w3",
+        "target": "nmuaqo7go4",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "emuaqoegj9",
+        "source": "nmuaqo7go4",
+        "target": "nmuaqo64w3",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "emuaqofdea",
+        "source": "nmuaqo64w3",
+        "target": "nmuaqo4v22",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "検索結果",
+        "semantic": "rag_retrieval"
+      },
+      {
+        "id": "emuaqogcqb",
+        "source": "nmuaqo4v22",
+        "target": "nmuaqo3f61",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "emuaqohbsc",
+        "source": "nmuaqo3f61",
+        "target": "nmuaqo2ae0",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      }
+    ],
+    "boundaries": [
+      {
+        "id": "bmuaqok6td",
+        "type": "RECT",
+        "x": 44,
+        "y": 440,
+        "width": 200,
+        "height": 250,
+        "trustLevel": "Internet"
+      },
+      {
+        "id": "bmuaqolrte",
+        "type": "RECT_DASHED",
+        "x": 289,
+        "y": 440,
+        "width": 190,
+        "height": 250,
+        "trustLevel": "Internet"
+      },
+      {
+        "id": "bmuaqon9jf",
+        "type": "ROUNDED",
+        "x": 524,
+        "y": 440,
+        "width": 670,
+        "height": 250,
+        "trustLevel": "Internal",
+        "macroTrust": "Office Area"
+      }
+    ]
+  }
+}
