@@ -152,6 +152,7 @@ Secure by Default では、どの機能を既定で有効にするか、どの�
 ## 次に読むもの
 
 - 実際の操作 — [はじめに — CyberRiskScape 入門](getting-started.ja.md)
+- 手を動かして作図する — [はじめての脅威モデル](first-threat-model.ja.md)
 - 機能一覧・脅威ルールの構成 — [README.ja.md](../README.ja.md)
 
 ---

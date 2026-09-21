@@ -226,6 +226,7 @@
 
 ## 7. 次に読むもの
 
+- 実際に 1 つ作図してみる — [はじめての脅威モデル](first-threat-model.ja.md)
 - なぜ設計段階で脅威を考えるのか — [Secure by Design 入門](secure-by-design.ja.md)
 - プロジェクト全体の概要・機能一覧 — [README.ja.md](../README.ja.md)
 - 脅威ルールの追加や翻訳への参加 — [CONTRIBUTING.ja.md](../CONTRIBUTING.ja.md)

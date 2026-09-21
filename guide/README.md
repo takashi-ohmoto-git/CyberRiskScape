@@ -13,11 +13,13 @@ Nothing here needs to be installed — you can follow along in the
 | Page | What it covers |
 |---|---|
 | **[Getting Started](getting-started.md)** | What the tool does, what you would use it for, how the screen is laid out, and every canvas operation — placing components, drawing connections and trust boundaries, zooming and panning — with screenshots |
+| **[Your First Threat Model](first-threat-model.md)** | A full walkthrough using an AI chatbot: creating a project, choosing a depth layer, placing components, connecting them and setting trust boundaries |
 | **[An Introduction to Secure by Design](secure-by-design.md)** | The thinking behind the tool: what Secure by Design means, why it is being asked for now, and the four roles threat modeling plays. Based on the CISA-led joint guidance |
 
 ## Where to start
 
 - **You want to try the tool** — start with [Getting Started](getting-started.md).
+- **You want to build one end to end** — go to [Your First Threat Model](first-threat-model.md).
 - **You want to explain to someone why this work matters** —
   [An Introduction to Secure by Design](secure-by-design.md) is written to be read on its own.
 

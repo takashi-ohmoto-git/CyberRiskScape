@@ -226,6 +226,7 @@ Access API, so it only works in Chromium-based browsers such as Chrome and Edge.
 
 ## 7. Where to go next
 
+- Build one end to end — [Your First Threat Model](first-threat-model.md)
 - Why threats belong in the design stage — [An Introduction to Secure by Design](secure-by-design.md)
 - Project overview and feature list — [README.md](../README.md)
 - Adding threat rules, or helping with translations — [CONTRIBUTING.md](../CONTRIBUTING.md)

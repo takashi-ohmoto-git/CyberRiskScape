@@ -155,6 +155,7 @@ structure, enumerating the threats, keeping the reasoning, and exporting the res
 ## Where to go next
 
 - The tool in practice — [Getting Started with CyberRiskScape](getting-started.md)
+- Build one yourself — [Your First Threat Model](first-threat-model.md)
 - Features and how the rules are organized — [README.md](../README.md)
 
 ---
