@@ -17,6 +17,7 @@
 
 はじめて使う方は **[はじめに — CyberRiskScape 入門](guide/getting-started.ja.md)** をご覧ください。
 ツールの目的・画面構成・キャンバス操作を画面付きで説明しています。
+背景にある考え方は [Secure by Design 入門](guide/secure-by-design.ja.md) にまとめています。
 
 ---
 

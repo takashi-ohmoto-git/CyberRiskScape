@@ -20,6 +20,7 @@ leaves your machine.
 
 New here? Start with **[Getting Started](guide/getting-started.md)** — what the tool is for,
 how the screen is laid out, and how to work on the canvas, with screenshots.
+For the thinking behind it, see [An Introduction to Secure by Design](guide/secure-by-design.md).
 
 > **Interface language.** English and Japanese are both supported — use the JA / EN switch
 > in the top bar, and your choice is remembered. The interface, all 113 threat rules
