@@ -233,6 +233,7 @@ Your work is saved in the browser automatically, but keep anything you care abou
 ## Where to go next
 
 - What to do with the findings — [Reading the Threat Panel](reading-threats.md)
+- Deciding where to put controls — [Attack Path Analysis](attack-paths.md)
 - The operations in detail — [Getting Started with CyberRiskScape](getting-started.md)
 - Why threats belong in the design stage — [An Introduction to Secure by Design](secure-by-design.md)
 - Feature list — [README.md](../README.md)

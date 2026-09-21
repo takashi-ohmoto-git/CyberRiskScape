@@ -237,6 +237,7 @@ Front-end Server → LLM は認証なし（赤）です。
 ## 次に読むもの
 
 - 出てきた脅威の扱い方 — [脅威パネルの読み方](reading-threats.ja.md)
+- 対策の置き場所を決める — [攻撃経路分析](attack-paths.ja.md)
 - 操作の詳細 — [はじめに — CyberRiskScape 入門](getting-started.ja.md)
 - なぜ設計段階で脅威を考えるのか — [Secure by Design 入門](secure-by-design.ja.md)
 - 機能一覧 — [README.ja.md](../README.ja.md)

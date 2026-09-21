@@ -218,6 +218,7 @@ DREAD は 5 項目をそれぞれ **1（低）／2（中）／3（高）** の 3
 
 ## 次に読むもの
 
+- 対策をどこに置くか決める — [攻撃経路分析](attack-paths.ja.md)
 - 作図の手順 — [はじめての脅威モデル](first-threat-model.ja.md)
 - 操作の詳細 — [はじめに — CyberRiskScape 入門](getting-started.ja.md)
 - なぜ設計段階で脅威を考えるのか — [Secure by Design 入門](secure-by-design.ja.md)
