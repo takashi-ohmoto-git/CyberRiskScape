@@ -15,6 +15,9 @@
 **▶ オンラインデモ： https://takashi-ohmoto-git.github.io/CyberRiskScape/**
 （インストール不要。ブラウザだけで試せます）
 
+はじめて使う方は **[はじめに — CyberRiskScape 入門](guide/getting-started.ja.md)** をご覧ください。
+ツールの目的・画面構成・キャンバス操作を画面付きで説明しています。
+
 ---
 
 ## 特徴
@@ -107,6 +110,9 @@ npm run preview   # ビルド成果物をローカルで確認
 5. **評価と対応方針を記録** — DREAD スコアと対応方針（低減／受容／移転／回避）を
    入力します。誤検知は抑制できます
 6. **エクスポート** — 脅威一覧を CSV / JSON / Markdown で出力します
+
+各ステップの具体的な操作方法は [はじめに — CyberRiskScape 入門](guide/getting-started.ja.md) に
+画面付きでまとめています。
 
 ---
 
