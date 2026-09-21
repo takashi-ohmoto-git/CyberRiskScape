@@ -198,5 +198,6 @@ API ゲートウェイ（公開面からの直接攻撃）の 2 本を引いて�
 ## 次に読むもの
 
 - 脅威の読み方・DREAD の付け方 — [脅威パネルの読み方](reading-threats.ja.md)
+- 規格との対応を確認する — [コンプライアンスマップ](compliance-map.ja.md)
 - 作図の手順 — [はじめての脅威モデル](first-threat-model.ja.md)
 - 操作の詳細 — [はじめに — CyberRiskScape 入門](getting-started.ja.md)

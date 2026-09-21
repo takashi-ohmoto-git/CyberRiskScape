@@ -200,5 +200,6 @@ The analysis rests on the following. **Check them before drawing conclusions.**
 ## Where to go next
 
 - Reading threats and scoring DREAD — [Reading the Threat Panel](reading-threats.md)
+- Lining threats up against standards — [The Compliance Map](compliance-map.md)
 - How to draw the diagram — [Your First Threat Model](first-threat-model.md)
 - The operations in detail — [Getting Started with CyberRiskScape](getting-started.md)

@@ -223,6 +223,7 @@ assessment made in your context.
 ## Where to go next
 
 - Deciding where to put controls — [Attack Path Analysis](attack-paths.md)
+- Lining threats up against standards — [The Compliance Map](compliance-map.md)
 - How to draw the diagram — [Your First Threat Model](first-threat-model.md)
 - The operations in detail — [Getting Started with CyberRiskScape](getting-started.md)
 - Why threats belong in the design stage — [An Introduction to Secure by Design](secure-by-design.md)
