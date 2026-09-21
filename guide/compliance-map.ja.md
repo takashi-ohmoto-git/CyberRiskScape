@@ -132,5 +132,6 @@ AI エージェントを扱う設計で、**どの成熟度を目指すか**を�
 ## 次に読むもの
 
 - 脅威の読み方・記録 — [脅威パネルの読み方](reading-threats.ja.md)
+- 評価して記録する手順 — [Analytics でリスクを評価する](analytics-assessment.ja.md)
 - 対策の置き場所を決める — [攻撃経路分析](attack-paths.ja.md)
 - なぜ設計段階で脅威を考えるのか — [Secure by Design 入門](secure-by-design.ja.md)

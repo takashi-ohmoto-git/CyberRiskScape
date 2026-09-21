@@ -132,5 +132,6 @@ It gives you a yardstick for **which maturity level to aim at** when designing a
 ## Where to go next
 
 - Reading and recording threats — [Reading the Threat Panel](reading-threats.md)
+- How to assess and record — [Assessing Risk in Analytics](analytics-assessment.md)
 - Deciding where to put controls — [Attack Path Analysis](attack-paths.md)
 - Why threats belong in the design stage — [An Introduction to Secure by Design](secure-by-design.md)

@@ -5,8 +5,9 @@
 A list of threats tells you what could happen. It does not tell you **where a single control buys
 you the most**. That is what attack path analysis is for.
 
-This page follows on from [Reading the Threat Panel](reading-threats.md) — the control implementation
-status you record there feeds directly into this analysis, so read that first.
+This page follows on from [Assessing Risk in Analytics](analytics-assessment.md) — the DREAD scores
+and control implementation status you record there feed directly into this analysis, so read that
+first. The diagram is the AI chatbot built in [Your First Threat Model](first-threat-model.md).
 
 ---
 
@@ -36,7 +37,7 @@ or Agentic Attacker) and connect it to **whatever it touches first**.
 ![An attacker connected to its entry points](../assets/guide/en/attack-path/01-attacker-placed.png)
 
 There can be more than one entry point. In the example the attacker reaches both the user (phishing
-and the like) and the API gateway (a direct attack on the public surface).
+and the like) and the Front-end Server (a direct attack on the public surface).
 **The more entry points there are, the more the choke point analysis is worth.**
 
 ### 2.2 Set TYPE and OBJECTIVE
@@ -63,10 +64,10 @@ Press "Attack path analysis" and the analysis opens.
 
 ### The header
 
-- **2 route(s) (2 channel combinations)** — two routes reach the target. The number in parentheses
+- **2 route(s) (2 channel combinations)** — two routes reach the target (the data store). The number in parentheses
   counts combinations of parallel data flows and is **informational only**: routes through the same
   sequence of components count as **one route**, however many channels connect them.
-- **Min cost 11** — the cost of the easiest route. Lower means easier for the attacker.
+- **Min cost 13** — the cost of the easiest route. Lower means easier for the attacker.
 - **DREAD not scored…** — the note shown while no DREAD assessment exists (see below).
 
 ### The graph
@@ -96,8 +97,9 @@ shows the top three (only elements on two or more routes).
 
 ![Choke points](../assets/guide/en/attack-path/04-chokepoints.png)
 
-Here the API gateway, the LLM model and the hop between them each carry "2/2 routes" — put a control
-on any of them and **both routes are affected at once**.
+Here the Front-end Server, the LLM model and the Vector DB / RAG each carry "2/2 routes" — put a
+control on any of them and **both routes are affected at once**. Hardening only the path through the
+user would leave the direct attack on the public surface untouched.
 
 Before designing a separate control per entry point, cover **what every route has to pass through**.
 That is the order with the best return.
@@ -119,8 +121,8 @@ Below the graph is the list of routes.
 | Weakest hop | The easiest step on that route — **the first candidate for a control** |
 | Status | Reachable or blocked |
 
-Work from the cheapest row down. Above, `C5 → C2 → C3 → C4` (cost 11) is the easiest route, which
-the attacker would prefer over the one through the user (cost 13).
+Work from the cheapest row down. Above, `C6 → C2 → C3 → C4 → C5` (cost 13) is the easiest route,
+which the attacker would prefer over the one through the user (cost 15).
 
 ---
 
@@ -159,7 +161,8 @@ penalty for how well the hop is covered.
 | Partially mitigated | +1 |
 | Mitigated (covered) | +8 (treated as blocked in "residual routes only" mode) |
 
-**Coverage comes from the control implementation status you recorded** in the previous chapter. Of
+**Coverage comes from the control implementation status you recorded** in
+[Analytics](analytics-assessment.md). Of
 the threats that fired on that element, if **all** are marked "Implemented" or "Not applicable" it
 counts as covered; if only some are, it is partially covered.
 
@@ -199,7 +202,8 @@ The analysis rests on the following. **Check them before drawing conclusions.**
 
 ## Where to go next
 
-- Reading threats and scoring DREAD — [Reading the Threat Panel](reading-threats.md)
+- How to assess and record — [Assessing Risk in Analytics](analytics-assessment.md)
+- Reading the threat cards — [Reading the Threat Panel](reading-threats.md)
 - Lining threats up against standards — [The Compliance Map](compliance-map.md)
 - How to draw the diagram — [Your First Threat Model](first-threat-model.md)
 - The operations in detail — [Getting Started with CyberRiskScape](getting-started.md)

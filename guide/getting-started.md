@@ -78,6 +78,10 @@ within the same project. Leave it on L1 to begin with.
 The sample diagram you start with — **User → API gateway → LLM model → Vector DB / RAG** — is a
 typical RAG setup. Before changing anything, read down the right pane and see what it reports.
 
+> This page uses **the sample diagram the app opens with**. From the next chapter on, the guide works
+> on the AI chatbot diagram you build yourself in
+> [Your First Threat Model](first-threat-model.md).
+
 ---
 
 ## 4. Working on the canvas

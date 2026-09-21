@@ -21,7 +21,7 @@ The header carries three things:
 | What you see | What it means |
 |---|---|
 | `ALL MODE` | Which framework view is currently shown (follows the tabs at the top) |
-| `38 ISSUES` | The number of threats that are **not suppressed** |
+| `43 ISSUES` | The number of threats that are **not suppressed** |
 | Add scenario | Add a threat by hand that detection will never produce (see below) |
 
 The framework tabs (`ALL` / `Human Centric (STRIDE)` / `AI / LLM` / `Agent-Centric`) filter this
@@ -134,39 +134,13 @@ as a status ("False positive", "Accepted") together with the reason you wrote.
 Severity is the rule's general-purpose estimate. For **how serious it is in your context**, open
 **Analytics** in the top toolbar and score it with DREAD.
 
-![DREAD assessment in Analytics](../assets/guide/en/threat-panel/06-analytics-dread.png)
+DREAD scores five factors (damage, reproducibility, exploitability, affected users,
+discoverability) from 1 to 3 and maps the 5–15 total to a rank.
+**A DREAD score overrides the rule's severity.**
 
-The view has three panes:
-
-- **Left** — the threat tree by component (highest severity and count per element)
-- **Middle** — the list of mitigations (including how many have no implementation status yet)
-- **Right** — the selected threat, with the **DREAD assessment** form
-
-DREAD scores five factors on a three-point scale — **1 (Low) / 2 (Medium) / 3 (High)**.
-
-| Factor | What to look at |
-|---|---|
-| D: Damage | How bad it is if it succeeds |
-| R: Reproducibility | How reliably it reproduces |
-| E: Exploitability | How much skill and effort the attack takes |
-| A: Affected Users | How many people, and how much of the system |
-| D: Discoverability | How easily an attacker finds it |
-
-Each factor comes with written criteria, which keeps different assessors closer together. The total
-runs **5 to 15** and maps to a rank:
-
-| Total | Rank |
-|---|---|
-| 13 – 15 | Critical |
-| 11 – 12 | High |
-| 8 – 10 | Medium |
-| 5 – 7 | Low |
-
-**A DREAD score overrides the rule's severity.** In the example, a threat the rule calls High scores
-10 and becomes Medium (the original value stays in parentheses).
-
-The filters at the top (All / High or above / With mitigation / Without mitigation) and the search
-box narrow what you are working through. **Starting from "High or above"** is the practical order.
+The step-by-step procedure — and how to record the risk treatment and control implementation status
+in the same place — is the next chapter,
+[Assessing Risk in Analytics](analytics-assessment.md).
 
 ---
 
@@ -194,7 +168,7 @@ judgment began**.
 | DCRH THREAT_MODEL.md | Markdown compatible with Anthropic's `defending-code-reference-harness` |
 
 What gets exported is **the list you are currently looking at**. As the menu says — "Export the
-threats currently shown (L1 / ALL, 38)" — **the depth layer and the framework tab both apply**.
+threats currently shown (L1 / ALL, 43)" — **the depth layer and the framework tab both apply**.
 To cut out one particular view, switch tabs first, then export.
 
 Suppressed threats are included too, **carrying their status ("False positive", "Accepted") and the
@@ -216,12 +190,14 @@ reason, which makes the next review much easier.
 
 **Q. The severity looks too high, or too low.**
 Rule severity is a general estimate. Score it with DREAD in Analytics and it is replaced with an
-assessment made in your context.
+assessment made in your context (see
+[Assessing Risk in Analytics](analytics-assessment.md)).
 
 ---
 
 ## Where to go next
 
+- How to assess and record — [Assessing Risk in Analytics](analytics-assessment.md)
 - Deciding where to put controls — [Attack Path Analysis](attack-paths.md)
 - Lining threats up against standards — [The Compliance Map](compliance-map.md)
 - How to draw the diagram — [Your First Threat Model](first-threat-model.md)
