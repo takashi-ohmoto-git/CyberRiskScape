@@ -18,6 +18,9 @@ leaves your machine.
 
 **▶ Live demo: https://takashi-ohmoto-git.github.io/CyberRiskScape/** (nothing to install)
 
+New here? Start with **[Getting Started](guide/getting-started.md)** — what the tool is for,
+how the screen is laid out, and how to work on the canvas, with screenshots.
+
 > **Interface language.** English and Japanese are both supported — use the JA / EN switch
 > in the top bar, and your choice is remembered. The interface, all 113 threat rules
 > (name, category, description, mitigations) and every component type label are
@@ -108,7 +111,7 @@ npm run preview   # serve the build locally
 
 ## How to use it
 
-1. **Place components** — drag DFD elements (users, LLMs, agents, data stores, …) from the
+1. **Place components** — add DFD elements (users, LLMs, agents, data stores, …) from the
    left sidebar onto the canvas
 2. **Connect them** — draw data flows and set encryption, authentication, and semantics
    (tool call, memory write, …)
@@ -117,6 +120,8 @@ npm run preview   # serve the build locally
    its conditions, rule ID, and source
 5. **Assess and decide** — record DREAD scores and a risk treatment; suppress false positives
 6. **Export** — CSV, JSON, or Markdown
+
+[Getting Started](guide/getting-started.md) walks through each of these steps with screenshots.
 
 ---
 
