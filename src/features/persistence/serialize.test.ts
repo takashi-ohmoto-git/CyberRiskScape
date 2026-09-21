@@ -3,6 +3,7 @@ import {
   deserializeProject,
   resolveIdCounters,
   resolveLayers,
+  resolveRiskScores,
   serializeProject,
   type SerializableState,
 } from './serialize';
@@ -94,8 +95,27 @@ describe('serializeProject / deserializeProject', () => {
     expect(restored?.layers?.L1.nodes[0].authProviderId).toBe('n3');
   });
 
-  it('dreadScores を round-trip で保持し、空なら出力しない', () => {
+  it('riskScores を round-trip で保持し、空なら出力しない', () => {
     const score = {
+      damage: 3,
+      affectedUsers: 3,
+      reproducibility: 2,
+      exploitability: 2,
+      at: 123,
+    } as const;
+    const persisted = serializeProject({ ...STATE, riskScores: { 'rule-x-n1': score } });
+    const restored = deserializeProject(persisted);
+    expect(restored?.riskScores).toEqual({ 'rule-x-n1': score });
+    // 評価なしならフィールド自体を出力しない（旧データとの差分を抑える）
+    expect('riskScores' in serializeProject(STATE)).toBe(false);
+    expect('riskScores' in serializeProject({ ...STATE, riskScores: {} })).toBe(false);
+    // dreadScores（旧形式）は二度と書き出さない
+    expect('dreadScores' in persisted).toBe(false);
+  });
+
+  // ─── riskScores マイグレーション（旧 DREAD 形式との共存） ──────────
+  describe('resolveRiskScores（旧 dreadScores → riskScores マイグレーション）', () => {
+    const legacyDreadScore = {
       damage: 3,
       reproducibility: 2,
       exploitability: 2,
@@ -103,12 +123,40 @@ describe('serializeProject / deserializeProject', () => {
       discoverability: 1,
       at: 123,
     } as const;
-    const persisted = serializeProject({ ...STATE, dreadScores: { 'rule-x-n1': score } });
-    const restored = deserializeProject(persisted);
-    expect(restored?.dreadScores).toEqual({ 'rule-x-n1': score });
-    // 評価なしならフィールド自体を出力しない（旧データとの差分を抑える）
-    expect('dreadScores' in serializeProject(STATE)).toBe(false);
-    expect('dreadScores' in serializeProject({ ...STATE, dreadScores: {} })).toBe(false);
+
+    it('riskScores が無く dreadScores のみのときは discoverability を捨てて変換する', () => {
+      const raw = {
+        ...serializeProject(STATE),
+        dreadScores: { 'rule-x-n1': legacyDreadScore },
+      };
+      const loaded = deserializeProject(raw)!;
+      expect(loaded.dreadScores).toEqual({ 'rule-x-n1': legacyDreadScore });
+      expect(resolveRiskScores(loaded)).toEqual({
+        'rule-x-n1': { damage: 3, reproducibility: 2, exploitability: 2, affectedUsers: 3, at: 123 },
+      });
+    });
+
+    it('riskScores と dreadScores が両方あれば riskScores を優先する', () => {
+      const newScore = {
+        damage: 1,
+        affectedUsers: 1,
+        reproducibility: 1,
+        exploitability: 1,
+        at: 999,
+      } as const;
+      const raw = {
+        ...serializeProject(STATE),
+        dreadScores: { 'rule-x-n1': legacyDreadScore },
+        riskScores: { 'rule-x-n1': newScore },
+      };
+      const loaded = deserializeProject(raw)!;
+      expect(resolveRiskScores(loaded)).toEqual({ 'rule-x-n1': newScore });
+    });
+
+    it('どちらも無ければ undefined を返す', () => {
+      const loaded = deserializeProject(serializeProject(STATE))!;
+      expect(resolveRiskScores(loaded)).toBeUndefined();
+    });
   });
 
   it('未来バージョンは null を返す（壊れたデータを書き戻さない）', () => {

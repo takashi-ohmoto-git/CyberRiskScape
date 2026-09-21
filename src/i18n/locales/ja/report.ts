@@ -55,7 +55,7 @@ export const jaReport = {
   'report.dcrh.openQuestions.actor':
     '- actor は {brand} では未モデル化。section 4 の actor 列は空欄。要レビュー。',
   'report.dcrh.openQuestions.likelihood':
-    '- likelihood は DREAD 未評価の脅威で既定 `possible` を採用している。',
+    '- likelihood はリスク評価未評価の脅威で既定 `possible` を採用している。',
   'report.dcrh.openQuestions.evidence':
     '- evidence（CVE / 所見リンク等）は本ツールが未保持のため常に空。',
   'report.dcrh.openQuestions.sensitivity':

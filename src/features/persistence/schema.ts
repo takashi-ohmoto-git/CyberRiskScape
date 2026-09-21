@@ -234,15 +234,28 @@ const PersistedControlStatusSchema = z.object({
   at: z.number().int().nonnegative(),
 });
 
-/** DREAD 各項目の 3 段階スコア（[[plan]] §2.34）。 */
-const DreadValueSchema = z.union([z.literal(1), z.literal(2), z.literal(3)]);
+/** リスク評価各項目の 3 段階スコア（[[plan]] §2.34 / §2.45）。 */
+const RiskValueSchema = z.union([z.literal(1), z.literal(2), z.literal(3)]);
 
+/**
+ * 旧 DREAD 評価（discoverability を含む 5 項目）。廃止済みだが、旧データ読み込み専用として残す。
+ * `hydrate.ts` の deserialize 側でのみ参照し、書き出しには二度と使わない。
+ */
 const PersistedDreadScoreSchema = z.object({
-  damage: DreadValueSchema,
-  reproducibility: DreadValueSchema,
-  exploitability: DreadValueSchema,
-  affectedUsers: DreadValueSchema,
-  discoverability: DreadValueSchema,
+  damage: RiskValueSchema,
+  reproducibility: RiskValueSchema,
+  exploitability: RiskValueSchema,
+  affectedUsers: RiskValueSchema,
+  discoverability: RiskValueSchema,
+  at: z.number().int().nonnegative(),
+});
+
+/** リスク評価（Impact/Likelihood 2 軸方式、discoverability 廃止・4 項目）。[[plan]] §2.34 / §2.45。 */
+const PersistedRiskScoreSchema = z.object({
+  damage: RiskValueSchema,
+  affectedUsers: RiskValueSchema,
+  reproducibility: RiskValueSchema,
+  exploitability: RiskValueSchema,
   at: z.number().int().nonnegative(),
 });
 
@@ -288,10 +301,15 @@ export const PersistedProjectSchema = z.object({
    */
   suppressions: z.record(z.string().min(1), PersistedSuppressionSchema).optional(),
   /**
-   * 脅威への DREAD 評価（threatId キー。[[plan]] §2.34）。省略時は評価なしとして起動。
-   * schemaVersion は据え置き（optional 追加は後方互換）。
+   * 脅威への DREAD 評価（旧形式、threatId キー）。廃止済みだが、旧データ読み込み専用として
+   * optional のまま残す（deserialize 側で riskScores へ変換）。
    */
   dreadScores: z.record(z.string().min(1), PersistedDreadScoreSchema).optional(),
+  /**
+   * 脅威へのリスク評価（threatId キー。[[plan]] §2.34 / §2.45）。省略時は評価なしとして起動。
+   * schemaVersion は据え置き（optional 追加は後方互換）。
+   */
+  riskScores: z.record(z.string().min(1), PersistedRiskScoreSchema).optional(),
   /**
    * 検出/手動脅威への対策実装状況（threatId キー）。省略時は未設定として起動。
    * schemaVersion は据え置き（optional 追加は後方互換）。

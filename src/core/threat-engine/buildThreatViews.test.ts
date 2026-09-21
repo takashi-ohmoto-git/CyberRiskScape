@@ -59,13 +59,12 @@ describe('buildThreatViews', () => {
     expect(views.every((v) => v.origin === 'detected')).toBe(true);
   });
 
-  it('dreadScores を最終 id キーで検出・手動の両方に付与する', () => {
+  it('riskScores を最終 id キーで検出・手動の両方に付与する', () => {
     const score = {
       damage: 3,
       reproducibility: 2,
       exploitability: 1,
       affectedUsers: 2,
-      discoverability: 1,
       at: 0,
     } as const;
     const views = buildThreatViews({
@@ -74,11 +73,11 @@ describe('buildThreatViews', () => {
       nodes: NODES,
       framework: 'STRIDE',
       suppressions: {},
-      dreadScores: { 'rule-a-n1': score, mt1: score },
+      riskScores: { 'rule-a-n1': score, mt1: score },
     });
-    expect(views.find((v) => v.id === 'rule-a-n1')?.dread).toEqual(score);
-    expect(views.find((v) => v.id === 'mt1')?.dread).toEqual(score);
-    expect(views.find((v) => v.id === 'rule-b-n2')?.dread).toBeUndefined();
+    expect(views.find((v) => v.id === 'rule-a-n1')?.risk).toEqual(score);
+    expect(views.find((v) => v.id === 'mt1')?.risk).toEqual(score);
+    expect(views.find((v) => v.id === 'rule-b-n2')?.risk).toBeUndefined();
   });
 
   it('controlStatuses を最終 id キーで検出・手動の両方に付与する', () => {

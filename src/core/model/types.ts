@@ -666,26 +666,25 @@ export interface ControlStatusState {
   at: number;
 }
 
-/** DREAD 各評価項目の 3 段階スコア（1=低 / 2=中 / 3=高）。 */
-export type DreadValue = 1 | 2 | 3;
+/** リスク評価各項目の 3 段階スコア（1=低 / 2=中 / 3=高）。 */
+export type RiskValue = 1 | 2 | 3;
 
 /**
- * 脅威への DREAD 評価（ユーザー入力。[[plan]] §2.34）。
+ * 脅威へのリスク評価（ユーザー入力。[[plan]] §2.34 / §2.45）。
  * suppressions と同様に `ThreatView.id` をキーにグローバル Record で保持する。
- * 5 項目の合計（5–15）を `dreadRank` で Severity へマッピングし、評価済み脅威は
- * Analytics でルール由来 severity より優先して表示する。
+ * 4 項目を Impact（damage × affectedUsers）と Likelihood（reproducibility ×
+ * exploitability）の 2 軸へ畳み、`riskSeverity` で Severity へマッピングする。
+ * 評価済み脅威は Analytics でルール由来 severity より優先して表示される。
  */
-export interface DreadScore {
-  /** D: 損害の大きさ（Damage） */
-  damage: DreadValue;
-  /** R: 再現性（Reproducibility） */
-  reproducibility: DreadValue;
-  /** E: 攻撃の容易さ（Exploitability） */
-  exploitability: DreadValue;
-  /** A: 影響ユーザー範囲（Affected Users） */
-  affectedUsers: DreadValue;
-  /** D: 発見の容易さ（Discoverability） */
-  discoverability: DreadValue;
+export interface RiskScore {
+  /** Impact: 損害の大きさ（Damage） */
+  damage: RiskValue;
+  /** Impact: 影響ユーザー範囲（Affected Users） */
+  affectedUsers: RiskValue;
+  /** Likelihood: 再現性（Reproducibility） */
+  reproducibility: RiskValue;
+  /** Likelihood: 攻撃の容易さ（Exploitability） */
+  exploitability: RiskValue;
   /** 評価時刻（epoch ms）。 */
   at: number;
 }
@@ -705,8 +704,8 @@ export interface ThreatView extends DetectedThreat {
   manualTargetType?: ComponentTypeId;
   /** 抑制注記（検出脅威にのみ付く）。 */
   suppression?: SuppressionState;
-  /** DREAD 評価（評価済みの脅威にのみ付く。[[plan]] §2.34）。 */
-  dread?: DreadScore;
+  /** リスク評価（評価済みの脅威にのみ付く。[[plan]] §2.34 / §2.45）。 */
+  risk?: RiskScore;
   /** 対策実装状況（リスク対応方針=suppression とは別レイヤー）。 */
   controlStatus?: ControlStatusState;
   /**

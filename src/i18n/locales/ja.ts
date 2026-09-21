@@ -133,7 +133,7 @@ const jaCore = {
     '攻撃経路分析はキャンバス上のエッジ（接続線）を辿って構築されます。攻撃者の侵入点となるコンポーネントへエッジを作成してください。',
   'attackTree.truncated': '経路が多いため一部を省略しました（深さ・経路数の上限あり）。',
   'attackTree.footnote':
-    '難易度は DREAD Exploitability 優先（小さいほど容易）。未評価時は検出 severity の暫定値を使います。エッジは向きに依らず横移動の経路として扱います。1 つの対策で経路を完全遮断とは見なさず、被覆ホップはコスト加算で表します（「残存経路のみ」で遮断扱いに切替）。',
+    '難易度はリスク評価の Exploitability 優先（小さいほど容易）。未評価時は検出 severity の暫定値を使います。エッジは向きに依らず横移動の経路として扱います。1 つの対策で経路を完全遮断とは見なさず、被覆ホップはコスト加算で表します（「残存経路のみ」で遮断扱いに切替）。',
   'attackTree.node.difficulty': '難易度 {value}',
   'attackTree.node.unevaluated': '未評価',
   'attackTree.node.softDifficulty': '暫定 {value}',
@@ -150,9 +150,9 @@ const jaCore = {
   'attackTree.detail.chosenChannel': '採用チャネル',
   'attackTree.detail.close': '選択解除',
   'attackTree.detail.formula':
-    '難易度 = 4 − max(DREAD Exploitability)。脅威あり・DREAD 未評価は severity 転用の暫定難易度（Critical/High→1、Medium→2、Low→3）。脅威なしは中立 2。一部対策 +1 / 対策済 +8（残存経路モードでは遮断）。',
+    '難易度 = 4 − max(リスク評価の Exploitability)。脅威あり・リスク評価未評価は severity 転用の暫定難易度（Critical/High→1、Medium→2、Low→3）。脅威なしは中立 2。一部対策 +1 / 対策済 +8（残存経路モードでは遮断）。',
   'attackTree.allUnevaluatedNote':
-    'DREAD 未評価のため、コストは severity 転用の暫定難易度＋ホップ数基準です',
+    'リスク評価未評価のため、コストは severity 転用の暫定難易度＋ホップ数基準です',
   'attackTree.chokePoint.heading': 'チョークポイント（対策の投資対効果が高い要素）',
   'attackTree.chokePoint.hits': '{total} 経路中 {hits} 本が通過',
   'attackTree.routeTable.heading': '経路テーブル',

@@ -40,14 +40,14 @@ There are three intended uses:
 |---|---|
 | **Before a design review** | Draw the architecture, surface the threats, and use them as the agenda for the review |
 | **Deciding on an AI or agent design** | Decide what capabilities to give an agent while looking at the threats each choice introduces |
-| **Recording your response** | Record a DREAD score and a response (mitigate / accept / transfer / avoid) per threat, then export |
+| **Recording your response** | Record a risk score and a response (mitigate / accept / transfer / avoid) per threat, then export |
 
 It is just as important to be clear about **what this tool does not do**:
 
 - **It does not guarantee completeness.** What you see is what the threat library covers.
   Nothing appearing does not mean nothing is there.
 - **It does not decide how serious a risk is.** Severity is a general indication; you judge the real
-  impact and record it in DREAD.
+  impact and record it in the risk assessment.
 - **It is not an audit trail or evidence of compliance.** It is a tool for thinking about a design.
 
 Humans reach the conclusions of a threat model. The tool's job is to **mechanically prepare the
@@ -208,7 +208,7 @@ whenever you are judging whether a finding is valid.
 A threat marked **"Assumed"** fired because the relevant attributes are unset, so **worst-case values
 were used**. Set those attributes and the evaluation becomes more precise.
 
-Lower down the card you record the control implementation status, the DREAD score and the risk
+Lower down the card you record the control implementation status, the risk score and the risk
 response. A false positive can be marked as such, which suppresses it and removes it from the list.
 
 ---

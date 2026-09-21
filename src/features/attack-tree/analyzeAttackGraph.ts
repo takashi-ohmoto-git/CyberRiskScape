@@ -72,7 +72,7 @@ function coveragePenalty(coverage: HopCoverage, residualOnly: boolean): number {
 }
 
 /**
- * `buildAttackGraph` の結果に DREAD/Control 由来の重み（HopEvidence）を載せ、
+ * `buildAttackGraph` の結果に リスク評価/Control 由来の重み（HopEvidence）を載せ、
  * ノード列ベースの各経路について、並行チャネル（論理ホップ内の edgeIds）から
  * 最小コストのものを選びつつコストを算定する純粋関数。
  *

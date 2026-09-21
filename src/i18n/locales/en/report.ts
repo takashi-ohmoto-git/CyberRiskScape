@@ -54,7 +54,7 @@ export const enReport: Partial<Record<TranslationKey, string>> = {
   'report.dcrh.openQuestions.actor':
     '- actor is not modeled in {brand}; the actor column in section 4 is left blank. Needs review.',
   'report.dcrh.openQuestions.likelihood':
-    '- likelihood defaults to `possible` for threats without a DREAD score.',
+    '- likelihood defaults to `possible` for threats without a risk score.',
   'report.dcrh.openQuestions.evidence':
     '- evidence (CVE / finding links, etc.) is always blank; this tool does not retain it.',
   'report.dcrh.openQuestions.sensitivity':

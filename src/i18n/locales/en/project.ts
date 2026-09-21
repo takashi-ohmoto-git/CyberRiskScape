@@ -83,7 +83,7 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'project.newModal.confirmMessage':
     'This will clear your current work and create a blank new project. Save the current project to a file before creating it?',
   'project.newModal.warning':
-    'If you create without saving, your current diagram, manual threats, DREAD scores, etc. will be lost.',
+    'If you create without saving, your current diagram, manual threats, risk scores, etc. will be lost.',
   'project.newModal.createWithoutSaving': 'Create without saving',
   'project.newModal.saveAndCreate': 'Save and create',
 

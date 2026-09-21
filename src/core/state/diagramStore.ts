@@ -8,7 +8,7 @@ import type {
   DiagramEdge,
   DiagramNode,
   DragState,
-  DreadScore,
+  RiskScore,
   ElementKind,
   FrameworkView,
   GroupDragState,
@@ -52,7 +52,7 @@ interface HistorySnapshot {
   layers: Record<LayerKey, LayerData>;
   manualThreats: Record<LayerKey, ManualThreat[]>;
   suppressions: Record<string, SuppressionState>;
-  dreadScores: Record<string, DreadScore>;
+  riskScores: Record<string, RiskScore>;
   controlStatuses: Record<string, ControlStatusState>;
 }
 
@@ -60,7 +60,7 @@ const snapshotOf = (s: DiagramState): HistorySnapshot => ({
   layers: s.layers,
   manualThreats: s.manualThreats,
   suppressions: s.suppressions,
-  dreadScores: s.dreadScores,
+  riskScores: s.riskScores,
   controlStatuses: s.controlStatuses,
 });
 
@@ -317,8 +317,8 @@ export interface HydratePayload {
   projectMeta?: ProjectMeta;
   manualThreats?: Record<LayerKey, ManualThreat[]>;
   suppressions?: Record<string, SuppressionState>;
-  /** DREAD 評価（threatId キー。[[plan]] §2.34）。省略時は評価なし。 */
-  dreadScores?: Record<string, DreadScore>;
+  /** リスク評価（threatId キー。[[plan]] §2.34 / §2.45）。省略時は評価なし。 */
+  riskScores?: Record<string, RiskScore>;
   /** 対策実装状況（threatId キー）。省略時は未設定。 */
   controlStatuses?: Record<string, ControlStatusState>;
   /** ElementalID 採番カウンタ（[[plan]] §2.26）。省略時は全レイヤー 0 始まり。 */
@@ -372,8 +372,8 @@ interface DiagramState {
   manualThreats: Record<LayerKey, ManualThreat[]>;
   /** 検出脅威の抑制注記（threatId キー、グローバル）。 */
   suppressions: Record<string, SuppressionState>;
-  /** 脅威への DREAD 評価（threatId キー、グローバル。[[plan]] §2.34）。 */
-  dreadScores: Record<string, DreadScore>;
+  /** 脅威へのリスク評価（threatId キー、グローバル。[[plan]] §2.34 / §2.45）。 */
+  riskScores: Record<string, RiskScore>;
   /** 検出/手動脅威への対策実装状況（threatId キー、グローバル）。suppression とは別レイヤー。 */
   controlStatuses: Record<string, ControlStatusState>;
   /** 手動脅威エディタモーダルの開閉状態（UI 表示用、永続化しない）。 */
@@ -501,7 +501,7 @@ interface DiagramState {
   closeNewProjectConfirm: () => void;
   /**
    * 全レイヤー空・メタ未設定の「まっさらな新規プロジェクト」へ置き換える。
-   * 採番カウンタ・抑制注記・DREAD 評価・Undo/Redo 履歴もリセットする
+   * 採番カウンタ・抑制注記・リスク評価・Undo/Redo 履歴もリセットする
    * （保存確認は呼び出し側のモーダルで済ませてから呼ぶこと）。
    */
   newProject: () => void;
@@ -518,9 +518,9 @@ interface DiagramState {
   setSuppression: (threatId: string, status: SuppressionStatus, note?: string) => void;
   clearSuppression: (threatId: string) => void;
 
-  // ---- actions: DREAD 評価 ----
-  setDreadScore: (threatId: string, score: Omit<DreadScore, 'at'>) => void;
-  clearDreadScore: (threatId: string) => void;
+  // ---- actions: リスク評価 ----
+  setRiskScore: (threatId: string, score: Omit<RiskScore, 'at'>) => void;
+  clearRiskScore: (threatId: string) => void;
 
   // ---- actions: 対策実装状況 ----
   setControlStatus: (threatId: string, status: ControlStatusValue, note?: string) => void;
@@ -601,7 +601,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
   manualThreats: emptyManualThreats(),
   suppressions: {},
-  dreadScores: {},
+  riskScores: {},
   controlStatuses: {},
   isManualThreatModalOpen: false,
   editingManualThreatId: null,
@@ -636,7 +636,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       projectMeta: payload.projectMeta ?? EMPTY_PROJECT_META,
       manualThreats: payload.manualThreats ?? emptyManualThreats(),
       suppressions: payload.suppressions ?? {},
-      dreadScores: payload.dreadScores ?? {},
+      riskScores: payload.riskScores ?? {},
       controlStatuses: payload.controlStatuses ?? {},
       isHydrated: true,
       selectedNodeIds: [],
@@ -1033,7 +1033,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       projectMeta: EMPTY_PROJECT_META,
       manualThreats: emptyManualThreats(),
       suppressions: {},
-      dreadScores: {},
+      riskScores: {},
       controlStatuses: {},
       isNewProjectConfirmOpen: false,
       selectedNodeIds: [],
@@ -1108,20 +1108,20 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     });
   },
 
-  setDreadScore: (threatId, score) => {
+  setRiskScore: (threatId, score) => {
     get().recordHistory();
     set((s) => ({
-      dreadScores: { ...s.dreadScores, [threatId]: { ...score, at: Date.now() } },
+      riskScores: { ...s.riskScores, [threatId]: { ...score, at: Date.now() } },
     }));
   },
 
-  clearDreadScore: (threatId) => {
-    if (!(threatId in get().dreadScores)) return;
+  clearRiskScore: (threatId) => {
+    if (!(threatId in get().riskScores)) return;
     get().recordHistory();
     set((s) => {
-      const next = { ...s.dreadScores };
+      const next = { ...s.riskScores };
       delete next[threatId];
-      return { dreadScores: next };
+      return { riskScores: next };
     });
   },
 

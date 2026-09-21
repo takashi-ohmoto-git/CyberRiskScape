@@ -241,7 +241,7 @@ export function toJson(report: ThreatReport): string {
 //
 // 既存の CSV/JSON 経路（`ThreatReport` ベース）とは独立し、生の `ThreatView[]` を
 // 含む `BuildThreatReportInput` を直接取る純粋関数（DOM・時刻・registry 非依存）。
-// `ThreatView.id`・suppression・controlStatus・dread は読むだけで一切書き換えない。
+// `ThreatView.id`・suppression・controlStatus・risk は読むだけで一切書き換えない。
 // `Tn` 採番は出力文字列内のローカルラベルに限定する。
 
 /** Markdown 表セルの安全化：`|` をエスケープし、改行を `<br>` に畳む。 */
@@ -288,12 +288,16 @@ const LIKELIHOOD_RANK: Record<DcrhLikelihood, number> = {
 };
 
 /**
- * likelihood 推定：DREAD があれば Reproducibility + Exploitability（2..6）から
- * 5 段階へ写像。未評価なら既定 `possible`（その事実は section 6 に明記）。
+ * likelihood 推定：リスク評価があれば Reproducibility + Exploitability（2..6）から
+ * DCRH の 5 段階へ写像。未評価なら既定 `possible`（その事実は section 6 に明記）。
+ *
+ * アプリ内の Severity マトリクスは 3×3 なので `likelihoodLevel()` で 3 段階へ畳むが、
+ * DCRH 側は 5 段階を持つためここでは和をそのまま使って解像度を落とさない。
+ * 両者は単調で入れ子（Low→very_rare/rare、Medium→possible、High→likely/almost_certain）。
  */
 function dcrhLikelihood(t: ThreatView): DcrhLikelihood {
-  if (!t.dread) return 'possible';
-  switch (t.dread.reproducibility + t.dread.exploitability) {
+  if (!t.risk) return 'possible';
+  switch (t.risk.reproducibility + t.risk.exploitability) {
     case 2:
       return 'very_rare';
     case 3:
@@ -410,7 +414,7 @@ export function toDCRHThreatModelMarkdown(
       deprioritized.push({ threat: t.description, reason: disp.reason });
       continue;
     }
-    if (!t.dread) usedDefaultLikelihood = true;
+    if (!t.risk) usedDefaultLikelihood = true;
     const surface = t.subject ? elementLabel(index, t.subject.kind, t.subject.id) : '';
     // asset：エッジ起点の脅威は到達先ノード、それ以外は対象要素自身。
     let asset = surface;

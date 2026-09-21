@@ -18,7 +18,7 @@ A template is **one depth layer's diagram**.
 | Included | Not included |
 |---|---|
 | Components (type, position, attributes) | Project information (name, purpose, business impact) |
-| Data flows (direction, authentication, network, encryption, semantics) | DREAD scores |
+| Data flows (direction, authentication, network, encryption, semantics) | Risk scores |
 | Trust boundaries (type, position, size, trust level) | Risk treatment and control implementation status |
 | | Threats added by hand |
 

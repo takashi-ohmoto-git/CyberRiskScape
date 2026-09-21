@@ -46,7 +46,7 @@ Press **New project** in the left sidebar. A confirmation appears.
 ![The new project dialog](../assets/guide/en/chatbot/01-new-project.png)
 
 Choose "Save and create" to keep your current diagram, or "Create without saving" to start clean.
-**Creating without saving discards the current diagram, manual threats and DREAD assessments.**
+**Creating without saving discards the current diagram, manual threats and risk assessments.**
 
 ### Describe the system in Project Edit
 
@@ -248,7 +248,7 @@ This is where the actual work starts:
    reality, fix the diagram or the attributes.
 2. **Reduce the "Assumed" ones.** Unset attributes are evaluated at worst case; the more you fill
    in, the more accurate the result.
-3. **Prioritize.** Record a DREAD score and a response (mitigate / accept / transfer / avoid). The
+3. **Prioritize.** Record a risk score and a response (mitigate / accept / transfer / avoid). The
    business impact and security objectives from §2 are your yardstick.
 4. **Suppress false positives.** Mark threats that do not apply to your deployment and they leave
    the list.

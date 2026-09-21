@@ -58,18 +58,17 @@ describe('buildElementAnalytics', () => {
     expect(rows.find((r) => r.elementalId === 'C2')!.maxSeverity).toBe('Critical');
   });
 
-  it('maxSeverity は DREAD 評価済み脅威の評価由来ランクを優先する（上書き方式）', () => {
-    // severity=Critical だが DREAD 合計 5（=Low）→ 要素の最大リスクは他方の Medium になる
-    const lowDread = {
+  it('maxSeverity はリスク評価済み脅威の評価由来ランクを優先する（上書き方式）', () => {
+    // severity=Critical だが Impact/Likelihood 共に Low → 要素の最大リスクは他方の Medium になる
+    const lowRisk = {
       damage: 1,
       reproducibility: 1,
       exploitability: 1,
       affectedUsers: 1,
-      discoverability: 1,
       at: 0,
     } as const;
     const threats = [
-      tv({ id: 't1', subject: { kind: 'node', id: 'n2' }, severity: 'Critical', dread: lowDread }),
+      tv({ id: 't1', subject: { kind: 'node', id: 'n2' }, severity: 'Critical', risk: lowRisk }),
       tv({ id: 't2', subject: { kind: 'node', id: 'n2' }, severity: 'Medium' }),
     ];
     const { rows } = buildElementAnalytics({ nodes, edges, boundaries, threats });

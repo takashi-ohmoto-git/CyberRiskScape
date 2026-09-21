@@ -20,7 +20,7 @@ beforeEach(() => {
     },
     projectMeta: EMPTY_PROJECT_META,
     suppressions: {},
-    dreadScores: {},
+    riskScores: {},
     controlStatuses: {},
     isNewProjectConfirmOpen: false,
     selectedNodeIds: [],

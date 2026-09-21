@@ -3,7 +3,7 @@
 **English** | [日本語](analytics-assessment.ja.md)
 
 Once the threats are listed, the work is **assessing and recording them one by one**. Analytics puts
-**all three records — DREAD score, risk treatment and control implementation status — on one
+**all three records — risk score, risk treatment and control implementation status — on one
 screen**.
 
 This chapter follows [Reading the Threat Panel](reading-threats.md) and uses the **AI chatbot
@@ -71,41 +71,52 @@ badge** is the natural order.
 
 ---
 
-## 5. Step 3 — score DREAD
+## 5. Step 3 — score the risk
 
-In **DREAD Assessment** on the right, pick **1 (Low) / 2 (Medium) / 3 (High)** for each of the five
+In **Risk Assessment** on the right, pick **1 (Low) / 2 (Medium) / 3 (High)** for each of four
 factors.
 
-![Entering a DREAD score](../assets/guide/en/analytics/04-dread-input.png)
+![Entering a risk score](../assets/guide/en/analytics/04-risk-input.png)
 
 Every button carries written criteria. **Apply the criteria rather than your gut** — that is what
 keeps two assessors close together.
 
-| Factor | 1 (Low) | 2 (Medium) | 3 (High) |
+The four factors split into two groups: the **Impact axis** (damage, affected users) and the
+**Likelihood axis** (reproducibility, exploitability).
+
+| Axis | Factor | 1 (Low) | 2 (Medium) | 3 (High) |
+|---|---|---|---|---|
+| Impact | Damage | Minor disruption or limited information exposure | Partial data leakage or tampering | Full data breach or complete system outage |
+| Impact | Affected Users | A small subset of users | A significant number of users or tenants | All users, including administrators |
+| Likelihood | Reproducibility | Rarely reproducible under specific conditions | Reproducible when conditions align | Always reproducible |
+| Likelihood | Exploitability | Requires advanced skill or insider knowledge | Tools or procedures partially public | Easily exploitable with off-the-shelf tools |
+
+Each axis folds its two factors' sum (2–6) into three levels — **Low (2–3) / Medium (4) /
+High (5–6)** — and the following matrix maps the two axes to a Severity:
+
+| Impact \ Likelihood | Low | Medium | High |
 |---|---|---|---|
-| **D** Damage | Minor disruption or limited information exposure | Partial data leakage or tampering | Full data breach or complete system outage |
-| **R** Reproducibility | Rarely reproducible under specific conditions | Reproducible when conditions align | Always reproducible |
-| **E** Exploitability | Requires advanced skill or insider knowledge | Tools or procedures partially public | Easily exploitable with off-the-shelf tools |
-| **A** Affected Users | A small subset of users | A significant number of users or tenants | All users, including administrators |
-| **D** Discoverability | Hard to discover without insider knowledge | Discoverable with careful investigation | Easily discoverable from outside |
+| High | Medium | High | Critical |
+| Medium | Low | Medium | High |
+| Low | Low | Low | Medium |
 
-The total (5–15) is computed for you and mapped to a rank:
+Source: the [OWASP Risk Rating Methodology](https://owasp.org/www-community/OWASP_Risk_Rating_Methodology).
+This tool's Severity has four levels, so OWASP's Informational (Low×Low) is rounded up to Low.
 
-| Total | Rank |
-|---|---|
-| 13 – 15 | Critical |
-| 11 – 12 | High |
-| 8 – 10 | Medium |
-| 5 – 7 | Low |
+> **Changed from the old DREAD scoring:** Discoverability is gone — scoring "harder to find" as
+> lower risk brings security through obscurity into the number. The additive total (5–15) is also
+> gone, replaced with the Impact × Likelihood matrix. Microsoft itself retired DREAD from the SDL,
+> and this two-axis approach is now the mainstream replacement. The 1–3 three-point scale is
+> unchanged from before.
 
 **Nothing is recorded until you press Save.** Selecting the buttons alone does not commit it. (If you
 get it wrong, "Clear score" removes it.)
 
-![After saving, the severity is replaced](../assets/guide/en/analytics/05-dread-saved.png)
+![After saving, the severity is replaced](../assets/guide/en/analytics/05-risk-saved.png)
 
-Saving **overrides the rule-derived severity with the DREAD rank**. Above, "Account Takeover" — High
-by the rule — scores 13 and becomes **Critical**, with the original value kept in parentheses. The
-component badge in the left tree follows.
+Saving **overrides the rule-derived severity with the assessed rank**. Above, "Account Takeover" —
+High by the rule — is Impact High × Likelihood High and becomes **Critical**, with the original
+value kept in parentheses. The component badge in the left tree follows.
 
 > The override is deliberate: **your assessment in your context beats a general-purpose severity**,
 > and the original value is never lost.
@@ -114,7 +125,7 @@ component badge in the left tree follows.
 
 ## 6. Step 4 — record the risk treatment
 
-Below DREAD is **Risk Treatment**: pick avoid / mitigate / transfer / accept / false positive and
+Below the risk score is **Risk Treatment**: pick avoid / mitigate / transfer / accept / false positive and
 write **why**, then save.
 
 ![Recording a risk treatment](../assets/guide/en/analytics/06-risk-treatment.png)
@@ -171,7 +182,7 @@ The order that works in practice:
 
 1. Filter to **High or above**
 2. Take the first threat in the tree
-3. Score **DREAD** and save — now you know whether it really is High or above
+3. Score the **risk** and save — now you know whether it really is High or above
 4. Record the **risk treatment** with a reason
 5. Record the **control implementation status** (if implemented, what and when)
 6. Check that "unset" in the middle pane went down, and move on
@@ -186,7 +197,7 @@ finishes sooner than attempting everything in one sitting.
 
 What you type here is not just a memo.
 
-- **DREAD Exploitability** drives the **difficulty** values in
+- **The Exploitability score** drives the **difficulty** values in
   [Attack Path Analysis](attack-paths.md). Leave it unscored and route costs fall back to
   provisional values inferred from severity.
 - **Control implementation status** is what decides **coverage** (mitigated / partially mitigated)

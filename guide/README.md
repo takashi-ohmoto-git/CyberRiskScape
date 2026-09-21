@@ -15,8 +15,8 @@ Nothing here needs to be installed — you can follow along in the
 | **[Getting Started](getting-started.md)** | What the tool does, what you would use it for, how the screen is laid out, and every canvas operation — placing components, drawing connections and trust boundaries, zooming and panning — with screenshots |
 | **[Your First Threat Model](first-threat-model.md)** | A full walkthrough using an AI chatbot: creating a project, choosing a depth layer, placing components, connecting them and setting trust boundaries |
 | **[Creating and Using Templates](templates.md)** | Exporting and importing diagrams as JSON, plus the AI chatbot template this guide uses |
-| **[Reading the Threat Panel](reading-threats.md)** | How to read what was detected, prioritize with DREAD, record your treatment decisions, and export the result |
-| **[Assessing Risk in Analytics](analytics-assessment.md)** | Scoring DREAD and recording risk treatment and control implementation status, all on one screen |
+| **[Reading the Threat Panel](reading-threats.md)** | How to read what was detected, prioritize with a risk score, record your treatment decisions, and export the result |
+| **[Assessing Risk in Analytics](analytics-assessment.md)** | Scoring risk and recording risk treatment and control implementation status, all on one screen |
 | **[Attack Path Analysis](attack-paths.md)** | Enumerate the routes from attacker to target and find the choke points where one control covers the most routes |
 | **[The Compliance Map](compliance-map.md)** | Check how threats map to NIST CSF, the NIST AI RMF and Japan's AI Business Operator Guidelines, from either direction |
 | **[An Introduction to Secure by Design](secure-by-design.md)** | The thinking behind the tool: what Secure by Design means, why it is being asked for now, and the four roles threat modeling plays. Based on the CISA-led joint guidance |

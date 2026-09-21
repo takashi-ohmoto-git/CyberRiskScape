@@ -5,7 +5,7 @@
 A list of threats tells you what could happen. It does not tell you **where a single control buys
 you the most**. That is what attack path analysis is for.
 
-This page follows on from [Assessing Risk in Analytics](analytics-assessment.md) — the DREAD scores
+This page follows on from [Assessing Risk in Analytics](analytics-assessment.md) — the risk scores
 and control implementation status you record there feed directly into this analysis, so read that
 first. The diagram is the AI chatbot built in [Your First Threat Model](first-threat-model.md).
 
@@ -69,7 +69,7 @@ Press "Attack path analysis" and the analysis opens.
   through the same sequence of components count as **one route**, however many channels connect them.
   The round-trip flows make 24 combinations here, but there are still two routes.
 - **Min cost 12** — the cost of the easiest route. Lower means easier for the attacker.
-- **DREAD not scored…** — the note shown while no DREAD assessment exists (see below).
+- **Risk not scored…** — the note shown while no risk assessment exists (see below).
 
 ### The graph
 
@@ -81,8 +81,8 @@ Every card shows the element's **difficulty** and **how many threats fired on it
 
 | Label | Meaning |
 |---|---|
-| Difficulty n | Derived from DREAD Exploitability (lower = easier to pass) |
-| Provisional n | No DREAD score, so a value inferred from severity |
+| Difficulty n | Derived from the Exploitability score (lower = easier to pass) |
+| Provisional n | No risk score, so a value inferred from severity |
 | Unscored | Nothing to judge from |
 
 The small chips between cards are **logical hops**. Where several parallel channels connect the same
@@ -151,8 +151,8 @@ Knowing where the numbers come from keeps you from over-trusting them.
 
 | Condition | Difficulty |
 |---|---|
-| DREAD scored | `4 − max(Exploitability)` |
-| Threats present but no DREAD | Provisional, from severity (Critical/High → 1, Medium → 2, Low → 3) |
+| Risk scored | `4 − max(Exploitability)` |
+| Threats present but not scored | Provisional, from severity (Critical/High → 1, Medium → 2, Low → 3) |
 | No threats | Neutral 2 |
 
 **Route cost** is the sum of the difficulties of the components and channels traversed, plus a
@@ -168,7 +168,7 @@ penalty for how well the hop is covered.
 the threats that fired on that element, if **all** are marked "Implemented" or "Not applicable" it
 counts as covered; if only some are, it is partially covered.
 
-> **The more DREAD you score, the more accurate this gets.**
+> **The more risk you score, the more accurate this gets.**
 > With nothing scored, cost is effectively "provisional severity values plus hop count". The screen
 > says so when that is the case — do not treat the numbers as settled.
 

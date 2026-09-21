@@ -321,14 +321,28 @@ describe('toDCRHThreatModelMarkdown', () => {
     expect(text).toContain('対策対象外（not-applicable）：該当環境なし');
   });
 
-  it('DREAD なしは likelihood=possible、ありは段階推定', () => {
+  it('リスク評価なしは likelihood=possible', () => {
     expect(threatRows(md([T_HIGH]))[0][6]).toBe('possible');
-    const scored: ThreatView = {
-      ...T_HIGH,
-      dread: { damage: 1, reproducibility: 3, exploitability: 3, affectedUsers: 1, discoverability: 1, at: 1 },
-    };
-    expect(threatRows(md([scored]))[0][6]).toBe('almost_certain'); // 3+3=6
   });
+
+  // DCRH の likelihood は 5 段階なので、アプリ内の 3 段階へ畳む前の
+  // reproducibility + exploitability（2..6）をそのまま使う（解像度を落とさない）。
+  it.each([
+    [1, 1, 'very_rare'],
+    [1, 2, 'rare'],
+    [2, 2, 'possible'],
+    [2, 3, 'likely'],
+    [3, 3, 'almost_certain'],
+  ] as const)(
+    'reproducibility=%i + exploitability=%i → likelihood=%s',
+    (reproducibility, exploitability, expected) => {
+      const scored: ThreatView = {
+        ...T_HIGH,
+        risk: { damage: 1, affectedUsers: 1, reproducibility, exploitability, at: 1 },
+      };
+      expect(threatRows(md([scored]))[0][6]).toBe(expected);
+    },
+  );
 
   it('provenance に mode/date/tool を出力する', () => {
     const text = md([T_HIGH], '2026-06-29');
@@ -346,12 +360,12 @@ describe('toDCRHThreatModelMarkdown', () => {
     expect(toJson(buildThreatReport(base))).toBe(jsonBefore);
   });
 
-  it('8: 入力の threats（id/suppression/controlStatus/dread）を mutate しない', () => {
+  it('8: 入力の threats（id/suppression/controlStatus/risk）を mutate しない', () => {
     const t: ThreatView = {
       ...T_HIGH,
       suppression: { status: 'accepted', note: 'x', at: 1 },
       controlStatus: { status: 'required', at: 2 },
-      dread: { damage: 2, reproducibility: 2, exploitability: 2, affectedUsers: 2, discoverability: 2, at: 3 },
+      risk: { damage: 2, reproducibility: 2, exploitability: 2, affectedUsers: 2, at: 3 },
     };
     const arr = [t, T_CRIT];
     const snapshot = JSON.stringify(arr);

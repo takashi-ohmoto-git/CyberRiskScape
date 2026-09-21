@@ -37,7 +37,7 @@ type TFunc = ReturnType<typeof useT>;
 interface AttackTreeModalProps {
   /** ルートとなる攻撃者ノード。attackObjectiveId 設定済みであること（呼び出し側でガード）。 */
   attacker: DiagramNode;
-  /** アクティブレイヤーの全 ThreatView（経路上の全要素の DREAD/Control 集約に使う）。 */
+  /** アクティブレイヤーの全 ThreatView（経路上の全要素のリスク評価/Control 集約に使う）。 */
   allThreats: ThreatView[];
   onClose: () => void;
 }
@@ -240,7 +240,7 @@ function NodeCard({
           </div>
           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
             <span>
-              {evidence.difficultyBasis === 'dread'
+              {evidence.difficultyBasis === 'risk'
                 ? t('attackTree.node.difficulty', { value: evidence.difficulty })
                 : evidence.difficultyBasis === 'severity-soft'
                   ? t('attackTree.node.softDifficulty', { value: evidence.difficulty })
@@ -726,13 +726,13 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
                               ? 56
                               : 40;
                           const label =
-                            hopEv.difficultyBasis === 'dread'
+                            hopEv.difficultyBasis === 'risk'
                               ? String(hopEv.difficulty)
                               : hopEv.difficultyBasis === 'severity-soft'
                                 ? `~${hopEv.difficulty}`
                                 : '·';
                           const titleParts = [
-                            hopEv.difficultyBasis === 'dread'
+                            hopEv.difficultyBasis === 'risk'
                               ? t('attackTree.node.difficulty', { value: hopEv.difficulty })
                               : hopEv.difficultyBasis === 'severity-soft'
                                 ? t('attackTree.node.softDifficulty', { value: hopEv.difficulty })
@@ -923,7 +923,7 @@ function DetailPanel({
               </p>
             )}
             <p className="text-xs text-slate-500">
-              {hopAgg.difficultyBasis === 'dread'
+              {hopAgg.difficultyBasis === 'risk'
                 ? t('attackTree.node.difficulty', { value: hopAgg.difficulty })
                 : hopAgg.difficultyBasis === 'severity-soft'
                   ? t('attackTree.node.softDifficulty', { value: hopAgg.difficulty })

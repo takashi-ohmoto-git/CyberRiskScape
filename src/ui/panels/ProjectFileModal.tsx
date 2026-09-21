@@ -137,7 +137,7 @@ export function ProjectFileModal() {
         projectMeta: s.projectMeta,
         manualThreats: s.manualThreats,
         suppressions: s.suppressions,
-        dreadScores: s.dreadScores,
+        riskScores: s.riskScores,
         controlStatuses: s.controlStatuses,
       });
       await writeProjectFile(dir, name, project);

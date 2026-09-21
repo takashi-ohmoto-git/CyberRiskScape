@@ -1,4 +1,4 @@
-import type { ControlStatusValue, DreadValue, Severity, ThreatView } from '../../core/model/types';
+import type { ControlStatusValue, RiskValue, Severity, ThreatView } from '../../core/model/types';
 import type { LogicalHop } from './buildAttackGraph';
 
 /** その要素上の脅威の対策被覆度。`full` は残存経路モードで遮断扱い。 */
@@ -6,11 +6,11 @@ export type HopCoverage = 'none' | 'partial' | 'full';
 
 /**
  * 難易度の根拠。
- * - `dread`: DREAD Exploitability 入力済み（権威ある数値）
- * - `severity-soft`: 脅威はあるが DREAD 未評価。severity から暫定導出（権威は弱い）
+ * - `risk`: リスク評価の Exploitability 入力済み（権威ある数値）
+ * - `severity-soft`: 脅威はあるがリスク評価未評価。severity から暫定導出（権威は弱い）
  * - `neutral`: 脅威なし / 既定の中立値
  */
-export type DifficultyBasis = 'dread' | 'severity-soft' | 'neutral';
+export type DifficultyBasis = 'risk' | 'severity-soft' | 'neutral';
 
 export function nodeElementKey(nodeId: string): string {
   return `node:${nodeId}`;
@@ -28,7 +28,7 @@ const COVERAGE_RANK: Record<HopCoverage, number> = { none: 0, partial: 1, full: 
 const SEVERITY_RANK: Record<Severity, number> = { Low: 0, Medium: 1, High: 2, Critical: 3 };
 
 /**
- * DREAD 未評価・脅威ありの要素向け。ルール severity から暫定難易度を導出する。
+ * リスク評価未評価・脅威ありの要素向け。ルール severity から暫定難易度を導出する。
  * Critical/High → 1（容易）、Medium → 2、Low → 3（困難寄り）。
  * あくまでタイブレイク／未評価時の順位付け用で、evaluated は false のまま。
  */
@@ -45,8 +45,8 @@ export interface ThreatRef {
   /** ThreatView.name、無ければ category にフォールバック（UI と同じ規約）。 */
   name: string;
   severity: Severity;
-  /** DREAD 入力済みのときのみ。 */
-  exploitability?: DreadValue;
+  /** リスク評価入力済みのときのみ。 */
+  exploitability?: RiskValue;
   controlStatus?: ControlStatusValue;
 }
 
@@ -59,9 +59,9 @@ export interface HopEvidence {
   difficulty: number;
   /** 対策被覆度。 */
   coverage: HopCoverage;
-  /** その要素の脅威に DREAD 入力が 1 件でもあるか（既定値と評価済みの区別用）。 */
+  /** その要素の脅威にリスク評価入力が 1 件でもあるか（既定値と評価済みの区別用）。 */
   evaluated: boolean;
-  /** difficulty の根拠（UI で「未評価」「暫定」「DREAD」を出し分ける）。 */
+  /** difficulty の根拠（UI で「未評価」「暫定」「リスク評価」を出し分ける）。 */
   difficultyBasis: DifficultyBasis;
   /** その要素で発火している脅威（difficulty の内訳）。入力順。 */
   threats: ThreatRef[];
@@ -69,7 +69,7 @@ export interface HopEvidence {
 
 export type HopEvidenceProvider = (elementKey: string) => HopEvidence;
 
-/** 脅威・DREAD 未評価の要素に与える中立の既定値（未評価＝安全と誤認させない）。 */
+/** 脅威・リスク評価未評価の要素に与える中立の既定値（未評価＝安全と誤認させない）。 */
 export const NEUTRAL_EVIDENCE: HopEvidence = {
   difficulty: 2,
   coverage: 'none',
@@ -80,8 +80,8 @@ export const NEUTRAL_EVIDENCE: HopEvidence = {
 
 /**
  * 脅威 refs から difficulty / evaluated / difficultyBasis を決める。
- * - max(Exploitability) > 0 → difficulty = 4 − maxE、basis=dread、evaluated=true
- * - 脅威あり・DREAD なし → severity 転用の暫定難易度、basis=severity-soft、evaluated=false
+ * - max(Exploitability) > 0 → difficulty = 4 − maxE、basis=risk、evaluated=true
+ * - 脅威あり・リスク評価なし → severity 転用の暫定難易度、basis=severity-soft、evaluated=false
  * - 脅威なし → 中立 2、basis=neutral
  */
 export function resolveDifficulty(
@@ -89,7 +89,7 @@ export function resolveDifficulty(
   threats: readonly ThreatRef[],
 ): Pick<HopEvidence, 'difficulty' | 'evaluated' | 'difficultyBasis'> {
   if (maxExpl > 0) {
-    return { difficulty: 4 - maxExpl, evaluated: true, difficultyBasis: 'dread' };
+    return { difficulty: 4 - maxExpl, evaluated: true, difficultyBasis: 'risk' };
   }
   if (threats.length === 0) {
     return {
@@ -113,8 +113,8 @@ export function resolveDifficulty(
  * 全 ThreatView を要素キー（`node:<id>` / `edge:<id>`）単位に集約し、
  * 攻撃経路分析用の HopEvidence（重み＋根拠）を構築する純粋関数。
  *
- * - evaluated: 要素内の脅威に dread.exploitability > 0（入力済み）が 1 件でもあれば true。
- * - difficulty: DREAD 優先。未評価だが脅威ありなら severity 転用（暫定）。脅威なしは中立 2。
+ * - evaluated: 要素内の脅威に risk.exploitability > 0（入力済み）が 1 件でもあれば true。
+ * - difficulty: リスク評価優先。未評価だが脅威ありなら severity 転用（暫定）。脅威なしは中立 2。
  * - threats: その要素で発火している全脅威の ThreatRef（difficulty の内訳、入力順）。
  *
  * boundary 等 node/edge 以外を subject に持つ脅威は攻撃経路のホップにならないため無視する。
@@ -131,13 +131,13 @@ export function buildHopEvidence(threats: readonly ThreatView[]): Map<string, Ho
 
     const cur = agg.get(key) ?? { maxExpl: 0, total: 0, covered: 0, refs: [] };
     cur.total += 1;
-    if (t.dread && t.dread.exploitability > cur.maxExpl) cur.maxExpl = t.dread.exploitability;
+    if (t.risk && t.risk.exploitability > cur.maxExpl) cur.maxExpl = t.risk.exploitability;
     if (t.controlStatus && COVERED_STATUS.has(t.controlStatus.status)) cur.covered += 1;
     cur.refs.push({
       threatId: t.id,
       name: t.name ?? t.category,
       severity: t.severity,
-      exploitability: t.dread?.exploitability,
+      exploitability: t.risk?.exploitability,
       controlStatus: t.controlStatus?.status,
     });
     agg.set(key, cur);
@@ -164,7 +164,7 @@ function weakerCoverage(a: HopCoverage, b: HopCoverage): HopCoverage {
  * - difficulty: チャネル中の最小値（攻撃者は最弱チャネルを選ぶ）
  * - coverage: チャネル中の最弱（none 寄り）。片方だけ full でも遮断とみなさない
  * - threats: 全チャネルの脅威を結合（threatId で重複排除）
- * - difficultyBasis: dread > severity-soft > neutral の優先で、寄与したチャネルの最強根拠
+ * - difficultyBasis: risk > severity-soft > neutral の優先で、寄与したチャネルの最強根拠
  */
 export function aggregateLogicalHopEvidence(
   hop: LogicalHop,
@@ -182,7 +182,7 @@ export function aggregateLogicalHopEvidence(
   const basisRank: Record<DifficultyBasis, number> = {
     neutral: 0,
     'severity-soft': 1,
-    dread: 2,
+    risk: 2,
   };
 
   for (const edgeId of hop.edgeIds) {

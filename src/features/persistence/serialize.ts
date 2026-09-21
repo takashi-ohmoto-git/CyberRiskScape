@@ -1,12 +1,12 @@
 import type {
   ControlStatusState,
-  DreadScore,
   FrameworkView,
   LayerData,
   LayerKey,
   LayerSeqCounters,
   ManualThreat,
   ProjectMeta,
+  RiskScore,
   SuppressionState,
 } from '../../core/model/types';
 import { EMPTY_LAYER, LAYER_KEYS } from '../../core/model/types';
@@ -29,8 +29,8 @@ export interface SerializableState {
   projectMeta?: ProjectMeta;
   manualThreats?: Record<LayerKey, ManualThreat[]>;
   suppressions?: Record<string, SuppressionState>;
-  /** 脅威への DREAD 評価（threatId キー。§2.34）。省略時は保存しない。 */
-  dreadScores?: Record<string, DreadScore>;
+  /** 脅威へのリスク評価（threatId キー。§2.34 / §2.45）。省略時は保存しない。 */
+  riskScores?: Record<string, RiskScore>;
   /** 対策実装状況（threatId キー）。省略時は保存しない。 */
   controlStatuses?: Record<string, ControlStatusState>;
   /** ElementalID 採番カウンタ（§2.26）。省略時は保存しない（旧テスト互換）。 */
@@ -64,8 +64,8 @@ export function serializeProject(state: SerializableState): PersistedProject {
   const hasManual = !!manual && LAYER_KEYS.some((k) => (manual[k]?.length ?? 0) > 0);
   const suppressions = state.suppressions;
   const hasSuppressions = !!suppressions && Object.keys(suppressions).length > 0;
-  const dreadScores = state.dreadScores;
-  const hasDreadScores = !!dreadScores && Object.keys(dreadScores).length > 0;
+  const riskScores = state.riskScores;
+  const hasRiskScores = !!riskScores && Object.keys(riskScores).length > 0;
   const controlStatuses = state.controlStatuses;
   const hasControlStatuses = !!controlStatuses && Object.keys(controlStatuses).length > 0;
   return {
@@ -78,7 +78,7 @@ export function serializeProject(state: SerializableState): PersistedProject {
     ...(hasMetaContent ? { projectMeta: meta } : {}),
     ...(hasManual ? { manualThreats: manual } : {}),
     ...(hasSuppressions ? { suppressions } : {}),
-    ...(hasDreadScores ? { dreadScores } : {}),
+    ...(hasRiskScores ? { riskScores } : {}),
     ...(hasControlStatuses ? { controlStatuses } : {}),
     updatedAt: Date.now(),
   };
@@ -175,6 +175,25 @@ export function resolveLayers(loaded: PersistedProject): {
     layers: { L0: EMPTY_LAYER, L1: migratedL1, L2: EMPTY_LAYER, L3: EMPTY_LAYER },
     activeLayer: 'L1',
   };
+}
+
+/**
+ * 永続化レコードからリスク評価（threatId キー）を復元する（[[plan]] §2.34 / §2.45）。
+ *
+ * - `riskScores`（新形式）があればそれを優先する。
+ * - 無くて `dreadScores`（旧 DREAD 形式・discoverability を含む 5 項目）があれば、
+ *   discoverability を捨てて `RiskScore`（4 項目）へ変換する。
+ * - どちらも無ければ `undefined`（評価なしとして起動）。
+ */
+export function resolveRiskScores(loaded: PersistedProject): Record<string, RiskScore> | undefined {
+  if (loaded.riskScores) return loaded.riskScores;
+  if (!loaded.dreadScores) return undefined;
+  const converted: Record<string, RiskScore> = {};
+  for (const [id, score] of Object.entries(loaded.dreadScores)) {
+    const { damage, affectedUsers, reproducibility, exploitability, at } = score;
+    converted[id] = { damage, affectedUsers, reproducibility, exploitability, at };
+  }
+  return converted;
 }
 
 /**

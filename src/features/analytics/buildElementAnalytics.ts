@@ -7,7 +7,7 @@ import type {
   ThreatView,
 } from '../../core/model/types';
 import { formatElementalId } from '../../core/model/elementalId';
-import { effectiveSeverity } from '../../core/model/dread';
+import { effectiveSeverity } from '../../core/model/risk';
 
 /**
  * Analytics の ElementalID 単位リスト構築（[[plan]] §2.26 Step 5）。
@@ -29,7 +29,7 @@ export interface ElementAnalyticsRow {
   elementalId: string;
   /** この要素に紐づく脅威（検出 + 手動）。 */
   threats: ThreatView[];
-  /** 紐づく脅威の最大実効 severity（DREAD 評価済みは評価由来ランク優先）。脅威ゼロなら null。 */
+  /** 紐づく脅威の最大実効 severity（リスク評価済みは評価由来ランク優先）。脅威ゼロなら null。 */
   maxSeverity: Severity | null;
 }
 

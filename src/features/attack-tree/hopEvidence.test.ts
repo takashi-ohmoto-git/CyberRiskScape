@@ -8,7 +8,7 @@ import {
   resolveDifficulty,
   threatEvidenceScore,
 } from './hopEvidence';
-import type { ControlStatusValue, DreadValue, ThreatView } from '../../core/model/types';
+import type { ControlStatusValue, RiskValue, ThreatView } from '../../core/model/types';
 import type { LogicalHop } from './buildAttackGraph';
 
 function threat(
@@ -18,7 +18,7 @@ function threat(
     subject?: { kind: 'node' | 'edge' | 'boundary'; id: string };
     name?: string;
     severity?: ThreatView['severity'];
-    exploitability?: DreadValue;
+    exploitability?: RiskValue;
     control?: ControlStatusValue;
   } = {},
 ): ThreatView {
@@ -32,19 +32,19 @@ function threat(
     severity: opts.severity ?? 'Medium',
     description: '',
     origin: 'detected',
-    dread: opts.exploitability
-      ? { damage: 1, reproducibility: 1, exploitability: opts.exploitability, affectedUsers: 1, discoverability: 1, at: 0 }
+    risk: opts.exploitability
+      ? { damage: 1, reproducibility: 1, exploitability: opts.exploitability, affectedUsers: 1, at: 0 }
       : undefined,
     controlStatus: opts.control ? { status: opts.control, at: 0 } : undefined,
   } as ThreatView;
 }
 
 describe('resolveDifficulty', () => {
-  it('DREAD ありは 4-maxE / dread / evaluated', () => {
+  it('リスク評価ありは 4-maxE / risk / evaluated', () => {
     expect(resolveDifficulty(3, [{ threatId: 't', name: 'x', severity: 'Low' }])).toEqual({
       difficulty: 1,
       evaluated: true,
-      difficultyBasis: 'dread',
+      difficultyBasis: 'risk',
     });
   });
 
@@ -56,7 +56,7 @@ describe('resolveDifficulty', () => {
     });
   });
 
-  it('脅威あり・DREAD なしは severity 転用 / severity-soft / 未評価', () => {
+  it('脅威あり・リスク評価なしは severity 転用 / severity-soft / 未評価', () => {
     expect(
       resolveDifficulty(0, [
         { threatId: 't1', name: 'a', severity: 'Low' },
@@ -95,16 +95,16 @@ describe('buildHopEvidence', () => {
     expect(evidence.get(nodeElementKey('n1'))).toMatchObject({
       difficulty: 1,
       coverage: 'partial',
-      difficultyBasis: 'dread',
+      difficultyBasis: 'risk',
       evaluated: true,
     });
     // e1: maxExpl=2 → diff 2、2 件中 1 件被覆(not-applicable) → partial。
     expect(evidence.get(edgeElementKey('e1'))).toMatchObject({
       difficulty: 2,
       coverage: 'partial',
-      difficultyBasis: 'dread',
+      difficultyBasis: 'risk',
     });
-    // n2: DREAD 未評価・Medium 脅威 → soft diff 2、被覆なし → none。
+    // n2: リスク評価未評価・Medium 脅威 → soft diff 2、被覆なし → none。
     expect(evidence.get(nodeElementKey('n2'))).toMatchObject({
       difficulty: 2,
       coverage: 'none',
@@ -113,7 +113,7 @@ describe('buildHopEvidence', () => {
     });
   });
 
-  it('High severity 脅威のみ（DREAD なし）は暫定難易度 1', () => {
+  it('High severity 脅威のみ（リスク評価なし）は暫定難易度 1', () => {
     const evidence = buildHopEvidence([threat('t1', { nodeId: 'n1', severity: 'High' })]);
     expect(evidence.get(nodeElementKey('n1'))).toMatchObject({
       difficulty: 1,
@@ -122,7 +122,7 @@ describe('buildHopEvidence', () => {
     });
   });
 
-  it('evaluated: DREAD 入力ありの要素は true、脅威はあるが未入力は false', () => {
+  it('evaluated: リスク評価入力ありの要素は true、脅威はあるが未入力は false', () => {
     const evidence = buildHopEvidence([
       threat('t1', { nodeId: 'n1', exploitability: 2 }),
       threat('t2', { nodeId: 'n2' }),
@@ -145,7 +145,7 @@ describe('buildHopEvidence', () => {
       exploitability: 3,
       controlStatus: 'implemented',
     });
-    // name 未指定 → category フォールバック、DREAD/control 未入力 → undefined
+    // name 未指定 → category フォールバック、リスク評価/control 未入力 → undefined
     expect(refs![1]).toEqual({
       threatId: 't2',
       name: 'Tampering',
@@ -186,8 +186,8 @@ describe('aggregateLogicalHopEvidence', () => {
           difficulty: 1,
           coverage: 'full' as const,
           evaluated: true,
-          difficultyBasis: 'dread' as const,
-          threats: [{ threatId: 't1', name: 'A', severity: 'High' as const, exploitability: 3 as DreadValue }],
+          difficultyBasis: 'risk' as const,
+          threats: [{ threatId: 't1', name: 'A', severity: 'High' as const, exploitability: 3 as RiskValue }],
         },
       ],
       [
@@ -205,7 +205,7 @@ describe('aggregateLogicalHopEvidence', () => {
     expect(agg.difficulty).toBe(1);
     expect(agg.coverage).toBe('none'); // 最弱
     expect(agg.evaluated).toBe(true);
-    expect(agg.difficultyBasis).toBe('dread');
+    expect(agg.difficultyBasis).toBe('risk');
     expect(agg.threats.map((t) => t.threatId)).toEqual(['t1', 't2']);
   });
 

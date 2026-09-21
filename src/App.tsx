@@ -52,7 +52,7 @@ export default function App() {
   const linkingFromId = useDiagramStore((s) => s.linkingFromId);
   const manualThreats = useDiagramStore(selectActiveManualThreats);
   const suppressions = useDiagramStore((s) => s.suppressions);
-  const dreadScores = useDiagramStore((s) => s.dreadScores);
+  const riskScores = useDiagramStore((s) => s.riskScores);
   const controlStatuses = useDiagramStore((s) => s.controlStatuses);
   const isLibraryInspectorOpen = useDiagramStore((s) => s.isLibraryInspectorOpen);
   const closeLibraryInspector = useDiagramStore((s) => s.closeLibraryInspector);
@@ -77,7 +77,7 @@ export default function App() {
         nodes,
         framework: activeFramework,
         suppressions,
-        dreadScores,
+        riskScores,
         controlStatuses,
         customRuleIds: merged.customRuleIds,
       }),
@@ -88,7 +88,7 @@ export default function App() {
       activeFramework,
       manualThreats,
       suppressions,
-      dreadScores,
+      riskScores,
       controlStatuses,
       merged,
     ],

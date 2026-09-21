@@ -68,7 +68,7 @@ export function NewProjectModal() {
       projectMeta: s.projectMeta,
       manualThreats: s.manualThreats,
       suppressions: s.suppressions,
-      dreadScores: s.dreadScores,
+      riskScores: s.riskScores,
       controlStatuses: s.controlStatuses,
     });
     const base = projectFilename(s.projectMeta.name);

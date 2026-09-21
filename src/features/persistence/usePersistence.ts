@@ -60,7 +60,7 @@ export function usePersistence(): void {
         state.projectMeta !== prev.projectMeta ||
         state.manualThreats !== prev.manualThreats ||
         state.suppressions !== prev.suppressions ||
-        state.dreadScores !== prev.dreadScores ||
+        state.riskScores !== prev.riskScores ||
         state.controlStatuses !== prev.controlStatuses;
       if (!changed) return;
       pendingSnapshot = {
@@ -72,7 +72,7 @@ export function usePersistence(): void {
         projectMeta: state.projectMeta,
         manualThreats: state.manualThreats,
         suppressions: state.suppressions,
-        dreadScores: state.dreadScores,
+        riskScores: state.riskScores,
         controlStatuses: state.controlStatuses,
       };
       if (timer !== null) clearTimeout(timer);

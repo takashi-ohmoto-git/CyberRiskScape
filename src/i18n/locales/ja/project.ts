@@ -83,7 +83,7 @@ export const jaProject = {
   'project.newModal.title': '新規プロジェクト',
   'project.newModal.confirmMessage':
     '現在の作業内容を消去して、まっさらな新規プロジェクトを作成します。作成する前に、現在のプロジェクトをファイルへ保存しますか？',
-  'project.newModal.warning': '保存せずに作成すると、現在の図・手動脅威・DREAD 評価などは失われます。',
+  'project.newModal.warning': '保存せずに作成すると、現在の図・手動脅威・リスク評価などは失われます。',
   'project.newModal.createWithoutSaving': '保存せずに作成',
   'project.newModal.saveAndCreate': '保存して作成',
 

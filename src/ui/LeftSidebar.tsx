@@ -90,7 +90,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
         projectMeta: s.projectMeta,
         manualThreats: s.manualThreats,
         suppressions: s.suppressions,
-        dreadScores: s.dreadScores,
+        riskScores: s.riskScores,
         controlStatuses: s.controlStatuses,
       });
       setSaveState('saved');

@@ -19,7 +19,7 @@ beforeEach(() => {
     activeLayer: 'L1',
     manualThreats: { L0: [], L1: [], L2: [], L3: [] },
     suppressions: {},
-    dreadScores: {},
+    riskScores: {},
     controlStatuses: {},
     selectedNodeIds: [],
     selectedEdgeId: null,
@@ -145,34 +145,33 @@ describe('diagramStore Undo/Redo', () => {
     expect(useDiagramStore.getState().past.length).toBe(50);
   });
 
-  it('setDreadScore / clearDreadScore は undo で巻き戻せる', () => {
+  it('setRiskScore / clearRiskScore は undo で巻き戻せる', () => {
     const score = {
       damage: 3,
+      affectedUsers: 2,
       reproducibility: 2,
       exploitability: 1,
-      affectedUsers: 2,
-      discoverability: 1,
     } as const;
     const st = () => useDiagramStore.getState();
 
-    st().setDreadScore('rule-x-n1', score);
-    expect(st().dreadScores['rule-x-n1']).toMatchObject(score);
+    st().setRiskScore('rule-x-n1', score);
+    expect(st().riskScores['rule-x-n1']).toMatchObject(score);
 
     st().undo();
-    expect(st().dreadScores['rule-x-n1']).toBeUndefined();
+    expect(st().riskScores['rule-x-n1']).toBeUndefined();
 
     st().redo();
-    expect(st().dreadScores['rule-x-n1']).toMatchObject(score);
+    expect(st().riskScores['rule-x-n1']).toMatchObject(score);
 
-    st().clearDreadScore('rule-x-n1');
-    expect(st().dreadScores['rule-x-n1']).toBeUndefined();
+    st().clearRiskScore('rule-x-n1');
+    expect(st().riskScores['rule-x-n1']).toBeUndefined();
     st().undo();
-    expect(st().dreadScores['rule-x-n1']).toMatchObject(score);
+    expect(st().riskScores['rule-x-n1']).toMatchObject(score);
   });
 
-  it('clearDreadScore は未評価の脅威 id では履歴を残さない', () => {
+  it('clearRiskScore は未評価の脅威 id では履歴を残さない', () => {
     const before = useDiagramStore.getState().past.length;
-    useDiagramStore.getState().clearDreadScore('unknown');
+    useDiagramStore.getState().clearRiskScore('unknown');
     expect(useDiagramStore.getState().past.length).toBe(before);
   });
 

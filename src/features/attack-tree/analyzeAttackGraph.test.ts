@@ -193,7 +193,7 @@ describe('analyzeAttackGraph', () => {
     expect(result.chokePoints.some((c) => c.elementKey.startsWith('hop:'))).toBe(true);
   });
 
-  it('allUnevaluated: 全要素未評価なら true、1 要素でも DREAD 入力ありなら false', () => {
+  it('allUnevaluated: 全要素未評価なら true、1 要素でもリスク評価入力ありなら false', () => {
     const nodes = [node('atk'), node('a'), node('t')];
     const edges = [edge('e1', 'atk', 'a'), edge('e2', 'a', 't')];
     const graph = buildAttackGraph(nodes, edges, 'atk', 't');

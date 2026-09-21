@@ -24,7 +24,7 @@ const enCore: Partial<Record<TranslationKey, string>> = {
   'attackTree.minCost': 'Min cost {cost}',
   'attackTree.allBlocked': 'All routes blocked',
   'attackTree.allUnevaluatedNote':
-    'DREAD not scored — cost uses severity-based provisional difficulty plus hop count',
+    'Risk not scored — cost uses severity-based provisional difficulty plus hop count',
   'attackTree.legend.weakestRoute': 'Weakest route',
   'attackTree.legend.covered': 'Mitigated (covered)',
   'attackTree.legend.partial': 'Partially mitigated',
@@ -35,7 +35,7 @@ const enCore: Partial<Record<TranslationKey, string>> = {
     'Attack path analysis is built by following edges (connections) on the canvas. Create an edge to the component that serves as the attacker entry point.',
   'attackTree.truncated': 'Some routes were omitted due to depth/route limits.',
   'attackTree.footnote':
-    'Difficulty prefers DREAD Exploitability (lower = easier). When unscored, severity-based provisional values are used. Edges are treated as traversable regardless of direction. A single control does not fully block a route by default — covered hops add to the cost instead (toggle "residual routes only" to treat them as blocked).',
+    'Difficulty prefers risk-scored Exploitability (lower = easier). When unscored, severity-based provisional values are used. Edges are treated as traversable regardless of direction. A single control does not fully block a route by default — covered hops add to the cost instead (toggle "residual routes only" to treat them as blocked).',
   'attackTree.node.difficulty': 'Difficulty {value}',
   'attackTree.node.unevaluated': 'Unscored',
   'attackTree.node.softDifficulty': 'Provisional {value}',
@@ -52,7 +52,7 @@ const enCore: Partial<Record<TranslationKey, string>> = {
   'attackTree.detail.chosenChannel': 'Chosen channel',
   'attackTree.detail.close': 'Clear selection',
   'attackTree.detail.formula':
-    'Difficulty = 4 − max(DREAD Exploitability). With threats but no DREAD, severity-based provisional difficulty (Critical/High→1, Medium→2, Low→3). No threats → neutral 2. Partial +1 / full +8 (blocked in residual-route mode).',
+    'Difficulty = 4 − max(risk-scored Exploitability). With threats but no risk score, severity-based provisional difficulty (Critical/High→1, Medium→2, Low→3). No threats → neutral 2. Partial +1 / full +8 (blocked in residual-route mode).',
   'attackTree.chokePoint.heading': 'Choke points (highest-leverage mitigation targets)',
   'attackTree.chokePoint.hits': '{hits}/{total} routes',
   'attackTree.routeTable.heading': 'Routes',

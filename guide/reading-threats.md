@@ -129,14 +129,16 @@ as a status ("False positive", "Accepted") together with the reason you wrote.
 
 ---
 
-## 6. Prioritize with DREAD
+## 6. Prioritize with a risk score
 
 Severity is the rule's general-purpose estimate. For **how serious it is in your context**, open
-**Analytics** in the top toolbar and score it with DREAD.
+**Analytics** in the top toolbar and score the risk.
 
-DREAD scores five factors (damage, reproducibility, exploitability, affected users,
-discoverability) from 1 to 3 and maps the 5–15 total to a rank.
-**A DREAD score overrides the rule's severity.**
+Risk assessment scores four factors (damage, affected users, reproducibility, exploitability) from
+1 to 3, and maps the Impact axis (damage, affected users) and the Likelihood axis (reproducibility,
+exploitability) to a rank through a two-axis matrix (source: the
+[OWASP Risk Rating Methodology](https://owasp.org/www-community/OWASP_Risk_Rating_Methodology)).
+**A risk score overrides the rule's severity.**
 
 The step-by-step procedure — and how to record the risk treatment and control implementation status
 in the same place — is the next chapter,
@@ -189,7 +191,7 @@ diagram or the attributes. If it genuinely does not apply, record "False positiv
 reason, which makes the next review much easier.
 
 **Q. The severity looks too high, or too low.**
-Rule severity is a general estimate. Score it with DREAD in Analytics and it is replaced with an
+Rule severity is a general estimate. Score the risk in Analytics and it is replaced with an
 assessment made in your context (see
 [Assessing Risk in Analytics](analytics-assessment.md)).
 

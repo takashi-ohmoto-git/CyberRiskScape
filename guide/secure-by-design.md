@@ -135,7 +135,7 @@ Against those four roles, here is what this tool takes on:
 | What you protect, and from whom | The diagram states it. Attacker components and their Objective put the "from whom" on the canvas |
 | Enumerating potential threats | Threats fire from the structure you drew, covering gaps a manual pass would miss |
 | Informed by real intrusions | The threat library is built from published sources — OWASP, MITRE ATLAS, NIST, Anthropic and others — with references |
-| Setting priorities | Severity plus a DREAD score and a response (mitigate / accept / transfer / avoid) per threat |
+| Setting priorities | Severity plus a risk score and a response (mitigate / accept / transfer / avoid) per threat |
 | A staged adoption plan | Mitigations are given at three tiers: FOUNDATION / ENTERPRISE / ADVANCED |
 | Producing a written artifact | Export the threat list as CSV, JSON or Markdown |
 

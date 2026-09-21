@@ -54,7 +54,7 @@ This is where the project invests. Most threat modeling tools have zero rules in
   where several routes converge on one defensible node
 - **Compliance mapping** — maps detected threats to NIST CSF 2.0 (128 items), NIST AI RMF
   (72 items), and Japan's AI Business Operator Guidelines (34 items)
-- **Risk assessment** — DREAD scoring and risk treatment decisions (mitigate / accept /
+- **Risk assessment** — Impact × Likelihood scoring and risk treatment decisions (mitigate / accept /
   transfer / avoid)
 - **Custom rules** — add your own detection rules from an in-app editor
 - **Threat library inspector** — read-only view of every rule and the exact conditions
@@ -119,7 +119,7 @@ npm run preview   # serve the build locally
 3. **Draw trust boundaries** — make the crossings explicit
 4. **Review threats** — threats appear as you build. Each one opens to show why it fired:
    its conditions, rule ID, and source
-5. **Assess and decide** — record DREAD scores and a risk treatment; suppress false positives
+5. **Assess and decide** — record risk scores and a risk treatment; suppress false positives
 6. **Export** — CSV, JSON, or Markdown
 
 [Getting Started](guide/getting-started.md) walks through each of these steps with screenshots.

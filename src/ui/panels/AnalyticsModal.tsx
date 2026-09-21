@@ -10,12 +10,15 @@ import { getNodeDisplayName } from '../../core/model/nodeDisplay';
 import { formatElementalId } from '../../core/model/elementalId';
 import { buildIdentityInventory } from '../../features/analytics/buildIdentityInventory';
 import {
-  DREAD_KEYS,
-  dreadRank,
-  dreadTotal,
+  IMPACT_KEYS,
+  LIKELIHOOD_KEYS,
   effectiveSeverity,
-  type DreadKey,
-} from '../../core/model/dread';
+  impactLevel,
+  likelihoodLevel,
+  riskSeverity,
+  type AxisLevel,
+  type RiskKey,
+} from '../../core/model/risk';
 import {
   buildElementAnalytics,
   type ElementAnalyticsRow,
@@ -37,7 +40,7 @@ import type {
   DiagramBoundary,
   DiagramEdge,
   DiagramNode,
-  DreadValue,
+  RiskValue,
   Severity,
   ThreatView,
 } from '../../core/model/types';
@@ -53,54 +56,52 @@ const KIND_LABEL: Record<ElementAnalyticsRow['kind'], string> = {
   boundary: 'Boundary',
 };
 
-/** DREAD 評価フォームの項目定義（表示ラベルと 1/2/3 の判断基準）。t() で locale 依存に解決する。 */
-function dreadCriteria(t: TFunc): Record<DreadKey, { label: string; levels: [string, string, string] }> {
+/** リスク評価フォームの項目定義（表示ラベルと 1/2/3 の判断基準）。t() で locale 依存に解決する。 */
+function riskCriteria(t: TFunc): Record<RiskKey, { label: string; levels: [string, string, string] }> {
   return {
     damage: {
-      label: t('analytics.dread.damage.label'),
+      label: t('analytics.risk.damage.label'),
       levels: [
-        t('analytics.dread.damage.level1'),
-        t('analytics.dread.damage.level2'),
-        t('analytics.dread.damage.level3'),
-      ],
-    },
-    reproducibility: {
-      label: t('analytics.dread.reproducibility.label'),
-      levels: [
-        t('analytics.dread.reproducibility.level1'),
-        t('analytics.dread.reproducibility.level2'),
-        t('analytics.dread.reproducibility.level3'),
-      ],
-    },
-    exploitability: {
-      label: t('analytics.dread.exploitability.label'),
-      levels: [
-        t('analytics.dread.exploitability.level1'),
-        t('analytics.dread.exploitability.level2'),
-        t('analytics.dread.exploitability.level3'),
+        t('analytics.risk.damage.level1'),
+        t('analytics.risk.damage.level2'),
+        t('analytics.risk.damage.level3'),
       ],
     },
     affectedUsers: {
-      label: t('analytics.dread.affectedUsers.label'),
+      label: t('analytics.risk.affectedUsers.label'),
       levels: [
-        t('analytics.dread.affectedUsers.level1'),
-        t('analytics.dread.affectedUsers.level2'),
-        t('analytics.dread.affectedUsers.level3'),
+        t('analytics.risk.affectedUsers.level1'),
+        t('analytics.risk.affectedUsers.level2'),
+        t('analytics.risk.affectedUsers.level3'),
       ],
     },
-    discoverability: {
-      label: t('analytics.dread.discoverability.label'),
+    reproducibility: {
+      label: t('analytics.risk.reproducibility.label'),
       levels: [
-        t('analytics.dread.discoverability.level1'),
-        t('analytics.dread.discoverability.level2'),
-        t('analytics.dread.discoverability.level3'),
+        t('analytics.risk.reproducibility.level1'),
+        t('analytics.risk.reproducibility.level2'),
+        t('analytics.risk.reproducibility.level3'),
+      ],
+    },
+    exploitability: {
+      label: t('analytics.risk.exploitability.label'),
+      levels: [
+        t('analytics.risk.exploitability.level1'),
+        t('analytics.risk.exploitability.level2'),
+        t('analytics.risk.exploitability.level3'),
       ],
     },
   };
 }
 
-function dreadLevelLabel(t: TFunc): readonly [string, string, string] {
-  return [t('analytics.dread.level.low'), t('analytics.dread.level.medium'), t('analytics.dread.level.high')];
+function riskLevelLabel(t: TFunc): readonly [string, string, string] {
+  return [t('analytics.risk.level.low'), t('analytics.risk.level.medium'), t('analytics.risk.level.high')];
+}
+
+/** Impact/Likelihood 軸の判定結果（Low/Medium/High）を、1/2/3 と同じ低/中/高表記で表示する。 */
+function axisLevelLabel(level: AxisLevel, t: TFunc): string {
+  const [low, medium, high] = riskLevelLabel(t);
+  return level === 'Low' ? low : level === 'Medium' ? medium : high;
 }
 
 /** 上部フィルタバーのプリセット種別（ローカル state のみ。保存機能はなし）。 */
@@ -149,7 +150,7 @@ function matchesPreset(t: ThreatView, preset: Preset): boolean {
 
 /**
  * Analytics モーダル（[[plan]] §2.26 Step 5）。IriusRisk 風の 3 ペイン構成。
- * 左: 要素→カテゴリ→脅威ツリー / 中央: 対策（緩和策）一覧 / 右: 選択脅威の詳細 + DREAD。
+ * 左: 要素→カテゴリ→脅威ツリー / 中央: 対策（緩和策）一覧 / 右: 選択脅威の詳細 + リスク評価。
  * 脅威ビュー（`threats`）は App が算出済みのものを prop で受ける。
  */
 export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
@@ -582,7 +583,7 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
             )}
           </div>
 
-          {/* ④ 右ペイン: 詳細 + DREAD */}
+          {/* ④ 右ペイン: 詳細 + リスク評価 */}
           <div className="flex-1 min-w-0 overflow-y-auto px-4 py-4">
             {selectedThreat ? (
               <ThreatDetail
@@ -789,7 +790,7 @@ function UnassignedTreeNode({
   );
 }
 
-/** 右ペインの脅威詳細（対象要素 + バッジ群 + 説明 + 緩和策 + DREAD 評価）。 */
+/** 右ペインの脅威詳細（対象要素 + バッジ群 + 説明 + 緩和策 + リスク評価）。 */
 function ThreatDetail({
   threat,
   elementalId,
@@ -805,7 +806,7 @@ function ThreatDetail({
   const sev = effectiveSeverity(threat);
   return (
     <div className="flex flex-col gap-3">
-      {/* 対象要素（DREAD は要素インスタンス単位で保存されるため、ここで対象を明示する）。 */}
+      {/* 対象要素（リスク評価は要素インスタンス単位で保存されるため、ここで対象を明示する）。 */}
       <div className="flex items-center gap-2 min-w-0">
         {elementalId && (
           <span className="text-xs font-mono font-bold text-emerald-400 shrink-0">
@@ -825,12 +826,15 @@ function ThreatDetail({
         <span className={`text-xs px-2 py-0.5 rounded border ${SEVERITY_BADGE[sev]}`}>
           {sev}
         </span>
-        {threat.dread && (
+        {threat.risk && (
           <span
             className="text-xs px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/40"
-            title={t('analytics.dread.scoredTooltip', { severity: threat.severity })}
+            title={t('analytics.risk.scoredTooltip', { severity: threat.severity })}
           >
-            DREAD {dreadTotal(threat.dread)}
+            {t('analytics.risk.scoredBadge', {
+              impact: axisLevelLabel(impactLevel(threat.risk), t),
+              likelihood: axisLevelLabel(likelihoodLevel(threat.risk), t),
+            })}
           </span>
         )}
         {threat.origin === 'manual' && (
@@ -867,9 +871,9 @@ function ThreatDetail({
 
       <div className="pt-2 border-t border-slate-800">
         <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">
-          {t('analytics.dread.heading')}
+          {t('analytics.risk.heading')}
         </p>
-        <DreadEditor threat={threat} t={t} />
+        <RiskEditor threat={threat} t={t} />
       </div>
 
       {threat.origin !== 'manual' && (
@@ -892,89 +896,99 @@ function ThreatDetail({
 }
 
 /**
- * DREAD 評価フォーム（[[plan]] §2.34）。ローカルドラフトを編集し「保存」で
+ * リスク評価フォーム（[[plan]] §2.34 / §2.45）。ローカルドラフトを編集し「保存」で
  * store へ明示コミットする（項目選択ごとの自動保存はしない＝Undo 1 ステップ化）。
  * 右ペインに常時配置するため、脅威切替で draft を作り直すよう key を threat.id に紐づける。
+ * Impact（damage/affectedUsers）と Likelihood（reproducibility/exploitability）の
+ * 2 グループに見出しを付けて表示する。
  */
-function DreadEditor({ threat, t }: { threat: ThreatView; t: TFunc }) {
-  const setDreadScore = useDiagramStore((s) => s.setDreadScore);
-  const clearDreadScore = useDiagramStore((s) => s.clearDreadScore);
-  const [draft, setDraft] = useState<Record<DreadKey, DreadValue>>(() =>
-    threat.dread
+function RiskEditor({ threat, t }: { threat: ThreatView; t: TFunc }) {
+  const setRiskScore = useDiagramStore((s) => s.setRiskScore);
+  const clearRiskScore = useDiagramStore((s) => s.clearRiskScore);
+  const [draft, setDraft] = useState<Record<RiskKey, RiskValue>>(() =>
+    threat.risk
       ? {
-          damage: threat.dread.damage,
-          reproducibility: threat.dread.reproducibility,
-          exploitability: threat.dread.exploitability,
-          affectedUsers: threat.dread.affectedUsers,
-          discoverability: threat.dread.discoverability,
+          damage: threat.risk.damage,
+          affectedUsers: threat.risk.affectedUsers,
+          reproducibility: threat.risk.reproducibility,
+          exploitability: threat.risk.exploitability,
         }
       : {
           damage: 2,
+          affectedUsers: 2,
           reproducibility: 2,
           exploitability: 2,
-          affectedUsers: 2,
-          discoverability: 2,
         },
   );
 
-  const total = DREAD_KEYS.reduce((acc, k) => acc + draft[k], 0);
-  const rank = dreadRank(total);
-  const criteria = dreadCriteria(t);
-  const levelLabel = dreadLevelLabel(t);
+  const draftScore = { ...draft, at: 0 };
+  const impact = impactLevel(draftScore);
+  const likelihood = likelihoodLevel(draftScore);
+  const rank = riskSeverity(draftScore);
+  const criteria = riskCriteria(t);
+  const levelLabel = riskLevelLabel(t);
+
+  const renderKey = (key: RiskKey) => {
+    const c = criteria[key];
+    return (
+      <div key={key} className="flex items-center gap-2">
+        <span className="text-xs text-slate-400 w-56 shrink-0">{c.label}</span>
+        <div className="flex gap-1">
+          {([1, 2, 3] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setDraft((d) => ({ ...d, [key]: v }))}
+              title={c.levels[v - 1]}
+              className={`text-xs px-2.5 py-1 rounded border transition-colors ${
+                draft[key] === v
+                  ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-200'
+                  : 'border-slate-700 text-slate-500 hover:text-slate-300 hover:border-slate-500'
+              }`}
+            >
+              {v} {levelLabel[v - 1]}
+            </button>
+          ))}
+        </div>
+        <span className="text-xs text-slate-600 flex-1 truncate">
+          {c.levels[draft[key] - 1]}
+        </span>
+      </div>
+    );
+  };
 
   return (
     <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-700 flex flex-col gap-2">
-      {DREAD_KEYS.map((key) => {
-        const c = criteria[key];
-        return (
-          <div key={key} className="flex items-center gap-2">
-            <span className="text-xs text-slate-400 w-56 shrink-0">{c.label}</span>
-            <div className="flex gap-1">
-              {([1, 2, 3] as const).map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setDraft((d) => ({ ...d, [key]: v }))}
-                  title={c.levels[v - 1]}
-                  className={`text-xs px-2.5 py-1 rounded border transition-colors ${
-                    draft[key] === v
-                      ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-200'
-                      : 'border-slate-700 text-slate-500 hover:text-slate-300 hover:border-slate-500'
-                  }`}
-                >
-                  {v} {levelLabel[v - 1]}
-                </button>
-              ))}
-            </div>
-            <span className="text-xs text-slate-600 flex-1 truncate">
-              {c.levels[draft[key] - 1]}
-            </span>
-          </div>
-        );
-      })}
-      <div className="flex items-center gap-3 pt-1 border-t border-slate-800">
-        <span className="text-xs text-slate-400">
-          {t('analytics.dread.totalLabel')} <span className="font-bold text-slate-200">{total}</span> / 15 →
+      <p className="text-xs font-bold text-slate-500">{t('analytics.risk.impactHeading')}</p>
+      {IMPACT_KEYS.map(renderKey)}
+      <p className="text-xs font-bold text-slate-500 mt-1">{t('analytics.risk.likelihoodHeading')}</p>
+      {LIKELIHOOD_KEYS.map(renderKey)}
+      <div className="flex items-center flex-wrap gap-x-3 gap-y-1 pt-1 border-t border-slate-800">
+        <span className="text-xs text-slate-400 whitespace-nowrap">
+          {t('analytics.risk.previewLine', {
+            impact: axisLevelLabel(impact, t),
+            likelihood: axisLevelLabel(likelihood, t),
+          })}
         </span>
-        <span className={`text-xs px-2 py-0.5 rounded border ${SEVERITY_BADGE[rank]}`}>
+        <span className={`text-xs px-2 py-0.5 rounded border whitespace-nowrap ${SEVERITY_BADGE[rank]}`}>
           {rank}
         </span>
-        <span className="text-xs text-slate-600">
-          {t('analytics.dread.ruleSeverityTooltip', { severity: threat.severity })}
+        <span className="text-xs text-slate-600 whitespace-nowrap">
+          {t('analytics.risk.ruleSeverityTooltip', { severity: threat.severity })}
         </span>
         <div className="flex gap-2 ml-auto">
-          {threat.dread && (
+          {threat.risk && (
             <button
-              onClick={() => clearDreadScore(threat.id)}
+              onClick={() => clearRiskScore(threat.id)}
               className="text-xs px-2.5 py-1 rounded border border-slate-700 text-slate-500 hover:text-red-300 hover:border-red-500/50 transition-colors"
             >
-              {t('analytics.dread.clearButton')}
+              {t('analytics.risk.clearButton')}
             </button>
           )}
           <button
-            onClick={() => setDreadScore(threat.id, draft)}
+            onClick={() => setRiskScore(threat.id, draft)}
             className="text-xs px-2.5 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-500/30 transition-colors"
           >
-            {t('analytics.dread.saveButton')}
+            {t('analytics.risk.saveButton')}
           </button>
         </div>
       </div>
