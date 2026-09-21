@@ -1,0 +1,24 @@
+# CyberRiskScape ガイド
+
+[English](README.md) | **日本語**
+
+CyberRiskScape を使う人のためのドキュメントです。
+プロジェクトの概要・機能一覧・ビルド方法は[リポジトリの README](../README.ja.md) を参照してください。
+
+インストールは不要です。[オンラインデモ](https://takashi-ohmoto-git.github.io/CyberRiskScape/)を
+開けば、そのまま手を動かしながら読めます。
+
+## ページ一覧
+
+| ページ | 内容 |
+|---|---|
+| **[はじめに — CyberRiskScape 入門](getting-started.ja.md)** | ツールの目的と画面構成、キャンバス操作のすべて（コンポーネントの配置・接続・トラスト境界・ズーム／パン）を画面付きで説明 |
+| **[Secure by Design 入門](secure-by-design.ja.md)** | 背景にある考え方。Secure by Design とは何か、なぜ今求められるのか、脅威モデリングが担う 4 つの役割。CISA 主導の国際共同ガイダンスに基づく |
+
+## どこから読むか
+
+- **まず触ってみたい** — [はじめに](getting-started.ja.md) から。
+- **この取り組みの意義を誰かに説明したい** — [Secure by Design 入門](secure-by-design.ja.md) は
+  単独で読める内容になっています。
+
+各ページは日本語版と英語版があります。切り替えはページ冒頭の言語リンクからどうぞ。
