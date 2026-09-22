@@ -10,6 +10,7 @@ import {
 } from './threatReport';
 import {
   EMPTY_PROJECT_META,
+  type DiagramBoundary,
   type DiagramEdge,
   type DiagramNode,
   type ThreatView,
@@ -109,6 +110,42 @@ describe('buildThreatReport', () => {
     const t: ThreatView = { ...DETECTED, mitigation: undefined };
     expect(buildThreatReport(input([t])).rows[0].countermeasure).toBe('');
   });
+
+  it('リスク評価済みは severity（ルール由来）と effectiveSeverity（評価由来）が別の値になる', () => {
+    const scored: ThreatView = {
+      ...DETECTED,
+      severity: 'Critical',
+      risk: { damage: 1, affectedUsers: 1, reproducibility: 1, exploitability: 1, at: 1 },
+    };
+    const row = buildThreatReport(input([scored])).rows[0];
+    expect(row.severity).toBe('Critical');
+    expect(row.effectiveSeverity).toBe('Low');
+    expect(row.impact).toBe('Low');
+    expect(row.likelihood).toBe('Low');
+  });
+
+  it('リスク未評価は effectiveSeverity が severity と一致し impact/likelihood/risk が空', () => {
+    const row = buildThreatReport(input([DETECTED])).rows[0];
+    expect(row.effectiveSeverity).toBe(row.severity);
+    expect(row.impact).toBe('');
+    expect(row.likelihood).toBe('');
+    expect(row.risk).toBeUndefined();
+  });
+
+  it('controlStatus は翻訳ラベルになり未設定は空文字', () => {
+    const withStatus: ThreatView = {
+      ...DETECTED,
+      controlStatus: { status: 'implemented', note: '対応済', at: 1 },
+    };
+    expect(buildThreatReport(input([withStatus])).rows[0].controlStatus).toBe('実装済み');
+    expect(buildThreatReport(input([DETECTED])).rows[0].controlStatus).toBe('');
+  });
+
+  it('脅威名（name）を出力する。未設定は空', () => {
+    const named: ThreatView = { ...DETECTED, name: '脅威名テスト' };
+    expect(buildThreatReport(input([named])).rows[0].name).toBe('脅威名テスト');
+    expect(buildThreatReport(input([DETECTED])).rows[0].name).toBe('');
+  });
 });
 
 describe('toCsv', () => {
@@ -117,7 +154,9 @@ describe('toCsv', () => {
     const lines = csv.split('\r\n');
     expect(lines[0]).toBe('プロジェクト名,ProjectIT');
     expect(lines).toContain('脅威件数,1');
-    const headerIdx = lines.indexOf('ID,対象要素,フレームワーク,カテゴリ,脅威,深刻度,緩和策,ステータス,コメント,種別');
+    const headerIdx = lines.indexOf(
+      'ID,対象要素,フレームワーク,カテゴリ,脅威名,脅威,ルール深刻度,実効深刻度,Impact,Likelihood,緩和策,対応状況,対策実装状況,コメント,種別',
+    );
     expect(headerIdx).toBeGreaterThan(0);
     expect(lines[headerIdx - 1]).toBe(''); // 空行で区切る
     expect(lines[headerIdx + 1]).toContain('rule-a-n1');
@@ -136,6 +175,12 @@ describe('toCsv', () => {
   it('CRLF 改行を使う', () => {
     expect(toCsv(buildThreatReport(input([])))).toContain('\r\n');
   });
+
+  it('脅威名が CSV 行に出る', () => {
+    const named: ThreatView = { ...DETECTED, name: '脅威名テスト' };
+    const csv = toCsv(buildThreatReport(input([named])));
+    expect(csv).toContain('脅威名テスト');
+  });
 });
 
 describe('toJson', () => {
@@ -148,6 +193,23 @@ describe('toJson', () => {
     expect(json.project.name).toBe('ProjectIT');
     expect(json.threats).toHaveLength(1);
     expect(json.threats[0].asset).toBe('C1 GPT');
+  });
+
+  it('risk は生値（4 項目）を持ち、CSV には出ない', () => {
+    const scored: ThreatView = {
+      ...DETECTED,
+      risk: { damage: 2, affectedUsers: 3, reproducibility: 1, exploitability: 2, at: 123 },
+    };
+    const report = buildThreatReport(input([scored]));
+    const json = JSON.parse(toJson(report));
+    expect(json.threats[0].risk).toEqual({
+      damage: 2,
+      affectedUsers: 3,
+      reproducibility: 1,
+      exploitability: 2,
+      at: 123,
+    });
+    expect(toCsv(report)).not.toContain('damage');
   });
 });
 
@@ -283,6 +345,41 @@ describe('toDCRHThreatModelMarkdown', () => {
     const text = md([tricky]);
     expect(text).toContain('a\\|b<br>c');
     expect(text).not.toContain('a|b'); // 生のパイプは残らない
+  });
+
+  it('F-1: section 4 の impact は実効 severity から決まる（ルール由来ではない）', () => {
+    const scored: ThreatView = {
+      ...T_HIGH,
+      severity: 'Critical',
+      risk: { damage: 1, affectedUsers: 1, reproducibility: 1, exploitability: 1, at: 1 },
+    };
+    expect(threatRows(md([scored]))[0][5]).toBe('low');
+  });
+
+  it('F-2/F-3: BLAST_RADIUS 境界は section 2 Assets に出ない。blastRadiusLabel は資産ラベルに使われる', () => {
+    const boundary: DiagramBoundary = {
+      id: 'blast1',
+      seq: 1,
+      type: 'BLAST_RADIUS',
+      x: 0,
+      y: 0,
+      width: 10,
+      height: 10,
+      trustLevel: 'Internal',
+      blastRadiusLabel: '決済系の侵害範囲',
+    };
+    const boundaryThreat: ThreatView = {
+      ...T_HIGH,
+      id: 'r-boundary',
+      subject: { kind: 'boundary', id: 'blast1' },
+    };
+    const withBoundary = { ...input([boundaryThreat]), edges: EDGES, boundaries: [boundary] };
+
+    const text = toDCRHThreatModelMarkdown(withBoundary);
+    expect(text).not.toContain('| BLAST_RADIUS |'); // section 2 に出ない
+
+    const csv = toCsv(buildThreatReport(withBoundary));
+    expect(csv).toContain('決済系の侵害範囲'); // CSV の asset 列にはラベルが出る
   });
 
   it('status マッピング：implemented→mitigated / accepted→risk_accepted', () => {

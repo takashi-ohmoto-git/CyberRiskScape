@@ -1,15 +1,18 @@
 import type {
+  ControlStatusValue,
   DiagramBoundary,
   DiagramEdge,
   DiagramNode,
   FrameworkView,
   LayerKey,
   ProjectMeta,
+  RiskScore,
   Severity,
   ThreatView,
 } from '../../core/model/types';
 import { formatElementalId } from '../../core/model/elementalId';
 import { BRANDING } from '../../core/branding';
+import { effectiveSeverity, impactLevel, likelihoodLevel, type AxisLevel } from '../../core/model/risk';
 import { getLocale, translate, type Locale, type TranslationKey } from '../../i18n';
 
 /**
@@ -25,10 +28,11 @@ import { getLocale, translate, type Locale, type TranslationKey } from '../../i1
  * [[download]]、表示ラベルの最終整形は UI 層に委ねる。
  */
 
-export const THREAT_REPORT_SCHEMA_VERSION = 1 as const;
+/** v2 で severity 2 列化 ＋ name / impact / likelihood / controlStatus / risk を追加。 */
+export const THREAT_REPORT_SCHEMA_VERSION = 2 as const;
 export const THREAT_REPORT_KIND = 'cyberriskscape-threat-report' as const;
 
-/** 脅威 1 件＝レポート 1 行。値はすべて出力用に整形済みの文字列。 */
+/** 脅威 1 件＝レポート 1 行。CSV に出る値は整形済み文字列。`risk` のみ JSON 専用の生値。 */
 export interface ThreatReportRow {
   /** 脅威の安定 ID（`ThreatView.id`）。 */
   id: string;
@@ -36,17 +40,30 @@ export interface ThreatReportRow {
   asset: string;
   framework: string;
   category: string;
+  /** 脅威名（`ThreatView.name`）。未設定は空。 */
+  name: string;
   /** 脅威の説明（`description`）。 */
   threat: string;
+  /** ルール由来（脅威ライブラリの既定値）の severity。 */
   severity: Severity;
+  /** 実効 severity（リスク評価済みなら評価由来、未評価はルール由来）。 */
+  effectiveSeverity: Severity;
+  /** Impact 軸。リスク評価済みのみ、未評価は空。 */
+  impact: AxisLevel | '';
+  /** Likelihood 軸。リスク評価済みのみ、未評価は空。 */
+  likelihood: AxisLevel | '';
   /** 緩和策（`mitigation`）。未設定は空。 */
   countermeasure: string;
   /** 対応状況。検出脅威のみ：未対応 / 回避 / 低減 / 移転 / リスク受容 / 誤検知。手動脅威は空。 */
   status: string;
+  /** 対策実装状況（`ControlStatusState.status`）。未設定は空。 */
+  controlStatus: string;
   /** 開発者コメント等（`SuppressionState.note`）。 */
   comments: string;
   /** 種別：自動検出 / 手動。 */
   origin: string;
+  /** リスク評価の生値（1–3）。**JSON 専用**で CSV には出ない。未評価は undefined。 */
+  risk?: RiskScore;
 }
 
 export interface ThreatReport {
@@ -94,7 +111,7 @@ function buildAssetIndex(
   for (const b of boundaries) {
     index.set(`boundary:${b.id}`, {
       elementalId: b.seq != null ? formatElementalId('boundary', b.seq) : b.id,
-      name: b.vlanName?.trim() || b.type,
+      name: b.vlanName?.trim() || b.blastRadiusLabel?.trim() || b.type,
     });
   }
   return index;
@@ -105,6 +122,20 @@ function assetLabel(threat: ThreatView, index: Map<string, AssetEntry>): string 
   const entry = index.get(`${threat.subject.kind}:${threat.subject.id}`);
   if (!entry) return '';
   return entry.name ? `${entry.elementalId} ${entry.name}` : entry.elementalId;
+}
+
+// `src/ui/panels/controlStatusStyle.ts` の CONTROL_STATUS_LABEL_KEY と同じキーだが、
+// features/ から ui/ へ依存させないための意図的な重複。
+const CONTROL_STATUS_LABEL_KEY: Record<ControlStatusValue, TranslationKey> = {
+  implemented: 'threats.controlStatus.implemented',
+  required: 'threats.controlStatus.required',
+  'not-applicable': 'threats.controlStatus.notApplicable',
+  rejected: 'threats.controlStatus.rejected',
+};
+
+function controlStatusLabel(threat: ThreatView, locale: Locale): string {
+  if (!threat.controlStatus) return '';
+  return translate(CONTROL_STATUS_LABEL_KEY[threat.controlStatus.status], locale);
 }
 
 function statusLabel(threat: ThreatView, locale: Locale): string {
@@ -141,15 +172,23 @@ export function buildThreatReport({
     asset: assetLabel(t, index),
     framework: t.framework,
     category: t.category,
+    name: t.name ?? '',
     threat: t.description,
     severity: t.severity,
+    effectiveSeverity: effectiveSeverity(t),
+    // AxisLevel の生値（Low/Medium/High）をそのまま出す。既存の severity 列が
+    // Severity の生 enum を出しているのと揃えるため（翻訳しない）。
+    impact: t.risk ? impactLevel(t.risk) : '',
+    likelihood: t.risk ? likelihoodLevel(t.risk) : '',
     countermeasure: t.mitigation ?? '',
     status: statusLabel(t, locale),
+    controlStatus: controlStatusLabel(t, locale),
     comments: t.origin === 'detected' ? (t.suppression?.note ?? '') : '',
     origin:
       t.origin === 'manual'
         ? translate('report.origin.manual', locale)
         : translate('report.origin.detected', locale),
+    risk: t.risk,
   }));
   return { project: projectMeta, framework, layer, rows };
 }
@@ -170,10 +209,15 @@ const CSV_COLUMN_KEYS: readonly TranslationKey[] = [
   'report.csv.col.asset',
   'report.csv.col.framework',
   'report.csv.col.category',
+  'report.csv.col.name',
   'report.csv.col.threat',
   'report.csv.col.severity',
+  'report.csv.col.effectiveSeverity',
+  'report.csv.col.impact',
+  'report.csv.col.likelihood',
   'report.csv.col.mitigation',
   'report.csv.col.status',
+  'report.csv.col.controlStatus',
   'report.csv.col.comments',
   'report.csv.col.origin',
 ];
@@ -205,10 +249,15 @@ export function toCsv(report: ThreatReport): string {
         r.asset,
         r.framework,
         r.category,
+        r.name,
         r.threat,
         r.severity,
+        r.effectiveSeverity,
+        r.impact,
+        r.likelihood,
         r.countermeasure,
         r.status,
+        r.controlStatus,
         r.comments,
         r.origin,
       ]),
@@ -269,7 +318,7 @@ type DcrhImpact = 'low' | 'medium' | 'high' | 'critical';
 type DcrhLikelihood = 'very_rare' | 'rare' | 'possible' | 'likely' | 'almost_certain';
 type DcrhStatus = 'unmitigated' | 'partially_mitigated' | 'mitigated' | 'risk_accepted';
 
-/** Severity → 公式 impact（existential は使わない）。 */
+/** Severity → 公式 impact（existential は使わない）。実効 severity を使う（likelihood と出所を揃える）。 */
 const DCRH_IMPACT: Record<Severity, DcrhImpact> = {
   Low: 'low',
   Medium: 'medium',
@@ -427,7 +476,7 @@ export function toDCRHThreatModelMarkdown(
       source: t,
       surface,
       asset,
-      impact: DCRH_IMPACT[t.severity],
+      impact: DCRH_IMPACT[effectiveSeverity(t)],
       likelihood: dcrhLikelihood(t),
       status: disp.status,
       controls: dcrhControls(t, disp.status, locale),
@@ -490,6 +539,9 @@ export function toDCRHThreatModelMarkdown(
     );
   }
   for (const b of boundaries) {
+    // BLAST_RADIUS は侵害時の影響範囲を示す注記であって信頼境界でもアセットでもないため除外
+    // （src/core/model/types.ts の TRUST_BEARING_BOUNDARY_TYPES 付近のコメント参照）。
+    if (b.type === 'BLAST_RADIUS') continue;
     out.push(mdRow([elementLabel(index, 'boundary', b.id), b.type, 'medium']));
   }
 
