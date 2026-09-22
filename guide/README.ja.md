@@ -19,6 +19,7 @@ CyberRiskScape を使う人のためのドキュメントです。
 | **[Analytics でリスクを評価する](analytics-assessment.ja.md)** | リスク評価・リスク対応方針・対策実装状況を 1 画面で検討し、記録する手順 |
 | **[攻撃経路分析](attack-paths.ja.md)** | 攻撃者から標的までの到達経路を列挙し、チョークポイント（1 つの対策が最も多くの経路に効く場所）を特定する |
 | **[コンプライアンスマップ](compliance-map.ja.md)** | 脅威と NIST CSF / NIST AI RMF / AI 事業者ガイドラインの対応を、脅威側・規格側の両方から確認する |
+| **[脅威モデルを AI が読める Security Context に変換する](security-context.ja.md)** | 完成した脅威モデルを Markdown で書き出し、AI による脆弱性診断の入力として使う手順と、それが効く理由 |
 | **[Secure by Design 入門](secure-by-design.ja.md)** | 背景にある考え方。Secure by Design とは何か、なぜ今求められるのか、脅威モデリングが担う 4 つの役割。CISA 主導の国際共同ガイダンスに基づく |
 
 ## どこから読むか
@@ -30,6 +31,8 @@ CyberRiskScape を使う人のためのドキュメントです。
 - **脅威を評価して記録したい** — [Analytics でリスクを評価する](analytics-assessment.ja.md) へ。
 - **対策をどこから手を付けるか決めたい** — [攻撃経路分析](attack-paths.ja.md) へ。
 - **規格・ガイドラインとの対応を確認したい** — [コンプライアンスマップ](compliance-map.ja.md) へ。
+- **作った脅威モデルを AI の脆弱性診断に使いたい** —
+  [脅威モデルを AI が読める Security Context に変換する](security-context.ja.md) へ。
 - **この取り組みの意義を誰かに説明したい** — [Secure by Design 入門](secure-by-design.ja.md) は
   単独で読める内容になっています。
 

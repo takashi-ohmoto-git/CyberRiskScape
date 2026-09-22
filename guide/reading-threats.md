@@ -165,7 +165,7 @@ judgment began**.
 
 | Format | Use |
 |---|---|
-| CSV | Sorting and sharing in a spreadsheet. Columns: ID, asset, framework, category, threat, severity, mitigation, status, comments, origin |
+| CSV | Sorting and sharing in a spreadsheet. One row per threat, 15 columns (target, threat name, both rule-derived and effective severity, impact / likelihood, mitigation, risk treatment, control status and more) |
 | JSON | Feeding other tools or automation |
 | DCRH THREAT_MODEL.md | Markdown compatible with Anthropic's `defending-code-reference-harness` |
 
@@ -200,6 +200,7 @@ assessment made in your context (see
 ## Where to go next
 
 - How to assess and record — [Assessing Risk in Analytics](analytics-assessment.md)
+- Using the exported Markdown as input for an AI — [Turning Your Threat Model into an AI-Readable Security Context](security-context.md)
 - Deciding where to put controls — [Attack Path Analysis](attack-paths.md)
 - Lining threats up against standards — [The Compliance Map](compliance-map.md)
 - How to draw the diagram — [Your First Threat Model](first-threat-model.md)

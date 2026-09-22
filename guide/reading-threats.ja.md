@@ -160,7 +160,7 @@ Impact 軸（損害・影響範囲）と Likelihood 軸（再現性・攻撃容�
 
 | 形式 | 用途 |
 |---|---|
-| CSV | 表計算ソフトでの仕分け・共有。ID / 資産 / 分類 / 脅威 / severity / 対策 / 状況 / コメント / 由来の列 |
+| CSV | 表計算ソフトでの仕分け・共有。脅威 1 件＝1 行の 15 列（対象要素・脅威名・ルール由来と実効の severity 2 列・Impact / Likelihood・緩和策・対応状況・対策実装状況ほか） |
 | JSON | 他ツールへの取り込み・自動処理 |
 | DCRH THREAT_MODEL.md | Anthropic の `defending-code-reference-harness` 互換の Markdown |
 
@@ -193,6 +193,7 @@ Impact 軸（損害・影響範囲）と Likelihood 軸（再現性・攻撃容�
 ## 次に読むもの
 
 - 評価して記録する手順 — [Analytics でリスクを評価する](analytics-assessment.ja.md)
+- 書き出した Markdown を AI の入力として使う — [脅威モデルを AI が読める Security Context に変換する](security-context.ja.md)
 - 対策をどこに置くか決める — [攻撃経路分析](attack-paths.ja.md)
 - 規格との対応を確認する — [コンプライアンスマップ](compliance-map.ja.md)
 - 作図の手順 — [はじめての脅威モデル](first-threat-model.ja.md)
