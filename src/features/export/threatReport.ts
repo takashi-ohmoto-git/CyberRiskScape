@@ -45,8 +45,11 @@ import { getLocale, translate, type Locale, type TranslationKey } from '../../i1
  * **脅威表の CSV 15 列は v2 から不変**（追加は JSON の後方互換な増分で、v2 の読み手は影響を受けない）。
  * v3 ではあわせて認証基盤インベントリを追加した（CSV は脅威表の後ろの第 2 ブロック、
  * JSON は `identityInventory` キー）。
+ * v4 で **CSV の先頭にバージョン行**を足した。JSON は `schemaVersion` で版を見分けられるのに
+ * CSV には手掛かりが無く、v1→v2 の列変更と v3 の第 2 ブロック追加を下流が検知できなかったため。
+ * **バージョン行の有無自体が版の違い**になるので、行を足した時点で 3 → 4 に上げている。
  */
-export const THREAT_REPORT_SCHEMA_VERSION = 3 as const;
+export const THREAT_REPORT_SCHEMA_VERSION = 4 as const;
 export const THREAT_REPORT_KIND = 'cyberriskscape-threat-report' as const;
 
 /** 脅威 1 件＝レポート 1 行。CSV に出る値は整形済み文字列。`risk` のみ JSON 専用の生値。 */
@@ -308,13 +311,18 @@ const INVENTORY_LIST_SEPARATOR = '; ';
 
 /**
  * レポートを CSV 文字列へ変換する（UTF-8 / CRLF 改行）。
- * 先頭にプロジェクトメタ（2 列）ブロック → 空行 → 脅威表ヘッダ → 各行の順。
+ * 先頭にバージョン行 ＋ プロジェクトメタ（2 列）ブロック → 空行 → 脅威表ヘッダ → 各行の順。
  * BOM は付与しない（Excel 向け BOM はダウンロード時に付与する。[[download]]）。
  */
 export function toCsv(report: ThreatReport): string {
   const locale = getLocale();
   const { project } = report;
   const lines: string[] = [
+    // 先頭 1 行目に置く。下流が「何の形式の何版か」を最初の 1 行だけで判定できるようにするため。
+    csvRow([
+      translate('report.csv.meta.schemaVersion', locale),
+      String(THREAT_REPORT_SCHEMA_VERSION),
+    ]),
     csvRow([translate('report.csv.meta.projectName', locale), project.name]),
     csvRow([translate('report.csv.meta.systemName', locale), project.systemName]),
     csvRow([translate('report.csv.meta.purpose', locale), project.purpose]),

@@ -34,6 +34,7 @@ export const jaReport = {
   'report.csv.col.origin': '種別',
 
   // ── CSV 先頭のプロジェクトメタブロック ──
+  'report.csv.meta.schemaVersion': 'スキーマバージョン',
   'report.csv.meta.projectName': 'プロジェクト名',
   'report.csv.meta.systemName': 'システム名称',
   'report.csv.meta.purpose': 'システム目的',

@@ -37,6 +37,7 @@ export const enReport: Partial<Record<TranslationKey, string>> = {
   'report.csv.col.origin': 'Origin',
 
   // ── CSV leading project meta block ──
+  'report.csv.meta.schemaVersion': 'Schema version',
   'report.csv.meta.projectName': 'Project name',
   'report.csv.meta.systemName': 'System name',
   'report.csv.meta.purpose': 'System purpose',

@@ -152,7 +152,7 @@ describe('toCsv', () => {
   it('メタブロック → 空行 → ヘッダ → データ行の順で出力する', () => {
     const csv = toCsv(buildThreatReport(input([DETECTED])));
     const lines = csv.split('\r\n');
-    expect(lines[0]).toBe('プロジェクト名,ProjectIT');
+    expect(lines[1]).toBe('プロジェクト名,ProjectIT');
     expect(lines).toContain('脅威件数,1');
     const headerIdx = lines.indexOf(
       'ID,対象要素,フレームワーク,カテゴリ,脅威名,脅威,ルール深刻度,実効深刻度,Impact,Likelihood,緩和策,対応状況,対策実装状況,コメント,種別',
@@ -174,6 +174,11 @@ describe('toCsv', () => {
 
   it('CRLF 改行を使う', () => {
     expect(toCsv(buildThreatReport(input([])))).toContain('\r\n');
+  });
+
+  it('1 行目にスキーマバージョンを出す（下流が版を見分けられるようにする）', () => {
+    const lines = toCsv(buildThreatReport(input([DETECTED]))).split('\r\n');
+    expect(lines[0]).toBe(`スキーマバージョン,${THREAT_REPORT_SCHEMA_VERSION}`);
   });
 
   it('脅威名が CSV 行に出る', () => {
