@@ -140,6 +140,13 @@ export const jaRuleEditor = {
   'ruleEditor.nodeTarget.agentAxis.agency': 'agency（自律度）',
   'ruleEditor.nodeTarget.agentAxis.blastRadius': 'blastRadius（影響範囲）',
   'ruleEditor.nodeTarget.agentAxis.identityTier': 'identityTier（同一性）',
+  'ruleEditor.nodeTarget.identityAxesLabel': 'アイデンティティ軸（任意・OR）',
+  'ruleEditor.nodeTarget.identityProviderKindLabel': 'IdP 種別',
+  'ruleEditor.nodeTarget.authProviderRoleLabel': '発行元としての位置づけ',
+  'ruleEditor.nodeTarget.authProviderRoleNote':
+    'Sole = 単独依存 / Shared = 他と併用 / Unused = 誰からも参照されていない。既存ルールをこの軸で絞ると、資格情報の発行元が 1 つも宣言されていない図では全ノードが Unused になり、今出ている検出が消える。精密化は新規ルールか下の分岐で行う。',
+  'ruleEditor.nodeWhen.nodeTypeLabel': 'ノード型（任意・OR）',
+  'ruleEditor.nodeWhen.attackSurfaceLabel': '攻撃面',
 
   // ── SeverityBranchEditor ──
   'ruleEditor.severityBranch.description':

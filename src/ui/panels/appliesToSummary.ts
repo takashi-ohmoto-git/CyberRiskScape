@@ -53,6 +53,7 @@ const FIELD_LABEL_KEYS: Record<string, TranslationKey> = {
   targetIdentityProviderKind: 'appliesToSummary.field.targetIdentityProviderKind',
   authProvider: 'appliesToSummary.field.authProvider',
   identityProviderKind: 'appliesToSummary.field.identityProviderKind',
+  authProviderRole: 'appliesToSummary.field.authProviderRole',
   agency: 'appliesToSummary.field.agency',
   blastRadius: 'appliesToSummary.field.blastRadius',
   identityTier: 'appliesToSummary.field.identityTier',
@@ -165,6 +166,22 @@ function summarizeNode(appliesTo: Extract<AppliesTo, { kind: 'node' }>, locale: 
     parts.push(
       translate('appliesToSummary.node.agentAttributes', locale, {
         conditions: formatArrayMap(appliesTo.agentAttributes as unknown as EdgeWhenLike, locale),
+      }),
+    );
+  }
+
+  // アイデンティティ軸（[[plan]] §2.39 / §2.41）。どちらも発火を絞る条件なので 1 文にまとめる。
+  // `conditions`（severity / description の段階分け）は発火可否を変えないため、
+  // エッジ側と同じく発火条件の説明文には出さない。
+  const identityAxes: EdgeWhenLike = {};
+  if (appliesTo.identityProviderKind) {
+    identityAxes.identityProviderKind = appliesTo.identityProviderKind;
+  }
+  if (appliesTo.authProviderRole) identityAxes.authProviderRole = appliesTo.authProviderRole;
+  if (Object.keys(identityAxes).length > 0) {
+    parts.push(
+      translate('appliesToSummary.node.identityAxes', locale, {
+        conditions: formatArrayMap(identityAxes, locale),
       }),
     );
   }

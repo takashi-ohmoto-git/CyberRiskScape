@@ -140,6 +140,13 @@ export const enRuleEditor: Partial<Record<TranslationKey, string>> = {
   'ruleEditor.nodeTarget.agentAxis.agency': 'agency (autonomy level)',
   'ruleEditor.nodeTarget.agentAxis.blastRadius': 'blastRadius (impact scope)',
   'ruleEditor.nodeTarget.agentAxis.identityTier': 'identityTier (identity distinctness)',
+  'ruleEditor.nodeTarget.identityAxesLabel': 'Identity axes (optional, OR)',
+  'ruleEditor.nodeTarget.identityProviderKindLabel': 'IdP kind',
+  'ruleEditor.nodeTarget.authProviderRoleLabel': 'Role as credential provider',
+  'ruleEditor.nodeTarget.authProviderRoleNote':
+    'Sole = the only provider relied on / Shared = used alongside others / Unused = referenced by nobody. Narrowing an existing rule by this axis turns every node into Unused in diagrams that declare no credential provider, silently dropping current detections. Add a new rule, or use the branches below, instead.',
+  'ruleEditor.nodeWhen.nodeTypeLabel': 'Node type (optional, OR)',
+  'ruleEditor.nodeWhen.attackSurfaceLabel': 'Attack surface',
 
   // ── SeverityBranchEditor ──
   'ruleEditor.severityBranch.description':

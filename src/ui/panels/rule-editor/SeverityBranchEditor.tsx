@@ -1,39 +1,49 @@
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import { SeveritySchema } from '../../../threat-library/schema/threatRule';
-import {
-  emptyLeaf,
-  type ConditionCaseDraft,
-  type RuleDraft,
-} from '../../../features/custom-rules/editor/draft';
+import type { RuleDraft } from '../../../features/custom-rules/editor/draft';
 import { useT } from '../../../i18n';
-import { EdgeWhenLeafEditor } from './EdgeWhenLeafEditor';
 
 /**
  * ③ severity 分岐（§2.25 Phase D）。`conditions[]` の first-match-wins を
  * if / elif / else の縦フローとして編集する（上から順に評価、最初に一致した
  * ケースで severity / description を上書き）。
  *
- * - 各ケースは `when`（リーフ）＋ 上書きする severity / description。
+ * - 各ケースは `when`（条件）＋ 上書きする severity / description。
  * - severity '' = 据え置き、description 空 = 据え置き（最低どちらか 1 つが必要）。
  * - 末尾の「else（デフォルト）」はルール本体の severity / description。
+ *
+ * `when` の中身はエッジ（リーフ）とノードで別物なので、**分岐の枠だけを持ち**
+ * 条件エディタは `renderWhen` で受け取る（エッジ＝`EdgeWhenLeafEditor` /
+ * ノード＝`NodeWhenEditor`）。
  */
-export function SeverityBranchEditor({
+interface BranchCase<W> {
+  when: W;
+  severity: RuleDraft['severity'] | '';
+  description: string;
+}
+
+export function SeverityBranchEditor<W>({
   conditions,
   defaultSeverity,
   defaultDescription,
+  emptyWhen,
+  renderWhen,
   onChange,
 }: {
-  conditions: ConditionCaseDraft[];
+  conditions: BranchCase<W>[];
   defaultSeverity: RuleDraft['severity'];
   defaultDescription: string;
-  onChange: (next: ConditionCaseDraft[]) => void;
+  /** 新規ケース追加時の空条件。 */
+  emptyWhen: () => W;
+  renderWhen: (when: W, onChange: (next: W) => void) => React.ReactNode;
+  onChange: (next: BranchCase<W>[]) => void;
 }) {
   const t = useT();
-  const setCase = (i: number, next: ConditionCaseDraft) =>
+  const setCase = (i: number, next: BranchCase<W>) =>
     onChange(conditions.map((c, idx) => (idx === i ? next : c)));
 
   const addCase = () =>
-    onChange([...conditions, { when: emptyLeaf(), severity: '', description: '' }]);
+    onChange([...conditions, { when: emptyWhen(), severity: '', description: '' }]);
 
   const removeCase = (i: number) => onChange(conditions.filter((_, idx) => idx !== i));
 
@@ -87,14 +97,14 @@ export function SeverityBranchEditor({
             </div>
           </div>
 
-          <EdgeWhenLeafEditor leaf={c.when} onChange={(when) => setCase(i, { ...c, when })} />
+          {renderWhen(c.when, (when) => setCase(i, { ...c, when }))}
 
           <div className="grid grid-cols-[120px_1fr] gap-2 items-center">
             <span className="text-xs text-slate-500">{t('ruleEditor.severityBranch.severityLabel')}</span>
             <select
               value={c.severity}
               onChange={(e) =>
-                setCase(i, { ...c, severity: e.target.value as ConditionCaseDraft['severity'] })
+                setCase(i, { ...c, severity: e.target.value as BranchCase<W>['severity'] })
               }
               className="bg-slate-800 border border-slate-700 rounded-md px-2 py-1 text-[12px] text-slate-100 focus:outline-none focus:border-blue-500"
             >

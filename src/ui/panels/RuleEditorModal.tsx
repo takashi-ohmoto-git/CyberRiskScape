@@ -10,12 +10,16 @@ import {
 import {
   draftToRule,
   emptyDraft,
+  emptyLeaf,
+  emptyNodeWhen,
   ruleToDraft,
   type RuleDraft,
 } from '../../features/custom-rules/editor/draft';
 import { useT } from '../../i18n';
 import { ConditionGroup } from './rule-editor/ConditionGroup';
 import { NodeTargetEditor } from './rule-editor/NodeTargetEditor';
+import { NodeWhenEditor } from './rule-editor/NodeWhenEditor';
+import { EdgeWhenLeafEditor } from './rule-editor/EdgeWhenLeafEditor';
 import { SeverityBranchEditor } from './rule-editor/SeverityBranchEditor';
 
 /**
@@ -187,14 +191,32 @@ export function RuleEditorModal({
                 conditions={draft.edge.conditions}
                 defaultSeverity={draft.severity}
                 defaultDescription={draft.description}
+                emptyWhen={emptyLeaf}
+                renderWhen={(when, onWhenChange) => (
+                  <EdgeWhenLeafEditor leaf={when} onChange={onWhenChange} />
+                )}
                 onChange={(conditions) => patch({ edge: { ...draft.edge, conditions } })}
               />
             </Section>
           </>
         ) : (
-          <Section step="②" title={t('ruleEditor.modal.section.matchNode.title')}>
-            <NodeTargetEditor node={draft.node} onChange={(node) => patch({ node })} />
-          </Section>
+          <>
+            <Section step="②" title={t('ruleEditor.modal.section.matchNode.title')}>
+              <NodeTargetEditor node={draft.node} onChange={(node) => patch({ node })} />
+            </Section>
+            <Section step="③" title={t('ruleEditor.modal.section.severityBranch.title')}>
+              <SeverityBranchEditor
+                conditions={draft.node.conditions}
+                defaultSeverity={draft.severity}
+                defaultDescription={draft.description}
+                emptyWhen={emptyNodeWhen}
+                renderWhen={(when, onWhenChange) => (
+                  <NodeWhenEditor when={when} onChange={onWhenChange} />
+                )}
+                onChange={(conditions) => patch({ node: { ...draft.node, conditions } })}
+              />
+            </Section>
+          </>
         )}
 
         {/* 出典・コンプライアンス */}

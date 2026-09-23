@@ -32,6 +32,8 @@ type EdgeAppliesTo = Extract<ThreatRule['appliesTo'], { kind: 'edge' }>;
 type EdgeWhenLeaf = NonNullable<EdgeAppliesTo['when']>;
 type EdgeConditionCase = NonNullable<EdgeAppliesTo['conditions']>[number];
 type NodeAppliesTo = Extract<ThreatRule['appliesTo'], { kind: 'node' }>;
+type NodeConditionCase = NonNullable<NodeAppliesTo['conditions']>[number];
+type NodeWhen = NodeConditionCase['when'];
 
 // ── draft 型 ────────────────────────────────────────────────────────────────
 
@@ -48,6 +50,28 @@ export type AttackSurfaceDraft = { [K in keyof AttackSurfaceMatch]-?: boolean | 
 export type AgentAttributesDraft = {
   [K in keyof AgentAttributesMatch]-?: NonNullable<AgentAttributesMatch[K]>[number][];
 };
+
+/**
+ * ノード条件（`conditions[].when`）。`appliesTo` のノード側絞り込み軸のミラーで、
+ * **`connection` は持たない**（接続要件は「発火するか」の問いで、段階分けの軸ではない
+ * ——`NodeWhenSchema` のコメント参照）。各軸は常に配列/マップ（空 = 未指定）。
+ */
+export interface NodeWhenDraft {
+  nodeType: string[];
+  attackSurface: AttackSurfaceDraft;
+  agentAttributes: AgentAttributesDraft;
+  identityProviderKind: string[];
+  authProviderRole: string[];
+}
+
+/** ノードルールの severity / description 段階分岐（`conditions[]` の 1 ケース）。 */
+export interface NodeConditionCaseDraft {
+  when: NodeWhenDraft;
+  /** '' = severity を上書きしない。 */
+  severity: Severity | '';
+  /** '' = description を上書きしない。 */
+  description: string;
+}
 
 export type EdgeMode = 'when' | 'allOf' | 'anyOf';
 export type NodeMode = 'single' | 'anyOf';
@@ -79,6 +103,12 @@ export interface NodeDraft {
   connection: ConnectionDraft;
   attackSurface: AttackSurfaceDraft;
   agentAttributes: AgentAttributesDraft;
+  /** IdP 種別（OR）。空 = 未指定。 */
+  identityProviderKind: string[];
+  /** 発行元としての位置づけ（OR）。空 = 未指定。 */
+  authProviderRole: string[];
+  /** severity / description の段階分岐（first-match-wins）。 */
+  conditions: NodeConditionCaseDraft[];
 }
 
 export interface EdgeDraft {
@@ -190,6 +220,16 @@ export function emptyConnection(): ConnectionDraft {
   };
 }
 
+export function emptyNodeWhen(): NodeWhenDraft {
+  return {
+    nodeType: [],
+    attackSurface: emptyAttackSurface(),
+    agentAttributes: emptyAgentAttributes(),
+    identityProviderKind: [],
+    authProviderRole: [],
+  };
+}
+
 export function emptyNodeDraft(): NodeDraft {
   return {
     mode: 'single',
@@ -197,6 +237,9 @@ export function emptyNodeDraft(): NodeDraft {
     connection: emptyConnection(),
     attackSurface: emptyAttackSurface(),
     agentAttributes: emptyAgentAttributes(),
+    identityProviderKind: [],
+    authProviderRole: [],
+    conditions: [],
   };
 }
 
@@ -292,6 +335,24 @@ function edgeToDraft(applies: EdgeAppliesTo): EdgeDraft {
   return { mode, leaves, conditions: (applies.conditions ?? []).map(conditionToDraft) };
 }
 
+function nodeWhenToDraft(w: NodeWhen): NodeWhenDraft {
+  return {
+    nodeType: w.nodeType ? [...w.nodeType] : [],
+    attackSurface: w.attackSurface ? surfaceToDraft(w.attackSurface) : emptyAttackSurface(),
+    agentAttributes: w.agentAttributes ? agentToDraft(w.agentAttributes) : emptyAgentAttributes(),
+    identityProviderKind: w.identityProviderKind ? [...w.identityProviderKind] : [],
+    authProviderRole: w.authProviderRole ? [...w.authProviderRole] : [],
+  };
+}
+
+function nodeConditionToDraft(c: NodeConditionCase): NodeConditionCaseDraft {
+  return {
+    when: nodeWhenToDraft(c.when),
+    severity: c.severity ?? '',
+    description: c.description ?? '',
+  };
+}
+
 function nodeToDraft(applies: NodeAppliesTo): NodeDraft {
   const mode: NodeMode = applies.nodeType ? 'single' : 'anyOf';
   const nodeTypes = applies.nodeType
@@ -305,6 +366,9 @@ function nodeToDraft(applies: NodeAppliesTo): NodeDraft {
     agentAttributes: applies.agentAttributes
       ? agentToDraft(applies.agentAttributes)
       : emptyAgentAttributes(),
+    identityProviderKind: applies.identityProviderKind ? [...applies.identityProviderKind] : [],
+    authProviderRole: applies.authProviderRole ? [...applies.authProviderRole] : [],
+    conditions: (applies.conditions ?? []).map(nodeConditionToDraft),
   };
 }
 
@@ -387,6 +451,25 @@ function buildEdgeAppliesTo(edge: EdgeDraft): Record<string, unknown> {
   return out;
 }
 
+function buildNodeWhen(w: NodeWhenDraft): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (w.nodeType.length > 0) out.nodeType = [...w.nodeType];
+  const surface = buildAttackSurface(w.attackSurface);
+  if (surface) out.attackSurface = surface;
+  const agent = buildAgentAttributes(w.agentAttributes);
+  if (agent) out.agentAttributes = agent;
+  if (w.identityProviderKind.length > 0) out.identityProviderKind = [...w.identityProviderKind];
+  if (w.authProviderRole.length > 0) out.authProviderRole = [...w.authProviderRole];
+  return out;
+}
+
+function buildNodeConditionCase(c: NodeConditionCaseDraft): Record<string, unknown> {
+  const out: Record<string, unknown> = { when: buildNodeWhen(c.when) };
+  if (c.severity !== '') out.severity = c.severity;
+  if (c.description.trim() !== '') out.description = c.description;
+  return out;
+}
+
 function buildNodeAppliesTo(node: NodeDraft): Record<string, unknown> {
   const out: Record<string, unknown> = { kind: 'node' };
   if (node.mode === 'single') {
@@ -400,6 +483,11 @@ function buildNodeAppliesTo(node: NodeDraft): Record<string, unknown> {
   if (surface) out.attackSurface = surface;
   const agent = buildAgentAttributes(node.agentAttributes);
   if (agent) out.agentAttributes = agent;
+  if (node.identityProviderKind.length > 0) {
+    out.identityProviderKind = [...node.identityProviderKind];
+  }
+  if (node.authProviderRole.length > 0) out.authProviderRole = [...node.authProviderRole];
+  if (node.conditions.length > 0) out.conditions = node.conditions.map(buildNodeConditionCase);
   return out;
 }
 

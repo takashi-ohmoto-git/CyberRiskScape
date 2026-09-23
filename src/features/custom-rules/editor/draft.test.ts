@@ -55,6 +55,45 @@ const fixtures: Record<string, ThreatRule> = {
       agentAttributes: { agency: ['Autonomous'], blastRadius: ['Tenant', 'CrossTenant'] },
     },
   },
+  nodeWithIdentityAxes: {
+    id: 'node-identity-001',
+    framework: 'STRIDE',
+    category: 'Spoofing',
+    severity: 'High',
+    description: 'sole idp dependency',
+    appliesTo: {
+      kind: 'node',
+      nodeType: 'IDENTITY_PROVIDER',
+      identityProviderKind: ['IDaaS', 'Hybrid'],
+      authProviderRole: ['Sole'],
+    },
+  },
+  nodeWithConditions: {
+    id: 'node-conditions-001',
+    framework: 'STRIDE',
+    category: 'Spoofing',
+    severity: 'Medium',
+    description: 'identity provider',
+    appliesTo: {
+      kind: 'node',
+      nodeType: 'IDENTITY_PROVIDER',
+      conditions: [
+        {
+          when: { identityProviderKind: ['Social'] },
+          severity: 'High',
+          description: 'social idp',
+        },
+        {
+          when: { nodeType: ['IDENTITY_PROVIDER'], authProviderRole: ['Sole'] },
+          severity: 'Critical',
+        },
+        {
+          when: { attackSurface: { hasGlobalIp: true }, agentAttributes: { agency: ['Autonomous'] } },
+          description: 'exposed autonomous provider',
+        },
+      ],
+    },
+  },
   edgeWhen: {
     id: 'edge-when-001',
     framework: 'STRIDE',

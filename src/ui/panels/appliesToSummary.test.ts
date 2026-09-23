@@ -106,6 +106,30 @@ describe('summarizeAppliesTo - kind: node', () => {
     expect(text).toContain('自律度=Autonomous/Bounded');
     expect(text).toContain('アイデンティティ強度=LabelOnly');
   });
+
+  it('identityProviderKind / authProviderRole が発火条件文に出る', () => {
+    const appliesTo: AppliesTo = {
+      kind: 'node',
+      nodeType: 'IDENTITY_PROVIDER',
+      connection: { required: false },
+      identityProviderKind: ['IDaaS', 'Hybrid'],
+      authProviderRole: ['Sole'],
+    };
+    const text = summarizeAppliesTo(appliesTo, 'ja');
+    expect(text).toContain('IdP 種別=IDaaS/Hybrid');
+    expect(text).toContain('発行元としての位置づけ=Sole');
+  });
+
+  it('conditions（severity 段階分け）は発火条件文に出さない', () => {
+    const appliesTo: AppliesTo = {
+      kind: 'node',
+      nodeType: 'IDENTITY_PROVIDER',
+      connection: { required: false },
+      conditions: [{ when: { authProviderRole: ['Sole'] }, severity: 'Critical' }],
+    };
+    const text = summarizeAppliesTo(appliesTo, 'ja');
+    expect(text).not.toContain('発行元としての位置づけ');
+  });
 });
 
 describe('summarizeAppliesTo - kind: edge', () => {

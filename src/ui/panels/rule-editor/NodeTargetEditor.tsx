@@ -1,33 +1,24 @@
 import {
-  AgencyLevelSchema,
-  BlastRadiusSchema,
+  AuthProviderRoleSchema,
   ConnectionDirectionSchema,
-  IdentityTierSchema,
+  IdentityProviderKindSchema,
 } from '../../../threat-library/schema/threatRule';
 import { getComponentRegistry } from '../../../component-library/defaultRegistry';
-import type {
-  AgentAttributesDraft,
-  ConnectionDraft,
-  NodeDraft,
-} from '../../../features/custom-rules/editor/draft';
-import { useLocale, useT, type TranslationKey } from '../../../i18n';
+import type { ConnectionDraft, NodeDraft } from '../../../features/custom-rules/editor/draft';
+import { useLocale, useT } from '../../../i18n';
 import { ChipGroup, toggleInArray } from './ChipGroup';
 import { AttackSurfaceEditor } from './AttackSurfaceEditor';
+import { AgentAttributesEditor } from './AgentAttributesEditor';
 
 /**
  * ②マッチ条件（Node ルール）（§2.25 Phase D / D3）。
  *
  * nodeType（単一 / anyOf）＋ connection（接続要件・ピア攻撃面）＋ attackSurface ＋
- * agentAttributes を編集する。各条件は AND（連結）で評価される。
+ * agentAttributes ＋ アイデンティティ軸（IdP 種別・発行元としての位置づけ）を編集する。
+ * 各条件は AND（連結）で評価される。
  */
 const inputCls =
   'bg-slate-800 border border-slate-700 rounded-md px-2 py-1 text-[12px] text-slate-100 focus:outline-none focus:border-blue-500';
-
-const AGENT_AXES = [
-  { key: 'agency', labelKey: 'ruleEditor.nodeTarget.agentAxis.agency', options: AgencyLevelSchema.options },
-  { key: 'blastRadius', labelKey: 'ruleEditor.nodeTarget.agentAxis.blastRadius', options: BlastRadiusSchema.options },
-  { key: 'identityTier', labelKey: 'ruleEditor.nodeTarget.agentAxis.identityTier', options: IdentityTierSchema.options },
-] as const satisfies readonly { key: keyof AgentAttributesDraft; labelKey: TranslationKey; options: readonly string[] }[];
 
 function SubLabel({ children }: { children: React.ReactNode }) {
   return <span className="text-xs text-slate-500">{children}</span>;
@@ -183,24 +174,45 @@ export function NodeTargetEditor({
       {/* agentAttributes */}
       <div className="flex flex-col gap-2 border-t border-slate-700/60 pt-3">
         <SubLabel>{t('ruleEditor.nodeTarget.agentAttributesLabel')}</SubLabel>
-        {AGENT_AXES.map((axis) => (
-          <div key={axis.key} className="grid grid-cols-[160px_1fr] gap-2 items-start">
-            <span className="text-xs text-slate-500 pt-0.5">{t(axis.labelKey)}</span>
-            <ChipGroup
-              options={axis.options}
-              selected={node.agentAttributes[axis.key]}
-              onToggle={(v) =>
-                onChange({
-                  ...node,
-                  agentAttributes: {
-                    ...node.agentAttributes,
-                    [axis.key]: toggleInArray(node.agentAttributes[axis.key], v),
-                  },
-                })
-              }
-            />
-          </div>
-        ))}
+        <AgentAttributesEditor
+          value={node.agentAttributes}
+          onChange={(agentAttributes) => onChange({ ...node, agentAttributes })}
+        />
+      </div>
+
+      {/* アイデンティティ軸（[[plan]] §2.39 / §2.41） */}
+      <div className="flex flex-col gap-2 border-t border-slate-700/60 pt-3">
+        <SubLabel>{t('ruleEditor.nodeTarget.identityAxesLabel')}</SubLabel>
+        <div className="grid grid-cols-[160px_1fr] gap-2 items-start">
+          <span className="text-xs text-slate-500 pt-0.5">
+            {t('ruleEditor.nodeTarget.identityProviderKindLabel')}
+          </span>
+          <ChipGroup
+            options={IdentityProviderKindSchema.options}
+            selected={node.identityProviderKind}
+            onToggle={(v) =>
+              onChange({
+                ...node,
+                identityProviderKind: toggleInArray(node.identityProviderKind, v),
+              })
+            }
+          />
+        </div>
+        <div className="grid grid-cols-[160px_1fr] gap-2 items-start">
+          <span className="text-xs text-slate-500 pt-0.5">
+            {t('ruleEditor.nodeTarget.authProviderRoleLabel')}
+          </span>
+          <ChipGroup
+            options={AuthProviderRoleSchema.options}
+            selected={node.authProviderRole}
+            onToggle={(v) =>
+              onChange({ ...node, authProviderRole: toggleInArray(node.authProviderRole, v) })
+            }
+          />
+        </div>
+        <p className="text-xs text-slate-500 leading-relaxed">
+          {t('ruleEditor.nodeTarget.authProviderRoleNote')}
+        </p>
       </div>
     </div>
   );
