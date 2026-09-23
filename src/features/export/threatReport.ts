@@ -1,15 +1,23 @@
 import type {
   ControlStatusValue,
+  DetectionAssumptionFlag,
   DiagramBoundary,
   DiagramEdge,
   DiagramNode,
+  Framework,
   FrameworkView,
   LayerKey,
   ProjectMeta,
   RiskScore,
+  RiskValue,
   Severity,
   ThreatView,
 } from '../../core/model/types';
+import type {
+  ComplianceRef,
+  MitigationTiers,
+  Reference,
+} from '../../threat-library/schema/threatRule';
 import { formatElementalId } from '../../core/model/elementalId';
 import { BRANDING } from '../../core/branding';
 import { effectiveSeverity, impactLevel, likelihoodLevel, type AxisLevel } from '../../core/model/risk';
@@ -28,8 +36,13 @@ import { getLocale, translate, type Locale, type TranslationKey } from '../../i1
  * [[download]]、表示ラベルの最終整形は UI 層に委ねる。
  */
 
-/** v2 で severity 2 列化 ＋ name / impact / likelihood / controlStatus / risk を追加。 */
-export const THREAT_REPORT_SCHEMA_VERSION = 2 as const;
+/**
+ * v2 で severity 2 列化 ＋ name / impact / likelihood / controlStatus / risk を追加。
+ * v3 でルール由来の根拠フィールド（mitigationTiers / complianceRefs / references /
+ * corroboration / assumptionFlags / isCustom / canonicalId）を**JSON にのみ**追加。
+ * **CSV の 15 列は v2 から不変**（追加は JSON の後方互換な増分で、v2 の読み手は影響を受けない）。
+ */
+export const THREAT_REPORT_SCHEMA_VERSION = 3 as const;
 export const THREAT_REPORT_KIND = 'cyberriskscape-threat-report' as const;
 
 /** 脅威 1 件＝レポート 1 行。CSV に出る値は整形済み文字列。`risk` のみ JSON 専用の生値。 */
@@ -64,6 +77,24 @@ export interface ThreatReportRow {
   origin: string;
   /** リスク評価の生値（1–3）。**JSON 専用**で CSV には出ない。未評価は undefined。 */
   risk?: RiskScore;
+
+  // ── ここから下はすべて JSON 専用（`toCsv` は CSV_COLUMN_KEYS の 15 列しか出さない）──
+  // ルール由来の根拠。構造（配列・オブジェクト）を平文化せずそのまま渡す。
+
+  /** 緩和策の 3 段階成熟度。ルール未定義は undefined。 */
+  mitigationTiers?: MitigationTiers;
+  /** コンプライアンス参照（標準名 ＋ 節番号）。 */
+  complianceRefs?: ComplianceRef[];
+  /** 出典・参考文献。 */
+  references?: Reference[];
+  /** クロスソース畳み込みの裏付け（2 件以上がマージされたときのみ）。 */
+  corroboration?: { ruleIds: string[]; frameworks: Framework[] };
+  /** 最悪仮定に依存した検出であることのフラグ。 */
+  assumptionFlags?: DetectionAssumptionFlag[];
+  /** カスタムルール由来か（検出脅威のみ）。 */
+  isCustom?: boolean;
+  /** 等価グルーピングキー。 */
+  canonicalId?: string;
 }
 
 export interface ThreatReport {
@@ -189,6 +220,13 @@ export function buildThreatReport({
         ? translate('report.origin.manual', locale)
         : translate('report.origin.detected', locale),
     risk: t.risk,
+    mitigationTiers: t.mitigationTiers,
+    complianceRefs: t.complianceRefs,
+    references: t.references,
+    corroboration: t.corroboration,
+    assumptionFlags: t.assumptionFlags,
+    isCustom: t.isCustom,
+    canonicalId: t.canonicalId,
   }));
   return { project: projectMeta, framework, layer, rows };
 }
@@ -317,6 +355,7 @@ function elementLabel(
 type DcrhImpact = 'low' | 'medium' | 'high' | 'critical';
 type DcrhLikelihood = 'very_rare' | 'rare' | 'possible' | 'likely' | 'almost_certain';
 type DcrhStatus = 'unmitigated' | 'partially_mitigated' | 'mitigated' | 'risk_accepted';
+type DcrhSensitivity = 'low' | 'medium' | 'high' | 'critical';
 
 /** Severity → 公式 impact（existential は使わない）。実効 severity を使う（likelihood と出所を揃える）。 */
 const DCRH_IMPACT: Record<Severity, DcrhImpact> = {
@@ -325,6 +364,20 @@ const DCRH_IMPACT: Record<Severity, DcrhImpact> = {
   High: 'high',
   Critical: 'critical',
 };
+
+/**
+ * Damage（1–3）→ 公式 sensitivity。**`critical` は出さない**：damage の解像度が 3 段階しか
+ * 無く、最上位を critical に寄せると実際より強い主張になるため（`DCRH_IMPACT` が
+ * `existential` を使わないのと同じ保守側の扱い）。
+ */
+const DCRH_SENSITIVITY: Record<RiskValue, DcrhSensitivity> = {
+  1: 'low',
+  2: 'medium',
+  3: 'high',
+};
+
+/** リスク評価済みの脅威が 1 件も無いアセットの既定値（section 6 に明記する）。 */
+const DEFAULT_SENSITIVITY: DcrhSensitivity = 'medium';
 
 /** (impact, likelihood) 降順ソート用のランク。 */
 const IMPACT_RANK: Record<DcrhImpact, number> = { low: 0, medium: 1, high: 2, critical: 3 };
@@ -456,6 +509,10 @@ export function toDCRHThreatModelMarkdown(
   const threatRows: DcrhThreatRow[] = [];
   const deprioritized: { threat: string; reason: string }[] = [];
   let usedDefaultLikelihood = false;
+  // section 2 の sensitivity 用：アセット（`kind:id`）ごとの Damage 最大値。
+  // **section 4 に載る脅威だけ**を数える（誤検知・適用外は section 5 送りで、
+  // アセットの機微度の根拠にはしない）。畳み込みは最大値＝保守側。
+  const damageByAsset = new Map<string, RiskValue>();
 
   for (const t of threats) {
     const disp = dcrhDisposition(t, locale);
@@ -467,10 +524,18 @@ export function toDCRHThreatModelMarkdown(
     const surface = t.subject ? elementLabel(index, t.subject.kind, t.subject.id) : '';
     // asset：エッジ起点の脅威は到達先ノード、それ以外は対象要素自身。
     let asset = surface;
+    let assetKey = t.subject ? `${t.subject.kind}:${t.subject.id}` : '';
     if (t.subject?.kind === 'edge') {
       const e = edgeById.get(t.subject.id);
       const target = e ? elementLabel(index, 'node', e.target) : '';
-      if (target) asset = target;
+      if (e && target) {
+        asset = target;
+        assetKey = `node:${e.target}`;
+      }
+    }
+    if (assetKey && t.risk) {
+      const prev = damageByAsset.get(assetKey);
+      if (prev === undefined || t.risk.damage > prev) damageByAsset.set(assetKey, t.risk.damage);
     }
     threatRows.push({
       source: t,
@@ -532,17 +597,30 @@ export function toDCRHThreatModelMarkdown(
   out.push(ctx.join('\n\n'));
 
   // 2. Assets
+  let usedDefaultSensitivity = false;
+  const sensitivityOf = (kind: string, id: string): DcrhSensitivity => {
+    const damage = damageByAsset.get(`${kind}:${id}`);
+    if (damage === undefined) {
+      usedDefaultSensitivity = true;
+      return DEFAULT_SENSITIVITY;
+    }
+    return DCRH_SENSITIVITY[damage];
+  };
   out.push('', '## 2. Assets', '', '| asset | description | sensitivity |', '|---|---|---|');
   for (const n of nodes) {
     out.push(
-      mdRow([elementLabel(index, 'node', n.id), n.description?.trim() || n.type, 'medium']),
+      mdRow([
+        elementLabel(index, 'node', n.id),
+        n.description?.trim() || n.type,
+        sensitivityOf('node', n.id),
+      ]),
     );
   }
   for (const b of boundaries) {
     // BLAST_RADIUS は侵害時の影響範囲を示す注記であって信頼境界でもアセットでもないため除外
     // （src/core/model/types.ts の TRUST_BEARING_BOUNDARY_TYPES 付近のコメント参照）。
     if (b.type === 'BLAST_RADIUS') continue;
-    out.push(mdRow([elementLabel(index, 'boundary', b.id), b.type, 'medium']));
+    out.push(mdRow([elementLabel(index, 'boundary', b.id), b.type, sensitivityOf('boundary', b.id)]));
   }
 
   // 3. Entry points & trust boundaries（脅威が紐づくデータフローのみ）
@@ -607,6 +685,7 @@ export function toDCRHThreatModelMarkdown(
   if (usedDefaultLikelihood) out.push(translate('report.dcrh.openQuestions.likelihood', locale));
   out.push(translate('report.dcrh.openQuestions.evidence', locale));
   out.push(translate('report.dcrh.openQuestions.sensitivity', locale));
+  if (usedDefaultSensitivity) out.push(translate('report.dcrh.openQuestions.sensitivityDefault', locale));
   out.push(translate('report.dcrh.openQuestions.entryPoint', locale));
   out.push(translate('report.dcrh.openQuestions.section8', locale));
 

@@ -64,7 +64,9 @@ export const jaReport = {
   'report.dcrh.openQuestions.evidence':
     '- evidence（CVE / 所見リンク等）は本ツールが未保持のため常に空。',
   'report.dcrh.openQuestions.sensitivity':
-    '- sensitivity は対応データが無いため全資産で既定 `medium`。',
+    '- sensitivity はそのアセットに紐づく脅威のリスク評価 Damage の最大値から推定（1=low / 2=medium / 3=high）。`critical` は出力しない。',
+  'report.dcrh.openQuestions.sensitivityDefault':
+    '- リスク評価済みの脅威が 1 件も無いアセットは sensitivity を既定 `medium` としている。',
   'report.dcrh.openQuestions.entryPoint':
     '- entry point は脅威が紐づくデータフローのみを列挙（未割当のエッジは省略）。',
   'report.dcrh.openQuestions.section8':

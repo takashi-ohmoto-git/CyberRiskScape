@@ -211,6 +211,45 @@ describe('toJson', () => {
     });
     expect(toCsv(report)).not.toContain('damage');
   });
+
+  it('ルール由来の根拠フィールドを JSON に出し、CSV の 15 列は変えない', () => {
+    const rich: ThreatView = {
+      ...DETECTED,
+      canonicalId: 'prompt-injection',
+      isCustom: true,
+      mitigationTiers: { foundation: '入力検証', advanced: 'プロベナンス記録' },
+      complianceRefs: [{ standard: 'NIST AI RMF', ref: 'GOVERN 1.1' }],
+      references: [{ title: 'OWASP LLM Top 10', url: 'https://example.com/llm01' }],
+      corroboration: { ruleIds: ['rule-a-n1', 'rule-b-n1'], frameworks: ['AgenticAI', 'AI'] },
+      assumptionFlags: ['attackSurface'],
+    };
+    const report = buildThreatReport(input([rich]));
+    const row = JSON.parse(toJson(report)).threats[0];
+    expect(row.canonicalId).toBe('prompt-injection');
+    expect(row.isCustom).toBe(true);
+    expect(row.mitigationTiers).toEqual({ foundation: '入力検証', advanced: 'プロベナンス記録' });
+    expect(row.complianceRefs).toEqual([{ standard: 'NIST AI RMF', ref: 'GOVERN 1.1' }]);
+    expect(row.references).toEqual([
+      { title: 'OWASP LLM Top 10', url: 'https://example.com/llm01' },
+    ]);
+    expect(row.corroboration).toEqual({
+      ruleIds: ['rule-a-n1', 'rule-b-n1'],
+      frameworks: ['AgenticAI', 'AI'],
+    });
+    expect(row.assumptionFlags).toEqual(['attackSurface']);
+
+    // CSV は 15 列のまま（列の増減がないこと＝v2 の下流を壊さない）。
+    const lines = toCsv(report).split('\r\n');
+    const header = lines.find((l) => l.startsWith('ID,'));
+    expect(header?.split(',')).toHaveLength(15);
+    expect(toCsv(report)).not.toContain('GOVERN 1.1');
+  });
+
+  it('根拠フィールドを持たない脅威では各キーが undefined（JSON に出ない）', () => {
+    const json = toJson(buildThreatReport(input([DETECTED])));
+    expect(json).not.toContain('complianceRefs');
+    expect(json).not.toContain('canonicalId');
+  });
 });
 
 // ─── DCRH（Anthropic 公式 THREAT_MODEL.md）エクスポート ──────────────
@@ -252,6 +291,17 @@ describe('toDCRHThreatModelMarkdown', () => {
       { ...input(threats), edges: EDGES },
       date,
     );
+  }
+
+  /** section 2 のデータ行（asset / description / sensitivity）を抽出。 */
+  function assetRows(text: string): string[][] {
+    const lines = text.split('\n');
+    const start = lines.findIndex((l) => l === '## 2. Assets');
+    const end = lines.findIndex((l, i) => i > start && l.startsWith('## 3.'));
+    return lines
+      .slice(start, end)
+      .filter((l) => l.startsWith('| ') && !l.startsWith('| asset') && !l.startsWith('|---'))
+      .map((l) => l.slice(2, -2).split(' | '));
   }
 
   /** section 4 のデータ行（| T... で始まる行）を抽出。 */
@@ -306,7 +356,11 @@ describe('toDCRHThreatModelMarkdown', () => {
       expect(LIKELIHOOD.has(likelihood)).toBe(true);
       expect(STATUS.has(status)).toBe(true);
     }
-    // sensitivity は section 2 で常に medium。
+    // sensitivity（section 2）も許容集合に収まる。未評価なので既定 medium。
+    const SENSITIVITY = new Set(['low', 'medium', 'high', 'critical']);
+    for (const cols of assetRows(md([T_HIGH, T_CRIT, T_EDGE]))) {
+      expect(SENSITIVITY.has(cols[2])).toBe(true);
+    }
     expect(md([T_HIGH])).toMatch(/\| medium \|$/m);
   });
 
@@ -469,5 +523,75 @@ describe('toDCRHThreatModelMarkdown', () => {
     toDCRHThreatModelMarkdown({ ...input(arr), edges: EDGES }, '2026-06-29');
     expect(JSON.stringify(arr)).toBe(snapshot);
     expect(arr[0].id).toBe('r-high'); // Tn 採番はローカルラベルに限定
+  });
+
+  // ── section 2 sensitivity（Damage 由来・アセット単位で最大値） ──
+
+  it('sensitivity は Damage から引く（1=low / 2=medium / 3=high）', () => {
+    const scored = (damage: 1 | 2 | 3): ThreatView => ({
+      ...T_HIGH,
+      risk: { damage, affectedUsers: 1, reproducibility: 1, exploitability: 1, at: 1 },
+    });
+    expect(assetRows(md([scored(1)]))[0]).toEqual(['C1 GPT', 'LLM', 'low']);
+    expect(assetRows(md([scored(2)]))[0]).toEqual(['C1 GPT', 'LLM', 'medium']);
+    expect(assetRows(md([scored(3)]))[0]).toEqual(['C1 GPT', 'LLM', 'high']);
+  });
+
+  it('同一アセットに複数の評価があるときは Damage の最大値を採る', () => {
+    const low: ThreatView = {
+      ...T_HIGH,
+      id: 'r-low',
+      risk: { damage: 1, affectedUsers: 1, reproducibility: 1, exploitability: 1, at: 1 },
+    };
+    const high: ThreatView = {
+      ...T_HIGH,
+      id: 'r-hi',
+      risk: { damage: 3, affectedUsers: 1, reproducibility: 1, exploitability: 1, at: 2 },
+    };
+    // 並び順に依存しないこと（低い方を後に評価しても下がらない）。
+    expect(assetRows(md([low, high]))[0][2]).toBe('high');
+    expect(assetRows(md([high, low]))[0][2]).toBe('high');
+  });
+
+  it('エッジ起点の脅威は到達先ノードの sensitivity に効く', () => {
+    const edgeScored: ThreatView = {
+      ...T_EDGE,
+      risk: { damage: 3, affectedUsers: 1, reproducibility: 1, exploitability: 1, at: 1 },
+    };
+    const rows = assetRows(md([edgeScored]));
+    expect(rows[0]).toEqual(['C1 GPT', 'LLM', 'medium']); // 起点ノードは据え置き
+    expect(rows[1]).toEqual(['C2 DB', 'DB', 'high']); // 到達先 n2 に効く
+  });
+
+  it('section 5 送り（誤検知 / 適用外）の Damage は sensitivity に数えない', () => {
+    const fp: ThreatView = {
+      ...T_HIGH,
+      suppression: { status: 'false-positive', at: 1 },
+      risk: { damage: 3, affectedUsers: 1, reproducibility: 1, exploitability: 1, at: 1 },
+    };
+    const na: ThreatView = {
+      ...T_HIGH,
+      id: 'r-na',
+      controlStatus: { status: 'not-applicable', note: '該当なし', at: 1 },
+      risk: { damage: 3, affectedUsers: 1, reproducibility: 1, exploitability: 1, at: 1 },
+    };
+    expect(assetRows(md([fp, na]))[0][2]).toBe('medium');
+  });
+
+  it('未評価アセットは medium ＋ section 6 に既定値の注記を出す', () => {
+    const text = md([T_HIGH]);
+    expect(assetRows(text)[0][2]).toBe('medium');
+    expect(text).toContain('sensitivity を既定 `medium` としている');
+  });
+
+  it('全アセットが評価済みなら既定値の注記は出ない', () => {
+    const r = { affectedUsers: 1, reproducibility: 1, exploitability: 1, at: 1 } as const;
+    const n1: ThreatView = { ...T_HIGH, risk: { damage: 2, ...r } };
+    const n2: ThreatView = { ...T_CRIT, risk: { damage: 3, ...r } };
+    const text = md([n1, n2]);
+    expect(assetRows(text).map((c) => c[2])).toEqual(['medium', 'high']);
+    expect(text).not.toContain('sensitivity を既定 `medium` としている');
+    // 由来の説明そのものは常に出す。
+    expect(text).toContain('Damage の最大値から推定');
   });
 });

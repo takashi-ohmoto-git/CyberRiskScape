@@ -63,7 +63,9 @@ export const enReport: Partial<Record<TranslationKey, string>> = {
   'report.dcrh.openQuestions.evidence':
     '- evidence (CVE / finding links, etc.) is always blank; this tool does not retain it.',
   'report.dcrh.openQuestions.sensitivity':
-    '- sensitivity defaults to `medium` for all assets, as no corresponding data exists.',
+    '- sensitivity is derived from the highest Damage score among the threats mapped to that asset (1=low / 2=medium / 3=high); `critical` is never emitted.',
+  'report.dcrh.openQuestions.sensitivityDefault':
+    '- assets with no scored threats fall back to `medium` for sensitivity.',
   'report.dcrh.openQuestions.entryPoint':
     '- entry points list only data flows linked to a threat (unassigned edges are omitted).',
   'report.dcrh.openQuestions.section8':
