@@ -1,7 +1,7 @@
 {
   "name": "cyberriskscape",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Visual threat modeling tool covering AI, LLM, agentic systems, and post-quantum cryptography",
   "license": "Apache-2.0",
   "type": "module",
