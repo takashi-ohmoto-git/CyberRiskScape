@@ -45,6 +45,14 @@ export const jaReport = {
 
   // ── DCRH（Anthropic 公式 THREAT_MODEL.md）出力 ──
   // {name}=システム名, {brand}=BRANDING.name
+  'report.csv.inventory.heading': '認証基盤インベントリ',
+  'report.csv.inventory.col.provider': '発行元',
+  'report.csv.inventory.col.kind': '種別',
+  'report.csv.inventory.col.dependentCount': '依存先件数',
+  'report.csv.inventory.col.dependents': '依存先',
+  'report.csv.inventory.col.peerCount': '直接接続件数',
+  'report.csv.inventory.col.peers': '直接接続',
+
   'report.dcrh.defaultContext': '{name} の脅威モデル（{brand} からエクスポート）。',
   'report.dcrh.businessImpactLine': 'ビジネスインパクト：{value}',
   'report.dcrh.securityObjectivesLine': 'セキュリティ目標：{value}',

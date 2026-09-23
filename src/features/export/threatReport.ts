@@ -6,6 +6,7 @@ import type {
   DiagramNode,
   Framework,
   FrameworkView,
+  IdentityProviderKind,
   LayerKey,
   ProjectMeta,
   RiskScore,
@@ -18,6 +19,7 @@ import type {
   MitigationTiers,
   Reference,
 } from '../../threat-library/schema/threatRule';
+import { buildIdentityInventory } from '../analytics/buildIdentityInventory';
 import { formatElementalId } from '../../core/model/elementalId';
 import { BRANDING } from '../../core/branding';
 import { effectiveSeverity, impactLevel, likelihoodLevel, type AxisLevel } from '../../core/model/risk';
@@ -40,7 +42,9 @@ import { getLocale, translate, type Locale, type TranslationKey } from '../../i1
  * v2 で severity 2 列化 ＋ name / impact / likelihood / controlStatus / risk を追加。
  * v3 でルール由来の根拠フィールド（mitigationTiers / complianceRefs / references /
  * corroboration / assumptionFlags / isCustom / canonicalId）を**JSON にのみ**追加。
- * **CSV の 15 列は v2 から不変**（追加は JSON の後方互換な増分で、v2 の読み手は影響を受けない）。
+ * **脅威表の CSV 15 列は v2 から不変**（追加は JSON の後方互換な増分で、v2 の読み手は影響を受けない）。
+ * v3 ではあわせて認証基盤インベントリを追加した（CSV は脅威表の後ろの第 2 ブロック、
+ * JSON は `identityInventory` キー）。
  */
 export const THREAT_REPORT_SCHEMA_VERSION = 3 as const;
 export const THREAT_REPORT_KIND = 'cyberriskscape-threat-report' as const;
@@ -97,11 +101,31 @@ export interface ThreatReportRow {
   canonicalId?: string;
 }
 
+/**
+ * 認証基盤インベントリの 1 行（発行元 1 件＝1 行）。[[plan]] §2.40 ②。
+ *
+ * 脅威表（1 脅威＝1 行）とは粒度が違うため**列には混ぜず**、CSV では脅威表の後ろの
+ * 第 2 ブロック、JSON では別キーとして出す。DCRH には出さない（section 構成が下流との契約）。
+ * `dependents` / `directPeers` は CSV では `; ` 連結、JSON では配列のまま。
+ */
+export interface IdentityInventoryReportRow {
+  /** 発行元ノード：ElementalID ＋ラベル。 */
+  provider: string;
+  /** 発行元の種別（生値。未設定は空）。Impact / Likelihood 列と同じく翻訳しない。 */
+  kind: IdentityProviderKind | '';
+  /** Tier 1：この発行元を `authProviderId` で宣言しているエッジの接続先。 */
+  dependents: string[];
+  /** Tier 2：実エッジで直接つながる相手（Tier 1 と重複しない）。 */
+  directPeers: string[];
+}
+
 export interface ThreatReport {
   project: ProjectMeta;
   framework: FrameworkView;
   layer: LayerKey;
   rows: ThreatReportRow[];
+  /** 認証基盤インベントリ。発行元になり得るノードが無ければ空配列。 */
+  identityInventory: IdentityInventoryReportRow[];
 }
 
 export interface BuildThreatReportInput {
@@ -228,7 +252,16 @@ export function buildThreatReport({
     isCustom: t.isCustom,
     canonicalId: t.canonicalId,
   }));
-  return { project: projectMeta, framework, layer, rows };
+  // 認証基盤インベントリ（`authProviderId` 参照からの派生ビュー。新しいデータは持たない）。
+  const identityInventory: IdentityInventoryReportRow[] = buildIdentityInventory(nodes, edges).map(
+    (r) => ({
+      provider: elementLabel(index, 'node', r.provider.id),
+      kind: r.kind ?? '',
+      dependents: r.dependents.map((n) => elementLabel(index, 'node', n.id)),
+      directPeers: r.directPeers.map((n) => elementLabel(index, 'node', n.id)),
+    }),
+  );
+  return { project: projectMeta, framework, layer, rows, identityInventory };
 }
 
 // ─── シリアライザ ────────────────────────────────────────────
@@ -259,6 +292,19 @@ const CSV_COLUMN_KEYS: readonly TranslationKey[] = [
   'report.csv.col.comments',
   'report.csv.col.origin',
 ];
+
+/** 認証基盤インベントリ（第 2 ブロック）の列。脅威表の 15 列とは独立。 */
+const INVENTORY_COLUMN_KEYS: readonly TranslationKey[] = [
+  'report.csv.inventory.col.provider',
+  'report.csv.inventory.col.kind',
+  'report.csv.inventory.col.dependentCount',
+  'report.csv.inventory.col.dependents',
+  'report.csv.inventory.col.peerCount',
+  'report.csv.inventory.col.peers',
+];
+
+/** 依存先／直接接続の CSV 内連結（ロケール非依存。カンマを使わないので引用が増えない）。 */
+const INVENTORY_LIST_SEPARATOR = '; ';
 
 /**
  * レポートを CSV 文字列へ変換する（UTF-8 / CRLF 改行）。
@@ -301,6 +347,29 @@ export function toCsv(report: ThreatReport): string {
       ]),
     );
   }
+  // 第 2 ブロック：認証基盤インベントリ（発行元が 1 件も無い図では丸ごと出さない）。
+  if (report.identityInventory.length > 0) {
+    lines.push(
+      '',
+      csvRow([
+        translate('report.csv.inventory.heading', locale),
+        String(report.identityInventory.length),
+      ]),
+      csvRow(INVENTORY_COLUMN_KEYS.map((k) => translate(k, locale))),
+    );
+    for (const r of report.identityInventory) {
+      lines.push(
+        csvRow([
+          r.provider,
+          r.kind,
+          String(r.dependents.length),
+          r.dependents.join(INVENTORY_LIST_SEPARATOR),
+          String(r.directPeers.length),
+          r.directPeers.join(INVENTORY_LIST_SEPARATOR),
+        ]),
+      );
+    }
+  }
   return lines.join('\r\n');
 }
 
@@ -314,6 +383,7 @@ export function toJson(report: ThreatReport): string {
       layer: report.layer,
       project: report.project,
       threats: report.rows,
+      identityInventory: report.identityInventory,
     },
     null,
     2,

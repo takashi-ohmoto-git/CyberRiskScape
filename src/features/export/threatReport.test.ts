@@ -595,3 +595,87 @@ describe('toDCRHThreatModelMarkdown', () => {
     expect(text).toContain('Damage の最大値から推定');
   });
 });
+
+// ─── 認証基盤インベントリ（第 2 ブロック / JSON 別キー） ──────────────
+describe('identityInventory', () => {
+  const IDP: DiagramNode = {
+    id: 'idp',
+    seq: 3,
+    type: 'IDENTITY_PROVIDER',
+    x: 0,
+    y: 0,
+    label: 'Entra ID',
+    identityProviderKind: 'IDaaS',
+  };
+  const APP: DiagramNode = { id: 'app', seq: 4, type: 'PROCESS', x: 0, y: 0, label: '業務アプリ' };
+  // e1: app が idp を発行元として宣言（Tier 1）。e2: idp と n2(DB) が直接つながる（Tier 2）。
+  const EDGES: DiagramEdge[] = [
+    { id: 'e1', seq: 1, source: 'n1', target: 'app', auth: 'MFA', network: 'VPC', encryption: 'TLS', authProviderId: 'idp' },
+    { id: 'e2', seq: 2, source: 'idp', target: 'n2', auth: 'MFA', network: 'VPC', encryption: 'TLS' },
+  ];
+  const withIdp: BuildThreatReportInput = {
+    ...input([DETECTED]),
+    nodes: [...NODES, IDP, APP],
+    edges: EDGES,
+  };
+
+  it('発行元 1 件＝1 行で Tier 1 / Tier 2 を解決する', () => {
+    const inv = buildThreatReport(withIdp).identityInventory;
+    expect(inv).toHaveLength(1);
+    expect(inv[0].provider).toBe('C3 Entra ID');
+    expect(inv[0].kind).toBe('IDaaS');
+    expect(inv[0].dependents).toEqual(['C4 業務アプリ']);
+    expect(inv[0].directPeers).toEqual(['C2 DB']);
+  });
+
+  it('発行元になり得るノードが無ければ空配列で、CSV に第 2 ブロックを出さない', () => {
+    const report = buildThreatReport(input([DETECTED]));
+    expect(report.identityInventory).toEqual([]);
+    expect(toCsv(report)).not.toContain('認証基盤インベントリ');
+  });
+
+  it('CSV は脅威表の後ろに見出し → ヘッダ → 行の順で出す', () => {
+    const lines = toCsv(buildThreatReport(withIdp)).split('\r\n');
+    const threatHeader = lines.findIndex((l) => l.startsWith('ID,'));
+    const invHeading = lines.indexOf('認証基盤インベントリ,1');
+    expect(invHeading).toBeGreaterThan(threatHeader);
+    expect(lines[invHeading - 1]).toBe(''); // 空行で区切る
+    expect(lines[invHeading + 1]).toBe('発行元,種別,依存先件数,依存先,直接接続件数,直接接続');
+    expect(lines[invHeading + 2]).toBe('C3 Entra ID,IDaaS,1,C4 業務アプリ,1,C2 DB');
+  });
+
+  it('依存先が複数のときは `; ` で連結する', () => {
+    const app2: DiagramNode = { id: 'app2', seq: 5, type: 'PROCESS', x: 0, y: 0, label: 'アプリ B' };
+    const e3: DiagramEdge = { id: 'e3', seq: 3, source: 'n1', target: 'app2', auth: 'MFA', network: 'VPC', encryption: 'TLS', authProviderId: 'idp' };
+    const inv = buildThreatReport({
+      ...withIdp,
+      nodes: [...withIdp.nodes, app2],
+      edges: [...EDGES, e3],
+    }).identityInventory;
+    expect(inv[0].dependents).toEqual(['C4 業務アプリ', 'C5 アプリ B']);
+    const lines = toCsv(buildThreatReport({
+      ...withIdp,
+      nodes: [...withIdp.nodes, app2],
+      edges: [...EDGES, e3],
+    })).split('\r\n');
+    expect(lines.some((l) => l.includes('C4 業務アプリ; C5 アプリ B'))).toBe(true);
+  });
+
+  it('JSON は配列のまま identityInventory に出す', () => {
+    const json = JSON.parse(toJson(buildThreatReport(withIdp)));
+    expect(json.identityInventory).toEqual([
+      {
+        provider: 'C3 Entra ID',
+        kind: 'IDaaS',
+        dependents: ['C4 業務アプリ'],
+        directPeers: ['C2 DB'],
+      },
+    ]);
+  });
+
+  it('DCRH には出さない（section 構成は下流との契約）', () => {
+    const md = toDCRHThreatModelMarkdown(withIdp, '2026-09-23');
+    expect(md).not.toContain('認証基盤インベントリ');
+    expect(md).not.toContain('Identity provider inventory');
+  });
+});

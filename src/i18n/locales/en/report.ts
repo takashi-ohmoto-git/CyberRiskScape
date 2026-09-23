@@ -47,6 +47,14 @@ export const enReport: Partial<Record<TranslationKey, string>> = {
   'report.csv.meta.threatCount': 'Threat count',
 
   // ── DCRH (Anthropic official THREAT_MODEL.md) output ──
+  'report.csv.inventory.heading': 'Identity provider inventory',
+  'report.csv.inventory.col.provider': 'Provider',
+  'report.csv.inventory.col.kind': 'Kind',
+  'report.csv.inventory.col.dependentCount': 'Dependent count',
+  'report.csv.inventory.col.dependents': 'Dependents',
+  'report.csv.inventory.col.peerCount': 'Direct peer count',
+  'report.csv.inventory.col.peers': 'Direct peers',
+
   'report.dcrh.defaultContext': 'Threat model for {name} (exported from {brand}).',
   'report.dcrh.businessImpactLine': 'Business impact: {value}',
   'report.dcrh.securityObjectivesLine': 'Security objectives: {value}',
