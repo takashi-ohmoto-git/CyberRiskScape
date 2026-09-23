@@ -1,9 +1,11 @@
 import { create } from 'zustand';
 import type {
+  AnnotationKind,
   BoundaryTypeId,
   ComponentTypeId,
   ControlStatusState,
   ControlStatusValue,
+  DiagramAnnotation,
   DiagramBoundary,
   DiagramEdge,
   DiagramNode,
@@ -29,6 +31,7 @@ import type {
 import { EMPTY_LAYER, EMPTY_PROJECT_META } from '../model/types';
 import { getNodeDimensions } from '../canvas/nodeGeometry';
 import { IDENTITY_VIEWPORT, ZOOM_STEP, computeFit, zoomAtPoint } from '../canvas/viewport';
+import { getLocale, translate } from '../../i18n';
 
 /** 全レイヤー空の手動脅威 Record を新規生成する（初期化 / hydrate 用）。 */
 const emptyManualThreats = (): Record<LayerKey, ManualThreat[]> => ({
@@ -119,6 +122,7 @@ const INITIAL_L1: LayerData = {
       trustLevel: 'Internal',
     },
   ],
+  annotations: [],
 };
 
 export const INITIAL_LAYERS: Record<LayerKey, LayerData> = {
@@ -234,6 +238,8 @@ export const selectActiveEdges = (s: DiagramState): DiagramEdge[] =>
   s.layers[s.activeLayer].edges;
 export const selectActiveBoundaries = (s: DiagramState): DiagramBoundary[] =>
   s.layers[s.activeLayer].boundaries;
+export const selectActiveAnnotations = (s: DiagramState): DiagramAnnotation[] =>
+  s.layers[s.activeLayer].annotations;
 export const selectActiveManualThreats = (s: DiagramState): ManualThreat[] =>
   s.manualThreats[s.activeLayer];
 export const selectCanUndo = (s: DiagramState): boolean => s.past.length > 0;
@@ -387,10 +393,13 @@ interface DiagramState {
   selectedEdgeId: string | null;
   /** 選択中境界（複数）。パネル表示は selectPrimaryBoundaryId 経由で 1 個時のみ。 */
   selectedBoundaryIds: string[];
+  /** 選択中の注釈（単一、[[plan]] §2.48）。他の選択（ノード/エッジ/境界）とは排他。 */
+  selectedAnnotationId: string | null;
 
   // ---- interaction (transient) ----
   draggingNode: DragState | null;
   draggingBoundary: DragState | null;
+  draggingAnnotation: DragState | null;
   resizingBoundary: ResizeState | null;
   /** 複数ノードのグループ移動中の状態（単一ドラッグは draggingNode を使う）。 */
   draggingGroup: GroupDragState | null;
@@ -445,6 +454,16 @@ interface DiagramState {
   ) => void;
   reorderBoundary: (id: string, action: ReorderAction) => void;
 
+  // ---- actions: annotations（[[plan]] §2.48） ----
+  /** ビューポート中央付近のワールド座標へ新規注釈を追加する。 */
+  addAnnotation: (kind: AnnotationKind) => void;
+  updateAnnotation: <K extends keyof DiagramAnnotation>(
+    id: string,
+    field: K,
+    value: DiagramAnnotation[K],
+  ) => void;
+  deleteAnnotation: (id: string) => void;
+
   // ---- actions: mode ----
   setActiveFramework: (f: FrameworkView) => void;
   toggleFocusMode: () => void;
@@ -474,6 +493,8 @@ interface DiagramState {
   /** Shift+クリック：id の選択を反転（追加 / 解除）。 */
   toggleNodeSelection: (id: string) => void;
   selectEdge: (id: string) => void;
+  /** 注釈を単独選択する（[[plan]] §2.48）。他の選択（ノード/エッジ/境界）はクリア。 */
+  selectAnnotation: (id: string) => void;
   clearSelection: () => void;
 
   // ---- actions: linking ----
@@ -545,6 +566,8 @@ interface DiagramState {
     clientX: number,
     clientY: number,
   ) => void;
+  /** 注釈の単独選択＋ドラッグ開始（[[plan]] §2.48）。 */
+  beginAnnotationInteraction: (annotationId: string, clientX: number, clientY: number) => void;
   setNodePosition: (id: string, x: number, y: number) => void;
   /** 複数ノードの座標を一括更新（グループ移動用）。 */
   setNodesPositions: (updates: { id: string; x: number; y: number }[]) => void;
@@ -552,6 +575,7 @@ interface DiagramState {
   setBoundaryPosition: (id: string, x: number, y: number) => void;
   /** 複数境界の座標を一括更新（グループ移動用）。 */
   setBoundariesPositions: (updates: { id: string; x: number; y: number }[]) => void;
+  setAnnotationPosition: (id: string, x: number, y: number) => void;
   applyBoundaryResizeDelta: (dx: number, dy: number) => void;
   endInteraction: () => void;
 
@@ -609,9 +633,11 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   selectedNodeIds: [],
   selectedEdgeId: null,
   selectedBoundaryIds: [],
+  selectedAnnotationId: null,
 
   draggingNode: null,
   draggingBoundary: null,
+  draggingAnnotation: null,
   resizingBoundary: null,
   draggingGroup: null,
   marquee: null,
@@ -642,6 +668,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       selectedNodeIds: [],
       selectedEdgeId: null,
       selectedBoundaryIds: [],
+      selectedAnnotationId: null,
       // ロードは履歴のリセット起点
       past: [],
       future: [],
@@ -672,6 +699,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
         selectedNodeIds: [],
         selectedEdgeId: null,
         selectedBoundaryIds: [],
+        selectedAnnotationId: null,
         _commitTag: null,
         _dragArmed: false,
       };
@@ -688,6 +716,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
         selectedNodeIds: [],
         selectedEdgeId: null,
         selectedBoundaryIds: [],
+        selectedAnnotationId: null,
         _commitTag: null,
         _dragArmed: false,
       };
@@ -774,6 +803,13 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
           delete rest.authProviderId;
           return rest;
         }),
+        // 削除対象をリンク先にしていた注釈の targetNodeId も解除する（注釈自体は残す。[[plan]] §2.48）。
+        annotations: l.annotations.map((a) => {
+          if (a.targetNodeId !== id) return a;
+          const rest = { ...a };
+          delete rest.targetNodeId;
+          return rest;
+        }),
       })),
       selectedNodeIds: s.selectedNodeIds.filter((nid) => nid !== id),
     }));
@@ -845,6 +881,47 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     });
   },
 
+  addAnnotation: (kind) => {
+    get().recordHistory();
+    set((s) => {
+      // ビューポート中央付近のワールド座標へ配置。
+      const cx = (s.canvasSize.width / 2 - s.viewport.tx) / s.viewport.scale;
+      const cy = (s.canvasSize.height / 2 - s.viewport.ty) / s.viewport.scale;
+      const locale = getLocale();
+      const text = translate(
+        kind === 'label' ? 'canvas.annotation.defaultLabelText' : 'canvas.annotation.defaultCalloutText',
+        locale,
+      );
+      const annotation: DiagramAnnotation = {
+        id: nextId('ann'),
+        kind,
+        x: cx - 80,
+        y: cy - 20,
+        text,
+      };
+      return withActiveLayer(s, (l) => ({ annotations: [...l.annotations, annotation] }));
+    });
+  },
+
+  updateAnnotation: (id, field, value) => {
+    get().recordHistory(`u:annotation:${id}:${String(field)}`);
+    set((s) =>
+      withActiveLayer(s, (l) => ({
+        annotations: l.annotations.map((a) => (a.id === id ? { ...a, [field]: value } : a)),
+      })),
+    );
+  },
+
+  deleteAnnotation: (id) => {
+    get().recordHistory();
+    set((s) => ({
+      ...withActiveLayer(s, (l) => ({
+        annotations: l.annotations.filter((a) => a.id !== id),
+      })),
+      selectedAnnotationId: s.selectedAnnotationId === id ? null : s.selectedAnnotationId,
+    }));
+  },
+
   setActiveFramework: (f) => set({ activeFramework: f }),
   toggleFocusMode: () => set((s) => ({ isFocusMode: !s.isFocusMode })),
 
@@ -855,6 +932,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       selectedNodeIds: [],
       selectedEdgeId: null,
       selectedBoundaryIds: [],
+      selectedAnnotationId: null,
       linkingFromId: null,
       _commitTag: null,
     }),
@@ -923,7 +1001,8 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       });
 
       return {
-        layers: { ...s.layers, [lk]: { nodes, edges, boundaries } },
+        // テンプレートは注釈を持たない（[[plan]] §2.48）ため、既存の注釈も置換で空にする。
+        layers: { ...s.layers, [lk]: { nodes, edges, boundaries, annotations: [] } },
         idCounters: {
           ...s.idCounters,
           [lk]: { node: nodeSeq, edge: edgeSeq, boundary: boundarySeq },
@@ -931,6 +1010,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
         selectedNodeIds: [],
         selectedEdgeId: null,
         selectedBoundaryIds: [],
+        selectedAnnotationId: null,
         _commitTag: null,
       };
     });
@@ -945,7 +1025,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
         const nodes = renumberKind(l.nodes);
         const edges = renumberKind(l.edges);
         const boundaries = renumberKind(l.boundaries);
-        layers[key] = { nodes, edges, boundaries };
+        layers[key] = { nodes, edges, boundaries, annotations: l.annotations };
         idCounters[key] = {
           node: nodes.length,
           edge: edges.length,
@@ -968,11 +1048,18 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       selectedNodeIds: id ? [id] : [],
       selectedEdgeId: null,
       selectedBoundaryIds: [],
+      selectedAnnotationId: null,
       _commitTag: null,
     }),
 
   setSelectedNodes: (ids) =>
-    set({ selectedNodeIds: ids, selectedEdgeId: null, selectedBoundaryIds: [], _commitTag: null }),
+    set({
+      selectedNodeIds: ids,
+      selectedEdgeId: null,
+      selectedBoundaryIds: [],
+      selectedAnnotationId: null,
+      _commitTag: null,
+    }),
 
   toggleNodeSelection: (id) =>
     set((s) => ({
@@ -980,14 +1067,36 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
         ? s.selectedNodeIds.filter((nid) => nid !== id)
         : [...s.selectedNodeIds, id],
       selectedEdgeId: null,
+      selectedAnnotationId: null,
       _commitTag: null,
     })),
 
   selectEdge: (id) =>
-    set({ selectedEdgeId: id, selectedNodeIds: [], selectedBoundaryIds: [], _commitTag: null }),
+    set({
+      selectedEdgeId: id,
+      selectedNodeIds: [],
+      selectedBoundaryIds: [],
+      selectedAnnotationId: null,
+      _commitTag: null,
+    }),
+
+  selectAnnotation: (id) =>
+    set({
+      selectedAnnotationId: id,
+      selectedNodeIds: [],
+      selectedEdgeId: null,
+      selectedBoundaryIds: [],
+      _commitTag: null,
+    }),
 
   clearSelection: () =>
-    set({ selectedNodeIds: [], selectedEdgeId: null, selectedBoundaryIds: [], _commitTag: null }),
+    set({
+      selectedNodeIds: [],
+      selectedEdgeId: null,
+      selectedBoundaryIds: [],
+      selectedAnnotationId: null,
+      _commitTag: null,
+    }),
 
   setLinkingFromId: (id) => set({ linkingFromId: id }),
 
@@ -1039,6 +1148,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       selectedNodeIds: [],
       selectedEdgeId: null,
       selectedBoundaryIds: [],
+      selectedAnnotationId: null,
       linkingFromId: null,
       viewport: IDENTITY_VIEWPORT,
       // 旧プロジェクトの状態へ Undo で戻れると採番カウンタと矛盾するため履歴をクリア
@@ -1201,6 +1311,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       selectedNodeIds: [nodeId],
       selectedEdgeId: null,
       selectedBoundaryIds: [],
+      selectedAnnotationId: null,
       draggingNode: {
         id: nodeId,
         startClientX: clientX,
@@ -1225,6 +1336,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
           ? s.selectedBoundaryIds.filter((bid) => bid !== boundaryId)
           : [...s.selectedBoundaryIds, boundaryId],
         selectedEdgeId: null,
+        selectedAnnotationId: null,
       });
       return;
     }
@@ -1240,6 +1352,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       selectedBoundaryIds: [boundaryId],
       selectedNodeIds: [],
       selectedEdgeId: null,
+      selectedAnnotationId: null,
       draggingBoundary: {
         id: boundaryId,
         startClientX: clientX,
@@ -1260,6 +1373,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       selectedBoundaryIds: [boundaryId],
       selectedNodeIds: [],
       selectedEdgeId: null,
+      selectedAnnotationId: null,
       _dragArmed: true,
       _commitTag: null,
       resizingBoundary: {
@@ -1274,6 +1388,27 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
           height: boundary.height,
         },
       },
+    });
+  },
+
+  beginAnnotationInteraction: (annotationId, clientX, clientY) => {
+    const s = get();
+    const annotation = s.layers[s.activeLayer].annotations.find((a) => a.id === annotationId);
+    if (!annotation) return;
+    set({
+      selectedAnnotationId: annotationId,
+      selectedNodeIds: [],
+      selectedEdgeId: null,
+      selectedBoundaryIds: [],
+      draggingAnnotation: {
+        id: annotationId,
+        startClientX: clientX,
+        startClientY: clientY,
+        origX: annotation.x,
+        origY: annotation.y,
+      },
+      _dragArmed: true,
+      _commitTag: null,
     });
   },
 
@@ -1348,10 +1483,20 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     );
   },
 
+  setAnnotationPosition: (id, x, y) => {
+    if (get()._dragArmed) get().recordHistory();
+    set((s) =>
+      withActiveLayer(s, (l) => ({
+        annotations: l.annotations.map((a) => (a.id === id ? { ...a, x, y } : a)),
+      })),
+    );
+  },
+
   endInteraction: () =>
     set({
       draggingNode: null,
       draggingBoundary: null,
+      draggingAnnotation: null,
       resizingBoundary: null,
       draggingGroup: null,
       panning: null,
@@ -1365,6 +1510,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       selectedNodeIds: [],
       selectedEdgeId: null,
       selectedBoundaryIds: [],
+      selectedAnnotationId: null,
       marquee: { offsetLeft, offsetTop, startX: x, startY: y, curX: x, curY: y },
     }),
 

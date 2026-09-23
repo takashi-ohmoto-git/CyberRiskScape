@@ -155,4 +155,11 @@ export const enPanels: Partial<Record<TranslationKey, string>> = {
   'panels.boundary.blastRadiusNote':
     'This frame annotates the impact scope of a compromise. It is not a trust boundary, so it does not affect the trust level of the components it encloses, threat detection, or crossing markers.',
   'panels.boundary.networkAddressInvalid': 'Enter CIDR notation (e.g. 10.0.0.0/24)',
+
+  // ── AnnotationPanel ──
+  'panels.annotation.textLabel': 'Text',
+  'panels.annotation.textPlaceholder': 'Enter a description...',
+  'panels.annotation.linkedNodeLabel': 'Linked node',
+  'panels.annotation.linkedNodeUnset': '— Unlinked —',
+  'panels.annotation.deleteButton': 'Delete annotation',
 };

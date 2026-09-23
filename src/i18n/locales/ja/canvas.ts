@@ -28,4 +28,8 @@ export const jaCanvas = {
   'canvas.edgeNotation.crossingAuthNone': '越境：認証なし',
   'canvas.edgeNotation.crossingAuthPassword': '越境：パスワード認証',
   'canvas.edgeNotation.crossingAuthMfa': '越境：多要素認証',
+
+  // ── キャンバス注釈（[[plan]] §2.48） ──
+  'canvas.annotation.defaultLabelText': 'テキストラベル',
+  'canvas.annotation.defaultCalloutText': '吹き出し',
 } as const;

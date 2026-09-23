@@ -157,6 +157,7 @@ export function resolveLayers(loaded: PersistedProject): {
           nodes: data.nodes,
           edges: data.edges as LayerData['edges'],
           boundaries: data.boundaries,
+          annotations: data.annotations ?? [],
         };
         return acc;
       },
@@ -170,6 +171,7 @@ export function resolveLayers(loaded: PersistedProject): {
     nodes: loaded.nodes ?? [],
     edges: (loaded.edges ?? []) as LayerData['edges'],
     boundaries: loaded.boundaries ?? [],
+    annotations: [],
   };
   return {
     layers: { L0: EMPTY_LAYER, L1: migratedL1, L2: EMPTY_LAYER, L3: EMPTY_LAYER },
@@ -241,7 +243,7 @@ export function resolveIdCounters(
     nextLayers[key] =
       n.items === layer.nodes && e.items === layer.edges && b.items === layer.boundaries
         ? layer
-        : { nodes: n.items, edges: e.items, boundaries: b.items };
+        : { nodes: n.items, edges: e.items, boundaries: b.items, annotations: layer.annotations };
     idCounters[key] = { node: n.counter, edge: e.counter, boundary: b.counter };
   }
   return { layers: nextLayers, idCounters };

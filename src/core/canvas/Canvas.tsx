@@ -7,6 +7,7 @@ import {
   directPeersOf,
 } from '../threat-engine/authProviderClosure';
 import {
+  selectActiveAnnotations,
   selectActiveBoundaries,
   selectActiveEdges,
   selectActiveNodes,
@@ -15,6 +16,7 @@ import {
 import { NodeView } from './NodeView';
 import { BoundaryView } from './BoundaryView';
 import { EdgeLayer } from './EdgeLayer';
+import { AnnotationView, AnnotationLeaderLines } from './AnnotationView';
 
 interface CanvasProps {
   threats: ThreatView[];
@@ -25,20 +27,24 @@ export function Canvas({ threats, children }: CanvasProps) {
   const nodes = useDiagramStore(selectActiveNodes);
   const edges = useDiagramStore(selectActiveEdges);
   const boundaries = useDiagramStore(selectActiveBoundaries);
+  const annotations = useDiagramStore(selectActiveAnnotations);
   const selectedNodeIds = useDiagramStore((s) => s.selectedNodeIds);
   const selectedEdgeId = useDiagramStore((s) => s.selectedEdgeId);
   const selectedBoundaryIds = useDiagramStore((s) => s.selectedBoundaryIds);
+  const selectedAnnotationId = useDiagramStore((s) => s.selectedAnnotationId);
   const marquee = useDiagramStore((s) => s.marquee);
   const viewport = useDiagramStore((s) => s.viewport);
 
   const beginNodeInteraction = useDiagramStore((s) => s.beginNodeInteraction);
   const beginBoundaryInteraction = useDiagramStore((s) => s.beginBoundaryInteraction);
   const beginBoundaryResize = useDiagramStore((s) => s.beginBoundaryResize);
+  const beginAnnotationInteraction = useDiagramStore((s) => s.beginAnnotationInteraction);
   const beginMarquee = useDiagramStore((s) => s.beginMarquee);
   const selectNode = useDiagramStore((s) => s.selectNode);
   const selectEdge = useDiagramStore((s) => s.selectEdge);
   const deleteNode = useDiagramStore((s) => s.deleteNode);
   const deleteBoundary = useDiagramStore((s) => s.deleteBoundary);
+  const deleteAnnotation = useDiagramStore((s) => s.deleteAnnotation);
   const linkingFromId = useDiagramStore((s) => s.linkingFromId);
   const setCanvasSize = useDiagramStore((s) => s.setCanvasSize);
   const zoomAtLocal = useDiagramStore((s) => s.zoomAtLocal);
@@ -180,6 +186,11 @@ export function Canvas({ threats, children }: CanvasProps) {
     beginBoundaryResize(boundaryId, handle, e.clientX, e.clientY);
   };
 
+  const onAnnotationMouseDown = (e: MouseEvent, annotationId: string) => {
+    e.stopPropagation();
+    beginAnnotationInteraction(annotationId, e.clientX, e.clientY);
+  };
+
   const cursor = spaceHeld ? 'cursor-grab active:cursor-grabbing' : '';
 
   return (
@@ -226,6 +237,9 @@ export function Canvas({ threats, children }: CanvasProps) {
           onSelectEdge={selectEdge}
         />
 
+        {/* callout の引き出し線。境界/エッジより後、ノード/注釈ボックスより前（[[plan]] §2.48）。 */}
+        <AnnotationLeaderLines annotations={annotations} nodes={nodes} />
+
         {topLevelNodes.map((node) => {
           // 子ノードはキャンバス本体に描画されないため、子に紐づく脅威も親バッジに含めて
           // 可視化する（脅威バッジは内包コンポーネント発の脅威も集約）。
@@ -259,6 +273,16 @@ export function Canvas({ threats, children }: CanvasProps) {
             />
           );
         })}
+
+        {annotations.map((annotation) => (
+          <AnnotationView
+            key={annotation.id}
+            annotation={annotation}
+            isSelected={selectedAnnotationId === annotation.id}
+            onMouseDown={onAnnotationMouseDown}
+            onDelete={deleteAnnotation}
+          />
+        ))}
       </div>
 
       {/* マーキーは main ローカル座標で描画（変換の外側）。内包判定は endMarquee で

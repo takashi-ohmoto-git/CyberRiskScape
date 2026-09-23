@@ -570,4 +570,77 @@ describe('PersistedProjectSchema', () => {
     });
     expect(r.success).toBe(false);
   });
+
+  // ─── layer.annotations（キャンバス注釈、[[plan]] §2.48） ──────────
+  it('layer.annotations: label / callout（targetNodeId 有り）を受理する', () => {
+    const emptyLayer = { nodes: [], edges: [], boundaries: [] };
+    const r = PersistedProjectSchema.safeParse({
+      schemaVersion: PERSISTED_PROJECT_SCHEMA_VERSION,
+      layers: {
+        L0: emptyLayer,
+        L1: {
+          ...emptyLayer,
+          annotations: [
+            { id: 'ann1', kind: 'label', x: 0, y: 0, text: 'この部分は決済フロー' },
+            { id: 'ann2', kind: 'callout', x: 100, y: 100, text: '要注意', targetNodeId: 'n1' },
+          ],
+        },
+        L2: emptyLayer,
+        L3: emptyLayer,
+      },
+      activeLayer: 'L1',
+      activeFramework: 'STRIDE',
+      updatedAt: 0,
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it('layer.annotations を省略しても受理する（後方互換、旧データは注釈なし）', () => {
+    const emptyLayer = { nodes: [], edges: [], boundaries: [] };
+    const r = PersistedProjectSchema.safeParse({
+      schemaVersion: PERSISTED_PROJECT_SCHEMA_VERSION,
+      layers: { L0: emptyLayer, L1: emptyLayer, L2: emptyLayer, L3: emptyLayer },
+      activeLayer: 'L1',
+      activeFramework: 'STRIDE',
+      updatedAt: 0,
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it('layer.annotations: 未知の kind を拒否する', () => {
+    const emptyLayer = { nodes: [], edges: [], boundaries: [] };
+    const r = PersistedProjectSchema.safeParse({
+      schemaVersion: PERSISTED_PROJECT_SCHEMA_VERSION,
+      layers: {
+        L0: emptyLayer,
+        L1: { ...emptyLayer, annotations: [{ id: 'ann1', kind: 'sticky-note', x: 0, y: 0, text: 'x' }] },
+        L2: emptyLayer,
+        L3: emptyLayer,
+      },
+      activeLayer: 'L1',
+      activeFramework: 'STRIDE',
+      updatedAt: 0,
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it('layer.annotations: targetNodeId の空文字を拒否する（未リンクは省略で表す）', () => {
+    const emptyLayer = { nodes: [], edges: [], boundaries: [] };
+    const r = PersistedProjectSchema.safeParse({
+      schemaVersion: PERSISTED_PROJECT_SCHEMA_VERSION,
+      layers: {
+        L0: emptyLayer,
+        L1: {
+          ...emptyLayer,
+          annotations: [{ id: 'ann1', kind: 'callout', x: 0, y: 0, text: 'x', targetNodeId: '' }],
+        },
+        L2: emptyLayer,
+        L3: emptyLayer,
+      },
+      activeLayer: 'L1',
+      activeFramework: 'STRIDE',
+      updatedAt: 0,
+    });
+    expect(r.success).toBe(false);
+  });
 });

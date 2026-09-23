@@ -156,4 +156,11 @@ export const jaPanels = {
   'panels.boundary.blastRadiusPlaceholder': '例: 決済系の侵害範囲',
   'panels.boundary.blastRadiusNote':
     'この枠は侵害時の影響範囲を示す注記です。信頼境界ではないため、囲んだコンポーネントの信頼レベル・脅威検出・越境マーカーには影響しません。',
+
+  // ── AnnotationPanel（[[plan]] §2.48） ──
+  'panels.annotation.textLabel': '本文',
+  'panels.annotation.textPlaceholder': '説明を入力...',
+  'panels.annotation.linkedNodeLabel': 'リンク先ノード',
+  'panels.annotation.linkedNodeUnset': '— 未リンク —',
+  'panels.annotation.deleteButton': '注釈を削除',
 } as const;

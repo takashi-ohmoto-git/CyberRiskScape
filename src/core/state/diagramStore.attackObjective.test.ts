@@ -7,7 +7,7 @@ beforeEach(() => {
   useDiagramStore.setState({
     layers: {
       L0: EMPTY_LAYER,
-      L1: { nodes: [], edges: [], boundaries: [] },
+      L1: { nodes: [], edges: [], boundaries: [], annotations: [] },
       L2: EMPTY_LAYER,
       L3: EMPTY_LAYER,
     },
@@ -65,6 +65,7 @@ describe('attackObjectiveId の参照整合性', () => {
       ],
       edges: [],
       boundaries: [],
+      annotations: [],
     };
     useDiagramStore.getState().importTemplateToActiveLayer(template);
     const imported = nodes();
@@ -81,6 +82,7 @@ describe('attackObjectiveId の参照整合性', () => {
       ],
       edges: [],
       boundaries: [],
+      annotations: [],
     };
     useDiagramStore.getState().importTemplateToActiveLayer(template);
     expect(nodes()[0].attackObjectiveId).toBeUndefined();

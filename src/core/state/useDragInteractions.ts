@@ -14,6 +14,7 @@ export function useDragInteractions(): void {
   // mousemove 毎にオブジェクトが変わるため、購読すると毎フレーム再登録になってしまう）。
   const isDraggingNode = useDiagramStore((s) => s.draggingNode !== null);
   const isDraggingBoundary = useDiagramStore((s) => s.draggingBoundary !== null);
+  const isDraggingAnnotation = useDiagramStore((s) => s.draggingAnnotation !== null);
   const isResizing = useDiagramStore((s) => s.resizingBoundary !== null);
   const isDraggingGroup = useDiagramStore((s) => s.draggingGroup !== null);
   const isMarquee = useDiagramStore((s) => s.marquee !== null);
@@ -23,6 +24,7 @@ export function useDragInteractions(): void {
     if (
       !isDraggingNode &&
       !isDraggingBoundary &&
+      !isDraggingAnnotation &&
       !isResizing &&
       !isDraggingGroup &&
       !isMarquee &&
@@ -49,6 +51,13 @@ export function useDragInteractions(): void {
           s.draggingBoundary.id,
           s.draggingBoundary.origX + (e.clientX - s.draggingBoundary.startClientX) / scale,
           s.draggingBoundary.origY + (e.clientY - s.draggingBoundary.startClientY) / scale,
+        );
+      }
+      if (s.draggingAnnotation) {
+        s.setAnnotationPosition(
+          s.draggingAnnotation.id,
+          s.draggingAnnotation.origX + (e.clientX - s.draggingAnnotation.startClientX) / scale,
+          s.draggingAnnotation.origY + (e.clientY - s.draggingAnnotation.startClientY) / scale,
         );
       }
       if (s.resizingBoundary) {
@@ -100,5 +109,13 @@ export function useDragInteractions(): void {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDraggingNode, isDraggingBoundary, isResizing, isDraggingGroup, isMarquee, isPanning]);
+  }, [
+    isDraggingNode,
+    isDraggingBoundary,
+    isDraggingAnnotation,
+    isResizing,
+    isDraggingGroup,
+    isMarquee,
+    isPanning,
+  ]);
 }

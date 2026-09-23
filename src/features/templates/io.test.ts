@@ -22,6 +22,7 @@ const LAYER: LayerData = {
   boundaries: [
     { id: 'b1', seq: 1, type: 'ROUNDED_DASHED', x: 0, y: 0, width: 600, height: 250, trustLevel: 'Internal' },
   ],
+  annotations: [],
 };
 
 describe('serializeTemplateToJson', () => {

@@ -9,11 +9,13 @@ import {
   Layers3,
   Library as LibraryIcon,
   Lock,
+  MessageSquare,
   Minus,
   Pencil,
   Plus,
   Save,
   Square,
+  Type,
   type LucideIcon,
 } from 'lucide-react';
 import type { BoundaryTypeId, LayerKey, ThreatView } from '../core/model/types';
@@ -34,6 +36,7 @@ import { triggerDownload } from '../features/export/download';
 import { useLocale, useT, type TranslationKey } from '../i18n';
 
 const BOUNDARY_SECTION_KEY = 'BOUNDARIES';
+const ANNOTATION_SECTION_KEY = 'ANNOTATIONS';
 const LIBRARY_MANAGER_KEY = '__LIBRARY_MANAGER__';
 const PROJECT_SECTION_KEY = '__PROJECT__';
 const LAYER_SUBMENU_KEY = '__LAYERS__';
@@ -63,6 +66,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
   const [locale] = useLocale();
   const addNode = useDiagramStore((s) => s.addNode);
   const addBoundary = useDiagramStore((s) => s.addBoundary);
+  const addAnnotation = useDiagramStore((s) => s.addAnnotation);
   const disabledLibraryIds = useDiagramStore((s) => s.disabledLibraryIds);
   const toggleLibrary = useDiagramStore((s) => s.toggleLibrary);
   const openProjectEdit = useDiagramStore((s) => s.openProjectEdit);
@@ -358,6 +362,41 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                   <Plus size={12} className="ml-auto opacity-40 group-hover:opacity-100" />
                 </button>
               ))}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <button
+            onClick={() => toggleSection(ANNOTATION_SECTION_KEY)}
+            className="w-full flex items-center justify-between text-xs text-slate-500 hover:text-slate-300 font-bold uppercase mb-2 transition-colors"
+            aria-expanded={openSections.has(ANNOTATION_SECTION_KEY)}
+          >
+            <span>{t('project.sidebar.annotationsSection')}</span>
+            {renderToggleIcon(openSections.has(ANNOTATION_SECTION_KEY))}
+          </button>
+          {openSections.has(ANNOTATION_SECTION_KEY) && (
+            <div className="space-y-1.5">
+              <button
+                onClick={() => addAnnotation('label')}
+                className="w-full flex items-center gap-3 p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-all border border-slate-700 text-xs font-bold group"
+              >
+                <div className="bg-slate-600 p-1.5 rounded-md">
+                  <Type size={14} />
+                </div>
+                {t('project.sidebar.addLabel')}
+                <Plus size={12} className="ml-auto opacity-40 group-hover:opacity-100" />
+              </button>
+              <button
+                onClick={() => addAnnotation('callout')}
+                className="w-full flex items-center gap-3 p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-all border border-slate-700 text-xs font-bold group"
+              >
+                <div className="bg-slate-600 p-1.5 rounded-md">
+                  <MessageSquare size={14} />
+                </div>
+                {t('project.sidebar.addCallout')}
+                <Plus size={12} className="ml-auto opacity-40 group-hover:opacity-100" />
+              </button>
             </div>
           )}
         </div>

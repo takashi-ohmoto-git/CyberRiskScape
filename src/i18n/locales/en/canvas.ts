@@ -27,4 +27,8 @@ export const enCanvas: Partial<Record<TranslationKey, string>> = {
   'canvas.edgeNotation.crossingAuthNone': 'Crossing: unauthenticated',
   'canvas.edgeNotation.crossingAuthPassword': 'Crossing: password',
   'canvas.edgeNotation.crossingAuthMfa': 'Crossing: MFA',
+
+  // ── Canvas annotations ──
+  'canvas.annotation.defaultLabelText': 'Text label',
+  'canvas.annotation.defaultCalloutText': 'Callout',
 };

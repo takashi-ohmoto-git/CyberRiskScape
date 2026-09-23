@@ -12,7 +12,7 @@ beforeEach(() => {
   useDiagramStore.setState({
     layers: {
       L0: EMPTY_LAYER,
-      L1: { nodes: [], edges: [], boundaries: [] },
+      L1: { nodes: [], edges: [], boundaries: [], annotations: [] },
       L2: EMPTY_LAYER,
       L3: EMPTY_LAYER,
     },

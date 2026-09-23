@@ -304,14 +304,39 @@ export type SeqCounters = Record<ElementKind, number>;
 /** レイヤー別の採番カウンタ。各レイヤーが独立した連番空間を持つ。 */
 export type LayerSeqCounters = Record<LayerKey, SeqCounters>;
 
+/**
+ * キャンバス注釈の種類（[[plan]] §2.48）。
+ * - label: 枠なしのテキストラベル
+ * - callout: 枠付きの吹き出し（ノードへのリンク可）
+ */
+export type AnnotationKind = 'label' | 'callout';
+
+/**
+ * キャンバス注釈（テキストラベル／吹き出し）。脅威判定の対象外の描画要素で、
+ * 境界と同様に `LayerData.annotations` に置く（[[plan]] §2.48）。
+ * ElementalID（seq）は振らない。
+ */
+export interface DiagramAnnotation {
+  id: string;
+  kind: AnnotationKind;
+  /** 左上（ワールド座標）。 */
+  x: number;
+  y: number;
+  /** プレーンテキスト（改行可）。 */
+  text: string;
+  /** callout のみ。リンク先ノード ID（同一レイヤー）。 */
+  targetNodeId?: string;
+}
+
 /** 1 レイヤー分のダイアグラムデータ。 */
 export interface LayerData {
   nodes: DiagramNode[];
   edges: DiagramEdge[];
   boundaries: DiagramBoundary[];
+  annotations: DiagramAnnotation[];
 }
 
-export const EMPTY_LAYER: LayerData = { nodes: [], edges: [], boundaries: [] };
+export const EMPTY_LAYER: LayerData = { nodes: [], edges: [], boundaries: [], annotations: [] };
 
 /**
  * プロジェクト概要メタデータ。`docs/strategy.md` の想定利用シナリオで

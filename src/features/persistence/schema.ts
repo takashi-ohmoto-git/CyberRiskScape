@@ -166,10 +166,28 @@ const PersistedProjectMetaSchema = z.object({
   securityObjectives: z.string().max(2000).default(''),
 });
 
+const AnnotationKindSchema = z.enum(['label', 'callout']);
+
+/**
+ * キャンバス注釈（テキストラベル／吹き出し、[[plan]] §2.48）。旧データには存在しない
+ * フィールドのため `PersistedLayerDataSchema` 側で optional にし、schemaVersion は据え置き。
+ */
+const PersistedAnnotationSchema = z.object({
+  id: z.string().min(1),
+  kind: AnnotationKindSchema,
+  x: z.number(),
+  y: z.number(),
+  text: z.string(),
+  /** callout のみ。リンク先ノード id（同一レイヤー）。参照先削除時は store 側で解除される。 */
+  targetNodeId: z.string().min(1).optional(),
+});
+
 export const PersistedLayerDataSchema = z.object({
   nodes: z.array(PersistedNodeSchema),
   edges: z.array(PersistedEdgeSchema),
   boundaries: z.array(PersistedBoundarySchema),
+  /** 後方互換のため optional（旧データは注釈なしとして読み込む）。 */
+  annotations: z.array(PersistedAnnotationSchema).optional(),
 });
 
 const PersistedLayersSchema = z.object({

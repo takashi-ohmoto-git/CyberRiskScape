@@ -26,6 +26,11 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'project.sidebar.usageHint1': '🔹 Select a part and connect it with "Create Link"',
   'project.sidebar.usageHint2': '🔹 Connectors can be used as waypoints',
 
+  // ── LeftSidebar: Annotations ──
+  'project.sidebar.annotationsSection': 'Annotations',
+  'project.sidebar.addLabel': 'Add text label',
+  'project.sidebar.addCallout': 'Add callout',
+
   // ── TopControls ──
   'project.topControls.undo': 'Undo (Ctrl+Z)',
   'project.topControls.redo': 'Redo (Ctrl+Shift+Z)',

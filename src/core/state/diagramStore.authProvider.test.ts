@@ -7,7 +7,7 @@ beforeEach(() => {
   useDiagramStore.setState({
     layers: {
       L0: EMPTY_LAYER,
-      L1: { nodes: [], edges: [], boundaries: [] },
+      L1: { nodes: [], edges: [], boundaries: [], annotations: [] },
       L2: EMPTY_LAYER,
       L3: EMPTY_LAYER,
     },
@@ -47,7 +47,7 @@ function seedLayer(authProviderId?: string): { app: DiagramNode; idp: DiagramNod
     ...(authProviderId ? { authProviderId } : {}),
   };
   useDiagramStore.setState((s) => ({
-    layers: { ...s.layers, L1: { nodes: [app, api, idp], edges: [edge], boundaries: [] } },
+    layers: { ...s.layers, L1: { nodes: [app, api, idp], edges: [edge], boundaries: [], annotations: [] } },
   }));
   return { app, idp };
 }
@@ -87,7 +87,7 @@ describe('authProviderId の参照整合性', () => {
           authProviderId: 'old-idp',
         },
       ],
-      boundaries: [],
+      boundaries: [], annotations: [],
     };
     useDiagramStore.getState().importTemplateToActiveLayer(template);
     const idp = nodes().find((n) => n.type === 'IDENTITY_PROVIDER');
@@ -112,7 +112,7 @@ describe('authProviderId の参照整合性', () => {
           authProviderId: 'not-in-template',
         },
       ],
-      boundaries: [],
+      boundaries: [], annotations: [],
     };
     useDiagramStore.getState().importTemplateToActiveLayer(template);
     expect(edges()[0].authProviderId).toBeUndefined();
@@ -131,7 +131,7 @@ describe('ノード側 authProviderId の参照整合性（[[plan]] §2.42）', 
     };
     const idp: DiagramNode = { id: 'n-idp', type: 'IDENTITY_PROVIDER', x: 200, y: 0 };
     useDiagramStore.setState((s) => ({
-      layers: { ...s.layers, L1: { nodes: [srv, idp], edges: [], boundaries: [] } },
+      layers: { ...s.layers, L1: { nodes: [srv, idp], edges: [], boundaries: [], annotations: [] } },
     }));
     return { srv, idp };
   }
@@ -165,7 +165,7 @@ describe('ノード側 authProviderId の参照整合性（[[plan]] §2.42）', 
         { id: 'old-idp', type: 'IDENTITY_PROVIDER', x: 200, y: 0 },
       ],
       edges: [],
-      boundaries: [],
+      boundaries: [], annotations: [],
     };
     useDiagramStore.getState().importTemplateToActiveLayer(template);
     const idp = nodes().find((n) => n.type === 'IDENTITY_PROVIDER');
@@ -178,7 +178,7 @@ describe('ノード側 authProviderId の参照整合性（[[plan]] §2.42）', 
     const template: LayerData = {
       nodes: [{ id: 'old-srv', type: 'FRONT_END_SERVER', x: 0, y: 0, authProviderId: 'nope' }],
       edges: [],
-      boundaries: [],
+      boundaries: [], annotations: [],
     };
     useDiagramStore.getState().importTemplateToActiveLayer(template);
     expect(nodes()[0].authProviderId).toBeUndefined();

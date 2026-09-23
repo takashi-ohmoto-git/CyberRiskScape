@@ -28,6 +28,11 @@ export const jaProject = {
   'project.sidebar.usageHint1': '🔹 パーツを選択して "Create Link" で接続',
   'project.sidebar.usageHint2': '🔹 コネクタを中継点として利用可能',
 
+  // ── LeftSidebar: Annotations（[[plan]] §2.48） ──
+  'project.sidebar.annotationsSection': 'Annotations',
+  'project.sidebar.addLabel': 'テキストラベルを追加',
+  'project.sidebar.addCallout': '吹き出しを追加',
+
   // ── TopControls（topbar.* は既存キー。ここは未抽出分のみ） ──
   'project.topControls.undo': '元に戻す (Ctrl+Z)',
   'project.topControls.redo': 'やり直し (Ctrl+Shift+Z)',

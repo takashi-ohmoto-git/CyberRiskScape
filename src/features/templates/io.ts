@@ -24,12 +24,17 @@ export const TemplateExportSchema = z.object({
 
 export type TemplateExport = z.infer<typeof TemplateExportSchema>;
 
-/** 各要素から `seq`（レイヤー固有の連番）を落とす。可搬性のためインポート側で振り直す。 */
+/**
+ * 各要素から `seq`（レイヤー固有の連番）を落とす。可搬性のためインポート側で振り直す。
+ * 注釈（[[plan]] §2.48）はテンプレートに同梱しない（キャンバス上の説明書きはプロジェクト
+ * ローカルな情報のため）。
+ */
 function stripSeq(layer: LayerData): LayerData {
   return {
     nodes: layer.nodes.map(({ seq: _seq, ...n }) => n),
     edges: layer.edges.map(({ seq: _seq, ...e }) => e),
     boundaries: layer.boundaries.map(({ seq: _seq, ...b }) => b),
+    annotations: [],
   };
 }
 

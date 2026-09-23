@@ -33,6 +33,7 @@ const L1_DATA: LayerData = {
   nodes: [{ id: 'n1', type: 'USER', x: 10, y: 20 }],
   edges: [],
   boundaries: [],
+  annotations: [],
 };
 
 const STATE: SerializableState = {

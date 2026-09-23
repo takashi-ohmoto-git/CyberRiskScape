@@ -36,6 +36,7 @@ const L1_DATA: LayerData = {
       trustLevel: 'Partner',
     },
   ],
+  annotations: [],
 };
 
 const STATE: SerializableState = {
@@ -93,6 +94,37 @@ describe('serializeProject / deserializeProject', () => {
     });
     const restored = deserializeProject(persisted);
     expect(restored?.layers?.L1.nodes[0].authProviderId).toBe('n3');
+  });
+
+  // ─── annotations（キャンバス注釈、[[plan]] §2.48） ──────────
+  it('annotations を round-trip で保持する', () => {
+    const withAnnotations: LayerData = {
+      ...L1_DATA,
+      annotations: [
+        { id: 'ann1', kind: 'label', x: 10, y: 10, text: 'ラベル' },
+        { id: 'ann2', kind: 'callout', x: 20, y: 20, text: '吹き出し', targetNodeId: 'n1' },
+      ],
+    };
+    const persisted = serializeProject({
+      ...STATE,
+      layers: { L0: EMPTY_LAYER, L1: withAnnotations, L2: EMPTY_LAYER, L3: EMPTY_LAYER },
+    });
+    const restored = deserializeProject(persisted);
+    expect(restored?.layers?.L1.annotations).toEqual(withAnnotations.annotations);
+  });
+
+  it('annotations 無しの旧データは resolveLayers で空配列として読める', () => {
+    const persisted = serializeProject(STATE); // L1_DATA は annotations: [] 済み
+    // 保存済みレコードから annotations フィールド自体を落として「旧データ」を再現する。
+    const legacyL1 = { ...persisted.layers!.L1 } as Record<string, unknown>;
+    delete legacyL1.annotations;
+    const legacyRaw = {
+      ...persisted,
+      layers: { ...persisted.layers, L1: legacyL1 },
+    };
+    const loaded = deserializeProject(legacyRaw)!;
+    const { layers } = resolveLayers(loaded);
+    expect(layers.L1.annotations).toEqual([]);
   });
 
   it('riskScores を round-trip で保持し、空なら出力しない', () => {
@@ -468,6 +500,7 @@ describe('resolveLayers', () => {
           ],
           edges: [],
           boundaries: [],
+          annotations: [],
         },
         L2: EMPTY_LAYER,
         L3: EMPTY_LAYER,
@@ -500,6 +533,7 @@ describe('resolveLayers', () => {
           ],
           edges: [],
           boundaries: [],
+          annotations: [],
         },
         L2: EMPTY_LAYER,
         L3: EMPTY_LAYER,
@@ -524,6 +558,7 @@ describe('seq / idCounters の永続化', () => {
         ],
         edges: [{ id: 'e1', seq: 1, source: 'n1', target: 'n2', auth: 'None', network: 'VPC', encryption: 'TLS' }],
         boundaries: [],
+        annotations: [],
       },
       L2: EMPTY_LAYER,
       L3: EMPTY_LAYER,
@@ -564,6 +599,7 @@ describe('resolveIdCounters', () => {
       ],
       edges: [{ id: 'e1', source: 'n1', target: 'n2', auth: 'None', network: 'VPC', encryption: 'TLS' }],
       boundaries: [{ id: 'b1', type: 'RECT', x: 0, y: 0, width: 100, height: 100, trustLevel: 'Internal' }],
+      annotations: [],
     } as LayerData,
     L2: EMPTY_LAYER,
     L3: EMPTY_LAYER,
@@ -591,6 +627,7 @@ describe('resolveIdCounters', () => {
         nodes: [{ id: 'n1', seq: 1, type: 'USER', x: 0, y: 0 }],
         edges: [],
         boundaries: [],
+        annotations: [],
       } as LayerData,
     };
     const { idCounters } = resolveIdCounters(withSeq, persisted);
@@ -604,6 +641,7 @@ describe('resolveIdCounters', () => {
         nodes: [{ id: 'n1', seq: 1, type: 'USER', x: 0, y: 0 }],
         edges: [],
         boundaries: [],
+        annotations: [],
       } as LayerData,
     };
     const { layers } = resolveIdCounters(allSeq);
