@@ -7,6 +7,7 @@ import { enRuleEditor } from './en/ruleEditor';
 import { enProject } from './en/project';
 import { enThreats } from './en/threats';
 import { enReport } from './en/report';
+import { enDiff } from './en/diff';
 
 
 /**
@@ -169,4 +170,5 @@ export const en: Partial<Record<TranslationKey, string>> = {
   ...enProject,
   ...enThreats,
   ...enReport,
+  ...enDiff,
 };

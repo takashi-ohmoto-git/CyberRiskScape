@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "layers": {
+    "L0": { "nodes": [], "edges": [], "boundaries": [], "annotations": [] },
+    "L1": {
+      "nodes": [
+        { "id": "n-user", "seq": 1, "type": "USER", "x": 0, "y": 0, "label": "利用者" },
+        { "id": "n-llm", "seq": 2, "type": "LLM", "x": 240, "y": 0, "label": "社内向けチャットボット" },
+        { "id": "n-db", "seq": 3, "type": "DB", "x": 480, "y": 0, "label": "会話ログDB" },
+        { "id": "n-agent", "seq": 4, "type": "AGENT", "x": 240, "y": 200, "label": "自動応答エージェント" },
+        { "id": "n-tool", "seq": 5, "type": "TOOL", "x": 480, "y": 200, "label": "社内チケット起票API" }
+      ],
+      "edges": [
+        {
+          "id": "e-user-llm",
+          "seq": 1,
+          "source": "n-user",
+          "target": "n-llm",
+          "auth": "MFA",
+          "network": "Internet",
+          "encryption": "TLS"
+        },
+        {
+          "id": "e-llm-db",
+          "seq": 2,
+          "source": "n-llm",
+          "target": "n-db",
+          "auth": "None",
+          "network": "VPC",
+          "encryption": "Plain"
+        },
+        {
+          "id": "e-agent-tool",
+          "seq": 3,
+          "source": "n-agent",
+          "target": "n-tool",
+          "auth": "None",
+          "network": "VPC",
+          "encryption": "TLS",
+          "semantic": "tool_invocation"
+        },
+        {
+          "id": "e-user-tool",
+          "seq": 4,
+          "source": "n-user",
+          "target": "n-tool",
+          "auth": "None",
+          "network": "Internet",
+          "encryption": "TLS"
+        }
+      ],
+      "boundaries": [],
+      "annotations": []
+    },
+    "L2": { "nodes": [], "edges": [], "boundaries": [], "annotations": [] },
+    "L3": { "nodes": [], "edges": [], "boundaries": [], "annotations": [] }
+  },
+  "activeLayer": "L1",
+  "idCounters": {
+    "L0": { "node": 0, "edge": 0, "boundary": 0 },
+    "L1": { "node": 5, "edge": 4, "boundary": 0 },
+    "L2": { "node": 0, "edge": 0, "boundary": 0 },
+    "L3": { "node": 0, "edge": 0, "boundary": 0 }
+  },
+  "activeFramework": "ALL",
+  "projectMeta": {
+    "name": "CLIスモークテスト用サンプル",
+    "systemName": "社内向けAIチャットボット",
+    "purpose": "社内問い合わせ対応を自動化するLLMチャットボット",
+    "businessImpact": "停止時は問い合わせ業務が手動対応に戻る",
+    "securityObjectives": "会話ログの機密性を守る"
+  },
+  "suppressions": {
+    "stride-user-spoofing-001-n-user": {
+      "status": "accepted",
+      "note": "社内ネットワーク限定公開のため受容",
+      "at": 0
+    }
+  },
+  "updatedAt": 0
+}

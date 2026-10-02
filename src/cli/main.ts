@@ -2,18 +2,31 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { analyzeProject, evaluateGate, type LayerAnalysisResult } from './analyze';
 import { toSarif } from './sarif';
+import {
+  diffProjects,
+  diffToJson,
+  diffToMarkdown,
+  evaluateDiffGate,
+  type DiffGateResult,
+  type ProjectDiff,
+} from './diff';
 import { buildThreatReport, toDCRHThreatModelMarkdown, toJsonObject } from '../features/export/threatReport';
 import { effectiveSeverity } from '../core/model/risk';
 import { setLocale, type Locale } from '../i18n';
 import { LAYER_KEYS, type FrameworkView, type Severity } from '../core/model/types';
+import { getChangeTriggers } from '../change-triggers/loader/bundledChangeTriggers';
+import { loadChangeTriggers } from '../change-triggers/loader/loadChangeTriggers';
+import type { ChangeTrigger } from '../change-triggers/schema/trigger';
 
 /**
- * CyberRiskScape ヘッドレス CLI（[[plan]] §2.49）。
- * 保存済みプロジェクト JSON を入力に、ブラウザなしで脅威を検出してレポートを出す。
+ * CyberRiskScape ヘッドレス CLI（[[plan]] §2.49 / §2.50）。
+ * 保存済みプロジェクト JSON を入力に、ブラウザなしで脅威を検出してレポートを出す
+ * （`analyze`）か、2 版を比較して実行トリガー・脅威差分・ゲート判定を出す（`diff`）。
  * カスタムルール（IndexedDB 別保存）は含まれないため、同梱ルールのみで評価する。
  */
 
-const FORMATS = ['json', 'sarif', 'md'] as const;
+const ANALYZE_FORMATS = ['json', 'sarif', 'md'] as const;
+const DIFF_FORMATS = ['md', 'json'] as const;
 
 const FRAMEWORKS: readonly FrameworkView[] = ['STRIDE', 'AI', 'AgenticAI', 'ALL'];
 const SEVERITIES: readonly Severity[] = ['Low', 'Medium', 'High', 'Critical'];
@@ -21,14 +34,24 @@ const LOCALES: readonly Locale[] = ['ja', 'en'];
 
 const USAGE = `使い方:
   analyze <project.json> [options]
+  diff <base.json> <head.json> [options]
 
-オプション:
+analyze のオプション:
   --format <json|sarif|md>                     出力形式（既定: json）
   --layer <L0|L1|L2|L3>                         対象レイヤー（既定: ノードがある全レイヤー）
   --framework <STRIDE|AI|AgenticAI|ALL>         対象フレームワーク（既定: ALL）
   --fail-on <Critical|High|Medium|Low>          指定した重大度以上の未抑制脅威があれば exit 1
   --locale <ja|en>                              表示言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
+
+diff のオプション:
+  --format <md|json>                            出力形式（既定: md）
+  --fail-on <Critical|High|Medium|Low>          新規かつ未抑制の脅威が指定重大度以上なら exit 1
+  --triggers <file>                             実行トリガー定義 YAML（既定: 同梱の T1〜T8。指定時は翻訳オーバーレイ非適用）
+  --locale <ja|en>                              表示言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+共通:
   --help                                        このヘルプを表示
 
 終了コード: 0=成功 / 1=--fail-on によるゲート不合格 / 2=入力・引数エラー`;
@@ -50,6 +73,28 @@ function parseEnum<T extends string>(
   return value as T;
 }
 
+function readJsonFile(file: string): unknown {
+  let text: string;
+  try {
+    text = readFileSync(file, 'utf-8');
+  } catch (e) {
+    fail(`ファイルを読み込めません: ${file}（${e instanceof Error ? e.message : String(e)}）`);
+  }
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    fail(`JSON の解析に失敗しました（${file}）: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
+function writeOutput(output: string, outFile: string | undefined): void {
+  if (outFile) {
+    writeFileSync(outFile, output, 'utf-8');
+  } else {
+    process.stdout.write(`${output}\n`);
+  }
+}
+
 /** `parseArgs` の呼び出しを切り出す（options リテラルを直接渡して戻り値の型を具体化するため）。 */
 function parseCliArgs() {
   return parseArgs({
@@ -61,6 +106,7 @@ function parseCliArgs() {
       layer: { type: 'string' },
       framework: { type: 'string' },
       'fail-on': { type: 'string' },
+      triggers: { type: 'string' },
       locale: { type: 'string' },
       out: { type: 'string' },
       help: { type: 'boolean' },
@@ -68,50 +114,21 @@ function parseCliArgs() {
   });
 }
 
-function main(): void {
-  let parsed: ReturnType<typeof parseCliArgs>;
-  try {
-    parsed = parseCliArgs();
-  } catch (e) {
-    fail(`引数の解析に失敗しました: ${e instanceof Error ? e.message : String(e)}\n\n${USAGE}`);
-  }
+type CliValues = ReturnType<typeof parseCliArgs>['values'];
 
-  const { values, positionals } = parsed;
-
-  if (values.help) {
-    process.stdout.write(`${USAGE}\n`);
-    process.exit(0);
-  }
-
-  const command = positionals[0];
-  if (command !== 'analyze') {
-    fail(`不明なコマンドです: "${command ?? ''}"\n\n${USAGE}`);
-  }
-
+function runAnalyze(values: CliValues, positionals: string[]): void {
   const file = positionals[1];
   if (!file) {
     fail(`入力ファイルを指定してください。\n\n${USAGE}`);
   }
 
-  const format = parseEnum(values.format, FORMATS, 'format') ?? 'json';
+  const format = parseEnum(values.format, ANALYZE_FORMATS, 'format') ?? 'json';
   const layer = parseEnum(values.layer, LAYER_KEYS, 'layer');
   const framework = parseEnum(values.framework, FRAMEWORKS, 'framework');
   const failOn = parseEnum(values['fail-on'], SEVERITIES, 'fail-on');
   const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
 
-  let text: string;
-  try {
-    text = readFileSync(file, 'utf-8');
-  } catch (e) {
-    fail(`ファイルを読み込めません: ${file}（${e instanceof Error ? e.message : String(e)}）`);
-  }
-
-  let raw: unknown;
-  try {
-    raw = JSON.parse(text);
-  } catch (e) {
-    fail(`JSON の解析に失敗しました: ${e instanceof Error ? e.message : String(e)}`);
-  }
+  const raw = readJsonFile(file);
 
   // 脅威本文のテンプレート展開（`renderTemplate`）とレポート生成はどちらも `getLocale()`
   // （モジュール内グローバル）を読むため、検出より前に揃える（App.tsx の JA/EN 切替と同じ経路）。
@@ -130,22 +147,12 @@ function main(): void {
     output = JSON.stringify(toSarif(results, { artifactUri }), null, 2);
   } else if (format === 'md') {
     const exportDate = new Date().toISOString().slice(0, 10);
-    output = results
-      .map((r) => toDCRHThreatModelMarkdown(r.input, exportDate))
-      .join('\n\n');
+    output = results.map((r) => toDCRHThreatModelMarkdown(r.input, exportDate)).join('\n\n');
   } else {
-    output = JSON.stringify(
-      results.map((r) => toJsonObject(buildThreatReport(r.input))),
-      null,
-      2,
-    );
+    output = JSON.stringify(results.map((r) => toJsonObject(buildThreatReport(r.input))), null, 2);
   }
 
-  if (values.out) {
-    writeFileSync(values.out, output, 'utf-8');
-  } else {
-    process.stdout.write(`${output}\n`);
-  }
+  writeOutput(output, values.out);
 
   if (failOn) {
     const offenders = evaluateGate(results.flatMap((r) => r.threats), failOn);
@@ -159,6 +166,93 @@ function main(): void {
       // process.exit() はパイプ先への stdout 書き込みを打ち切り得るため、終了コードだけ設定する。
       process.exitCode = 1;
     }
+  }
+}
+
+function runDiff(values: CliValues, positionals: string[]): void {
+  const baseFile = positionals[1];
+  const headFile = positionals[2];
+  if (!baseFile || !headFile) {
+    fail(`base.json と head.json を指定してください。\n\n${USAGE}`);
+  }
+
+  const format = parseEnum(values.format, DIFF_FORMATS, 'format') ?? 'md';
+  const failOn = parseEnum(values['fail-on'], SEVERITIES, 'fail-on');
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+
+  const baseRaw = readJsonFile(baseFile);
+  const headRaw = readJsonFile(headFile);
+
+  let triggers: ChangeTrigger[];
+  if (values.triggers) {
+    const triggersFile = values.triggers;
+    let yamlText: string;
+    try {
+      yamlText = readFileSync(triggersFile, 'utf-8');
+    } catch (e) {
+      fail(
+        `トリガー定義ファイルを読み込めません: ${triggersFile}（${e instanceof Error ? e.message : String(e)}）`,
+      );
+    }
+    try {
+      // カスタムファイルには翻訳オーバーレイを適用しない（原文のまま使う）。
+      triggers = loadChangeTriggers([{ source: triggersFile, text: yamlText }]).triggers;
+    } catch (e) {
+      fail(e instanceof Error ? e.message : String(e));
+    }
+  } else {
+    triggers = getChangeTriggers(locale).triggers;
+  }
+
+  setLocale(locale);
+
+  let diff: ProjectDiff;
+  try {
+    diff = diffProjects(baseRaw, headRaw, { locale, triggers });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+
+  const gate: DiffGateResult | undefined = failOn
+    ? { failOn, offenders: evaluateDiffGate(diff, failOn) }
+    : undefined;
+
+  const output = format === 'json' ? diffToJson(diff, gate) : diffToMarkdown(diff, gate);
+  writeOutput(output, values.out);
+
+  if (gate && gate.offenders.length > 0) {
+    process.stderr.write(
+      `--fail-on ${failOn}: 新規かつ未抑制の脅威が ${gate.offenders.length} 件しきい値以上です。\n`,
+    );
+    for (const { threat, asset } of gate.offenders) {
+      process.stderr.write(`  - [${effectiveSeverity(threat)}] ${asset} ${threat.name ?? threat.category}\n`);
+    }
+    process.exitCode = 1;
+  }
+}
+
+function main(): void {
+  let parsed: ReturnType<typeof parseCliArgs>;
+  try {
+    parsed = parseCliArgs();
+  } catch (e) {
+    fail(`引数の解析に失敗しました: ${e instanceof Error ? e.message : String(e)}\n\n${USAGE}`);
+  }
+
+  const { values, positionals } = parsed;
+
+  if (values.help) {
+    process.stdout.write(`${USAGE}\n`);
+    process.exit(0);
+  }
+
+  const command = positionals[0];
+  if (command === 'analyze') {
+    runAnalyze(values, positionals);
+  } else if (command === 'diff') {
+    runDiff(values, positionals);
+  } else {
+    fail(`不明なコマンドです: "${command ?? ''}"\n\n${USAGE}`);
   }
 }
 

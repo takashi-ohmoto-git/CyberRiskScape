@@ -1,0 +1,91 @@
+# 脅威モデリングの実行トリガー（T1〜T8）。
+#
+# 出典：本プロジェクト（CyberRiskScape）自身の定義。外部出典なし（[[plan]] §2.50）。
+# T1〜T6 は本プロジェクトの定義、T7・T8 は AI／エージェント固有の変更を拾うため
+# 2026-10-03 に本プロジェクトで追加した。
+#
+# `detect` はモデル差分（base/head）から自動判定するための検出器。`detect: []`
+# のトリガー（T4）は図に技術スタックの情報が無いため自動判定できず、常に
+# 「PR レビューで確認」として提示する。
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+triggers:
+  - id: T1
+    title: 新しい信頼境界
+    checkpoint: データが新しいネットワークセグメント、テナント分離境界、または権限境界を越える
+    detect:
+      - kind: boundary-added
+      - kind: boundary-changed
+        fields: [trustLevel]
+      - kind: edge-added
+        crossesTrust: true
+      - kind: node-trust-changed
+
+  - id: T2
+    title: 新しい外部インターフェース
+    checkpoint: インターネット向け API、Webhook、gRPC エンドポイント、コールバック URL、公開 SDK
+    detect:
+      - kind: edge-added
+        peerTrust: [Internet]
+      - kind: node-changed
+        fields: [attackSurface]
+
+  - id: T3
+    title: 新しい認証／認可の仕組み
+    checkpoint: 新しいログインフロー、トークン種別、mTLS、RBAC モデル、サービス ID、証明書管理
+    detect:
+      - kind: edge-changed
+        fields: [auth, authProviderId]
+      - kind: node-changed
+        fields: [authProviderId]
+      - kind: node-added
+        nodeTypes: [IDENTITY_PROVIDER]
+
+  - id: T4
+    title: 新しい技術またはランタイム
+    checkpoint: 未経験の言語、フレームワーク、データストア、クラウドサービス、デプロイモデル
+    detect: []
+
+  - id: T5
+    title: 機密データが新しい経路を通る
+    checkpoint: 顧客データ、シークレット、暗号鍵、PII が、これまで扱っていなかったコンポーネントを通過する
+    detect:
+      - kind: node-added
+        categories: [DOCUMENTS]
+      - kind: node-changed
+        fields: [parentId]
+        categories: [DOCUMENTS]
+
+  - id: T6
+    title: 新しいサードパーティ連携
+    checkpoint: 顧客データを受け取る、または処理する外部ベンダーの SDK、API、サービス
+    detect:
+      - kind: edge-added
+        peerTrust: [Partner]
+      - kind: node-added
+        nodeTypes: [EXTERNAL_ENTITY]
+      - kind: node-changed
+        fields: [cloudSanction]
+
+  - id: T7
+    title: エージェントの能力拡大
+    checkpoint: 新しいツール・MCP サーバー・サブエージェントへの委譲・記憶の追加、自律性や権限の引き上げ
+    detect:
+      - kind: node-added
+        nodeTypes: [AGENT, SUB_AGENT, MCP_SERVER, TOOL, MEMORY_STORE]
+      - kind: edge-added
+        semantic: [tool_invocation, delegation, memory_read, memory_write]
+      - kind: node-changed
+        fields: [agentAttributes]
+
+  - id: T8
+    title: モデル・学習データ・RAG ソースの変更
+    checkpoint: 利用する LLM の変更、ファインチューニング／学習データ、RAG の参照先の追加・変更
+    detect:
+      - kind: node-added
+        nodeTypes: [LLM]
+      - kind: edge-added
+        semantic: [rag_retrieval]

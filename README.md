@@ -164,6 +164,45 @@ node dist-cli/main.js analyze <project.json> [options]
 
 Exit codes: `0` success, `1` `--fail-on` gate failed, `2` input/argument error.
 
+### Model diff gate (`diff`)
+
+Compares two versions (base / head) of a saved project file and reports which threat
+modeling **triggers** (T1–T8 below) the change hits, plus added/removed threats,
+disposition changes, and effective severity changes. Markdown output is ready to paste
+as a PR comment; JSON is for machine processing.
+
+```bash
+node dist-cli/main.js diff <base.json> <head.json> [options]
+```
+
+| Option | Values | Default |
+|---|---|---|
+| `--format` | `md` \| `json` | `md` |
+| `--fail-on` | `Critical` \| `High` \| `Medium` \| `Low` | no gate |
+| `--triggers` | path to a trigger-definition YAML | the bundled T1–T8 (translation overlay not applied when set) |
+| `--locale` | `ja` \| `en` | `ja` |
+| `--out` | output file path | stdout |
+
+The gate only considers **newly added** threats (existing unaddressed ones never fail it).
+Disposition changes to accepted/false-positive never fail the gate either — they are
+flagged as "needs approval" in the output instead.
+
+Trigger list:
+
+| ID | Trigger |
+|---|---|
+| T1 | New trust boundary |
+| T2 | New external interface |
+| T3 | New authentication / authorization mechanism |
+| T4 | New technology or runtime |
+| T5 | Sensitive data takes a new path |
+| T6 | New third-party integration |
+| T7 | Expanded agent capability |
+| T8 | Change to the model, training data, or RAG source |
+
+T4 cannot be auto-judged from the model diff (the diagram has no tech-stack information),
+so it is always reported as "confirm in PR review".
+
 ---
 
 ## Roadmap

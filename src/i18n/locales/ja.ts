@@ -19,6 +19,7 @@ import { jaRuleEditor } from './ja/ruleEditor';
 import { jaProject } from './ja/project';
 import { jaThreats } from './ja/threats';
 import { jaReport } from './ja/report';
+import { jaDiff } from './ja/diff';
 
 const jaCore = {
   'app.loading': '読み込み中…',
@@ -194,6 +195,7 @@ export const ja = {
   ...jaProject,
   ...jaThreats,
   ...jaReport,
+  ...jaDiff,
 } as const;
 
 /** 全翻訳キーの型。en 等の他ロケールはこの部分集合を持つ。 */

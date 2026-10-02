@@ -1,0 +1,37 @@
+# English overlay for `data/change-triggers/triggers.yaml`.
+#
+# The Japanese file is the source of truth: only `title` / `checkpoint` are translated
+# here, keyed by trigger id. Anything omitted falls back to the original text.
+# `detect` is judgment logic, not prose, so it is never translated (and not part of
+# this schema at all).
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+triggers:
+  T1:
+    title: New trust boundary
+    checkpoint: Data crosses a new network segment, tenant isolation boundary, or privilege boundary
+  T2:
+    title: New external interface
+    checkpoint: Internet-facing API, webhook, gRPC endpoint, callback URL, or public SDK
+  T3:
+    title: New authentication / authorization mechanism
+    checkpoint: New login flow, token type, mTLS, RBAC model, service identity, or certificate management
+  T4:
+    title: New technology or runtime
+    checkpoint: Unfamiliar language, framework, data store, cloud service, or deployment model
+  T5:
+    title: Sensitive data takes a new path
+    checkpoint: Customer data, secrets, cryptographic keys, or PII pass through a component that did not previously handle them
+  T6:
+    title: New third-party integration
+    checkpoint: An external vendor's SDK, API, or service that receives or processes customer data
+  T7:
+    title: Expanded agent capability
+    checkpoint: A new tool, MCP server, sub-agent delegation, or memory is added, or autonomy/privilege is raised
+  T8:
+    title: Change to the model, training data, or RAG source
+    checkpoint: Change of the LLM in use, fine-tuning/training data, or addition/change of a RAG reference source

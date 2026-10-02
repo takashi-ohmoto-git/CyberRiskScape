@@ -46,3 +46,4 @@ jobs:
         run: |
           npm run build:cli
           node dist-cli/main.js analyze src/cli/__fixtures__/sample-project.json --format sarif > /dev/null
+          node dist-cli/main.js diff src/cli/__fixtures__/sample-project.json src/cli/__fixtures__/sample-project-changed.json > /dev/null

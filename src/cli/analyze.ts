@@ -13,9 +13,15 @@ import {
   EMPTY_PROJECT_META,
   LAYER_KEYS,
   isSuppressed,
+  type ControlStatusState,
   type FrameworkView,
+  type LayerData,
   type LayerKey,
+  type ManualThreat,
+  type ProjectMeta,
+  type RiskScore,
   type Severity,
+  type SuppressionState,
   type ThreatView,
 } from '../core/model/types';
 import type { BuildThreatReportInput } from '../features/export/threatReport';
@@ -39,17 +45,25 @@ export interface LayerAnalysisResult {
 }
 
 /**
- * 保存済みプロジェクト JSON（`unknown`）を解析し、レイヤーごとの脅威ビューを返す純粋関数。
- *
- * アプリ本体（`App.tsx`）と同じ経路（`deserializeProject` → `resolveLayers` /
- * `resolveRiskScores` → `detectThreats` → `buildThreatViews`）を通すことで、ブラウザと
- * 同じ結果になることを保証する。カスタムルール（IndexedDB 別保存）は含まれないため、
- * 同梱ルール（`getThreatLibrary(locale).rules`）のみで評価する。
+ * `deserializeProject` 以降の解析に必要な状態一式（[[plan]] §2.50 で `diff` と共有するため分離）。
+ * レイヤーは常に全 4 層を含む（ノード数で絞り込むのは `analyzeResolvedProject` 側の責務）。
  */
-export function analyzeProject(
-  raw: unknown,
-  opts: AnalyzeOptions = {},
-): LayerAnalysisResult[] {
+export interface ResolvedProject {
+  layers: Record<LayerKey, LayerData>;
+  manualThreatsByLayer: Record<LayerKey, ManualThreat[]>;
+  suppressions: Record<string, SuppressionState>;
+  riskScores: Record<string, RiskScore> | undefined;
+  controlStatuses: Record<string, ControlStatusState> | undefined;
+  projectMeta: ProjectMeta;
+}
+
+/**
+ * 保存済みプロジェクト JSON（`unknown`）を解析可能な状態へ変換する純粋関数。
+ *
+ * アプリ本体（`App.tsx`）と同じ経路（`deserializeProject` → `resolveLayers` →
+ * `resolveIdCounters`）を通すことで、ブラウザと同じ結果になることを保証する。
+ */
+export function resolveProject(raw: unknown): ResolvedProject {
   const loaded = deserializeProject(raw);
   if (!loaded) {
     throw new Error(
@@ -57,17 +71,32 @@ export function analyzeProject(
     );
   }
 
-  const locale = opts.locale ?? 'ja';
-  const framework = opts.framework ?? 'ALL';
-
   const { layers: resolvedLayers } = resolveLayers(loaded);
   const { layers } = resolveIdCounters(resolvedLayers, loaded.idCounters);
 
-  const manualThreatsByLayer = loaded.manualThreats ?? emptyManualThreats();
-  const suppressions = loaded.suppressions ?? {};
-  const riskScores = resolveRiskScores(loaded);
-  const controlStatuses = loaded.controlStatuses;
-  const projectMeta = loaded.projectMeta ?? EMPTY_PROJECT_META;
+  return {
+    layers,
+    manualThreatsByLayer: loaded.manualThreats ?? emptyManualThreats(),
+    suppressions: loaded.suppressions ?? {},
+    riskScores: resolveRiskScores(loaded),
+    controlStatuses: loaded.controlStatuses,
+    projectMeta: loaded.projectMeta ?? EMPTY_PROJECT_META,
+  };
+}
+
+/**
+ * 解析済み状態（`resolveProject` の出力）からレイヤーごとの脅威ビューを組み立てる純粋関数。
+ * カスタムルール（IndexedDB 別保存）は含まれないため、同梱ルール
+ * （`getThreatLibrary(locale).rules`）のみで評価する。
+ */
+export function analyzeResolvedProject(
+  resolved: ResolvedProject,
+  opts: AnalyzeOptions = {},
+): LayerAnalysisResult[] {
+  const { layers, manualThreatsByLayer, suppressions, riskScores, controlStatuses, projectMeta } =
+    resolved;
+  const locale = opts.locale ?? 'ja';
+  const framework = opts.framework ?? 'ALL';
 
   const targetLayers: LayerKey[] = opts.layer
     ? [opts.layer]
@@ -106,8 +135,19 @@ export function analyzeProject(
   });
 }
 
-/** `Severity` の強さ順位（ゲート判定のしきい値比較に使う）。 */
-const SEVERITY_RANK: Record<Severity, number> = { Low: 0, Medium: 1, High: 2, Critical: 3 };
+/**
+ * 保存済みプロジェクト JSON（`unknown`）を解析し、レイヤーごとの脅威ビューを返す純粋関数。
+ * `resolveProject` → `analyzeResolvedProject` の合成（従来の単発 API）。
+ */
+export function analyzeProject(
+  raw: unknown,
+  opts: AnalyzeOptions = {},
+): LayerAnalysisResult[] {
+  return analyzeResolvedProject(resolveProject(raw), opts);
+}
+
+/** `Severity` の強さ順位（ゲート判定のしきい値比較に使う。`diff.ts` でも再利用する）。 */
+export const SEVERITY_RANK: Record<Severity, number> = { Low: 0, Medium: 1, High: 2, Critical: 3 };
 
 /**
  * ゲート判定：抑制（受容・誤検知）されていない脅威のうち、実効 severity が
