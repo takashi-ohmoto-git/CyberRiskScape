@@ -381,21 +381,22 @@ export function toCsv(report: ThreatReport): string {
   return lines.join('\r\n');
 }
 
+/** `toJson` が出力するオブジェクトを組み立てる（CLI 等が文字列化前に再利用するための分離）。 */
+export function toJsonObject(report: ThreatReport): Record<string, unknown> {
+  return {
+    schemaVersion: THREAT_REPORT_SCHEMA_VERSION,
+    kind: THREAT_REPORT_KIND,
+    framework: report.framework,
+    layer: report.layer,
+    project: report.project,
+    threats: report.rows,
+    identityInventory: report.identityInventory,
+  };
+}
+
 /** レポートを機械可読な JSON 文字列へ変換する（整形済み）。 */
 export function toJson(report: ThreatReport): string {
-  return JSON.stringify(
-    {
-      schemaVersion: THREAT_REPORT_SCHEMA_VERSION,
-      kind: THREAT_REPORT_KIND,
-      framework: report.framework,
-      layer: report.layer,
-      project: report.project,
-      threats: report.rows,
-      identityInventory: report.identityInventory,
-    },
-    null,
-    2,
-  );
+  return JSON.stringify(toJsonObject(report), null, 2);
 }
 
 // ─── DCRH（Anthropic 公式 THREAT_MODEL.md）シリアライザ ───────────

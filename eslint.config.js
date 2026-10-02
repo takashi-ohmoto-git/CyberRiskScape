@@ -10,7 +10,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 
 export default tseslint.config(
-  { ignores: ['dist/**', 'node_modules/**'] },
+  { ignores: ['dist/**', 'dist-cli/**', 'node_modules/**'] },
 
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -69,6 +69,12 @@ export default tseslint.config(
     files: ['*.config.{js,ts}', '.claude/**/*.mjs'],
     languageOptions: { globals: globals.node },
     rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
+
+  // ヘッドレス CLI（Node で実行。DOM グローバルは不要）
+  {
+    files: ['src/cli/**/*.ts'],
+    languageOptions: { globals: globals.node },
   },
 
   // テストは Vitest のグローバルを使う

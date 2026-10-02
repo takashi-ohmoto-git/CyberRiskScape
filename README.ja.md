@@ -133,6 +133,30 @@ npx tsc --noEmit     # 型チェック（strict）
 
 ---
 
+## CLI（プレビュー）
+
+ブラウザなしで保存済みプロジェクト JSON を解析するヘッドレス CLI です。CI でのゲート
+判定等に使えます。評価対象は同梱の脅威ルールのみです（IndexedDB に保存するカスタム
+ルールは CLI からは参照できません）。
+
+```bash
+npm run build:cli
+node dist-cli/main.js analyze <project.json> [options]
+```
+
+| オプション | 値 | 既定 |
+|---|---|---|
+| `--format` | `json` \| `sarif` \| `md` | `json` |
+| `--layer` | `L0` \| `L1` \| `L2` \| `L3` | ノードがある全レイヤー |
+| `--framework` | `STRIDE` \| `AI` \| `AgenticAI` \| `ALL` | `ALL` |
+| `--fail-on` | `Critical` \| `High` \| `Medium` \| `Low` | 指定なし（ゲート判定なし） |
+| `--locale` | `ja` \| `en` | `ja` |
+| `--out` | 出力先ファイルパス | 標準出力 |
+
+終了コード：`0` 成功 ／ `1` `--fail-on` によるゲート不合格 ／ `2` 入力・引数エラー。
+
+---
+
 ## コントリビュート
 
 Issue と Pull Request を歓迎します。開発の流れ・脅威ルール追加時のルール・翻訳への

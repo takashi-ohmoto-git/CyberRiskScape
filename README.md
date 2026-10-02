@@ -142,6 +142,30 @@ currently pass.
 
 ---
 
+## CLI (preview)
+
+A headless CLI can analyze a saved project file without a browser — useful for CI gates.
+It evaluates only the bundled threat rules (custom rules stored in IndexedDB are not
+available to it).
+
+```bash
+npm run build:cli
+node dist-cli/main.js analyze <project.json> [options]
+```
+
+| Option | Values | Default |
+|---|---|---|
+| `--format` | `json` \| `sarif` \| `md` | `json` |
+| `--layer` | `L0` \| `L1` \| `L2` \| `L3` | every layer that has nodes |
+| `--framework` | `STRIDE` \| `AI` \| `AgenticAI` \| `ALL` | `ALL` |
+| `--fail-on` | `Critical` \| `High` \| `Medium` \| `Low` | no gate |
+| `--locale` | `ja` \| `en` | `ja` |
+| `--out` | output file path | stdout |
+
+Exit codes: `0` success, `1` `--fail-on` gate failed, `2` input/argument error.
+
+---
+
 ## Roadmap
 
 Near-term priorities, in order:

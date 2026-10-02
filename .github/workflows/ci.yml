@@ -41,3 +41,8 @@ jobs:
 
       - name: ビルド
         run: npm run build
+
+      - name: CLI ビルドとスモーク実行
+        run: |
+          npm run build:cli
+          node dist-cli/main.js analyze src/cli/__fixtures__/sample-project.json --format sarif > /dev/null
