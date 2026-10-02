@@ -1,0 +1,18 @@
+# Example CODEOWNERS entry for the threat model file.
+# Copy the relevant line(s) into your repository's .github/CODEOWNERS and set the team/user.
+#
+# This makes a security reviewer a required approver whenever the model file changes (combine
+# with a branch protection rule that requires code owner review — see guide/ci-integration.md).
+#
+# Note: GitHub cannot restrict *who* may apply a PR label beyond "triage" repo permission or
+# above. The `skip-label` used by the threat-model gate (default: threat-model-not-needed) is
+# NOT enforced by CODEOWNERS — restrict who gets triage/write access, or treat the label as a
+# social/process control, not a technical one.
+
+threat-model/project.json         @your-org/security-reviewers
+
+# A pull_request workflow runs the PR's own version of the workflow file, so a PR could remove
+# the gate by editing it. Put the workflow (and custom trigger definitions, if any) under the
+# same reviewers.
+.github/workflows/threat-model.yml  @your-org/security-reviewers
+# threat-model/triggers.yaml        @your-org/security-reviewers

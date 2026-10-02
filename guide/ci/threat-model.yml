@@ -1,0 +1,37 @@
+# Example workflow for the CyberRiskScape threat model gate.
+# Copy this to .github/workflows/threat-model.yml in your own repository and adjust the inputs.
+#
+# See guide/ci-integration.md (or guide/ci-integration.ja.md) for the full setup walkthrough,
+# including branch protection and CODEOWNERS.
+
+name: Threat model gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  threat-model:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        # Default shallow checkout (depth 1) is enough — the action fetches the PR's base
+        # commit itself with its own shallow `git fetch`.
+
+      # Pin to a commit SHA in production (e.g. `@<40-char-sha>  # v0.1.0`) rather than a
+      # branch or tag — this action builds and runs arbitrary CLI code from the referenced ref.
+      - uses: takashi-ohmoto-git/CyberRiskScape@main
+        with:
+          model: threat-model/project.json
+          fail-on: High
+          watch-paths: |
+            infra/**
+            **/auth/**
+            **/package.json
+            **/Dockerfile
+          # skip-label: threat-model-not-needed   # default; override if you use a different label
+          # locale: ja                             # default; set to "en" for English output

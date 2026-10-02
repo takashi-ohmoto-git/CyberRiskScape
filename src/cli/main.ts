@@ -10,6 +10,7 @@ import {
   type DiffGateResult,
   type ProjectDiff,
 } from './diff';
+import { triggersToJson, triggersToMarkdown } from './triggers';
 import { buildThreatReport, toDCRHThreatModelMarkdown, toJsonObject } from '../features/export/threatReport';
 import { effectiveSeverity } from '../core/model/risk';
 import { setLocale, type Locale } from '../i18n';
@@ -27,6 +28,7 @@ import type { ChangeTrigger } from '../change-triggers/schema/trigger';
 
 const ANALYZE_FORMATS = ['json', 'sarif', 'md'] as const;
 const DIFF_FORMATS = ['md', 'json'] as const;
+const TRIGGERS_FORMATS = ['md', 'json'] as const;
 
 const FRAMEWORKS: readonly FrameworkView[] = ['STRIDE', 'AI', 'AgenticAI', 'ALL'];
 const SEVERITIES: readonly Severity[] = ['Low', 'Medium', 'High', 'Critical'];
@@ -35,6 +37,7 @@ const LOCALES: readonly Locale[] = ['ja', 'en'];
 const USAGE = `使い方:
   analyze <project.json> [options]
   diff <base.json> <head.json> [options]
+  triggers [options]
 
 analyze のオプション:
   --format <json|sarif|md>                     出力形式（既定: json）
@@ -47,6 +50,12 @@ analyze のオプション:
 diff のオプション:
   --format <md|json>                            出力形式（既定: md）
   --fail-on <Critical|High|Medium|Low>          新規かつ未抑制の脅威が指定重大度以上なら exit 1
+  --triggers <file>                             実行トリガー定義 YAML（既定: 同梱の T1〜T8。指定時は翻訳オーバーレイ非適用）
+  --locale <ja|en>                              表示言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+triggers のオプション:
+  --format <md|json>                            出力形式（既定: md）
   --triggers <file>                             実行トリガー定義 YAML（既定: 同梱の T1〜T8。指定時は翻訳オーバーレイ非適用）
   --locale <ja|en>                              表示言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
@@ -84,6 +93,30 @@ function readJsonFile(file: string): unknown {
     return JSON.parse(text);
   } catch (e) {
     fail(`JSON の解析に失敗しました（${file}）: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
+/**
+ * `--triggers <file>` を読む共通処理（`diff` / `triggers` サブコマンドで共有）。
+ * 未指定なら同梱の T1〜T8（指定 locale の翻訳オーバーレイ適用）を返す。
+ */
+function resolveTriggers(values: CliValues, locale: Locale): ChangeTrigger[] {
+  if (!values.triggers) return getChangeTriggers(locale).triggers;
+
+  const triggersFile = values.triggers;
+  let yamlText: string;
+  try {
+    yamlText = readFileSync(triggersFile, 'utf-8');
+  } catch (e) {
+    fail(
+      `トリガー定義ファイルを読み込めません: ${triggersFile}（${e instanceof Error ? e.message : String(e)}）`,
+    );
+  }
+  try {
+    // カスタムファイルには翻訳オーバーレイを適用しない（原文のまま使う）。
+    return loadChangeTriggers([{ source: triggersFile, text: yamlText }]).triggers;
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
   }
 }
 
@@ -183,26 +216,7 @@ function runDiff(values: CliValues, positionals: string[]): void {
   const baseRaw = readJsonFile(baseFile);
   const headRaw = readJsonFile(headFile);
 
-  let triggers: ChangeTrigger[];
-  if (values.triggers) {
-    const triggersFile = values.triggers;
-    let yamlText: string;
-    try {
-      yamlText = readFileSync(triggersFile, 'utf-8');
-    } catch (e) {
-      fail(
-        `トリガー定義ファイルを読み込めません: ${triggersFile}（${e instanceof Error ? e.message : String(e)}）`,
-      );
-    }
-    try {
-      // カスタムファイルには翻訳オーバーレイを適用しない（原文のまま使う）。
-      triggers = loadChangeTriggers([{ source: triggersFile, text: yamlText }]).triggers;
-    } catch (e) {
-      fail(e instanceof Error ? e.message : String(e));
-    }
-  } else {
-    triggers = getChangeTriggers(locale).triggers;
-  }
+  const triggers: ChangeTrigger[] = resolveTriggers(values, locale);
 
   setLocale(locale);
 
@@ -231,6 +245,23 @@ function runDiff(values: CliValues, positionals: string[]): void {
   }
 }
 
+/**
+ * `triggers`：実行トリガー（T1〜T8 等）をチェックリストとして出す（[[plan]] §2.51）。
+ * PR テンプレートや AI レビュアーの観点表にそのまま使える。ゲート判定は無い（exit 0 固定、
+ * 入力・引数エラーのみ 2）。
+ */
+function runTriggers(values: CliValues): void {
+  const format = parseEnum(values.format, TRIGGERS_FORMATS, 'format') ?? 'md';
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+
+  const triggers = resolveTriggers(values, locale);
+
+  setLocale(locale);
+
+  const output = format === 'json' ? triggersToJson(triggers) : triggersToMarkdown(triggers);
+  writeOutput(output, values.out);
+}
+
 function main(): void {
   let parsed: ReturnType<typeof parseCliArgs>;
   try {
@@ -251,6 +282,8 @@ function main(): void {
     runAnalyze(values, positionals);
   } else if (command === 'diff') {
     runDiff(values, positionals);
+  } else if (command === 'triggers') {
+    runTriggers(values);
   } else {
     fail(`不明なコマンドです: "${command ?? ''}"\n\n${USAGE}`);
   }

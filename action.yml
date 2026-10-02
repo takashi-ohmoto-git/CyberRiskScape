@@ -1,0 +1,207 @@
+name: CyberRiskScape threat model gate
+description: >-
+  Checks a pull request against a CyberRiskScape threat model: runs the model diff gate when the
+  model file changed, or asks for a threat-model update when a watched path changed without it.
+  Node-only CLI under the hood (no external network calls besides building this action and
+  posting the PR comment).
+branding:
+  icon: shield
+  color: blue
+
+inputs:
+  model:
+    description: Path (relative to the repository root) to the saved CyberRiskScape project JSON.
+    required: true
+  fail-on:
+    description: Minimum severity (Critical|High|Medium|Low) of a newly added, unsuppressed threat that fails the gate. Empty = no gate.
+    required: false
+    default: ''
+  triggers:
+    description: Path to a custom trigger-definition YAML. Empty = use the bundled T1-T8.
+    required: false
+    default: ''
+  locale:
+    description: Output language (ja|en).
+    required: false
+    default: ja
+  watch-paths:
+    description: >-
+      Newline-separated git pathspec globs (e.g. "infra/**"). When one of these changes without a
+      model update, the PR fails unless `skip-label` is applied.
+    required: false
+    default: ''
+  skip-label:
+    description: PR label that waives the watch-paths check for a given PR (applied by a human reviewer).
+    required: false
+    default: threat-model-not-needed
+  comment:
+    description: Post (or update) a PR comment with the result. 'false' only writes the job summary.
+    required: false
+    default: 'true'
+  github-token:
+    description: Token used to read PR labels and post the PR comment.
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Skip on non pull_request events
+      if: github.event_name != 'pull_request'
+      shell: bash
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+      run: |
+        echo "::notice::cyberriskscape threat model gate only runs on pull_request events (got: $EVENT_NAME). Skipping."
+
+    - name: Set up Node.js
+      if: github.event_name == 'pull_request'
+      uses: actions/setup-node@v7
+      with:
+        node-version: '22'
+
+    - name: Build the CyberRiskScape CLI
+      if: github.event_name == 'pull_request'
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        npm ci
+        npm run build:cli
+
+    - name: Fetch base ref
+      if: github.event_name == 'pull_request'
+      shell: bash
+      env:
+        # PR が記録している base コミット（= チェックアウトされたマージコミットの親）。
+        # base ブランチの現在の先端を使うと、PR 作成後に base へ入った変更まで逆向きに差分へ混ざる。
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      run: |
+        git fetch --no-tags --depth=1 origin "$BASE_SHA"
+
+    - name: Evaluate
+      if: github.event_name == 'pull_request'
+      id: evaluate
+      shell: bash
+      env:
+        MODEL: ${{ inputs.model }}
+        FAIL_ON: ${{ inputs.fail-on }}
+        TRIGGERS_FILE: ${{ inputs.triggers }}
+        LOCALE: ${{ inputs.locale }}
+        WATCH_PATHS: ${{ inputs.watch-paths }}
+        SKIP_LABEL: ${{ inputs.skip-label }}
+        HAS_SKIP_LABEL: ${{ contains(github.event.pull_request.labels.*.name, inputs.skip-label) }}
+        CLI: ${{ github.action_path }}/dist-cli/main.js
+        MD_FILE: ${{ runner.temp }}/crs-gate-result.md
+      run: |
+        set -euo pipefail
+
+        CODE=0
+        : > "$MD_FILE"
+
+        # カスタムのトリガー定義は base 側の版を使う。PR 側の版を使うと、PR 自身が定義を
+        # 空にしてチェックをすり抜けられる。base に無い（この PR で新設された）ときだけ PR 側を使う。
+        if [ -n "$TRIGGERS_FILE" ]; then
+          BASE_TRIGGERS="$RUNNER_TEMP/crs-base-triggers.yaml"
+          if git show "FETCH_HEAD:$TRIGGERS_FILE" > "$BASE_TRIGGERS" 2>/dev/null; then
+            TRIGGERS_FILE="$BASE_TRIGGERS"
+          else
+            echo "::warning::\"$TRIGGERS_FILE\" does not exist on the base branch; using the version from this PR."
+          fi
+        fi
+
+        if ! git diff --quiet FETCH_HEAD HEAD -- "$MODEL"; then
+          # モデル定義ファイルが変更された PR → base 版と diff する。
+          BASE_MODEL="$RUNNER_TEMP/crs-base-model.json"
+          if ! git show "FETCH_HEAD:$MODEL" > "$BASE_MODEL" 2>/dev/null || [ ! -s "$BASE_MODEL" ]; then
+            # base にモデルファイルが無い（新規追加された PR）→ 最小の空プロジェクトと比較する。
+            printf '%s' '{"schemaVersion":1,"activeFramework":"ALL","updatedAt":0}' > "$BASE_MODEL"
+          fi
+
+          DIFF_ARGS=(diff "$BASE_MODEL" "$MODEL" --format md --locale "$LOCALE" --out "$MD_FILE")
+          if [ -n "$FAIL_ON" ]; then
+            DIFF_ARGS+=(--fail-on "$FAIL_ON")
+          fi
+          if [ -n "$TRIGGERS_FILE" ]; then
+            DIFF_ARGS+=(--triggers "$TRIGGERS_FILE")
+          fi
+
+          set +e
+          node "$CLI" "${DIFF_ARGS[@]}"
+          CODE=$?
+          set -e
+        elif [ -n "$WATCH_PATHS" ]; then
+          # watch-paths の各行を git pathspec（glob）に変換する。
+          PATHSPECS=()
+          while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            PATHSPECS+=(":(glob)$line")
+          done <<< "$WATCH_PATHS"
+
+          if [ "${#PATHSPECS[@]}" -gt 0 ]; then
+            CHANGED="$(git diff --name-only FETCH_HEAD HEAD -- "${PATHSPECS[@]}")"
+            if [ -n "$CHANGED" ]; then
+              if [ "$HAS_SKIP_LABEL" = "true" ]; then
+                echo "::notice::Watched paths changed without a model update, but the \"$SKIP_LABEL\" label is present. Skipping."
+                CODE=0
+              else
+                CODE=1
+                TRIGGERS_ARGS=()
+                if [ -n "$TRIGGERS_FILE" ]; then
+                  TRIGGERS_ARGS=(--triggers "$TRIGGERS_FILE")
+                fi
+                {
+                  echo "## CyberRiskScape: threat model update may be needed"
+                  echo
+                  echo "The threat model file (\`$MODEL\`) was not changed in this PR, but the following"
+                  echo "watched paths were. Please update the threat model, or ask a designated reviewer"
+                  echo "to apply the \`$SKIP_LABEL\` label if no update is needed."
+                  echo
+                  echo "### Changed watched files"
+                  echo
+                  while IFS= read -r f; do
+                    echo "- $f"
+                  done <<< "$CHANGED"
+                  echo
+                  node "$CLI" triggers --format md --locale "$LOCALE" "${TRIGGERS_ARGS[@]}"
+                } > "$MD_FILE"
+              fi
+            fi
+          fi
+        fi
+
+        echo "code=$CODE" >> "$GITHUB_OUTPUT"
+        if [ -s "$MD_FILE" ]; then
+          echo "has_md=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "has_md=false" >> "$GITHUB_OUTPUT"
+        fi
+        echo "md_file=$MD_FILE" >> "$GITHUB_OUTPUT"
+
+    - name: Write job summary
+      if: github.event_name == 'pull_request' && steps.evaluate.outputs.has_md == 'true'
+      shell: bash
+      env:
+        MD_FILE: ${{ steps.evaluate.outputs.md_file }}
+      run: |
+        cat "$MD_FILE" >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Post PR comment
+      if: >-
+        github.event_name == 'pull_request' && inputs.comment == 'true' &&
+        steps.evaluate.outputs.has_md == 'true'
+      shell: bash
+      env:
+        MD_FILE: ${{ steps.evaluate.outputs.md_file }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        gh pr comment "$PR_NUMBER" --body-file "$MD_FILE" --edit-last --create-if-none \
+          || echo "::warning::cyberriskscape threat model gate: failed to post the PR comment (check token permissions). The job summary still has the result."
+
+    - name: Apply gate
+      if: github.event_name == 'pull_request'
+      shell: bash
+      env:
+        CODE: ${{ steps.evaluate.outputs.code }}
+      run: |
+        exit "$CODE"

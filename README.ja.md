@@ -192,6 +192,24 @@ node dist-cli/main.js diff <base.json> <head.json> [options]
 T4 のみモデル差分から自動判定できず（図に技術スタックの情報が無いため）、常に
 「PR レビューで確認」として出力されます。
 
+### 実行トリガー チェックリスト（`triggers`）と CI 導入
+
+```bash
+node dist-cli/main.js triggers [options]
+```
+
+| オプション | 値 | 既定 |
+|---|---|---|
+| `--format` | `md` \| `json` | `md` |
+| `--triggers` | 実行トリガー定義 YAML のパス | 同梱の T1〜T8（指定時は翻訳オーバーレイ非適用） |
+| `--locale` | `ja` \| `en` | `ja` |
+| `--out` | 出力先ファイルパス | 標準出力 |
+
+上記 T1〜T8 を Markdown チェックリスト（PR テンプレートや AI レビュアーの観点表として使える形）
+または JSON で出します。そのまま使える GitHub Action（`action.yml`）・ワークフロー例・
+CODEOWNERS・PR テンプレートと、導入手順の全体は[ガイド](guide/README.ja.md)の
+[CI に組み込む](guide/ci-integration.ja.md)を参照してください。
+
 ---
 
 ## コントリビュート

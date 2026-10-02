@@ -20,6 +20,7 @@ Nothing here needs to be installed — you can follow along in the
 | **[Attack Path Analysis](attack-paths.md)** | Enumerate the routes from attacker to target and find the choke points where one control covers the most routes |
 | **[The Compliance Map](compliance-map.md)** | Check how threats map to NIST CSF, the NIST AI RMF and Japan's AI Business Operator Guidelines, from either direction |
 | **[Turning Your Threat Model into an AI-Readable Security Context](security-context.md)** | Exporting a finished threat model as Markdown, using it as the input to an AI vulnerability review, and why that works |
+| **[Integrating with CI](ci-integration.md)** | Treating a saved project JSON as a source-of-record file: the headless CLI, the GitHub Action, trigger-based review, CODEOWNERS and branch protection, and running on a closed network |
 | **[An Introduction to Secure by Design](secure-by-design.md)** | The thinking behind the tool: what Secure by Design means, why it is being asked for now, and the four roles threat modeling plays. Based on the CISA-led joint guidance |
 
 ## Where to start
@@ -33,6 +34,8 @@ Nothing here needs to be installed — you can follow along in the
 - **You need to line the work up against a standard** — see [The Compliance Map](compliance-map.md).
 - **You want to feed your threat model to an AI vulnerability review** —
   see [Turning Your Threat Model into an AI-Readable Security Context](security-context.md).
+- **You want to wire the threat model into CI as a reviewed, source-of-record file** —
+  read [Integrating with CI](ci-integration.md).
 - **You want to explain to someone why this work matters** —
   [An Introduction to Secure by Design](secure-by-design.md) is written to be read on its own.
 

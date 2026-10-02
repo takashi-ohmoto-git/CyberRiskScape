@@ -203,6 +203,24 @@ Trigger list:
 T4 cannot be auto-judged from the model diff (the diagram has no tech-stack information),
 so it is always reported as "confirm in PR review".
 
+### Triggers checklist (`triggers`) and CI setup
+
+```bash
+node dist-cli/main.js triggers [options]
+```
+
+| Option | Values | Default |
+|---|---|---|
+| `--format` | `md` \| `json` | `md` |
+| `--triggers` | path to a trigger-definition YAML | the bundled T1–T8 (translation overlay not applied when set) |
+| `--locale` | `ja` \| `en` | `ja` |
+| `--out` | output file path | stdout |
+
+Outputs the T1–T8 trigger list above as a Markdown checklist (for a PR template or an AI
+reviewer's checklist) or as JSON. For a ready-to-use GitHub Action (`action.yml`), example
+workflow, CODEOWNERS and PR template, and the full setup guide, see
+[Integrating with CI](guide/ci-integration.md) in the [user guide](guide/README.md).
+
 ---
 
 ## Roadmap
