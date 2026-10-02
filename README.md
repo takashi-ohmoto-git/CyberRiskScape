@@ -219,7 +219,7 @@ node dist-cli/main.js triggers [options]
 Outputs the T1–T8 trigger list above as a Markdown checklist (for a PR template or an AI
 reviewer's checklist) or as JSON. For a ready-to-use GitHub Action (`action.yml`), example
 workflow, CODEOWNERS and PR template, and the full setup guide, see
-[Integrating with CI](guide/ci-integration.md) in the [user guide](guide/README.md).
+[Integrating with AI-Driven Development CI](guide/ci-integration.md) in the [user guide](guide/README.md).
 
 ---
 

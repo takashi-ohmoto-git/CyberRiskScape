@@ -1,4 +1,4 @@
-# Integrating with CI — Treating the Threat Model as a Source-of-Record File
+# Integrating with AI-Driven Development CI — Treating the Threat Model as a Source-of-Record File
 
 **English** | [日本語](ci-integration.ja.md)
 
@@ -98,7 +98,7 @@ trigger checklist** as judgment material for whether a model update is needed.
 
 "Auto-judged from the model diff" only applies **once the model file itself has been updated**. At
 stage ① the model file hasn't changed yet, so every item is shown as "needs human/AI review" here
-(see §7 for why T4 can never be auto-judged even at stage ②).
+(see §8 for why T4 can never be auto-judged even at stage ②).
 
 A PR that touches a watched path without updating the model keeps failing CI until a designated
 reviewer looks at it and applies the `threat-model-not-needed` label.
@@ -116,6 +116,35 @@ and reports, as Markdown posted to the PR comment and job summary:
 
 and **fails CI when a newly added, unsuppressed threat is at or above `fail-on`**. Pre-existing
 unaddressed threats never fail it — ongoing remediation is fine.
+
+### How heavy should the threat modeling be — two tracks
+
+Once a trigger matches, pick one of these tracks according to the size of the change.
+
+| | Track A: Diff review | Track B: Full threat model |
+|---|---|---|
+| When to use | Low-to-medium-risk changes: about one new interface, a narrow scope, 1–3 matching triggers | A new major component, a new authentication mechanism, a regulatory boundary (FedRAMP, ISMAP, etc.), multiple interacting services, or a formal compliance deliverable is required |
+| Prerequisite | A baseline model of the system already exists (built with Track B) | None. **The first model of any system always goes here** |
+| Duration | 1–2 days | 2–4 weeks |
+| Tools | A short model update in Canvas + the diff report from CI | Canvas (diagramming, Analytics, attack path analysis) |
+| Deliverable | The diff report on the PR: matching triggers and their evidence, added/removed threats, disposition changes (needs approval), and the gate verdict (the Go/No-Go) | A project file with triaged mitigations (risk ratings, dispositions, and control status recorded) and its report |
+| Review | Self-review by the development team's security lead → approval on the PR by the security team | Iterative review meetings with the security team |
+
+**When to move from Track A to Track B**: when the diff report matches T1 (new trust boundary) or
+T3 (new authentication/authorization mechanism), or when four or more triggers match.
+
+Current constraints when running Track A:
+
+- **The CLI does not create or update the model.** It reviews diffs of an existing model. Update
+  the model in Canvas and include the saved JSON in the PR. You can edit the JSON directly, but
+  membership in a trust boundary is decided by node coordinates, so hand edits or direct edits by
+  an AI are not recommended.
+- **The CLI does not render the diagram and does not narrow threats to a top N.** Open the model
+  file in Canvas to see the DFD; the "Entry points & trust boundaries" section of
+  `analyze --format md` describes it in text.
+- **Risk ratings (impact × likelihood) are not assigned automatically.** A person enters them in
+  Canvas's Analytics. The diff report uses the rating when one exists, and the rule's default
+  severity otherwise.
 
 ---
 

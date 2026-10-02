@@ -208,7 +208,7 @@ node dist-cli/main.js triggers [options]
 上記 T1〜T8 を Markdown チェックリスト（PR テンプレートや AI レビュアーの観点表として使える形）
 または JSON で出します。そのまま使える GitHub Action（`action.yml`）・ワークフロー例・
 CODEOWNERS・PR テンプレートと、導入手順の全体は[ガイド](guide/README.ja.md)の
-[CI に組み込む](guide/ci-integration.ja.md)を参照してください。
+[AI駆動開発のCIに組み込む](guide/ci-integration.ja.md)を参照してください。
 
 ---
 
