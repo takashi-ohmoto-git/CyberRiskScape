@@ -163,7 +163,7 @@ Copy [`guide/ci/threat-model.yml`](ci/threat-model.yml) to
 repository.
 
 ```yaml
-- uses: takashi-ohmoto-git/CyberRiskScape@main   # pin to a commit SHA in production
+- uses: takashi-ohmoto-git/CyberRiskScape@v0.2.0   # pin to a commit SHA in production
   with:
     model: threat-model/project.json
     fail-on: High
@@ -175,8 +175,8 @@ repository.
 ```
 
 > **Pin to a commit SHA, not a branch, in production.** This action builds and runs arbitrary code
-> from whatever ref you reference, via `npm ci && npm run build:cli`. `@main` here is a
-> simplification for this guide.
+> from whatever ref you reference, via `npm ci && npm run build:cli`. A tag (`@v0.2.0`) can be
+> moved later, so in production use the commit SHA that the tag points to.
 
 ### 4.3 Set up CODEOWNERS
 

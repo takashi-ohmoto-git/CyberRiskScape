@@ -22,9 +22,9 @@ jobs:
         # Default shallow checkout (depth 1) is enough — the action fetches the PR's base
         # commit itself with its own shallow `git fetch`.
 
-      # Pin to a commit SHA in production (e.g. `@<40-char-sha>  # v0.1.0`) rather than a
+      # Pin to a commit SHA in production (e.g. `@<40-char-sha>  # v0.2.0`) rather than a
       # branch or tag — this action builds and runs arbitrary CLI code from the referenced ref.
-      - uses: takashi-ohmoto-git/CyberRiskScape@main
+      - uses: takashi-ohmoto-git/CyberRiskScape@v0.2.0
         with:
           model: threat-model/project.json
           fail-on: High

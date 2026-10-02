@@ -4,7 +4,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Threat rules](https://img.shields.io/badge/threat%20rules-126-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-687%20passing-brightgreen.svg)](#development)
+[![Tests](https://img.shields.io/badge/tests-786%20passing-brightgreen.svg)](#development)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 **English** | [日本語](README.ja.md)
@@ -46,7 +46,7 @@ This is where the project invests. Most threat modeling tools have zero rules in
 
 ### Features
 
-- **Visual DFD editor** — 48 component types across 6 libraries and 8 categories, trust
+- **Visual DFD editor** — 39 component types across 6 libraries and 8 categories, trust
   boundaries, and data flows carrying encryption, authentication, and semantic attributes
 - **Automatic threat detection** — distinguishes *inherent* threats (a component fires them
   just by existing) from *path-dependent* ones (they need a specific connection to exist)
@@ -137,7 +137,7 @@ npm run test:watch   # watch mode
 npx tsc --noEmit     # type check (strict)
 ```
 
-The standard check after a change is `npx tsc --noEmit` plus the test suite. 687 tests
+The standard check after a change is `npx tsc --noEmit` plus the test suite. 786 tests
 currently pass.
 
 ---

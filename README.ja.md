@@ -4,7 +4,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Threat rules](https://img.shields.io/badge/threat%20rules-126-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-687%20passing-brightgreen.svg)](#開発)
+[![Tests](https://img.shields.io/badge/tests-786%20passing-brightgreen.svg)](#開発)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 [English](README.md) | **日本語**
@@ -36,7 +36,7 @@
 
 ### 主な機能
 
-- **ビジュアル DFD エディタ** — 48 種のコンポーネント型（6 ライブラリ・8 カテゴリ）、
+- **ビジュアル DFD エディタ** — 39 種のコンポーネント型（6 ライブラリ・8 カテゴリ）、
   トラスト境界、データフローの暗号化区分・認証状態の表現
 - **脅威の自動検出** — 配置しただけで発火する内在脅威と、接続条件つきで発火する
   経路依存脅威を区別して検出
@@ -128,7 +128,7 @@ npm run test:watch   # テスト watch モード
 npx tsc --noEmit     # 型チェック（strict）
 ```
 
-変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 687 件の
+変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 786 件の
 テストが通ります。
 
 ---

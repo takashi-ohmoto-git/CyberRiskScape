@@ -152,7 +152,7 @@ Track A を回すうえでの現状の制約：
 コピーし、`model` / `fail-on` / `watch-paths` を自分のリポジトリに合わせます。
 
 ```yaml
-- uses: takashi-ohmoto-git/CyberRiskScape@main   # 本番ではコミット SHA に固定すること
+- uses: takashi-ohmoto-git/CyberRiskScape@v0.2.0   # 本番ではコミット SHA に固定すること
   with:
     model: threat-model/project.json
     fail-on: High
@@ -165,7 +165,7 @@ Track A を回すうえでの現状の制約：
 
 > **本番ではブランチではなくコミット SHA に固定してください。** この Action は参照先の
 > リポジトリの任意のコードを `npm ci && npm run build:cli` でビルドして実行します。
-> `@main` はこのガイドでの説明用の簡略表記です。
+> タグ（`@v0.2.0`）は後から付け替えられるため、本番ではそのタグが指すコミット SHA を指定してください。
 
 ### 4.3 CODEOWNERS を設定する
 
