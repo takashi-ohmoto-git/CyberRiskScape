@@ -1,0 +1,403 @@
+{
+  "schemaVersion": 1,
+  "kind": "cyberriskscape-template",
+  "name": "コンタクトセンター 標準構成（有人＋AI の 4 パターン）",
+  "layer": {
+    "nodes": [
+      {
+        "id": "ncc_ph",
+        "type": "SMARTPHONE",
+        "x": 50,
+        "y": 200,
+        "label": "顧客（電話）",
+        "managedState": "Unmanaged"
+      },
+      {
+        "id": "ncc_cu",
+        "type": "USER",
+        "x": 50,
+        "y": 520,
+        "label": "顧客（チャット）",
+        "userTrustAttribute": "Guest"
+      },
+      {
+        "id": "ncc_ivr",
+        "type": "IVR",
+        "x": 520,
+        "y": 60,
+        "label": "IVR"
+      },
+      {
+        "id": "ncc_pbx",
+        "type": "PBX",
+        "x": 740,
+        "y": 200,
+        "label": "PBX / コンタクトセンター基盤"
+      },
+      {
+        "id": "ncc_vp",
+        "type": "VOICEPRINT_AUTH",
+        "x": 520,
+        "y": 360,
+        "label": "声紋認証"
+      },
+      {
+        "id": "ncc_ho",
+        "type": "HUMAN_OPERATOR",
+        "x": 740,
+        "y": 360,
+        "label": "有人オペレーター"
+      },
+      {
+        "id": "ncc_stt",
+        "type": "STT",
+        "x": 960,
+        "y": 200,
+        "label": "STT（音声認識）"
+      },
+      {
+        "id": "ncc_tts",
+        "type": "TTS",
+        "x": 960,
+        "y": 360,
+        "label": "TTS（音声合成）"
+      },
+      {
+        "id": "ncc_sts",
+        "type": "STS",
+        "x": 960,
+        "y": 60,
+        "label": "STS（音声対音声）"
+      },
+      {
+        "id": "ncc_rec",
+        "type": "VOICE_RECORDING",
+        "x": 740,
+        "y": 60,
+        "label": "通話録音"
+      },
+      {
+        "id": "ncc_ag",
+        "type": "AGENT",
+        "x": 1180,
+        "y": 520,
+        "label": "AI オペレーター",
+        "agentAttributes": {
+          "agency": "Bounded",
+          "blastRadius": "Tenant",
+          "identityTier": "Cryptographic"
+        }
+      },
+      {
+        "id": "ncc_crm",
+        "type": "CRM",
+        "x": 1400,
+        "y": 360,
+        "label": "CRM（顧客データ）"
+      },
+      {
+        "id": "ncc_llm",
+        "type": "LLM",
+        "x": 1400,
+        "y": 520,
+        "label": "LLM（インテント分析・要約）"
+      },
+      {
+        "id": "ncc_line",
+        "type": "LINE",
+        "x": 290,
+        "y": 520,
+        "label": "LINE 公式アカウント"
+      },
+      {
+        "id": "ncc_chat",
+        "type": "CHAT",
+        "x": 520,
+        "y": 680,
+        "label": "有人チャット"
+      }
+    ],
+    "edges": [
+      {
+        "id": "ecc_01",
+        "source": "ncc_ph",
+        "target": "ncc_pbx",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "Plain",
+        "dataFlow": "outbound",
+        "dataFlowName": "音声"
+      },
+      {
+        "id": "ecc_02",
+        "source": "ncc_pbx",
+        "target": "ncc_ivr",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "音声"
+      },
+      {
+        "id": "ecc_03",
+        "source": "ncc_ivr",
+        "target": "ncc_pbx",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "ecc_04",
+        "source": "ncc_pbx",
+        "target": "ncc_vp",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "声紋照合"
+      },
+      {
+        "id": "ecc_05",
+        "source": "ncc_pbx",
+        "target": "ncc_ho",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "音声"
+      },
+      {
+        "id": "ecc_06",
+        "source": "ncc_pbx",
+        "target": "ncc_stt",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "通話音声"
+      },
+      {
+        "id": "ecc_07",
+        "source": "ncc_stt",
+        "target": "ncc_ag",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "書き起こし"
+      },
+      {
+        "id": "ecc_08",
+        "source": "ncc_ag",
+        "target": "ncc_tts",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "応答テキスト"
+      },
+      {
+        "id": "ecc_09",
+        "source": "ncc_tts",
+        "target": "ncc_pbx",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "合成音声"
+      },
+      {
+        "id": "ecc_10",
+        "source": "ncc_pbx",
+        "target": "ncc_sts",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "音声"
+      },
+      {
+        "id": "ecc_11",
+        "source": "ncc_sts",
+        "target": "ncc_pbx",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "音声"
+      },
+      {
+        "id": "ecc_12",
+        "source": "ncc_pbx",
+        "target": "ncc_rec",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "通話録音"
+      },
+      {
+        "id": "ecc_13",
+        "source": "ncc_ag",
+        "target": "ncc_crm",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "顧客情報の照会",
+        "semantic": "tool_invocation"
+      },
+      {
+        "id": "ecc_14",
+        "source": "ncc_crm",
+        "target": "ncc_ag",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "顧客データ"
+      },
+      {
+        "id": "ecc_15",
+        "source": "ncc_ag",
+        "target": "ncc_llm",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "発話内容"
+      },
+      {
+        "id": "ecc_16",
+        "source": "ncc_llm",
+        "target": "ncc_ag",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "分析結果"
+      },
+      {
+        "id": "ecc_17",
+        "source": "ncc_ag",
+        "target": "ncc_ho",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "エスカレーション"
+      },
+      {
+        "id": "ecc_18",
+        "source": "ncc_cu",
+        "target": "ncc_line",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "メッセージ"
+      },
+      {
+        "id": "ecc_19",
+        "source": "ncc_line",
+        "target": "ncc_cu",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "返信"
+      },
+      {
+        "id": "ecc_20",
+        "source": "ncc_line",
+        "target": "ncc_ag",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Webhook"
+      },
+      {
+        "id": "ecc_21",
+        "source": "ncc_ag",
+        "target": "ncc_line",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "返信"
+      },
+      {
+        "id": "ecc_22",
+        "source": "ncc_cu",
+        "target": "ncc_chat",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "メッセージ"
+      },
+      {
+        "id": "ecc_23",
+        "source": "ncc_chat",
+        "target": "ncc_cu",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "返信"
+      },
+      {
+        "id": "ecc_24",
+        "source": "ncc_chat",
+        "target": "ncc_ho",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "メッセージ"
+      },
+      {
+        "id": "ecc_25",
+        "source": "ncc_ho",
+        "target": "ncc_chat",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "返信"
+      }
+    ],
+    "boundaries": [
+      {
+        "id": "bcc0001",
+        "type": "RECT",
+        "x": 14,
+        "y": 120,
+        "width": 240,
+        "height": 550,
+        "trustLevel": "Internet"
+      },
+      {
+        "id": "bcc0002",
+        "type": "RECT_DASHED",
+        "x": 262,
+        "y": 450,
+        "width": 190,
+        "height": 190,
+        "trustLevel": "Partner"
+      },
+      {
+        "id": "bcc0003",
+        "type": "ROUNDED",
+        "x": 480,
+        "y": 0,
+        "width": 1090,
+        "height": 810,
+        "trustLevel": "Internal",
+        "macroTrust": "Office Area"
+      }
+    ]
+  }
+}

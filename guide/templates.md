@@ -92,6 +92,32 @@ User ⇄ Front-end Server ⇄ LLM model ⇄ Vector DB / RAG ⇄ Data store
 Import it and **48 threats** are detected straight away. Every chapter from
 [Reading the Threat Panel](reading-threats.md) onward assumes this state.
 
+### The contact center template
+
+A single diagram of a contact center that mixes human operators and AI.
+
+| File | Contents |
+|---|---|
+| [`templates/contact-center.en.json`](templates/contact-center.en.json) | English |
+| [`templates/contact-center.ja.json`](templates/contact-center.ja.json) | Japanese |
+
+**Inside:** 15 components, 25 data flows, 3 trust boundaries (customer side = Internet, LINE = Partner, in-house contact center = Internal).
+
+Four handling patterns share the one diagram:
+
+- **Human call** — Customer (phone) → PBX → Human operator
+- **AI call** — PBX → STT → AI operator → TTS → PBX (cascaded). A separate PBX ⇄ STS (speech-to-speech) path is included too
+- **AI chat** — Customer → LINE → AI operator (received by webhook, answered through the reply API)
+- **Human chat** — Customer → Chat → Human operator
+
+The common parts are an IVR in front of the PBX, voiceprint authentication, call recording, a CRM
+(`tool_invocation`), an LLM (intent analysis / summary) and the AI-to-human escalation.
+
+Import it and **60 threats** are detected. The main ones: voiceprint bypass with cloned voices,
+social engineering of human operators by phone, STS guardrail gaps, prompt injection through
+STT (spoken input), PBX toll fraud and caller ID spoofing, unverified LINE webhook signatures and
+channel takeover, and exposure of call recordings (biometric data).
+
 ---
 
 ## 5. Why the flows run both ways
