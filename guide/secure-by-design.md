@@ -126,9 +126,55 @@ you can say "we looked at the threats, and chose this default" rather than "it w
 
 ---
 
-## 4. Where CyberRiskScape fits
+## 4. The role CyberRiskScape plays in Secure by Design
 
-Against those four roles, here is what this tool takes on:
+### 4.1 When only the security team thinks about threats, things get missed
+
+Enumerating threats has traditionally been the security team's job.
+To achieve Secure by Design, that way of working **leaves gaps**.
+
+The knowledge needed to find threats is spread across the organization. The business side knows
+what must be protected and how an outage would hit the business. The engineering side knows where
+the data flows and which boundaries it crosses. Much of both is **tacit knowledge** that was never
+written down. When a security engineer draws the diagram alone, that knowledge falls out — and it
+turns straight into missed threats.
+
+This is also why the guidance's third principle is that **executives lead**: security is treated
+as a business priority for the whole organization, not a technical problem for one department.
+
+### 4.2 Sharing one context to discuss threats
+
+CyberRiskScape lets **executives, service planners and security engineers discuss threats while
+sharing the same context**. Each feature has its main users and its role:
+
+| Feature | Main users | Role |
+|---|---|---|
+| **Canvas** | Executives, service planners, security engineers | The place where everyone **discusses the whole threat picture from the same vantage point**. It makes the tacit knowledge of the business and engineering sides visible as a diagram and its threats |
+| **Analytics** | Security engineers, internal auditors | Security engineers scrutinize threats and record risk scores, responses and control status. Internal auditors **review the state of security controls** from those records |
+| **PDF report (Report)** | Executives | Grasp **the critical threats (top 10) and control implementation progress** on a one-page summary (see [Exporting PDF Reports and Diagram Images](report-export.md)) |
+| **DCRH THREAT_MODEL.md (Report)** | AI-driven vulnerability assessment | Feed threat-modeling information — what you protect, the trust boundaries, the decisions people made — to AI vulnerability assessment, **raising its accuracy in the era of frontier AI** (see [Security Context](security-context.md)) |
+| **CLI** | Development teams, CI/CD | Treat the saved project as a source-of-truth file and **build it into the CI/CD of AI-driven development**, with people reviewing threat diffs on pull requests (see [Integrating with AI-Driven Development CI](ci-integration.md)) |
+
+The key is that **every feature looks at the same single threat model**. The "top 10" executives
+see in the PDF, the threats a security engineer assessed in Analytics, and the threats CI diffs are
+the same threats. Nobody has to rebuild the material for each audience, so the conversation stays
+aligned.
+
+### 4.3 Built into the SDLC, it becomes a Security Context Layer
+
+Built into the **SDLC (Software Development Life Cycle)** this way, CyberRiskScape connects planning
+and design discussions, assessment and audit, reporting to executives, AI vulnerability assessment
+and CI/CD review **around one threat model**.
+
+What CyberRiskScape aims to be is not a one-off diagramming tool. It is **the Security Context
+Layer at the core of Secure by Design**: it keeps the organization's tacit knowledge and human
+judgment as a written threat model, and supplies it to every stage of development.
+
+---
+
+## 5. Where CyberRiskScape fits
+
+Against the four roles of threat modeling in section 3, here is what this tool takes on:
 
 | Role of threat modeling | What CyberRiskScape provides |
 |---|---|
@@ -137,7 +183,7 @@ Against those four roles, here is what this tool takes on:
 | Informed by real intrusions | The threat library is built from published sources — OWASP, MITRE ATLAS, NIST, Anthropic and others — with references |
 | Setting priorities | Severity plus a risk score and a response (mitigate / accept / transfer / avoid) per threat |
 | A staged adoption plan | Mitigations are given at three tiers: FOUNDATION / ENTERPRISE / ADVANCED |
-| Producing a written artifact | Export the threat list as CSV, JSON or Markdown |
+| Producing a written artifact | Export the threat list as CSV, JSON or Markdown, plus a PDF report for executives and PNG diagram images |
 
 To be clear about the other side: **this tool does not demonstrate conformance with Secure by
 Design**. The guidance asks for an organizational commitment; a diagram and a list are only the

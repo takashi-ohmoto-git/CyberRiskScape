@@ -22,7 +22,7 @@ CyberRiskScape を使う人のためのドキュメントです。
 | **[コンプライアンスマップ](compliance-map.ja.md)** | 脅威と NIST CSF / NIST AI RMF / AI 事業者ガイドラインの対応を、脅威側・規格側の両方から確認する |
 | **[脅威モデルを AI が読める Security Context に変換する](security-context.ja.md)** | 完成した脅威モデルを Markdown で書き出し、AI による脆弱性診断の入力として使う手順と、それが効く理由 |
 | **[AI駆動開発のCIに組み込む](ci-integration.ja.md)** | 保存済みプロジェクト JSON を正本ファイルとして扱う：ヘッドレス CLI・GitHub Action・実行トリガーに基づくレビュー・CODEOWNERS とブランチ保護・閉域環境での使い方 |
-| **[Secure by Design 入門](secure-by-design.ja.md)** | 背景にある考え方。Secure by Design とは何か、なぜ今求められるのか、脅威モデリングが担う 4 つの役割。CISA 主導の国際共同ガイダンスに基づく |
+| **[Secure by Design 入門](secure-by-design.ja.md)** | 背景にある考え方。Secure by Design とは何か、なぜ今求められるのか、脅威モデリングが担う 4 つの役割、そして経営層・企画・セキュリティ・監査・CI が 1 つの脅威モデルを共有する Security Context Layer としての CyberRiskScape の役割。CISA 主導の国際共同ガイダンスに基づく |
 
 ## どこから読むか
 

@@ -22,7 +22,7 @@ Nothing here needs to be installed — you can follow along in the
 | **[The Compliance Map](compliance-map.md)** | Check how threats map to NIST CSF, the NIST AI RMF and Japan's AI Business Operator Guidelines, from either direction |
 | **[Turning Your Threat Model into an AI-Readable Security Context](security-context.md)** | Exporting a finished threat model as Markdown, using it as the input to an AI vulnerability review, and why that works |
 | **[Integrating with AI-Driven Development CI](ci-integration.md)** | Treating a saved project JSON as a source-of-record file: the headless CLI, the GitHub Action, trigger-based review, CODEOWNERS and branch protection, and running on a closed network |
-| **[An Introduction to Secure by Design](secure-by-design.md)** | The thinking behind the tool: what Secure by Design means, why it is being asked for now, and the four roles threat modeling plays. Based on the CISA-led joint guidance |
+| **[An Introduction to Secure by Design](secure-by-design.md)** | The thinking behind the tool: what Secure by Design means, why it is being asked for now, the four roles threat modeling plays, and CyberRiskScape as a Security Context Layer that executives, planners, security, audit and CI all share. Based on the CISA-led joint guidance |
 
 ## Where to start
 
