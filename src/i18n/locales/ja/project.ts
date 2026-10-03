@@ -21,6 +21,8 @@ export const jaProject = {
   'project.sidebar.exportCsv': 'CSV ダウンロード',
   'project.sidebar.exportJson': 'JSON ダウンロード',
   'project.sidebar.exportDcrh': 'DCRH THREAT_MODEL.md（Anthropic 公式互換）',
+  'project.sidebar.exportPdf': 'PDF レポート（レイヤー選択）',
+  'project.sidebar.exportPng': 'PNG 画像（レイヤー選択）',
   'project.sidebar.newProject': '新規作成',
   'project.sidebar.fileMenu': 'ファイル（保存 / 開く）',
   'project.sidebar.saveStateSaved': '保存しました',
@@ -113,4 +115,17 @@ export const jaProject = {
   'project.templateModal.replaceButton': '置き換える',
   'project.templateModal.replaceAndApply': '置き換えて適用',
   'project.templateModal.apply': '適用',
+  // ── ExportLayersModal（PDF / PNG） ──
+  'project.exportModal.titlePdf': 'PDF レポートの出力',
+  'project.exportModal.titlePng': 'PNG 画像の出力',
+  'project.exportModal.introPdf': '含めるレイヤーを選んでください。選んだレイヤーを 1 本の PDF にまとめます（現在の framework 表示・カスタムルール込み）。',
+  'project.exportModal.introPng': '出力するレイヤーを選んでください。レイヤーごとに 1 ファイルの PNG をダウンロードします。',
+  'project.exportModal.emptyLayer': 'ノードがありません',
+  'project.exportModal.nodeCount': '{count} ノード',
+  'project.exportModal.noneSelected': 'レイヤーを 1 つ以上選んでください。',
+  'project.exportModal.export': '出力',
+  'project.exportModal.busy': '生成中…',
+  'project.exportModal.error': '出力に失敗しました: {message}',
+  'project.exportModal.errorReload':
+    '出力機能を読み込めませんでした。アプリが更新されたか、接続が切れた可能性があります。ページを再読み込みしてから、もう一度お試しください（未保存の変更はブラウザ内に自動保存されています）。',
 } as const;

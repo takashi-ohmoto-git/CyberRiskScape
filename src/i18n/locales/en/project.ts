@@ -19,6 +19,8 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'project.sidebar.exportCsv': 'Download CSV',
   'project.sidebar.exportJson': 'Download JSON',
   'project.sidebar.exportDcrh': 'DCRH THREAT_MODEL.md (Anthropic-compatible)',
+  'project.sidebar.exportPdf': 'PDF report (choose layers)',
+  'project.sidebar.exportPng': 'PNG image (choose layers)',
   'project.sidebar.newProject': 'New project',
   'project.sidebar.fileMenu': 'File (Save / Open)',
   'project.sidebar.saveStateSaved': 'Saved',
@@ -113,4 +115,17 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'project.templateModal.replaceButton': 'Replace',
   'project.templateModal.replaceAndApply': 'Replace and apply',
   'project.templateModal.apply': 'Apply',
+  // ── ExportLayersModal（PDF / PNG） ──
+  'project.exportModal.titlePdf': 'Export PDF report',
+  'project.exportModal.titlePng': 'Export PNG image',
+  'project.exportModal.introPdf': 'Choose the layers to include. They are combined into a single PDF (current framework view, custom rules included).',
+  'project.exportModal.introPng': 'Choose the layers to export. One PNG file is downloaded per layer.',
+  'project.exportModal.emptyLayer': 'No nodes',
+  'project.exportModal.nodeCount': '{count} nodes',
+  'project.exportModal.noneSelected': 'Select at least one layer.',
+  'project.exportModal.export': 'Export',
+  'project.exportModal.busy': 'Generating…',
+  'project.exportModal.error': 'Export failed: {message}',
+  'project.exportModal.errorReload':
+    'Could not load the export feature. The app may have been updated, or the connection was lost. Reload the page and try again (your changes are auto-saved in the browser).',
 };

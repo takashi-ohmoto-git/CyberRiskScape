@@ -33,6 +33,7 @@ import { renderIcon } from '../component-library/iconRegistry';
 import { saveProject } from '../features/persistence/repository';
 import { buildThreatReport, toCsv, toJson, toDCRHThreatModelMarkdown } from '../features/export/threatReport';
 import { triggerDownload } from '../features/export/download';
+import { reportFilename } from '../features/export/exportFiles';
 import { useLocale, useT, type TranslationKey } from '../i18n';
 
 const BOUNDARY_SECTION_KEY = 'BOUNDARIES';
@@ -41,13 +42,6 @@ const LIBRARY_MANAGER_KEY = '__LIBRARY_MANAGER__';
 const PROJECT_SECTION_KEY = '__PROJECT__';
 const LAYER_SUBMENU_KEY = '__LAYERS__';
 const REPORT_SUBMENU_KEY = '__REPORT__';
-
-/** レポートのファイル名（拡張子なし）。例: `threat-report_CreditScoringAPI_L1_2026-06-03`。 */
-function reportFilename(systemName: string, layer: LayerKey): string {
-  const slug = systemName.trim().replace(/[^\w.-]+/g, '_').slice(0, 60);
-  const date = new Date().toISOString().slice(0, 10);
-  return ['threat-report', slug, layer, date].filter(Boolean).join('_');
-}
 
 const LAYER_DESCRIPTION_KEYS: Record<LayerKey, TranslationKey> = {
   L0: 'project.sidebar.layerDesc.L0',
@@ -71,6 +65,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
   const toggleLibrary = useDiagramStore((s) => s.toggleLibrary);
   const openProjectEdit = useDiagramStore((s) => s.openProjectEdit);
   const openTemplate = useDiagramStore((s) => s.openTemplate);
+  const openExportModal = useDiagramStore((s) => s.openExportModal);
   const openProjectFile = useDiagramStore((s) => s.openProjectFile);
   const openNewProjectConfirm = useDiagramStore((s) => s.openNewProjectConfirm);
   const projectName = useDiagramStore((s) => s.projectMeta.name);
@@ -270,6 +265,20 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                   >
                     <Download size={12} className="text-emerald-400 shrink-0" />
                     {t('project.sidebar.exportDcrh')}
+                  </button>
+                  <button
+                    onClick={() => openExportModal('pdf')}
+                    className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
+                  >
+                    <Download size={12} className="text-emerald-400 shrink-0" />
+                    {t('project.sidebar.exportPdf')}
+                  </button>
+                  <button
+                    onClick={() => openExportModal('png')}
+                    className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
+                  >
+                    <Download size={12} className="text-emerald-400 shrink-0" />
+                    {t('project.sidebar.exportPng')}
                   </button>
                 </div>
               )}

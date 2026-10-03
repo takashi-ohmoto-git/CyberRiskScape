@@ -368,6 +368,8 @@ interface DiagramState {
   isLibraryInspectorOpen: boolean;
   /** Template（Import / Export）モーダルの開閉状態（UI 表示用、永続化しない）。 */
   isTemplateModalOpen: boolean;
+  /** PDF / PNG エクスポートのレイヤー選択モーダル（null=閉。UI 表示用、永続化しない）。 */
+  exportModalMode: 'pdf' | 'png' | null;
   /** プロジェクトのファイル保存/読込モーダルの開閉状態（UI 表示用、永続化しない）。 */
   isProjectFileModalOpen: boolean;
   /** 新規プロジェクト作成の確認モーダルの開閉状態（UI 表示用、永続化しない）。 */
@@ -516,6 +518,8 @@ interface DiagramState {
   closeLibraryInspector: () => void;
   openTemplate: () => void;
   closeTemplate: () => void;
+  openExportModal: (mode: 'pdf' | 'png') => void;
+  closeExportModal: () => void;
   openProjectFile: () => void;
   closeProjectFile: () => void;
   openNewProjectConfirm: () => void;
@@ -620,6 +624,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   isAnalyticsOpen: false,
   isLibraryInspectorOpen: false,
   isTemplateModalOpen: false,
+  exportModalMode: null,
   isProjectFileModalOpen: false,
   isNewProjectConfirmOpen: false,
 
@@ -1127,6 +1132,8 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
   openTemplate: () => set({ isTemplateModalOpen: true }),
   closeTemplate: () => set({ isTemplateModalOpen: false }),
+  openExportModal: (mode) => set({ exportModalMode: mode }),
+  closeExportModal: () => set({ exportModalMode: null }),
   openProjectFile: () => set({ isProjectFileModalOpen: true }),
   closeProjectFile: () => set({ isProjectFileModalOpen: false }),
   openNewProjectConfirm: () => set({ isNewProjectConfirmOpen: true }),

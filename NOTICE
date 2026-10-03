@@ -139,3 +139,18 @@ Runtime dependencies
 This project depends on third-party npm packages that are not included in this
 repository. See package.json and package-lock.json for the dependency list and
 each package's own license.
+
+================================================================================
+Bundled fonts
+================================================================================
+
+BIZ UDPGothic (Regular / Bold)
+Copyright 2022 The BIZ UDGothic Project Authors
+(https://github.com/googlefonts/morisawa-biz-ud-mincho)
+(copyright line reproduced as written in the upstream license file)
+Licensed under the SIL Open Font License, Version 1.1.
+Full license text: src/assets/fonts/OFL-BIZUDPGothic.txt
+
+Location: src/assets/fonts/
+Used to embed Japanese text in exported PDF reports. Only the glyphs used in
+each report are embedded (subset at export time).
