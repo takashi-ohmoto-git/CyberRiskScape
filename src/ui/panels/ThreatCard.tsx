@@ -65,6 +65,14 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
   const [locale] = useLocale();
   const { getRule, getSource } = useRuleLookup();
   const [isBasisOpen, setIsBasisOpen] = useState(false);
+  // 展開中のコンプライアンス参照（complianceRefs の添字）
+  const [openRefs, setOpenRefs] = useState<ReadonlySet<number>>(new Set());
+  const toggleRef = (i: number) =>
+    setOpenRefs((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(i)) next.add(i);
+      return next;
+    });
 
   const isManual = threat.origin === 'manual';
   // 「抑制」（淡色化）扱いは受容/誤検知のみ。回避/低減/移転は表示維持。
@@ -216,18 +224,40 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
           <div className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">
             {t('threats.threatCard.complianceHeading')}
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="space-y-1.5">
             {threat.complianceRefs.map((c, i) => {
               const label = resolveStandardLabel(c.standard, locale);
               const refLabel = resolveRefLabel(c.standard, c.ref, locale);
+              const item = getComplianceMap(locale).index.get(
+                makeComplianceKey(c.standard as StandardId, c.ref),
+              );
+              const isOpen = openRefs.has(i);
               return (
-                <span
-                  key={`${c.standard}-${c.ref}-${i}`}
-                  className="text-xs font-bold bg-slate-800 border border-slate-700 text-slate-300 px-2 py-0.5 rounded"
-                  title={`${label} / ${refLabel}`}
-                >
-                  {label} <span className="text-slate-500">·</span> {refLabel}
-                </span>
+                <div key={`${c.standard}-${c.ref}-${i}`}>
+                  <span
+                    className="inline-block text-xs font-bold bg-slate-800 border border-slate-700 text-slate-300 px-2 py-0.5 rounded"
+                    title={`${label} / ${refLabel}`}
+                  >
+                    {label} <span className="text-slate-500">·</span> {refLabel}
+                  </span>
+                  {item && (
+                    // 規格名が長いとチップ横の列が細り title が 1〜2 文字ずつ折り返すため、title は次の行に置く
+                    <button
+                      type="button"
+                      onClick={() => toggleRef(i)}
+                      aria-expanded={isOpen}
+                      className="mt-1 w-full flex items-start gap-1 text-left text-xs text-slate-300 hover:text-slate-100 transition-colors"
+                    >
+                      <span className="shrink-0 mt-0.5 text-slate-500">
+                        {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                      </span>
+                      <span className="leading-snug">{item.title}</span>
+                    </button>
+                  )}
+                  {item && isOpen && (
+                    <p className="mt-1 pl-4 text-xs text-slate-400 leading-relaxed">{item.summary}</p>
+                  )}
+                </div>
               );
             })}
           </div>
