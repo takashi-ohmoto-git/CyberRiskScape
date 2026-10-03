@@ -374,7 +374,9 @@ function detailBlock(ctx: Ctx, r: PreparedRow, t: T, top = false): void {
   ctx.cursor.advance(4);
 }
 
-const THREAT_WIDTHS = [28, 100, 187, 60, 65, 75];
+// 列幅は太字見出し・ラベルの実測（8.5pt＋左右余白）で決めた最小幅を確保する：
+// 実効深刻度/Effective ≈52pt、Unaddressed ≈70pt、Not applicable ≈76pt、FRONT_END_SERVER ≈104pt（空白で折り返す前提）。
+const THREAT_WIDTHS = [26, 106, 180, 53, 72, 78];
 
 function threatSection(ctx: Ctx, title: string, rows: PreparedRow[], t: T): void {
   heading(ctx, title, 11);
@@ -563,8 +565,10 @@ export async function buildPdfReport(input: BuildPdfReportInput): Promise<Uint8A
   const subsetter = await createFontSubsetter(input.harfbuzzWasm);
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
-  const reg = await doc.embedFont(subsetter.subset(input.fonts.regular, used), { subset: false });
-  const bold = await doc.embedFont(subsetter.subset(input.fonts.bold, used), { subset: false });
+  // liga を切る：既定の fi 等の合字は描画に隙間が出るうえ、テキスト抽出・検索で "fi" が欠ける。
+  const embedOpts = { subset: false, features: { liga: false } };
+  const reg = await doc.embedFont(subsetter.subset(input.fonts.regular, used), embedOpts);
+  const bold = await doc.embedFont(subsetter.subset(input.fonts.bold, used), embedOpts);
   doc.setTitle(`${t('report.pdf.title')} ${systemName}`.trim());
   doc.setCreator(toolLine);
   doc.setProducer(toolLine);
@@ -589,7 +593,7 @@ export async function buildPdfReport(input: BuildPdfReportInput): Promise<Uint8A
   if (topRows.length === 0) {
     paragraph(ctx, t('report.pdf.top.empty'), { color: MUTED });
   } else {
-    table(ctx, topHeaders, [32, 142, 90, 36, 54, 66, 95], topRows, compact);
+    table(ctx, topHeaders, [34, 132, 106, 40, 53, 72, 78], topRows, compact); // 幅の根拠は THREAT_WIDTHS の注記。Rank/レイヤー ≈32/39pt
   }
   heading(ctx, t('report.pdf.counts.treatment'), 10, 6);
   table(ctx, treatmentHeaders, equalWidths(TREATMENTS.length), [{ cells: treatmentValues }], {

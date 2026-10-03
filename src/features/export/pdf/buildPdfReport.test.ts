@@ -158,6 +158,16 @@ describe('buildPdfReport', () => {
     expect(pages.join(' ')).not.toMatch(/\[(Foundation|Enterprise|Advanced)\]/);
   }, 30_000);
 
+  it('fi 合字を使わず、テキスト抽出で "fi" が欠けない', async () => {
+    const l = layer('L0', 1);
+    const row = l.report.rows[0];
+    if (row) row.threat = 'The confidentiality of data must survive verification.';
+    const pages = await pageTexts(await buildPdfReport(input([l], 'en')));
+    const text = pages.join(' ').replace(/\s+/g, '');
+    expect(text).toContain('confidentiality');
+    expect(text).toContain('verification');
+  }, 30_000);
+
   // 目視確認用：CRS_PDF_SAMPLE_OUT にパスを渡すとサンプルと 1 ページ目のテキストを書き出す。
   it.skipIf(!process.env.CRS_PDF_SAMPLE_OUT)('サンプル PDF を書き出す', async () => {
     const out = process.env.CRS_PDF_SAMPLE_OUT as string;

@@ -61,8 +61,10 @@ export function DiagramSnapshot({ layer, threats, bounds }: DiagramSnapshotProps
         backgroundSize: '32px 32px',
       }}
     >
+      {/* EdgeLayer 等の SVG は w-full/h-full（＝画像サイズ）だがワールド座標で描くため、
+          原点から遠い要素がクリップされないよう overflow を可視にする。 */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none [&_svg]:overflow-visible"
         style={{
           transform: `translate(${SNAPSHOT_PADDING - bounds.minX}px, ${SNAPSHOT_PADDING - bounds.minY}px)`,
           transformOrigin: '0 0',
