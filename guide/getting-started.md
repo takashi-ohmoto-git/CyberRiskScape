@@ -221,7 +221,7 @@ the current state immediately.
 **"File (Save / Open)"** saves to and opens from a local file explicitly. It uses the File System
 Access API, so it only works in Chromium-based browsers such as Chrome and Edge.
 
-**Report** exports the threat list as CSV, JSON or Markdown.
+**Report** exports the threat list as CSV, JSON or Markdown, and also produces an executive-ready **PDF report** and **PNG images** of the diagram (see [Exporting PDF Reports and Diagram Images](report-export.md)).
 
 > Clearing your browser data also clears the canvas.
 > Use "File (Save / Open)" to keep a diagram you care about.

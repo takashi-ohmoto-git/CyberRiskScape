@@ -154,7 +154,7 @@ Impact 軸（損害・影響範囲）と Likelihood 軸（再現性・攻撃容�
 
 ## 8. エクスポートする
 
-左サイドバーの **Report** を開くと、3 つの形式でダウンロードできます。
+左サイドバーの **Report** を開くと、5 つの項目が並びます。上の 3 つはその場でダウンロードする形式、下の 2 つ（PDF・PNG）はレイヤーを選んで出力します。
 
 ![Report メニュー](../assets/guide/threat-panel/07-report.png)
 
@@ -163,8 +163,12 @@ Impact 軸（損害・影響範囲）と Likelihood 軸（再現性・攻撃容�
 | CSV | 表計算ソフトでの仕分け・共有。脅威 1 件＝1 行の 15 列（対象要素・脅威名・ルール由来と実効の severity 2 列・Impact / Likelihood・緩和策・対応状況・対策実装状況ほか） |
 | JSON | 他ツールへの取り込み・自動処理 |
 | DCRH THREAT_MODEL.md | Anthropic の `defending-code-reference-harness` 互換の Markdown |
+| PDF レポート | CISO・経営層への報告用。1 枚サマリ・上位 10 の詳細・レイヤー別の付録（レイヤーを選んで出力） |
+| PNG 画像 | 構成図の画像（レイヤーごとに 1 ファイル） |
 
-出力対象は**いま表示している脅威一覧**です。
+PDF と PNG の使い方は [PDF レポートと構成図（PNG）を出力する](report-export.ja.md) で説明します。
+
+CSV / JSON / DCRH の出力対象は**いま表示している脅威一覧**です。
 メニューに「表示中の脅威一覧（L1 / ALL・48 件）を出力」と出ているとおり、
 **深度レイヤーとフレームワークタブの絞り込みがそのまま効きます。**
 特定の観点だけを切り出したいときは、先にタブを切り替えてから出力してください。
@@ -193,6 +197,7 @@ Impact 軸（損害・影響範囲）と Likelihood 軸（再現性・攻撃容�
 ## 次に読むもの
 
 - 評価して記録する手順 — [Analytics でリスクを評価する](analytics-assessment.ja.md)
+- 経営層への報告用に PDF・PNG を出力する — [PDF レポートと構成図（PNG）を出力する](report-export.ja.md)
 - 書き出した Markdown を AI の入力として使う — [脅威モデルを AI が読める Security Context に変換する](security-context.ja.md)
 - 対策をどこに置くか決める — [攻撃経路分析](attack-paths.ja.md)
 - 規格との対応を確認する — [コンプライアンスマップ](compliance-map.ja.md)

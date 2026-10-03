@@ -17,6 +17,7 @@ Nothing here needs to be installed — you can follow along in the
 | **[Creating and Using Templates](templates.md)** | Exporting and importing diagrams as JSON, plus the AI chatbot template this guide uses |
 | **[Reading the Threat Panel](reading-threats.md)** | How to read what was detected, prioritize with a risk score, record your treatment decisions, and export the result |
 | **[Assessing Risk in Analytics](analytics-assessment.md)** | Scoring risk and recording risk treatment and control implementation status, all on one screen |
+| **[Exporting PDF Reports and Diagram Images](report-export.md)** | Producing a PDF report for a CISO or executives (one-page summary, top 10, per-layer appendix) and PNG images of the diagram, and how to read the indicators |
 | **[Attack Path Analysis](attack-paths.md)** | Enumerate the routes from attacker to target and find the choke points where one control covers the most routes |
 | **[The Compliance Map](compliance-map.md)** | Check how threats map to NIST CSF, the NIST AI RMF and Japan's AI Business Operator Guidelines, from either direction |
 | **[Turning Your Threat Model into an AI-Readable Security Context](security-context.md)** | Exporting a finished threat model as Markdown, using it as the input to an AI vulnerability review, and why that works |
@@ -30,6 +31,7 @@ Nothing here needs to be installed — you can follow along in the
 - **You would rather skip the drawing** — import the [template](templates.md).
 - **You have a diagram but do not know what to do with the findings** — read [Reading the Threat Panel](reading-threats.md).
 - **You need to assess and record the findings** — see [Assessing Risk in Analytics](analytics-assessment.md).
+- **You need to report to a CISO or executives** — read [Exporting PDF Reports and Diagram Images](report-export.md).
 - **You need to decide where to start mitigating** — read [Attack Path Analysis](attack-paths.md).
 - **You need to line the work up against a standard** — see [The Compliance Map](compliance-map.md).
 - **You want to feed your threat model to an AI vulnerability review** —

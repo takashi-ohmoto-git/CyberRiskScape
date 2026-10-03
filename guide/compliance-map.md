@@ -120,9 +120,10 @@ It gives you a yardstick for **which maturity level to aim at** when designing a
 
 - **Not every threat has a mapped item.** 103 of the 126 threat rules currently carry compliance
   references. A threat without one is a point that sits outside those frameworks.
-- **Exports do not include it.** There is no compliance column in the CSV, JSON or Markdown output
-  (as of September 2026). To carry the mapping into a deliverable, you have to compile it separately
-  from this screen.
+- **What the exports include depends on the format.** The PDF report lists each threat's mapped items
+  with their titles, and the JSON export carries them as `complianceRefs`. The CSV has no compliance
+  column. The cross-standard matrix (crosswalk) is not output in any format.
+  See [Exporting PDF Reports and Diagram Images](report-export.md) for details.
 - **The view is read-only.** You cannot add items or edit the mapping.
 - **It cannot support a claim of compliance.** As said at the top, it shows correspondence and
   nothing more.

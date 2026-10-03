@@ -60,7 +60,9 @@ This is where the project invests. Most threat modeling tools have zero rules in
 - **Threat library inspector** — read-only view of every rule and the exact conditions
   that make it fire
 - **Export** — threat lists as CSV / JSON, and as Markdown compatible with the
-  `THREAT_MODEL.md` schema used by Anthropic's `defending-code-reference-harness`
+  `THREAT_MODEL.md` schema used by Anthropic's `defending-code-reference-harness`;
+  a **PDF report** (one-page executive summary plus details) and **PNG diagram images**,
+  with selectable layers ([guide](guide/report-export.md))
 - **Local persistence** — automatic retention via IndexedDB, plus explicit saves to local
   files through the File System Access API
 
@@ -120,7 +122,7 @@ npm run preview   # serve the build locally
 4. **Review threats** — threats appear as you build. Each one opens to show why it fired:
    its conditions, rule ID, and source
 5. **Assess and decide** — record risk scores and a risk treatment; suppress false positives
-6. **Export** — CSV, JSON, or Markdown
+6. **Export** — CSV, JSON, Markdown, a PDF report, or PNG diagram images
 
 [Getting Started](guide/getting-started.md) walks through each of these steps with screenshots.
 
@@ -227,7 +229,8 @@ workflow, CODEOWNERS and PR template, and the full setup guide, see
 
 Near-term priorities, in order:
 
-1. **Structured audit report** — PDF / HTML output fit to serve as audit evidence, with
+1. **Structured audit report** — the PDF report (one-page summary, top-10 details, per-layer
+   appendix) has shipped; still to come is an HTML output fit to serve as audit evidence, with
    detection confidence stated explicitly
 
 Done recently: an English UI with a language switcher, plus English translation overlays

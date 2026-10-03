@@ -48,7 +48,9 @@
 - **カスタムルール** — UI 上のエディタから独自の脅威ルールを追加
 - **脅威ライブラリ・インスペクタ** — どのルールがどの条件で発火するかを読み取り専用で確認
 - **エクスポート** — 脅威一覧を CSV / JSON、および Anthropic 公式
-  `defending-code-reference-harness` の `THREAT_MODEL.md` 互換 Markdown で出力
+  `defending-code-reference-harness` の `THREAT_MODEL.md` 互換 Markdown で出力。
+  さらに、**PDF レポート**（1 枚の経営層向けサマリ＋詳細）と構成図の **PNG 画像**を、
+  レイヤーを選んで出力（[ガイド](guide/report-export.ja.md)）
 - **ローカル保存** — IndexedDB による自動保持と、File System Access API による
   ローカルファイルへの明示的な保存
 
@@ -110,7 +112,7 @@ npm run preview   # ビルド成果物をローカルで確認
    発火条件・ルール ID・出典を辿れます
 5. **評価と対応方針を記録** — リスク評価と対応方針（低減／受容／移転／回避）を
    入力します。誤検知は抑制できます
-6. **エクスポート** — 脅威一覧を CSV / JSON / Markdown で出力します
+6. **エクスポート** — 脅威一覧を CSV / JSON / Markdown、PDF レポート、構成図の PNG で出力します
 
 各ステップの具体的な操作方法は [はじめに — CyberRiskScape 入門](guide/getting-started.ja.md) に
 画面付きでまとめています。

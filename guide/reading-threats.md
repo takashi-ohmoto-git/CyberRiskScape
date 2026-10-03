@@ -159,7 +159,7 @@ judgment began**.
 
 ## 8. Exporting
 
-**Report** in the left sidebar offers three formats.
+**Report** in the left sidebar has five items. The top three download immediately; the bottom two (PDF and PNG) let you choose which layers to export.
 
 ![The Report menu](../assets/guide/en/threat-panel/07-report.png)
 
@@ -168,8 +168,12 @@ judgment began**.
 | CSV | Sorting and sharing in a spreadsheet. One row per threat, 15 columns (target, threat name, both rule-derived and effective severity, impact / likelihood, mitigation, risk treatment, control status and more) |
 | JSON | Feeding other tools or automation |
 | DCRH THREAT_MODEL.md | Markdown compatible with Anthropic's `defending-code-reference-harness` |
+| PDF report | For reporting to a CISO or executives. One-page summary, top-10 details and a per-layer appendix (layers are selectable) |
+| PNG image | An image of the diagram, one file per layer |
 
-What gets exported is **the list you are currently looking at**. As the menu says — "Export the
+How to use the PDF and PNG exports is covered in [Exporting PDF Reports and Diagram Images](report-export.md).
+
+For CSV, JSON and DCRH, what gets exported is **the list you are currently looking at**. As the menu says — "Export the
 threats currently shown (L1 / ALL, 48)" — **the depth layer and the framework tab both apply**.
 To cut out one particular view, switch tabs first, then export.
 
@@ -200,6 +204,7 @@ assessment made in your context (see
 ## Where to go next
 
 - How to assess and record — [Assessing Risk in Analytics](analytics-assessment.md)
+- Producing a PDF and PNG for executive reporting — [Exporting PDF Reports and Diagram Images](report-export.md)
 - Using the exported Markdown as input for an AI — [Turning Your Threat Model into an AI-Readable Security Context](security-context.md)
 - Deciding where to put controls — [Attack Path Analysis](attack-paths.md)
 - Lining threats up against standards — [The Compliance Map](compliance-map.md)
