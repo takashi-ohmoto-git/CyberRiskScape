@@ -8,6 +8,23 @@ JSON into CI as a source-of-record file. This chapter continues from there: it e
 update the diagram**. The connection uses MCP (Model Context Protocol), so any MCP-capable client
 can use the same server.
 
+For how to use it in each situation, see [MCP Use Cases](mcp-use-cases.md).
+
+---
+
+## What to do first
+
+1. **Build** — at the repository root, run `npm install` and `npm run build:cli` (details in §3)
+2. **Register it with your client** — pick your client's configuration from §4 and write it
+   (Claude Code, Copilot in VS Code, the Copilot coding agent, Cursor)
+3. **Check that it works** — ask the agent the following. If it returns the component types and
+   threat rules, the connection works (you can try it without any model JSON)
+
+```text
+Using the CyberRiskScape MCP tools, list the component types and give me three threat rules
+that apply to a database (type DB).
+```
+
 ---
 
 ## 1. What it can do
@@ -178,6 +195,32 @@ To allow read-only use, remove `apply_model_changes` from the array.
 - The agent's changes arrive as a PR, so the diff gate in §2 acts as the reviewer as is
 - Only MCP **tools** are supported, and this server provides only tools
 
+### 4.4 Cursor
+
+Write it in `.cursor/mcp.json` at the project root (per project) or `~/.cursor/mcp.json` in your home
+directory (all projects). The format is `mcpServers`, and a standard-I/O server sets `type` to
+`"stdio"`. `${workspaceFolder}` expands to the project root.
+
+```json
+{
+  "mcpServers": {
+    "cyberriskscape": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/dist-cli/main.js",
+        "mcp",
+        "--root",
+        "${workspaceFolder}"
+      ]
+    }
+  }
+}
+```
+
+By default, Cursor asks for approval before using MCP tools. You can turn a server on or off in
+Cursor's settings (Customize).
+
 ---
 
 ## 5. Tools
@@ -343,6 +386,8 @@ commit your changes before letting an agent work.
 
 ## What to read next
 
+- How to use it in each situation (design, review, Copilot, Cursor, pairing with Snyk) —
+  [MCP Use Cases](mcp-use-cases.md)
 - Setting up the diff gate, CODEOWNERS and branch protection —
   [Integrating with AI-Driven Development CI](ci-integration.md)
 - How to read detected threats — [Reading the Threat Panel](reading-threats.md)

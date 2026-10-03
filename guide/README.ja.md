@@ -23,6 +23,7 @@ CyberRiskScape を使う人のためのドキュメントです。
 | **[脅威モデルを AI が読める Security Context に変換する](security-context.ja.md)** | 完成した脅威モデルを Markdown で書き出し、AI による脆弱性診断の入力として使う手順と、それが効く理由 |
 | **[AI駆動開発のCIに組み込む](ci-integration.ja.md)** | 保存済みプロジェクト JSON を正本ファイルとして扱う：ヘッドレス CLI・GitHub Action・実行トリガーに基づくレビュー・CODEOWNERS とブランチ保護・閉域環境での使い方 |
 | **[コーディングエージェントから使う](mcp-integration.ja.md)** | Claude Code・GitHub Copilot などのエージェントが脅威の問い合わせと構成図の更新をできるようにする MCP サーバーの導入：クライアント別の設定・ツール一覧・安全のための仕組み・PR の差分ゲートとの組み合わせ |
+| **[ユースケースで学ぶ MCP 連携](mcp-use-cases.ja.md)** | MCP を使う場面別の実践：設計初期の調査・重要脅威の実装タスク化・コンポーネント追加の影響確認・PR 前のセルフレビュー・GitHub Copilot／Cursor での使い方・Snyk との組み合わせ・許可範囲の決め方 |
 | **[Secure by Design 入門](secure-by-design.ja.md)** | 背景にある考え方。Secure by Design とは何か、なぜ今求められるのか、脅威モデリングが担う 4 つの役割、そして経営層・企画・セキュリティ・監査・CI が 1 つの脅威モデルを共有する Security Context Layer としての CyberRiskScape の役割。CISA 主導の国際共同ガイダンスに基づく |
 
 ## どこから読むか

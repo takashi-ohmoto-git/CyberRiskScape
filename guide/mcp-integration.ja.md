@@ -8,6 +8,23 @@ Copilot など）が、設計中に脅威を問い合わせ、構成図を更新
 接続には MCP（Model Context Protocol）を使います。MCP 対応のクライアントであれば、同じサーバーを
 そのまま使えます。
 
+場面ごとの使い方は[ユースケースで学ぶ MCP 連携](mcp-use-cases.ja.md)を参照してください。
+
+---
+
+## 利用者が最初にやること
+
+1. **ビルドする** — リポジトリのルートで `npm install` と `npm run build:cli`（詳細は §3）
+2. **クライアントに登録する** — 使うクライアントの設定を §4 から選んで書く
+   （Claude Code・VS Code の Copilot・Copilot コーディングエージェント・Cursor）
+3. **動作を確かめる** — エージェントに次のように頼む。コンポーネント型と脅威ルールの一覧が返れば、
+   接続できています（モデル JSON が無くても試せます）
+
+```text
+CyberRiskScape の MCP ツールで、コンポーネント型の一覧を取得し、
+データベース（型 DB）に当たる脅威ルールを 3 件挙げてください。
+```
+
 ---
 
 ## 1. 何ができるのか
@@ -174,6 +191,32 @@ Copilot はここで許可したツールを、**承認を求めずに**自律�
 - エージェントの変更は PR として届くので、§2 の差分ゲートがそのまま審査役になります
 - 対応しているのは MCP の**ツールのみ**です。このサーバーもツールだけを提供しています
 
+### 4.4 Cursor
+
+プロジェクトのルートの `.cursor/mcp.json`（プロジェクト用）、またはホームの `~/.cursor/mcp.json`
+（全プロジェクト共通）に書きます。形式は `mcpServers` で、標準入出力のサーバーは `type` に
+`"stdio"` を指定します。`${workspaceFolder}` はプロジェクトのルートに展開されます。
+
+```json
+{
+  "mcpServers": {
+    "cyberriskscape": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/dist-cli/main.js",
+        "mcp",
+        "--root",
+        "${workspaceFolder}"
+      ]
+    }
+  }
+}
+```
+
+Cursor は既定で、MCP ツールを使う前に承認を求めます。サーバーの有効・無効は Cursor の設定画面
+（Customize）で切り替えられます。
+
 ---
 
 ## 5. ツール一覧
@@ -331,6 +374,8 @@ Copilot はここで許可したツールを、**承認を求めずに**自律�
 
 ## 次に読むもの
 
+- 場面ごとの使い方（設計・レビュー・Copilot・Cursor・Snyk との組み合わせ） —
+  [ユースケースで学ぶ MCP 連携](mcp-use-cases.ja.md)
 - 差分ゲート・CODEOWNERS・ブランチ保護の設定 — [AI駆動開発のCIに組み込む](ci-integration.ja.md)
 - 検出された脅威の読み方 — [脅威パネルの読み方](reading-threats.ja.md)
 - モデルを Markdown で書き出して AI に読ませる別の使い方 —
