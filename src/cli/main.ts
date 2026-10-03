@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, statSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { analyzeProject, evaluateGate, type LayerAnalysisResult } from './analyze';
 import { toSarif } from './sarif';
@@ -18,6 +18,9 @@ import { LAYER_KEYS, type FrameworkView, type Severity } from '../core/model/typ
 import { getChangeTriggers } from '../change-triggers/loader/bundledChangeTriggers';
 import { loadChangeTriggers } from '../change-triggers/loader/loadChangeTriggers';
 import type { ChangeTrigger } from '../change-triggers/schema/trigger';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { createCrsMcpServer } from '../mcp/server';
+import { BRANDING } from '../core/branding';
 
 /**
  * CyberRiskScape ヘッドレス CLI（[[plan]] §2.49 / §2.50）。
@@ -38,6 +41,7 @@ const USAGE = `使い方:
   analyze <project.json> [options]
   diff <base.json> <head.json> [options]
   triggers [options]
+  mcp [options]
 
 analyze のオプション:
   --format <json|sarif|md>                     出力形式（既定: json）
@@ -59,6 +63,11 @@ triggers のオプション:
   --triggers <file>                             実行トリガー定義 YAML（既定: 同梱の T1〜T8。指定時は翻訳オーバーレイ非適用）
   --locale <ja|en>                              表示言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
+
+mcp のオプション（stdio の MCP サーバーとして起動。stdout は MCP プロトコル専用）:
+  --root <dir>                                  読み書きを許可するディレクトリ（既定: カレントディレクトリ）
+  --triggers <file>                             実行トリガー定義 YAML（既定: 同梱の T1〜T8。指定時は翻訳オーバーレイ非適用）
+  --locale <ja|en>                              表示言語（既定: ja。起動中は固定）
 
 共通:
   --help                                        このヘルプを表示
@@ -142,6 +151,7 @@ function parseCliArgs() {
       triggers: { type: 'string' },
       locale: { type: 'string' },
       out: { type: 'string' },
+      root: { type: 'string' },
       help: { type: 'boolean' },
     },
   });
@@ -262,6 +272,27 @@ function runTriggers(values: CliValues): void {
   writeOutput(output, values.out);
 }
 
+/**
+ * `mcp`：stdio の MCP サーバーとして起動する（[[plan]] §2.56）。stdout はプロトコル専用のため、
+ * ここから先は stdout に何も書かない（ログ・エラーは stderr）。
+ */
+async function runMcp(values: CliValues): Promise<void> {
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  const root = values.root ?? process.cwd();
+  let isDir: boolean;
+  try {
+    isDir = statSync(root).isDirectory();
+  } catch {
+    isDir = false;
+  }
+  if (!isDir) fail(`--root のディレクトリが存在しません: ${root}`);
+
+  const triggers = resolveTriggers(values, locale);
+  const server = createCrsMcpServer({ root, locale, triggers });
+  await server.connect(new StdioServerTransport());
+  process.stderr.write(`${BRANDING.name} MCP サーバーを起動しました（root: ${root}、locale: ${locale}）\n`);
+}
+
 function main(): void {
   let parsed: ReturnType<typeof parseCliArgs>;
   try {
@@ -284,6 +315,10 @@ function main(): void {
     runDiff(values, positionals);
   } else if (command === 'triggers') {
     runTriggers(values);
+  } else if (command === 'mcp') {
+    runMcp(values).catch((e: unknown) => {
+      fail(`MCP サーバーの起動に失敗しました: ${e instanceof Error ? e.message : String(e)}`);
+    });
   } else {
     fail(`不明なコマンドです: "${command ?? ''}"\n\n${USAGE}`);
   }

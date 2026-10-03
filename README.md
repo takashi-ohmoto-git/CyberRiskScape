@@ -223,6 +223,12 @@ reviewer's checklist) or as JSON. For a ready-to-use GitHub Action (`action.yml`
 workflow, CODEOWNERS and PR template, and the full setup guide, see
 [Integrating with AI-Driven Development CI](guide/ci-integration.md) in the [user guide](guide/README.md).
 
+### MCP server (`mcp`)
+
+`node dist-cli/main.js mcp` starts an MCP server over stdio so coding agents (Claude Code, GitHub Copilot, etc.)
+can query threats and update the diagram's structure. It makes no external calls and cannot change acceptances or risk assessments.
+See [Using It from Coding Agents](guide/mcp-integration.md).
+
 ---
 
 ## Roadmap

@@ -212,6 +212,12 @@ node dist-cli/main.js triggers [options]
 CODEOWNERS・PR テンプレートと、導入手順の全体は[ガイド](guide/README.ja.md)の
 [AI駆動開発のCIに組み込む](guide/ci-integration.ja.md)を参照してください。
 
+### MCP サーバー（`mcp`）
+
+`node dist-cli/main.js mcp` で、stdio 経由の MCP サーバーを起動します。コーディングエージェント（Claude Code・GitHub Copilot 等）が
+脅威を問い合わせ、構成図の構成を更新できます。外部通信は行わず、受容やリスク評価は変更できません。
+導入は[コーディングエージェントから使う](guide/mcp-integration.ja.md)を参照してください。
+
 ---
 
 ## コントリビュート
