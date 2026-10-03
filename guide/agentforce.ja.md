@@ -46,7 +46,7 @@
 | Employee agent（社員向け） | `AGENT` | ログインユーザーの権限で動く。社員を表す `USER`（Employee）から接続する |
 | サブエージェント／`connected_subagent` | `SUB_AGENT`（または `AGENT` ＋ エッジ） | 委譲は `semantic: delegation` のエッジで表す |
 | 推論エンジン／BYOLLM | `LLM` | |
-| Einstein Trust Layer | `GUARDRAIL`（または `AI_GATEWAY`） | エージェントと LLM の間に置く |
+| Einstein Trust Layer | `EINSTEIN_TRUST_LAYER`（専用ライブラリ「Salesforce Agentforce」） | エージェントと LLM の間に置く。専用ルール（§4.2・§4.5・§4.7）は、**この型とつながったエージェント**に発火する。ライブラリは左サイドバーで無効化でき、無効にするとパレットから消えるだけで、配置済みの図・脅威検出・保存データは変わらない |
 | アクション（Apex・Flow・プロンプト・標準アクション） | `TOOL` | エージェントからは `semantic: tool_invocation`。実行権限（ユーザー／システム）は説明欄に書く |
 | 外部 MCP サーバー（`mcpTool://`） | `MCP_SERVER` | 組織の外に置く（Partner または Internet） |
 | 外部 API（`externalService://`、Named Credential 先） | `SAAS` または `EXTERNAL_ENTITY` | 組織の外に置く |
@@ -86,7 +86,7 @@
 読み込み方は[テンプレートの章](templates.ja.md#3-読み込むimport)と同じです。
 左サイドバーの **Template** → **Import** で JSON を選び、**適用**します。
 
-**読み込むと 97 件**（Critical 17・High 57・Medium 23）の脅威が検出されます。
+**読み込むと 101 件**（Critical 17・High 61・Medium 23）の脅威が検出されます。
 
 ### 3.1 図の前提（仮置きの属性）
 
@@ -100,21 +100,22 @@
 | エッジの `auth` | 社内の接続は `Password`、外部の接続は `Password` | 実際の認証方式（OAuth・Named Credential など）に合わせて直す |
 | Web フォーム → CRM | `auth: None`・`network: Internet` | 外部の誰でも書き込める入口として表現している |
 
-> **Employee agent が CRM を直接読む形にしていない理由** — 間接プロンプトインジェクションのルール
-> （`atlas-aml-t0051-indirect-prompt-injection-001`）が「改ざんされうるソース」として見るのは、
-> ベクター DB／RAG・外部ツール／API・外部主体・データストア・コネクタ・エージェントメモリです。
-> **`CRM` 型が直接つながっていても、このルールは発火しません。** そのためテンプレートでは、
-> エージェントがレコードを**アクション経由**で読むと想定して、CRM → アクション → エージェントの
-> 順に接続しています。実際の読み取り経路（標準アクション・Flow・Apex・検索拡張など）は
-> 自分の構成に合わせて確認してください。
+> **Employee agent が CRM を直接読む形にしていない理由** — 実際の Agentforce では、エージェントは
+> レコードを標準アクション・Flow・Apex・検索拡張などの**アクション経由**で読むことが多いため、テンプレートは
+> CRM → アクション → エージェントの順に接続しています。`CRM` 型からエージェントへの**直接の入力経路**
+> も、汎用ルール（`owasp-llm01-indirect-business-record-001`、High）が間接プロンプトインジェクションとして
+> 検出します（`CRM`・`MAIL`・`CHAT`・`OTHER_APP`・`SAAS` からエージェントへの経路が対象）。
+> アクション経由の形でも、アクションの応答を読む既存のルール（`atlas-aml-t0051-…`）が発火します。
+> 実際の読み取り経路は、自分の構成に合わせて確認してください。
 
 ---
 
 ## 4. 押さえるべき脅威
 
 以降、各項目に「CyberRiskScape で検出されるルール」と「Agentforce での意味」を書きます。
-**ルール名の後ろの括弧は、発火する構成要素**です。専用ルールはまだ無く、**既存の汎用ルール**で
-評価しています（§7）。**検出されないことも正直に書きます。**
+**ルール名の後ろの括弧は、発火する構成要素**です。汎用ルールに加えて、**Agentforce 専用ルール**
+（`sf-agentforce-…`）が 3 本あり、Einstein Trust Layer 型、またはそれとつながったエージェントに発火します（§7）。
+**検出されないことも正直に書きます。**
 
 ### 4.1 外部から書き込める CRM の項目を経由する間接プロンプトインジェクション
 
@@ -133,6 +134,7 @@
 | ルール | 重大度 | 発火する要素 | 読み方 |
 |---|---|---|---|
 | 間接プロンプトインジェクション（`atlas-aml-t0051-…`） | High | Employee agent・Service agent | アクションの応答（CRM のレコードを含む）や Data Cloud・外部 MCP の応答が、エージェントの入力に入る |
+| 業務アプリのデータ経由の間接プロンプトインジェクション（`owasp-llm01-indirect-business-record-001`） | High | `CRM`・`MAIL`・`CHAT`・`OTHER_APP`・`SAAS` から直接つながったエージェント | 外部の人が書き込めるレコード・メール・チャットをエージェントが入力として読む経路。**CRM 型を直接つないだ構成でも検出される**（このテンプレートは CRM → アクション → エージェントなので、この行は出ず、上の行が出る）。`LINE` は利用者の直接入力として扱うため対象外 |
 | Lethal Trifecta（`maestro-lethal-trifecta-001`） | Critical | Employee agent・Service agent | 「攻撃者制御データの取込 × 機密データへのアクセス × 外部送信能力」。**発火条件は図の接続ではなくエージェントの影響範囲の属性**（Tenant／CrossTenant／Admin）。3 要素のどれかが切れているかを、図全体で確認する合図 |
 | 正規ツールの連鎖悪用（`anthropic-zt-tool-chaining-001`） | High | Employee agent・Service agent | 内部 CRM の取得と外部送信の組み合わせ |
 | 制御外通信（`maestro-agent-internet-egress-001`） | High | 「外部 URL への出力」のデータフローほか | 許可リスト外の宛先への送信経路 |
@@ -143,6 +145,7 @@
 
 上の画面は、Employee agent を選び、間接プロンプトインジェクションの「検出根拠」を開いたところです。
 「対象ノードへの入力方向の接続がある」ことが発火条件だと分かります。
+（このスクリーンショットはアクション経由の読み取りのルールです。）
 
 ![Employee agent の Lethal Trifecta](../assets/guide/agentforce/03-lethal-trifecta.png)
 
@@ -171,8 +174,12 @@
 | ルール | 重大度 | 発火する要素 |
 |---|---|---|
 | エージェント識別の不在（`anthropic-zt-agent-identity-attribution-001`） | High | Service agent（`identityTier: LabelOnly` のため。Employee agent は `Cryptographic` なので発火しない） |
+| エージェントの実行ユーザーとアクションの実行コンテキストによる権限の過大（`sf-agentforce-runtime-privilege-001`、**専用**） | High（`blastRadius` が `ReadOnly`／`Self` なら Medium） | Trust Layer とつながった Employee agent・Service agent |
 | Confused Deputy／委譲時の権限継承（`anthropic-zt-confused-deputy-001`） | High | Employee agent・Service agent |
 | セッション跨ぎの権限残留（`anthropic-zt-memory-privilege-retention-001`） | High | Employee agent・Service agent |
+
+専用ルールは、実行ユーザーとアクションの実行コンテキストという Agentforce の権限の決まり方に即した
+**点検項目を出す**もので、実際の権限を読むわけではありません。
 
 **検出されないもの** — **共有ルールの扱い・権限セットの中身・実効権限そのものを評価するルールは
 ありません。** 図では `blastRadius`（侵害時の影響範囲）で表現し、権限セットの内容は人がレビューします
@@ -193,8 +200,10 @@
 | 出力の信頼境界違反（`maestro-tool-output-handling-001`） | High | アクション |
 | 権限昇格リスク（`maestro-tool-edge-001`） | High | アクション ⇄ CRM のデータフロー |
 | 自律動作の暴走（`maestro-agent-runaway-001`） | Critical | Employee agent・Service agent |
+| 実行ユーザーとアクションの実行コンテキストによる権限の過大（`sf-agentforce-runtime-privilege-001`、**専用**） | High | Trust Layer とつながったエージェント（§4.2 と同じルール。緩和策に、Apex の `with sharing`・Flow のユーザーコンテキストを含む） |
 
-**検出されないもの** — 「このアクションがシステムモードで動く」ことを見分けるルールはありません。
+**検出されないもの** — 「このアクションがシステムモードで動く」ことを見分けるルールはありません。アクションは汎用の `TOOL` のままで、
+専用ルールはエージェント側に発火して棚卸しを促すだけです。
 該当するアクションは、説明欄に実行コンテキストを書き、`blastRadius` を現実に合わせて上げてください。
 
 ### 4.4 書き込み系アクションの人の確認（`require_user_confirmation`）
@@ -219,8 +228,16 @@ ForcedLeak への対応として、Salesforce は **Trusted URL の許可リス�
 ForcedLeak では、許可リストに残っていた**失効ドメイン**が悪用されたと報告されています。
 許可リストは「入れたら終わり」ではなく、棚卸しが要ります。
 
-**検出されるルール** — 制御外通信（`maestro-agent-internet-egress-001`、High）が、「外部 URL への出力」・
-外部 API・外部 MCP サーバーへの接続に出ます。外部 URL のノードには、なりすまし・否認のルールも出ます。
+**検出されるルール**
+
+| ルール | 重大度 | 発火する要素 |
+|---|---|---|
+| エージェントの出力に埋め込んだ URL による外部送信（Trusted URL の残存ドメイン）（`sf-agentforce-output-url-exfiltration-001`、**専用**） | High | Trust Layer とつながった Employee agent・Service agent |
+| 制御外通信（`maestro-agent-internet-egress-001`） | High | 「外部 URL への出力」・外部 API・外部 MCP サーバーへの接続 |
+
+外部 URL のノードには、なりすまし・否認のルールも出ます。専用ルールは、応答に埋め込んだ URL（画像・リンク）の
+描画で CRM のデータが送り出される経路と、Trusted URL の棚卸しを点検項目にします（確度は上記のとおり、
+ForcedLeak の詳細は発見者の記事に基づきます）。
 
 **検出されないもの** — 許可リストの中身（失効ドメインの有無など）は評価できません。
 
@@ -249,9 +266,14 @@ Trust Layer には、プロンプトインジェクションの検知機能が�
 **最新は公式で確認してください**）。日本語で運用する場合や、機能をオンにしていない場合は、
 検知に頼れない前提で設計します。
 
-**検出されるルール** — ガードレール単体依存（確率的防御の限界）（`zt-guardrail-probabilistic-bypass-001`、
-Medium）が Trust Layer に出ます。緩和策は、ガードレールの背後に**決定論的な制御**（アクションの許可リスト・
+**検出されるルール** — Trust Layer の検知の適用範囲の制約（`sf-agentforce-trust-layer-detection-gap-001`、
+**専用**、Medium）が、`EINSTEIN_TRUST_LAYER` 型のノードに出ます（Beta・既定でオフ・英語のみ、という公式の記載と、
+ガードレールが確率的な防御であることが根拠。汎用のガードレール単体依存のルールの代わりに、この型ではこちらが出ます）。緩和策は、ガードレールの背後に**決定論的な制御**（アクションの許可リスト・
 最小権限・出力先の制限・人の承認）を置くことです。
+
+![Trust Layer の検知の適用範囲の制約](../assets/guide/agentforce/06-trust-layer-gap.png)
+
+上の画面は、Einstein Trust Layer のノードを選び、専用ルールのカード（Medium）を開いたところです。
 
 ### 4.8 Agentforce Voice
 
@@ -400,10 +422,15 @@ Salesforce は、Salesforce DX の MCP サーバー（`@salesforce/mcp`）を公
 
 ## 7. 限界
 
-- **Agentforce 専用の脅威ルールはまだありません。** このページの検出は、既存の汎用ルール
-  （間接プロンプトインジェクション・ツール記述子ポイズニング・過剰な権限・外部送信など）で
-  評価した結果です。共有ルール・Trusted URL の中身・`require_user_confirmation` の設定値・
+- **専用ルールは 3 本で、Trust Layer 型とつながったエージェントに発火する設計です。** Trust Layer を
+  図に置かないと、エージェント向けの専用ルール（出力 URL・実行権限）は出ません。それ以外の評価は
+  既存の汎用ルールによります。共有ルール・Trusted URL の中身・`require_user_confirmation` の設定値・
   システムモードの有無といった **Salesforce 固有の設定は、評価できません**
+- **2 段の経路（窓口 → CRM → エージェント）の精密な判定はできず、近似です。** 汎用ルールは
+  「エージェントへの直接の入力経路」を見るため、外部の窓口が CRM に書き込み、CRM をアクションが読み、
+  エージェントがその応答を受ける、という 2 段以上の経路は、途中のアクションの応答を読むルールや
+  攻撃経路分析（§5）で補います
+- **Flow・Apex は汎用の `TOOL` のままです。** 実行コンテキストやアクションの種類で当たり方は変わりません
 - **メタデータからの構成図の自動生成はありません。** UC2 のようにコーディングエージェントが
   `.agent` を読んで下書きを作れますが、結果は毎回同じとは限らず、人の確認が要ります
 - **テンプレートの属性は仮置きです**（§3.1）。検出件数は、属性や接続の置き方で変わります

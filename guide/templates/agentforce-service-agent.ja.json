@@ -52,7 +52,7 @@
       },
       {
         "id": "nag_gr",
-        "type": "GUARDRAIL",
+        "type": "EINSTEIN_TRUST_LAYER",
         "x": 650,
         "y": 40,
         "label": "Einstein Trust Layer",

@@ -44,7 +44,7 @@
 | Employee agent (internal) | `AGENT` | Runs with the signed-in user's permissions. Connect it from a `USER` (Employee) |
 | Sub-agent / `connected_subagent` | `SUB_AGENT` (or `AGENT` plus an edge) | Express delegation with an edge of `semantic: delegation` |
 | Reasoning engine / BYOLLM | `LLM` | |
-| Einstein Trust Layer | `GUARDRAIL` (or `AI_GATEWAY`) | Place it between the agent and the LLM |
+| Einstein Trust Layer | `EINSTEIN_TRUST_LAYER` (dedicated library "Salesforce Agentforce") | Place it between the agent and the LLM. The dedicated rules (§4.2, §4.5, §4.7) fire on **agents connected to this type**. You can disable the library in the left sidebar; this only removes it from the palette and does not change placed diagrams, threat detection or saved data |
 | Actions (Apex, Flow, prompt, standard action) | `TOOL` | From the agent, `semantic: tool_invocation`. Note the run permission (user / system) in the description |
 | External MCP server (`mcpTool://`) | `MCP_SERVER` | Place it outside the org (Partner or Internet) |
 | External API (`externalService://`, Named Credential target) | `SAAS` or `EXTERNAL_ENTITY` | Place it outside the org |
@@ -84,7 +84,7 @@ the Salesforce org = Internal, external API / external MCP server = Partner).
 Import works the same way as in [the templates page](templates.md). Open **Template** in the left sidebar,
 choose **Import**, select the JSON, and apply it.
 
-**After loading, 97 threats** are detected (17 Critical, 57 High, 23 Medium).
+**After loading, 101 threats** are detected (17 Critical, 61 High, 23 Medium).
 
 ### 3.1 Assumptions in the diagram (placeholder attributes)
 
@@ -98,20 +98,20 @@ The attributes in the template are **placeholders for a typical setup**. Change 
 | Edge `auth` | `Password` for internal and external connections | Change it to the real mechanism (OAuth, Named Credential, etc.) |
 | Web form → CRM | `auth: None`, `network: Internet` | Represents an entry point anyone outside can write to |
 
-> **Why the Employee agent does not read the CRM directly** — For the indirect prompt injection rule
-> (`atlas-aml-t0051-indirect-prompt-injection-001`), the "tamperable sources" it looks at are vector DB / RAG,
-> external tool / API, external entity, data store, connector and agent memory.
-> **A `CRM` node connected directly does not fire this rule.** So the template assumes the agent reads records
-> **through an action**, and connects them CRM → actions → agent. Check your real read path (standard actions,
-> Flow, Apex, retrieval and so on) against your own setup.
+> **Why the Employee agent does not read the CRM directly** — In a real Agentforce setup the agent often reads
+> records **through an action** (standard action, Flow, Apex, retrieval and so on), so the template connects
+> CRM → actions → agent. A **direct input path** from a `CRM` node to an agent is also detected as indirect
+> prompt injection by a general-purpose rule (`owasp-llm01-indirect-business-record-001`, High; it covers paths
+> from `CRM`, `MAIL`, `CHAT`, `OTHER_APP` and `SAAS` to an agent). Even in the through-an-action form, the existing
+> rule that reads action responses (`atlas-aml-t0051-…`) fires. Check your real read path against your own setup.
 
 ---
 
 ## 4. Threats to watch
 
 Each item below lists "the rules CyberRiskScape detects" and "what it means in Agentforce". The
-**parenthetical after a rule name is the component it fires on.** There are no dedicated rules yet; the
-evaluation uses **existing general-purpose rules** (§7). **What is not detected is stated plainly too.**
+**parenthetical after a rule name is the component it fires on.** In addition to the general-purpose rules, there are
+**three Agentforce-specific rules** (`sf-agentforce-…`) that fire on the Einstein Trust Layer type or on an agent connected to it (§7). **What is not detected is stated plainly too.**
 
 ### 4.1 Indirect prompt injection through externally writable CRM fields
 
@@ -130,6 +130,7 @@ that an outsider wrote as "data" and treats it as an instruction.
 | Rule | Severity | Fires on | How to read it |
 |---|---|---|---|
 | Indirect prompt injection (`atlas-aml-t0051-…`) | High | Employee agent, Service agent | Action responses (including CRM records) and Data Cloud / external MCP responses enter the agent's input |
+| Indirect prompt injection through business-app data (`owasp-llm01-indirect-business-record-001`) | High | An agent connected directly from `CRM`, `MAIL`, `CHAT`, `OTHER_APP` or `SAAS` | A path where the agent reads records, mail or chat that an outsider can write. **It is detected even when a CRM node is connected directly** (this template goes CRM → actions → agent, so this row does not appear and the row above does). `LINE` is treated as the user's direct input and is out of scope |
 | Lethal Trifecta (`maestro-lethal-trifecta-001`) | Critical | Employee agent, Service agent | "Attacker-controlled data in × access to sensitive data × ability to send out". **It fires from the agent's blast-radius attribute (Tenant / CrossTenant / Admin), not from the connections in the diagram.** Treat it as a prompt to check, across the whole diagram, that at least one of the three is cut |
 | Chained abuse of legitimate tools (`anthropic-zt-tool-chaining-001`) | High | Employee agent, Service agent | Combining an internal CRM lookup with an outbound send |
 | Uncontrolled egress (`maestro-agent-internet-egress-001`) | High | The "Output to external URL" data flow and others | A path that sends data to a destination outside the allowlist |
@@ -138,7 +139,7 @@ that an outsider wrote as "data" and treats it as an instruction.
 
 ![Indirect prompt injection on the Employee agent](../assets/guide/agentforce/02-indirect-injection.png)
 
-The screen above shows the Employee agent selected with the "detection basis" of the indirect prompt
+(This screenshot shows the rule that reads action responses.) The screen above shows the Employee agent selected with the "detection basis" of the indirect prompt
 injection opened. It shows that the rule fires when there is an input-direction connection to the target node.
 
 ![Lethal Trifecta on the Employee agent](../assets/guide/agentforce/03-lethal-trifecta.png)
@@ -169,8 +170,11 @@ injection opened. It shows that the rule fires when there is an input-direction 
 | Rule | Severity | Fires on |
 |---|---|---|
 | Absence of agent identity (`anthropic-zt-agent-identity-attribution-001`) | High | Service agent (because of `identityTier: LabelOnly`; the Employee agent is `Cryptographic`, so it does not fire) |
+| Excessive privilege from the run user and the actions' run context (`sf-agentforce-runtime-privilege-001`, **dedicated**) | High (Medium if `blastRadius` is `ReadOnly` / `Self`) | Employee agent, Service agent connected to the Trust Layer |
 | Confused deputy / privilege inheritance on delegation (`anthropic-zt-confused-deputy-001`) | High | Employee agent, Service agent |
 | Cross-session privilege retention (`anthropic-zt-memory-privilege-retention-001`) | High | Employee agent, Service agent |
+
+The dedicated rule **raises a checklist** that fits how Agentforce decides permissions (the run user and the actions' run context); it does not read the real permissions.
 
 **Not detected** — **No rule evaluates how sharing rules apply, what a permission set contains, or effective
 permissions themselves.** The diagram expresses them through `blastRadius` (the impact if compromised), and a
@@ -191,8 +195,9 @@ decided from the metadata alone.**
 | Output trust boundary violation (`maestro-tool-output-handling-001`) | High | Actions |
 | Privilege escalation risk (`maestro-tool-edge-001`) | High | The actions ⇄ CRM data flow |
 | Runaway autonomous action (`maestro-agent-runaway-001`) | Critical | Employee agent, Service agent |
+| Excessive privilege from the run user and the actions' run context (`sf-agentforce-runtime-privilege-001`, **dedicated**) | High | Agents connected to the Trust Layer (the same rule as §4.2; its mitigations include Apex `with sharing` and Flow user context) |
 
-**Not detected** — No rule tells you that "this action runs in system mode". For such actions, write the run
+**Not detected** — No rule tells you that "this action runs in system mode". Actions remain the general-purpose `TOOL`; the dedicated rule fires on the agent side and only prompts a review. For such actions, write the run
 context in the description and raise `blastRadius` to match reality.
 
 ### 4.4 Human confirmation for write actions (`require_user_confirmation`)
@@ -219,9 +224,14 @@ In response to ForcedLeak, Salesforce is described as having started to **enforc
 ForcedLeak, an **expired domain** left on the allowlist was reported to be abused. An allowlist is not "add it
 and forget it"; it needs periodic review.
 
-**Rules detected** — Uncontrolled egress (`maestro-agent-internet-egress-001`, High) appears on the "Output to
-external URL" flow and on the connections to the external API and external MCP server. The external URL node
-also gets spoofing and repudiation rules.
+**Rules detected**
+
+| Rule | Severity | Fires on |
+|---|---|---|
+| External exfiltration through URLs embedded in agent output (leftover Trusted URL domains) (`sf-agentforce-output-url-exfiltration-001`, **dedicated**) | High | Employee agent, Service agent connected to the Trust Layer |
+| Uncontrolled egress (`maestro-agent-internet-egress-001`) | High | The "Output to external URL" flow and the connections to the external API and external MCP server |
+
+The external URL node also gets spoofing and repudiation rules. The dedicated rule checks the path where rendering a URL (image or link) embedded in a response sends CRM data out, and the Trusted URL review (the ForcedLeak details come from the discoverer's write-up, as noted above).
 
 **Not detected** — The contents of the allowlist (for example, expired domains) cannot be evaluated.
 
@@ -249,10 +259,14 @@ The Trust Layer has a prompt-injection detection feature. However, the official 
 ([source 10](#references); **check the official source for the latest**). If you operate in Japanese, or have
 not turned the feature on, design on the assumption that you cannot rely on detection.
 
-**Rules detected** — Reliance on a standalone guardrail (limits of probabilistic defense)
-(`zt-guardrail-probabilistic-bypass-001`, Medium) appears on the Trust Layer. The mitigation is to put
+**Rules detected** — Limits on the scope of the Trust Layer's detection (`sf-agentforce-trust-layer-detection-gap-001`,
+**dedicated**, Medium) appears on the `EINSTEIN_TRUST_LAYER` node (grounded in the official notes of Beta, off by default and English only, and in guardrails being a probabilistic defense; on this type it appears in place of the general-purpose reliance-on-a-guardrail rule). The mitigation is to put
 **deterministic controls** behind the guardrail (an action allowlist, least privilege, restricted output
 destinations, human approval).
+
+![Limits on the Trust Layer's detection scope](../assets/guide/agentforce/06-trust-layer-gap.png)
+
+The screen above shows the Einstein Trust Layer node selected with the card of the dedicated rule (Medium) open.
 
 ### 4.8 Agentforce Voice
 
@@ -401,11 +415,16 @@ what it connects to in Salesforce's official documentation.
 
 ## 7. Limits
 
-- **There are no Agentforce-specific threat rules yet.** The detections on this page are the result of
-  evaluating with existing general-purpose rules (indirect prompt injection, tool descriptor poisoning,
-  excessive permissions, outbound data and so on). **Salesforce-specific settings cannot be evaluated**:
-  sharing rules, the contents of the Trusted URL allowlist, the value of `require_user_confirmation`, and
-  whether something runs in system mode
+- **There are three dedicated rules, designed to fire on agents connected to the Trust Layer type.** If you do not
+  place the Trust Layer in the diagram, the agent-side dedicated rules (output URL, run privilege) do not appear.
+  Everything else is evaluated by existing general-purpose rules. **Salesforce-specific settings cannot be
+  evaluated**: sharing rules, the contents of the Trusted URL allowlist, the value of `require_user_confirmation`,
+  and whether something runs in system mode
+- **Two-hop paths (window → CRM → agent) cannot be judged precisely; the result is an approximation.** The
+  general-purpose rules look at a direct input path to the agent, so a path where an outside window writes to the
+  CRM, an action reads the CRM and the agent receives that response is supplemented by the rule that reads
+  action responses and by attack-path analysis (§5)
+- **Flow and Apex remain the general-purpose `TOOL`.** Run context and action kind do not change how rules apply
 - **There is no automatic diagram generation from metadata.** A coding agent can read `.agent` and draft one,
   as in UC2, but the result is not guaranteed to be the same each time and needs human review
 - **The template's attributes are placeholders** (§3.1). The number of detections changes with how you set
