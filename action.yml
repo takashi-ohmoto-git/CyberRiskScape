@@ -150,13 +150,23 @@ runs:
                   TRIGGERS_ARGS=(--triggers "$TRIGGERS_FILE")
                 fi
                 {
-                  echo "## CyberRiskScape: threat model update may be needed"
-                  echo
-                  echo "The threat model file (\`$MODEL\`) was not changed in this PR, but the following"
-                  echo "watched paths were. Please update the threat model, or ask a designated reviewer"
-                  echo "to apply the \`$SKIP_LABEL\` label if no update is needed."
-                  echo
-                  echo "### Changed watched files"
+                  if [ "$LOCALE" = "en" ]; then
+                    echo "## CyberRiskScape: threat model update may be needed"
+                    echo
+                    echo "The threat model file (\`$MODEL\`) was not changed in this PR, but the following"
+                    echo "watched paths were. Please update the threat model, or ask a designated reviewer"
+                    echo "to apply the \`$SKIP_LABEL\` label if no update is needed."
+                    echo
+                    echo "### Changed watched files"
+                  else
+                    echo "## CyberRiskScape: 脅威モデルの更新が必要な可能性があります"
+                    echo
+                    echo "この PR では脅威モデルのファイル（\`$MODEL\`）は変更されていませんが、監視対象の"
+                    echo "パスが変更されています。脅威モデルを更新するか、更新が不要であれば指定レビュアーに"
+                    echo "\`$SKIP_LABEL\` ラベルを付けてもらってください。"
+                    echo
+                    echo "### 変更された監視対象のファイル"
+                  fi
                   echo
                   while IFS= read -r f; do
                     echo "- $f"
