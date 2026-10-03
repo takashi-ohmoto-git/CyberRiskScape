@@ -153,6 +153,15 @@ describe('analyzeThreats', () => {
     expect(() => analyzeThreats({}, { locale: 'ja' })).toThrow(/プロジェクト JSON/);
   });
 
+  it('limit は並びの先頭から返し、total / truncated は従来どおり', () => {
+    const all = analyzeThreats(BASE(), { locale: 'ja' }) as any;
+    const two = analyzeThreats(BASE(), { locale: 'ja', limit: 2 }) as any;
+    expect(two.returned).toBe(2);
+    expect(two.total).toBe(all.total);
+    expect(two.truncated).toBe(all.total > 2);
+    expect(two.threats.map((t: any) => t.id)).toEqual(all.threats.slice(0, 2).map((t: any) => t.id));
+  });
+
   it('locale で本文が切り替わる', () => {
     const ja = analyzeThreats(BASE(), { locale: 'ja' }) as any;
     const en = analyzeThreats(BASE(), { locale: 'en' }) as any;
@@ -203,6 +212,19 @@ describe('diffModels', () => {
     expect(out.kind).toBeTruthy();
     expect(out.added.length).toBeGreaterThan(0);
     expect(() => JSON.stringify(out)).not.toThrow();
+  });
+
+  it('脅威 id は analyze_threats と同じ L1:<id> 形式（CLI の diffToJsonObject は素の id のまま）', () => {
+    const out = diffModels(BASE(), CHANGED(), {
+      triggers: BUNDLED_CHANGE_TRIGGERS.triggers,
+      locale: 'ja',
+    }) as any;
+    for (const e of [...out.added, ...out.removed, ...out.suppressionChanged, ...out.severityChanged]) {
+      expect(e.id.startsWith(`${e.layer}:`)).toBe(true);
+    }
+    const added = analyzeThreats(CHANGED(), { locale: 'ja' }) as any;
+    const ids = new Set(added.threats.map((t: any) => t.id));
+    expect(out.added.every((e: any) => ids.has(e.id))).toBe(true);
   });
 
   it('不正な入力は Error', () => {

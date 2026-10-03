@@ -74,6 +74,51 @@ export class McpOperationError extends Error {
 
 // ── スキーマ ──────────────────────────────────────────────────────────────
 
+// ── エラーメッセージ（日本語） ─────────────────────────────────────────────
+// SDK は入力検証（`z.array(OperationSchema)`）の Zod 既定メッセージをそのままクライアントへ返すため、
+// スキーマ側に errorMap を付けて日本語化する（tools/list の JSON Schema は変わらない）。
+// サーバーの他のメッセージと同じく日本語固定（locale は tools 側の脅威本文用）。
+
+/** 判断系（受容・誤検知・リスク評価・対策実装状況・手動脅威）に当たるキー／操作名。 */
+const JUDGEMENT_RE = /suppress|accept|false.?positive|risk|dread|control|manual.?threat|mitigat|project.?meta/i;
+
+export const JUDGEMENT_GUIDANCE =
+  '受容・誤検知・リスク評価・対策実装状況はこのツールでは変更できません。人が CyberRiskScape で設定し、PR で承認します。';
+
+const opErrorMap: z.ZodErrorMap = (issue, ctx) => {
+  if (issue.code === z.ZodIssueCode.unrecognized_keys) {
+    const keys = issue.keys.map((k) => `"${k}"`).join(', ');
+    const hint = issue.keys.some((k) => JUDGEMENT_RE.test(k))
+      ? JUDGEMENT_GUIDANCE
+      : '座標・id・seq などは指定できません。使えるキーは operations の入力スキーマを参照してください。';
+    return { message: `この操作では使えないキーがあります: ${keys}。${hint}` };
+  }
+  if (issue.code === z.ZodIssueCode.invalid_union_discriminator) {
+    const given = (ctx.data as { op?: unknown } | undefined)?.op;
+    const name = typeof given === 'string' ? given : String(given);
+    const hint = typeof given === 'string' && JUDGEMENT_RE.test(given) ? JUDGEMENT_GUIDANCE : '';
+    return {
+      message: `未定義の操作 "${name}" です（使える op: ${issue.options.map(String).join(' / ')}）。${hint}`,
+    };
+  }
+  return { message: ctx.defaultError };
+};
+
+/** `.strict()` ＋日本語 errorMap の操作用オブジェクト。 */
+const opObject = <T extends z.ZodRawShape>(shape: T) => z.object(shape, { errorMap: opErrorMap }).strict();
+
+const DATA_FLOW_DESC =
+  'データ通信の向き（source から見た向き）。outbound＝source → target（既定）、inbound＝target → source、bidirectional＝双方向。キャンバスの矢印の向きと、脅威ルールの接続方向（inbound＝対象ノードが target 側）の判定に使われる。';
+const SEMANTIC_DESC =
+  'エッジの意味（省略時は data_flow）：data_flow／tool_invocation（ツール呼び出し）／delegation（委任）／memory_read／memory_write／rag_retrieval／directory_sync。AI・エージェント系の脅威判定に使われる。';
+const BOUNDARY_ID_DESC =
+  '配置先の信頼境界の id（set の中ではなく操作の直下に置く）。座標は指定できず、サーバーが境界内に配置する。update_node では null で境界の外へ移動。';
+
+/** `set` が空でないことの検査（スキーマの `.refine` は未知キー拒否の後に二次エラーを出すため適用側で行う）。 */
+const failIfEmptySet = (set: object | undefined): void => {
+  if (set !== undefined && Object.keys(set).length === 0) fail('set が空です');
+};
+
 const idStr = z.string().min(1).max(100);
 const labelStr = z.string().min(1).max(200);
 const descStr = z.string().max(2000);
@@ -124,35 +169,31 @@ const nodeAttrShape = {
 };
 
 /** `update_node.set`：許可リスト。null は「その属性を消す」。 */
-const NodeSetSchema = z
-  .object({
-    label: labelStr.optional(),
-    description: descStr.nullable().optional(),
-    managedState: ManagedStateSchema.nullable().optional(),
-    userTrustAttribute: UserTrustAttributeSchema.nullable().optional(),
-    cloudSanction: CloudSanctionSchema.nullable().optional(),
-    cloudOwnership: CloudOwnershipSchema.nullable().optional(),
-    threatActorType: ThreatActorTypeSchema.nullable().optional(),
-    attackObjectiveId: idStr.nullable().optional(),
-    identityProviderKind: IdentityProviderKindSchema.nullable().optional(),
-    authProviderId: idStr.nullable().optional(),
-    attackSurface: AttackSurfaceSchema.nullable().optional(),
-    agentAttributes: AgentAttributesSchema.nullable().optional(),
-  })
-  .strict();
+const NodeSetSchema = opObject({
+  label: labelStr.optional(),
+  description: descStr.nullable().optional(),
+  managedState: ManagedStateSchema.nullable().optional(),
+  userTrustAttribute: UserTrustAttributeSchema.nullable().optional(),
+  cloudSanction: CloudSanctionSchema.nullable().optional(),
+  cloudOwnership: CloudOwnershipSchema.nullable().optional(),
+  threatActorType: ThreatActorTypeSchema.nullable().optional(),
+  attackObjectiveId: idStr.nullable().optional(),
+  identityProviderKind: IdentityProviderKindSchema.nullable().optional(),
+  authProviderId: idStr.nullable().optional(),
+  attackSurface: AttackSurfaceSchema.nullable().optional(),
+  agentAttributes: AgentAttributesSchema.nullable().optional(),
+});
 
 /** `update_edge.set`：source / target は変更不可（付け替えは delete + add）。 */
-const EdgeSetSchema = z
-  .object({
-    auth: AuthTypeSchema.optional(),
-    network: NetworkTypeSchema.optional(),
-    encryption: EncryptionTypeSchema.optional(),
-    dataFlow: DataFlowSchema.optional(),
-    dataFlowName: z.string().min(1).max(80).nullable().optional(),
-    semantic: EdgeSemanticSchema.nullable().optional(),
-    authProviderId: idStr.nullable().optional(),
-  })
-  .strict();
+const EdgeSetSchema = opObject({
+  auth: AuthTypeSchema.optional(),
+  network: NetworkTypeSchema.optional(),
+  encryption: EncryptionTypeSchema.optional(),
+  dataFlow: DataFlowSchema.optional().describe(DATA_FLOW_DESC),
+  dataFlowName: z.string().min(1).max(80).nullable().optional(),
+  semantic: EdgeSemanticSchema.nullable().optional().describe(SEMANTIC_DESC),
+  authProviderId: idStr.nullable().optional(),
+});
 
 const MacroTrustSchema = z.enum(['Public Area', 'Office Area', 'Security Zone']);
 const MicroTrustSchema = z.enum(['Development', 'Staging', 'Production']);
@@ -178,46 +219,40 @@ const boundaryAttrShape = {
   blastRadiusLabel: z.string().max(64).optional(),
 };
 
-const BoundarySetSchema = z
-  .object({
-    trustLevel: TrustLevelSchema.optional(),
-    macroTrust: MacroTrustSchema.optional(),
-    vlanName: z.string().max(64).nullable().optional(),
-    vlanId: z.number().int().min(0).max(4094).nullable().optional(),
-    networkAddress: z.string().max(64).nullable().optional(),
-    microTrust: MicroTrustSchema.optional(),
-    microSegmentationStatus: MicroStatusSchema.optional(),
-    sensitiveData: SensitiveDataSchema.optional(),
-    blastRadiusLabel: z.string().max(64).nullable().optional(),
-  })
-  .strict();
+const BoundarySetSchema = opObject({
+  trustLevel: TrustLevelSchema.optional(),
+  macroTrust: MacroTrustSchema.optional(),
+  vlanName: z.string().max(64).nullable().optional(),
+  vlanId: z.number().int().min(0).max(4094).nullable().optional(),
+  networkAddress: z.string().max(64).nullable().optional(),
+  microTrust: MicroTrustSchema.optional(),
+  microSegmentationStatus: MicroStatusSchema.optional(),
+  sensitiveData: SensitiveDataSchema.optional(),
+  blastRadiusLabel: z.string().max(64).nullable().optional(),
+});
 
-const nonEmpty = (o: object) => Object.keys(o).length > 0;
 
-export const OperationSchema = z.discriminatedUnion('op', [
-  z
-    .object({
+export const OperationSchema = z.discriminatedUnion(
+  'op',
+  [
+  opObject({
       op: z.literal('add_node'),
       ref: refStr.optional(),
       type: z.string().min(1).max(100),
       label: labelStr,
-      boundaryId: idStr.optional(),
+      boundaryId: idStr.optional().describe(BOUNDARY_ID_DESC),
       parentId: idStr.optional(),
       ...nodeAttrShape,
-    })
-    .strict(),
-  z
-    .object({
+    }),
+  opObject({
       op: z.literal('update_node'),
       id: idStr,
-      set: NodeSetSchema.refine(nonEmpty, 'set が空です').optional(),
+      set: NodeSetSchema.optional(),
       /** 指定すると再配置（境界の移動）。null は「どの境界にも入らない位置」へ。 */
-      boundaryId: idStr.nullable().optional(),
-    })
-    .strict(),
-  z.object({ op: z.literal('delete_node'), id: idStr }).strict(),
-  z
-    .object({
+      boundaryId: idStr.nullable().optional().describe(BOUNDARY_ID_DESC),
+    }),
+  opObject({ op: z.literal('delete_node'), id: idStr }),
+  opObject({
       op: z.literal('add_edge'),
       ref: refStr.optional(),
       source: idStr,
@@ -225,22 +260,18 @@ export const OperationSchema = z.discriminatedUnion('op', [
       auth: AuthTypeSchema,
       network: NetworkTypeSchema,
       encryption: EncryptionTypeSchema,
-      dataFlow: DataFlowSchema.optional(),
+      dataFlow: DataFlowSchema.optional().describe(DATA_FLOW_DESC),
       dataFlowName: z.string().min(1).max(80).optional(),
-      semantic: EdgeSemanticSchema.optional(),
+      semantic: EdgeSemanticSchema.optional().describe(SEMANTIC_DESC),
       authProviderId: idStr.optional(),
-    })
-    .strict(),
-  z
-    .object({
+    }),
+  opObject({
       op: z.literal('update_edge'),
       id: idStr,
-      set: EdgeSetSchema.refine(nonEmpty, 'set が空です'),
-    })
-    .strict(),
-  z.object({ op: z.literal('delete_edge'), id: idStr }).strict(),
-  z
-    .object({
+      set: EdgeSetSchema,
+    }),
+  opObject({ op: z.literal('delete_edge'), id: idStr }),
+  opObject({
       op: z.literal('add_boundary'),
       ref: refStr.optional(),
       type: BoundaryTypeSchema,
@@ -248,25 +279,22 @@ export const OperationSchema = z.discriminatedUnion('op', [
       /** 指定ノード（と内包された子）を囲む。省略時は既存要素の右側に空の境界を作る。 */
       around: z.array(idStr).min(1).max(100).optional(),
       ...boundaryAttrShape,
-    })
-    .strict(),
-  z
-    .object({
+    }),
+  opObject({
       op: z.literal('update_boundary'),
       id: idStr,
-      set: BoundarySetSchema.refine(nonEmpty, 'set が空です'),
-    })
-    .strict(),
-  z.object({ op: z.literal('delete_boundary'), id: idStr }).strict(),
-  z
-    .object({
+      set: BoundarySetSchema,
+    }),
+  opObject({ op: z.literal('delete_boundary'), id: idStr }),
+  opObject({
       op: z.literal('add_annotation'),
       kind: z.enum(['label', 'callout']),
       text: z.string().min(1).max(2000),
       targetNodeId: idStr.optional(),
-    })
-    .strict(),
-]);
+    }),
+],
+  { errorMap: opErrorMap },
+);
 
 export type Operation = z.infer<typeof OperationSchema>;
 
@@ -453,6 +481,7 @@ function expandBoundary(work: Work, boundaryId: string, rect: { height: number }
 
 function applyUpdateNode(work: Work, op: Extract<Operation, { op: 'update_node' }>): string {
   if (op.set === undefined && op.boundaryId === undefined) fail('set か boundaryId が必要です');
+  failIfEmptySet(op.set);
   const id = resolveId(work, op.id);
   const current = findNode(work, id);
   let next: DiagramNode = { ...current };
@@ -553,6 +582,7 @@ function applyAddEdge(work: Work, op: Extract<Operation, { op: 'add_edge' }>): s
 }
 
 function applyUpdateEdge(work: Work, op: Extract<Operation, { op: 'update_edge' }>): string {
+  failIfEmptySet(op.set);
   const id = resolveId(work, op.id);
   const current = work.layer.edges.find((e) => e.id === id) ?? fail(`エッジ ${id} が存在しません`);
   const next: DiagramEdge = { ...current };
@@ -645,6 +675,7 @@ function applyAddBoundary(work: Work, op: Extract<Operation, { op: 'add_boundary
 }
 
 function applyUpdateBoundary(work: Work, op: Extract<Operation, { op: 'update_boundary' }>): string {
+  failIfEmptySet(op.set);
   const id = resolveId(work, op.id);
   const current = findBoundary(work, id);
   const { trustLevel, ...attrs } = op.set;

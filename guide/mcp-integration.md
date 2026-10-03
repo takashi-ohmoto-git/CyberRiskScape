@@ -188,7 +188,7 @@ JSON file.
 | Tool | Main arguments | Returns |
 |---|---|---|
 | `get_model` | `path`, `layer?` | Nodes, edges, trust boundaries and annotations per layer (no coordinates). `revision` |
-| `analyze_threats` | `path`, `layer?`, `framework?`, `minSeverity?`, `elementId?`, `includeSuppressed?` | A summary list of detected threats (highest effective severity first). `revision` |
+| `analyze_threats` | `path`, `layer?`, `framework?`, `minSeverity?`, `elementId?`, `includeSuppressed?`, `limit?` | A summary list of detected threats (highest effective severity first). `revision` |
 | `get_threat` | `path`, `threatId` | Details of one threat (mitigations, sources, compliance references, treatment, etc.) |
 | `diff_models` | `basePath`, `headPath` | Matching change triggers and the threat diff (same shape as the CLI's `diff --format json`) |
 | `list_component_types` | none | Component type ids, categories, the types each can contain, and settable attributes. Consult before writing structure |
@@ -202,8 +202,11 @@ Notes:
   `minSeverity` is `Critical` / `High` / `Medium` / `Low`
 - `elementId` in `analyze_threats` accepts an internal id or an ElementalID such as `C1`, `DF1` or
   `Z1`. Because threat ids can collide across layers, they are returned as `L1:<id>`, and you pass
-  that form to `get_threat`
-- Result counts are capped (200 threats, 50 rules; `truncated` becomes true when exceeded)
+  that form to `get_threat`. Threat ids in the diffs of `diff_models` and `apply_model_changes`
+  (`added` / `removed` / `suppressionChanged` / `severityChanged`) use the same `L1:<id>` form and can
+  be passed to `get_threat` as is (the CLI's `diff --format json` keeps the plain id without a layer)
+- Result counts are capped (200 threats, 50 rules; `truncated` becomes true when exceeded).
+  `analyze_threats` takes `limit` (1-200, default 200) to return only the first N of the sorted list
 - The **`revision`** returned by `get_model` and `analyze_threats` is the SHA-256 of the file
   contents. It is required for writing (§7)
 
@@ -217,7 +220,7 @@ before any is applied, and if even one fails nothing is written** (atomic).
 | `add_node` | `type`, `label`, `ref?`, `boundaryId?`, `parentId?`, `description?`, plus per-type attributes | No coordinates. The result contains the assigned id |
 | `update_node` | `id`, `set?`, `boundaryId?` | Passing `boundaryId` moves the node to that boundary (`null` for outside any boundary). A `null` in `set` removes the attribute |
 | `delete_node` | `id` | Edges connected to the node are removed too. References to the node from attributes and annotations are cleared |
-| `add_edge` | `source`, `target`, `auth`, `network`, `encryption`, `ref?`, `dataFlow?`, `dataFlowName?`, `semantic?`, `authProviderId?` | `auth`: `None` / `Password` / `MFA`. `network`: `Internet` / `VPN` / `VPC`. `encryption`: `Plain` / `TLS` / `E2EE` |
+| `add_edge` | `source`, `target`, `auth`, `network`, `encryption`, `ref?`, `dataFlow?`, `dataFlowName?`, `semantic?`, `authProviderId?` | `auth`: `None` / `Password` / `MFA`. `network`: `Internet` / `VPN` / `VPC`. `encryption`: `Plain` / `TLS` / `E2EE`. `dataFlow` is the **direction seen from the source**: `outbound` = source -> target (default), `inbound` = target -> source, `bidirectional` = both |
 | `update_edge` | `id`, `set` | `source` / `target` cannot be changed (delete and add to reconnect) |
 | `delete_edge` | `id` | |
 | `add_boundary` | `type`, `ref?`, `trustLevel?`, `around?`, plus per-type attributes | `type`: `RECT` / `RECT_DASHED` / `ROUNDED` / `ROUNDED_DASHED` / `BLAST_RADIUS`. Sized to enclose the nodes in `around` (an array of node ids); an empty boundary if omitted |
@@ -269,6 +272,16 @@ returned by `list_component_types`.)
 With `dryRun: true` nothing is written; **only the threat diff and matching triggers that would
 result** are returned. If it looks right, call again with the same content with `dryRun` removed (or
 set to `false`).
+**Ids assigned in a `dryRun` result are provisional**: the real write assigns different ids (the
+result's `note` says so too). Do not use them in later operations; within one call, use `ref`.
+
+**Error guidance.** If an operation includes acceptance, false-positive, risk-assessment or
+control-status data (`suppression`, `riskScore`, `controlStatus`, manual threats, ...), or an undefined
+operation such as `accept_threat` is sent, it is rejected at input validation with a message (in
+Japanese) saying that acceptance, false positives, risk assessment and control status cannot be changed
+with this tool: a person sets them in CyberRiskScape and approves them in a PR. The file is not changed.
+Other undefined keys and operations are also rejected with Japanese messages (the language of these
+messages is fixed to Japanese).
 
 ---
 

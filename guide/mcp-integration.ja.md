@@ -183,7 +183,7 @@ Copilot はここで許可したツールを、**承認を求めずに**自律�
 | ツール | 主な引数 | 返すもの |
 |---|---|---|
 | `get_model` | `path`, `layer?` | レイヤー別のノード・エッジ・信頼境界・注釈（座標は含まない）。`revision` |
-| `analyze_threats` | `path`, `layer?`, `framework?`, `minSeverity?`, `elementId?`, `includeSuppressed?` | 検出された脅威の要約一覧（実効 severity の高い順）。`revision` |
+| `analyze_threats` | `path`, `layer?`, `framework?`, `minSeverity?`, `elementId?`, `includeSuppressed?`, `limit?` | 検出された脅威の要約一覧（実効 severity の高い順）。`revision` |
 | `get_threat` | `path`, `threatId` | 1 件の詳細（対策・出典・コンプライアンス参照・対応方針など） |
 | `diff_models` | `basePath`, `headPath` | 該当する実行トリガーと脅威差分（CLI の `diff --format json` と同じ形） |
 | `list_component_types` | なし | コンポーネント型の id・カテゴリ・内包できる型・設定できる属性。構成を書く前に参照する |
@@ -196,8 +196,12 @@ Copilot はここで許可したツールを、**承認を求めずに**自律�
 - `layer` は `L0` 〜 `L3`。`framework` は `STRIDE` / `AI` / `AgenticAI` / `ALL`。
   `minSeverity` は `Critical` / `High` / `Medium` / `Low`
 - `analyze_threats` の `elementId` には、内部 id のほか `C1`・`DF1`・`Z1` のような ElementalID も使えます。
-  脅威の id はレイヤーをまたいで衝突しうるため `L1:<id>` の形で返り、`get_threat` にもその形で渡します
-- 返す件数には上限があります（脅威 200 件、ルール 50 件。超えると `truncated` が真になります）
+  脅威の id はレイヤーをまたいで衝突しうるため `L1:<id>` の形で返り、`get_threat` にもその形で渡します。
+  `diff_models` と `apply_model_changes` の脅威差分（`added` / `removed` / `suppressionChanged` /
+  `severityChanged`）の id も同じ `L1:<id>` 形式で、そのまま `get_threat` に渡せます
+  （CLI の `diff --format json` の id はレイヤー無しの素の id のままです）
+- 返す件数には上限があります（脅威 200 件、ルール 50 件。超えると `truncated` が真になります）。
+  `analyze_threats` は `limit`（1〜200、既定 200）で、並びの先頭から返す件数を絞れます
 - `get_model` と `analyze_threats` が返す **`revision`** は、ファイル内容の SHA-256 です。
   書き込みに必要です（§7）
 
@@ -211,7 +215,7 @@ Copilot はここで許可したツールを、**承認を求めずに**自律�
 | `add_node` | `type`, `label`, `ref?`, `boundaryId?`, `parentId?`, `description?` と型ごとの属性 | 座標は指定しない。結果に採番された id が入る |
 | `update_node` | `id`, `set?`, `boundaryId?` | `boundaryId` を指定すると境界の移動（`null` で境界の外へ）。`set` の `null` は属性の削除 |
 | `delete_node` | `id` | そのノードにつながるエッジも消える。ノードを参照する属性・注釈の参照は外れる |
-| `add_edge` | `source`, `target`, `auth`, `network`, `encryption`, `ref?`, `dataFlow?`, `dataFlowName?`, `semantic?`, `authProviderId?` | `auth`：`None` / `Password` / `MFA`。`network`：`Internet` / `VPN` / `VPC`。`encryption`：`Plain` / `TLS` / `E2EE` |
+| `add_edge` | `source`, `target`, `auth`, `network`, `encryption`, `ref?`, `dataFlow?`, `dataFlowName?`, `semantic?`, `authProviderId?` | `auth`：`None` / `Password` / `MFA`。`network`：`Internet` / `VPN` / `VPC`。`encryption`：`Plain` / `TLS` / `E2EE`。`dataFlow` は **source から見た向き**：`outbound`＝source → target（既定）、`inbound`＝target → source、`bidirectional`＝双方向 |
 | `update_edge` | `id`, `set` | `source` / `target` は変更不可（付け替えは削除と追加） |
 | `delete_edge` | `id` | |
 | `add_boundary` | `type`, `ref?`, `trustLevel?`, `around?` と型ごとの属性 | `type`：`RECT` / `RECT_DASHED` / `ROUNDED` / `ROUNDED_DASHED` / `BLAST_RADIUS`。`around`（ノード id の配列）を囲む大きさで作る。省略時は空の境界 |
@@ -261,6 +265,14 @@ Copilot はここで許可したツールを、**承認を求めずに**自律�
 
 `dryRun: true` のときはファイルを書かず、**書いた場合に起きる脅威差分と該当トリガーだけ**を返します。
 問題なければ `dryRun` を外して（または `false` にして）同じ内容で呼び直します。
+**`dryRun` の結果に含まれる採番 id は仮のもの**で、本番の書き込みでは別の id が採番されます
+（結果の `note` にも明記されます）。後続の操作には使わず、同じ呼び出しの中では `ref` を使います。
+
+**エラーの案内。** 受容・誤検知・リスク評価・対策実装状況（`suppression`・`riskScore`・
+`controlStatus`・手動脅威など）を操作に入れたり、`accept_threat` のような未定義の操作を送ったりすると、
+入力の検証の段階で拒否され、「受容・誤検知・リスク評価・対策実装状況はこのツールでは変更できません。
+人が CyberRiskScape で設定し、PR で承認します」という案内が返ります（ファイルは変わりません）。
+その他の未定義のキー・操作も日本語のメッセージで拒否します（メッセージは日本語固定です）。
 
 ---
 

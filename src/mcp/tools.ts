@@ -40,7 +40,7 @@ import type { ThreatRule } from '../threat-library/schema/threatRule';
 
 const MAX_TEXT = 2000;
 const MITIGATION_DIGEST = 200;
-const MAX_THREATS = 200;
+export const MAX_THREATS = 200;
 const MAX_RULES = 50;
 
 const FRAMEWORKS: readonly FrameworkView[] = ['STRIDE', 'AI', 'AgenticAI', 'ALL'];
@@ -220,6 +220,8 @@ export interface AnalyzeThreatsOptions {
   /** 要素の内部 id、または ElementalID（`C1` / `DF1` / `Z1`）。 */
   elementId?: string;
   includeSuppressed?: boolean;
+  /** 返す件数の上限（1〜MAX_THREATS、既定 MAX_THREATS）。並び（実効 severity 降順）の先頭から返す。 */
+  limit?: number;
   locale: Locale;
 }
 
@@ -270,7 +272,8 @@ export function analyzeThreats(raw: unknown, opts: AnalyzeThreatsOptions): Recor
   );
 
   const total = items.length;
-  const threats = items.slice(0, MAX_THREATS).map((lt) => ({
+  const limit = Math.min(Math.max(opts.limit ?? MAX_THREATS, 1), MAX_THREATS);
+  const threats = items.slice(0, limit).map((lt) => ({
     id: qualifiedId(lt),
     layer: lt.layer,
     name: trunc(lt.threat.name ?? lt.threat.category),
@@ -351,7 +354,17 @@ export function diffModels(
   opts: DiffModelsOptions,
 ): Record<string, unknown> {
   setLocale(opts.locale);
-  return diffToJsonObject(diffProjects(baseRaw, headRaw, opts));
+  const json = diffToJsonObject(diffProjects(baseRaw, headRaw, opts));
+  // CLI の JSON は素の id のまま（下流との契約）。MCP では analyze_threats / get_threat と同じ `L1:<id>` に揃える。
+  const qualify = (list: unknown) =>
+    (list as { layer: string; id: string }[]).map((e) => ({ ...e, id: `${e.layer}:${e.id}` }));
+  return {
+    ...json,
+    added: qualify(json.added),
+    removed: qualify(json.removed),
+    suppressionChanged: qualify(json.suppressionChanged),
+    severityChanged: qualify(json.severityChanged),
+  };
 }
 
 // ─────────────────────────────────────────────── 5. list_component_types

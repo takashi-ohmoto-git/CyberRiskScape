@@ -159,7 +159,91 @@ describe('MCP サーバー', () => {
     expect(r.json.written).toBe(false);
     expect(r.json.revision).toBe(rev);
     expect(r.json.results[0].id).toBeTruthy();
+    expect(r.json.note).toContain('仮の採番');
     expect(readModel().equals(before)).toBe(true);
+  });
+
+  it('analyze_threats の limit は SDK 経由でも効き、範囲外は拒否する', async () => {
+    const client = await connect();
+    const r = await call(client, 'analyze_threats', { path: 'model.json', limit: 1 });
+    expect(r.json.returned).toBe(1);
+    expect(r.json.truncated).toBe(r.json.total > 1);
+    const bad = await call(client, 'analyze_threats', { path: 'model.json', limit: 0 });
+    expect(bad.isError).toBe(true);
+  });
+
+  it('diff の脅威 id（L1:<id>）は get_threat にそのまま渡せる', async () => {
+    const client = await connect();
+    const d = await call(client, 'diff_models', { basePath: 'model.json', headPath: 'changed.json' });
+    expect(d.json.added.length).toBeGreaterThan(0);
+    const id = d.json.added[0].id as string;
+    expect(id).toMatch(/^L1:/);
+    const t = await call(client, 'get_threat', { path: 'changed.json', threatId: id });
+    expect(t.isError, t.text).toBe(false);
+    expect(t.json.id).toBe(id);
+  });
+
+  describe('判断系の変更は SDK の入力検証段階でも日本語の案内がクライアントに届く', () => {
+    const GUIDE = '人が CyberRiskScape で設定し、PR で承認します';
+    const run = async (operations: unknown[]) => {
+      const client = await connect();
+      const before = readModel();
+      const r = await call(client, 'apply_model_changes', {
+        path: 'model.json',
+        revision: computeRevision(before),
+        layer: 'L1',
+        operations,
+      });
+      expect(readModel().equals(before)).toBe(true);
+      return r;
+    };
+
+    it('set に suppression 等を入れた場合（二次エラー「set が空」は出ない）', async () => {
+      const r = await run([{ op: 'update_node', id: 'n-llm', set: { suppression: { status: 'accepted' } } }]);
+      expect(r.isError).toBe(true);
+      expect(r.text).toContain(GUIDE);
+      expect(r.text).toContain('"suppression"');
+      expect(r.text).not.toContain('set が空');
+      expect(r.text).not.toContain('Unrecognized');
+    });
+
+    it('操作の直下に riskScore 等を入れた場合', async () => {
+      const r = await run([{ ...ADD_DB, riskScore: 5 }]);
+      expect(r.isError).toBe(true);
+      expect(r.text).toContain(GUIDE);
+    });
+
+    it('accept_threat のような未定義の操作名', async () => {
+      const r = await run([{ op: 'accept_threat', threatId: 'L1:x' }]);
+      expect(r.isError).toBe(true);
+      expect(r.text).toContain(GUIDE);
+      expect(r.text).toContain('accept_threat');
+      expect(r.text).not.toContain('Invalid discriminator');
+    });
+
+    it('判断系でない未知キー・未知の操作は日本語で、案内は付けない', async () => {
+      const k = await run([{ ...ADD_DB, x: 10 }]);
+      expect(k.text).toContain('使えないキー');
+      expect(k.text).not.toContain(GUIDE);
+      const o = await run([{ op: 'add_nod' }]);
+      expect(o.text).toContain('未定義の操作');
+      expect(o.text).not.toContain(GUIDE);
+    });
+
+    it('空の set は適用側で拒否する（index と理由）', async () => {
+      const r = await run([{ op: 'update_edge', id: 'e1', set: {} }]);
+      expect(r.isError).toBe(true);
+      expect(r.json).toMatchObject({ error: 'operation_failed', index: 0, reason: 'set が空です' });
+    });
+
+    it('tools/list の operations スキーマには各操作が JSON Schema として出る', async () => {
+      const client = await connect();
+      const { tools } = await client.listTools();
+      const apply = tools.find((t) => t.name === 'apply_model_changes')!;
+      const json = JSON.stringify(apply.inputSchema);
+      expect(json).toContain('add_edge');
+      expect(json).toContain('source から見た向き');
+    });
   });
 
   it('revision 不一致は拒否し、ファイルを変えない', async () => {
