@@ -68,7 +68,8 @@ export function EdgeLayer({
   }
 
   return (
-    <svg className="absolute inset-0 w-full h-full pointer-events-none">
+    // ワールド座標で描くため、キャンバス枠の外（右端より先・負の座標）も描画できるよう overflow を可視にする。
+    <svg className="absolute inset-0 w-full h-full overflow-visible pointer-events-none">
       <defs>
         {(Object.keys(EDGE_STROKE_COLORS) as MarkerKey[]).map((key) => (
           <marker

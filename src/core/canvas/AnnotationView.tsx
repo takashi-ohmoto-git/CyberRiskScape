@@ -77,7 +77,7 @@ export function AnnotationLeaderLines({ annotations, nodes }: AnnotationLeaderLi
   if (callouts.length === 0) return null;
 
   return (
-    <svg className="absolute inset-0 w-full h-full pointer-events-none">
+    <svg className="absolute inset-0 w-full h-full overflow-visible pointer-events-none">
       {callouts.map((a) => {
         const target = nodes.find((n) => n.id === a.targetNodeId);
         if (!target) return null;
