@@ -173,6 +173,7 @@ describe('buildPdfReport', () => {
     const out = process.env.CRS_PDF_SAMPLE_OUT as string;
     const bytes = await buildPdfReport(input([layer('L0', 6), layer('L1', 18)]));
     fs.writeFileSync(out, bytes);
+    fs.writeFileSync(`${out}.en.pdf`, await buildPdfReport(input([layer('L0', 6), layer('L1', 18)], 'en')));
     const pages = await pageTexts(bytes);
     if (pages) fs.writeFileSync(`${out}.page1.txt`, pages[0] ?? '');
   });

@@ -143,3 +143,63 @@ export function layoutTableRow(
   const maxCount = Math.max(1, ...lines.map((l) => l.length));
   return { lines, height: maxCount * lineHeight + padY * 2 };
 }
+
+/** 横並びメタ行の 1 項目（ラベル＋値）。 */
+export interface InlineItem {
+  label: string;
+  value: string;
+}
+
+/** 配置済みの断片。`label` は項目の先頭行だけに付く。`x` は行頭からのオフセット。 */
+export interface InlineSegment {
+  x: number;
+  label?: string;
+  text: string;
+}
+
+export interface InlineMeasure {
+  label: (text: string) => number;
+  value: (text: string) => number;
+}
+
+/**
+ * 「ラベル 値」を横に並べ、`maxWidth` を超えたら次の行へ送る。値の無い項目は捨てる。
+ * 1 項目だけで行幅を超えるときは、その値を折り返す（2 行目以降はラベルの右に揃える）。
+ * 戻り値は行ごとの断片。
+ */
+export function flowInline(
+  items: readonly InlineItem[],
+  maxWidth: number,
+  measure: InlineMeasure,
+  gap = 14,
+  labelGap = 4,
+): InlineSegment[][] {
+  const rows: InlineSegment[][] = [];
+  let row: InlineSegment[] = [];
+  let x = 0;
+  const newRow = () => {
+    if (row.length > 0) rows.push(row);
+    row = [];
+    x = 0;
+  };
+  for (const item of items) {
+    const value = item.value.replace(/\s*\n\s*/g, ' ').trim();
+    if (!value) continue;
+    const labelW = measure.label(item.label) + labelGap;
+    const w = labelW + measure.value(value);
+    if (w > maxWidth) {
+      newRow();
+      const lines = wrapText(value, Math.max(1, maxWidth - labelW), 1, (t) => measure.value(t));
+      lines.forEach((text, i) => {
+        rows.push([i === 0 ? { x: 0, label: item.label, text } : { x: labelW, text }]);
+      });
+      continue;
+    }
+    if (row.length > 0 && x + gap + w > maxWidth) newRow();
+    if (row.length > 0) x += gap;
+    row.push({ x, label: item.label, text: value });
+    x += w;
+  }
+  newRow();
+  return rows;
+}

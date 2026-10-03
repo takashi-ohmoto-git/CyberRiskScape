@@ -177,7 +177,7 @@ Check these before exporting.
 - **Glyphs missing from the font render as boxes.** Japanese text is embedded in BIZ UDPGothic,
   but characters it does not contain (some symbols, emoji) appear as squares.
 - **The PDF text is selectable and searchable.** It is embedded as text, not as an image.
-- **A PDF can run to dozens of pages even for one layer,** because the appendix holds every threat in
+- **A PDF can run to well over ten pages even for one layer,** because the appendix holds every threat in
   detail. As a rule, hand executives page 1 (the summary) and the top-10 details.
 
 ---

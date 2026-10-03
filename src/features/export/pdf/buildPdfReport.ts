@@ -8,7 +8,7 @@ import type { StandardId } from '../../../compliance/schema/complianceItem';
 import { translate, type Locale, type TranslationKey } from '../../../i18n';
 import { THREAT_REPORT_SCHEMA_VERSION, type ThreatReport, type ThreatReportRow } from '../threatReport';
 import { createFontSubsetter } from './fontSubset';
-import { createCursor, layoutTableRow, wrapText, type PageCursor } from './layout';
+import { createCursor, flowInline, layoutTableRow, wrapText, type PageCursor } from './layout';
 import {
   CONTROL_BUCKETS,
   SEVERITY_ORDER,
@@ -346,23 +346,48 @@ function detailBlock(ctx: Ctx, r: PreparedRow, t: T, top = false): void {
   });
   paragraph(ctx, `${r.no}. ${r.name}`, { font: ctx.bold, size: 10, lineHeight: 14, width: CONTENT_W - sevW - 10 });
   ctx.cursor.advance(1);
+  // 短い項目は「ラベル 値」の横並びメタ行にまとめる（幅を超えたら次の行へ）。
+  const metaRows = flowInline(
+    [
+      ...(top ? [{ label: t('report.pdf.detail.layer'), value: r.layer }] : []),
+      { label: t('report.pdf.detail.category'), value: r.category },
+      { label: t('report.pdf.detail.asset'), value: r.asset },
+      { label: t('report.pdf.detail.impact'), value: r.impact },
+      { label: t('report.pdf.detail.likelihood'), value: r.likelihood },
+      { label: t('report.pdf.detail.status'), value: r.status },
+      { label: t('report.pdf.detail.controlStatus'), value: r.controlStatus },
+    ],
+    CONTENT_W,
+    {
+      label: (s) => ctx.bold.widthOfTextAtSize(s, SMALL),
+      value: (s) => ctx.reg.widthOfTextAtSize(s, BODY),
+    },
+  );
+  for (const row of metaRows) {
+    need(ctx, BODY_LH);
+    const p = page(ctx);
+    const baseline = ctx.cursor.y - BODY;
+    for (const seg of row) {
+      let x = MARGIN_X + seg.x;
+      if (seg.label) {
+        p.drawText(seg.label, { x, y: baseline, size: SMALL, font: ctx.bold, color: MUTED });
+        x += ctx.bold.widthOfTextAtSize(seg.label, SMALL) + 4;
+      }
+      p.drawText(seg.text, { x, y: baseline, size: BODY, font: ctx.reg, color: INK });
+    }
+    ctx.cursor.advance(BODY_LH);
+  }
+  // 長い項目はラベル行＋本文。
   const field = (label: string, body: string) => {
     if (!body) return;
     need(ctx, BODY_LH * 2);
     paragraph(ctx, label, { font: ctx.bold, size: SMALL, lineHeight: 11, color: MUTED });
     paragraph(ctx, body, { x: MARGIN_X + 8 });
   };
-  if (top) field(t('report.pdf.detail.layer'), r.layer);
-  field(t('report.pdf.detail.category'), r.category);
-  field(t('report.pdf.detail.asset'), r.asset);
   field(t('report.pdf.detail.description'), r.description);
   field(t('report.pdf.detail.mitigation'), r.mitigation);
   if (top) field(t('report.pdf.detail.firstStep'), r.firstStep);
   field(t('report.pdf.detail.compliance'), r.compliance.map((c) => `・${c}`).join('\n'));
-  field(t('report.pdf.detail.impact'), r.impact);
-  field(t('report.pdf.detail.likelihood'), r.likelihood);
-  field(t('report.pdf.detail.status'), r.status);
-  field(t('report.pdf.detail.controlStatus'), r.controlStatus);
   field(t('report.pdf.detail.comments'), r.comments);
   need(ctx, 6);
   page(ctx).drawLine({

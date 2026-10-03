@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createCursor, layoutTableRow, wrapText, type Measure } from './layout';
+import { createCursor, flowInline, layoutTableRow, wrapText, type Measure } from './layout';
 
 // 全角（CJK）= size、半角 = size / 2 の疑似フォント。
 const measure: Measure = (text, size) =>
@@ -57,5 +57,58 @@ describe('layoutTableRow', () => {
   it('maxLines を超えたら末尾に … を付けて打ち切る', () => {
     const r = layoutTableRow(['あいうえおかきくけこ'], [30], 10, 12, 5, 3, measure, 2);
     expect(r.lines[0]).toEqual(['あい', 'うえ…']);
+  });
+});
+
+describe('flowInline', () => {
+  const m = { label: (t: string) => measure(t, 8), value: (t: string) => measure(t, 10) };
+
+  it('幅に収まる項目は横に並べ、値の無い項目は出さない', () => {
+    const rows = flowInline(
+      [
+        { label: 'AB', value: 'xy' },
+        { label: 'CD', value: '' },
+        { label: 'EF', value: 'zz' },
+      ],
+      200,
+      m,
+      10,
+      4,
+    );
+    expect(rows).toHaveLength(1);
+    // 1 項目目：ラベル 8 + 4、値 10 → 幅 22。2 項目目は 22 + 10 の位置。
+    expect(rows[0]?.map((s) => [s.label, s.text, s.x])).toEqual([
+      ['AB', 'xy', 0],
+      ['EF', 'zz', 32],
+    ]);
+  });
+
+  it('幅を超える項目は次の行へ送る', () => {
+    const rows = flowInline(
+      [
+        { label: 'AB', value: 'xy' },
+        { label: 'CD', value: 'zz' },
+      ],
+      50,
+      m,
+      10,
+      4,
+    );
+    expect(rows).toHaveLength(2);
+    expect(rows[1]?.[0]?.x).toBe(0);
+  });
+
+  it('単独で行幅を超える値は折り返し、2 行目以降はラベルの右に揃える', () => {
+    const rows = flowInline([{ label: 'AB', value: 'あいうえおかきくけこ' }], 62, m, 10, 4);
+    // ラベル幅 12 → 値に使える幅 50 → 全角（10）5 文字/行
+    expect(rows.map((r) => r.map((s) => s.text))).toEqual([['あいうえお'], ['かきくけこ']]);
+    expect(rows[0]?.[0]?.label).toBe('AB');
+    expect(rows[1]?.[0]).toMatchObject({ x: 12 });
+    expect(rows[1]?.[0]?.label).toBeUndefined();
+  });
+
+  it('値中の改行は空白に畳む', () => {
+    const rows = flowInline([{ label: 'A', value: 'x\ny' }], 200, m);
+    expect(rows[0]?.[0]?.text).toBe('x y');
   });
 });
