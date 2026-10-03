@@ -48,7 +48,7 @@ import {
 import { boundaryAround, emptyBoundaryRect, placeAnnotation, placeNode } from './placement';
 
 /**
- * MCP の `apply_model_changes` が使う「構成変更の適用」純粋モジュール（[[plan]] §2.56）。
+ * MCP の `apply_model_changes` が使う「構成変更の適用」純粋モジュール。
  *
  * - 編集できるのは対象レイヤーの構成（ノード・エッジ・境界・注釈）のみ。座標・id・seq は
  *   エージェントに指定させない（操作スキーマは `.strict()`、座標はサーバー側の配置で決める）。

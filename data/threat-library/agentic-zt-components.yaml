@@ -1,5 +1,5 @@
 # Agentic Zero Trust 拡張コンポーネント（MCP_SERVER / MEMORY_STORE / SUB_AGENT）向け
-# bundled 脅威ルール（[[plan]] §2.22 1.6e 以降の段階的再構成）。
+# bundled 脅威ルール。
 #
 # 背景: §2.22 で MCP_SERVER / SUB_AGENT / MEMORY_STORE の 3 型を component-library に
 #   追加したが、脅威ルール側のカバレッジが薄かった（MCP_SERVER:0 / SUB_AGENT:0 /

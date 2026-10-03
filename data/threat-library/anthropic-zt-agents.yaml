@@ -246,7 +246,7 @@ rules:
     references:
       - title: "Anthropic - Zero Trust for AI Agents (Configuration integrity)"
 
-  # ── Memory Store: 長期メモリ自体の完全性（[[plan]] §2.22 1.6e）────
+  # ── Memory Store: 長期メモリ自体の完全性────
   - id: anthropic-zt-memory-store-tampering-001
     canonicalId: memory-store-tampering
     framework: AgenticAI
@@ -272,7 +272,7 @@ rules:
       - title: "OWASP Top 10 for Agentic Applications 2026 - ASI06: Memory & Context Poisoning（関連マッピング）"
         url: "https://genai.owasp.org/"
 
-  # ── Delegation: エージェント間委譲の整合性（[[plan]] §2.22 1.6d）────
+  # ── Delegation: エージェント間委譲の整合性────
   - id: anthropic-zt-delegation-integrity-001
     canonicalId: delegation-message-integrity
     framework: AgenticAI

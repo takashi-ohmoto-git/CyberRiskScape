@@ -2,7 +2,7 @@
  * HarfBuzz（harfbuzz-subset.wasm）による実行時フォントサブセット。
  *
  * pdf-lib の `embedFont(..., { subset: true })` は日本語グリフが欠落するため、
- * 文書で使う文字だけをここで切り出し、`subset: false` で埋め込む（[[plan]] §2.53）。
+ * 文書で使う文字だけをここで切り出し、`subset: false` で埋め込む。
  * wasm は import 無しの単体モジュール。バイト列は呼び出し側が注入する（fetch しない）。
  */
 

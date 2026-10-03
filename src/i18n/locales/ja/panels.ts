@@ -83,7 +83,7 @@ export const jaPanels = {
   'panels.node.identityTier.hardwareBound': 'HardwareBound — HSM / TPM',
   'panels.node.identityTierLabel': 'Identity Tier（アイデンティティの根付き方）',
   'panels.node.agentAttrsNote':
-    'Anthropic "Zero Trust for AI Agents" 由来の設計者宣言属性。未設定属性は将来の脅威エンジンで「最悪を仮定」評価される予定（[[plan]] §2.22 1.6c）。',
+    'Anthropic "Zero Trust for AI Agents" 由来の設計者宣言属性。未設定属性は将来の脅威エンジンで「最悪を仮定」評価される予定。',
 
   'panels.node.createEdgeHeading': 'エッジの作成',
   'panels.node.createEdgeNote': 'このパーツから別のパーツへの接続線を作成します。',
@@ -157,7 +157,7 @@ export const jaPanels = {
   'panels.boundary.blastRadiusNote':
     'この枠は侵害時の影響範囲を示す注記です。信頼境界ではないため、囲んだコンポーネントの信頼レベル・脅威検出・越境マーカーには影響しません。',
 
-  // ── AnnotationPanel（[[plan]] §2.48） ──
+  // ── AnnotationPanel ──
   'panels.annotation.textLabel': '本文',
   'panels.annotation.textPlaceholder': '説明を入力...',
   'panels.annotation.linkedNodeLabel': 'リンク先ノード',

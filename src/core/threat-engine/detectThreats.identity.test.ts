@@ -4,7 +4,7 @@ import type { DiagramEdge, DiagramNode } from '../model/types';
 import type { ThreatRule } from '../../threat-library/schema/threatRule';
 
 /**
- * アイデンティティ軸（[[plan]] §2.39）のエンジン評価テスト。
+ * アイデンティティ軸のエンジン評価テスト。
  * - node: `identityProviderKind`
  * - edge: `sourceIdentityProviderKind` / `targetIdentityProviderKind` / `authProvider`
  *

@@ -18,7 +18,7 @@ import {
 import { getLocale, translate, type Locale } from '../i18n';
 
 /**
- * モデル差分（base/head の 2 版比較）＋実行トリガー判定＋ゲート判定（[[plan]] §2.50）。
+ * モデル差分（base/head の 2 版比較）＋実行トリガー判定＋ゲート判定。
  *
  * `analyze.ts`（単版の脅威検出）の上に積む形で実装する：base/head をそれぞれ
  * `resolveProject` → `analyzeResolvedProject` に通し、脅威 id（`${layer}:${threat.id}`）で
@@ -172,8 +172,8 @@ export function diffProjects(baseRaw: unknown, headRaw: unknown, opts: DiffOptio
 }
 
 /**
- * ゲート判定：**新規に追加された脅威だけ**を対象にする（既存の未対応脅威で毎回落ちないように。
- * [[plan]] §2.50 設計判断）。未抑制かつ実効 severity が `failOn` 以上なら offender とする。
+ * ゲート判定：**新規に追加された脅威だけ**を対象にする（既存の未対応脅威で毎回落ちないように）。
+ * 未抑制かつ実効 severity が `failOn` 以上なら offender とする。
  * 受容・誤検知への変更（`suppressionChanged`）はゲートに含めない。
  */
 export function evaluateDiffGate(diff: ProjectDiff, failOn: Severity): ThreatDiffEntry[] {

@@ -49,7 +49,7 @@ const MAX_HISTORY = 50;
 
 /**
  * Undo/Redo のスナップショット。ドキュメント編集対象のみを持つ。
- * 全 mutation が immutable なため、ここは古い state への参照保持で安全（[[plan]] §2.24-C）。
+ * 全 mutation が immutable なため、ここは古い state への参照保持で安全。
  */
 interface HistorySnapshot {
   layers: Record<LayerKey, LayerData>;
@@ -68,7 +68,7 @@ const snapshotOf = (s: DiagramState): HistorySnapshot => ({
 });
 
 /**
- * L1 にだけ初期サンプルを置く（[[plan]] §2 ステップ 18 で確定）。
+ * L1 にだけ初期サンプルを置く。
  * L0 = ビジネスサイドが空から記載、L1 = セキュリティ担当者のデフォルト出発点。
  */
 const INITIAL_L1: LayerData = {
@@ -135,7 +135,7 @@ export const INITIAL_LAYERS: Record<LayerKey, LayerData> = {
 export const DEFAULT_ACTIVE_LAYER: LayerKey = 'L1';
 
 /**
- * ElementalID 採番カウンタ（[[plan]] §2.26）。レイヤー × 種別ごとに**単調増加**で、
+ * ElementalID 採番カウンタ。レイヤー × 種別ごとに**単調増加**で、
  * 削除しても巻き戻さない（番号を再利用しない＝レポート参照の永続安定性）。値は
  * 「直近に割り当てた seq」。次に割り当てる seq は `value + 1`。
  */
@@ -180,7 +180,7 @@ function renumberKind<T extends { seq?: number }>(items: T[]): T[] {
 
 /**
  * 内部要素 ID（不変キー）の生成。`Date.now()` 単独は同一ミリ秒内で衝突し得たため、
- * セッション内単調増加カウンタを併用して衝突を排除する（[[plan]] §2.26）。
+ * セッション内単調増加カウンタを併用して衝突を排除する。
  * セッション間は `Date.now()` 部が異なるため過去 ID とも衝突しない。
  */
 let idSeq = 0;
@@ -323,11 +323,11 @@ export interface HydratePayload {
   projectMeta?: ProjectMeta;
   manualThreats?: Record<LayerKey, ManualThreat[]>;
   suppressions?: Record<string, SuppressionState>;
-  /** リスク評価（threatId キー。[[plan]] §2.34 / §2.45）。省略時は評価なし。 */
+  /** リスク評価（threatId キー）。省略時は評価なし。 */
   riskScores?: Record<string, RiskScore>;
   /** 対策実装状況（threatId キー）。省略時は未設定。 */
   controlStatuses?: Record<string, ControlStatusState>;
-  /** ElementalID 採番カウンタ（[[plan]] §2.26）。省略時は全レイヤー 0 始まり。 */
+  /** ElementalID 採番カウンタ。省略時は全レイヤー 0 始まり。 */
   idCounters?: LayerSeqCounters;
 }
 
@@ -338,7 +338,7 @@ interface DiagramState {
   /** 現在編集対象のレイヤー。 */
   activeLayer: LayerKey;
   /**
-   * ElementalID 採番カウンタ（レイヤー × 種別、単調増加）。[[plan]] §2.26。
+   * ElementalID 採番カウンタ（レイヤー × 種別、単調増加）。
    * 採番のみに使い、Undo/Redo では巻き戻さない（番号再利用を避けるため履歴対象外）。
    */
   idCounters: LayerSeqCounters;
@@ -380,7 +380,7 @@ interface DiagramState {
   manualThreats: Record<LayerKey, ManualThreat[]>;
   /** 検出脅威の抑制注記（threatId キー、グローバル）。 */
   suppressions: Record<string, SuppressionState>;
-  /** 脅威へのリスク評価（threatId キー、グローバル。[[plan]] §2.34 / §2.45）。 */
+  /** 脅威へのリスク評価（threatId キー、グローバル）。 */
   riskScores: Record<string, RiskScore>;
   /** 検出/手動脅威への対策実装状況（threatId キー、グローバル）。suppression とは別レイヤー。 */
   controlStatuses: Record<string, ControlStatusState>;
@@ -395,7 +395,7 @@ interface DiagramState {
   selectedEdgeId: string | null;
   /** 選択中境界（複数）。パネル表示は selectPrimaryBoundaryId 経由で 1 個時のみ。 */
   selectedBoundaryIds: string[];
-  /** 選択中の注釈（単一、[[plan]] §2.48）。他の選択（ノード/エッジ/境界）とは排他。 */
+  /** 選択中の注釈（単一）。他の選択（ノード/エッジ/境界）とは排他。 */
   selectedAnnotationId: string | null;
 
   // ---- interaction (transient) ----
@@ -456,7 +456,7 @@ interface DiagramState {
   ) => void;
   reorderBoundary: (id: string, action: ReorderAction) => void;
 
-  // ---- actions: annotations（[[plan]] §2.48） ----
+  // ---- actions: annotations ----
   /** ビューポート中央付近のワールド座標へ新規注釈を追加する。 */
   addAnnotation: (kind: AnnotationKind) => void;
   updateAnnotation: <K extends keyof DiagramAnnotation>(
@@ -495,7 +495,7 @@ interface DiagramState {
   /** Shift+クリック：id の選択を反転（追加 / 解除）。 */
   toggleNodeSelection: (id: string) => void;
   selectEdge: (id: string) => void;
-  /** 注釈を単独選択する（[[plan]] §2.48）。他の選択（ノード/エッジ/境界）はクリア。 */
+  /** 注釈を単独選択する。他の選択（ノード/エッジ/境界）はクリア。 */
   selectAnnotation: (id: string) => void;
   clearSelection: () => void;
 
@@ -570,7 +570,7 @@ interface DiagramState {
     clientX: number,
     clientY: number,
   ) => void;
-  /** 注釈の単独選択＋ドラッグ開始（[[plan]] §2.48）。 */
+  /** 注釈の単独選択＋ドラッグ開始。 */
   beginAnnotationInteraction: (annotationId: string, clientX: number, clientY: number) => void;
   setNodePosition: (id: string, x: number, y: number) => void;
   /** 複数ノードの座標を一括更新（グループ移動用）。 */
@@ -789,7 +789,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       ...withActiveLayer(s, (l) => ({
         // 削除対象を除外し、子の parentId は解除してトップレベルに戻す。
         // 削除対象を標的にしていた攻撃者ノードの attackObjectiveId も解除する。
-        // 削除対象を認証の預け先にしていたノードの authProviderId も解除する（[[plan]] §2.42）。
+        // 削除対象を認証の預け先にしていたノードの authProviderId も解除する。
         nodes: l.nodes
           .filter((n) => n.id !== id)
           .map((n) => {
@@ -808,7 +808,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
           delete rest.authProviderId;
           return rest;
         }),
-        // 削除対象をリンク先にしていた注釈の targetNodeId も解除する（注釈自体は残す。[[plan]] §2.48）。
+        // 削除対象をリンク先にしていた注釈の targetNodeId も解除する（注釈自体は残す）。
         annotations: l.annotations.map((a) => {
           if (a.targetNodeId !== id) return a;
           const rest = { ...a };
@@ -970,7 +970,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
         }
         if (next.authProviderId) {
           const mapped = idMap.get(next.authProviderId);
-          // 発行元がテンプレート内に居れば付け替え、居なければ解除（[[plan]] §2.42）。
+          // 発行元がテンプレート内に居れば付け替え、居なければ解除。
           if (mapped) next.authProviderId = mapped;
           else delete next.authProviderId;
         }
@@ -1006,7 +1006,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       });
 
       return {
-        // テンプレートは注釈を持たない（[[plan]] §2.48）ため、既存の注釈も置換で空にする。
+        // テンプレートは注釈を持たないため、既存の注釈も置換で空にする。
         layers: { ...s.layers, [lk]: { nodes, edges, boundaries, annotations: [] } },
         idCounters: {
           ...s.idCounters,

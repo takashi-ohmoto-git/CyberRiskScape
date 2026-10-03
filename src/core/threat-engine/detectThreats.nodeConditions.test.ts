@@ -5,7 +5,7 @@ import type { DiagramEdge, DiagramNode } from '../model/types';
 import type { ThreatRule } from '../../threat-library/schema/threatRule';
 
 /**
- * ノード軸 `authProviderRole` とノードルールの `conditions`（[[plan]] §2.41）。
+ * ノード軸 `authProviderRole` とノードルールの `conditions`。
  *
  * 押さえる点：
  * - `authProviderRole` は `authProviderId` の参照グラフからの派生値で、図に保存しない。

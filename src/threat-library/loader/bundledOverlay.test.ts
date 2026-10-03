@@ -74,7 +74,7 @@ describe('同梱の翻訳オーバーレイ', () => {
     });
 
     it('conditions[].description の {{token}} を原文どおり保持している', () => {
-      // 条件別記述は node / edge の双方が持つ（[[plan]] §2.41）。原本と同じ添字で対応する。
+      // 条件別記述は node / edge の双方が持つ。原本と同じ添字で対応する。
       const broken: string[] = [];
       for (const id of translatedIds) {
         const translated = overlay[id]?.conditions;

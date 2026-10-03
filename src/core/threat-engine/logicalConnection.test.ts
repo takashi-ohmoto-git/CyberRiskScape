@@ -5,7 +5,7 @@ import type { ThreatRule } from '../../threat-library/schema/threatRule';
 
 /**
  * 発行元として参照されたノードを「論理的に接続されている」とみなす挙動
- * （[[plan]] §2.40、ユーザー判断 2026-09-20）。
+ * （ユーザー判断 2026-09-20）。
  *
  * 全コンポーネントを IdP へ線で繋ぐのは実務上非現実的なので、`authProviderId` の参照を
  * 接続の一形態として扱う。ただし `direction` / `peerType` を指定するルールは実エッジのみ。

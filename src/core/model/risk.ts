@@ -1,7 +1,7 @@
 import type { RiskScore, Severity } from './types';
 
 /**
- * リスク評価の計算ロジック（[[plan]] §2.34 / §2.45）。
+ * リスク評価の計算ロジック。
  * Impact（損害 × 影響範囲）と Likelihood（再現性 × 攻撃容易性）の 2 軸へ畳み、
  * OWASP Risk Rating Methodology のマトリクスで Severity を決める。
  *

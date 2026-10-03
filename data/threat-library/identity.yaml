@@ -1,12 +1,12 @@
 # アイデンティティ基盤（IdP / Directory / ID 同期）の脅威ルール。
 #
 # 背景:
-#   [[plan]] §2.39 で `EdgeSemantic` に `directory_sync`（オンプレ Directory ⇄ IDaaS の
+#   `EdgeSemantic` に `directory_sync`（オンプレ Directory ⇄ IDaaS の
 #   ID 同期）を追加したが、この semantic を条件に使うルールは 1 件も無かった。本ファイルは
 #   その同期経路と、IDENTITY_PROVIDER ノードに残っていた STRIDE 上の空白（Repudiation /
 #   フェデレーション信頼の改ざん）を埋める。
 #
-#   続けて [[plan]] §2.39 B-1 が開いた 3 軸（node `identityProviderKind` /
+#   続けて、エンジン拡張で追加された 3 軸（node `identityProviderKind` /
 #   edge `source|targetIdentityProviderKind` / edge `authProvider`）を条件に使うルールを
 #   追加した。IdP 種別 `Hybrid` / `Social` の内在リスクと、発行元が宣言されていない
 #   認証＝ローカル資格情報がそれに当たる。
@@ -26,7 +26,7 @@
 #     - `identityProviderKind` は**明示宣言時のみ発火**する（未宣言の IdP を Hybrid /
 #       Social と決めつけない）。よって種別ルールも既存ダイアグラムでは発火しない。
 #     - **`authProvider` だけは逆**で、`edge.authProviderId` 未設定を `Undeclared` として
-#       積極的にマッチさせる（[[plan]] §2.39 B-1「auth !== 'None' かつ発行元未設定 ＝
+#       積極的にマッチさせる（「auth !== 'None' かつ発行元未設定 ＝
 #       ローカル資格情報」という規約そのものが脅威シグナル）。したがって
 #       identity-local-credential-outside-idp-001 は**既存ダイアグラムでも発火し、
 #       検出件数を増やす**。これは仕様であり、発行元を宣言すれば消える。
@@ -374,7 +374,7 @@ rules:
     appliesTo:
       kind: edge
       when:
-        # 「認証はしているが発行元の宣言が無い」＝ローカル資格情報（[[plan]] §2.39 B-1）。
+        # 「認証はしているが発行元の宣言が無い」＝ローカル資格情報。
         # auth:[None] は stride-edge-unauth-internet-001 /
         # zt-implicit-trust-network-location-001 が扱うため対象外。
         auth: [Password, MFA]
@@ -414,7 +414,7 @@ rules:
       # 依存先が無ければ保証レベルの不足は実害を持たないため内在脅威にはしない。
       conditions:
         # この Social IdP が図の中で唯一の資格情報発行元なら、組織は統制不能な外部 ID に
-        # 認証を単独で預けている。発火条件は変えず severity と文面だけ上げる（[[plan]] §2.41）。
+        # 認証を単独で預けている。発火条件は変えず severity と文面だけ上げる。
         - when:
             authProviderRole: [Sole]
           severity: High

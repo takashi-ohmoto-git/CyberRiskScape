@@ -28,7 +28,7 @@ import type { BuildThreatReportInput } from '../features/export/threatReport';
 import type { Locale } from '../i18n';
 
 /**
- * ヘッドレス CLI の解析オプション（[[plan]] §2.49）。
+ * ヘッドレス CLI の解析オプション。
  * 既定：レイヤーはノードが 1 件以上あるものすべて／framework は 'ALL'／locale は 'ja'。
  */
 export interface AnalyzeOptions {
@@ -45,7 +45,7 @@ export interface LayerAnalysisResult {
 }
 
 /**
- * `deserializeProject` 以降の解析に必要な状態一式（[[plan]] §2.50 で `diff` と共有するため分離）。
+ * `deserializeProject` 以降の解析に必要な状態一式（`diff` と共有するため分離）。
  * レイヤーは常に全 4 層を含む（ノード数で絞り込むのは `analyzeResolvedProject` 側の責務）。
  */
 export interface ResolvedProject {

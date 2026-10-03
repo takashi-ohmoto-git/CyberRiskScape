@@ -67,7 +67,7 @@ function getDataFlowOptions(t: TFunc): OptionDef<DataFlow>[] {
 }
 
 /**
- * エッジ意味論（[[plan]] §2.22 1.6d）の選択肢。
+ * エッジ意味論の選択肢。
  * 値の意味は src/core/model/types.ts の EdgeSemantic を参照。
  */
 function getSemanticOptions(t: TFunc): { val: EdgeSemantic; label: string }[] {

@@ -29,7 +29,7 @@ export const jaCanvas = {
   'canvas.edgeNotation.crossingAuthPassword': '越境：パスワード認証',
   'canvas.edgeNotation.crossingAuthMfa': '越境：多要素認証',
 
-  // ── キャンバス注釈（[[plan]] §2.48） ──
+  // ── キャンバス注釈 ──
   'canvas.annotation.defaultLabelText': 'テキストラベル',
   'canvas.annotation.defaultCalloutText': '吹き出し',
 } as const;

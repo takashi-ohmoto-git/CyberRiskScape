@@ -34,7 +34,7 @@ beforeEach(() => {
 const nodes = () => selectActiveNodes(useDiagramStore.getState());
 const annotations = () => selectActiveAnnotations(useDiagramStore.getState());
 
-describe('キャンバス注釈（[[plan]] §2.48）', () => {
+describe('キャンバス注釈', () => {
   it('addAnnotation(label) はテキストラベルを既定文言で追加する', () => {
     useDiagramStore.getState().addAnnotation('label');
     const list = annotations();

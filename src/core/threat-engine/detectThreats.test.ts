@@ -1661,7 +1661,7 @@ describe('detectThreats - semantic 条件 (1.6d)', () => {
   });
 });
 
-// ─── subject（ElementalID 集約用の対象要素参照、[[plan]] §2.26 Step 4） ──────────
+// ─── subject（ElementalID 集約用の対象要素参照） ──────────
 describe('detectThreats - subject', () => {
   it('node ルールの subject は対象ノードを指す', () => {
     const out = detectThreats({

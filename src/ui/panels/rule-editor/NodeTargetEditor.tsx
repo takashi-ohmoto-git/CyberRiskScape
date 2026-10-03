@@ -180,7 +180,7 @@ export function NodeTargetEditor({
         />
       </div>
 
-      {/* アイデンティティ軸（[[plan]] §2.39 / §2.41） */}
+      {/* アイデンティティ軸 */}
       <div className="flex flex-col gap-2 border-t border-slate-700/60 pt-3">
         <SubLabel>{t('ruleEditor.nodeTarget.identityAxesLabel')}</SubLabel>
         <div className="grid grid-cols-[160px_1fr] gap-2 items-start">

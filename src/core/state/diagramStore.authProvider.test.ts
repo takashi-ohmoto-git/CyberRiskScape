@@ -119,7 +119,7 @@ describe('authProviderId の参照整合性', () => {
   });
 });
 
-describe('ノード側 authProviderId の参照整合性（[[plan]] §2.42）', () => {
+describe('ノード側 authProviderId の参照整合性', () => {
   /** ドメイン参加サーバ（エッジを持たない）と IdP を置く。 */
   function seedNodeDeclaration(): { srv: DiagramNode; idp: DiagramNode } {
     const srv: DiagramNode = {

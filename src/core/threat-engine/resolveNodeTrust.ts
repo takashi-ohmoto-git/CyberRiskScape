@@ -18,7 +18,7 @@ import { getNodeCenter } from '../canvas/nodeGeometry';
  *   `resolveDrawableAncestor` で遡った祖先の中心を用いる。これにより親と子は
  *   同じ境界・同じ trustLevel になる。
  *
- * 設計判断は CLAUDE.md / docs（境界の入れ子可、未所属は Internet）に従う。
+ * 設計判断：境界の入れ子可、未所属は Internet。
  */
 export function resolveNodeTrust(
   nodes: DiagramNode[],

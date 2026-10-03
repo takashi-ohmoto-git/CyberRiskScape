@@ -1,6 +1,6 @@
 /**
  * コンポーネント型 ID。コンポーネントライブラリ（YAML）で宣言された任意の文字列。
- * 妥当性は実行時に `ComponentRegistry` で動的に検証される（[[plan]] §2.16）。
+ * 妥当性は実行時に `ComponentRegistry` で動的に検証される。
  *
  * 慣例：先頭英大文字、英数字とアンダースコア（例：`LLM`, `MCP_SERVER`）。
  */
@@ -176,7 +176,7 @@ export type BlastRadius = 'ReadOnly' | 'Self' | 'Tenant' | 'CrossTenant' | 'Admi
 export type IdentityTier = 'LabelOnly' | 'Cryptographic' | 'HardwareBound';
 
 /**
- * エージェント特有のノード属性（[[plan]] §2.22 1.6b で追加）。
+ * エージェント特有のノード属性。
  *
  * 全フィールド optional。設計者が NodePanel から明示宣言する情報レイヤであり、
  * 自動推論はしない（説明可能性を保つ差別化要件）。
@@ -214,7 +214,7 @@ export const SANCTION_ATTRIBUTE_APPLICABLE: ReadonlySet<ComponentTypeId> = new S
 ]);
 
 /**
- * IdP ノードの種別（[[plan]] §2.39 B-1 拡張）。**提供形態の軸**であり、製品名は `label` に書く。
+ * IdP ノードの種別。**提供形態の軸**であり、製品名は `label` に書く。
  *
  * 型名を `IDaaS` / `Directory` に分けないのは、Entra ID のように 1 製品が IdP かつ IDaaS かつ
  * Directory を兼ねるため。DFD で安定しているのは「認証してトークンを出す」という**役割**
@@ -245,7 +245,7 @@ export const AUTH_PROVIDER_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set([
  * `AUTH_PROVIDER_APPLICABLE` と**意図的に別集合**にしている。`DIRECTORY` は型それ自体が
  * 「ディレクトリである」ことを表すため、`identityProviderKind: 'Directory'` を重ねると
  * 同じ事実を 2 か所で宣言することになる（粗い図では IdP 1 箱＋種別、詳細な図では
- * DIRECTORY / IDENTITY_PROVIDER を分けて描く、という [[plan]] §2.39 の整理）。
+ * DIRECTORY / IDENTITY_PROVIDER を分けて描く、という整理）。
  */
 export const IDP_KIND_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set(['IDENTITY_PROVIDER']);
 
@@ -278,7 +278,7 @@ export type LayerKey = 'L0' | 'L1' | 'L2' | 'L3';
 export const LAYER_KEYS: readonly LayerKey[] = ['L0', 'L1', 'L2', 'L3'] as const;
 
 /**
- * ElementalID の対象となる Canvas 要素の種別（[[plan]] §2.26）。
+ * ElementalID の対象となる Canvas 要素の種別。
  * - node：コンポーネント（表示 ID `C{n}`）
  * - edge：データフロー（表示 ID `DF{n}`）
  * - boundary：トラスト境界 / ゾーン（表示 ID `Z{n}`）
@@ -286,7 +286,7 @@ export const LAYER_KEYS: readonly LayerKey[] = ['L0', 'L1', 'L2', 'L3'] as const
 export type ElementKind = 'node' | 'edge' | 'boundary';
 
 /**
- * Canvas 上の単一要素への参照（[[plan]] §2.26）。脅威を「どの要素由来か」で
+ * Canvas 上の単一要素への参照。脅威を「どの要素由来か」で
  * 集約するための正準キー。`id` は要素の内部 `id`（不変キー）を指す。
  * 表示用の ElementalID（`C3` 等）は `seq` から `formatElementalId` で整形する。
  */
@@ -296,7 +296,7 @@ export interface ElementRef {
 }
 
 /**
- * ElementalID 採番カウンタ（[[plan]] §2.26）。種別ごとの「直近に割り当てた seq」。
+ * ElementalID 採番カウンタ。種別ごとの「直近に割り当てた seq」。
  * 次に割り当てる seq は `value + 1`。削除しても巻き戻さない（番号を再利用しない）。
  */
 export type SeqCounters = Record<ElementKind, number>;
@@ -305,7 +305,7 @@ export type SeqCounters = Record<ElementKind, number>;
 export type LayerSeqCounters = Record<LayerKey, SeqCounters>;
 
 /**
- * キャンバス注釈の種類（[[plan]] §2.48）。
+ * キャンバス注釈の種類。
  * - label: 枠なしのテキストラベル
  * - callout: 枠付きの吹き出し（ノードへのリンク可）
  */
@@ -313,7 +313,7 @@ export type AnnotationKind = 'label' | 'callout';
 
 /**
  * キャンバス注釈（テキストラベル／吹き出し）。脅威判定の対象外の描画要素で、
- * 境界と同様に `LayerData.annotations` に置く（[[plan]] §2.48）。
+ * 境界と同様に `LayerData.annotations` に置く。
  * ElementalID（seq）は振らない。
  */
 export interface DiagramAnnotation {
@@ -339,7 +339,7 @@ export interface LayerData {
 export const EMPTY_LAYER: LayerData = { nodes: [], edges: [], boundaries: [], annotations: [] };
 
 /**
- * プロジェクト概要メタデータ。`docs/strategy.md` の想定利用シナリオで
+ * プロジェクト概要メタデータ。想定利用シナリオで
  * 「対象システムの目的・ビジネスインパクトを明示してから脅威モデリングに入る」
  * という前提を反映する。すべて空文字許容（未記入の状態を素直に表現）。
  */
@@ -382,7 +382,7 @@ export type EncryptionType = 'Plain' | 'TLS' | 'E2EE';
 export type DataFlow = 'inbound' | 'outbound' | 'bidirectional';
 
 /**
- * エッジの意味論ラベル（[[plan]] §2.22 1.6d）。
+ * エッジの意味論ラベル。
  *
  * - data_flow: 既定。通常のデータ転送（HTTP/SQL/メッセージング等）
  * - tool_invocation: エージェントからツール（外部 API / 関数）への呼出
@@ -391,7 +391,7 @@ export type DataFlow = 'inbound' | 'outbound' | 'bidirectional';
  * - memory_write: エージェントメモリストアへの書込
  * - rag_retrieval: RAG 用ベクター DB からの取得
  * - directory_sync: オンプレ Directory ⇄ IDaaS の ID 同期（AD Connect 等）。同期経路そのものを
- *   攻撃面として扱うためのラベル（[[plan]] §2.39 B-1 拡張）
+ *   攻撃面として扱うためのラベル
  *
  * 設計者が EdgePanel から明示宣言する情報。未指定エッジは脅威エンジンで
  * `data_flow` として評価される（既定値）。自動推論はしない。
@@ -408,7 +408,7 @@ export type EdgeSemantic =
 export interface DiagramNode {
   id: string;
   /**
-   * レイヤー×種別で単調増加する採番（[[plan]] §2.26）。表示 ID は `C{seq}`。
+   * レイヤー×種別で単調増加する採番。表示 ID は `C{seq}`。
    * 採番は store 側で行う（Step 2）。旧データは optional（ロード時にマイグレ）。
    */
   seq?: number;
@@ -452,7 +452,7 @@ export interface DiagramNode {
    */
   cloudOwnership?: CloudOwnership;
   /**
-   * エージェント特有属性（[[plan]] §2.22 1.6b で追加）。
+   * エージェント特有属性。
    * 設計者が明示宣言する情報レイヤ。未指定属性は脅威エンジンで「最悪を仮定」評価される（1.6c 実装予定）。
    * 適用対象は [[AGENCY_APPLICABLE]] / [[IDENTITY_TIER_APPLICABLE]] を参照。
    */
@@ -473,14 +473,14 @@ export interface DiagramNode {
    */
   identityProviderKind?: IdentityProviderKind;
   /**
-   * **このコンポーネント自身の認証**の預け先（発行元ノードへの参照。[[plan]] §2.42）。
+   * **このコンポーネント自身の認証**の預け先（発行元ノードへの参照）。
    * ドメイン参加・SSO フェデレーション・マネージド ID を表す。
    *
    * `DiagramEdge.authProviderId`（**経路ごとの資格情報**の発行元）とは**別の事実**。
    * 「AD にドメイン参加したサーバ上で、アプリはローカルのサービスアカウントを使っている」は
    * 両方が同時に成立する構図で、互いを打ち消さない。
    *
-   * 入力できる型は UI 側で絞る（データ資産と攻撃者カテゴリを除く。[[plan]] §2.42 論点 2）。
+   * 入力できる型は UI 側で絞る（データ資産と攻撃者カテゴリを除く）。
    * エンジンは型で絞らず、宣言されたものを読むだけ。発行元削除時は store 側で解除される。
    */
   authProviderId?: string;
@@ -489,7 +489,7 @@ export interface DiagramNode {
 export interface DiagramEdge {
   id: string;
   /**
-   * レイヤー×種別で単調増加する採番（[[plan]] §2.26）。表示 ID は `DF{seq}`。
+   * レイヤー×種別で単調増加する採番。表示 ID は `DF{seq}`。
    * 採番は store 側で行う（Step 2）。旧データは optional（ロード時にマイグレ）。
    */
   seq?: number;
@@ -508,12 +508,12 @@ export interface DiagramEdge {
    */
   dataFlowName?: string;
   /**
-   * エッジの意味論ラベル（[[plan]] §2.22 1.6d）。
+   * エッジの意味論ラベル。
    * 未指定エッジは脅威エンジンで `data_flow`（既定）として評価される。
    */
   semantic?: EdgeSemantic;
   /**
-   * 認証に用いる資格情報の発行元（[[plan]] §2.39 B-1）。
+   * 認証に用いる資格情報の発行元。
    * 同一レイヤー上の `AUTH_PROVIDER_APPLICABLE` なノード id を指す。参照先ノード削除時は
    * store 側で解除される。
    *
@@ -526,7 +526,7 @@ export interface DiagramEdge {
 export interface DiagramBoundary {
   id: string;
   /**
-   * レイヤー×種別で単調増加する採番（[[plan]] §2.26）。表示 ID は `Z{seq}`。
+   * レイヤー×種別で単調増加する採番。表示 ID は `Z{seq}`。
    * 採番は store 側で行う（Step 2）。旧データは optional（ロード時にマイグレ）。
    */
   seq?: number;
@@ -580,7 +580,7 @@ export interface DetectedThreat {
    */
   canonicalId?: string;
   /**
-   * 脅威の対象要素への参照（[[plan]] §2.26）。Analytics の要素単位集約はこれを正準キーにする。
+   * 脅威の対象要素への参照。Analytics の要素単位集約はこれを正準キーにする。
    * engine 出力は Step 4 で populate するため現状は optional。`nodeId` は既存 UI 互換のため不変。
    */
   subject?: ElementRef;
@@ -595,7 +595,7 @@ export interface DetectedThreat {
   mitigation?: string;
   /**
    * 緩和策の 3 段階成熟度（Foundation / Enterprise / Advanced）。
-   * ローダーが `mitigation` の markup から自動 populate する（[[plan]] §2.22 1.6a）。
+   * ローダーが `mitigation` の markup から自動 populate する。
    */
   mitigationTiers?: MitigationTiers;
   /** ルール定義由来のコンプライアンス参照（任意）。 */
@@ -622,13 +622,13 @@ export type DetectionAssumptionFlag = 'attackSurface' | 'agentAttributes';
  * **プロジェクト固有データ**で、脅威ライブラリ（YAML ルール）には属さない。
  * activeLayer + `framework` スコープで保持し、IndexedDB に永続化する。
  *
- * 将来の Kill Chain（複数ステップの攻撃シナリオ、[[plan]] Phase2）対応で
+ * 将来の Kill Chain（複数ステップの攻撃シナリオ）対応で
  * `steps?` を非破壊追加できるよう、`DetectedThreat` とは独立した型に保つ。
  */
 export interface ManualThreat {
   id: string;
   /**
-   * 脅威の対象要素への参照（[[plan]] §2.26）。`nodeId` / `targetType` のスコープ表現とは別軸の
+   * 脅威の対象要素への参照。`nodeId` / `targetType` のスコープ表現とは別軸の
    * 正準キーで、Analytics の要素単位集約に使う。配線は Step 4 以降のため現状は optional。
    */
   subject?: ElementRef;
@@ -695,7 +695,7 @@ export interface ControlStatusState {
 export type RiskValue = 1 | 2 | 3;
 
 /**
- * 脅威へのリスク評価（ユーザー入力。[[plan]] §2.34 / §2.45）。
+ * 脅威へのリスク評価（ユーザー入力）。
  * suppressions と同様に `ThreatView.id` をキーにグローバル Record で保持する。
  * 4 項目を Impact（damage × affectedUsers）と Likelihood（reproducibility ×
  * exploitability）の 2 軸へ畳み、`riskSeverity` で Severity へマッピングする。
@@ -729,7 +729,7 @@ export interface ThreatView extends DetectedThreat {
   manualTargetType?: ComponentTypeId;
   /** 抑制注記（検出脅威にのみ付く）。 */
   suppression?: SuppressionState;
-  /** リスク評価（評価済みの脅威にのみ付く。[[plan]] §2.34 / §2.45）。 */
+  /** リスク評価（評価済みの脅威にのみ付く）。 */
   risk?: RiskScore;
   /** 対策実装状況（リスク対応方針=suppression とは別レイヤー）。 */
   controlStatus?: ControlStatusState;

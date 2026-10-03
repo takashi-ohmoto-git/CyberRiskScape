@@ -5,7 +5,7 @@ import { getNodeDimensions } from '../core/canvas/nodeGeometry';
 import { resolveDrawableAncestor } from '../core/model/parentChain';
 
 /**
- * MCP サーバー用の配置（[[plan]] §2.56）。座標はエージェントに渡させず、ここで決める。
+ * MCP サーバー用の配置。座標はエージェントに渡させず、ここで決める。
  *
  * 信頼境界の所属は座標で決まるため、配置結果は必ず `resolveNodeBoundaries`（アプリ・脅威エンジンと
  * 同じ包含規則）で検証し、意図した境界に入らない／他の要素の所属を変えてしまう場合は

@@ -168,7 +168,7 @@ export function EdgeLayer({
           },
         );
         const crossingColor = CROSSING_AUTH_COLORS[edge.auth];
-        // 資格情報の発行元（[[plan]] §2.39 B-1）。キャンバスには字を出さずツールチップに載せる。
+        // 資格情報の発行元。キャンバスには字を出さずツールチップに載せる。
         const authProvider = edge.authProviderId
           ? nodes.find((n) => n.id === edge.authProviderId)
           : undefined;

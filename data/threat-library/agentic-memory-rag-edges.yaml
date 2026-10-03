@@ -1,5 +1,5 @@
 # エッジ semantic（memory_write / memory_read / rag_retrieval）に着目した
-# エージェントメモリ・RAG 経路依存の脅威ルール（[[plan]] §2.22 1.6d 活用）。
+# エージェントメモリ・RAG 経路依存の脅威ルール。
 #
 # 背景:
 #   エッジ semantic（data_flow / tool_invocation / delegation / memory_read /

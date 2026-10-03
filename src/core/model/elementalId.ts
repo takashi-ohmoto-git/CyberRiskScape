@@ -1,7 +1,7 @@
 import type { ElementKind } from './types';
 
 /**
- * ElementalID の種別接頭辞（[[plan]] §2.26）。
+ * ElementalID の種別接頭辞。
  * - node     → `C`  （Component）
  * - edge     → `DF` （Data Flow）
  * - boundary → `Z`  （Zone / Trust Boundary）

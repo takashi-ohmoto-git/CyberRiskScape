@@ -114,7 +114,7 @@ export function Canvas({ threats, children }: CanvasProps) {
     [selectedBoundaryIds],
   );
 
-  // 発行元（IdP）を 1 つだけ選んでいる間、その影響範囲を光らせる（[[plan]] §2.40 ③）。
+  // 発行元（IdP）を 1 つだけ選んでいる間、その影響範囲を光らせる。
   // Tier 1 は図に線が無い不可視の依存、Tier 2 は線で直接つながっている相手。
   // 影響範囲が空なら null＝何も光らせない（選択リングだけが出る）。
   const identityHighlight = useMemo(() => {
@@ -237,7 +237,7 @@ export function Canvas({ threats, children }: CanvasProps) {
           onSelectEdge={selectEdge}
         />
 
-        {/* callout の引き出し線。境界/エッジより後、ノード/注釈ボックスより前（[[plan]] §2.48）。 */}
+        {/* callout の引き出し線。境界/エッジより後、ノード/注釈ボックスより前。 */}
         <AnnotationLeaderLines annotations={annotations} nodes={nodes} />
 
         {topLevelNodes.map((node) => {

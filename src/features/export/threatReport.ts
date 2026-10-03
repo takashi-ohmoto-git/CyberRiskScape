@@ -105,7 +105,7 @@ export interface ThreatReportRow {
 }
 
 /**
- * 認証基盤インベントリの 1 行（発行元 1 件＝1 行）。[[plan]] §2.40 ②。
+ * 認証基盤インベントリの 1 行（発行元 1 件＝1 行）。
  *
  * 脅威表（1 脅威＝1 行）とは粒度が違うため**列には混ぜず**、CSV では脅威表の後ろの
  * 第 2 ブロック、JSON では別キーとして出す。DCRH には出さない（section 構成が下流との契約）。
@@ -403,7 +403,7 @@ export function toJson(report: ThreatReport): string {
 //
 // Anthropic 公式 OSS `defending-code-reference-harness` の `/threat-model` スキル
 // が出力する `THREAT_MODEL.md`（見出し・列順・enum 値が下流ツールとの「契約」）に
-// 準拠した Markdown を生成する。詳細は docs/interop-anthropic-threat-model.md。
+// 準拠した Markdown を生成する。
 //
 // 既存の CSV/JSON 経路（`ThreatReport` ベース）とは独立し、生の `ThreatView[]` を
 // 含む `BuildThreatReportInput` を直接取る純粋関数（DOM・時刻・registry 非依存）。

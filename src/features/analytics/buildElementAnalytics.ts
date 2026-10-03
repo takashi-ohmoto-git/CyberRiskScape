@@ -10,7 +10,7 @@ import { formatElementalId } from '../../core/model/elementalId';
 import { effectiveSeverity } from '../../core/model/risk';
 
 /**
- * Analytics の ElementalID 単位リスト構築（[[plan]] §2.26 Step 5）。
+ * Analytics の ElementalID 単位リスト構築。
  *
  * `ThreatView.subject` を正準キーに、アクティブレイヤーの全要素（node / edge /
  * boundary）へ脅威を集約する純粋関数。表示ラベルの解決（registry 依存）は UI 層に委ね、

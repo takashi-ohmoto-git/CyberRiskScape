@@ -13,8 +13,7 @@ import { componentRegistry } from '../component-library/defaultRegistry';
 import type { ChangeTrigger, TriggerDetector } from './schema/trigger';
 
 /**
- * base/head 2 版のモデルを比べ、どの実行トリガーに当たる変更かを判定する純粋関数
- * （[[plan]] §2.50）。
+ * base/head 2 版のモデルを比べ、どの実行トリガーに当たる変更かを判定する純粋関数。
  *
  * マッチングは**レイヤー内で要素 id が同じもの**を同一要素とみなす（id は図の内部キーで
  * 不変。ElementalID の採番 `seq` は表示用で、ここでは照合に使わない）。

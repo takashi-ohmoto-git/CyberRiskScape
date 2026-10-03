@@ -24,7 +24,7 @@ import {
 /**
  * 脅威検出エンジン。
  *
- * 設計原則（[[architecture]] §5）：
+ * 設計原則：
  * - 個別の脅威知識を一切持たず、ローダーが返した `ThreatRule[]` を解釈するだけ。
  * - 評価は `appliesTo.kind` による分岐のみ（'node' / 'edge'）。コンポーネント型や
  *   エッジ属性ごとの if 文をエンジンに書かないこと。新しい条件軸が必要になった場合は
@@ -58,7 +58,7 @@ type AttackSurfaceMatch = NonNullable<NodeAppliesTo['attackSurface']>;
 type AgentAttributesMatch = NonNullable<NodeAppliesTo['agentAttributes']>;
 
 /**
- * `agentAttributes` 未指定ノードのベースライン値（[[plan]] §2.22 1.6c）。
+ * `agentAttributes` 未指定ノードのベースライン値。
  * 「最悪を仮定」評価：未指定 = 最大リスク値とみなしてマッチさせる。
  * 設計者に明示宣言を促す圧力として機能する（脅威モデリングの定石）。
  */
@@ -110,7 +110,7 @@ function usedAttackSurfaceBaseline(node: DiagramNode, match: AttackSurfaceMatch)
 }
 
 /**
- * `agentAttributes` 条件のマッチ判定（[[plan]] §2.22 1.6c）。
+ * `agentAttributes` 条件のマッチ判定。
  *
  * - 各条件フィールドは配列で OR、フィールド間は AND。
  * - ノード側で未指定の属性は `AGENT_ATTRIBUTES_BASELINE`（最悪を仮定）で評価する。
@@ -200,7 +200,7 @@ function matchEdgeWhen(
     if (!when.semantic.includes(value)) return false;
   }
   if (when.sourceIdentityProviderKind) {
-    // managedState / userTrust と同じ「明示宣言時のみ発火」方式（[[plan]] §2.39）。
+    // managedState / userTrust と同じ「明示宣言時のみ発火」方式。
     if (!source.identityProviderKind) return false;
     if (!when.sourceIdentityProviderKind.includes(source.identityProviderKind)) return false;
   }
@@ -209,7 +209,7 @@ function matchEdgeWhen(
     if (!when.targetIdentityProviderKind.includes(target.identityProviderKind)) return false;
   }
   if (when.authProvider) {
-    // 発行元は id ではなく宣言状態で見る。未設定＝Undeclared（[[plan]] §2.39 B-1）。
+    // 発行元は id ではなく宣言状態で見る。未設定＝Undeclared。
     const state = edge.authProviderId ? 'Declared' : 'Undeclared';
     if (!when.authProvider.includes(state)) return false;
   }
@@ -261,17 +261,17 @@ function matchNodeAxes(axes: NodeAxisMatch, node: DiagramNode, role: AuthProvide
   if (axes.attackSurface && !matchAttackSurface(node, axes.attackSurface)) return false;
   if (axes.agentAttributes && !matchAgentAttributes(node, axes.agentAttributes)) return false;
   if (axes.identityProviderKind) {
-    // 明示宣言時のみ発火。種別未宣言の IdP を Hybrid 等と決めつけない（[[plan]] §2.39）。
+    // 明示宣言時のみ発火。種別未宣言の IdP を Hybrid 等と決めつけない。
     if (!node.identityProviderKind) return false;
     if (!axes.identityProviderKind.includes(node.identityProviderKind)) return false;
   }
   // 発行元としての位置づけは参照グラフからの派生値なので、常にいずれかの値を持つ
-  //（誰からも参照されていなければ `Unused`）。[[plan]] §2.41。
+  //（誰からも参照されていなければ `Unused`）。
   if (axes.authProviderRole && !axes.authProviderRole.includes(role)) return false;
   return true;
 }
 
-/** `conditions[].when` の評価（[[plan]] §2.41）。`nodeType` は配列で OR。 */
+/** `conditions[].when` の評価。`nodeType` は配列で OR。 */
 function matchNodeWhen(when: NodeWhenLeaf, node: DiagramNode, role: AuthProviderRole): boolean {
   if (when.nodeType && !when.nodeType.includes(node.type)) return false;
   return matchNodeAxes(when, node, role);
@@ -296,8 +296,8 @@ function matchNodeConnection(
   const direction = conn?.direction ?? 'any';
   const peerType = conn?.peerType;
   const peerAttackSurface = conn?.peerAttackSurface;
-  // 資格情報の発行元として参照されているノードは**論理的に接続されている**とみなす
-  // （[[plan]] §2.40）。全コンポーネントを IdP へ線で繋ぐのは実務上非現実的なため。
+  // 資格情報の発行元として参照されているノードは**論理的に接続されている**とみなす。
+  // 全コンポーネントを IdP へ線で繋ぐのは実務上非現実的なため。
   //
   // ただし認めるのは「素の接続要件」のときだけ。`direction` / `peerType` /
   // `peerAttackSurface` を指定するルールは**実際のデータフローの形**を問うており、
@@ -332,7 +332,7 @@ export function detectThreats({
   const threats: DetectedThreat[] = [];
   const nodeById = new Map(nodes.map((n) => [n.id, n] as const));
   const trustByNodeId = resolveNodeTrust(nodes, boundaries ?? []);
-  // 発行元ごとの依存コンポーネント（[[plan]] §2.40）。説明文の `{{dependentCount}}` /
+  // 発行元ごとの依存コンポーネント。説明文の `{{dependentCount}}` /
   // `{{dependentNames}}` 展開に使う。境界と同じく図全体から 1 回だけ導出する。
   const authProviderClosure = buildAuthProviderClosure(nodes, edges);
 
@@ -414,7 +414,7 @@ export function detectThreats({
         ruleId: rule.id,
         canonicalId: rule.canonicalId,
         // 対象要素はエッジ自身（Analytics の要素単位集約用）。nodeId は
-        // 既存 UI 互換のため引き続きターゲットノードを指す（[[plan]] §2.26 Step 4）。
+        // 既存 UI 互換のため引き続きターゲットノードを指す。
         subject: { kind: 'edge', id: edge.id },
         nodeId: targetNode.id,
         framework: rule.framework,

@@ -85,7 +85,7 @@ export function serializeProject(state: SerializableState): PersistedProject {
 }
 
 /**
- * 旧 framework 値を新 enum へ変換する（[[plan]] §2.29）：
+ * 旧 framework 値を新 enum へ変換する：
  * `'STRIDE+AI'`→`'STRIDE'`（古典 STRIDE への改名）、`'MAESTRO'`→`'AgenticAI'`
  * （MAESTRO は概念であってフレームワークではないため概念カテゴリ名へ改称）。
  * 3 分類化以前に保存されたレコードは `activeFramework` と `manualThreats[].framework`
@@ -142,7 +142,7 @@ export function deserializeProject(raw: unknown): PersistedProject | null {
  * - `layers` が含まれていればそのまま使用。
  * - 旧形式（深度レイヤー導入前）はトップレベルの `nodes/edges/boundaries` を
  *   **L1 へ自動マイグレート** し、L0/L2/L3 は空レイヤーで埋める（既存ユーザーの
- *   データロスを避ける。詳細は [[plan]] §2 ステップ 18）。
+ *   データロスを避ける）。
  * - どちらも欠ければ全レイヤー空で起動。
  */
 export function resolveLayers(loaded: PersistedProject): {
@@ -180,7 +180,7 @@ export function resolveLayers(loaded: PersistedProject): {
 }
 
 /**
- * 永続化レコードからリスク評価（threatId キー）を復元する（[[plan]] §2.34 / §2.45）。
+ * 永続化レコードからリスク評価（threatId キー）を復元する。
  *
  * - `riskScores`（新形式）があればそれを優先する。
  * - 無くて `dreadScores`（旧 DREAD 形式・discoverability を含む 5 項目）があれば、
@@ -222,7 +222,7 @@ function fillSeq<T extends { seq?: number }>(
 }
 
 /**
- * ロード済みレイヤーから ElementalID の採番状態を確定する（[[plan]] §2.26 Step 3）。
+ * ロード済みレイヤーから ElementalID の採番状態を確定する。
  *
  * - `persisted`（保存済みカウンタ）があればそれを起点に使う（番号の永続的非再利用を保証）。
  * - `seq` 未設定の要素（旧データ / Step 2 以前の保存）には要素順で連番を補完する。

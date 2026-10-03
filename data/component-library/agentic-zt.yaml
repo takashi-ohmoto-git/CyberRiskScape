@@ -1,4 +1,4 @@
-# Agentic Zero Trust 拡張コンポーネントライブラリ（[[plan]] §2.22 1.6e）。
+# Agentic Zero Trust 拡張コンポーネントライブラリ。
 #
 # Anthropic "Zero Trust for AI Agents" (2026-05-18) で扱われる
 # エージェント特有の構成要素を扱うための追加型 3 種：

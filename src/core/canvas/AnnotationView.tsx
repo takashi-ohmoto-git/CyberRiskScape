@@ -3,7 +3,7 @@ import { Trash2 } from 'lucide-react';
 import type { DiagramAnnotation, DiagramNode } from '../model/types';
 import { getEdgeAnchorAt, getEdgeEndpointGeometry } from './nodeGeometry';
 
-/** callout の固定幅（`w-56` と一致）。[[plan]] §2.48：リサイズは v1 スコープ外。 */
+/** callout の固定幅（`w-56` と一致）。リサイズは v1 スコープ外。 */
 const CALLOUT_WIDTH = 224;
 /**
  * 引き出し線のアンカー計算に使う仮の高さ。callout の実高さは本文に応じた自動サイズで
@@ -66,7 +66,7 @@ interface AnnotationLeaderLinesProps {
 
 /**
  * callout がノードへリンクされている場合の引き出し線（SVG の破線）。
- * ボックス中心からノード外周への線分（[[plan]] §2.48）。描画順は境界/エッジより後、
+ * ボックス中心からノード外周への線分。描画順は境界/エッジより後、
  * ノード/注釈ボックスより前（Canvas.tsx を参照）。
  */
 export function AnnotationLeaderLines({ annotations, nodes }: AnnotationLeaderLinesProps) {

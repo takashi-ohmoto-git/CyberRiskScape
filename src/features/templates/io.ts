@@ -26,7 +26,7 @@ export type TemplateExport = z.infer<typeof TemplateExportSchema>;
 
 /**
  * 各要素から `seq`（レイヤー固有の連番）を落とす。可搬性のためインポート側で振り直す。
- * 注釈（[[plan]] §2.48）はテンプレートに同梱しない（キャンバス上の説明書きはプロジェクト
+ * 注釈はテンプレートに同梱しない（キャンバス上の説明書きはプロジェクト
  * ローカルな情報のため）。
  */
 function stripSeq(layer: LayerData): LayerData {

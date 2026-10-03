@@ -30,7 +30,7 @@ export const jaProject = {
   'project.sidebar.usageHint1': '🔹 パーツを選択して "Create Link" で接続',
   'project.sidebar.usageHint2': '🔹 コネクタを中継点として利用可能',
 
-  // ── LeftSidebar: Annotations（[[plan]] §2.48） ──
+  // ── LeftSidebar: Annotations ──
   'project.sidebar.annotationsSection': 'Annotations',
   'project.sidebar.addLabel': 'テキストラベルを追加',
   'project.sidebar.addCallout': '吹き出しを追加',

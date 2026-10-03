@@ -21,7 +21,7 @@ describe('summarizeAppliesTo - kind: node', () => {
     expect(text).toContain('または');
   });
 
-  // docs/threat-schema.md §3.1 の例 (A)〜(E)
+  // 例 (A)〜(E)
   it('(A) connection 省略時のデフォルト', () => {
     const appliesTo: AppliesTo = { kind: 'node', nodeType: 'AGENT' };
     expect(summarizeAppliesTo(appliesTo, 'ja')).toContain('何らかの接続があるとき');

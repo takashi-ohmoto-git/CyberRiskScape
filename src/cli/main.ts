@@ -23,7 +23,7 @@ import { createCrsMcpServer } from '../mcp/server';
 import { BRANDING } from '../core/branding';
 
 /**
- * CyberRiskScape ヘッドレス CLI（[[plan]] §2.49 / §2.50）。
+ * CyberRiskScape ヘッドレス CLI。
  * 保存済みプロジェクト JSON を入力に、ブラウザなしで脅威を検出してレポートを出す
  * （`analyze`）か、2 版を比較して実行トリガー・脅威差分・ゲート判定を出す（`diff`）。
  * カスタムルール（IndexedDB 別保存）は含まれないため、同梱ルールのみで評価する。
@@ -256,7 +256,7 @@ function runDiff(values: CliValues, positionals: string[]): void {
 }
 
 /**
- * `triggers`：実行トリガー（T1〜T8 等）をチェックリストとして出す（[[plan]] §2.51）。
+ * `triggers`：実行トリガー（T1〜T8 等）をチェックリストとして出す。
  * PR テンプレートや AI レビュアーの観点表にそのまま使える。ゲート判定は無い（exit 0 固定、
  * 入力・引数エラーのみ 2）。
  */
@@ -273,7 +273,7 @@ function runTriggers(values: CliValues): void {
 }
 
 /**
- * `mcp`：stdio の MCP サーバーとして起動する（[[plan]] §2.56）。stdout はプロトコル専用のため、
+ * `mcp`：stdio の MCP サーバーとして起動する。stdout はプロトコル専用のため、
  * ここから先は stdout に何も書かない（ログ・エラーは stderr）。
  */
 async function runMcp(values: CliValues): Promise<void> {

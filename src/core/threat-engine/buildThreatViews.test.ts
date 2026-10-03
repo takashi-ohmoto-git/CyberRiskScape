@@ -235,7 +235,7 @@ describe('buildThreatViews', () => {
     expect(views[0].manualId).toBe('mt-type');
   });
 
-  // ─── subject（ElementalID 集約用、[[plan]] §2.26 Step 4） ───
+  // ─── subject（ElementalID 集約用） ───
   it('検出脅威の subject はそのまま素通しされる', () => {
     const det: DetectedThreat[] = [
       {

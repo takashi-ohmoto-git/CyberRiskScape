@@ -1,11 +1,11 @@
 import { z } from 'zod';
 
 /**
- * 実行トリガー（change-triggers）の Zod スキーマ定義（[[plan]] §2.50）。
+ * 実行トリガー（change-triggers）の Zod スキーマ定義。
  *
  * 「どの変更が脅威モデリングの再実行に値するか」の知識は YAML（`data/change-triggers/`）に置き、
- * 判定ロジックは固定の検出器（detector）の組み合わせに限定する（CLAUDE.md 絶対制約 1 と同じ方針
- * を変更トリガーにも適用）。
+ * 判定ロジックは固定の検出器（detector）の組み合わせに限定する（脅威ルールを
+ * コードにハードコードしない方針を、変更トリガーにも適用）。
  *
  * 型・カテゴリ ID は `threat-library/schema/threatRule.ts` と同じ理由で独立に複製する
  * （スキーマ層を他機能のスキーマに結合させない）。実在性は `ComponentRegistry` でロード時に検証する。

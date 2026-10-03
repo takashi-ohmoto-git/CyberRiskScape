@@ -78,7 +78,7 @@ describe('directPeersOf', () => {
     expect(peers.map((n) => n.id)).toEqual(['appA', 'user']);
   });
 
-  it('一度も発行元として参照されていないノードでも Tier 2 が出る（回帰：[[plan]] §2.40）', () => {
+  it('一度も発行元として参照されていないノードでも Tier 2 が出る（回帰）', () => {
     // 閉包は authProviderId で参照された発行元しか走査しないため、そこから導くと 0 件になる。
     const peers = directPeersOf([ad, idp], [edge('e1', 'ad', 'idp')], 'ad', new Set());
     expect(peers.map((n) => n.id)).toEqual(['idp']);

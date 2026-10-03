@@ -61,7 +61,7 @@ import { AttackTreeModal } from './AttackTreeModal';
 type TFunc = ReturnType<typeof useT>;
 
 /**
- * 「このコンポーネント自身の認証の預け先」を入力**できない**カテゴリ（[[plan]] §2.42 論点 2）。
+ * 「このコンポーネント自身の認証の預け先」を入力**できない**カテゴリ。
  *
  * 型の許可リストを持たないのは、この属性が意味を持つ型の方が多数派で、include リストだと
  * 新しい型を足すたびに更新漏れが起きるため。除外すべきはデータ資産と攻撃者の 2 カテゴリだけ。
@@ -192,7 +192,7 @@ function getAttackSurfaceFields(t: TFunc): { key: AttackSurfaceKey; label: strin
 }
 
 /**
- * エージェント特有属性（[[plan]] §2.22 1.6b）の選択肢。
+ * エージェント特有属性の選択肢。
  * 値の意味は src/core/model/types.ts を参照。
  */
 function getAgencyOptions(t: TFunc): { val: AgencyLevel; label: string }[] {
@@ -270,7 +270,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
   const showAttacker = ATTACK_OBJECTIVE_APPLICABLE.has(node.type);
   const showThreatActorType = THREAT_ACTOR_TYPE_APPLICABLE.has(node.type);
   const showIdpKind = IDP_KIND_APPLICABLE.has(node.type);
-  // 認証の預け先：データ資産・攻撃者カテゴリ以外で入力できる（[[plan]] §2.42）。
+  // 認証の預け先：データ資産・攻撃者カテゴリ以外で入力できる。
   // SHADOW / SHADOW_APP は定義上「未把握」なので SANCTION_ATTRIBUTE の前例に倣い除外。
   const nodeCategory = registry.get(node.type)?.category;
   const showAuthProvider =

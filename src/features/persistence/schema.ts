@@ -70,7 +70,7 @@ const PersistedAttackSurfaceSchema = z.object({
   hasDdosProtection: z.boolean().optional(),
 });
 
-/** エージェント特有属性（[[plan]] §2.22 1.6b）。全フィールド optional、空オブジェクトも許容。 */
+/** エージェント特有属性。全フィールド optional、空オブジェクトも許容。 */
 const PersistedAgentAttributesSchema = z.object({
   agency: AgencyLevelSchema.optional(),
   blastRadius: BlastRadiusSchema.optional(),
@@ -99,7 +99,7 @@ const PersistedNodeSchema = z.object({
   attackObjectiveId: z.string().min(1).optional(),
   /** IdP 種別（§2.39 B-1 拡張、IDENTITY_PROVIDER 型用。後方互換のため optional） */
   identityProviderKind: IdentityProviderKindSchema.optional(),
-  /** このコンポーネント自身の認証の預け先（[[plan]] §2.42）。optional のため schemaVersion 据え置き。 */
+  /** このコンポーネント自身の認証の預け先。optional のため schemaVersion 据え置き。 */
   authProviderId: z.string().min(1).optional(),
   /** 攻撃面属性（FRONT_END_SERVER / GATEWAY 用、後方互換のため optional） */
   attackSurface: PersistedAttackSurfaceSchema.optional(),
@@ -169,7 +169,7 @@ const PersistedProjectMetaSchema = z.object({
 const AnnotationKindSchema = z.enum(['label', 'callout']);
 
 /**
- * キャンバス注釈（テキストラベル／吹き出し、[[plan]] §2.48）。旧データには存在しない
+ * キャンバス注釈（テキストラベル／吹き出し）。旧データには存在しない
  * フィールドのため `PersistedLayerDataSchema` 側で optional にし、schemaVersion は据え置き。
  */
 const PersistedAnnotationSchema = z.object({
@@ -252,7 +252,7 @@ const PersistedControlStatusSchema = z.object({
   at: z.number().int().nonnegative(),
 });
 
-/** リスク評価各項目の 3 段階スコア（[[plan]] §2.34 / §2.45）。 */
+/** リスク評価各項目の 3 段階スコア。 */
 const RiskValueSchema = z.union([z.literal(1), z.literal(2), z.literal(3)]);
 
 /**
@@ -268,7 +268,7 @@ const PersistedDreadScoreSchema = z.object({
   at: z.number().int().nonnegative(),
 });
 
-/** リスク評価（Impact/Likelihood 2 軸方式、discoverability 廃止・4 項目）。[[plan]] §2.34 / §2.45。 */
+/** リスク評価（Impact/Likelihood 2 軸方式、discoverability 廃止・4 項目）。 */
 const PersistedRiskScoreSchema = z.object({
   damage: RiskValueSchema,
   affectedUsers: RiskValueSchema,
@@ -324,7 +324,7 @@ export const PersistedProjectSchema = z.object({
    */
   dreadScores: z.record(z.string().min(1), PersistedDreadScoreSchema).optional(),
   /**
-   * 脅威へのリスク評価（threatId キー。[[plan]] §2.34 / §2.45）。省略時は評価なしとして起動。
+   * 脅威へのリスク評価（threatId キー）。省略時は評価なしとして起動。
    * schemaVersion は据え置き（optional 追加は後方互換）。
    */
   riskScores: z.record(z.string().min(1), PersistedRiskScoreSchema).optional(),

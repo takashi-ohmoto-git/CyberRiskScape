@@ -3,7 +3,7 @@ import { z } from 'zod';
 /**
  * コンポーネントライブラリの Zod スキーマ定義。
  *
- * 設計原則（[[plan]] §2.16）：
+ * 設計原則：
  * - コンポーネント型は **open string ID**（kebab/snake/SCREAMING_SNAKE いずれも可）。
  *   コード側は string として扱い、レジストリで動的に検証する。
  * - カテゴリはライブラリ YAML 内で宣言され、`components[].category` から参照される。

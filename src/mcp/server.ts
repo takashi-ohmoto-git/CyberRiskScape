@@ -24,7 +24,7 @@ import {
 } from './tools';
 
 /**
- * MCP サーバー（stdio 専用。[[plan]] §2.56）。ツール 8 本の配線・パスガード・revision・原子的書き込み。
+ * MCP サーバー（stdio 専用）。ツール 8 本の配線・パスガード・revision・原子的書き込み。
  *
  * - transport の接続は呼び出し側（CLI の `mcp` サブコマンド／テストの InMemoryTransport）。
  * - ロケールは起動時に 1 つ固定する。`tools.ts` は `setLocale`（モジュール内グローバル）を書き換えるため、

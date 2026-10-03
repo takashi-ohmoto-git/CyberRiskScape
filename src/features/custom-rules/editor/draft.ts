@@ -17,7 +17,7 @@ import {
  * ルールエディタ（§2.25 Phase D「ワークフロー形式」）の **draft 状態モデル**と
  * `ThreatRule` との往復変換。
  *
- * 設計（[[architecture]] §5 / docs/plan.md §2.25）：
+ * 設計：
  * - `ThreatRuleSchema` を唯一の真実源とする。draft は編集途中の**緩い**表現で、
  *   `appliesTo` の「ちょうど1つ」制約や「最低1軸」制約は満たさなくてよい。
  *   検証は保存時に `ThreatRuleSchema.safeParse` に一任する（並行スキーマを作らない）。

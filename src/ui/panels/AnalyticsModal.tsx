@@ -149,7 +149,7 @@ function matchesPreset(t: ThreatView, preset: Preset): boolean {
 }
 
 /**
- * Analytics モーダル（[[plan]] §2.26 Step 5）。IriusRisk 風の 3 ペイン構成。
+ * Analytics モーダル。IriusRisk 風の 3 ペイン構成。
  * 左: 要素→カテゴリ→脅威ツリー / 中央: 対策（緩和策）一覧 / 右: 選択脅威の詳細 + リスク評価。
  * 脅威ビュー（`threats`）は App が算出済みのものを prop で受ける。
  */
@@ -169,7 +169,7 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
   const [selectedThreatId, setSelectedThreatId] = useState<string | null>(null);
   /** ID 振り直しのインライン確認待ち（ブラウザダイアログを使わない方針）。 */
   const [confirmingRenumber, setConfirmingRenumber] = useState(false);
-  /** 認証基盤インベントリ（[[plan]] §2.40 ②）の開閉。既定は閉じる（主線の脅威一覧を押し下げない）。 */
+  /** 認証基盤インベントリの開閉。既定は閉じる（主線の脅威一覧を押し下げない）。 */
   const [inventoryOpen, setInventoryOpen] = useState(false);
 
   useEffect(() => {
@@ -203,7 +203,7 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
     [nodes, edges, boundaries, threats],
   );
 
-  // 認証基盤インベントリ（[[plan]] §2.40 ②）。発行元になり得る型が図に無ければ節ごと出さない。
+  // 認証基盤インベントリ。発行元になり得る型が図に無ければ節ごと出さない。
   const inventory = useMemo(() => buildIdentityInventory(nodes, edges), [nodes, edges]);
 
   const labelOf = (row: ElementAnalyticsRow): string => {
@@ -426,7 +426,7 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
           ))}
         </div>
 
-        {/* ②-a 認証基盤インベントリ（[[plan]] §2.40）。発行元が図に無ければ非表示 */}
+        {/* ②-a 認証基盤インベントリ。発行元が図に無ければ非表示 */}
         {inventory.length > 0 && (
           <div className="border-b border-slate-800 bg-slate-900/40">
             <button
@@ -896,7 +896,7 @@ function ThreatDetail({
 }
 
 /**
- * リスク評価フォーム（[[plan]] §2.34 / §2.45）。ローカルドラフトを編集し「保存」で
+ * リスク評価フォーム。ローカルドラフトを編集し「保存」で
  * store へ明示コミットする（項目選択ごとの自動保存はしない＝Undo 1 ステップ化）。
  * 右ペインに常時配置するため、脅威切替で draft を作り直すよう key を threat.id に紐づける。
  * Impact（damage/affectedUsers）と Likelihood（reproducibility/exploitability）の

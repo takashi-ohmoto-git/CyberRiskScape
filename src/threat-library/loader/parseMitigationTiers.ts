@@ -4,7 +4,7 @@ import type { MitigationTiers } from '../schema/threatRule';
  * `mitigation` 文字列から `[Foundation]` / `[Enterprise]` / `[Advanced]` の
  * インライン markup を抽出し、3 段階構造化された `MitigationTiers` を返す。
  *
- * 仕様（docs/threat-schema.md §7.5.1）：
+ * 仕様：
  * - タグは `[Foundation]` `[Enterprise]` `[Advanced]`（大文字小文字無視）。
  * - 各タグから次のタグまでをそれぞれの値として抽出。前後空白は trim。
  * - 順序は前後しても OK（タグ名で識別）。

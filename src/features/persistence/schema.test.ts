@@ -425,7 +425,7 @@ describe('PersistedProjectSchema', () => {
     expect(r.success).toBe(false);
   });
 
-  // ─── agentAttributes（[[plan]] §2.22 1.6b） ──────────
+  // ─── agentAttributes ──────────
   it('agentAttributes: 3 フィールド全指定を受理する', () => {
     const r = PersistedProjectSchema.safeParse({
       ...VALID_PROJECT,
@@ -480,7 +480,7 @@ describe('PersistedProjectSchema', () => {
     expect(r.success).toBe(true);
   });
 
-  // ─── edge.semantic（[[plan]] §2.22 1.6d） ──────────
+  // ─── edge.semantic ──────────
   it('edge.semantic: 全ての有効値を受理する', () => {
     const semantics = [
       'data_flow',
@@ -513,7 +513,7 @@ describe('PersistedProjectSchema', () => {
     expect(r.success).toBe(true);
   });
 
-  // ─── node.identityProviderKind（[[plan]] §2.39 B-1 拡張） ──────────
+  // ─── node.identityProviderKind ──────────
   it('node.identityProviderKind: 全ての有効値を受理する', () => {
     for (const kind of ['IDaaS', 'Directory', 'Hybrid', 'Social', 'Custom']) {
       const r = PersistedProjectSchema.safeParse({
@@ -532,7 +532,7 @@ describe('PersistedProjectSchema', () => {
     expect(r.success).toBe(false);
   });
 
-  // ─── edge.authProviderId（[[plan]] §2.39 B-1） ──────────
+  // ─── edge.authProviderId ──────────
   it('edge.authProviderId: ノード id 文字列を受理する', () => {
     const r = PersistedProjectSchema.safeParse({
       ...VALID_PROJECT,
@@ -554,7 +554,7 @@ describe('PersistedProjectSchema', () => {
     expect(r.success).toBe(true);
   });
 
-  // ─── node.authProviderId（[[plan]] §2.42） ──────────
+  // ─── node.authProviderId ──────────
   it('node.authProviderId: ノード id 文字列を受理する', () => {
     const r = PersistedProjectSchema.safeParse({
       ...VALID_PROJECT,
@@ -571,7 +571,7 @@ describe('PersistedProjectSchema', () => {
     expect(r.success).toBe(false);
   });
 
-  // ─── layer.annotations（キャンバス注釈、[[plan]] §2.48） ──────────
+  // ─── layer.annotations（キャンバス注釈） ──────────
   it('layer.annotations: label / callout（targetNodeId 有り）を受理する', () => {
     const emptyLayer = { nodes: [], edges: [], boundaries: [] };
     const r = PersistedProjectSchema.safeParse({

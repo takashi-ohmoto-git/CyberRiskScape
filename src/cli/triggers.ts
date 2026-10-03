@@ -2,8 +2,8 @@ import type { ChangeTrigger } from '../change-triggers/schema/trigger';
 import { getLocale, translate } from '../i18n';
 
 /**
- * CLI `triggers` サブコマンド：実行トリガー（T1〜T8 等）をチェックリストとして出す
- * （[[plan]] §2.51）。PR テンプレートや AI レビュアーの観点表にそのまま使える形。
+ * CLI `triggers` サブコマンド：実行トリガー（T1〜T8 等）をチェックリストとして出す。
+ * PR テンプレートや AI レビュアーの観点表にそのまま使える形。
  *
  * `diff.ts` の md/json 変換と同じ設計（`getLocale()` を読む純粋関数、CLI 側で
  * `setLocale` 済みであることを前提にする）。

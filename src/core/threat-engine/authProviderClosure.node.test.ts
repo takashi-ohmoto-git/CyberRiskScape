@@ -8,7 +8,7 @@ import {
 import type { DiagramEdge, DiagramNode } from '../model/types';
 
 /**
- * ノード側 `authProviderId`（[[plan]] §2.42）の閉包への合流。
+ * ノード側 `authProviderId` の閉包への合流。
  *
  * 「このコンポーネント自身の認証の預け先」はエッジ宣言（経路ごとの資格情報）と別の事実だが、
  * 「落ちると認証が壊れる」点は同じなので **Tier 1 に合流**させる。
@@ -40,7 +40,7 @@ function edge(id: string, source: string, target: string, authProviderId?: strin
   };
 }
 
-describe('ノード宣言の Tier 1 合流（[[plan]] §2.42）', () => {
+describe('ノード宣言の Tier 1 合流', () => {
   it('エッジが 1 本も無くてもノード宣言だけで依存先に数える', () => {
     const c = buildAuthProviderClosure([ad, srv('ad')], []);
     expect(dependentsOf(c, 'ad').map((n) => n.id)).toEqual(['srv']);

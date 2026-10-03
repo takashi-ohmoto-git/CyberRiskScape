@@ -346,7 +346,7 @@ rules:
   #   zt-idp-single-point-of-failure-001 と**同じ canonicalId** を共有する。
   #   あちらは「IdP が存在する」だけで発火する近似。こちらは図の中で
   #   `authProviderId` として参照されている発行元がこの 1 つだけ（authProviderRole: Sole）
-  #   という構造的事実で発火する精密版（[[plan]] §2.41）。提示層は (canonicalId, subject)
+  #   という構造的事実で発火する精密版。提示層は (canonicalId, subject)
   #   で畳み込み severity 最大を採るため、単独依存の図では High のこの文面 1 枚になり、
   #   そうでない図では従来どおり Medium の近似 1 枚になる（カードは増えない）。
   - id: zt-idp-sole-authentication-dependency-001
@@ -360,7 +360,7 @@ rules:
     appliesTo:
       kind: node
       nodeType: IDENTITY_PROVIDER
-      # 図の中で参照されている発行元がこの 1 つだけのときのみ発火（[[plan]] §2.41）。
+      # 図の中で参照されている発行元がこの 1 つだけのときのみ発火。
       # 発行元が 1 つも宣言されていない図では全ノードが Unused になり発火しない。
       authProviderRole: [Sole]
     complianceRefs:

@@ -22,7 +22,7 @@ export type TemplateContext =
       kind: 'node';
       node: DiagramNode;
       /**
-       * この発行元に依存するコンポーネント（[[plan]] §2.40 Tier 1）。
+       * この発行元に依存するコンポーネント（Tier 1）。
        * `{{dependentCount}}` / `{{dependentNames}}` の展開に使う。省略時は依存ゼロ扱い。
        */
       dependents?: readonly DiagramNode[];
@@ -84,7 +84,7 @@ export function renderEdgeTemplate(
 
 /**
  * node ルール向けの便宜関数。
- * `dependents`（[[plan]] §2.40）は任意。渡さない呼び出しは依存ゼロとして展開される。
+ * `dependents` は任意。渡さない呼び出しは依存ゼロとして展開される。
  */
 export function renderNodeTemplate(
   template: string,

@@ -65,7 +65,7 @@ describe('serializeProject / deserializeProject', () => {
     expect(restored?.activeFramework).toBe(STATE.activeFramework);
   });
 
-  it('edge.authProviderId を round-trip で保持する（[[plan]] §2.39 B-1）', () => {
+  it('edge.authProviderId を round-trip で保持する', () => {
     const withProvider: LayerData = {
       ...L1_DATA,
       nodes: [...L1_DATA.nodes, { id: 'n3', type: 'IDENTITY_PROVIDER', x: 0, y: 300 }],
@@ -79,7 +79,7 @@ describe('serializeProject / deserializeProject', () => {
     expect(restored?.layers?.L1.edges[0].authProviderId).toBe('n3');
   });
 
-  it('node.authProviderId を round-trip で保持する（[[plan]] §2.42）', () => {
+  it('node.authProviderId を round-trip で保持する', () => {
     const withProvider: LayerData = {
       ...L1_DATA,
       nodes: [
@@ -96,7 +96,7 @@ describe('serializeProject / deserializeProject', () => {
     expect(restored?.layers?.L1.nodes[0].authProviderId).toBe('n3');
   });
 
-  // ─── annotations（キャンバス注釈、[[plan]] §2.48） ──────────
+  // ─── annotations（キャンバス注釈） ──────────
   it('annotations を round-trip で保持する', () => {
     const withAnnotations: LayerData = {
       ...L1_DATA,
@@ -427,7 +427,7 @@ describe('resolveLayers', () => {
     });
   });
 
-  it('旧 framework 値 STRIDE+AI は STRIDE へマイグレートされる（[[plan]] §2.29）', () => {
+  it('旧 framework 値 STRIDE+AI は STRIDE へマイグレートされる', () => {
     const legacyRaw = {
       schemaVersion: PERSISTED_PROJECT_SCHEMA_VERSION,
       activeFramework: 'STRIDE+AI',
@@ -453,7 +453,7 @@ describe('resolveLayers', () => {
     expect(loaded!.manualThreats?.L1[0].framework).toBe('STRIDE');
   });
 
-  it('旧 framework 値 MAESTRO は AgenticAI へマイグレートされる（[[plan]] §2.29）', () => {
+  it('旧 framework 値 MAESTRO は AgenticAI へマイグレートされる', () => {
     const legacyRaw = {
       schemaVersion: PERSISTED_PROJECT_SCHEMA_VERSION,
       activeFramework: 'MAESTRO',
@@ -479,7 +479,7 @@ describe('resolveLayers', () => {
     expect(loaded!.manualThreats?.L1[0].framework).toBe('AgenticAI');
   });
 
-  // ─── agentAttributes round-trip（[[plan]] §2.22 1.6b） ──────────
+  // ─── agentAttributes round-trip ──────────
   it('agentAttributes が round-trip で保持される', () => {
     const STATE_WITH_ATTRS: SerializableState = {
       layers: {
@@ -546,7 +546,7 @@ describe('resolveLayers', () => {
   });
 });
 
-// ─── ElementalID 採番の永続化（[[plan]] §2.26 Step 3） ──────────
+// ─── ElementalID 採番の永続化 ──────────
 describe('seq / idCounters の永続化', () => {
   const STATE_WITH_SEQ: SerializableState = {
     layers: {

@@ -170,7 +170,7 @@ function summarizeNode(appliesTo: Extract<AppliesTo, { kind: 'node' }>, locale: 
     );
   }
 
-  // アイデンティティ軸（[[plan]] §2.39 / §2.41）。どちらも発火を絞る条件なので 1 文にまとめる。
+  // アイデンティティ軸。どちらも発火を絞る条件なので 1 文にまとめる。
   // `conditions`（severity / description の段階分け）は発火可否を変えないため、
   // エッジ側と同じく発火条件の説明文には出さない。
   const identityAxes: EdgeWhenLike = {};

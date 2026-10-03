@@ -9,7 +9,7 @@ interface AnnotationPanelProps {
   annotation: DiagramAnnotation;
 }
 
-/** テキストラベル／吹き出しの編集パネル（[[plan]] §2.48）。BoundaryPanel と同じ見た目に揃える。 */
+/** テキストラベル／吹き出しの編集パネル。BoundaryPanel と同じ見た目に揃える。 */
 export function AnnotationPanel({ annotation }: AnnotationPanelProps) {
   const t = useT();
   const onUpdate = useDiagramStore((s) => s.updateAnnotation);

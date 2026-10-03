@@ -3,8 +3,8 @@ import { z } from 'zod';
 /**
  * 脅威ライブラリの Zod スキーマ定義。
  *
- * 仕様の概要は docs/threat-schema.md を参照。スキーマ確定前に大量のルールを
- * 書かないこと（CLAUDE.md「やってはいけないこと」§5）。
+ * スキーマ確定前に大量のルールを
+ * 書かないこと。
  *
  * 設計原則：
  * - ルールは「コンポーネント型に紐づく静的ルール」と「エッジ属性に紐づく動的ルール」を
@@ -31,13 +31,13 @@ export const EncryptionTypeSchema = z.enum(['Plain', 'TLS', 'E2EE']);
 export const DataFlowSchema = z.enum(['inbound', 'outbound', 'bidirectional']);
 export const TrustLevelSchema = z.enum(['Internal', 'Partner', 'Internet']);
 /**
- * エッジの資格情報発行元（`authProviderId`）の宣言状態（[[plan]] §2.39 B-1）。
+ * エッジの資格情報発行元（`authProviderId`）の宣言状態。
  * 値の意味は `EdgeWhenSchema.authProvider` のコメントを参照。
  */
 export const AuthProviderStateSchema = z.enum(['Declared', 'Undeclared']);
 
 /**
- * ノードが図の中で**資格情報の発行元として占める位置づけ**（[[plan]] §2.41 案 A）。
+ * ノードが図の中で**資格情報の発行元として占める位置づけ**。
  *
  * エッジ軸の `authProvider`（1 本のエッジが発行元を宣言しているか）と**別物**。
  * こちらは `authProviderId` の参照グラフから導出するノード軸で、図に保存はしない。
@@ -57,7 +57,7 @@ export const ManagedStateSchema = z.enum(['Managed', 'Unmanaged']);
 export const UserTrustAttributeSchema = z.enum(['Guest', 'Employee', 'Contractor', 'Partner']);
 
 /**
- * エージェント特有属性の Zod スキーマ（[[plan]] §2.22 1.6b）。
+ * エージェント特有属性の Zod スキーマ。
  * 値の意味と適用対象ノード型は `src/core/model/types.ts` を一次ソースとする。
  */
 export const AgencyLevelSchema = z.enum(['None', 'Advisory', 'Bounded', 'Autonomous']);
@@ -65,7 +65,7 @@ export const BlastRadiusSchema = z.enum(['ReadOnly', 'Self', 'Tenant', 'CrossTen
 export const IdentityTierSchema = z.enum(['LabelOnly', 'Cryptographic', 'HardwareBound']);
 
 /**
- * エッジ意味論（[[plan]] §2.22 1.6d）。
+ * エッジ意味論。
  * 値の意味は `src/core/model/types.ts` の `EdgeSemantic` を一次ソースとする。
  */
 export const EdgeSemanticSchema = z.enum([
@@ -119,7 +119,7 @@ const NodeLeafSchema = z.object({
 });
 
 /**
- * エージェント特有属性によるノード絞り込み条件（[[plan]] §2.22 1.6c）。
+ * エージェント特有属性によるノード絞り込み条件。
  *
  * - 各フィールドは配列（**OR**）。複数フィールド指定時は **AND**。
  * - ノード側で未指定の属性は脅威エンジン側で **「最悪を仮定」評価** する：
@@ -130,8 +130,6 @@ const NodeLeafSchema = z.object({
  *   これにより既存ルール（属性条件なし）の挙動を保ちつつ、明示宣言したノードは
  *   ルール対象から外せる（設計者に明示宣言を促す圧力）。
  * - 少なくとも 1 フィールド指定が必要（空オブジェクト拒否）。
- *
- * セマンティクス詳細と適用対象は docs/threat-schema.md §3.1「エージェント属性条件」参照。
  */
 export const AgentAttributesMatchSchema = z
   .object({
@@ -159,8 +157,6 @@ export const ConnectionDirectionSchema = z.enum(['any', 'inbound', 'outbound']);
  *   併用すれば「特定型のピアで、かつその攻撃面が条件を満たす」を表現できる
  *   （例：接続先 GATEWAY の `hasGlobalIp:true`）。direction/peerType/peerAttackSurface は
  *   同一エッジで AND 評価され、すべて満たすエッジが 1 本以上あるとき成立。
- *
- * 仕様詳細は docs/threat-schema.md「接続要件」節を参照。
  */
 const ConnectionRequirementSchema = z
   .object({
@@ -186,7 +182,7 @@ const ConnectionRequirementSchema = z
   });
 
 /**
- * ノード属性に対する条件式（[[plan]] §2.41）。`conditions[].when` で使う。
+ * ノード属性に対する条件式。`conditions[].when` で使う。
  *
  * `appliesTo` のノード側絞り込み軸のミラー。各フィールドは OR（配列内のいずれか）、
  * フィールド間は AND。評価の意味論（未宣言の扱い等）は `appliesTo` 側と完全に同じで、
@@ -217,7 +213,7 @@ const NodeWhenSchema = z
   );
 
 /**
- * ノードルールの conditions の 1 ケース（[[plan]] §2.41）。
+ * ノードルールの conditions の 1 ケース。
  * `appliesTo` を通過したノードに追加の `when` でマッチ判定し、最初に一致したケースの
  * severity / description でルールのデフォルトを上書きする（first-match-wins）。
  *
@@ -241,7 +237,7 @@ const NodeConditionCaseSchema = z
  * - `anyOf`: 複数リーフの OR。例 `anyOf: [{ nodeType: AGENT }, { nodeType: LLM }]`。
  *
  * `allOf` はノード単一型と矛盾する（1 ノードは 1 型）ため導入しない。
- * 組合せ条件はネスト 1 段までに制限する設計方針に従う（docs/plan.md §4）。
+ * 組合せ条件はネスト 1 段までに制限する設計方針に従う。
  *
  * `connection`（任意）で接続要件を追加できる。省略時はデフォルト = 接続必須（任意方向）。
  * 内在的脅威（接続不問）には `connection: { required: false }` を明示する。
@@ -257,29 +253,29 @@ const NodeAppliesToSchema = z.object({
    */
   attackSurface: AttackSurfaceMatchSchema.optional(),
   /**
-   * エージェント特有属性による絞り込み（[[plan]] §2.22 1.6c）。
+   * エージェント特有属性による絞り込み。
    * 未指定属性は「最悪を仮定」評価。詳細は AgentAttributesMatchSchema。
    */
   agentAttributes: AgentAttributesMatchSchema.optional(),
   /**
-   * IdP 種別による絞り込み（[[plan]] §2.39）。IDENTITY_PROVIDER 系ノードで意味を持つ。
+   * IdP 種別による絞り込み。IDENTITY_PROVIDER 系ノードで意味を持つ。
    * `managedState` / `userTrust` と同じ**明示宣言時のみ発火**方式で、種別未宣言のノードは不成立。
    * （「最悪を仮定」にしないのは、未宣言の IdP を Hybrid と決めつけると誤検知になるため）
    */
   identityProviderKind: z.array(IdentityProviderKindSchema).nonempty().optional(),
   /**
-   * 発行元としての位置づけによる絞り込み（[[plan]] §2.41 案 A）。
+   * 発行元としての位置づけによる絞り込み。
    *
    * **ノード型では絞られない。** 発行元になり得ない型も誰からも参照されていないため
    * `Unused` に該当する。「IdP のうち単独依存のもの」を指すには `nodeType` と併用すること。
    *
-   * **既存ルールをこの軸で絞ってはいけない**（[[plan]] §2.41）。`authProviderId` が
+   * **既存ルールをこの軸で絞ってはいけない**。`authProviderId` が
    * 1 つも宣言されていない図では全ノードが `Unused` になり、現在出ている検出が消える。
    * 精密化は「新しいルールを足す」か「`conditions` で severity を上げる」で行う。
    */
   authProviderRole: z.array(AuthProviderRoleSchema).nonempty().optional(),
   /**
-   * 同一ルール内で severity / description を分岐させる場合に使用（[[plan]] §2.41）。
+   * 同一ルール内で severity / description を分岐させる場合に使用。
    * エッジルールの `conditions` と同じ first-match-wins。
    * **発火の可否は変えない**（`appliesTo` を通過した後の上書きのみ）。
    */
@@ -316,19 +312,19 @@ const EdgeWhenSchema = z
     /** target ノードのユーザー信頼区分（USER のみ意味を持つ）。未宣言は不成立。 */
     targetUserTrust: z.array(UserTrustAttributeSchema).nonempty().optional(),
     /**
-     * エッジ意味論ラベルによる絞り込み（[[plan]] §2.22 1.6d）。
+     * エッジ意味論ラベルによる絞り込み。
      * 未指定エッジは `data_flow`（既定）として評価される。
      */
     semantic: z.array(EdgeSemanticSchema).nonempty().optional(),
     /**
      * source ノードの IdP 種別（IDENTITY_PROVIDER 系のみ意味を持つ）。未宣言は不成立。
-     * 例：Directory → IDaaS の ID 同期を捕まえる（[[plan]] §2.39）。
+     * 例：Directory → IDaaS の ID 同期を捕まえる。
      */
     sourceIdentityProviderKind: z.array(IdentityProviderKindSchema).nonempty().optional(),
     /** target ノードの IdP 種別（IDENTITY_PROVIDER 系のみ意味を持つ）。未宣言は不成立。 */
     targetIdentityProviderKind: z.array(IdentityProviderKindSchema).nonempty().optional(),
     /**
-     * 資格情報の発行元（`authProviderId`）の宣言状態（[[plan]] §2.39 B-1）。
+     * 資格情報の発行元（`authProviderId`）の宣言状態。
      *
      * - `Declared`: 発行元ノードへの参照がある＝集中 IdP 経由の認証
      * - `Undeclared`: 参照が無い。`auth: [Password, MFA]` と組み合わせると
@@ -386,7 +382,6 @@ const EdgeConditionCaseSchema = z
  * - `anyOf`: 複数リーフの OR。`when` では表現できない「ブロック単位の OR」を追加する。
  *
  * 組合せ条件はネスト 1 段まで（`allOf` の中に `anyOf` を入れる等は不可）。
- * 設計方針は docs/plan.md §4「組合せ条件スキーマの設計」参照。
  */
 const EdgeAppliesToSchema = z.object({
   kind: z.literal('edge'),
@@ -432,7 +427,7 @@ export const AppliesToSchema = z
  * 緩和策の 3 段階成熟度（Anthropic "Zero Trust for AI Agents" 2026 に準拠）。
  *
  * - Foundation：最小実用セキュリティ。AI 加速攻撃の現状を踏まえ「単なる friction による
- *   対策」は Foundation 要件を満たさない（docs/threat-schema.md §7.5.2 参照）。
+ *   対策」は Foundation 要件を満たさない。
  * - Enterprise：標準的エンタープライズ実装。多くの組織が目指すべき水準。
  * - Advanced：高リスク・規制対応・最先端。3〜5 年後に Enterprise 標準へ降りてくる見込み。
  *

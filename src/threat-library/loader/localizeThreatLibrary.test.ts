@@ -192,7 +192,7 @@ rules:
     expect(appliesTo.conditions?.[1]?.description).toBe('MFA のため深刻度を下げる。');
   });
 
-  it('node ルールの conditions も差し替える（[[plan]] §2.41）', () => {
+  it('node ルールの conditions も差し替える', () => {
     const nodeConditionRule: ThreatRule = {
       ...nodeRule,
       appliesTo: {

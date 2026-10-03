@@ -29,7 +29,7 @@ import { getThreatLibrary } from '../threat-library/loader/bundledLibrary';
 import type { ThreatRule } from '../threat-library/schema/threatRule';
 
 /**
- * MCP サーバーの読み取りツール 7 本（[[plan]] §2.56）。いずれも JSON シリアライズ可能な
+ * MCP サーバーの読み取りツール 7 本。いずれも JSON シリアライズ可能な
  * オブジェクトを返す純粋関数で、ファイル I/O・revision・パス処理はサーバー側の責務。
  *
  * - 座標はエージェントに返さない（配置はサーバーが決める設計）。
