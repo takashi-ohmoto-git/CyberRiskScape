@@ -1,0 +1,50 @@
+# Salesforce Agentforce 拡張コンポーネントライブラリ。
+#
+# Agentforce の構成のうち、製品固有の脅威を持つ周辺要素だけを型にする：
+#   - EINSTEIN_TRUST_LAYER: Einstein Trust Layer（LLM の前後に入るガードレール層）
+#
+# 型にしないもの（汎用型で表す）：
+#   - エージェント本体（Service agent / Employee agent）→ AGENT。専用のエージェント型を作ると、
+#     AGENT 向けの汎用ルールすべてに製品名の型を書き足すことになるため。
+#     Agentforce 固有の脅威ルールは「EINSTEIN_TRUST_LAYER と接続した AGENT」に発火させる。
+#   - アクション（Flow / Apex / Prompt Template 等）→ TOOL。専用型にすると TOOL 向けの
+#     汎用ルール（ツール応答の扱い・ツール汚染・Confused Deputy 等）が発火しなくなるため。
+#   - Web-to-Lead 等の外部入力窓口 → USER / EXTERNAL_ENTITY から CRM へのデータフロー。
+#   - 外部 MCP サーバー → MCP_SERVER。CRM オブジェクト → CRM。
+#
+# 出典（型の説明の根拠）:
+#   - Salesforce Developers - Einstein Trust Layer
+#     https://developer.salesforce.com/docs/einstein/genai/guide/trust.html
+#
+# Salesforce、Agentforce、Einstein は Salesforce, Inc. の商標。製品の構成要素を指すための
+# 記述的な使用であり、本プロジェクトは Salesforce, Inc. と提携・承認の関係に無い。
+#
+# 製品固有のライブラリのため builtin にしない（LeftSidebar のライブラリトグルで無効化できる）。
+#
+# ライセンス: Apache-2.0（同梱）
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+library:
+  id: salesforce-agentforce
+  title: "Salesforce Agentforce Components"
+  version: "1.0"
+  license: "Apache-2.0"
+  description: "Salesforce Agentforce の製品固有の構成要素（Einstein Trust Layer）。エージェント本体・アクションは汎用の AGENT・TOOL で表す。"
+
+# 既存 protect ライブラリのカテゴリを idempotent に再宣言（label/order を一致させる）。
+categories:
+  - id: PROTECT
+    label: "Protect"
+    order: 25
+
+components:
+  - id: EINSTEIN_TRUST_LAYER
+    label: "Einstein Trust Layer"
+    category: PROTECT
+    icon: { kind: builtin, name: "shield-half" }
+    shape: rounded
+    color: "bg-sky-700"
+    description: "Salesforce の LLM 呼び出しの前後に入る保護層（データマスキング・ゼロデータ保持・毒性検知・プロンプト防御・監査）。エージェントと LLM の間に置く。"

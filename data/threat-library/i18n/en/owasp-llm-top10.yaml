@@ -30,6 +30,17 @@ rules:
       "1":
         title: "OWASP Top 10 for Agentic Applications 2026 - ASI01: Agent Goal Hijack (related mapping)"
 
+  owasp-llm01-indirect-business-record-001:
+    category: "Prompt Injection"
+    name: "Indirect prompt injection through business application data"
+    description: "{{nodeName}} reads data from business applications such as CRM, email, chat, and ticketing (including SaaS) as input. Business applications hold a lot of text written by people outside the organization: leads and inquiries from web forms, the bodies of received email, posts in chats with external participants, and tickets or cases created from email or portals, much of which can be written with no or weak authentication. An attacker can plant instructions in that text and, once an employee asks {{nodeName}} about that data or has it summarize the data, have {{nodeName}} carry them out as commands (Can). In ForcedLeak, reported in 2025, instructions planted in the description field of a CRM web form led an agent to send CRM data to an outside destination. The attacker never needs to touch {{nodeName}} or its users directly. If, on the other hand, business application data is passed explicitly marked as data that is never interpreted as instructions, the destinations {{nodeName}} can send to and the operations it can call are restricted by allow lists, and write or send operations in sessions that handle externally sourced data require human confirmation, the planted instructions cannot lead to data being taken out or altered (Cannot). The blast radius is all data {{nodeName}} can read in that session and every operation it can call."
+    mitigation: "[Foundation] Identify the parts of business application data that people outside the organization can write (web forms, received email, chats with external participants, tickets from portals, and the like), and treat them as untrusted input when passing them to an agent. Restrict the destinations an agent can send to (URLs, email addresses, external APIs) with an allow list. [Enterprise] Pass externally sourced data structurally separated from the system prompt and instructions, and add instruction detection. In sessions that have read externally sourced data, require human confirmation for operations that write or send data outside. Put bot protection and input length limits on the intake channels (web forms and the like), and record where and from whom each piece of data came. [Advanced] Separate the agent that reads externally sourced data from the agent that holds permission to read sensitive data and send it outside. Run regular red-team evaluations with test data whose externally sourced fields carry planted instructions."
+    references:
+      "0":
+        title: "OWASP LLM01:2025 Prompt Injection (indirect prompt injection)"
+      "2":
+        title: "Noma Labs - ForcedLeak (indirect prompt injection through a CRM web form, discoverer's report)"
+
   owasp-llm02-sensitive-info-disclosure-001:
     category: "Information Disclosure"
     name: "Sensitive information disclosure"

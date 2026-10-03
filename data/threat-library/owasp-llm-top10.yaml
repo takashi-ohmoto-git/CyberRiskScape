@@ -10,6 +10,16 @@
 #   出典は references で常に OWASP LLM Top 10 を明記する。
 # - 重複回避: stride-ai.yaml の `stride-ai-llm-model-extraction-001`（LLM10:2023 相当）
 #   は流用とし、本ファイルではより新しい 2025 区分にあわせて再構成する。
+# - 業務アプリ（CRM・メール・チャット・SaaS 等）のデータ経由の間接プロンプトインジェクション
+#   （owasp-llm01-indirect-business-record-001）は、atlas-aml-t0051-indirect-prompt-injection-001
+#   の接続条件（DB / TOOL / MEMORY_STORE 等）に業務アプリの型が無く発火しなかった穴を埋める。
+#   同じ脅威なので canonicalId: indirect-prompt-injection を共有し、カードは増やさない。
+#   ATLAS のルールの接続条件は変更しない（ATLAS 由来の対象範囲を保つため）。
+#   メール・チャット等を入力元として扱う既存の node ルールは無い（maestro-agent-untrusted-ingress-001
+#   はエッジ視点・別 canonicalId、anthropic-zt-untrusted-input-sandbox-001 は USER 等が相手の別脅威）。
+#   対象外にした型：LINE（顧客がエージェントと直接対話するチャネルで、話者自身の入力は
+#   direct-prompt-injection が扱う）、SHADOW_APP / SHADOW（中身が不明な未統制アプリで、統制の欠如は
+#   zero-trust-access のシャドー資産ルールが扱う）、IAAS / PAAS（基盤であり文章の入る業務アプリではない）。
 
 schemaVersion: 1
 
@@ -39,6 +49,43 @@ rules:
       # OWASP ASI Top 10 の ASI01 Agent Goal Hijack に対応（クロスマッピング）。
       - title: "OWASP Top 10 for Agentic Applications 2026 - ASI01: Agent Goal Hijack（関連マッピング）"
         url: "https://genai.owasp.org/"
+
+  # ── LLM01:2025 Prompt Injection（間接・業務アプリのデータ経由）──────
+  - id: owasp-llm01-indirect-business-record-001
+    canonicalId: indirect-prompt-injection
+    framework: AI
+    category: "Prompt Injection"
+    name: "業務アプリのデータを経由する間接プロンプトインジェクション"
+    severity: High
+    description: "{{nodeName}} は CRM・メール・チャット・チケット管理などの業務アプリ（SaaS を含む）のデータを入力として読み込んでいる。業務アプリには、社外の人が書いた文章が多く入る。Web フォームからのリード・問い合わせ、受信メールの本文、社外の参加者がいるチャットの投稿、メールやポータルから作られるチケット・ケースなどで、多くは認証なしまたは弱い認証で書き込める。攻撃者はその文章に指示文を書き込んでおき、従業員がそのデータについて {{nodeName}} に質問したり要約させたりした時点で、指示を {{nodeName}} への命令として実行させられる（Can）。2025 年に報告された ForcedLeak では、CRM の Web フォームの説明欄に仕込んだ指示によって、エージェントが CRM のデータを外部へ送信した。攻撃者は {{nodeName}} にもその利用者にも直接触れる必要がない。一方、業務アプリのデータを命令として解釈しない「データ」として明示的に区別して渡し、{{nodeName}} が外部へ送信できる宛先と呼び出せる操作を許可リストで限定し、社外由来のデータを扱うセッションでは書き込み・送信系の操作を人の確認にしていれば、指示が読み込まれても情報の持ち出しや改ざんには至らない（Cannot）。blast radius は {{nodeName}} がそのセッションで参照できる全データと、呼び出せる全操作。"
+    mitigation: "[Foundation] 業務アプリのデータのうち、社外の人が書き込める項目（Web フォーム・受信メール・社外の参加者がいるチャット・ポータル由来のチケット等）を洗い出し、エージェントに渡すときは信頼できない入力として扱う。エージェントが外部へ送信できる宛先（URL・メールアドレス・外部 API）を許可リストで限定する。 [Enterprise] 社外由来のデータをシステムプロンプトや指示と構造的に分離して渡し、指示文の検出を併用する。社外由来のデータを読んだセッションでは、書き込み・外部送信を伴う操作を人の確認にする。入力窓口（Web フォーム等）にボット対策と入力長の制限を設け、データの作成元・送信元を記録する。 [Advanced] 社外由来のデータを読むエージェントと、機微データの参照・外部送信の権限を持つエージェントを分離する。社外由来の項目に指示文を仕込んだ評価用データで、定期的にレッドチーム評価を行う。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: LLM
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+      # 業務アプリのデータが対象ノードへ流れ込む経路があるときのみ発火する。
+      # 「その業務アプリへ社外から書き込める」という 2 段目の条件は接続要件では表せない
+      # （接続要件は対象ノード自身のエッジしか見ない）。これらの業務アプリはほぼ例外なく
+      # 社外由来の文章を持つため、入力経路そのものを前提条件とする近似で扱う。
+      connection:
+        direction: inbound
+        peerType: [CRM, MAIL, CHAT, OTHER_APP, SAAS]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "OWASP LLM01:2025 Prompt Injection（間接プロンプトインジェクション）"
+        url: "https://genai.owasp.org/llmrisk/llm01-prompt-injection/"
+      - title: "MITRE ATLAS AML.T0051 LLM Prompt Injection"
+        url: "https://atlas.mitre.org/techniques/AML.T0051"
+      - title: "Noma Labs - ForcedLeak（CRM の Web フォーム経由の間接プロンプトインジェクション、発見者の報告）"
+        url: "https://noma.security/noma-labs/forcedleak"
+      # DB / TOOL / MEMORY_STORE 等からの入力経路は atlas-aml-t0051-indirect-prompt-injection-001 が扱う。
+      # 同じ canonicalId なので、両方が同じノードで発火しても提示層で 1 枚に畳み込まれる。
 
   # ── LLM02:2025 Sensitive Information Disclosure ─────────────
   - id: owasp-llm02-sensitive-info-disclosure-001

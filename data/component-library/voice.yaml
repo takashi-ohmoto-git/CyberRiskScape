@@ -12,8 +12,9 @@
 # LINE チャネルは CHAT と同じ APP カテゴリのため app.yaml に置く。
 # 有人／AI × Chat／Call の別は型にせず、コンタクトセンターのテンプレートで組み合わせとして示す。
 #
-# 別ライブラリ（builtin と分離）にすることで、LeftSidebar のライブラリトグルで
-# 「音声系を使わない」運用を選べる。
+# 別ライブラリ（builtin.yaml と分離）にし、library メタに `builtin: true` を付けないことで、
+# LeftSidebar のライブラリトグルで無効化できる（「音声系を使わない」運用を選べる）。
+# 無効化はパレットから型を外すだけで、配置済みのノードの描画と脅威検出には影響しない。
 #
 # ライセンス: Apache-2.0（同梱）
 #
@@ -26,7 +27,6 @@ library:
   title: "Voice AI & Contact Center Components"
   version: "1.0"
   license: "Apache-2.0"
-  builtin: true
   description: "音声 AI・コンタクトセンター型（PBX / IVR / STT / TTS / STS / アバター / 有人オペレーター / 声紋認証）。"
 
 # 既存 builtin のカテゴリを idempotent に再宣言（label/order を一致させる）。

@@ -1,0 +1,165 @@
+# Salesforce Agentforce 固有の脅威ルール（Einstein Trust Layer と、それに接続した AGENT）。
+#
+# 発火の考え方（接続前提モデリング）:
+#   - エージェント本体は汎用の AGENT で表す（専用のエージェント型は作らない）。
+#     Agentforce の構成であることは「EINSTEIN_TRUST_LAYER 型のノードと接続している」ことで
+#     判定し、製品固有のルールは peerType: [EINSTEIN_TRUST_LAYER] を前提条件に持つ。
+#     汎用ルールの対象型に製品名の型を書き足すことはしない。
+#   - EINSTEIN_TRUST_LAYER を使わない図（Trust Layer を GUARDRAIL で表した図を含む）では、
+#     本ファイルのルールは発火しない。
+#
+# 出典（公式の記載を根拠とする。確度に応じて本文の書き方を変えている）:
+#   - Salesforce Developers - Einstein Trust Layer
+#     https://developer.salesforce.com/docs/einstein/genai/guide/trust.html
+#   - Salesforce Help - プロンプトインジェクション検知の設定（Beta・既定で無効・英語のみ）。
+#     本文は執筆時点（2026 年 10 月）の公式記載の抜粋による。ルール本文でも「執筆時点の
+#     公式の記載では」と明示し、最新の対応状況を公式で確認するよう促す。
+#     https://help.salesforce.com/s/articleView?language=en_US&id=ai.generative_ai_trust_configure_prompt_injection_detection.htm
+#   - Salesforce Blog - Best Practices for Secure Agentforce Implementation
+#     （エージェントごとの専用ユーザー、新規エージェントの権限は既定でゼロ、最小権限）
+#     https://www.salesforce.com/blog/best-practices-for-secure-agentforce-implementation-2/
+#   - Salesforce Developers Blog - Best Practices for Building Agentforce Apex Actions
+#     （with sharing・ユーザーモードの推奨）
+#     https://developer.salesforce.com/blogs/2025/07/best-practices-for-building-agentforce-apex-actions
+#   - Salesforce Help - Employee agent の考慮事項（Employee agent はログインユーザー、
+#     Service agent は専用のエージェントユーザーで動作）
+#     https://help.salesforce.com/s/articleView?id=ai.agent_employee_agent_considerations.htm
+#   - Salesforce Help - Agentforce の責任共有（最小権限・ガードレール・監視・カスタムアクションでの人の確認は顧客の責任）
+#     https://help.salesforce.com/s/articleView?id=005315874&language=en_US&type=1
+#   - Noma Labs - ForcedLeak（発見者の報告）
+#     https://noma.security/noma-labs/forcedleak
+#   本文は逐語転載せず日本語要約のみ。Salesforce の運用メモ（forcedotcom/sf-skills）は
+#   公式ドキュメントではないため根拠にしない。第三者の二次報道のみの事例は扱わない。
+#
+#   Salesforce、Agentforce、Einstein は Salesforce, Inc. の商標。製品の構成要素を指すための
+#   記述的な使用であり、本プロジェクトは Salesforce, Inc. と提携・承認の関係に無い。
+#
+#   SPDX-License-Identifier: Apache-2.0
+#   ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+#   出典の帰属表示は NOTICE を参照。
+#
+# 重複回避方針:
+#   - CRM のレコード（Web-to-Lead 等の外部入力窓口から書き込まれた項目）を経由する
+#     間接プロンプトインジェクション（ForcedLeak の入口）は、製品に依存しない脅威として
+#     owasp-llm01-indirect-business-record-001（canonicalId: indirect-prompt-injection、
+#     CRM 等の業務アプリ → LLM/AGENT/SUB_AGENT の入力経路で発火）が扱う。本ファイルでは重複させない。
+#   - Einstein Trust Layer の検知の制約は、ガードレール単体依存の一般論
+#     zt-guardrail-probabilistic-bypass-001（canonicalId: guardrail-probabilistic-bypass、
+#     GUARDRAIL 型）と同じ脅威の製品固有の具体化。EINSTEIN_TRUST_LAYER 型では汎用ルールが
+#     発火しないため、同じ canonicalId で本ファイルにルールを置く。
+#   - 外部 MCP サーバー（Agentforce の MCP クライアント）の Tool Poisoning・なりすましは、
+#     MCP_SERVER 型の mcp-tool-descriptor-poisoning-001（tool-descriptor-poisoning）と
+#     mcp-server-impersonation-typosquatting-001（mcp-server-impersonation）でカバー済み。
+#     Salesforce 自身もこの脅威に言及しているが、製品固有の差分が無いためルール化しない。
+#   - 出力経路の外部送信の一般論は maestro-agent-internet-egress-001（agent-uncontrolled-egress、
+#     AGENT 発の公衆網エッジ）と maestro-lethal-trifecta-001 が扱う。本ファイルは
+#     「出力の描画先が許可リスト（Trusted URL）上のドメインへ通信する」経路と、許可リストの
+#     棚卸しという製品固有の差分を扱う。別 canonicalId。
+#   - エージェントの権限過大の一般論は maestro-agent-runaway-001 / owasp-llm06-excessive-agency-001
+#     （excessive-agency）と anthropic-zt-confused-deputy-001（confused-deputy-delegation）が扱う。
+#     本ファイルは「エージェントの実行ユーザー」と「アクション（Flow / Apex）の実行コンテキスト」
+#     という Agentforce の権限の決まり方に即した点検項目を扱う。別 canonicalId。
+#     書き込み系アクションの人の確認は、独立したルールにせず本ルールの対策に含める。
+#
+# mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
+# description は Can/Cannot ペアと blast radius を意識して記述する。
+
+schemaVersion: 1
+
+rules:
+  # ── EINSTEIN_TRUST_LAYER: プロンプトインジェクション検知の適用範囲の制約 ──────
+  - id: sf-agentforce-trust-layer-detection-gap-001
+    canonicalId: guardrail-probabilistic-bypass
+    framework: AI
+    category: "Defense Evasion"
+    name: "Einstein Trust Layer のプロンプトインジェクション検知の適用範囲の制約"
+    severity: Medium
+    description: "{{nodeName}} はデータマスキング・毒性検知・プロンプト防御などで LLM の入出力を保護する。ただし執筆時点（2026 年 10 月）の公式の記載では、プロンプトインジェクションの検知は Beta で、既定では無効、対象は英語（米国）のみとされている。日本語の問い合わせや日本語で書かれた CRM のレコードを扱う運用では、攻撃者が日本語で書いた指示文は検知の対象外になり、{{nodeName}} を経由してもそのまま LLM に届く（Can）。検知を有効にした英語の運用でも、ガードレールは既知の傾向に基づく確率的な防御で、言い換え・分割・他言語への切り替えで迂回されうる。一方、エージェントが呼び出せるアクションと外部送信先を許可リストで限定し、アクションの実行権限を最小にし、書き込み・送信を伴う操作を人の確認にしていれば、検知をすり抜けた指示でも実行できる操作は構造的に制限される（Cannot）。blast radius は {{nodeName}} の検知を前提に許可されている全エージェントの操作。"
+    mitigation: "[Foundation] Einstein Trust Layer のプロンプトインジェクション検知を、利用する言語で有効かどうかの前提にせず、唯一の防御にしない。エージェントのアクションと外部送信先を許可リストで限定し、アクションの実行権限を最小にする（多層防御）。プロンプトインジェクション検知の対応言語・提供状況を公式で確認し、導入判断の記録に残す。 [Enterprise] 日本語を含む利用言語で、間接プロンプトインジェクション（CRM のレコード・ナレッジ記事・外部 API の応答に仕込んだ指示）のテストケースを用意し、Testing Center 等でリリース前に評価する。監査証跡を保存し、検知の有無にかかわらずエージェントの操作を事後に追跡できるようにする。 [Advanced] 迂回を前提とした設計（assume bypass）に移行し、ガードレールは検知・観測層として扱う。利用言語に対応した検知器を Trust Layer とは別に併置し、継続的な敵対的評価を行う。"
+    appliesTo:
+      kind: node
+      nodeType: EINSTEIN_TRUST_LAYER
+      # 保護対象（AGENT・LLM 等）と接続されているとき発火する（デフォルト接続要件）。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "Salesforce Help - Configure Prompt Injection Detection（Beta・既定で無効・英語のみ。執筆時点の公式記載の抜粋による。最新は公式で確認）"
+        url: "https://help.salesforce.com/s/articleView?language=en_US&id=ai.generative_ai_trust_configure_prompt_injection_detection.htm"
+      - title: "Salesforce Developers - Einstein Trust Layer"
+        url: "https://developer.salesforce.com/docs/einstein/genai/guide/trust.html"
+      - title: "OWASP LLM01:2025 Prompt Injection（フィルタの限界）"
+        url: "https://genai.owasp.org/llmrisk/llm01-prompt-injection/"
+
+  # ── AGENT（Trust Layer と接続）: 出力の描画先を経由する外部送信と Trusted URL の棚卸し ──
+  - id: sf-agentforce-output-url-exfiltration-001
+    canonicalId: output-url-allowlist-exfiltration
+    framework: AI
+    category: "Information Disclosure"
+    name: "エージェントの出力に埋め込んだ URL による外部送信（Trusted URL の残存ドメイン）"
+    severity: High
+    description: "{{nodeName}} の応答は、チャット画面・Lightning のページ・メール等で描画される。間接プロンプトインジェクションなどで応答を操作できた攻撃者は、CRM のデータを URL のパラメーターに埋め込んだ画像やリンクを応答に出力させ、画面が描画された時点でそのデータを攻撃者のサーバーへ送信させられる（Can）。2025 年に報告された ForcedLeak では、Trusted URL の許可リストに残っていた失効済みのドメインを攻撃者が取得し、許可された送信先として CRM のデータを受け取った。発見者の報告によれば、Salesforce は対応として Trusted URL の許可リストを強制するようにしたが、許可リストに登録したドメインの管理は利用者側に残る。一方、Trusted URL の許可リストを業務上必要な自社管理のドメインに絞って定期的に棚卸しし、失効・譲渡されたドメインを残さず、エージェントの応答に外部の画像・リンクを描画させない構成にしていれば、応答を操作されてもデータの送信先が成立しない（Cannot）。blast radius は {{nodeName}} がそのセッションで参照できる全レコード。"
+    mitigation: "[Foundation] Trusted URL（および CSP の許可先）の一覧を棚卸しし、業務上不要なドメイン・自社が管理していないドメイン・失効したドメインを削除する。ドメインの所有者と更新期限を台帳で管理し、契約終了・ドメイン失効時に許可リストから外す手順を定める。 [Enterprise] エージェントの応答で外部の画像・リンクを描画しない、または許可先を自社管理のドメインに限定する。応答に含まれる URL を検査し、レコードの値をパラメーターに含む URL を遮断する。許可リストの変更を変更管理の対象にし、監査ログで追跡する。 [Advanced] 社外由来のデータを読むセッションと、機微データを外部へ出力できるセッションを分離する。許可リスト上のドメインの登録状況（失効・所有者の変更）を継続的に監視する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+      # Einstein Trust Layer と接続している＝Agentforce のエージェントである構成でのみ発火する。
+      connection:
+        peerType: [EINSTEIN_TRUST_LAYER]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "Noma Labs - ForcedLeak（発見者の報告。Trusted URL の許可リストに残った失効ドメインによる外部送信）"
+        url: "https://noma.security/noma-labs/forcedleak"
+      - title: "OWASP LLM05:2025 Improper Output Handling（関連マッピング）"
+        url: "https://genai.owasp.org/llmrisk/llm05-improper-output-handling/"
+      # 応答を操作する入口（CRM のレコード経由の間接プロンプトインジェクション）は
+      # owasp-llm01-indirect-business-record-001 が扱う（別 canonicalId）。
+
+  # ── AGENT（Trust Layer と接続）: 実行ユーザーとアクションの実行コンテキストによる権限の過大 ──
+  - id: sf-agentforce-runtime-privilege-001
+    canonicalId: agent-runtime-privilege-scope
+    framework: AgenticAI
+    category: "Elevation of Privilege"
+    name: "エージェントの実行ユーザーとアクションの実行コンテキストによる権限の過大"
+    severity: High
+    description: "{{nodeName}} が参照・変更できるデータは、エージェントが動作するユーザーの権限と、アクション（Flow / Apex）の実行コンテキストで決まる。公式の説明では、Employee agent はログインしている従業員として動作し、Service agent は専用のエージェントユーザーで動作する。エージェントユーザーに広い権限セットを付けている場合や、アクションがシステムコンテキストの Flow や共有設定を適用しない Apex で実装されている場合、プロンプトインジェクションや想定外の質問で {{nodeName}} を操作した者は、本来その利用者が見られないレコードの参照・変更をアクション経由で行える（Can）。顧客向けのエージェントでは、相手が匿名の外部の利用者でもこの権限が使われる。一方、エージェントごとに専用のユーザーを用意して必要なオブジェクト・項目だけを許可し、Apex のアクションを with sharing とユーザーモードで実装し、Flow をユーザーコンテキストで実行し、書き込み系のアクションに人の確認を求めていれば、{{nodeName}} を操作されても利用者の権限を超える参照・変更はできない（Cannot）。blast radius はエージェントユーザーとアクションの実行コンテキストが到達できる全レコード。"
+    mitigation: "[Foundation] エージェントごとに専用のユーザーと権限セットを用意し、新規エージェントは権限ゼロから必要なオブジェクト・項目・アクションだけを付与する。アクションごとに、Flow の実行コンテキストと Apex の共有設定（with sharing / without sharing）を棚卸しし、システムコンテキストで動くものを特定する。 [Enterprise] Apex のアクションは with sharing とユーザーモードのデータベース操作で実装し、Flow はユーザーコンテキストで実行する。システムコンテキストが必要なアクションは入力を検証し、対象レコードを呼び出し元の利用者に紐づくものに限定する。書き込み・送金・外部送信を伴うアクションには人の確認を組み込む。高リスクの操作には認証とステップアップ認証を求める。 [Advanced] 権限セットとアクションの実行コンテキストをメタデータとしてバージョン管理し、CI で差分を審査する。エージェントのテストに、権限外のレコードを要求するケースを含めて継続的に評価する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+      # Einstein Trust Layer と接続している＝Agentforce のエージェントである構成でのみ発火する。
+      connection:
+        peerType: [EINSTEIN_TRUST_LAYER]
+      conditions:
+        # 影響範囲を読み取り専用・自分自身に限定すると宣言したエージェントは、権限の過大が
+        # 及ぶ範囲が小さいため 1 段下げる。未宣言は最悪（Admin）を仮定するため High のまま。
+        - when:
+            agentAttributes:
+              blastRadius: [ReadOnly, Self]
+          severity: Medium
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-ai-rmf
+        ref: "MANAGE 2.4"
+    references:
+      - title: "Salesforce Blog - Best Practices for Secure Agentforce Implementation（エージェントごとの専用ユーザー・既定で権限ゼロ・最小権限）"
+        url: "https://www.salesforce.com/blog/best-practices-for-secure-agentforce-implementation-2/"
+      - title: "Salesforce Developers Blog - Best Practices for Building Agentforce Apex Actions（with sharing・ユーザーモード）"
+        url: "https://developer.salesforce.com/blogs/2025/07/best-practices-for-building-agentforce-apex-actions"
+      - title: "Salesforce Help - Employee Agent Considerations（Employee agent と Service agent の実行ユーザー）"
+        url: "https://help.salesforce.com/s/articleView?id=ai.agent_employee_agent_considerations.htm"
+      - title: "Salesforce Help - Agentforce の責任共有（最小権限・カスタムアクションでの人の確認は利用者の責任）"
+        url: "https://help.salesforce.com/s/articleView?id=005315874&language=en_US&type=1"
+      - title: "OWASP LLM06:2025 Excessive Agency（関連マッピング）"
+        url: "https://genai.owasp.org/llmrisk/llm06-excessive-agency/"

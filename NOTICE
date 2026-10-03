@@ -32,7 +32,8 @@ verbatim.
 
    Referenced by: data/threat-library/owasp-llm-top10.yaml,
                   data/threat-library/owasp-asi-top10.yaml,
-                  data/threat-library/maestro.yaml
+                  data/threat-library/maestro.yaml,
+                  data/threat-library/salesforce-agentforce.yaml
 
 --------------------------------------------------------------------------------
 2. The MITRE Corporation
@@ -45,7 +46,8 @@ verbatim.
 
    Referenced by: data/threat-library/mitre-atlas.yaml,
                   data/threat-library/agentic-memory-rag-edges.yaml,
-                  data/threat-library/voice-contact-center.yaml
+                  data/threat-library/voice-contact-center.yaml,
+                  data/threat-library/owasp-llm-top10.yaml
 
    MITRE ATT&CK (Enterprise)
    https://attack.mitre.org/
@@ -202,6 +204,30 @@ verbatim.
    summary only; no text is reproduced verbatim.
 
    Referenced by: data/threat-library/voice-contact-center.yaml
+
+--------------------------------------------------------------------------------
+14. Salesforce, Inc. — Salesforce Help, Salesforce Developers documentation
+    and blogs, and the Salesforce blog (Einstein Trust Layer, Agentforce
+    security best practices, Agentforce Apex actions, agent users, shared
+    responsibility)
+   https://help.salesforce.com/ , https://developer.salesforce.com/ ,
+   https://www.salesforce.com/blog/
+   © Salesforce, Inc. Salesforce, Agentforce and Einstein are trademarks of
+   Salesforce, Inc. The names are used descriptively to identify product
+   components; this project is not affiliated with or endorsed by
+   Salesforce, Inc. Referenced by citation and short summary only.
+
+   Referenced by: data/threat-library/salesforce-agentforce.yaml,
+                  data/component-library/salesforce-agentforce.yaml
+
+--------------------------------------------------------------------------------
+15. Noma Security — Noma Labs, "ForcedLeak" (2025)
+   https://noma.security/noma-labs/forcedleak
+   © Noma Security. Referenced by citation and short summary only; no text is
+   reproduced verbatim.
+
+   Referenced by: data/threat-library/owasp-llm-top10.yaml,
+                  data/threat-library/salesforce-agentforce.yaml
 
 ================================================================================
 Runtime dependencies

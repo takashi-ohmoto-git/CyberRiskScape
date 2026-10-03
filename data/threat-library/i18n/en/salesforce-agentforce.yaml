@@ -1,0 +1,60 @@
+# English overlay for `data/threat-library/salesforce-agentforce.yaml`.
+#
+# The Japanese file is the source of truth: only `name` / `category` / `description` /
+# `mitigation` (plus `conditions[].description` and `references[].title` where present)
+# are translated here, keyed by rule id. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - Keep `{{token}}` placeholders exactly as they appear in the original.
+#   - Keep the `[Foundation]` / `[Enterprise]` / `[Advanced]` markup — the maturity
+#     tiers are re-derived from this text.
+#   - Preserve the Can / Cannot pair and the blast radius statement in `description`.
+#   - `references` is keyed by the index in the original array, and only the entries
+#     that need translating are listed. `url` is never translated.
+#   - Salesforce, Agentforce and Einstein are trademarks of Salesforce, Inc., used here
+#     descriptively to name product components.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+rules:
+  sf-agentforce-trust-layer-detection-gap-001:
+    category: "Defense Evasion"
+    name: "Limited coverage of prompt injection detection in Einstein Trust Layer"
+    description: "{{nodeName}} protects LLM input and output with data masking, toxicity detection, prompt defense, and similar controls. At the time of writing (October 2026), however, the official documentation describes prompt injection detection as Beta, disabled by default, and limited to English (US). In deployments that handle Japanese inquiries or CRM records written in Japanese, instructions an attacker writes in Japanese fall outside detection and reach the LLM unchanged through {{nodeName}} (Can). Even in English deployments with detection enabled, a guardrail is a probabilistic defense based on known patterns and can be bypassed by rephrasing, splitting, or switching languages. If, on the other hand, the actions an agent can call and the destinations it can send to are restricted by allow lists, action privileges are minimized, and operations that write or send data require human confirmation, instructions that slip past detection can only reach a structurally limited set of operations (Cannot). The blast radius is every agent operation that is permitted on the assumption that {{nodeName}} detects attacks."
+    mitigation: "[Foundation] Do not assume that Einstein Trust Layer's prompt injection detection works for the languages you use, and do not make it the only defense. Restrict an agent's actions and external destinations with allow lists, and minimize action privileges (defense in depth). Check the supported languages and availability of prompt injection detection in the official documentation, and record that check in the adoption decision. [Enterprise] Prepare test cases for indirect prompt injection (instructions planted in CRM records, knowledge articles, or external API responses) in every language you use, including Japanese, and evaluate them before release in Testing Center or a similar tool. Keep the audit trail so agent operations can be traced afterwards whether or not anything was detected. [Advanced] Move to an assume-bypass design and treat the guardrail as a detection and observability layer. Place a detector that supports your languages alongside the Trust Layer, and run continuous adversarial evaluation."
+    references:
+      "0":
+        title: "Salesforce Help - Configure Prompt Injection Detection (Beta, disabled by default, English only; based on an excerpt of the official documentation at the time of writing — check the official documentation for current status)"
+      "2":
+        title: "OWASP LLM01:2025 Prompt Injection (limits of filtering)"
+
+  sf-agentforce-output-url-exfiltration-001:
+    category: "Information Disclosure"
+    name: "Data sent out through URLs embedded in agent output (stale Trusted URL domains)"
+    description: "Responses from {{nodeName}} are rendered in chat windows, Lightning pages, email, and similar surfaces. An attacker who can steer a response, for example through indirect prompt injection, can have it output an image or link whose URL parameters carry CRM data, so that the data is sent to the attacker's server the moment the screen renders it (Can). In ForcedLeak, reported in 2025, an attacker acquired an expired domain that was still on the Trusted URL allow list and received CRM data as a permitted destination. According to the discoverer's report, Salesforce responded by enforcing the Trusted URL allow list, but managing the domains registered on that list remains the customer's job. If, on the other hand, the Trusted URL allow list is limited to domains the organization controls and needs, it is reviewed regularly so that expired or transferred domains do not remain, and agent responses are not allowed to render external images or links, a steered response has no destination to send data to (Cannot). The blast radius is every record {{nodeName}} can read in that session."
+    mitigation: "[Foundation] Review the Trusted URL list (and the CSP allowed sites), and remove domains that are not needed for the business, domains the organization does not control, and expired domains. Keep a register of each domain's owner and renewal date, and define a procedure to remove domains from the allow list when contracts end or domains expire. [Enterprise] Do not render external images or links in agent responses, or limit them to domains the organization controls. Inspect URLs in responses and block URLs whose parameters contain record values. Put allow list changes under change management and track them in audit logs. [Advanced] Separate sessions that read externally sourced data from sessions that can output sensitive data to the outside. Continuously monitor the registration status (expiry, change of owner) of domains on the allow list."
+    references:
+      "0":
+        title: "Noma Labs - ForcedLeak (discoverer's report; data sent out through an expired domain left on the Trusted URL allow list)"
+      "1":
+        title: "OWASP LLM05:2025 Improper Output Handling (related mapping)"
+
+  sf-agentforce-runtime-privilege-001:
+    category: "Elevation of Privilege"
+    name: "Excessive privilege from the agent's running user and the execution context of its actions"
+    description: "The data {{nodeName}} can read and change is determined by the privileges of the user the agent runs as and by the execution context of its actions (Flow / Apex). According to the official documentation, an Employee agent runs as the signed-in employee, while a Service agent runs as a dedicated agent user. If the agent user has broad permission sets, or actions are implemented as Flows running in system context or Apex that does not enforce sharing, anyone who steers {{nodeName}} through prompt injection or unexpected questions can read or change records through those actions that the user should not be able to see (Can). For customer-facing agents, these privileges are exercised even when the other party is an anonymous external user. If, on the other hand, each agent has its own dedicated user permitted only the objects and fields it needs, Apex actions are implemented with sharing and in user mode, Flows run in user context, and write actions ask for human confirmation, steering {{nodeName}} cannot read or change anything beyond the user's own privileges (Cannot). The blast radius is every record the agent user and the execution context of its actions can reach."
+    mitigation: "[Foundation] Give each agent its own dedicated user and permission sets, start new agents from zero privileges, and grant only the objects, fields, and actions they need. For each action, review the Flow execution context and the Apex sharing setting (with sharing / without sharing), and identify the ones that run in system context. [Enterprise] Implement Apex actions with sharing and with database operations in user mode, and run Flows in user context. For actions that genuinely need system context, validate input and limit the target records to those tied to the calling user. Build human confirmation into actions that write data, move money, or send data outside. Require authentication and step-up authentication for high-risk operations. [Advanced] Keep permission sets and action execution contexts under version control as metadata, and review the diffs in CI. Include cases that request records outside the user's privileges in agent tests, and evaluate them continuously."
+    references:
+      "0":
+        title: "Salesforce Blog - Best Practices for Secure Agentforce Implementation (a dedicated user per agent, zero privileges by default, least privilege)"
+      "1":
+        title: "Salesforce Developers Blog - Best Practices for Building Agentforce Apex Actions (with sharing, user mode)"
+      "2":
+        title: "Salesforce Help - Employee Agent Considerations (the running user of Employee agents and Service agents)"
+      "3":
+        title: "Salesforce Help - Agentforce shared responsibility (least privilege and human confirmation in custom actions are the customer's responsibility)"
+      "4":
+        title: "OWASP LLM06:2025 Excessive Agency (related mapping)"

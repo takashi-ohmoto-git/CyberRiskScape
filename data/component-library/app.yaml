@@ -6,8 +6,8 @@
 #     ノード属性（cloudSanction / cloudOwnership）として NodePanel から設定できる。
 #   - SHADOW_APP: 組織が把握していないシャドー IT アプリ。
 #
-# 別ライブラリ（builtin と分離）にすることで、LeftSidebar のライブラリトグルで
-# 「アプリ型を使わない」運用を選べる。
+# 型の定義を builtin.yaml と分けて管理するための別ファイル。同梱の基本型として扱う
+# （builtin: true＝サイドバーのライブラリトグルでは無効化できない）。
 #
 # ライセンス: Apache-2.0（同梱）
 #
