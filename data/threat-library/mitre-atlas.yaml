@@ -132,7 +132,10 @@ rules:
     mitigation: "多層ガードレール（前処理＋後処理＋サンプル監査）、ジェイルブレイク既知パターンの継続更新、リスク応答の人手レビュー回送。"
     appliesTo:
       kind: node
-      nodeType: LLM
+      # STS（音声対音声モデル）も言語モデルとしてジェイルブレイクを受けるため対象に含める。
+      anyOf:
+        - nodeType: LLM
+        - nodeType: STS
     references:
       - title: "MITRE ATLAS AML.T0054 LLM Jailbreak"
         url: "https://atlas.mitre.org/techniques/AML.T0054"

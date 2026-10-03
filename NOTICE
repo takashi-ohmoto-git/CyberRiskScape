@@ -44,7 +44,8 @@ verbatim.
    attribution.
 
    Referenced by: data/threat-library/mitre-atlas.yaml,
-                  data/threat-library/agentic-memory-rag-edges.yaml
+                  data/threat-library/agentic-memory-rag-edges.yaml,
+                  data/threat-library/voice-contact-center.yaml
 
    MITRE ATT&CK (Enterprise)
    https://attack.mitre.org/
@@ -78,10 +79,12 @@ verbatim.
 
 --------------------------------------------------------------------------------
 5. U.S. National Institute of Standards and Technology (NIST)
-   - SP 800-46 Rev.2, SP 800-124 Rev.2, SP 800-207, SP 800-63A, SP 800-63B
+   - SP 800-46 Rev.2, SP 800-124 Rev.2, SP 800-207, SP 800-63A, SP 800-63B,
+     SP 800-63B-4, SP 800-58
    - IR 8259 / 8259A, IR 8547
    - FIPS 203 (ML-KEM), FIPS 204 (ML-DSA), FIPS 205 (SLH-DSA)
    - AI Risk Management Framework 1.0 (AI 100-1)
+   - AI 600-1, Generative Artificial Intelligence Profile
    - Cybersecurity Framework 2.0 (CSWP 29)
    https://csrc.nist.gov/ , https://www.nist.gov/cyberframework
 
@@ -94,6 +97,7 @@ verbatim.
    - Zero Trust Maturity Model v2
    - Implementing Phishing-Resistant MFA
    - Insider Threat Mitigation Guide
+   - Cybersecurity Advisory AA23-320A, Scattered Spider (with FBI)
    - Shifting the Balance of Cybersecurity Risk: Principles and Approaches for
      Secure by Design Software (October 2023, with NSA, FBI and international
      partners) — summarized in guide/secure-by-design.md
@@ -131,6 +135,73 @@ verbatim.
    Simon Willison — the "lethal trifecta" concept
    https://simonwillison.net/
    Referenced as a concept with attribution.
+
+--------------------------------------------------------------------------------
+10. Other U.S. Government sources
+   - Financial Crimes Enforcement Network (FinCEN), Alert FIN-2024-Alert004
+     (fraud schemes involving deepfake media)
+     https://www.fincen.gov/
+   - Federal Bureau of Investigation, Internet Crime Complaint Center (FBI IC3),
+     Public Service Announcement I-051525
+     https://www.ic3.gov/
+   - Federal Trade Commission (FTC), Consumer Alert on harmful voice cloning
+     (April 2024)
+     https://consumer.ftc.gov/
+   - Federal Communications Commission (FCC), Caller ID Authentication
+     (STIR/SHAKEN)
+     https://www.fcc.gov/call-authentication
+
+   Works of the U.S. Government; not subject to copyright protection in the
+   United States (17 U.S.C. §105).
+
+   Referenced by: data/threat-library/voice-contact-center.yaml
+
+--------------------------------------------------------------------------------
+11. Other public authorities
+   個人情報保護委員会「個人情報の保護に関する法律についてのガイドライン」に関する Q&A
+   (Personal Information Protection Commission, Japan)
+   https://www.ppc.go.jp/
+   出典明記の上での要約参照。
+
+   Government of the Hong Kong Special Administrative Region — Legislative
+   Council reply (2024-06-26)
+   https://www.info.gov.hk/
+   © Government of the Hong Kong SAR. Referenced by citation and short summary
+   only.
+
+   Europol — Cyber-Telecom (CyTel) Crime fraud intelligence notification
+   https://www.europol.europa.eu/
+   © European Union Agency for Law Enforcement Cooperation. Referenced by
+   citation and short summary only.
+
+   Referenced by: data/threat-library/voice-contact-center.yaml
+
+--------------------------------------------------------------------------------
+12. LY Corporation — LINE Developers documentation and LY Corporation notices
+   https://developers.line.biz/ , https://www.lycorp.co.jp/
+   © LY Corporation. LINE is a trademark or registered trademark of LY
+   Corporation. Referenced by citation and short summary only.
+
+   Referenced by: data/threat-library/voice-contact-center.yaml
+
+--------------------------------------------------------------------------------
+13. Research papers, vendor documentation and press reports
+   - Zhang et al., "DolphinAttack: Inaudible Voice Commands" (ACM CCS 2017)
+   - Yuan et al., "CommanderSong: A Systematic Approach for Practical
+     Adversarial Voice Recognition" (USENIX Security 2018)
+   - Carlini and Wagner, "Audio Adversarial Examples: Targeted Attacks on
+     Speech-to-Text" (2018)
+   - arXiv:2502.00735, arXiv:2504.01094, and an EMNLP 2025 paper
+     (aclanthology.org/2025.emnlp-main.734) on spoken jailbreaks and the
+     transfer of safety alignment to speech
+   - LiteLLM documentation — Realtime Guardrails
+   - OpenAI Agents SDK documentation — Realtime guide
+   - Vice — "How I Broke Into a Bank Account With an AI-Generated Voice"
+
+   © The respective authors and publishers. Referenced by citation and short
+   summary only; no text is reproduced verbatim.
+
+   Referenced by: data/threat-library/voice-contact-center.yaml
 
 ================================================================================
 Runtime dependencies

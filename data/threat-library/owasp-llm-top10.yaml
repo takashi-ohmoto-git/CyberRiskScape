@@ -26,9 +26,11 @@ rules:
     appliesTo:
       kind: node
       # 直接 PI はプロンプト受理時点で成立する内在的脅威。接続有無に依存しない。
+      # STS（音声対音声モデル）も発話をプロンプトとして直接受理するため対象に含める。
       anyOf:
         - nodeType: LLM
         - nodeType: AGENT
+        - nodeType: STS
       connection:
         required: false
     references:

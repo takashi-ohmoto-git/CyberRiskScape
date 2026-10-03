@@ -1,0 +1,124 @@
+# English overlay for `data/threat-library/voice-contact-center.yaml`.
+#
+# The Japanese file is the source of truth: only `name` / `category` / `description` /
+# `mitigation` (plus `conditions[].description` and `references[].title` where present)
+# are translated here, keyed by rule id. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - Keep `{{token}}` placeholders exactly as they appear in the original.
+#   - Keep the `[Foundation]` / `[Enterprise]` / `[Advanced]` markup — the maturity
+#     tiers are re-derived from this text.
+#   - Preserve the Can / Cannot pair and the blast radius statement in `description`.
+#   - `references` is keyed by the index in the original array, and only the entries
+#     that need translating are listed. Keep a genuinely Japanese document title as
+#     its original title and add an English gloss; `url` is never translated.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+rules:
+  voice-voiceprint-clone-bypass-001:
+    category: "Spoofing"
+    name: "Voiceprint authentication bypassed with a cloned voice"
+    description: "{{nodeName}} confirms identity from the characteristics of a voice alone. An attacker can synthesize the person's voice from a few minutes of public audio (social media video, voicemail greetings, earlier calls), play it or answer live with it on the phone, pass the comparison, and go on as that person to operate accounts, look up personal data, or change registered details (Can). Synthetic voices can answer liveness challenges in real time, so replay countermeasures alone do not stop this. NIST SP 800-63B-4 states that biometric comparison based on voice SHALL NOT be used for authentication. If, on the other hand, the voiceprint is kept as a fraud risk signal only, and identity confirmation and approval of high-risk operations require a separate phishing-resistant factor (a FIDO authenticator or passkey on a registered device), a synthesized voice alone cannot get through authentication (Cannot). The blast radius is every account that {{nodeName}} can verify and every operation that verification alone unlocks."
+    mitigation: "[Foundation] Do not use the voiceprint as a standalone authentication factor. Document that high-risk operations such as account changes, updates to registered details, and money transfers are never approved on a voiceprint match alone. [Enterprise] Move identity confirmation to phishing-resistant MFA (FIDO2/WebAuthn, passkeys), and require out-of-band approval in a registered app for high-risk operations requested over the phone. Use the voiceprint only as a fraud risk signal, and keep the match result and subsequent operations in the audit log. [Advanced] Retire voiceprint authentication altogether and replace it with an authentication path that does not depend on liveness checks or synthetic-voice detection. Shrink what can be completed over the phone channel to a scope where a cloned voice causes only limited harm."
+    references:
+      "0":
+        title: "NIST SP 800-63B-4 - Digital Identity Guidelines: Authentication and Authenticator Management (§3.2.3 Use of biometrics)"
+      "2":
+        title: "Vice - How I Broke Into a Bank Account With an AI-Generated Voice (public case)"
+      "3":
+        title: "MITRE ATLAS AML.T0088 Generate Deepfakes (related mapping)"
+
+  voice-biometric-recording-exposure-001:
+    category: "Information Disclosure"
+    name: "Leakage and secondary use of voiceprints and call recordings"
+    description: "{{nodeName}} holds the voice itself. The voice feature data kept by voiceprint authentication is an individual identification code under Japan's Act on the Protection of Personal Information, and is personal information on its own. Call recordings contain personal and confidential information in the conversation, and voiceprints can be extracted from them. An attacker or an insider with access who reaches the storage can take recordings and voiceprints in bulk and use them as material for voice cloning, then reuse them for impersonation calls or to defeat voiceprint authentication (Can). Unlike a password, a voice cannot be changed after it leaks, so the harm lasts. Extracting or using voiceprints from recordings beyond the consented purpose can itself be a legal violation. If, on the other hand, the purpose is specified and consented to, retention is minimized, data is encrypted at rest with segregated access rights, and voiceprint extraction from recordings is limited to that purpose, what can be taken and reused stays within the retention period and the access granted (Cannot). The blast radius is every speaker accumulated in {{nodeName}} over its full retention, and every account protected by those voices."
+    mitigation: "[Foundation] Specify the purpose of recordings and voiceprints, give notice and obtain consent, and prohibit voiceprint extraction or secondary use outside that purpose. Set a retention period and delete expired data, encrypt data at rest, and minimize access rights. [Enterprise] Store recordings and voiceprint templates separately from business data, with encryption keys managed separately in a key management service. Track viewing and downloads in audit logs and detect bulk retrieval. Mask personal information copied into transcripts and summaries. [Advanced] Retain recordings only for calls that are essential to the business, and keep voiceprint templates only in a form from which the original audio cannot be reconstructed. Assume unauthorized imitation of voices, and define procedures to notify affected individuals and suspend voice-dependent authentication after a leak."
+    references:
+      "0":
+        title: "個人情報保護委員会 - 「個人情報の保護に関する法律についてのガイドライン」に関する Q&A 1-11 (Personal Information Protection Commission of Japan, Q&A 1-11: voiceprints are individual identification codes)"
+      "1":
+        title: "NIST AI 600-1 - Generative AI Profile (unauthorized imitation of voice and likeness)"
+
+  voice-synthetic-media-impersonation-001:
+    category: "Spoofing"
+    name: "Abuse of synthetic voice and video for impersonation"
+    description: "{{nodeName}} synthesizes a human voice (and, for AVATAR, a face as well). Where custom voices or voices and avatars modeled on real people can be created, abuse of that capability or of the models lets an attacker produce calls or video meetings that impersonate executives, customers, or the organization's own agent voice (Can). Public authorities have warned of cloned-voice calls impersonating family members, managers, and senior government officials, and in 2024 a deepfake video meeting in Hong Kong posed as executives and induced a large transfer. The more users grow used to the organization's synthetic voice or avatar, the harder it becomes to tell an attacker's fake apart. If, on the other hand, synthesis of real people's voices and likenesses is limited to recorded consent from those people, rights to create and use the models are restricted, and users and staff are told that transfers and credentials are never accepted on voice or video alone, synthesis by itself cannot push a fraudulent instruction through (Cannot). The blast radius is the people whose voice or appearance {{nodeName}} can produce, and the customers and employees who act on trust in them."
+    mitigation: "[Foundation] Record the consent of the person when synthesizing a real person's voice or likeness, and restrict who can create and use custom voice and avatar models. Tell customers and employees that the organization never asks for transfers, credentials, or password resets by phone or video, and define a procedure to verify such requests by calling back a known contact. [Enterprise] Attach provenance information (watermarks, provenance metadata) to generated audio and video, and track use of synthesis models in audit logs. Make internal transfers and permission changes require dual approval that a voice or video request alone cannot satisfy. [Advanced] Build verifiable provenance of synthetic content into official external channels so users can check synthetic voice or video that claims to come from the organization. Manage models of real people so they can be reliably destroyed when consent is withdrawn."
+    references:
+      "4":
+        title: "Government of the Hong Kong SAR - Legislative Council reply (2024-06-26, deepfake video meeting fraud)"
+      "5":
+        title: "NIST AI 600-1 - Generative AI Profile (provenance of synthetic content)"
+
+  voice-operator-social-engineering-reset-001:
+    category: "Spoofing"
+    name: "MFA and password resets through phone social engineering"
+    description: "{{nodeName}} confirms identity and carries out procedures based on what the caller claims. An attacker posing as an employee, customer, or manager, armed with personal information gathered in advance or a cloned voice, can ask for a password reset, re-enrollment of an MFA authenticator, a transfer, or disclosure of information, and have it carried out as a legitimate procedure (Can). CISA and the FBI have reported attacks that phone the help desk to reset MFA, take over accounts, and go on to deploy ransomware. As long as the operator judges identity from knowledge (date of birth, employee number) or the impression of a voice, the strength of MFA is cancelled out at this desk. If, on the other hand, resets, re-enrollment, and transfers require phishing-resistant identity confirmation that is independent of the operator's judgment (approval on a registered FIDO authenticator, a callback to a known contact, approval by a manager), the caller's claims alone cannot complete the procedure (Cannot). The blast radius is every account {{nodeName}} can reset or change, and the privileges those accounts hold."
+    mitigation: "[Foundation] Do not carry out password resets, MFA re-enrollment, transfers, or contact changes on knowledge-based answers or the impression of a voice alone. Verify requests by calling back the registered contact. [Enterprise] Roll out phishing-resistant MFA (FIDO2/WebAuthn, passkeys) to all users, and require approval on a registered authenticator, in person, or by a manager for any reset. Monitor reset and re-enrollment events and correlate them with suspicious sign-ins that follow. Train operators on techniques that include cloned voices. [Advanced] Remove the path by which operators can reset credentials, replacing it with self-service recovery using hardware-bound credentials. Put high-risk procedures under dual approval so no single person's judgment completes them."
+    references:
+      "0":
+        title: "CISA / FBI Cybersecurity Advisory AA23-320A - Scattered Spider"
+
+  voice-sts-guardrail-gap-001:
+    category: "Defense Evasion"
+    name: "Guardrail blind spots in speech-to-speech models"
+    description: "{{nodeName}} takes speech in and produces speech out directly. On the input side, jailbreaks carried by elements that never appear in a transcript (manner of speaking, tone, prosody, switching languages) cannot be detected by text guardrails that inspect the transcript. Research shows that safety alignment obtained in text carries over to speech input only partially. On the output side, when checks run on the output transcript in batches of a fixed number of characters, the audio can already have been played to the other party before the check completes (Can). An attacker can draw out prohibited responses or have sensitive information read aloud during the call. If, on the other hand, high-risk responses and operations do not depend on the audio guardrail verdict and are stopped by limited privileges and out-of-band approval, getting past the checks does not lead to actual harm (Cannot). The blast radius is the information {{nodeName}} can read aloud during a call and the operations it can invoke."
+    mitigation: "[Foundation] Do not make text guardrails the only defense for speech input and output. Minimize the information the speech model can consult and the operations it can perform during a call, and require out-of-band approval rather than completing transfers or changes to registered details on a spoken response alone. [Enterprise] Choose a configuration that completes checks before output audio is played (buffer audio before playback, or shorten the check interval), and make the latency trade-off an explicit decision. Record both audio and transcripts for input and output so they can be inspected afterwards, and red-team with spoken jailbreaks, including manner of speaking and multiple languages. [Advanced] For high-risk business flows, switch to a cascaded STT → LLM → TTS configuration so checks complete at the text stage before speech is generated. Add detectors that take the audio itself as input."
+    references:
+      "0":
+        title: "LiteLLM - Realtime Guardrails (attacks that do not appear in a transcript cannot be stopped by text guardrails)"
+      "1":
+        title: "OpenAI Agents SDK - Realtime guide (timing of output guardrail checks)"
+      "2":
+        title: "arXiv 2504.01094 - Spoken jailbreaks against speech language models (research paper)"
+      "3":
+        title: "EMNLP 2025 - Transfer of text safety alignment to speech (research paper)"
+
+  voice-stt-adversarial-audio-001:
+    category: "Tampering"
+    name: "Misrecognition in speech recognition through adversarial audio"
+    description: "{{nodeName}} transcribes whatever audio reaches it. An attacker can mix adversarial audio into a call or the surrounding sound, such as modulation onto inaudible ultrasound, commands embedded in music, or small perturbations designed to be transcribed as a chosen string, and insert arbitrary instructions into the transcript without listeners noticing (Can). Where the transcript becomes input to a downstream LLM or agent or triggers an operation, those instructions are executed as they are. If, on the other hand, high-risk operations are never executed on the transcript alone, and preprocessing that strips components outside the audible band is combined with a confirmation step, misrecognition does not translate into an operation (Cannot). The blast radius is the downstream processing that accepts {{nodeName}}'s transcript as input, and the operations that processing can execute."
+    mitigation: "[Foundation] Do not execute high-risk operations on the transcript alone. Read the content back for confirmation, or ask for out-of-band approval, before the operation. [Enterprise] Add preprocessing that removes components outside the audible band from input audio, and introduce detection of adversarial audio. Record transcripts together with the original audio so they can be compared afterwards. [Advanced] Evaluate robustness with adversarial audio on a regular schedule, and treat disagreement between the results of multiple speech recognition models as an anomaly."
+
+  voice-stt-spoken-prompt-injection-001:
+    category: "Prompt Injection"
+    name: "Prompt injection through speech"
+    description: "{{nodeName}} receives speech recognition transcripts as input. The person on the call only has to read aloud a known text jailbreak or prompt injection, and it reaches {{nodeName}} as an instruction by way of the transcript (Can). The phone is an entry point reachable by anonymous callers, and this input path is open even before identity is confirmed. If, on the other hand, transcripts are treated like text input as untrusted user input with input and output guardrails applied, and the operations {{nodeName}} can invoke during a call are minimized with high-risk operations requiring out-of-band approval, a successful injection does not lead to actual harm (Cannot). The blast radius is the information {{nodeName}} can consult and the operations it can execute during a call."
+    mitigation: "[Foundation] Treat transcripts as untrusted user input, and apply the same input and output guardrails as the text channel. Separate the system prompt from the caller's speech structurally. [Enterprise] In sessions arriving over a call, restrict the tools and the reference scope available to the LLM or agent in stages, before and after identity confirmation. Require out-of-band approval for high-risk operations, and keep transcripts and responses in the audit log. [Advanced] Run continuous red-team evaluations that include spoken jailbreaks, and feed attack patterns specific to the phone channel into detection."
+    references:
+      "1":
+        title: "arXiv 2502.00735 - Spoken jailbreaks and injection against voice agents (research paper)"
+
+  voice-pbx-toll-fraud-001:
+    category: "Elevation of Privilege"
+    name: "Toll fraud through misuse of the telephony platform"
+    description: "If {{nodeName}}'s management interface, SIP extension accounts, or features that can place outside calls (forwarding from voicemail, relaying outbound calls) are reachable with weak authentication or missing patches, an attacker can take over {{nodeName}} and have it place large numbers of calls to international or premium-rate numbers, leaving the charges with the organization (Can). The calls are often concentrated at night and on holidays, so losses build up until the bill arrives. If the configuration is tampered with, voicemail can be listened to and call forwarding destinations rewritten. If, on the other hand, destinations not used by the business (international and premium-rate numbers) are blocked in advance, and the management interface and SIP are logically separated from the data network and protected with strong authentication, attempted takeovers do not result in costly calls (Cannot). The blast radius is the call charges on every line that can dial out through {{nodeName}}, and the forwarding and voicemail of every call {{nodeName}} handles."
+    mitigation: "[Foundation] Block international and premium-rate destinations the business does not need, using an allow-list. Change default passwords on the management interface and extension accounts, and disable unused outbound relay and remote forwarding features. [Enterprise] Logically separate voice from the data network with VLANs or similar, and place a session border controller or firewall at the SIP trunk boundary. Restrict access to the management interface to the management network and MFA, and apply patches on a regular schedule. Monitor anomalies in call volume and destinations, and stop outbound calling automatically when a threshold is exceeded. [Advanced] Use certificate-based authentication for extensions and trunks, and track configuration changes through change management and audit logs. Coordinate with the carrier's fraud detection and outbound call restrictions."
+
+  voice-pbx-caller-id-spoofing-001:
+    category: "Spoofing"
+    name: "Caller ID spoofing"
+    description: "{{nodeName}} receives calls from outside. The caller ID is set freely by the calling side, and on paths where calls are not authenticated (signed and verified) a false number can be displayed as-is. An attacker can call in under the number of a registered customer or business partner, pass IVR or operator procedures that treat a matching number as identity confirmation, and undermine the reliability of callback verification (Can). If, on the other hand, the caller ID is never used as grounds for identity confirmation, is kept as a hint for routing and record-keeping only, and the call authentication result (STIR/SHAKEN verification status) is treated as reference information, a spoofed number alone does not get through a procedure (Cannot). The blast radius is every procedure that proceeds on a matching caller ID alone."
+    mitigation: "[Foundation] Do not use caller ID as an identity confirmation factor. Identify and retire procedures that accept inquiries or changes on a matching number. [Enterprise] Receive the call authentication result (STIR/SHAKEN verification status) available from the carrier, and show it on operator screens and in risk decisions. Confirm identity with another factor (approval in a registered app, for example). [Advanced] Apply call authentication to the organization's own outbound calls as well, so customers can confirm a legitimate call from the organization."
+
+  voice-line-webhook-signature-001:
+    category: "Spoofing"
+    name: "Forged events injected through an unverified LINE webhook signature"
+    description: "{{nodeName}}'s Messaging API sends user messages and events to the organization's receiver by webhook. If the receiver does not verify the signature in the x-line-signature header (HMAC-SHA256 keyed with the channel secret), an attacker can send forged events with any user ID and any message straight to the receiving URL, and drive the agent or business processing while posing as other users (Can). LINE does not publish the source IP addresses of webhooks, so IP restriction cannot prevent this. If, on the other hand, the receiver verifies the signature over the request body and discards mismatching requests before processing, an attacker without the channel secret cannot forge events (Cannot). The blast radius is every process triggered by the webhook, and the data of every user reachable from it."
+    mitigation: "[Foundation] At the webhook receiver, verify x-line-signature against the unmodified request body and the channel secret, and do not process requests that do not match. [Enterprise] Compare signatures in constant time and monitor verification failures. Keep the channel secret in a secret management service. Deduplicate redelivered events by webhookEventId to prevent double processing. [Advanced] Separate webhook reception into a dedicated component, and pass only events that have passed signature verification on to the downstream agent or business processing."
+    references:
+      "1":
+        title: "LINE Developers - Tips: verifying webhook signatures (2026-06-18)"
+
+  voice-line-channel-takeover-001:
+    category: "Spoofing"
+    name: "Impersonated messages through takeover of a LINE official account"
+    description: "{{nodeName}} sends messages to customers as the organization's official account. If the channel access token or channel secret leaks from source code, configuration files, or logs, an attacker can send messages to every friend as the organization's official account. Long-lived channel access tokens do not expire, so they stay usable until the leak is noticed. If the LINE Business ID used to reach the management console is protected only by a password, the whole account can be taken over by credential stuffing (a real case occurred in August 2024) (Can). Customers trust messages from the official account, which makes it an effective lure for phishing. If, on the other hand, tokens with an expiry are used, secrets are kept in a dedicated store, and two-step verification is required on the management account, a leaked token becomes unusable within a short period and a reused password alone does not get into the console (Cannot). The blast radius is every friend of {{nodeName}} and the trust placed in the official account."
+    mitigation: "[Foundation] Enable two-step verification on the LINE Business ID and keep the set of administrators to a minimum. Keep the channel access token and channel secret out of source code and configuration files, in a secret management service. [Enterprise] Stop using long-lived channel access tokens that never expire, and move to tokens with a specified expiry (v2.1) or short-lived tokens. Define the procedure for issuing and reissuing tokens so they can be reissued at once when a leak is suspected. Monitor anomalies in sending volume. [Advanced] Make the token obtainable only by a dedicated sending component, so agents and business processing can call the sending API only indirectly."
+    references:
+      "2":
+        title: "LINE ヤフー株式会社 - お知らせ (LY Corporation notice, 2024-08: credential stuffing against LINE Business ID)"

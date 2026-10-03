@@ -1,0 +1,384 @@
+# 音声 AI・コンタクトセンター系ノード型（PBX / STT / STS / TTS / AVATAR /
+# HUMAN_OPERATOR / VOICEPRINT_AUTH / VOICE_RECORDING / LINE）の固有脅威。
+#
+# 出典（一次情報のみをルールの根拠とする。二次情報だけで裏付く事実は本文に用いない）:
+#   - NIST SP 800-63B-4, "Digital Identity Guidelines: Authentication and
+#     Authenticator Management"（§3.2.3 生体認証の利用：声による生体照合は使用してはならない）。
+#   - NIST SP 800-58, "Security Considerations for Voice Over IP Systems"。
+#   - NIST AI 600-1, "Artificial Intelligence Risk Management Framework:
+#     Generative Artificial Intelligence Profile"（声・肖像の無許可模倣、合成コンテンツ）。
+#   - CISA / FBI, Cybersecurity Advisory AA23-320A "Scattered Spider"。
+#   - FinCEN Alert FIN-2024-Alert004（ディープフェイクを用いた金融機関への詐欺）。
+#   - FBI IC3 PSA I-051525（AI 音声を用いた政府高官なりすまし）。
+#   - FTC Consumer Alert（2024-04, 有害な音声クローンへの対抗）。
+#   - FCC, Call Authentication Trust Anchor（STIR/SHAKEN）。
+#   - Europol, Cyber-Telecom (CyTel) Crime fraud intelligence notification（通話料詐欺）。
+#   - 個人情報保護委員会「個人情報の保護に関する法律についてのガイドライン」に関する Q&A 1-11
+#     （声紋＝個人識別符号）。
+#   - 香港特別行政区政府 立法会答弁（2024-06-26、ビデオ会議ディープフェイク詐欺）。
+#   - MITRE ATLAS（AML.T0043 / AML.T0051 / AML.T0052.001 / AML.T0088）。
+#   - LINE Developers（Messaging API の Webhook 署名検証・チャネルアクセストークン・開発ガイドライン）、
+#     LINE ヤフー株式会社のお知らせ（2024-08、LINE ビジネス ID へのパスワードリスト攻撃）。
+#   - 学術論文：DolphinAttack（CCS 2017）、CommanderSong（USENIX Security 2018）、
+#     Carlini & Wagner "Audio Adversarial Examples"（2018）、音声エージェントへの
+#     音声経由ジェイルブレイク／インジェクション（arXiv 2502.00735）、音声言語モデルの
+#     安全性アライメント転移（arXiv 2504.01094）。
+#   - 実装ドキュメント：LiteLLM Realtime Guardrails、OpenAI Agents SDK Realtime guide
+#     （テキスト前提のガードレールの限界と出力検査のタイミング）。
+#   本文は逐語転載せず日本語要約のみ。
+#
+#   SPDX-License-Identifier: Apache-2.0
+#   ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+#   出典の帰属表示は NOTICE を参照。
+#
+# 重複回避方針:
+#   - 音声・SIP の平文伝送による盗聴 → stride-edge-plain-encryption-001
+#     （canonicalId: plaintext-transmission）でカバー済み。PBX の盗聴は本ファイルで扱わない。
+#   - 発話が文字起こしされて LLM / AGENT に入るプロンプトインジェクションは、話者自身が
+#     攻撃者である「直接」型として owasp-llm01-prompt-injection 系（canonicalId:
+#     direct-prompt-injection）と同義。本ファイルは STT からの入力経路があるときだけ発火する
+#     ルールを同じ canonicalId で追加し、提示層で 1 枚に畳み込む（新しいカードは増えない）。
+#   - STT への敵対的音声は「微小な摂動で誤認識を誘発する」点で stride-ai の回避攻撃
+#     （canonicalId: adversarial-evasion、LLM ノード）と同義。subject が STT のため別カードになるが
+#     canonicalId は再利用する。
+#   - 利用者アカウントの乗っ取り（USER ノード視点、user-account-takeover）と、有人窓口を
+#     介した MFA・パスワード再設定（HUMAN_OPERATOR ノード視点）は subject も対策も異なるため別グループ。
+#   - 声紋認証の突破（認証の仕組みの欠陥）と声のデータの漏えい・目的外利用（保管データの
+#     性質）は別グループ。合成音声・映像の悪用（TTS / AVATAR の能力側）とも別グループ。
+#   - STS への直接プロンプトインジェクション・ジェイルブレイクそのものは、既存の
+#     owasp-llm01-prompt-injection-001（direct-prompt-injection）と
+#     atlas-aml-t0054-llm-jailbreak-001（llm-jailbreak）の対象型に STS を加えて扱う。
+#     本ファイルの STS ルールは「テキスト前提の検査が音声に届かない」検知の欠落を扱い、別グループ。
+#   - IVR 固有の脅威（口座の存在確認・認証前の情報開示）は二次情報しか無いためルール化しない。
+#     着信の入口のなりすましは PBX 側の発信者番号ルールで扱う。
+#   - 既存の DOCUMENTS 型向けルールは CREDENTIAL の静的保管（credential-sprawl）のみで、
+#     PERSONAL_INFO 等の個人情報ルールは存在しない。VOICE_RECORDING は本ファイルの
+#     声のデータ漏えいルールで扱い、既存ルールの対象型は変更しない。
+#
+# mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
+# description は Can/Cannot ペアと blast radius を意識して記述する。
+
+schemaVersion: 1
+
+rules:
+  # ── VOICEPRINT_AUTH: 音声クローンによる声紋認証の突破（intrinsic）──────
+  - id: voice-voiceprint-clone-bypass-001
+    canonicalId: voiceprint-synthetic-voice-bypass
+    framework: AI
+    category: "Spoofing"
+    name: "音声クローンによる声紋認証の突破"
+    severity: High
+    description: "{{nodeName}} は声の特徴だけで本人を確認している。攻撃者は SNS の動画・留守電・過去の通話など数分程度の公開音声から本人の声を合成し、電話口で再生または合成音声のまま応答させることで、照合に合格して本人として口座操作・個人情報の照会・登録情報の変更に進める（Can）。生存確認の問いかけにも合成音声がリアルタイムに応答しうるため、録音再生対策だけでは防げない。NIST SP 800-63B-4 は声による生体照合を認証に使用してはならない（SHALL NOT）と定めている。一方、声紋を不正検知のリスク信号にとどめ、本人確認と高リスク操作の承認をフィッシング耐性のある別要素（登録済み端末の FIDO 認証器・パスキー等）で必須にしていれば、声の合成だけでは認証を通過できない（Cannot）。blast radius は {{nodeName}} で本人確認を済ませられる全アカウントと、その確認だけで実行できる全操作。"
+    mitigation: "[Foundation] 声紋を単独の認証要素にしない。口座操作・登録情報の変更・送金などの高リスク操作は、声紋の照合結果だけでは承認しない運用を明文化する。 [Enterprise] 本人確認をフィッシング耐性のある MFA（FIDO2/WebAuthn・パスキー）へ移し、電話チャネルからの高リスク操作は登録済みアプリでの帯域外承認を必須にする。声紋は不正検知のリスク信号としてのみ使い、照合結果と後続操作を監査ログに残す。 [Advanced] 声紋による認証そのものを廃止し、生存確認や合成音声検知に依存しない認証経路へ置き換える。電話チャネルで完結できる操作を、合成音声で突破されても被害が限定される範囲に縮小する。"
+    appliesTo:
+      kind: node
+      nodeType: VOICEPRINT_AUTH
+      # 声の合成で照合を通過できるのは声紋認証という方式自体の性質で、接続関係に依存しない。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+    references:
+      - title: "NIST SP 800-63B-4 - Digital Identity Guidelines: Authentication and Authenticator Management（§3.2.3 生体認証の利用）"
+        url: "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-63B-4.pdf"
+      - title: "FinCEN Alert FIN-2024-Alert004 - Fraud Schemes Involving Deepfake Media Targeting Financial Institutions"
+        url: "https://www.fincen.gov/system/files/shared/FinCEN-Alert-DeepFakes-Alert508FINAL.pdf"
+      - title: "Vice - How I Broke Into a Bank Account With an AI-Generated Voice（公開事例）"
+        url: "https://www.vice.com/en/article/how-i-broke-into-a-bank-account-with-an-ai-generated-voice/"
+      # MITRE ATLAS に声紋突破の専用 technique は無い。合成音声の生成は AML.T0088 が近い。
+      - title: "MITRE ATLAS AML.T0088 Generate Deepfakes（関連マッピング）"
+        url: "https://atlas.mitre.org/techniques/AML.T0088"
+
+  # ── VOICEPRINT_AUTH / VOICE_RECORDING: 声のデータの漏えい・目的外利用（intrinsic）──
+  - id: voice-biometric-recording-exposure-001
+    canonicalId: voice-biometric-data-exposure
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "声紋・通話録音の漏えいと目的外利用"
+    severity: High
+    description: "{{nodeName}} は声そのものを保持している。声紋認証が保持する声の特徴データは日本の個人情報保護法で個人識別符号に当たり、単体で個人情報になる。通話録音は通話内容に個人情報・機密情報を含むうえ、録音から声紋を抽出できる。攻撃者や権限を持つ内部者が保管先へ到達すると、録音・声紋を一括で持ち出して音声クローンの素材に使い、本人へのなりすまし通話や声紋認証の突破に転用できる（Can）。パスワードと異なり声は漏えい後に変更できないため、被害は長期に及ぶ。また、同意した目的の外で録音から声紋を抽出・利用すること自体が法令違反になりうる。一方、利用目的を特定して同意を得たうえで保存期間を最小化し、保管時の暗号化とアクセス権の職務分離を行い、録音からの声紋抽出を目的の範囲に限定していれば、持ち出せる量と転用の余地は保存期間内・権限内に限られる（Cannot）。blast radius は {{nodeName}} に蓄積された全期間の話者と、その声で保護されている全アカウント。"
+    mitigation: "[Foundation] 録音・声紋の利用目的を特定して通知・同意を取り、目的外の声紋抽出や二次利用を禁止する。保存期間を定めて期限切れのデータを削除し、保管時の暗号化とアクセス権の最小化を行う。 [Enterprise] 録音と声紋テンプレートを業務データから分離して保管し、暗号鍵を鍵管理サービスで分離管理する。参照・ダウンロードを監査ログで追跡し、大量取得を検知する。文字起こし・要約へ転記する個人情報はマスキングする。 [Advanced] 録音の保持を業務上不可欠な通話に限定し、声紋テンプレートは原音声を復元できない形式でのみ保持する。声の無許可模倣を前提に、漏えい時に影響を受ける本人への通知と、声に依存する認証の停止を手順化する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: VOICEPRINT_AUTH
+        - nodeType: VOICE_RECORDING
+      # 声が生体情報であり変更できないことはデータ自体の性質で、接続関係に依存しない。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "GV.OC-03"
+    references:
+      - title: "個人情報保護委員会 - 「個人情報の保護に関する法律についてのガイドライン」に関する Q&A 1-11（声紋は個人識別符号）"
+        url: "https://www.ppc.go.jp/all_faq_index/faq1-q1-11/"
+      - title: "NIST AI 600-1 - Generative AI Profile（声・肖像の無許可模倣）"
+        url: "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf"
+
+  # ── TTS / AVATAR: 合成音声・映像によるなりすましへの悪用（intrinsic）────
+  - id: voice-synthetic-media-impersonation-001
+    canonicalId: synthetic-media-impersonation
+    framework: AI
+    category: "Spoofing"
+    name: "合成音声・映像によるなりすましへの悪用"
+    severity: Medium
+    description: "{{nodeName}} は人の声（AVATAR の場合は顔と声）を合成する。カスタムボイスや実在人物を模した声・アバターを作れる構成では、その能力やモデルが悪用されると、経営幹部・顧客・自社の応対音声になりすました通話やビデオ会議を作り出せる（Can）。公的機関は、クローン音声による家族・上司・政府高官へのなりすまし通話を警告しており、2024 年には香港でビデオ会議のディープフェイクで幹部を装い多額を送金させた事件が起きている。利用者が自社の合成音声・アバターに慣れるほど、攻撃者の偽物との見分けもつきにくくなる。一方、実在人物の声・肖像の合成を本人の記録された同意に限り、モデルの作成・利用権限を絞り、送金や認証情報の提供を音声・映像だけでは受け付けない運用を利用者と社内に周知していれば、合成だけで不正な指示を通すことはできない（Cannot）。blast radius は {{nodeName}} で作られうる声・姿の本人と、それを信頼して行動する顧客・従業員。"
+    mitigation: "[Foundation] 実在人物の声・肖像を合成する場合は本人の同意を記録し、カスタムボイス・アバターモデルの作成と利用の権限を限定する。顧客と従業員に、電話やビデオで送金・認証情報・パスワード再設定を求めることは無いと周知し、そうした依頼は既知の連絡先へかけ直して確認する手順を定める。 [Enterprise] 生成した音声・映像に出所を示す情報（電子透かし・来歴メタデータ）を付与し、合成モデルの利用を監査ログで追跡する。社内の送金・権限変更は、音声・映像による依頼だけでは実行できない二者承認にする。 [Advanced] 合成コンテンツの来歴を検証できる仕組みを社外向けの公式チャネルに組み込み、自社を名乗る合成音声・映像を利用者が確認できるようにする。実在人物のモデルは、本人の同意撤回時に確実に廃棄できる形で管理する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: TTS
+        - nodeType: AVATAR
+      # 声・姿を合成できることは型自体の能力で、接続関係に依存しない。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AT-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "MITRE ATLAS AML.T0052.001 Deepfake-Assisted Phishing"
+        url: "https://atlas.mitre.org/techniques/AML.T0052.001"
+      - title: "MITRE ATLAS AML.T0088 Generate Deepfakes"
+        url: "https://atlas.mitre.org/techniques/AML.T0088"
+      - title: "FTC Consumer Alert - Fighting back against harmful voice cloning（2024-04）"
+        url: "https://consumer.ftc.gov/consumer-alerts/2024/04/fighting-back-against-harmful-voice-cloning"
+      - title: "FBI IC3 PSA I-051525 - Senior US Officials Impersonated in Malicious Messaging Campaign"
+        url: "https://www.ic3.gov/PSA/2025/PSA250515"
+      - title: "香港特別行政区政府 - 立法会答弁（2024-06-26、ビデオ会議のディープフェイク詐欺）"
+        url: "https://www.info.gov.hk/gia/general/202406/26/P2024062600192.htm"
+      - title: "NIST AI 600-1 - Generative AI Profile（合成コンテンツの来歴）"
+        url: "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf"
+
+  # ── HUMAN_OPERATOR: 電話のソーシャルエンジニアリングによる MFA・パスワード再設定 ──
+  - id: voice-operator-social-engineering-reset-001
+    canonicalId: phone-social-engineering-credential-reset
+    framework: STRIDE
+    category: "Spoofing"
+    name: "電話のソーシャルエンジニアリングによる MFA・パスワード再設定"
+    severity: High
+    description: "{{nodeName}} は電話の相手の申告をもとに本人確認や手続きを行う。攻撃者は従業員・顧客・上司を名乗り、事前に集めた個人情報やクローン音声を使って、パスワードの再設定・MFA 認証器の再登録・送金や情報提供を依頼し、正規の手続きとして実行させられる（Can）。CISA・FBI は、ヘルプデスクへの電話で MFA を再設定させてアカウントを奪い、ランサムウェアの展開まで進む攻撃を報告している。オペレーターが知識情報（生年月日・社員番号等）や声の印象で本人と判断する限り、MFA の強度はこの窓口で無効化される。一方、再設定・再登録・送金には、オペレーターの判断と独立したフィッシング耐性のある本人確認（登録済み FIDO 認証器での承認・既知の連絡先への折り返し・上長の承認）を必須にしていれば、電話の申告だけでは手続きを完了させられない（Cannot）。blast radius は {{nodeName}} が再設定・変更できる全アカウントと、それらが持つ権限。"
+    mitigation: "[Foundation] パスワード再設定・MFA 再登録・送金・連絡先変更を、電話口の知識情報や声の印象だけでは実行しない手順にする。依頼を受けたら登録済みの連絡先へ折り返して確認する。 [Enterprise] 全利用者にフィッシング耐性のある MFA（FIDO2/WebAuthn・パスキー）を展開し、再設定は登録済み認証器による承認か対面・上長承認を必須にする。再設定・再登録のイベントを監視し、直後の不審なサインインと相関させる。オペレーターにクローン音声を含む手口を訓練する。 [Advanced] オペレーターが資格情報を再設定できる経路自体を廃止し、ハードウェアに束縛された資格情報によるセルフサービス復旧へ置き換える。高リスク手続きを二者承認にし、一人の判断で完了しない構成にする。"
+    appliesTo:
+      kind: node
+      nodeType: HUMAN_OPERATOR
+      # 外部からの通話・来訪者と接点を持つとき成立する。電話基盤・利用者・外部主体との接続を前提にする。
+      connection:
+        peerType: [PBX, USER, EXTERNAL_ENTITY, SMARTPHONE]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AT-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-02"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+    references:
+      - title: "CISA / FBI Cybersecurity Advisory AA23-320A - Scattered Spider"
+        url: "https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-320a"
+      - title: "FinCEN Alert FIN-2024-Alert004 - Fraud Schemes Involving Deepfake Media Targeting Financial Institutions"
+        url: "https://www.fincen.gov/system/files/shared/FinCEN-Alert-DeepFakes-Alert508FINAL.pdf"
+      - title: "FBI IC3 PSA I-051525 - Senior US Officials Impersonated in Malicious Messaging Campaign"
+        url: "https://www.ic3.gov/PSA/2025/PSA250515"
+
+  # ── STS: テキスト前提のガードレールが音声を検査できない ────────────
+  - id: voice-sts-guardrail-gap-001
+    canonicalId: speech-native-guardrail-gap
+    framework: AI
+    category: "Defense Evasion"
+    name: "音声対音声モデルでのガードレールの検査漏れ"
+    severity: High
+    description: "{{nodeName}} は音声を直接入力し、音声を直接出力する。入力側では、話し方・口調・韻律・言語の切り替えといった文字起こしに現れない要素で行うジェイルブレイクを、文字起こしを検査するテキスト前提のガードレールは検知できない。研究では、テキストで得た安全性の調整が音声入力へは部分的にしか引き継がれないことが示されている。出力側では、検査が出力の文字起こしを一定の文字数ごとにまとめて行う方式の場合、検査が終わる前に音声がすでに相手へ再生されうる（Can）。攻撃者は通話の中で、禁止された応答や機微情報の読み上げを引き出せる。一方、高リスクの応答や操作を音声のガードレール判定に依存させず、権限の制限と帯域外の承認で止めていれば、検査をすり抜けても実害には至らない（Cannot）。blast radius は {{nodeName}} が通話中に読み上げられる情報と、呼び出せる操作の範囲。"
+    mitigation: "[Foundation] テキストのガードレールを音声入出力の唯一の防御にしない。音声モデルが通話中に参照できる情報と実行できる操作を最小化し、送金・登録情報の変更などは音声の応答だけで完了させず帯域外の承認を必須にする。 [Enterprise] 出力音声の再生前に検査を完了させる構成（音声を一時保持してから再生する・検査の間隔を短くする）を選び、遅延とのトレードオフを明示的に判断する。入力と出力の音声と文字起こしの両方を記録して事後検査できるようにし、話し方・多言語を含む音声のジェイルブレイクでレッドチーム評価を行う。 [Advanced] 高リスクの業務フローでは STT → LLM → TTS の段階型構成に切り替え、テキストの段階で検査を完了してから音声を生成する。音声そのものを入力とする検知器を併用する。"
+    appliesTo:
+      kind: node
+      nodeType: STS
+      # 通話経路（電話基盤・利用者等）と接続されているとき発火する（デフォルト接続要件）。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "LiteLLM - Realtime Guardrails（文字起こしに現れない攻撃はテキストのガードレールで防げない）"
+        url: "https://docs.litellm.ai/docs/proxy/guardrails/realtime_guardrails"
+      - title: "OpenAI Agents SDK - Realtime guide（出力ガードレールの検査タイミング）"
+        url: "https://openai.github.io/openai-agents-python/realtime/guide/"
+      - title: "arXiv 2504.01094 - 音声言語モデルへの音声ジェイルブレイク（研究論文）"
+        url: "https://arxiv.org/pdf/2504.01094"
+      - title: "EMNLP 2025 - テキストの安全性アライメントの音声への転移（研究論文）"
+        url: "https://aclanthology.org/2025.emnlp-main.734.pdf"
+      # ガードレール単体依存の一般論（GUARDRAIL ノード視点）は zt-guardrail-* が扱う（別 subject）。
+
+  # ── STT: 敵対的音声による誤認識（intrinsic）────────────────────
+  - id: voice-stt-adversarial-audio-001
+    canonicalId: adversarial-evasion
+    framework: AI
+    category: "Tampering"
+    name: "敵対的音声による音声認識の誤認識"
+    severity: Medium
+    description: "{{nodeName}} は届いた音声をそのまま文字に起こす。攻撃者は人に聞こえない超音波への変調、楽曲への埋め込み、狙った文字列に書き起こされるよう設計した微小な摂動などの敵対的音声を通話や周囲の音に混ぜ、聞き手が気づかないまま任意の指示を文字起こしに入れられる（Can）。文字起こしが後段の LLM・エージェントの入力や操作の引き金になる構成では、その指示がそのまま実行される。一方、文字起こしだけを根拠に高リスク操作を実行せず、可聴帯域外の成分を除去する前処理と確認手順を置いていれば、誤認識が起きても操作には結び付かない（Cannot）。blast radius は {{nodeName}} の文字起こしを入力として受け付ける後段の処理と、その処理が実行できる操作。"
+    mitigation: "[Foundation] 文字起こしの結果だけで高リスク操作を実行しない。操作の前に内容を読み上げて確認するか、帯域外の承認を求める。 [Enterprise] 入力音声から可聴帯域外の成分を除去する前処理を入れ、敵対的音声の検知を導入する。文字起こしと原音声を記録し、事後に照合できるようにする。 [Advanced] 敵対的音声を用いたロバスト性評価を定期的に行い、複数の音声認識モデルの結果の不一致を異常として扱う。"
+    appliesTo:
+      kind: node
+      nodeType: STT
+      # 敵対的音声で誤認識させられることは音声認識モデル自体の性質で、接続関係に依存しない。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-ai-rmf
+        ref: "MEASURE 2.7"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "MITRE ATLAS AML.T0043 Craft Adversarial Data"
+        url: "https://atlas.mitre.org/techniques/AML.T0043"
+      - title: "DolphinAttack: Inaudible Voice Commands（ACM CCS 2017）"
+        url: "https://arxiv.org/abs/1708.09537"
+      - title: "CommanderSong: A Systematic Approach for Practical Adversarial Voice Recognition（USENIX Security 2018）"
+        url: "https://www.usenix.org/conference/usenixsecurity18/presentation/yuan-xuejing"
+      - title: "Carlini & Wagner - Audio Adversarial Examples: Targeted Attacks on Speech-to-Text（2018）"
+        url: "https://arxiv.org/abs/1801.01944"
+
+  # ── LLM / AGENT ← STT: 発話によるプロンプトインジェクション（経路依存）──
+  - id: voice-stt-spoken-prompt-injection-001
+    canonicalId: direct-prompt-injection
+    framework: AI
+    category: "Prompt Injection"
+    name: "発話によるプロンプトインジェクション"
+    severity: Critical
+    description: "{{nodeName}} は音声認識の文字起こしを入力として受け取っている。通話の相手は、テキストで知られているジェイルブレイクやプロンプトインジェクションの文面をそのまま読み上げるだけで、文字起こしを経由して {{nodeName}} への指示として届けられる（Can）。電話は匿名の相手でも到達できる入口であり、認証前の段階からこの入力経路が開いている。一方、文字起こしをテキスト入力と同じく信頼できない利用者入力として扱い、入出力のガードレールを適用したうえで、{{nodeName}} が通話中に呼び出せる操作を最小化し高リスク操作を帯域外の承認にしていれば、注入に成功しても実害には至らない（Cannot）。blast radius は {{nodeName}} が通話中に参照できる情報と実行できる操作。"
+    mitigation: "[Foundation] 文字起こしを信頼できない利用者入力として扱い、テキストのチャネルと同じ入出力ガードレールを適用する。システムプロンプトと通話の発話を構造的に分離する。 [Enterprise] 通話経由のセッションで LLM・エージェントが使えるツールと参照範囲を、本人確認の前後で段階的に制限する。高リスク操作は帯域外の承認を必須にし、文字起こしと応答を監査ログに残す。 [Advanced] 音声経由のジェイルブレイクを含むレッドチーム評価を継続的に行い、通話チャネル固有の攻撃パターンを検知に反映する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: LLM
+        - nodeType: AGENT
+      # 音声認識の出力が対象ノードへ流れ込む経路があるときのみ発火する。
+      connection:
+        direction: inbound
+        peerType: [STT]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "MITRE ATLAS AML.T0051 LLM Prompt Injection"
+        url: "https://atlas.mitre.org/techniques/AML.T0051"
+      - title: "arXiv 2502.00735 - 音声エージェントへの音声経由のジェイルブレイク・インジェクション（研究論文）"
+        url: "https://arxiv.org/abs/2502.00735"
+      # テキスト入力の直接プロンプトインジェクション（OWASP LLM01）と同じ canonicalId で提示層マージする。
+
+  # ── PBX: 通話料詐欺（toll fraud / IRSF）──────────────────────
+  - id: voice-pbx-toll-fraud-001
+    canonicalId: pbx-toll-fraud
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "電話基盤の不正利用による通話料詐欺"
+    severity: High
+    description: "{{nodeName}} の管理画面・SIP の内線アカウント・外部から発信できる機能（ボイスメールからの転送・外線発信の中継等）が弱い認証やパッチ未適用のまま到達可能だと、攻撃者は {{nodeName}} を乗っ取って国際電話や高額番号へ大量に発信させ、通話料を自社に負担させられる（Can）。発信は夜間・休日に集中して行われることが多く、請求で初めて気付くまでに損害が膨らむ。設定を改ざんされれば、ボイスメールの盗聴や着信の転送先の書き換えも起きうる。一方、業務で使わない発信先（国際・高額番号）をあらかじめ遮断し、管理インターフェースと SIP をデータ網から論理的に分離して強い認証で保護していれば、乗っ取りを試みても高額な発信は成立しない（Cannot）。blast radius は {{nodeName}} 経由で発信できる回線の通話料と、{{nodeName}} が扱う全通話の転送・ボイスメール。"
+    mitigation: "[Foundation] 業務で不要な国際発信・高額番号への発信を許可リスト方式で遮断する。管理画面と内線アカウントの既定パスワードを変更し、使わない外線中継・リモート転送機能を無効化する。 [Enterprise] 音声系をデータ網から VLAN 等で論理分離し、SIP トランクの境界にセッションボーダーコントローラやファイアウォールを置く。管理インターフェースへのアクセスを管理用ネットワークと MFA に限定し、パッチを定期適用する。発信量・発信先の異常を監視し、閾値超過時に自動で発信を止める。 [Advanced] 内線・トランクの認証を証明書ベースにし、設定変更を変更管理と監査ログで追跡する。通信事業者側の不正検知・発信制限と連携する。"
+    appliesTo:
+      kind: node
+      nodeType: PBX
+      # 外部回線・内線・管理端末のいずれかと接続されているとき発火する（デフォルト接続要件）。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-01"
+    references:
+      - title: "NIST SP 800-58 - Security Considerations for Voice Over IP Systems"
+        url: "https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-58.pdf"
+      - title: "Europol - Cyber-Telecom (CyTel) Crime fraud intelligence notification"
+        url: "https://www.europol.europa.eu/sites/default/files/documents/cytel_fraud_intelligence_notification.pdf"
+      # 音声・SIP の平文伝送による盗聴は stride-edge-plain-encryption-001 が扱う（別 canonicalId）。
+
+  # ── PBX: 発信者番号のなりすまし（外部からの着信経路）────────────────
+  - id: voice-pbx-caller-id-spoofing-001
+    canonicalId: caller-id-spoofing
+    framework: STRIDE
+    category: "Spoofing"
+    name: "発信者番号のなりすまし"
+    severity: Medium
+    description: "{{nodeName}} は外部からの着信を受けている。発信者番号は発信側が自由に設定でき、通話の認証（署名と検証）が行われていない経路では偽の番号をそのまま表示できる。攻撃者は登録済みの顧客や取引先の番号を名乗って着信させ、番号の一致を本人確認として扱う IVR・オペレーターの手続きを通過したり、折り返し確認の信頼性を損なったりできる（Can）。一方、発信者番号を本人確認の根拠に使わず、番号は振り分けと記録の目安にとどめ、通話の認証結果（STIR/SHAKEN の検証状態）を参考情報として扱っていれば、番号の偽装だけでは手続きを通過できない（Cannot）。blast radius は発信者番号の一致だけで進められる全手続き。"
+    mitigation: "[Foundation] 発信者番号を本人確認の要素として使わない。番号の一致で照会・変更を受け付けている手続きを洗い出して廃止する。 [Enterprise] 通信事業者から得られる通話の認証結果（STIR/SHAKEN の検証状態）を受け取り、オペレーター画面やリスク判定に表示する。本人確認は別の要素（登録済みアプリでの承認等）で行う。 [Advanced] 自社からの発信にも通話の認証を適用し、顧客が自社からの正規の着信を確認できるようにする。"
+    appliesTo:
+      kind: node
+      nodeType: PBX
+      # 外部（利用者・外部主体・スマートフォン）から着信する経路があるときのみ発火する。
+      connection:
+        direction: inbound
+        peerType: [USER, EXTERNAL_ENTITY, SMARTPHONE]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+    references:
+      - title: "FCC - Call Authentication Trust Anchor（STIR/SHAKEN）"
+        url: "https://www.fcc.gov/call-authentication"
+
+  # ── LINE: Webhook 署名の未検証による偽イベント投入（経路依存）─────────
+  - id: voice-line-webhook-signature-001
+    canonicalId: webhook-signature-verification-gap
+    framework: STRIDE
+    category: "Spoofing"
+    name: "LINE Webhook の署名未検証による偽イベントの投入"
+    severity: High
+    description: "{{nodeName}} の Messaging API は利用者の発言やイベントを Webhook で自社側の受信先へ送る。受信先が x-line-signature ヘッダーの署名（チャネルシークレットを鍵とする HMAC-SHA256）を検証していないと、攻撃者は受信 URL へ任意の利用者 ID・任意の発言を含む偽のイベントを直接送り、他の利用者を装ってエージェントや業務処理を動かせる（Can）。LINE は Webhook の送信元 IP アドレスを公開していないため、IP 制限では防げない。一方、受信先がリクエスト本文の署名を検証し、不一致のリクエストを処理前に破棄していれば、チャネルシークレットを持たない攻撃者はイベントを偽造できない（Cannot）。blast radius は Webhook を起点に動く全処理と、そこから参照できる全利用者のデータ。"
+    mitigation: "[Foundation] Webhook の受信先で x-line-signature の署名を、加工前のリクエスト本文とチャネルシークレットで検証し、一致しないリクエストは処理しない。 [Enterprise] 署名の比較を定数時間で行い、検証の失敗を監視する。チャネルシークレットをシークレット管理サービスで保管する。再送されたイベントは webhookEventId で重複を排除し、二重処理を防ぐ。 [Advanced] Webhook の受信を専用のコンポーネントに分離し、署名検証を通過したイベントだけを後段のエージェント・業務処理へ渡す構成にする。"
+    appliesTo:
+      kind: node
+      nodeType: LINE
+      # Webhook は LINE から自社側へ向かう経路で成立する。LINE を起点とする出力エッジがあるときのみ発火する。
+      connection:
+        direction: outbound
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+    references:
+      - title: "LINE Developers - Verify webhook signature"
+        url: "https://developers.line.biz/en/docs/messaging-api/verify-webhook-signature/"
+      - title: "LINE Developers - Tips: Webhook の署名検証（2026-06-18）"
+        url: "https://developers.line.biz/en/tips/2026/06/18/verify-webhook-signature/"
+      - title: "LINE Developers - Receive messages (webhook)"
+        url: "https://developers.line.biz/en/docs/messaging-api/receiving-messages/"
+
+  # ── LINE: チャネル資格情報の漏えい・管理アカウント乗っ取りによるなりすまし送信 ──
+  - id: voice-line-channel-takeover-001
+    canonicalId: messaging-channel-account-takeover
+    framework: STRIDE
+    category: "Spoofing"
+    name: "LINE 公式アカウントの乗っ取りによるなりすまし送信"
+    severity: High
+    description: "{{nodeName}} は自社の公式アカウントとして顧客にメッセージを送る。チャネルアクセストークンやチャネルシークレットがソースコード・設定ファイル・ログから漏えいすると、攻撃者は自社の公式アカウントとして友だち全員にメッセージを送れる。長期のチャネルアクセストークンは失効しないため、漏えいに気付くまで使われ続ける。管理画面に入る LINE ビジネス ID がパスワードだけで守られていれば、パスワードリスト攻撃でアカウントごと乗っ取られる（2024 年 8 月に実例）（Can）。顧客は公式アカウントからのメッセージを信頼するため、フィッシングへの誘導の効果が高い。一方、有効期限付きのトークンを使ってシークレットを専用の保管先に置き、管理アカウントに二段階認証を必須にしていれば、漏えいしたトークンは短期間で使えなくなり、パスワードの使い回しだけでは管理画面に入れない（Cannot）。blast radius は {{nodeName}} の全友だちと、公式アカウントの信頼。"
+    mitigation: "[Foundation] LINE ビジネス ID に二段階認証を設定し、管理者の範囲を最小にする。チャネルアクセストークンとチャネルシークレットをソースコード・設定ファイルに置かず、シークレット管理サービスで保管する。 [Enterprise] 失効しない長期のチャネルアクセストークンを使わず、有効期限を指定できるトークン（v2.1）または短期のトークンへ移行する。トークンの発行・再発行の手順を定め、漏えいが疑われるときに直ちに再発行できるようにする。送信量の異常を監視する。 [Advanced] トークンを送信用の専用コンポーネントだけが取得できる構成にし、エージェントや業務処理からは送信 API を間接的にしか呼べないようにする。"
+    appliesTo:
+      kind: node
+      nodeType: LINE
+      # 公式アカウントは外部のメッセージング基盤上に存在し、資格情報と管理アカウントの性質は接続関係に依存しない。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+    references:
+      - title: "LINE Developers - Channel access token"
+        url: "https://developers.line.biz/en/docs/basics/channel-access-token/"
+      - title: "LINE Developers - Development guidelines"
+        url: "https://developers.line.biz/en/docs/partner-docs/development-guidelines/"
+      - title: "LINE ヤフー株式会社 - お知らせ（2024-08、LINE ビジネス ID へのパスワードリスト攻撃）"
+        url: "https://www.lycorp.co.jp/ja/privacy-security/announcement/009179/"
