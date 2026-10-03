@@ -3,9 +3,8 @@
 #
 # 背景: §2.22 で MCP_SERVER / SUB_AGENT / MEMORY_STORE の 3 型を component-library に
 #   追加したが、脅威ルール側のカバレッジが薄かった（MCP_SERVER:0 / SUB_AGENT:0 /
-#   MEMORY_STORE:1）。docs/threat-schema.md §4.1 はカスタムルールでの anyOf 展開を
-#   推奨注記するが、「脅威ライブラリの質が競争優位」（docs/strategy.md §5-2）の方針に
-#   従い bundled で持つ。SUB_AGENT への AGENT ルール anyOf 展開は各ソースファイル側で
+#   MEMORY_STORE:1）。カスタムルールでの anyOf 展開でも表現できるが、
+#   同梱ルールとして持つ。SUB_AGENT への AGENT ルール anyOf 展開は各ソースファイル側で
 #   in-place に行い、本ファイルは MCP_SERVER / MEMORY_STORE 固有の新規脅威に限定する。
 #
 # 出典:
@@ -43,7 +42,7 @@
 #   （次タスクで別途実施）。本ファイルは node ルールおよび semantic を使わない edge ルールに限定。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
-# description は Can/Cannot ペアと blast radius を意識して記述する（docs/threat-schema.md §7.5）。
+# description は Can/Cannot ペアと blast radius を意識して記述する。
 
 schemaVersion: 1
 

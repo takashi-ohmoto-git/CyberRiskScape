@@ -8,8 +8,7 @@
 #   - Keep `{{token}}` placeholders exactly as they appear in the original.
 #   - Keep the `[Foundation]` / `[Enterprise]` / `[Advanced]` markup — the maturity
 #     tiers are re-derived from this text.
-#   - Preserve the Can / Cannot pair and the blast radius statement in `description`
-#     (docs/threat-schema.md §7.5).
+#   - Preserve the Can / Cannot pair and the blast radius statement in `description`.
 #   - `references` is keyed by the index in the original array, and only the entries
 #     that need translating are listed. Keep a genuinely Japanese document title as
 #     its original title and add an English gloss; `url` is never translated.

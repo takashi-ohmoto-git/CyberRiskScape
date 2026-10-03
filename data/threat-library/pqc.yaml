@@ -35,7 +35,7 @@
 #   enum 拡張せず、HNDL ルールの description と条件設計（[Plain, TLS] を対象に含める）で表現する。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
-# description は Can/Cannot ペアと blast radius を意識して記述する（docs/threat-schema.md §7.5）。
+# description は Can/Cannot ペアと blast radius を意識して記述する。
 
 schemaVersion: 1
 

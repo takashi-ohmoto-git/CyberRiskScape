@@ -6,8 +6,8 @@
 # ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
 # 出典の帰属表示は NOTICE を参照。
 # 注: ファイル名と id 接頭辞 `maestro-` は歴史的経緯による据え置き。改名は既存プロジェクトの
-#   抑制状態キー（`${ruleId}-${nodeId}`）を孤児化させるため行わない（2026-06-10 判断、
-#   docs/plan.md Execution Log 参照）。出典としての CSA MAESTRO への依存は同日付で解消済み。
+#   抑制状態キー（`${ruleId}-${nodeId}`）を孤児化させるため行わない（2026-06-10 判断）。
+#   出典としての CSA MAESTRO への依存は同日付で解消済み。
 
 schemaVersion: 1
 
@@ -183,7 +183,7 @@ rules:
 
   # ── OWASP AI Exchange 決定木の未充足ギャップ（W6）──────────
   # Lethal Trifecta は単一 edge では表現不能なグラフ横断条件のため、
-  # AGENT 存在時の警告として近似する（docs/plan.md §2 ステップ 13）。
+  # AGENT 存在時の警告として近似する。
   - id: maestro-lethal-trifecta-001
     canonicalId: lethal-trifecta
     framework: AgenticAI
@@ -198,7 +198,7 @@ rules:
       anyOf:
         - nodeType: AGENT
         - nodeType: SUB_AGENT
-      # AGENT 存在時の構成全体への注意喚起として近似（docs/plan.md §2 ステップ 13）。
+      # AGENT 存在時の構成全体への注意喚起として近似。
       # 接続関係に依存しない警告。
       connection:
         required: false

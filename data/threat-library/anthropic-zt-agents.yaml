@@ -6,8 +6,6 @@
 #
 # mitigation のテキストには 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）
 # をインライン markup で示す（スキーマ拡張は次フェーズ）。
-# 概念的背景（Blast Radius / Least Agency / Impossible vs Tedious テスト）は
-# docs/threat-schema.md の補足セクションを参照。
 #
 # SPDX-License-Identifier: Apache-2.0
 # ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
