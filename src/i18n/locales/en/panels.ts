@@ -82,7 +82,7 @@ export const enPanels: Partial<Record<TranslationKey, string>> = {
   'panels.node.identityTier.hardwareBound': 'HardwareBound — HSM / TPM',
   'panels.node.identityTierLabel': 'Identity Tier (how the identity is rooted)',
   'panels.node.agentAttrsNote':
-    'Designer-declared attributes derived from Anthropic\'s "Zero Trust for AI Agents". Unset attributes are planned to be evaluated as worst-case by the future threat engine.',
+    'Designer-declared attributes derived from Anthropic\'s "Zero Trust for AI Agents". Unset attributes are evaluated with worst-case defaults (Autonomous / Admin / LabelOnly), and the affected threats are marked with an "Assumed" badge. Set the attributes for higher precision.',
 
   'panels.node.createEdgeHeading': 'Create edge',
   'panels.node.createEdgeNote': 'Create a connection line from this part to another part.',
