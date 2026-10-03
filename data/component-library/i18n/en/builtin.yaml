@@ -103,3 +103,7 @@ components:
     # 原本は「その他」だが、`app.yaml` の OTHER_APP が英語で "Other" のため衝突する。
     label: "Other document"
     description: "A document or data asset that does not fit the categories above."
+
+  VOICE_RECORDING:
+    label: "Call recording"
+    description: "Recorded call audio. The voice itself is biometric data, and the call content may include personal or confidential information."

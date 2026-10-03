@@ -57,7 +57,7 @@ components:
     shape: data-store
     color: "bg-teal-500"
     description: "永続化されたデータの格納場所（DB、ファイルストア、キャッシュ）。"
-    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, OTHER_DOCUMENT]
 
   # ── AI Components ───────────────────────────────────────────
   - id: LLM
@@ -210,6 +210,14 @@ components:
     shape: rounded
     color: "bg-gray-500"
     description: "監査ログ・アクセスログ・アプリケーションログなどの記録情報。"
+
+  - id: VOICE_RECORDING
+    label: "通話録音"
+    category: DOCUMENTS
+    icon: { kind: builtin, name: "file-audio" }
+    shape: rounded
+    color: "bg-rose-600"
+    description: "通話の録音データ。声そのものが生体情報であり、通話内容に個人情報・機密情報を含み得る。"
 
   - id: OTHER_DOCUMENT
     label: "その他"

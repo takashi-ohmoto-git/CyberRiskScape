@@ -1,0 +1,50 @@
+# English overlay for `data/component-library/voice.yaml`.
+#
+# The Japanese file is the source of truth: only `label` and `description` are
+# translated here, keyed by component type id. Anything omitted falls back to the
+# original text, so `label` is listed only where the English differs.
+#
+# Conventions:
+#   - `label` shows in the palette, on canvas, in the library inspector and wherever a
+#     threat description expands `{{nodeType}}` / `{{sourceType}}` / `{{targetType}}`.
+#     Keep it short enough for a palette row and a canvas chip.
+#   - `description` is the palette tooltip. One sentence, same level of detail as the
+#     original.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+components:
+  PBX:
+    label: "PBX / contact center platform"
+    description: "A telephone exchange or contact center platform (PSTN / SIP, including cloud contact centers). Handles inbound calls, transfers, and recording."
+
+  IVR:
+    label: "IVR"
+    description: "Interactive Voice Response. Routes calls by keypad or voice input and automates identity checks and procedures."
+
+  HUMAN_OPERATOR:
+    label: "Human operator"
+    description: "A human agent at the contact center (operator or supervisor). Has access to customer personal data and call content."
+
+  VOICEPRINT_AUTH:
+    label: "Voiceprint authentication"
+    description: "Biometric authentication that verifies identity by voice. Holds voiceprint templates; replayed recordings and synthesized voices are the main spoofing threats."
+
+  STT:
+    label: "STT (speech-to-text)"
+    description: "Speech-to-Text. Transcribes audio into text; the transcript becomes input to the downstream LLM or agent."
+
+  TTS:
+    label: "TTS (text-to-speech)"
+    description: "Text-to-Speech. Converts text into spoken responses. Synthesized voice can also be abused for impersonation."
+
+  STS:
+    label: "STS (speech-to-speech model)"
+    description: "Speech-to-Speech. A real-time voice model that takes and produces audio directly; with no text in between, instructions injected through audio are hard to inspect."
+
+  AVATAR:
+    label: "Avatar"
+    description: "An avatar or digital human that interacts with users through video and voice. Mind the handling of faces and voices, and impersonation."

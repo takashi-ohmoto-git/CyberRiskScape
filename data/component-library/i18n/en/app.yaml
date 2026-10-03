@@ -34,3 +34,6 @@ components:
   SHADOW_APP:
     label: "Shadow app"
     description: "A shadow IT app the organization neither tracks nor controls."
+
+  LINE:
+    description: "A LINE Official Account or Messaging API channel. Reaches customers through an external messaging platform."

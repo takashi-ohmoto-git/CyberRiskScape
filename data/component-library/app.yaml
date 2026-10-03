@@ -37,6 +37,14 @@ components:
     color: "bg-green-600"
     description: "チャット / メッセージングアプリ。認可状況・所有状況を属性で設定する。"
 
+  - id: LINE
+    label: "LINE"
+    category: APP
+    icon: { kind: builtin, name: "messages-square" }
+    shape: rounded
+    color: "bg-green-500"
+    description: "LINE 公式アカウント／Messaging API チャネル。外部のメッセージング基盤を経由して顧客とやり取りする。"
+
   - id: MAIL
     label: "Mail"
     category: APP

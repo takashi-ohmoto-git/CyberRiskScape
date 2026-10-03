@@ -1,0 +1,108 @@
+# 音声 AI・コンタクトセンター拡張コンポーネントライブラリ（[[plan]] §2.57）。
+#
+# 電話・音声 AI・コンタクトセンターを脅威モデルに載せるための 8 型：
+#   - PBX: 電話交換機・コンタクトセンター基盤（PSTN / SIP、クラウド型コンタクトセンターを含む）
+#   - IVR: 自動音声応答
+#   - STT / TTS / STS: 音声→テキスト／テキスト→音声／音声→音声（リアルタイム音声モデル）
+#   - AVATAR: アバター・デジタルヒューマン（映像と音声で応対）
+#   - HUMAN_OPERATOR: 有人オペレーター（コンタクトセンターの応対者）
+#   - VOICEPRINT_AUTH: 声紋認証（生体認証）
+#
+# 通話録音（VOICE_RECORDING）は DOCUMENTS カテゴリのため builtin.yaml、
+# LINE チャネルは CHAT と同じ APP カテゴリのため app.yaml に置く。
+# 有人／AI × Chat／Call の別は型にせず、コンタクトセンターのテンプレートで組み合わせとして示す。
+#
+# 別ライブラリ（builtin と分離）にすることで、LeftSidebar のライブラリトグルで
+# 「音声系を使わない」運用を選べる。
+#
+# ライセンス: Apache-2.0（同梱）
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+library:
+  id: voice
+  title: "Voice AI & Contact Center Components"
+  version: "1.0"
+  license: "Apache-2.0"
+  builtin: true
+  description: "音声 AI・コンタクトセンター型（PBX / IVR / STT / TTS / STS / アバター / 有人オペレーター / 声紋認証）。"
+
+# 既存 builtin のカテゴリを idempotent に再宣言（label/order を一致させる）。
+categories:
+  - id: AI
+    label: "AI Components"
+    order: 20
+  - id: INFRASTRUCTURE
+    label: "Infrastructure"
+    order: 30
+
+components:
+  # ── Infrastructure ──────────────────────────────────────────
+  - id: PBX
+    label: "PBX / コンタクトセンター基盤"
+    category: INFRASTRUCTURE
+    icon: { kind: builtin, name: "phone" }
+    shape: rounded
+    color: "bg-teal-600"
+    description: "電話交換機・コンタクトセンター基盤（PSTN / SIP、クラウド型コンタクトセンターを含む）。通話の着信・転送・録音を担う。"
+    canContain: [VOICE_RECORDING, PERSONAL_INFO, LOG]
+
+  - id: IVR
+    label: "IVR"
+    category: INFRASTRUCTURE
+    icon: { kind: builtin, name: "list-tree" }
+    shape: rounded
+    color: "bg-cyan-600"
+    description: "自動音声応答（Interactive Voice Response）。番号入力や音声で通話を振り分け、本人確認や手続きを自動化する。"
+
+  - id: HUMAN_OPERATOR
+    label: "有人オペレーター"
+    category: INFRASTRUCTURE
+    icon: { kind: builtin, name: "headset" }
+    shape: rounded
+    color: "bg-blue-600"
+    description: "コンタクトセンターの有人の応対者（オペレーター・スーパーバイザー）。顧客の個人情報や通話内容に触れる。"
+
+  - id: VOICEPRINT_AUTH
+    label: "声紋認証"
+    category: INFRASTRUCTURE
+    icon: { kind: builtin, name: "fingerprint" }
+    shape: rounded
+    color: "bg-fuchsia-500"
+    description: "声の特徴で本人確認を行う生体認証。声紋テンプレートを保持し、なりすまし（録音再生・音声合成）が主な脅威。"
+    canContain: [PERSONAL_INFO, CREDENTIAL]
+
+  # ── AI Components ───────────────────────────────────────────
+  - id: STT
+    label: "STT（音声認識）"
+    category: AI
+    icon: { kind: builtin, name: "mic" }
+    shape: rounded
+    color: "bg-violet-600"
+    description: "Speech-to-Text。音声をテキストに書き起こす。認識結果は後段の LLM・エージェントへの入力になる。"
+
+  - id: TTS
+    label: "TTS（音声合成）"
+    category: AI
+    icon: { kind: builtin, name: "volume-2" }
+    shape: rounded
+    color: "bg-violet-400"
+    description: "Text-to-Speech。テキストを音声に変換して応答する。合成音声のなりすましへの悪用にも注意。"
+
+  - id: STS
+    label: "STS（音声対音声モデル）"
+    category: AI
+    icon: { kind: builtin, name: "audio-lines" }
+    shape: rounded
+    color: "bg-purple-500"
+    description: "Speech-to-Speech。音声を直接入出力するリアルタイム音声モデル。テキストを介さないため、音声経由の指示注入の検査が難しい。"
+
+  - id: AVATAR
+    label: "アバター"
+    category: AI
+    icon: { kind: builtin, name: "scan-face" }
+    shape: rounded
+    color: "bg-pink-600"
+    description: "アバター・デジタルヒューマン。映像と音声で利用者に応対する。顔・声の取り扱いとなりすましに注意。"

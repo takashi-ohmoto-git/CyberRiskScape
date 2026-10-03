@@ -38,7 +38,7 @@ components:
     shape: rounded
     color: "bg-sky-600"
     description: "SaaS（Software as a Service）。認可状況・所有状況を属性で設定する。"
-    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, OTHER_DOCUMENT]
 
   - id: IAAS
     label: "IaaS"
@@ -47,7 +47,7 @@ components:
     shape: rounded
     color: "bg-blue-700"
     description: "IaaS（Infrastructure as a Service）。認可状況・所有状況を属性で設定する。"
-    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, OTHER_DOCUMENT]
 
   - id: PAAS
     label: "PaaS"
@@ -56,7 +56,7 @@ components:
     shape: rounded
     color: "bg-cyan-600"
     description: "PaaS（Platform as a Service）。認可状況・所有状況を属性で設定する。"
-    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, OTHER_DOCUMENT]
 
   - id: SHADOW
     label: "Shadow"
@@ -65,4 +65,4 @@ components:
     shape: rounded
     color: "bg-zinc-600"
     description: "組織が把握・統制していないシャドー IT / シャドークラウド。"
-    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, OTHER_DOCUMENT]
