@@ -1,0 +1,413 @@
+{
+  "schemaVersion": 1,
+  "kind": "cyberriskscape-template",
+  "name": "Salesforce Agentforce Service agent 構成（顧客向け＋ForcedLeak 型の経路）",
+  "layer": {
+    "nodes": [
+      {
+        "id": "nag_cust",
+        "type": "USER",
+        "x": 40,
+        "y": 280,
+        "label": "顧客（Experience Cloud）",
+        "userTrustAttribute": "Guest"
+      },
+      {
+        "id": "nag_exturl",
+        "type": "EXTERNAL_ENTITY",
+        "x": 40,
+        "y": 100,
+        "label": "外部 URL（画像・リンクの送信先）",
+        "description": "エージェントの出力に含まれる外部 URL。Trusted URL の許可リストで制限する対象"
+      },
+      {
+        "id": "nag_webform",
+        "type": "USER",
+        "x": 40,
+        "y": 700,
+        "label": "外部の第三者（Web フォーム）",
+        "description": "Web フォームから CRM に書き込める外部の人。ForcedLeak 型の経路の起点",
+        "userTrustAttribute": "Guest"
+      },
+      {
+        "id": "nag_employee",
+        "type": "USER",
+        "x": 270,
+        "y": 170,
+        "label": "社員（営業・サポート）",
+        "userTrustAttribute": "Employee"
+      },
+      {
+        "id": "nag_emp",
+        "type": "AGENT",
+        "x": 460,
+        "y": 40,
+        "label": "Employee agent（社員向け）",
+        "description": "ログインした社員の権限で動く。リードやケースを読んで要約する",
+        "agentAttributes": {
+          "agency": "Bounded",
+          "blastRadius": "Tenant",
+          "identityTier": "Cryptographic"
+        }
+      },
+      {
+        "id": "nag_gr",
+        "type": "GUARDRAIL",
+        "x": 650,
+        "y": 40,
+        "label": "Einstein Trust Layer",
+        "description": "プロンプト防御・データマスキング・毒性検知など。Salesforce 側の保護層"
+      },
+      {
+        "id": "nag_llm",
+        "type": "LLM",
+        "x": 840,
+        "y": 40,
+        "label": "LLM（推論エンジン／BYOLLM）"
+      },
+      {
+        "id": "nag_svc",
+        "type": "AGENT",
+        "x": 460,
+        "y": 280,
+        "label": "Service agent（顧客向け）",
+        "description": "専用のエージェントユーザーで動く。顧客の問い合わせに自律的に応答する",
+        "agentAttributes": {
+          "agency": "Bounded",
+          "blastRadius": "Tenant",
+          "identityTier": "LabelOnly"
+        }
+      },
+      {
+        "id": "nag_act",
+        "type": "TOOL",
+        "x": 650,
+        "y": 360,
+        "label": "アクション（Flow／Apex）",
+        "description": "エージェントが呼び出すアクション。実行コンテキスト（ユーザー／システム）と with sharing の有無を確認する",
+        "agentAttributes": {
+          "agency": "Bounded",
+          "blastRadius": "Tenant",
+          "identityTier": "LabelOnly"
+        }
+      },
+      {
+        "id": "nag_crm",
+        "type": "CRM",
+        "x": 840,
+        "y": 520,
+        "label": "CRM（リード・ケース・取引先）",
+        "description": "外部から書き込める項目（Web-to-Lead の説明欄など）を含む",
+        "cloudSanction": "Sanctioned",
+        "cloudOwnership": "Company"
+      },
+      {
+        "id": "nag_dc",
+        "type": "DB",
+        "x": 460,
+        "y": 500,
+        "label": "Data Cloud（検索拡張）",
+        "description": "retriever による検索拡張。取得内容がそのままプロンプトに入る"
+      },
+      {
+        "id": "nag_human",
+        "type": "HUMAN_OPERATOR",
+        "x": 270,
+        "y": 500,
+        "label": "人のオペレーター（エスカレーション）",
+        "description": "エージェントからの引き継ぎ先"
+      },
+      {
+        "id": "nag_saas",
+        "type": "SAAS",
+        "x": 1100,
+        "y": 170,
+        "label": "外部 API（externalService）",
+        "description": "OpenAPI スキーマ経由で呼び出す外部サービス（Named Credential 先）",
+        "cloudSanction": "Sanctioned",
+        "cloudOwnership": "ThirdParty"
+      },
+      {
+        "id": "nag_mcp",
+        "type": "MCP_SERVER",
+        "x": 1100,
+        "y": 310,
+        "label": "外部 MCP サーバー（mcpTool）",
+        "description": "Agentforce から呼び出す外部 MCP サーバー（許可リスト・審査の対象）"
+      }
+    ],
+    "edges": [
+      {
+        "id": "eag_01",
+        "source": "nag_cust",
+        "target": "nag_svc",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "問い合わせ"
+      },
+      {
+        "id": "eag_02",
+        "source": "nag_svc",
+        "target": "nag_cust",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_03",
+        "source": "nag_webform",
+        "target": "nag_crm",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Web-to-Lead 送信"
+      },
+      {
+        "id": "eag_04",
+        "source": "nag_employee",
+        "target": "nag_emp",
+        "auth": "MFA",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "社員の質問"
+      },
+      {
+        "id": "eag_05",
+        "source": "nag_emp",
+        "target": "nag_employee",
+        "auth": "MFA",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_06",
+        "source": "nag_emp",
+        "target": "nag_exturl",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "外部 URL への出力"
+      },
+      {
+        "id": "eag_07",
+        "source": "nag_emp",
+        "target": "nag_gr",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_08",
+        "source": "nag_gr",
+        "target": "nag_emp",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_09",
+        "source": "nag_svc",
+        "target": "nag_gr",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_10",
+        "source": "nag_gr",
+        "target": "nag_svc",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_11",
+        "source": "nag_gr",
+        "target": "nag_llm",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_12",
+        "source": "nag_llm",
+        "target": "nag_gr",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_13",
+        "source": "nag_svc",
+        "target": "nag_act",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "アクション呼び出し",
+        "semantic": "tool_invocation"
+      },
+      {
+        "id": "eag_14",
+        "source": "nag_act",
+        "target": "nag_svc",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_15",
+        "source": "nag_emp",
+        "target": "nag_act",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "semantic": "tool_invocation"
+      },
+      {
+        "id": "eag_16",
+        "source": "nag_act",
+        "target": "nag_emp",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_17",
+        "source": "nag_act",
+        "target": "nag_crm",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "レコード照会・更新"
+      },
+      {
+        "id": "eag_18",
+        "source": "nag_crm",
+        "target": "nag_act",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "リード・ケース情報"
+      },
+      {
+        "id": "eag_19",
+        "source": "nag_svc",
+        "target": "nag_saas",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "外部 API 呼び出し",
+        "semantic": "tool_invocation"
+      },
+      {
+        "id": "eag_20",
+        "source": "nag_saas",
+        "target": "nag_svc",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_21",
+        "source": "nag_svc",
+        "target": "nag_mcp",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "MCP ツール呼び出し",
+        "semantic": "tool_invocation"
+      },
+      {
+        "id": "eag_22",
+        "source": "nag_mcp",
+        "target": "nag_svc",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_23",
+        "source": "nag_svc",
+        "target": "nag_dc",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "検索クエリ"
+      },
+      {
+        "id": "eag_24",
+        "source": "nag_dc",
+        "target": "nag_svc",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "semantic": "rag_retrieval"
+      },
+      {
+        "id": "eag_25",
+        "source": "nag_svc",
+        "target": "nag_human",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "引き継ぎ"
+      }
+    ],
+    "boundaries": [
+      {
+        "id": "bag0001",
+        "type": "RECT",
+        "x": 14,
+        "y": 0,
+        "width": 200,
+        "height": 840,
+        "trustLevel": "Internet"
+      },
+      {
+        "id": "bag0002",
+        "type": "RECT_DASHED",
+        "x": 1070,
+        "y": 70,
+        "width": 185,
+        "height": 380,
+        "trustLevel": "Partner"
+      },
+      {
+        "id": "bag0003",
+        "type": "ROUNDED",
+        "x": 240,
+        "y": 0,
+        "width": 810,
+        "height": 840,
+        "trustLevel": "Internal",
+        "macroTrust": "Office Area"
+      }
+    ]
+  }
+}

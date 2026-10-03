@@ -24,6 +24,7 @@ CyberRiskScape を使う人のためのドキュメントです。
 | **[AI駆動開発のCIに組み込む](ci-integration.ja.md)** | 保存済みプロジェクト JSON を正本ファイルとして扱う：ヘッドレス CLI・GitHub Action・実行トリガーに基づくレビュー・CODEOWNERS とブランチ保護・閉域環境での使い方 |
 | **[コーディングエージェントから使う](mcp-integration.ja.md)** | Claude Code・GitHub Copilot などのエージェントが脅威の問い合わせと構成図の更新をできるようにする MCP サーバーの導入：クライアント別の設定・ツール一覧・安全のための仕組み・PR の差分ゲートとの組み合わせ |
 | **[ユースケースで学ぶ MCP 連携](mcp-use-cases.ja.md)** | MCP を使う場面別の実践：設計初期の調査・重要脅威の実装タスク化・コンポーネント追加の影響確認・PR 前のセルフレビュー・GitHub Copilot／Cursor での使い方・Snyk との組み合わせ・許可範囲の決め方 |
+| **[Salesforce Agentforce を脅威モデリングする](agentforce.ja.md)** | Agentforce の構成要素と CyberRiskScape の型の対応、顧客向け Service agent の構成図テンプレート、外部から書き込める CRM 項目を経由する間接プロンプトインジェクション（ForcedLeak 型）など押さえたい脅威と、検出されるルール・されないこと、エージェント定義の変更を PR で見張る方法 |
 | **[Secure by Design 入門](secure-by-design.ja.md)** | 背景にある考え方。Secure by Design とは何か、なぜ今求められるのか、脅威モデリングが担う 4 つの役割、そして経営層・企画・セキュリティ・監査・CI が 1 つの脅威モデルを共有する Security Context Layer としての CyberRiskScape の役割。CISA 主導の国際共同ガイダンスに基づく |
 
 ## どこから読むか
@@ -42,6 +43,7 @@ CyberRiskScape を使う人のためのドキュメントです。
   [AI駆動開発のCIに組み込む](ci-integration.ja.md) を読んでください。
 - **コーディングエージェントに脅威を問い合わせさせ、構成図も更新させたい** —
   [コーディングエージェントから使う](mcp-integration.ja.md) へ。
+- **Salesforce Agentforce の構成を脅威モデル化したい** — [Salesforce Agentforce を脅威モデリングする](agentforce.ja.md) へ。
 - **この取り組みの意義を誰かに説明したい** — [Secure by Design 入門](secure-by-design.ja.md) は
   単独で読める内容になっています。
 

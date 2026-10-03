@@ -118,6 +118,21 @@ social engineering of human operators by phone, STS guardrail gaps, prompt injec
 STT (spoken input), PBX toll fraud and caller ID spoofing, unverified LINE webhook signatures and
 channel takeover, and exposure of call recordings (biometric data).
 
+### The Salesforce Agentforce template
+
+A single diagram that puts a customer-facing Service agent and an internal Employee agent together. It
+includes a ForcedLeak-style path, where an outsider writes to the CRM through a web form and the Employee
+agent reads it and can send data out.
+
+| File | Contents |
+|---|---|
+| [`templates/agentforce-service-agent.en.json`](templates/agentforce-service-agent.en.json) | English |
+| [`templates/agentforce-service-agent.ja.json`](templates/agentforce-service-agent.ja.json) | Japanese |
+
+**Inside:** 14 components, 25 data flows, 3 trust boundaries (customers and outsiders = Internet, Salesforce org = Internal, external API / external MCP server = Partner).
+Import it and **97 threats** are detected. For how Agentforce building blocks map to types and how to read
+the detected threats, see [Threat Modeling Salesforce Agentforce](agentforce.md).
+
 ---
 
 ## 5. Why the flows run both ways

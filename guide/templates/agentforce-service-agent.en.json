@@ -1,0 +1,413 @@
+{
+  "schemaVersion": 1,
+  "kind": "cyberriskscape-template",
+  "name": "Salesforce Agentforce Service agent (customer-facing, with a ForcedLeak-style path)",
+  "layer": {
+    "nodes": [
+      {
+        "id": "nag_cust",
+        "type": "USER",
+        "x": 40,
+        "y": 280,
+        "label": "Customer (Experience Cloud)",
+        "userTrustAttribute": "Guest"
+      },
+      {
+        "id": "nag_exturl",
+        "type": "EXTERNAL_ENTITY",
+        "x": 40,
+        "y": 100,
+        "label": "External URL (image / link destination)",
+        "description": "An external URL included in agent output. Restricted by the Trusted URL allowlist"
+      },
+      {
+        "id": "nag_webform",
+        "type": "USER",
+        "x": 40,
+        "y": 700,
+        "label": "External third party (web form)",
+        "description": "An outsider who can write to the CRM through a web form. Starting point of the ForcedLeak-style path",
+        "userTrustAttribute": "Guest"
+      },
+      {
+        "id": "nag_employee",
+        "type": "USER",
+        "x": 270,
+        "y": 170,
+        "label": "Employee (sales / support)",
+        "userTrustAttribute": "Employee"
+      },
+      {
+        "id": "nag_emp",
+        "type": "AGENT",
+        "x": 460,
+        "y": 40,
+        "label": "Employee agent (internal)",
+        "description": "Runs with the permissions of the signed-in employee. Reads and summarizes leads and cases",
+        "agentAttributes": {
+          "agency": "Bounded",
+          "blastRadius": "Tenant",
+          "identityTier": "Cryptographic"
+        }
+      },
+      {
+        "id": "nag_gr",
+        "type": "GUARDRAIL",
+        "x": 650,
+        "y": 40,
+        "label": "Einstein Trust Layer",
+        "description": "Prompt defense, data masking, toxicity detection and more. Salesforce-side protection layer"
+      },
+      {
+        "id": "nag_llm",
+        "type": "LLM",
+        "x": 840,
+        "y": 40,
+        "label": "LLM (reasoning engine / BYOLLM)"
+      },
+      {
+        "id": "nag_svc",
+        "type": "AGENT",
+        "x": 460,
+        "y": 280,
+        "label": "Service agent (customer-facing)",
+        "description": "Runs as a dedicated agent user. Answers customer inquiries autonomously",
+        "agentAttributes": {
+          "agency": "Bounded",
+          "blastRadius": "Tenant",
+          "identityTier": "LabelOnly"
+        }
+      },
+      {
+        "id": "nag_act",
+        "type": "TOOL",
+        "x": 650,
+        "y": 360,
+        "label": "Actions (Flow / Apex)",
+        "description": "Actions the agents call. Check the run context (user / system) and whether with sharing is used",
+        "agentAttributes": {
+          "agency": "Bounded",
+          "blastRadius": "Tenant",
+          "identityTier": "LabelOnly"
+        }
+      },
+      {
+        "id": "nag_crm",
+        "type": "CRM",
+        "x": 840,
+        "y": 520,
+        "label": "CRM (leads / cases / accounts)",
+        "description": "Includes fields writable from outside (e.g. the Web-to-Lead description)",
+        "cloudSanction": "Sanctioned",
+        "cloudOwnership": "Company"
+      },
+      {
+        "id": "nag_dc",
+        "type": "DB",
+        "x": 460,
+        "y": 500,
+        "label": "Data Cloud (retrieval)",
+        "description": "Retrieval augmentation via retriever. Retrieved content goes straight into the prompt"
+      },
+      {
+        "id": "nag_human",
+        "type": "HUMAN_OPERATOR",
+        "x": 270,
+        "y": 500,
+        "label": "Human operator (escalation)",
+        "description": "Hand-off target from the agent"
+      },
+      {
+        "id": "nag_saas",
+        "type": "SAAS",
+        "x": 1100,
+        "y": 170,
+        "label": "External API (externalService)",
+        "description": "External service called via an OpenAPI schema (Named Credential target)",
+        "cloudSanction": "Sanctioned",
+        "cloudOwnership": "ThirdParty"
+      },
+      {
+        "id": "nag_mcp",
+        "type": "MCP_SERVER",
+        "x": 1100,
+        "y": 310,
+        "label": "External MCP server (mcpTool)",
+        "description": "External MCP server called from Agentforce (subject to allowlist and review)"
+      }
+    ],
+    "edges": [
+      {
+        "id": "eag_01",
+        "source": "nag_cust",
+        "target": "nag_svc",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Inquiry"
+      },
+      {
+        "id": "eag_02",
+        "source": "nag_svc",
+        "target": "nag_cust",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_03",
+        "source": "nag_webform",
+        "target": "nag_crm",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Web-to-Lead submission"
+      },
+      {
+        "id": "eag_04",
+        "source": "nag_employee",
+        "target": "nag_emp",
+        "auth": "MFA",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Employee question"
+      },
+      {
+        "id": "eag_05",
+        "source": "nag_emp",
+        "target": "nag_employee",
+        "auth": "MFA",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_06",
+        "source": "nag_emp",
+        "target": "nag_exturl",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Output to external URL"
+      },
+      {
+        "id": "eag_07",
+        "source": "nag_emp",
+        "target": "nag_gr",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_08",
+        "source": "nag_gr",
+        "target": "nag_emp",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_09",
+        "source": "nag_svc",
+        "target": "nag_gr",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_10",
+        "source": "nag_gr",
+        "target": "nag_svc",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_11",
+        "source": "nag_gr",
+        "target": "nag_llm",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_12",
+        "source": "nag_llm",
+        "target": "nag_gr",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_13",
+        "source": "nag_svc",
+        "target": "nag_act",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Action call",
+        "semantic": "tool_invocation"
+      },
+      {
+        "id": "eag_14",
+        "source": "nag_act",
+        "target": "nag_svc",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_15",
+        "source": "nag_emp",
+        "target": "nag_act",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "semantic": "tool_invocation"
+      },
+      {
+        "id": "eag_16",
+        "source": "nag_act",
+        "target": "nag_emp",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_17",
+        "source": "nag_act",
+        "target": "nag_crm",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Record lookup / update"
+      },
+      {
+        "id": "eag_18",
+        "source": "nag_crm",
+        "target": "nag_act",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Lead / case data"
+      },
+      {
+        "id": "eag_19",
+        "source": "nag_svc",
+        "target": "nag_saas",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "External API call",
+        "semantic": "tool_invocation"
+      },
+      {
+        "id": "eag_20",
+        "source": "nag_saas",
+        "target": "nag_svc",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_21",
+        "source": "nag_svc",
+        "target": "nag_mcp",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "MCP tool call",
+        "semantic": "tool_invocation"
+      },
+      {
+        "id": "eag_22",
+        "source": "nag_mcp",
+        "target": "nag_svc",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "eag_23",
+        "source": "nag_svc",
+        "target": "nag_dc",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Search query"
+      },
+      {
+        "id": "eag_24",
+        "source": "nag_dc",
+        "target": "nag_svc",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "semantic": "rag_retrieval"
+      },
+      {
+        "id": "eag_25",
+        "source": "nag_svc",
+        "target": "nag_human",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Hand-off"
+      }
+    ],
+    "boundaries": [
+      {
+        "id": "bag0001",
+        "type": "RECT",
+        "x": 14,
+        "y": 0,
+        "width": 200,
+        "height": 840,
+        "trustLevel": "Internet"
+      },
+      {
+        "id": "bag0002",
+        "type": "RECT_DASHED",
+        "x": 1070,
+        "y": 70,
+        "width": 185,
+        "height": 380,
+        "trustLevel": "Partner"
+      },
+      {
+        "id": "bag0003",
+        "type": "ROUNDED",
+        "x": 240,
+        "y": 0,
+        "width": 810,
+        "height": 840,
+        "trustLevel": "Internal",
+        "macroTrust": "Office Area"
+      }
+    ]
+  }
+}

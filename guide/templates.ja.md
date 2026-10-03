@@ -119,6 +119,21 @@ AI から有人へのエスカレーションを含みます。
 STT 経由の発話によるプロンプトインジェクション、PBX の不正発信（toll fraud）・発信者番号の偽装、
 LINE の Webhook 署名未検証・チャネル乗っ取り、通話録音（生体情報）の漏えい。
 
+### Salesforce Agentforce のテンプレート
+
+顧客向けの Service agent と社員向けの Employee agent を 1 枚にまとめたテンプレートです。
+外部の人が Web フォームから CRM に書き込み、それを Employee agent が読んで外部へ送れてしまう
+経路（ForcedLeak 型）を含みます。
+
+| ファイル | 内容 |
+|---|---|
+| [`templates/agentforce-service-agent.ja.json`](templates/agentforce-service-agent.ja.json) | 日本語版 |
+| [`templates/agentforce-service-agent.en.json`](templates/agentforce-service-agent.en.json) | 英語版 |
+
+**中身：** コンポーネント 14・データフロー 25・トラスト境界 3（顧客・外部＝Internet、Salesforce 組織＝Internal、外部 API／外部 MCP サーバー＝Partner）。
+読み込むと **97 件**の脅威が検出されます。構成要素の対応づけと、検出される脅威の読み方は
+[Salesforce Agentforce を脅威モデリングする](agentforce.ja.md)を参照してください。
+
 ---
 
 ## 5. なぜ往復のフローを入れてあるのか

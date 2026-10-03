@@ -362,3 +362,4 @@ root, or something like `threat-model/`). The base of `diff_models` must also be
 - Configuration and tool reference — [Using It from Coding Agents](mcp-integration.md)
 - Diff gate, CODEOWNERS and branch protection — [Integrating with AI-Driven Development CI](ci-integration.md)
 - How to read detected threats — [Reading the Threat Panel](reading-threats.md)
+- A worked example built on Salesforce Agentforce agent definitions — [Threat Modeling Salesforce Agentforce](agentforce.md)

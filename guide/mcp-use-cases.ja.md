@@ -351,3 +351,4 @@ T4 は差分から自動判定できないため、依存や IaC の変更から
 - 設定とツールのリファレンス — [コーディングエージェントから使う](mcp-integration.ja.md)
 - 差分ゲート・CODEOWNERS・ブランチ保護 — [AI駆動開発のCIに組み込む](ci-integration.ja.md)
 - 検出された脅威の読み方 — [脅威パネルの読み方](reading-threats.ja.md)
+- Salesforce Agentforce のエージェント定義を題材にした実践 — [Salesforce Agentforce を脅威モデリングする](agentforce.ja.md)
