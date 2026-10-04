@@ -21,6 +21,7 @@ CyberRiskScape を使う人のためのドキュメントです。
 | **[攻撃経路分析](attack-paths.ja.md)** | 攻撃者から標的までの到達経路を列挙し、チョークポイント（1 つの対策が最も多くの経路に効く場所）を特定する |
 | **[コンプライアンスマップ](compliance-map.ja.md)** | 脅威と NIST CSF / NIST AI RMF / AI 事業者ガイドラインの対応を、脅威側・規格側の両方から確認する |
 | **[脅威モデルを AI が読める Security Context に変換する](security-context.ja.md)** | 完成した脅威モデルを Markdown で書き出し、AI による脆弱性診断の入力として使う手順と、それが効く理由 |
+| **[連携ガイド](integrations.ja.md)** | 連携できる製品（Claude Code・GitHub Copilot・Cursor・Snyk・GitHub Actions・Kong・Postman・Salesforce Agentforce 等）と連携の方法（MCP・ファイルと CLI）、ユースケースの一覧。各製品のページへの入口 |
 | **[AI駆動開発のCIに組み込む](ci-integration.ja.md)** | 保存済みプロジェクト JSON を正本ファイルとして扱う：ヘッドレス CLI・GitHub Action・実行トリガーに基づくレビュー・CODEOWNERS とブランチ保護・閉域環境での使い方 |
 | **[コーディングエージェントから使う](mcp-integration.ja.md)** | Claude Code・GitHub Copilot などのエージェントが脅威の問い合わせと構成図の更新をできるようにする MCP サーバーの導入：クライアント別の設定・ツール一覧・安全のための仕組み・PR の差分ゲートとの組み合わせ |
 | **[ユースケースで学ぶ MCP 連携](mcp-use-cases.ja.md)** | MCP を使う場面別の実践：設計初期の調査・重要脅威の実装タスク化・コンポーネント追加の影響確認・PR 前のセルフレビュー・GitHub Copilot／Cursor での使い方・Snyk との組み合わせ・許可範囲の決め方 |
@@ -45,6 +46,7 @@ CyberRiskScape を使う人のためのドキュメントです。
   [AI駆動開発のCIに組み込む](ci-integration.ja.md) を読んでください。
 - **コーディングエージェントに脅威を問い合わせさせ、構成図も更新させたい** —
   [コーディングエージェントから使う](mcp-integration.ja.md) へ。
+- **ほかのツールや製品とつなぎたい** — [連携ガイド](integrations.ja.md) で、連携できる製品と方法を一覧できます。
 - **Salesforce Agentforce の構成を脅威モデル化したい** — [Salesforce Agentforce を脅威モデリングする](agentforce.ja.md) へ。
 - **Kong Gateway（AI Gateway）の構成を脅威モデル化したい** — [Kong AI Gateway を脅威モデリングする](kong-ai-gateway.ja.md) へ。kong.yaml から図の下書きを作れます。
 - **検出した脅威が実装でも成立するか確かめたい** — [脅威を Postman で確かめる](postman.ja.md) へ。

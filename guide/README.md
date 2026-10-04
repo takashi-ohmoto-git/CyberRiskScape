@@ -21,6 +21,7 @@ Nothing here needs to be installed — you can follow along in the
 | **[Attack Path Analysis](attack-paths.md)** | Enumerate the routes from attacker to target and find the choke points where one control covers the most routes |
 | **[The Compliance Map](compliance-map.md)** | Check how threats map to NIST CSF, the NIST AI RMF and Japan's AI Business Operator Guidelines, from either direction |
 | **[Turning Your Threat Model into an AI-Readable Security Context](security-context.md)** | Exporting a finished threat model as Markdown, using it as the input to an AI vulnerability review, and why that works |
+| **[Integrations](integrations.md)** | The products you can integrate with (Claude Code, GitHub Copilot, Cursor, Snyk, GitHub Actions, Kong, Postman, Salesforce Agentforce, and more), how they connect (MCP, files and the CLI), and their use cases — the entry point to each product page |
 | **[Integrating with AI-Driven Development CI](ci-integration.md)** | Treating a saved project JSON as a source-of-record file: the headless CLI, the GitHub Action, trigger-based review, CODEOWNERS and branch protection, and running on a closed network |
 | **[Using It from Coding Agents](mcp-integration.md)** | Setting up the MCP server so that Claude Code, GitHub Copilot and other agents can query threats and update the diagram: client configuration, the tools, safeguards, and how it pairs with the PR gate |
 | **[MCP Use Cases](mcp-use-cases.md)** | MCP in practice, by scenario: early-design research, turning key threats into tasks, checking the impact of a new component, self-review before a PR, using it with GitHub Copilot and Cursor, pairing with Snyk, and deciding what to allow |
@@ -45,6 +46,7 @@ Nothing here needs to be installed — you can follow along in the
   read [Integrating with AI-Driven Development CI](ci-integration.md).
 - **You want coding agents to query threats and update the diagram while they design** —
   read [Using It from Coding Agents](mcp-integration.md).
+- **You want to connect other tools and products** — see [Integrations](integrations.md) for the list of products and how they connect.
 - **You want to threat-model a Salesforce Agentforce setup** — read [Threat Modeling Salesforce Agentforce](agentforce.md).
 - **You want to threat-model a Kong Gateway (AI Gateway) setup** — read [Threat Modeling Kong AI Gateway](kong-ai-gateway.md). You can draft the diagram from kong.yaml.
 - **You want to check whether detected threats hold in the implementation** — read [Verifying Threats with Postman](postman.md).
