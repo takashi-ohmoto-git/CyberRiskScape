@@ -21,6 +21,8 @@ import type { ChangeTrigger } from '../change-triggers/schema/trigger';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createCrsMcpServer } from '../mcp/server';
 import { BRANDING } from '../core/branding';
+import { kongToLayer } from '../features/kong-import/kongToLayer';
+import { layerToProject } from '../features/kong-import/toProject';
 
 /**
  * CyberRiskScape ヘッドレス CLI。
@@ -41,6 +43,7 @@ const USAGE = `使い方:
   analyze <project.json> [options]
   diff <base.json> <head.json> [options]
   triggers [options]
+  import-kong <kong.yaml> [options]
   mcp [options]
 
 analyze のオプション:
@@ -62,6 +65,10 @@ triggers のオプション:
   --format <md|json>                            出力形式（既定: md）
   --triggers <file>                             実行トリガー定義 YAML（既定: 同梱の T1〜T8。指定時は翻訳オーバーレイ非適用）
   --locale <ja|en>                              表示言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+import-kong のオプション（Kong の宣言設定から構成図の下書きを L1 に作り、プロジェクト JSON を出力）:
+  --locale <ja|en>                              ノード名の言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
 mcp のオプション（stdio の MCP サーバーとして起動。stdout は MCP プロトコル専用）:
@@ -273,6 +280,38 @@ function runTriggers(values: CliValues): void {
 }
 
 /**
+ * `import-kong`：Kong の宣言設定（decK の kong.yaml / JSON）から構成図の下書きを作り、
+ * プロジェクト JSON を出力する。出力は `analyze` / `diff` の入力やアプリでの読み込みにそのまま使える。
+ * 認証ヘッダ・資格情報の値は読まない（`kongToLayer` 参照）。
+ */
+function runImportKong(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+
+  let text: string;
+  try {
+    text = readFileSync(file, 'utf-8');
+  } catch (e) {
+    fail(`ファイルを読み込めません: ${file}（${e instanceof Error ? e.message : String(e)}）`);
+  }
+  const result = kongToLayer(text);
+  if (!result.ok) fail(result.error);
+
+  writeOutput(JSON.stringify(layerToProject(result.layer), null, 2), values.out);
+  const { services, routes, plugins, consumers } = result.summary;
+  process.stderr.write(
+    `Kong 設定を取り込みました（サービス ${services} / ルート ${routes} / プラグイン ${plugins} / コンシューマー ${consumers}）
+`,
+  );
+}
+
+/**
  * `mcp`：stdio の MCP サーバーとして起動する。stdout はプロトコル専用のため、
  * ここから先は stdout に何も書かない（ログ・エラーは stderr）。
  */
@@ -315,6 +354,8 @@ function main(): void {
     runDiff(values, positionals);
   } else if (command === 'triggers') {
     runTriggers(values);
+  } else if (command === 'import-kong') {
+    runImportKong(values, positionals);
   } else if (command === 'mcp') {
     runMcp(values).catch((e: unknown) => {
       fail(`MCP サーバーの起動に失敗しました: ${e instanceof Error ? e.message : String(e)}`);
