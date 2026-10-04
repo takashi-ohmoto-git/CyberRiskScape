@@ -284,7 +284,13 @@ verbatim.
    Tool names and configuration keys are referenced by name only; no
    documentation text is reproduced.
 
-   Referenced by: guide/nhi-identity.md, guide/nhi-identity.ja.md
+   The Conjur policy syntax (statement tags and attributes) is referenced from
+   the documentation and the open-source Conjur policy parser
+   (https://github.com/cyberark/conjur); no code is copied.
+
+   Referenced by: guide/nhi-identity.md, guide/nhi-identity.ja.md,
+                  src/features/conjur-import/conjurToLayer.ts,
+                  guide/templates/conjur-policy.yml
 
 ================================================================================
 Runtime dependencies

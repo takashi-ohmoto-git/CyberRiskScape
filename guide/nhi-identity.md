@@ -16,6 +16,7 @@
 - The NHI threats detected on that diagram (based on the OWASP Non-Human Identities Top 10)
 - **Registering the Okta, SailPoint and CyberArk (Idira) MCP servers in the same AI agent as the CyberRiskScape MCP
   server**, and cross-checking the threat model against the real state of your identities
+- **Loading a CyberArk (Idira) Conjur policy** to draft a diagram of NHIs and secret read paths automatically
 - Safety precautions for this pairing, and its limitations
 
 **Background: why NHIs matter in threat modeling**
@@ -210,7 +211,55 @@ Requests (`create-access-request`) are made by people. See §6 for how to keep t
 
 ---
 
-## 6. Safety precautions
+## 6. Build a diagram from a CyberArk (Idira) Conjur policy
+
+CyberArk (Idira) Secrets Manager (Conjur) manages **who (hosts and users) can read which secrets** with a declarative YAML
+policy. Load that policy and a diagram of NHIs and secret read paths is drafted automatically. The policy is only read as
+a file; the Conjur API is not called.
+
+### 6.1 Mapping
+
+| Policy element | CyberRiskScape type / attribute |
+|---|---|
+| `!host` with an authenticator annotation (`authn-jwt`, `authn-k8s`, `authn-iam`, `authn-azure`, `authn-gcp`) | `WORKLOAD_IDENTITY` (Workload identity), Identity Tier "Cryptographic" |
+| `!host` without such an annotation (authenticates with an API key) | `SERVICE_ACCOUNT` (Service account), Identity Tier unset (static key) |
+| `!variable` | Aggregated into one `SECRETS_VAULT` (Conjur). Connections from each NHI and person read "Fetch N variables" / "Update N variables" |
+| `!user`, `!group` | Drawn as `USER` only when they hold variable privileges or have been granted a host role |
+| `!grant` (a host role granted to a person) | A person → NHI connection ("Human use of an NHI" is detected) |
+| `!layer` | Not drawn; noted in the member hosts' descriptions. Privileges are resolved as effective privileges by following `!grant` memberships |
+| `!policy` | Nested `id`s are used as prefixes to resolve each element's id |
+
+**Annotation values are not put on the diagram** (they are used only to determine the authentication method). Policies hold
+no secret values, so none can reach the diagram. Change statements such as `!deny`, `!revoke` and `!delete` are out of scope.
+
+### 6.2 How to import
+
+- **From the UI**: in Template → Import tab, choose the YAML with **"Select Conjur policy"**.
+- **From the CLI**: `node dist-cli/main.js import-conjur policy.yml --out model.json`
+
+A sample to try is in [`templates/conjur-policy.yml`](templates/conjur-policy.yml) (three hosts of an order system, four
+variables, an operations group, and an operator granted a host role).
+
+![Importing a Conjur policy](../assets/guide/nhi/04-conjur-import.png)
+
+![Diagram built from a Conjur policy](../assets/guide/nhi/05-conjur-overview.png)
+
+The sample produces **21 threats** at the time of writing. nightly-batch, which runs on an API key, gets "Long-lived static
+secrets" and, because alice holds its role, "Human use of an NHI"; the authn-jwt and authn-k8s hosts get "Workload identity
+federation trust conditions"; and Conjur gets "Concentration of privilege in the secrets manager".
+
+![Threats on a host running on an API key](../assets/guide/nhi/06-conjur-batch.png)
+
+### 6.3 Where it helps
+
+- **Reviewing privileges**: the number of variables each NHI can fetch appears on its connection, so NHIs with far more
+  access than their purpose needs (NHI5), and how widely people can read secrets, are visible at a glance.
+- **Watching in PRs**: if the policy is in Git, build project JSON from the policy before and after with `import-conjur`,
+  just as [for Kong](kong-ai-gateway.md), and gate new threats with `diff`. Element IDs are derived from host and variable ids.
+
+---
+
+## 7. Safety precautions
 
 - **Vendor MCP servers talk to their clouds.** The CyberRiskScape MCP server makes no outbound calls, but the vendor
   servers registered alongside it connect to your identity platform, and what they retrieve is passed to the agent (and
@@ -230,7 +279,7 @@ Requests (`create-access-request`) are made by people. See §6 for how to keep t
 
 ---
 
-## 7. Limitations
+## 8. Limitations
 
 - **The cross-check is the agent's inference.** Diagram nodes and identity-platform entities are matched by names and
   notes, so mismatches and omissions are possible. Ask for the evidence and have a person check it
@@ -239,8 +288,7 @@ Requests (`create-access-request`) are made by people. See §6 for how to keep t
 - **SailPoint's MCP offers only access-request tools at the time of writing.** The NHI inventory and owner information
   cannot be read this way
 - **CyberArk (Idira)'s Secrets Manager MCP is for development environments.** It cannot be used to inventory
-  production. To diagram the permissions between workloads and secrets (who can read what), wait for the planned policy
-  import or draw them by hand
+  production. To diagram the permissions between workloads and secrets (who can read what), use the policy import (§6)
 - Vendor MCP servers may change. Check tool names and scope in the official documentation
 
 ---

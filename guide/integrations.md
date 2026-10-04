@@ -46,7 +46,7 @@ Importing configuration files, exporting verification requests, and diff checks 
 | **Salesforce Agentforce** | Dedicated stencils, threat rules, and template | Assess a Service agent setup; watch agent-definition changes in PRs | [Threat Modeling Salesforce Agentforce](agentforce.md) |
 | **Okta** | MCP (side by side, through the agent), dedicated stencils and threat rules | Cross-check diagram NHIs against existing service apps; confirm identity strength from the authentication method; find unused NHIs | [Threat Modeling NHIs and Identity Platforms](nhi-identity.md) |
 | **SailPoint** | MCP (side by side, through the agent), IGA stencil and threat rules | Find the least access that can be requested instead of excessive permissions | [Threat Modeling NHIs and Identity Platforms](nhi-identity.md) |
-| **CyberArk (Idira)** | MCP (side by side, through the agent), PAM stencil and threat rules | Cross-check diagram NHIs against Secrets Manager workloads | [Threat Modeling NHIs and Identity Platforms](nhi-identity.md) |
+| **CyberArk (Idira)** | Conjur policy import, MCP (side by side, through the agent), PAM stencil and threat rules | Draft a diagram of NHIs and secret read paths from the policy; cross-check diagram NHIs against Secrets Manager workloads | [Threat Modeling NHIs and Identity Platforms](nhi-identity.md) |
 | **Anthropic `defending-code-reference-harness`** | `THREAT_MODEL.md`-compatible export | Use the threat model as input to an AI-driven vulnerability review | [Turning Your Threat Model into a Security Context](security-context.md) |
 
 ---

@@ -45,7 +45,7 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | **Salesforce Agentforce** | 専用のステンシル・脅威ルール・テンプレート | Service agent の構成を評価する・エージェント定義の変更を PR で見張る | [Salesforce Agentforce を脅威モデリングする](agentforce.ja.md) |
 | **Okta** | MCP（エージェント経由で併用）・専用のステンシルと脅威ルール | 図の NHI と実在するサービスアプリを突き合わせる・認証方式で ID の強度を確かめる・使われていない NHI を探す | [NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md) |
 | **SailPoint** | MCP（エージェント経由で併用）・IGA のステンシルと脅威ルール | 過剰な権限の代わりに、申請できる最小のアクセスを探す | [NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md) |
-| **CyberArk（Idira）** | MCP（エージェント経由で併用）・PAM のステンシルと脅威ルール | 図の NHI と Secrets Manager のワークロードを突き合わせる | [NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md) |
+| **CyberArk（Idira）** | Conjur ポリシーの取り込み・MCP（エージェント経由で併用）・PAM のステンシルと脅威ルール | ポリシーから NHI とシークレットの読み取り経路の図を作る・図の NHI と Secrets Manager のワークロードを突き合わせる | [NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md) |
 | **Anthropic `defending-code-reference-harness`** | `THREAT_MODEL.md` 互換の書き出し | 脅威モデルを、AI による脆弱性診断の入力にする | [Security Context に変換する](security-context.ja.md) |
 
 ---

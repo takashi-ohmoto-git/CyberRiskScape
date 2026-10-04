@@ -1,0 +1,78 @@
+# Sample CyberArk (Idira) Conjur / Secrets Manager policy for the CyberRiskScape guide.
+# Conjur / Secrets Manager のポリシーのサンプル（CyberRiskScape のガイド用）。
+#
+# Contains no secret values (Conjur policies never hold them; values are set separately).
+# シークレットの値は含みません（ポリシーは値を持たず、値は別に設定します）。
+#
+# SPDX-License-Identifier: Apache-2.0
+
+- !group ops
+- !user
+  id: alice
+  annotations:
+    description: Operations engineer
+- !grant
+  role: !group ops
+  member: !user alice
+
+- !policy
+  id: orders
+  body:
+    - &db_secrets
+      - !variable db/username
+      - !variable db/password
+    - &payment_secrets
+      - !variable payment/api-key
+      - !variable payment/webhook-secret
+
+    - !layer app
+
+    # Order API on Kubernetes (authenticates with authn-k8s)
+    - !host
+      id: order-api
+      annotations:
+        authn-k8s/namespace: orders
+        authn-k8s/service-account: order-api
+
+    # Nightly batch with the host API key
+    - !host
+      id: nightly-batch
+
+    # Deployment from GitHub Actions (authenticates with authn-jwt)
+    - !host
+      id: deploy
+      annotations:
+        authn-jwt/github/repository: example-org/orders
+        authn-jwt/github/ref: refs/heads/main
+
+    - !grant
+      role: !layer app
+      member:
+        - !host order-api
+        - !host nightly-batch
+
+    - !permit
+      role: !layer app
+      privileges: [ read, execute ]
+      resource: *db_secrets
+
+    - !permit
+      role: !host order-api
+      privileges: [ read, execute ]
+      resource: *payment_secrets
+
+    - !permit
+      role: !host deploy
+      privileges: [ read, execute, update ]
+      resource: [ *db_secrets, *payment_secrets ]
+
+    # The operations group can fetch every secret
+    - !permit
+      role: !group /ops
+      privileges: [ read, execute ]
+      resource: [ *db_secrets, *payment_secrets ]
+
+    # alice is granted the nightly batch host role (acts as the NHI)
+    - !grant
+      role: !host nightly-batch
+      member: !user /alice

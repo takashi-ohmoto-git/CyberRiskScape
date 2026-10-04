@@ -16,6 +16,7 @@
 - 描いた図で検出される NHI の脅威（OWASP Non-Human Identities Top 10 にもとづく）
 - Okta・SailPoint・CyberArk（Idira）の **MCP サーバーを CyberRiskScape の MCP サーバーと同じ AI エージェントに登録**し、
   脅威モデルと実際の ID の状態を突き合わせる使い方
+- CyberArk（Idira）Conjur の**ポリシーを読み込んで**、NHI とシークレットの読み取り経路の図を自動で作る方法
 - 組み合わせるときの安全上の注意と、限界
 
 **前提：NHI が脅威モデリングで重要な理由**
@@ -202,7 +203,55 @@ Cryptographic として、図の宣言と違うものを挙げてください。
 
 ---
 
-## 6. 安全のための注意
+## 6. CyberArk（Idira）Conjur のポリシーから図を作る
+
+CyberArk（Idira）の Secrets Manager（Conjur）は、**だれ（host・ユーザー）がどのシークレットを読めるか**を宣言的な YAML の
+ポリシーで管理します。このポリシーを読み込むと、NHI とシークレットの読み取り経路の構成図を自動で作れます。
+ポリシーはファイルで読むだけで、Conjur の API は呼びません。
+
+### 6.1 対応
+
+| ポリシーの要素 | CyberRiskScape の型・属性 |
+|---|---|
+| `!host`（認証方式の annotation：`authn-jwt`・`authn-k8s`・`authn-iam`・`authn-azure`・`authn-gcp`） | `WORKLOAD_IDENTITY`（ワークロードID）。Identity Tier は「Cryptographic」 |
+| `!host`（上の annotation が無い＝API キーで認証） | `SERVICE_ACCOUNT`（サービスアカウント）。Identity Tier は未設定（静的な鍵） |
+| `!variable` | 1 つの `SECRETS_VAULT`（Conjur）に集約。各 NHI・人からの線に「変数の取得 N 件」「変数の更新 N 件」と書く |
+| `!user`・`!group` | 変数の権限を持つもの、または host のロールを付与されたものだけ `USER` として描く |
+| `!grant`（host のロールを人に付与） | 人 → NHI の線（「人による NHI の利用」が検出される） |
+| `!layer` | 描かずに、所属する host の説明欄に書く。権限は `!grant` の所属関係をたどって実効権限として求める |
+| `!policy` | 入れ子の `id` を接頭辞にして、各要素の id を解決する |
+
+**annotation の値は図に載せません**（認証方式の判定にだけ使います）。ポリシーはシークレットの値を持たないため、値が図に入ることもありません。
+`!deny`・`!revoke`・`!delete` などの変更系の文は対象外です。
+
+### 6.2 取り込み方
+
+- **画面から**：Template → Import タブの **「Conjur ポリシーを選択」** で YAML を選びます。
+- **CLI から**：`node dist-cli/main.js import-conjur policy.yml --out model.json`
+
+試すためのサンプルを [`templates/conjur-policy.yml`](templates/conjur-policy.yml) に置いています（受注システムの host 3 つ・変数 4 つ・運用グループ・
+host のロールを付与された運用担当）。
+
+![Conjur ポリシーの取り込み](../assets/guide/nhi/04-conjur-import.png)
+
+![Conjur ポリシーから作った図](../assets/guide/nhi/05-conjur-overview.png)
+
+サンプルでは **21 件**の脅威が検出されます（執筆時点）。API キーで動く nightly-batch には「長期の静的シークレット」と、alice にロールを付与されていることによる
+「人による NHI の利用」、authn-jwt・authn-k8s の host には「ワークロード ID 連携の信頼条件」、
+Conjur には「シークレット管理への権限集中」が出ます。
+
+![API キーで動く host の脅威](../assets/guide/nhi/06-conjur-batch.png)
+
+### 6.3 使いどころ
+
+- **権限の棚卸し**：各 NHI が取得できる変数の件数が線に出るので、用途に比べて多すぎる NHI（NHI5）や、
+  シークレットを読める人の広がりが一目で分かります。
+- **PR での見張り**：ポリシーを Git で管理しているなら、[Kong の場合](kong-ai-gateway.ja.md)と同じく変更前後のポリシーから
+  `import-conjur` でプロジェクト JSON を作り、`diff` で新しい脅威を判定できます。要素の ID は host や変数の id から決まります。
+
+---
+
+## 7. 安全のための注意
 
 - **各社の MCP サーバーは、それぞれのクラウドへ通信します。** CyberRiskScape の MCP サーバーは外部と通信しませんが、
   並べて登録した各社のサーバーは ID 基盤に接続し、取得した内容はエージェント（と、その背後の LLM）に渡ります。
@@ -219,7 +268,7 @@ Cryptographic として、図の宣言と違うものを挙げてください。
 
 ---
 
-## 7. 限界
+## 8. 限界
 
 - **突き合わせはエージェントの推定です。** 図のノードと ID 基盤のエンティティは名前やメモで対応づけるため、
   取り違えや見落としがありえます。根拠を示させ、人が確認してください
@@ -227,7 +276,7 @@ Cryptographic として、図の宣言と違うものを挙げてください。
   「過剰な権限」や「オフボーディング」は、該当しそうな NHI に対する点検項目として出ます
 - **SailPoint の MCP は、執筆時点ではアクセス申請のツールだけです。** NHI の棚卸しや所有者の情報は、この方法では読めません
 - **CyberArk（Idira）の Secrets Manager の MCP は開発環境向けです。** 本番の棚卸しには使えません。ワークロードと
-  シークレットの間の権限（だれが何を読めるか）を図にするには、今後対応予定のポリシーの取り込みを待つか、手で描いてください
+  シークレットの間の権限（だれが何を読めるか）を図にするには、ポリシーの取り込み（§6）を使ってください
 - 各社の MCP サーバーの仕様は変わりえます。ツールの名前と範囲は公式で確認してください
 
 ---
