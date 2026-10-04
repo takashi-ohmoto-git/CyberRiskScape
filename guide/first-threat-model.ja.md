@@ -115,8 +115,8 @@ Project Edit が開きます。ここに**何を守るための作業なのか**
 
 | # | コンポーネント | カテゴリ |
 |---|---|---|
-| 1 | ユーザー | `INFRASTRUCTURE` |
-| 2 | Front-end Server | `INFRASTRUCTURE` |
+| 1 | ユーザー | `USERS & DEVICES` |
+| 2 | Front-end Server | `NETWORK & EDGE` |
 | 3 | LLMモデル | `AI COMPONENTS` |
 | 4 | ベクターDB / RAG | `AI COMPONENTS` |
 | 5 | データストア | `CLASSIC DFD` |

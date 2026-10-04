@@ -29,20 +29,25 @@ library:
   license: "Apache-2.0"
   description: "音声 AI・コンタクトセンター型（PBX / IVR / STT / TTS / STS / アバター / 有人オペレーター / 声紋認証）。"
 
-# 既存 builtin のカテゴリを idempotent に再宣言（label/order を一致させる）。
+# 音声系 8 型のうち 6 型は CONTACT_CENTER にまとめる（音声 AI も AI ではなくこちらに置き、
+# 電話・音声の構成要素を 1 か所で探せるようにする）。有人オペレーターは人なので USERS_DEVICES、
+# 声紋認証は認証基盤なので IDENTITY。builtin と共有するカテゴリは idempotent に再宣言する。
 categories:
-  - id: AI
-    label: "AI Components"
-    order: 20
-  - id: INFRASTRUCTURE
-    label: "Infrastructure"
-    order: 30
+  - id: USERS_DEVICES
+    label: "Users & Devices"
+    order: 15
+  - id: IDENTITY
+    label: "Identity & Secrets"
+    order: 32
+  - id: CONTACT_CENTER
+    label: "Contact Center"
+    order: 33
 
 components:
-  # ── Infrastructure ──────────────────────────────────────────
+  # ── Contact Center / Users & Devices / Identity ─────────────
   - id: PBX
     label: "PBX / コンタクトセンター基盤"
-    category: INFRASTRUCTURE
+    category: CONTACT_CENTER
     icon: { kind: builtin, name: "phone" }
     shape: rounded
     color: "bg-teal-600"
@@ -51,7 +56,7 @@ components:
 
   - id: IVR
     label: "IVR"
-    category: INFRASTRUCTURE
+    category: CONTACT_CENTER
     icon: { kind: builtin, name: "list-tree" }
     shape: rounded
     color: "bg-cyan-600"
@@ -59,7 +64,7 @@ components:
 
   - id: HUMAN_OPERATOR
     label: "有人オペレーター"
-    category: INFRASTRUCTURE
+    category: USERS_DEVICES
     icon: { kind: builtin, name: "headset" }
     shape: rounded
     color: "bg-blue-600"
@@ -67,17 +72,17 @@ components:
 
   - id: VOICEPRINT_AUTH
     label: "声紋認証"
-    category: INFRASTRUCTURE
+    category: IDENTITY
     icon: { kind: builtin, name: "fingerprint" }
     shape: rounded
     color: "bg-fuchsia-500"
     description: "声の特徴で本人確認を行う生体認証。声紋テンプレートを保持し、なりすまし（録音再生・音声合成）が主な脅威。"
     canContain: [PERSONAL_INFO, CREDENTIAL]
 
-  # ── AI Components ───────────────────────────────────────────
+  # ── Contact Center（音声 AI）────────────────────────────────
   - id: STT
     label: "STT（音声認識）"
-    category: AI
+    category: CONTACT_CENTER
     icon: { kind: builtin, name: "mic" }
     shape: rounded
     color: "bg-violet-600"
@@ -85,7 +90,7 @@ components:
 
   - id: TTS
     label: "TTS（音声合成）"
-    category: AI
+    category: CONTACT_CENTER
     icon: { kind: builtin, name: "volume-2" }
     shape: rounded
     color: "bg-violet-400"
@@ -93,7 +98,7 @@ components:
 
   - id: STS
     label: "STS（音声対音声モデル）"
-    category: AI
+    category: CONTACT_CENTER
     icon: { kind: builtin, name: "audio-lines" }
     shape: rounded
     color: "bg-purple-500"
@@ -101,7 +106,7 @@ components:
 
   - id: AVATAR
     label: "アバター"
-    category: AI
+    category: CONTACT_CENTER
     icon: { kind: builtin, name: "scan-face" }
     shape: rounded
     color: "bg-pink-600"

@@ -114,8 +114,8 @@ Open the categories under `LIBRARY` in the left sidebar and click these five:
 
 | # | Component | Category |
 |---|---|---|
-| 1 | User | `INFRASTRUCTURE` |
-| 2 | Front-end Server | `INFRASTRUCTURE` |
+| 1 | User | `USERS & DEVICES` |
+| 2 | Front-end Server | `NETWORK & EDGE` |
 | 3 | LLM model | `AI COMPONENTS` |
 | 4 | Vector DB / RAG | `AI COMPONENTS` |
 | 5 | Data store | `CLASSIC DFD` |

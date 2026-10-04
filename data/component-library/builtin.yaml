@@ -1,6 +1,6 @@
 # Built-in component library for CyberRiskScape.
 # Default 13 component types covering Classic DFD, AI/LLM components, and
-# infrastructure primitives. Bundled with the application; cannot be disabled.
+# users/devices, network edge and identity primitives. Bundled with the application; cannot be disabled.
 #
 # To add custom components, create a separate YAML in this directory or upload
 # from the UI (planned for a later phase).
@@ -15,7 +15,7 @@ library:
   version: "1.0"
   license: "Apache-2.0"
   builtin: true
-  description: "Default component set: Classic DFD primitives, AI components, and infrastructure."
+  description: "Default component set: Classic DFD primitives, AI components, users/devices, network edge, and identity."
 
 categories:
   - id: CLASSIC_DFD
@@ -24,9 +24,15 @@ categories:
   - id: AI
     label: "AI Components"
     order: 20
-  - id: INFRASTRUCTURE
-    label: "Infrastructure"
+  - id: USERS_DEVICES
+    label: "Users & Devices"
+    order: 15
+  - id: NETWORK
+    label: "Network & Edge"
     order: 30
+  - id: IDENTITY
+    label: "Identity & Secrets"
+    order: 32
   - id: DOCUMENTS
     label: "Documents"
     order: 40
@@ -92,10 +98,10 @@ components:
     color: "bg-pink-500"
     description: "計画・ツール選択・推論を自律的に行う AI エージェント。"
 
-  # ── Infrastructure ──────────────────────────────────────────
+  # ── Users & Devices / Network & Edge / Identity & Secrets ───
   - id: USER
     label: "ユーザー"
-    category: INFRASTRUCTURE
+    category: USERS_DEVICES
     icon: { kind: builtin, name: "user" }
     shape: rounded
     color: "bg-blue-500"
@@ -104,7 +110,7 @@ components:
 
   - id: PC
     label: "パソコン"
-    category: INFRASTRUCTURE
+    category: USERS_DEVICES
     icon: { kind: builtin, name: "monitor" }
     shape: rounded
     color: "bg-sky-500"
@@ -113,7 +119,7 @@ components:
 
   - id: SMARTPHONE
     label: "スマートフォン"
-    category: INFRASTRUCTURE
+    category: USERS_DEVICES
     icon: { kind: builtin, name: "smartphone" }
     shape: rounded
     color: "bg-violet-500"
@@ -122,7 +128,7 @@ components:
 
   - id: IOT
     label: "IoT"
-    category: INFRASTRUCTURE
+    category: USERS_DEVICES
     icon: { kind: builtin, name: "wifi" }
     shape: rounded
     color: "bg-lime-500"
@@ -130,7 +136,7 @@ components:
 
   - id: GATEWAY
     label: "APIゲートウェイ"
-    category: INFRASTRUCTURE
+    category: NETWORK
     icon: { kind: builtin, name: "activity" }
     shape: rounded
     color: "bg-indigo-500"
@@ -138,7 +144,7 @@ components:
 
   - id: FRONT_END_SERVER
     label: "Front-end Server"
-    category: INFRASTRUCTURE
+    category: NETWORK
     icon: { kind: builtin, name: "server" }
     shape: rounded
     color: "bg-rose-500"
@@ -146,7 +152,7 @@ components:
 
   - id: CONNECTOR
     label: "コネクタ"
-    category: INFRASTRUCTURE
+    category: NETWORK
     icon: { kind: builtin, name: "circle" }
     shape: connector
     color: "bg-slate-400"
@@ -154,7 +160,7 @@ components:
 
   - id: IDENTITY_PROVIDER
     label: "IdP"
-    category: INFRASTRUCTURE
+    category: IDENTITY
     icon: { kind: builtin, name: "shield-check" }
     shape: rounded
     color: "bg-fuchsia-600"
@@ -162,7 +168,7 @@ components:
 
   - id: DIRECTORY
     label: "Directory"
-    category: INFRASTRUCTURE
+    category: IDENTITY
     icon: { kind: builtin, name: "users" }
     shape: rounded
     color: "bg-fuchsia-700"
