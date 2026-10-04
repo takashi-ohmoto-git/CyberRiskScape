@@ -221,13 +221,11 @@ code 1 (confirmed with the templates, at the time of writing; DF and C numbers v
 makes the threat names and node labels English.
 
 ```text
---fail-on High: 新規かつ未抑制の脅威が 24 件しきい値以上です。
+--fail-on High: 24 new unsuppressed threat(s) at or above the threshold.
   - [Critical] DF9 Unauthenticated queries Spoofing
   - [Critical] DF10 Unauthenticated API calls Spoofing
   ...
 ```
-
-The first line is a fixed message that is still in Japanese even with `--locale en`.
 
 The diff report (`--format md`) also lists the **triggers** a person should review, such as a new external interface
 (T2). For how to wire it into GitHub Actions, see [Integrating with AI-Driven Development CI](ci-integration.md).

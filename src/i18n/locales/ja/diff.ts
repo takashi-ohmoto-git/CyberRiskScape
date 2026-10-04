@@ -35,4 +35,5 @@ export const jaDiff = {
   'diff.gate.pass': 'PASS（しきい値 {failOn} 以上の新規未抑制脅威はありません）',
   'diff.gate.fail': 'FAIL（しきい値 {failOn} 以上の新規未抑制脅威が {count} 件）',
   'diff.gate.notConfigured': '未設定（--fail-on 省略）',
+  'diff.gate.stderr': '--fail-on {failOn}: 新規かつ未抑制の脅威が {count} 件しきい値以上です。',
 } as const;

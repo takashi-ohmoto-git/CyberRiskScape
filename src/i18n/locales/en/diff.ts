@@ -33,4 +33,5 @@ export const enDiff: Partial<Record<TranslationKey, string>> = {
   'diff.gate.pass': 'PASS (no new unsuppressed threats at or above {failOn})',
   'diff.gate.fail': 'FAIL ({count} new unsuppressed threat(s) at or above {failOn})',
   'diff.gate.notConfigured': 'Not configured (--fail-on omitted)',
+  'diff.gate.stderr': '--fail-on {failOn}: {count} new unsuppressed threat(s) at or above the threshold.',
 };

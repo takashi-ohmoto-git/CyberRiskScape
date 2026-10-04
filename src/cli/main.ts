@@ -13,7 +13,7 @@ import {
 import { triggersToJson, triggersToMarkdown } from './triggers';
 import { buildThreatReport, toDCRHThreatModelMarkdown, toJsonObject } from '../features/export/threatReport';
 import { effectiveSeverity } from '../core/model/risk';
-import { setLocale, type Locale } from '../i18n';
+import { setLocale, translate, type Locale } from '../i18n';
 import { LAYER_KEYS, type FrameworkView, type Severity } from '../core/model/types';
 import { getChangeTriggers } from '../change-triggers/loader/bundledChangeTriggers';
 import { loadChangeTriggers } from '../change-triggers/loader/loadChangeTriggers';
@@ -267,7 +267,7 @@ function runDiff(values: CliValues, positionals: string[]): void {
 
   if (gate && gate.offenders.length > 0) {
     process.stderr.write(
-      `--fail-on ${failOn}: 新規かつ未抑制の脅威が ${gate.offenders.length} 件しきい値以上です。\n`,
+      `${translate('diff.gate.stderr', locale, { failOn: gate.failOn, count: gate.offenders.length })}\n`,
     );
     for (const { threat, asset } of gate.offenders) {
       process.stderr.write(`  - [${effectiveSeverity(threat)}] ${asset} ${threat.name ?? threat.category}\n`);
