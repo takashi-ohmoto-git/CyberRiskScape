@@ -35,7 +35,7 @@ components:
     category: AI
     icon: { kind: builtin, name: "settings" }
     shape: rounded
-    color: "bg-fuchsia-600"
+    color: "bg-violet-600"
     description: "Model Context Protocol サーバ。ツール記述子・スキーマ・メタデータをエージェントに提供する。tool poisoning / rug pull の標的になりやすい。"
 
   - id: MEMORY_STORE
@@ -43,7 +43,7 @@ components:
     category: AI
     icon: { kind: builtin, name: "hard-drive" }
     shape: data-store
-    color: "bg-amber-600"
+    color: "bg-violet-600"
     description: "エージェントの長期メモリ・要約・統計記憶。memory poisoning や cross-session privilege retention の起点。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, CREDENTIAL, LOG, OTHER_DOCUMENT]
 
@@ -52,5 +52,5 @@ components:
     category: AI
     icon: { kind: builtin, name: "layers" }
     shape: rounded
-    color: "bg-pink-300"
+    color: "bg-violet-600"
     description: "マルチエージェント構成における下位エージェント（委譲先）。confused deputy / unscoped privilege inheritance の経路。"

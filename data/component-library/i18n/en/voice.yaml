@@ -29,6 +29,10 @@ components:
     label: "Human operator"
     description: "A human agent at the contact center (operator or supervisor). Has access to customer personal data and call content."
 
+  PHONE:
+    label: "Phone"
+    description: "A voice call from a landline or mobile phone. Caller ID can be spoofed, and the caller's identity is not guaranteed."
+
   VOICEPRINT_AUTH:
     label: "Voiceprint authentication"
     description: "Biometric authentication that verifies identity by voice. Holds voiceprint templates; replayed recordings and synthesized voices are the main spoofing threats."

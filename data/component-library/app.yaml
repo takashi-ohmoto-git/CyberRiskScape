@@ -34,7 +34,7 @@ components:
     category: APP
     icon: { kind: builtin, name: "message-circle" }
     shape: rounded
-    color: "bg-green-600"
+    color: "bg-transparent"
     description: "チャット / メッセージングアプリ。認可状況・所有状況を属性で設定する。"
 
   - id: LINE
@@ -42,7 +42,7 @@ components:
     category: APP
     icon: { kind: builtin, name: "messages-square" }
     shape: rounded
-    color: "bg-green-500"
+    color: "bg-transparent"
     description: "LINE 公式アカウント／Messaging API チャネル。外部のメッセージング基盤を経由して顧客とやり取りする。"
 
   - id: MAIL
@@ -50,7 +50,7 @@ components:
     category: APP
     icon: { kind: builtin, name: "mail" }
     shape: rounded
-    color: "bg-blue-500"
+    color: "bg-transparent"
     description: "メールサービス / メールクライアント。認可状況・所有状況を属性で設定する。"
 
   - id: CRM
@@ -58,7 +58,7 @@ components:
     category: APP
     icon: { kind: builtin, name: "users" }
     shape: rounded
-    color: "bg-orange-600"
+    color: "bg-transparent"
     description: "CRM（顧客管理）アプリ。認可状況・所有状況を属性で設定する。"
 
   - id: OTHER_APP
@@ -66,7 +66,7 @@ components:
     category: APP
     icon: { kind: builtin, name: "app-window" }
     shape: rounded
-    color: "bg-slate-500"
+    color: "bg-transparent"
     description: "上記に該当しないその他の業務アプリ。認可状況・所有状況を属性で設定する。"
 
   - id: SHADOW_APP
@@ -74,5 +74,5 @@ components:
     category: APP
     icon: { kind: builtin, name: "eye-off" }
     shape: rounded
-    color: "bg-zinc-600"
+    color: "bg-transparent"
     description: "組織が把握・統制していないシャドー IT アプリ。"

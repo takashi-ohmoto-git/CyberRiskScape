@@ -172,7 +172,7 @@ rules:
       nodeType: HUMAN_OPERATOR
       # 外部からの通話・来訪者と接点を持つとき成立する。電話基盤・利用者・外部主体との接続を前提にする。
       connection:
-        peerType: [PBX, USER, EXTERNAL_ENTITY, SMARTPHONE]
+        peerType: [PBX, USER, EXTERNAL_ENTITY, SMARTPHONE, PHONE]
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.AT-01"
@@ -316,10 +316,10 @@ rules:
     appliesTo:
       kind: node
       nodeType: PBX
-      # 外部（利用者・外部主体・スマートフォン）から着信する経路があるときのみ発火する。
+      # 外部（利用者・外部主体・スマートフォン・電話）から着信する経路があるときのみ発火する。
       connection:
         direction: inbound
-        peerType: [USER, EXTERNAL_ENTITY, SMARTPHONE]
+        peerType: [USER, EXTERNAL_ENTITY, SMARTPHONE, PHONE]
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.AA-03"

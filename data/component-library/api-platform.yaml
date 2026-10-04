@@ -50,7 +50,7 @@ components:
     category: SERVICES
     icon: { kind: builtin, name: "server-cog" }
     shape: rounded
-    color: "bg-cyan-700"
+    color: "bg-transparent"
     description: "ゲートウェイの背後にあるバックエンド API・マイクロサービス。業務データへの認可を最終的に担う。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, CREDENTIAL, LOG, OTHER_DOCUMENT]
 
@@ -59,7 +59,7 @@ components:
     category: SERVICES
     icon: { kind: builtin, name: "sliders-horizontal" }
     shape: rounded
-    color: "bg-indigo-800"
+    color: "bg-transparent"
     description: "API ゲートウェイの Admin API・管理コンソール・構成の配布元。ルーティングと認証設定を書き換えられる管理面。"
     canContain: [CREDENTIAL, LOG, API_SPEC]
 
@@ -68,7 +68,7 @@ components:
     category: SERVICES
     icon: { kind: builtin, name: "workflow" }
     shape: rounded
-    color: "bg-slate-600"
+    color: "bg-transparent"
     description: "ビルド・テスト・デプロイを自動実行する基盤。API テストランナーや構成の自動適用を含む。"
     canContain: [SOURCE_CODE, CREDENTIAL, LOG, API_SPEC]
 
@@ -78,7 +78,7 @@ components:
     category: IDENTITY
     icon: { kind: builtin, name: "vault" }
     shape: rounded
-    color: "bg-amber-800"
+    color: "bg-fuchsia-600"
     description: "API キー・トークン・証明書を保管し、実行時に払い出すシークレット管理（Vault / KMS 等）。"
     canContain: [CREDENTIAL]
 
@@ -88,7 +88,7 @@ components:
     category: APP
     icon: { kind: builtin, name: "send" }
     shape: rounded
-    color: "bg-orange-400"
+    color: "bg-transparent"
     description: "API 開発・テストツールのワークスペース。リクエストのコレクション・環境変数・モックを保持し、クラウドで共有されることが多い。"
     canContain: [CREDENTIAL, API_SPEC, OTHER_DOCUMENT]
 
@@ -98,5 +98,5 @@ components:
     category: DOCUMENTS
     icon: { kind: builtin, name: "file-json" }
     shape: rounded
-    color: "bg-yellow-600"
+    color: "bg-cyan-600"
     description: "OpenAPI 等の機械可読な API 定義。エンドポイント・認証方式・データ構造を示す。"

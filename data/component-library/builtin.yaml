@@ -44,7 +44,7 @@ components:
     category: CLASSIC_DFD
     icon: { kind: builtin, name: "building-2" }
     shape: rectangle
-    color: "bg-amber-500"
+    color: "bg-transparent"
     description: "システム境界の外側にいるアクター（顧客、外部システム、規制当局など）。"
 
   - id: PROCESS
@@ -52,7 +52,7 @@ components:
     category: CLASSIC_DFD
     icon: { kind: builtin, name: "cog" }
     shape: circle
-    color: "bg-cyan-500"
+    color: "bg-transparent"
     description: "データを変換・処理する機能要素。Yourdon 記法では円で表現。"
 
   - id: DATA_STORE
@@ -60,7 +60,7 @@ components:
     category: CLASSIC_DFD
     icon: { kind: builtin, name: "hard-drive" }
     shape: data-store
-    color: "bg-teal-500"
+    color: "bg-transparent"
     description: "永続化されたデータの格納場所（DB、ファイルストア、キャッシュ）。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, OTHER_DOCUMENT]
 
@@ -70,7 +70,7 @@ components:
     category: AI
     icon: { kind: builtin, name: "cpu" }
     shape: rounded
-    color: "bg-purple-600"
+    color: "bg-violet-600"
     description: "大規模言語モデル（推論API、ホスト型、ローカル型を含む）。"
 
   - id: DB
@@ -78,7 +78,7 @@ components:
     category: AI
     icon: { kind: builtin, name: "database" }
     shape: rounded
-    color: "bg-emerald-500"
+    color: "bg-violet-600"
     description: "埋め込みベクトルや RAG インデックスを保持するストア。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]
 
@@ -87,7 +87,7 @@ components:
     category: AI
     icon: { kind: builtin, name: "settings" }
     shape: rounded
-    color: "bg-orange-500"
+    color: "bg-violet-600"
     description: "エージェントが呼び出す外部ツール／API（function calling 先）。"
 
   - id: AGENT
@@ -95,7 +95,7 @@ components:
     category: AI
     icon: { kind: builtin, name: "layers" }
     shape: rounded
-    color: "bg-pink-500"
+    color: "bg-violet-600"
     description: "計画・ツール選択・推論を自律的に行う AI エージェント。"
 
   # ── Users & Devices / Network & Edge / Identity & Secrets ───
@@ -104,7 +104,7 @@ components:
     category: USERS_DEVICES
     icon: { kind: builtin, name: "user" }
     shape: rounded
-    color: "bg-blue-500"
+    color: "bg-yellow-600"
     description: "人間のエンドユーザー。userTrustAttribute で信頼区分を分類。"
     canContain: [PC, SMARTPHONE]
 
@@ -113,7 +113,7 @@ components:
     category: USERS_DEVICES
     icon: { kind: builtin, name: "monitor" }
     shape: rounded
-    color: "bg-sky-500"
+    color: "bg-yellow-600"
     description: "PC 端末。managedState で MDM 配下か BYOD かを表現。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]
 
@@ -122,7 +122,7 @@ components:
     category: USERS_DEVICES
     icon: { kind: builtin, name: "smartphone" }
     shape: rounded
-    color: "bg-violet-500"
+    color: "bg-yellow-600"
     description: "モバイル端末。managedState で MDM 配下か BYOD かを表現。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]
 
@@ -131,7 +131,7 @@ components:
     category: USERS_DEVICES
     icon: { kind: builtin, name: "wifi" }
     shape: rounded
-    color: "bg-lime-500"
+    color: "bg-yellow-600"
     description: "IoT 機器・組込デバイス。多くは Unmanaged 扱い。"
 
   - id: GATEWAY
@@ -139,7 +139,7 @@ components:
     category: NETWORK
     icon: { kind: builtin, name: "activity" }
     shape: rounded
-    color: "bg-indigo-500"
+    color: "bg-transparent"
     description: "API ゲートウェイ／リバースプロキシ／WAF。境界での認可と流入制御を担う。"
 
   - id: FRONT_END_SERVER
@@ -147,7 +147,7 @@ components:
     category: NETWORK
     icon: { kind: builtin, name: "server" }
     shape: rounded
-    color: "bg-rose-500"
+    color: "bg-transparent"
     description: "Web サーバー・リバースプロキシ等の外部公開ポイント。attackSurface 属性で公開条件・防御策の有無を表現する。"
 
   - id: CONNECTOR
@@ -155,7 +155,7 @@ components:
     category: NETWORK
     icon: { kind: builtin, name: "circle" }
     shape: connector
-    color: "bg-slate-400"
+    color: "bg-transparent"
     description: "中継ノード（メッセージブローカー、iPaaS、サイドカープロキシ）。"
 
   - id: IDENTITY_PROVIDER
@@ -171,7 +171,7 @@ components:
     category: IDENTITY
     icon: { kind: builtin, name: "users" }
     shape: rounded
-    color: "bg-fuchsia-700"
+    color: "bg-fuchsia-600"
     description: "ディレクトリサービス（Active Directory / LDAP）。利用者・グループ・権限とその資格情報を保持する ID の格納先であり、自身も認証（Kerberos 等）を行う。トークン発行やフェデレーションを担う場合は IdP を使う。"
     canContain: [PERSONAL_INFO, CREDENTIAL]
 
@@ -181,7 +181,7 @@ components:
     category: DOCUMENTS
     icon: { kind: builtin, name: "id-card" }
     shape: rounded
-    color: "bg-red-500"
+    color: "bg-cyan-600"
     description: "氏名・住所・連絡先などの個人を識別し得る情報（PII）。"
 
   - id: CONFIDENTIAL_INFO
@@ -189,7 +189,7 @@ components:
     category: DOCUMENTS
     icon: { kind: builtin, name: "file-lock" }
     shape: rounded
-    color: "bg-red-700"
+    color: "bg-cyan-600"
     description: "事業秘密・契約情報・非公開資料など、漏洩時の影響が大きい情報。"
 
   - id: SOURCE_CODE
@@ -197,7 +197,7 @@ components:
     category: DOCUMENTS
     icon: { kind: builtin, name: "file-code" }
     shape: rounded
-    color: "bg-yellow-500"
+    color: "bg-cyan-600"
     description: "アプリケーション／インフラのソースコード、IaC、設定ファイル。"
 
   - id: CREDENTIAL
@@ -205,7 +205,7 @@ components:
     category: DOCUMENTS
     icon: { kind: builtin, name: "key-round" }
     shape: rounded
-    color: "bg-amber-700"
+    color: "bg-cyan-600"
     description: "API キー・トークン・パスワード・秘密鍵・証明書などの認証材料。"
 
   - id: LOG
@@ -213,7 +213,7 @@ components:
     category: DOCUMENTS
     icon: { kind: builtin, name: "scroll-text" }
     shape: rounded
-    color: "bg-gray-500"
+    color: "bg-cyan-600"
     description: "監査ログ・アクセスログ・アプリケーションログなどの記録情報。"
 
   - id: VOICE_RECORDING
@@ -221,7 +221,7 @@ components:
     category: DOCUMENTS
     icon: { kind: builtin, name: "file-audio" }
     shape: rounded
-    color: "bg-rose-600"
+    color: "bg-cyan-600"
     description: "通話の録音データ。声そのものが生体情報であり、通話内容に個人情報・機密情報を含み得る。"
 
   - id: OTHER_DOCUMENT
@@ -229,5 +229,5 @@ components:
     category: DOCUMENTS
     icon: { kind: builtin, name: "file" }
     shape: rounded
-    color: "bg-stone-400"
+    color: "bg-cyan-600"
     description: "上記カテゴリに該当しないドキュメント・データ資産。"

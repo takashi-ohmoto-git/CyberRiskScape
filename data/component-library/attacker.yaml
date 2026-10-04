@@ -46,7 +46,7 @@ components:
     category: ATTACKER
     icon: { kind: builtin, name: "user-x" }
     shape: rounded
-    color: "bg-rose-700"
+    color: "bg-red-600"
     description: "内部不正・内部脅威（従業員・委託先等の正規アクセス権を持つ攻撃者）。objective で標的コンポーネントを指定する。"
 
   - id: AGENTIC_ATTACKER
@@ -54,5 +54,5 @@ components:
     category: ATTACKER
     icon: { kind: builtin, name: "bot" }
     shape: rounded
-    color: "bg-purple-700"
+    color: "bg-red-600"
     description: "AI エージェントを悪用する、または自律エージェント自体が攻撃主体となる攻撃者。objective で標的コンポーネントを指定する。"

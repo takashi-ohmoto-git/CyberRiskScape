@@ -1,12 +1,13 @@
 # 音声 AI・コンタクトセンター拡張コンポーネントライブラリ。
 #
-# 電話・音声 AI・コンタクトセンターを脅威モデルに載せるための 8 型：
+# 電話・音声 AI・コンタクトセンターを脅威モデルに載せるための 9 型：
 #   - PBX: 電話交換機・コンタクトセンター基盤（PSTN / SIP、クラウド型コンタクトセンターを含む）
 #   - IVR: 自動音声応答
 #   - STT / TTS / STS: 音声→テキスト／テキスト→音声／音声→音声（リアルタイム音声モデル）
 #   - AVATAR: アバター・デジタルヒューマン（映像と音声で応対）
 #   - HUMAN_OPERATOR: 有人オペレーター（コンタクトセンターの応対者）
 #   - VOICEPRINT_AUTH: 声紋認証（生体認証）
+#   - PHONE: 電話機（固定電話・携帯電話の通話。データ端末としてのスマートフォンは builtin の SMARTPHONE）
 #
 # 通話録音（VOICE_RECORDING）は DOCUMENTS カテゴリのため builtin.yaml、
 # LINE チャネルは CHAT と同じ APP カテゴリのため app.yaml に置く。
@@ -50,7 +51,7 @@ components:
     category: CONTACT_CENTER
     icon: { kind: builtin, name: "phone" }
     shape: rounded
-    color: "bg-teal-600"
+    color: "bg-transparent"
     description: "電話交換機・コンタクトセンター基盤（PSTN / SIP、クラウド型コンタクトセンターを含む）。通話の着信・転送・録音を担う。"
     canContain: [VOICE_RECORDING, PERSONAL_INFO, LOG]
 
@@ -59,7 +60,7 @@ components:
     category: CONTACT_CENTER
     icon: { kind: builtin, name: "list-tree" }
     shape: rounded
-    color: "bg-cyan-600"
+    color: "bg-transparent"
     description: "自動音声応答（Interactive Voice Response）。番号入力や音声で通話を振り分け、本人確認や手続きを自動化する。"
 
   - id: HUMAN_OPERATOR
@@ -67,15 +68,23 @@ components:
     category: USERS_DEVICES
     icon: { kind: builtin, name: "headset" }
     shape: rounded
-    color: "bg-blue-600"
+    color: "bg-yellow-600"
     description: "コンタクトセンターの有人の応対者（オペレーター・スーパーバイザー）。顧客の個人情報や通話内容に触れる。"
+
+  - id: PHONE
+    label: "電話"
+    category: USERS_DEVICES
+    icon: { kind: builtin, name: "phone-call" }
+    shape: rounded
+    color: "bg-yellow-600"
+    description: "固定電話・携帯電話による通話。発信者番号は偽装でき、通話相手の本人性は保証されない。"
 
   - id: VOICEPRINT_AUTH
     label: "声紋認証"
     category: IDENTITY
     icon: { kind: builtin, name: "fingerprint" }
     shape: rounded
-    color: "bg-fuchsia-500"
+    color: "bg-fuchsia-600"
     description: "声の特徴で本人確認を行う生体認証。声紋テンプレートを保持し、なりすまし（録音再生・音声合成）が主な脅威。"
     canContain: [PERSONAL_INFO, CREDENTIAL]
 
@@ -85,7 +94,7 @@ components:
     category: CONTACT_CENTER
     icon: { kind: builtin, name: "mic" }
     shape: rounded
-    color: "bg-violet-600"
+    color: "bg-transparent"
     description: "Speech-to-Text。音声をテキストに書き起こす。認識結果は後段の LLM・エージェントへの入力になる。"
 
   - id: TTS
@@ -93,7 +102,7 @@ components:
     category: CONTACT_CENTER
     icon: { kind: builtin, name: "volume-2" }
     shape: rounded
-    color: "bg-violet-400"
+    color: "bg-transparent"
     description: "Text-to-Speech。テキストを音声に変換して応答する。合成音声のなりすましへの悪用にも注意。"
 
   - id: STS
@@ -101,7 +110,7 @@ components:
     category: CONTACT_CENTER
     icon: { kind: builtin, name: "audio-lines" }
     shape: rounded
-    color: "bg-purple-500"
+    color: "bg-transparent"
     description: "Speech-to-Speech。音声を直接入出力するリアルタイム音声モデル。テキストを介さないため、音声経由の指示注入の検査が難しい。"
 
   - id: AVATAR
@@ -109,5 +118,5 @@ components:
     category: CONTACT_CENTER
     icon: { kind: builtin, name: "scan-face" }
     shape: rounded
-    color: "bg-pink-600"
+    color: "bg-transparent"
     description: "アバター・デジタルヒューマン。映像と音声で利用者に応対する。顔・声の取り扱いとなりすましに注意。"

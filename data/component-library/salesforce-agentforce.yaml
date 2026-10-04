@@ -46,5 +46,5 @@ components:
     category: PROTECT
     icon: { kind: builtin, name: "shield-half" }
     shape: rounded
-    color: "bg-sky-700"
+    color: "bg-green-600"
     description: "Salesforce の LLM 呼び出しの前後に入る保護層（データマスキング・ゼロデータ保持・毒性検知・プロンプト防御・監査）。エージェントと LLM の間に置く。"
