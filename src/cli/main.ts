@@ -1,4 +1,5 @@
 import { readFileSync, statSync, writeFileSync } from 'node:fs';
+import { gunzipSync } from 'node:zlib';
 import { parseArgs } from 'node:util';
 import { analyzeProject, evaluateGate, type LayerAnalysisResult } from './analyze';
 import { toSarif } from './sarif';
@@ -24,6 +25,7 @@ import { BRANDING } from '../core/branding';
 import { kongToLayer } from '../features/kong-import/kongToLayer';
 import { layerToProject } from '../features/kong-import/toProject';
 import { conjurToLayer } from '../features/conjur-import/conjurToLayer';
+import { shodanToLayer } from '../features/shodan-import/shodanToLayer';
 import { toPostmanCollection } from '../features/postman-export/toPostmanCollection';
 
 /**
@@ -47,6 +49,7 @@ const USAGE = `使い方:
   triggers [options]
   import-kong <kong.yaml> [options]
   import-conjur <policy.yml> [options]
+  import-shodan <export.json[.gz]> [options]
   export-postman <project.json> [options]
   mcp [options]
 
@@ -76,6 +79,10 @@ import-kong のオプション（Kong の宣言設定から構成図の下書き
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
 import-conjur のオプション（Conjur / Secrets Manager のポリシーから NHI と読み取り経路の図を L1 に作り、プロジェクト JSON を出力）:
+  --locale <ja|en>                              ノード名の言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+import-shodan のオプション（Shodan の書き出し（.json.gz または JSON）から外部露出サービスの図を L1 に作り、プロジェクト JSON を出力）:
   --locale <ja|en>                              ノード名の言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
@@ -354,6 +361,38 @@ function runImportConjur(values: CliValues, positionals: string[]): void {
 }
 
 /**
+ * `import-shodan`：Shodan の書き出し（gzip 圧縮の JSON Lines、または JSON）から、インターネットに露出した
+ * サービスの構成図を作り、プロジェクト JSON を出力する。バナー本文・HTTP の内容は読まない（`shodanToLayer` 参照）。
+ */
+function runImportShodan(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+
+  let text: string;
+  try {
+    const buf = readFileSync(file);
+    text = (buf[0] === 0x1f && buf[1] === 0x8b ? gunzipSync(buf) : buf).toString('utf-8');
+  } catch (e) {
+    fail(`ファイルを読み込めません: ${file}（${e instanceof Error ? e.message : String(e)}）`);
+  }
+  const result = shodanToLayer(text);
+  if (!result.ok) fail(result.error);
+
+  writeOutput(JSON.stringify(layerToProject(result.layer), null, 2), values.out);
+  const s = result.summary;
+  process.stderr.write(
+    `Shodan の書き出しを取り込みました（サービス ${s.services} / ホスト ${s.hosts} / CVE ${s.cves} / 読み飛ばし ${s.skipped} / 上限超過 ${s.truncated}）
+`,
+  );
+}
+
+/**
  * `export-postman`：検出した脅威のうち HTTP で確かめられるものについて、確認リクエストの
  * Postman Collection（v2.1 JSON）を出力する。ホスト名・トークンは変数のまま出す。
  */
@@ -434,6 +473,8 @@ function main(): void {
     runExportPostman(values, positionals);
   } else if (command === 'import-conjur') {
     runImportConjur(values, positionals);
+  } else if (command === 'import-shodan') {
+    runImportShodan(values, positionals);
   } else if (command === 'import-kong') {
     runImportKong(values, positionals);
   } else if (command === 'mcp') {

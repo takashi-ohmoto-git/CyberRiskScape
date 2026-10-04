@@ -15,6 +15,7 @@ import {
 } from '../../features/templates/io';
 import { kongToLayer, type KongImportSummary } from '../../features/kong-import/kongToLayer';
 import { conjurToLayer, type ConjurImportSummary } from '../../features/conjur-import/conjurToLayer';
+import { shodanToLayer, type ShodanImportSummary } from '../../features/shodan-import/shodanToLayer';
 
 type Tab = 'export' | 'import';
 
@@ -51,11 +52,13 @@ export function TemplateModal() {
   /** Kong 設定から作った場合のみ、元設定の件数を表示する。 */
   const [kongSummary, setKongSummary] = useState<KongImportSummary | null>(null);
   const [conjurSummary, setConjurSummary] = useState<ConjurImportSummary | null>(null);
+  const [shodanSummary, setShodanSummary] = useState<ShodanImportSummary | null>(null);
   /** 既存要素ありの置換に対するインライン確認待ち（ブラウザダイアログを使わない方針）。 */
   const [confirming, setConfirming] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const kongInputRef = useRef<HTMLInputElement>(null);
   const conjurInputRef = useRef<HTMLInputElement>(null);
+  const shodanInputRef = useRef<HTMLInputElement>(null);
 
   const activeCount = nodes.length + edges.length + boundaries.length;
 
@@ -72,6 +75,7 @@ export function TemplateModal() {
     setImportedFileName(null);
     setKongSummary(null);
     setConjurSummary(null);
+    setShodanSummary(null);
     setConfirming(false);
   }, [isOpen, projectName, activeLayer]);
 
@@ -101,6 +105,7 @@ export function TemplateModal() {
     setImportedFileName(file.name);
     setKongSummary(null);
     setConjurSummary(null);
+    setShodanSummary(null);
     setConfirming(false);
   };
 
@@ -109,6 +114,7 @@ export function TemplateModal() {
     setParsed(result);
     setKongSummary(result.ok ? result.summary : null);
     setConjurSummary(null);
+    setShodanSummary(null);
     setImportedFileName(file.name);
     setConfirming(false);
   };
@@ -118,6 +124,24 @@ export function TemplateModal() {
     setParsed(result);
     setConjurSummary(result.ok ? result.summary : null);
     setKongSummary(null);
+    setShodanSummary(null);
+    setImportedFileName(file.name);
+    setConfirming(false);
+  };
+
+  const handleShodanFile = async (file: File) => {
+    // shodan download / host --save の出力は gzip 圧縮の JSON Lines。先頭 2 バイトで判定して展開する。
+    const buf = await file.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    const text =
+      bytes[0] === 0x1f && bytes[1] === 0x8b
+        ? await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).text()
+        : new TextDecoder().decode(buf);
+    const result = shodanToLayer(text);
+    setParsed(result);
+    setShodanSummary(result.ok ? result.summary : null);
+    setKongSummary(null);
+    setConjurSummary(null);
     setImportedFileName(file.name);
     setConfirming(false);
   };
@@ -283,6 +307,28 @@ export function TemplateModal() {
               {t('project.templateModal.selectConjur')}
             </button>
 
+            <p className="text-xs text-slate-400 leading-relaxed">
+              {t('project.templateModal.shodanIntro')}
+            </p>
+            <input
+              ref={shodanInputRef}
+              type="file"
+              accept=".json,.gz,.jsonl,.ndjson,application/json,application/gzip"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleShodanFile(file);
+                e.target.value = '';
+              }}
+            />
+            <button
+              onClick={() => shodanInputRef.current?.click()}
+              className="flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-wider bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg transition-colors"
+            >
+              <Upload size={14} />
+              {t('project.templateModal.selectShodan')}
+            </button>
+
             {importedFileName && parsed && (
               <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-3 text-xs">
                 <p className="text-slate-500 mb-1 truncate">{importedFileName}</p>
@@ -303,6 +349,11 @@ export function TemplateModal() {
                     {conjurSummary && (
                       <span className="block text-slate-400 mt-1">
                         {t('project.templateModal.conjurStats', { ...conjurSummary })}
+                      </span>
+                    )}
+                    {shodanSummary && (
+                      <span className="block text-slate-400 mt-1">
+                        {t('project.templateModal.shodanStats', { ...shodanSummary })}
                       </span>
                     )}
                   </p>

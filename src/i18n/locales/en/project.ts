@@ -139,6 +139,22 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'conjur.edge.fetch': 'Fetch {n} variables',
   'conjur.edge.update': 'Update {n} variables',
   'conjur.edge.actAs': 'Granted the host role',
+  'project.templateModal.shodanIntro':
+    'You can also draft a diagram of externally exposed services from a Shodan export (.json.gz from `shodan download` / `host --save`, or JSON). Banner text and HTTP content are not put on the diagram.',
+  'project.templateModal.selectShodan': 'Select Shodan export',
+  'project.templateModal.shodanStats': 'Services {services} / Hosts {hosts} / CVEs {cves} / Skipped {skipped} / Over limit {truncated}',
+  // ── Shodan export import ──
+  'shodan.templateName': 'External exposure observed by Shodan',
+  'shodan.error.noBanners': 'No Shodan banners (JSON with ip_str and port) found. Select an export such as the output of `shodan download`.',
+  'shodan.node.actor': 'Attacker on the internet',
+  'shodan.desc.ip': 'IP: {ip}',
+  'shodan.desc.port': 'Port: {port}/{transport}',
+  'shodan.desc.product': 'Product: {product}',
+  'shodan.desc.tags': 'Tags: {tags}',
+  'shodan.desc.observed': 'Observed: {date}',
+  'shodan.desc.cves': 'CVEs reported by Shodan (unverified): {ids}',
+  'shodan.desc.more': '{n} more',
+  'shodan.desc.ics': 'OT/ICS device (CyberRiskScape stencils do not cover OT/ICS yet, so it is drawn as IoT)',
   // ── Kong (decK) import ──
   'kong.templateName': 'Kong Gateway (generated from decK)',
   'kong.error.parse': 'Could not read the file as YAML / JSON: {message}',

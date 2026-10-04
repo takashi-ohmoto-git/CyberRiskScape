@@ -139,6 +139,22 @@ export const jaProject = {
   'conjur.edge.fetch': '変数の取得 {n} 件',
   'conjur.edge.update': '変数の更新 {n} 件',
   'conjur.edge.actAs': 'host のロールを付与',
+  'project.templateModal.shodanIntro':
+    'Shodan の書き出し（`shodan download` / `host --save` の .json.gz、または JSON）から、外部に露出したサービスの図を作ることもできます。バナー本文や HTTP の内容は図に載せません。',
+  'project.templateModal.selectShodan': 'Shodan の書き出しを選択',
+  'project.templateModal.shodanStats': 'サービス {services} / ホスト {hosts} / CVE {cves} / 読み飛ばし {skipped} / 上限超過 {truncated}',
+  // ── Shodan 書き出し取り込み ──
+  'shodan.templateName': 'Shodan で観測した外部露出',
+  'shodan.error.noBanners': 'Shodan のバナー（ip_str と port を持つ JSON）が見つかりません。`shodan download` などの書き出しを選択してください。',
+  'shodan.node.actor': 'インターネット上の攻撃者',
+  'shodan.desc.ip': 'IP: {ip}',
+  'shodan.desc.port': 'ポート: {port}/{transport}',
+  'shodan.desc.product': '製品: {product}',
+  'shodan.desc.tags': 'タグ: {tags}',
+  'shodan.desc.observed': '観測日: {date}',
+  'shodan.desc.cves': 'Shodan が報告した CVE（未検証）: {ids}',
+  'shodan.desc.more': '他 {n} 件',
+  'shodan.desc.ics': 'OT/ICS 機器（CyberRiskScape のステンシルは OT/ICS に未対応のため IoT として描いています）',
   // ── Kong（decK）取り込み ──
   'kong.templateName': 'Kong Gateway（decK から生成）',
   'kong.error.parse': 'YAML / JSON として読み込めません: {message}',
