@@ -184,6 +184,16 @@ A nested component is shown as a small badge at the top left of its parent.
 | Fit everything on screen | The Fit button at the bottom right |
 | Hide the sidebars | The focus-mode button at the top right |
 
+Notes on panning:
+
+- Dragging the background without holding `Space` starts a **marquee selection**, not a pan.
+- Start the drag on **empty background**. Starting on a component, boundary, or connection
+  grabs and moves that item instead.
+- `Space` does not pan while you are typing in a text field, and you cannot pan while drawing a connection.
+- Middle- and right-button drags are not mapped to panning (a middle click behaves like a left click).
+  A two-finger trackpad scroll zooms rather than pans.
+- Going back to `100%` resets the view position as well as the zoom level.
+
 If you ever lose the diagram off-screen, Fit will always bring it back.
 
 ### 4.7 Undo
