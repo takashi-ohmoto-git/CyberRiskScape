@@ -1,0 +1,102 @@
+# API 基盤（API 管理・API 開発ツール）拡張コンポーネントライブラリ。
+#
+# API ゲートウェイ／API 管理基盤と、API 開発・テストツールを脅威モデルに載せるための 6 型：
+#   - BACKEND_API: ゲートウェイの背後にあるバックエンド API・マイクロサービス（ゲートウェイの upstream）
+#   - API_CONTROL_PLANE: API 管理・コントロールプレーン（Admin API、管理コンソール、構成の配布元）
+#   - SECRETS_VAULT: シークレット管理（Vault / KMS / クラウドのシークレットストア）
+#   - API_DEV_WORKSPACE: API 開発・テストツールのワークスペース（コレクション・環境変数・モック）
+#   - CI_PIPELINE: CI/CD パイプライン（API テストランナーやデプロイの実行基盤）
+#   - API_SPEC: API 仕様書（OpenAPI 等の機械可読な定義）
+#
+# ゲートウェイの通り道そのもの（データプレーン）は builtin の GATEWAY、
+# AI 向けの集中制御点は protect の AI_GATEWAY を使う。API の利用者（コンシューマー）は
+# USER / EXTERNAL_ENTITY / OTHER_APP で表し、専用型は作らない。
+# 型名は特定製品に寄せない汎用名とする（製品名はノードのラベルで付ける）。
+#
+# 別ライブラリ（builtin.yaml と分離）にし、library メタに `builtin: true` を付けないことで、
+# LeftSidebar のライブラリトグルで無効化できる（voice.yaml と同じ方針）。
+#
+# ライセンス: Apache-2.0（同梱）
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+library:
+  id: api-platform
+  title: "API Platform Components"
+  version: "1.0"
+  license: "Apache-2.0"
+  description: "API 基盤型（バックエンド API / API 管理コントロールプレーン / シークレット管理 / API 開発ツール / CI/CD / API 仕様書）。"
+
+categories:
+  - id: PROTECT
+    label: "Protect"
+    order: 25
+  - id: INFRASTRUCTURE
+    label: "Infrastructure"
+    order: 30
+  - id: APP
+    label: "App"
+    order: 36
+  - id: DOCUMENTS
+    label: "Documents"
+    order: 40
+
+components:
+  # ── Infrastructure ──────────────────────────────────────────
+  - id: BACKEND_API
+    label: "バックエンド API"
+    category: INFRASTRUCTURE
+    icon: { kind: builtin, name: "server-cog" }
+    shape: rounded
+    color: "bg-cyan-700"
+    description: "ゲートウェイの背後にあるバックエンド API・マイクロサービス。業務データへの認可を最終的に担う。"
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, CREDENTIAL, LOG, OTHER_DOCUMENT]
+
+  - id: API_CONTROL_PLANE
+    label: "API 管理プレーン"
+    category: INFRASTRUCTURE
+    icon: { kind: builtin, name: "sliders-horizontal" }
+    shape: rounded
+    color: "bg-indigo-800"
+    description: "API ゲートウェイの Admin API・管理コンソール・構成の配布元。ルーティングと認証設定を書き換えられる管理面。"
+    canContain: [CREDENTIAL, LOG, API_SPEC]
+
+  - id: CI_PIPELINE
+    label: "CI/CD パイプライン"
+    category: INFRASTRUCTURE
+    icon: { kind: builtin, name: "workflow" }
+    shape: rounded
+    color: "bg-slate-600"
+    description: "ビルド・テスト・デプロイを自動実行する基盤。API テストランナーや構成の自動適用を含む。"
+    canContain: [SOURCE_CODE, CREDENTIAL, LOG, API_SPEC]
+
+  # ── Protect ─────────────────────────────────────────────────
+  - id: SECRETS_VAULT
+    label: "シークレット管理"
+    category: PROTECT
+    icon: { kind: builtin, name: "vault" }
+    shape: rounded
+    color: "bg-amber-800"
+    description: "API キー・トークン・証明書を保管し、実行時に払い出すシークレット管理（Vault / KMS 等）。"
+    canContain: [CREDENTIAL]
+
+  # ── App ─────────────────────────────────────────────────────
+  - id: API_DEV_WORKSPACE
+    label: "API 開発ツール"
+    category: APP
+    icon: { kind: builtin, name: "send" }
+    shape: rounded
+    color: "bg-orange-400"
+    description: "API 開発・テストツールのワークスペース。リクエストのコレクション・環境変数・モックを保持し、クラウドで共有されることが多い。"
+    canContain: [CREDENTIAL, API_SPEC, OTHER_DOCUMENT]
+
+  # ── Documents ───────────────────────────────────────────────
+  - id: API_SPEC
+    label: "API 仕様書"
+    category: DOCUMENTS
+    icon: { kind: builtin, name: "file-json" }
+    shape: rounded
+    color: "bg-yellow-600"
+    description: "OpenAPI 等の機械可読な API 定義。エンドポイント・認証方式・データ構造を示す。"

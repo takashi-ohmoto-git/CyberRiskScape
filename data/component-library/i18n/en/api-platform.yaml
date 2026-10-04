@@ -1,0 +1,35 @@
+# English overlay for `data/component-library/api-platform.yaml`.
+#
+# The Japanese file is the source of truth: only `label` and `description` are
+# translated here, keyed by component type id. Anything omitted falls back to the
+# original text, so `label` is listed only where the English differs.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+components:
+  BACKEND_API:
+    label: "Backend API"
+    description: "A backend API or microservice behind the gateway. It makes the final authorization decision on business data."
+
+  API_CONTROL_PLANE:
+    label: "API control plane"
+    description: "The gateway's Admin API, management console, and configuration source. A management plane that can rewrite routing and authentication settings."
+
+  CI_PIPELINE:
+    label: "CI/CD pipeline"
+    description: "Infrastructure that runs builds, tests, and deployments automatically, including API test runners and automated configuration rollout."
+
+  SECRETS_VAULT:
+    label: "Secrets manager"
+    description: "Stores API keys, tokens, and certificates and issues them at runtime (Vault, KMS, and similar)."
+
+  API_DEV_WORKSPACE:
+    label: "API dev tool"
+    description: "A workspace in an API development and testing tool. Holds request collections, environment variables, and mocks, and is often shared in the cloud."
+
+  API_SPEC:
+    label: "API specification"
+    description: "A machine-readable API definition such as OpenAPI, describing endpoints, authentication, and data structures."

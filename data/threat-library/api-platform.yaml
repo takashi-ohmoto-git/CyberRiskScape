@@ -1,0 +1,244 @@
+# API 基盤（API 管理・API 開発ツール）の脅威ルール。
+#
+# 対象は data/component-library/api-platform.yaml の 6 型
+# （BACKEND_API / API_CONTROL_PLANE / SECRETS_VAULT / API_DEV_WORKSPACE / CI_PIPELINE / API_SPEC）。
+# 型名は特定製品に寄せない汎用名で、API ゲートウェイ製品（Admin API を持つもの）や
+# API 開発・テストツール（コレクション・環境変数をクラウドで共有するもの）の構成を表す。
+#
+# 発火の考え方（接続前提モデリング）:
+#   - 攻撃面属性（attackSurface）は FRONT_END_SERVER / GATEWAY でしか入力できないため、
+#     本ファイルの型には使わない（未入力扱いで常に insecure baseline になり、利用者が
+#     打ち消せない）。露出の有無はエッジの trust（信頼境界）と peerType で表す。
+#   - ドキュメント型（API_SPEC）と、存在そのものがリスクの型（API_DEV_WORKSPACE /
+#     CI_PIPELINE）は内在的脅威として connection.required:false にする。
+#
+# 出典:
+#   - OWASP API Security Top 10 2023
+#     https://owasp.org/API-Security/editions/2023/en/0x11-t10/
+#     （API1 BOLA / API3 BOPLA / API8 Security Misconfiguration / API9 Improper Inventory Management）
+#   - OWASP Top 10 CI/CD Security Risks
+#     https://owasp.org/www-project-top-10-ci-cd-security-risks/
+#     （CICD-SEC-4 Poisoned Pipeline Execution / CICD-SEC-6 Insufficient Credential Hygiene）
+#   - OWASP Secrets Management Cheat Sheet
+#     https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html
+#   本文は逐語転載せず日本語要約のみ。
+#
+#   SPDX-License-Identifier: Apache-2.0
+#   ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+#   出典の帰属表示は NOTICE を参照。
+#
+# 重複回避方針:
+#   - ゲートウェイ層の認可不備（スコープ検証・管理 API への横展開＝機能単位の認可、API5 BFLA 相当）は
+#     stride-gateway-elevation-of-privilege-001（canonicalId: gateway-authorization-gap、GATEWAY 型）
+#     でカバー済み。本ファイルの BOLA ルールは「ゲートウェイでは判定できない、レコード・項目単位の
+#     所有者チェック」をバックエンド側の責務として扱う。別 canonicalId。
+#   - ゲートウェイのレート制限（API4 相当）は stride-gateway-dos-001（gateway-resource-exhaustion）で
+#     カバー済み。本ファイルでは扱わない。
+#   - 管理面のインターネット露出は stride-web-remote-mgmt-exposed-001
+#     （canonicalId: web-remote-management-exposure、FRONT_END_SERVER / GATEWAY の攻撃面属性）と
+#     同じ脅威。API_CONTROL_PLANE は攻撃面属性を持たないため、エッジ視点のルールを同じ canonicalId で置く。
+#   - 認証材料そのものの静的保管・散在は zt-credential-sprawl-static-secret-001
+#     （canonicalId: credential-sprawl、CREDENTIAL 型）が扱う。本ファイルは「認証材料を集約する
+#     基盤（SECRETS_VAULT）」と「クラウドで共有される開発ツール（API_DEV_WORKSPACE）」「CI」という
+#     置き場所ごとの固有の経路を扱い、subject が異なるため別 canonicalId とする。
+#   - 呼び出し時の静的 API キー利用（弱いサービス認証）は weak-service-auth 群が扱う。
+#
+# mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
+# description は Can/Cannot ペアと blast radius を意識して記述する。
+
+schemaVersion: 1
+
+rules:
+  # ── BACKEND_API: オブジェクト・プロパティ単位の認可不備（API1 / API3）──────
+  - id: api-backend-object-level-authorization-001
+    canonicalId: api-object-level-authorization
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "オブジェクト・プロパティ単位の認可不備（BOLA / BOPLA）"
+    severity: High
+    description: "{{nodeName}} がリクエストに含まれるレコード ID や項目を、呼び出し元の利用者が扱ってよいものか照合していない場合、正規にログインした利用者が ID を書き換えるだけで他人のレコードを参照・変更できる（Can）。応答に不要な項目を返したり、更新時に受け取った項目をそのまま反映したりすると、閲覧権限の無い項目の読み出しや、権限・価格などの項目の書き換えも成立する。API ゲートウェイはトークンとスコープは検証できるが、レコードの所有者が誰かは知らないため、この判定はバックエンドでしか行えない。一方、すべてのデータ操作で呼び出し元とレコードの所有関係を照合し、応答と更新の対象項目を許可リストで限定していれば、ID を書き換えても他人のデータには届かない（Cannot）。blast radius は {{nodeName}} が扱う全レコード（ID が連番や推測可能なら全利用者分）。"
+    mitigation: "[Foundation] レコードを ID で扱うすべての API で、呼び出し元の利用者（トークンの主体）とレコードの所有関係を照合する。応答で返す項目と、更新で受け付ける項目を API ごとに許可リストで定め、それ以外は返さない・反映しない。 [Enterprise] 認可の判定を共通のライブラリまたはポリシーエンジンに集約し、個々の実装に任せない。他人の ID を指定するテストケースを API テストに含め、CI で毎回実行する。推測しにくい ID（ランダムな値）を使う。 [Advanced] 認可の判定結果をログに残し、同じ利用者が多数の他人の ID を試すパターンを検知する。API 仕様書から認可テストを自動生成し、仕様と実装の差を継続的に検査する。"
+    appliesTo:
+      kind: node
+      nodeType: BACKEND_API
+      # 呼び出し元（ゲートウェイ・利用者・他サービス）からの入力を受けるとき発火する。
+      connection:
+        direction: inbound
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+    references:
+      - title: "OWASP API Security Top 10 2023 - API1:2023 Broken Object Level Authorization"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/"
+      - title: "OWASP API Security Top 10 2023 - API3:2023 Broken Object Property Level Authorization"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa3-broken-object-property-level-authorization/"
+      # ゲートウェイ層の認可（スコープ・機能単位）は gateway-authorization-gap が扱う（別 canonicalId）。
+
+  # ── BACKEND_API: ゲートウェイを経由しない直接アクセス ──────────────
+  - id: api-backend-gateway-bypass-001
+    canonicalId: api-gateway-bypass
+    framework: STRIDE
+    category: "Spoofing/Tampering"
+    name: "ゲートウェイを経由しないバックエンド API への直接アクセス"
+    severity: High
+    description: "{{targetName}} に {{sourceName}} から API ゲートウェイを経由せずに到達できる構成です。認証・レート制限・入力検査・アクセスログをゲートウェイに任せている場合、直接到達した呼び出し元はそれらをすべて素通りできる（Can）。ゲートウェイが付けるヘッダー（利用者 ID 等）をバックエンドが信用している構成では、ヘッダーを偽装して他の利用者になりすますこともできる。一方、バックエンドへの通信をゲートウェイからの経路だけに限定し（ネットワーク制限と相互 TLS 等）、バックエンド自身もトークンを検証していれば、直接到達しても処理は受け付けられない（Cannot）。blast radius は {{targetName}} の全機能と、ゲートウェイで守っているつもりの全制御。"
+    mitigation: "[Foundation] 利用者や外部システムからバックエンド API へ直接到達できる経路を塞ぎ、ゲートウェイ経由に一本化する（ネットワークの許可リスト、プライベート接続）。ゲートウェイが付けたヘッダーを、ゲートウェイ以外からのリクエストでは信用しない。 [Enterprise] ゲートウェイとバックエンドの間を相互 TLS で認証する。バックエンド側でもトークンの署名・有効期限・スコープを検証する（ゲートウェイの検証に依存しない）。 [Advanced] サービスメッシュ等でサービス間の通信を個別に認可し、ゲートウェイの外側からの到達を構造的に不可能にする。"
+    appliesTo:
+      kind: edge
+      when:
+        sourceType: [USER, PC, SMARTPHONE, IOT, EXTERNAL_ENTITY, OTHER_APP, API_DEV_WORKSPACE]
+        targetType: [BACKEND_API]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "OWASP API Security Top 10 2023 - API8:2023 Security Misconfiguration"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/"
+
+  # ── API_CONTROL_PLANE: 構成の改ざんによる全 API への波及 ─────────────
+  - id: api-control-plane-config-tampering-001
+    canonicalId: api-control-plane-tampering
+    framework: STRIDE
+    category: "Tampering"
+    name: "API 管理プレーンの構成改ざん"
+    severity: High
+    description: "{{nodeName}} はルーティング・認証・レート制限・プラグインの設定をゲートウェイに配布する。管理用の API や管理画面の資格情報を入手した攻撃者は、認証プラグインを外す、ルートを攻撃者のサーバーへ向ける、ログ出力を止めるといった変更を、配下のすべての API に一度に反映できる（Can）。変更は正規の設定として配布されるため、ゲートウェイ側では異常として扱われない。一方、管理用の API をゲートウェイの通信経路から分離して管理者の端末からだけ到達できるようにし、構成をコードとしてバージョン管理し、レビュー済みの変更だけを CI から適用していれば、資格情報を入手しても気付かれずに構成を書き換えることはできない（Cannot）。blast radius は {{nodeName}} が管理する全 API と、その利用者全員。"
+    mitigation: "[Foundation] 管理用の API・管理画面を、利用者向けのゲートウェイと別の経路（管理用ネットワーク・VPN 等）に置き、認証と MFA を必須にする。管理者アカウントを個人ごとに分け、権限を役割で分ける。 [Enterprise] 構成を宣言的なファイルでバージョン管理し、レビュー済みの変更だけを CI から適用する（手作業の変更を禁止する）。稼働中の構成とリポジトリの構成の差分を定期的に検出する。構成変更を監査ログに残し、SIEM に送る。 [Advanced] 管理操作に承認フロー（2 人の承認等）を設ける。認証プラグインの削除やルートの外部向け変更など、影響の大きい変更を検知して自動で警告する。"
+    appliesTo:
+      kind: node
+      nodeType: API_CONTROL_PLANE
+      # 構成を配布する先（ゲートウェイ）または操作する管理者と接続されているとき発火する。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "OWASP API Security Top 10 2023 - API8:2023 Security Misconfiguration"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/"
+
+  # ── API_CONTROL_PLANE: 管理面のインターネット露出（エッジ視点）──────────
+  - id: api-control-plane-internet-exposure-001
+    canonicalId: web-remote-management-exposure
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "管理面リモートアクセス（API 管理プレーン）"
+    severity: Critical
+    description: "{{targetName}}（API の管理プレーン）に、信頼境界の外（Internet 扱い）にある {{sourceName}} から到達できる構成です。管理用の API がインターネットに公開されていると、攻撃者は認証の総当たりや、既定の設定・既知の脆弱性を狙って管理権限を取りに行ける（Can）。管理権限を取られると、配下のすべての API の認証とルーティングを書き換えられる。一方、管理面を管理用ネットワーク・VPN・IAP の背後に限定し、インターネット側から到達できないようにしていれば、この入口そのものが無くなる（Cannot）。blast radius は {{targetName}} が管理する全 API。"
+    mitigation: "[Foundation] 管理用の API・管理画面をインターネットに公開しない。管理用ネットワーク・VPN・IAP（Identity-Aware Proxy）の背後に置き、送信元を管理者の端末に限定する。 [Enterprise] 管理面の認証に MFA と短命のトークンを使い、既定の管理者アカウントを無効にする。管理面へのアクセスを監査ログに残し、失敗の連続を検知する。 [Advanced] 管理面への到達自体をデバイスの状態と利用者の属性で都度判定する（ゼロトラストアクセス）。"
+    appliesTo:
+      kind: edge
+      when:
+        targetType: [API_CONTROL_PLANE]
+        sourceTrust: [Internet]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "OWASP API Security Top 10 2023 - API8:2023 Security Misconfiguration"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/"
+      # FRONT_END_SERVER / GATEWAY の管理面露出は stride-web-remote-mgmt-exposed-001 が扱う（同じ canonicalId）。
+
+  # ── SECRETS_VAULT: 認証材料の集約点としてのリスク ──────────────────
+  - id: api-secrets-vault-concentration-001
+    canonicalId: secrets-vault-concentration
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "シークレット管理への権限集中"
+    severity: High
+    description: "{{nodeName}} は API キー・トークン・証明書を一か所に集める。読み出しの権限を広く設定している場合（全シークレットを読めるアプリケーション用の資格情報、共有の管理者トークン等）、その資格情報を 1 つ入手した攻撃者は、{{nodeName}} に保管されたすべての認証材料をまとめて取得できる（Can）。取得した認証材料は正規のものとして使えるため、利用先のシステムでは攻撃と区別しにくい。一方、利用者ごと・アプリケーションごとに読み出せるパスを最小に絞り、短命の資格情報を動的に発行し、読み出しを監査ログで追跡していれば、1 つの資格情報を入手しても取得できるのはその用途の認証材料に限られ、異常な読み出しは検知される（Cannot）。blast radius は {{nodeName}} の読み出し権限が届くすべての認証材料と、それが許すアクセス範囲。"
+    mitigation: "[Foundation] アプリケーション・利用者ごとに読み出せるシークレットのパスを最小に絞り、全体を読める資格情報を日常の運用で使わない。初期の管理者トークンや復旧用の鍵は運用後に無効化または分割保管する。 [Enterprise] 長寿命のシークレットを、利用時に発行する短命の資格情報（動的シークレット）に置き換える。読み出しを監査ログに残し、通常と異なる量・時間帯の読み出しを検知する。シークレットのローテーションを自動化する。 [Advanced] ワークロードアイデンティティでシークレット管理への認証自体から静的な資格情報を無くす。鍵の保護に HSM を使い、管理操作に複数人の承認を求める。"
+    appliesTo:
+      kind: node
+      nodeType: SECRETS_VAULT
+      # シークレットを読み出す利用元と接続されているとき発火する。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "OWASP Secrets Management Cheat Sheet（最小権限・動的シークレット・監査）"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html"
+      # 置き場所を問わない認証材料の散在は credential-sprawl が扱う（別 canonicalId）。
+
+  # ── API_DEV_WORKSPACE: 共有ワークスペースからの認証材料の露出 ──────────
+  - id: api-dev-workspace-secret-exposure-001
+    canonicalId: api-workspace-secret-exposure
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "API 開発ツールの共有ワークスペースからの認証材料の露出"
+    severity: High
+    description: "{{nodeName}} のコレクションや環境変数には、API を試すための API キー・アクセストークン・パスワードが書き込まれやすい。ワークスペースを誤って公開設定にしたり、社外の協力者を招待したり、本番の認証材料を入れたままコレクションを書き出して共有したりすると、それを見た第三者は認証材料をそのまま使って本番の API を呼び出せる（Can）。公開されたワークスペースは検索で見つけられるため、攻撃者が組織名で探して収集することもできる。一方、ワークスペースの公開を組織の設定で禁止し、認証材料をツールのシークレット機能や外部のシークレット管理から実行時に読み込み、コレクションや共有する値に実際の値を残さず、開発用と本番用の認証材料を分けていれば、ワークスペースが見られても本番の API は呼び出せない（Cannot）。blast radius は {{nodeName}} に保存された認証材料が許す全 API。"
+    mitigation: "[Foundation] ワークスペースの公開を組織の設定で禁止し、既存のワークスペースの公開範囲と参加者を棚卸しする。コレクション・環境変数に保存された認証材料を探し、見つかったものは失効させて再発行する。本番の認証材料を開発ツールに保存しない。 [Enterprise] 認証材料はツールのシークレット機能や外部のシークレット管理から実行時に読み込み、共有される値には残さない。開発・テスト用の認証材料を本番と分け、権限と有効期限を絞る。公開ワークスペースに自組織の認証材料が無いかを定期的に検索する。 [Advanced] ワークスペースの書き出し・共有の操作を監査ログで追跡し、シークレットスキャンをワークスペースにも適用する。"
+    appliesTo:
+      kind: node
+      nodeType: API_DEV_WORKSPACE
+      # 保存された認証材料の露出はワークスペースの存在そのものに伴う内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+    references:
+      - title: "OWASP Secrets Management Cheat Sheet（シークレットの検出と共有の禁止）"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html"
+      # 認証材料の置き場所を問わない一般論は credential-sprawl が扱う（別 canonicalId）。
+
+  # ── CI_PIPELINE: 汚染されたパイプラインの実行と認証材料の窃取 ──────────
+  - id: api-ci-pipeline-poisoned-execution-001
+    canonicalId: ci-pipeline-poisoned-execution
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "CI/CD パイプラインの汚染と認証材料の窃取"
+    severity: High
+    description: "{{nodeName}} はリポジトリにあるビルド定義やテストスクリプトを、デプロイ用・API 呼び出し用の認証材料を持った状態で実行する。プルリクエストやブランチへの書き込みができる攻撃者（外部からの貢献者、乗っ取られた開発者アカウント等）は、ビルド定義やテストスクリプトを書き換えて、{{nodeName}} の権限でコードを実行させ、認証材料の窃取や本番環境への変更ができる（Can）。API テストを CI で実行する構成では、本番の API キーがパイプラインに渡されていることも多い。一方、レビュー前のコードを認証材料の無い環境でだけ実行し、認証材料を必要なジョブだけに短命で発行し、本番への適用を保護されたブランチと承認に限定していれば、ビルド定義を書き換えても認証材料には届かない（Cannot）。blast radius は {{nodeName}} に渡された認証材料と、デプロイ先の環境全体。"
+    mitigation: "[Foundation] 外部からのプルリクエストなど未レビューのコードは、認証材料を渡さない環境で実行する。本番に関わるジョブは保護されたブランチからだけ実行し、ビルド定義の変更をレビュー必須にする。パイプラインのログに認証材料が出力されないようにする。 [Enterprise] 長寿命の認証材料を CI に保存せず、OIDC 等でジョブごとに短命の資格情報を発行する。ジョブごとに渡す認証材料を必要最小にし、本番へのデプロイには承認を求める。 [Advanced] ビルド環境を毎回使い捨てにし、外部への通信を許可リストで制限する。成果物に署名し、デプロイ時に検証する。"
+    appliesTo:
+      kind: node
+      nodeType: CI_PIPELINE
+      # ビルド定義を実行する仕組みそのものに伴う内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-06"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+    references:
+      - title: "OWASP Top 10 CI/CD Security Risks - CICD-SEC-4 Poisoned Pipeline Execution / CICD-SEC-6 Insufficient Credential Hygiene"
+        url: "https://owasp.org/www-project-top-10-ci-cd-security-risks/"
+
+  # ── API_SPEC: API の棚卸しと仕様の乖離 ──────────────────────────
+  - id: api-spec-improper-inventory-001
+    canonicalId: api-improper-inventory
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "API の棚卸し不備（古い版・未登録の API の残存）"
+    severity: Medium
+    description: "{{nodeName}} が実際に公開されている API と一致していない場合、仕様書に載っていない古い版のエンドポイント、テスト用のエンドポイント、廃止したはずの API が稼働し続ける。これらは新しい版で入れた認可や入力検査が適用されていないことが多く、攻撃者は古い版の URL を推測するだけで弱い実装に到達できる（Can）。仕様書を公開している場合は、内部向けの API や認証方式の情報も攻撃者の偵察材料になる。一方、稼働中の API を仕様書と突き合わせて棚卸しし、仕様書に無い API をゲートウェイで遮断し、廃止した版を期限を決めて停止していれば、管理外の API は外部から到達できない（Cannot）。blast radius は棚卸しから漏れたすべての API。"
+    mitigation: "[Foundation] 稼働中の API（ホスト・版・環境）の一覧を作り、仕様書と所有者を紐づける。廃止した版・テスト用のエンドポイントを停止する。公開する仕様書から内部向けの API を除く。 [Enterprise] 仕様書をゲートウェイの構成と同じリポジトリで管理し、仕様書に無いルートを公開しない。ゲートウェイのアクセスログから仕様書に無い API への呼び出しを検出する。 [Advanced] 仕様書と実装の差分を CI で検査し、乖離をリリースの阻止条件にする。"
+    appliesTo:
+      kind: node
+      nodeType: API_SPEC
+      # ドキュメント型は canContain で他コンポーネント内に置かれる設計で、エッジ接続を前提としない。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "ID.AM-02"
+      - standard: nist-csf-2.0
+        ref: "ID.AM-07"
+    references:
+      - title: "OWASP API Security Top 10 2023 - API9:2023 Improper Inventory Management"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa9-improper-inventory-management/"

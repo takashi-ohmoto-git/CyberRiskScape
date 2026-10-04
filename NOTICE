@@ -229,6 +229,18 @@ verbatim.
    Referenced by: data/threat-library/owasp-llm-top10.yaml,
                   data/threat-library/salesforce-agentforce.yaml
 
+--------------------------------------------------------------------------------
+16. OWASP Foundation — OWASP API Security Top 10 2023, OWASP Top 10 CI/CD
+    Security Risks, OWASP Cheat Sheet Series (Secrets Management)
+   https://owasp.org/API-Security/ ,
+   https://owasp.org/www-project-top-10-ci-cd-security-risks/ ,
+   https://cheatsheetseries.owasp.org/
+   Referenced by category name, risk ID and URL with a short Japanese summary
+   only; no text is reproduced verbatim. See each project page for its license
+   terms.
+
+   Referenced by: data/threat-library/api-platform.yaml
+
 ================================================================================
 Runtime dependencies
 ================================================================================
