@@ -46,7 +46,7 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 | **CI**（GitHub Actions） | 構成図の差分から新しい脅威を検出して PR を止め、結果を SARIF で出力する（[ガイド](guide/ci-integration.ja.md)） |
 | **API ゲートウェイ**（Kong AI Gateway） | decK の設定から構成図を自動生成し、設定の変更を PR で見張る（[ガイド](guide/kong-ai-gateway.ja.md)） |
 | **API テスト**（Postman・Postman CLI・Newman） | 検出した脅威を確かめる検証用リクエストを書き出す（[ガイド](guide/postman.ja.md)） |
-| **ID 基盤**（Microsoft Entra ID・Okta・Active Directory / LDAP） | IdP・ディレクトリの種別、資格情報の発行元、同期経路をモデル化し、トークン偽造や同期の特権などを評価する |
+| **ID 基盤・NHI**（Okta・SailPoint・CyberArk（Idira）・Microsoft Entra ID・Active Directory / LDAP） | IdP・ディレクトリ・NHI・PAM・IGA をモデル化して評価し、各社の MCP サーバーと組み合わせて実際の ID の状態と突き合わせる（[ガイド](guide/nhi-identity.ja.md)） |
 | **AI エージェント基盤**（Salesforce Agentforce） | 専用のステンシル・脅威ルール・構成図テンプレートで評価する（[ガイド](guide/agentforce.ja.md)） |
 | **AI による脆弱性診断**（Anthropic `defending-code-reference-harness`） | 脅威モデルを `THREAT_MODEL.md` 互換で書き出し、診断の入力にする（[ガイド](guide/security-context.ja.md)） |
 

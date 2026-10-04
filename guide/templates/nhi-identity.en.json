@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 1,
+  "kind": "cyberriskscape-template",
+  "name": "NHI and identity platforms (service account, workload identity, OAuth client, RPA, PAM, IGA)",
+  "layer": {
+    "nodes": [
+      {
+        "id": "nnhi_emp",
+        "type": "USER",
+        "x": 60,
+        "y": 60,
+        "label": "Employee (operator)",
+        "userTrustAttribute": "Employee"
+      },
+      {
+        "id": "nnhi_pam",
+        "type": "PAM",
+        "x": 320,
+        "y": 200,
+        "label": "Privileged access management"
+      },
+      {
+        "id": "nnhi_sa",
+        "type": "SERVICE_ACCOUNT",
+        "x": 580,
+        "y": 60,
+        "label": "Nightly batch service account"
+      },
+      {
+        "id": "nnhi_db",
+        "type": "DATA_STORE",
+        "x": 840,
+        "y": 60,
+        "label": "Customer DB"
+      },
+      {
+        "id": "nnhi_ci",
+        "type": "CI_PIPELINE",
+        "x": 60,
+        "y": 360,
+        "label": "CI/CD"
+      },
+      {
+        "id": "nnhi_wi",
+        "type": "WORKLOAD_IDENTITY",
+        "x": 320,
+        "y": 360,
+        "label": "Deploy workload identity"
+      },
+      {
+        "id": "nnhi_api",
+        "type": "BACKEND_API",
+        "x": 580,
+        "y": 360,
+        "label": "Order API"
+      },
+      {
+        "id": "nnhi_oc",
+        "type": "OAUTH_CLIENT",
+        "x": 840,
+        "y": 360,
+        "label": "Integration OAuth client"
+      },
+      {
+        "id": "nnhi_rpa",
+        "type": "RPA_BOT",
+        "x": 60,
+        "y": 560,
+        "label": "Accounting RPA bot"
+      },
+      {
+        "id": "nnhi_iga",
+        "type": "IGA",
+        "x": 320,
+        "y": 560,
+        "label": "Identity governance"
+      },
+      {
+        "id": "nnhi_vault",
+        "type": "SECRETS_VAULT",
+        "x": 840,
+        "y": 200,
+        "label": "Secrets manager"
+      },
+      {
+        "id": "nnhi_saas",
+        "type": "SAAS",
+        "x": 1120,
+        "y": 360,
+        "label": "External SaaS (partner ordering)"
+      },
+      {
+        "id": "nnhi_idp",
+        "type": "IDENTITY_PROVIDER",
+        "x": 1120,
+        "y": 560,
+        "label": "IdP (IDaaS)",
+        "identityProviderKind": "IDaaS"
+      },
+      {
+        "id": "nnhi_cred",
+        "type": "CREDENTIAL",
+        "x": 0,
+        "y": 0,
+        "label": "Batch password",
+        "parentId": "nnhi_sa"
+      }
+    ],
+    "edges": [
+      {
+        "id": "enhi_01",
+        "source": "nnhi_emp",
+        "target": "nnhi_pam",
+        "auth": "MFA",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Privileged task request",
+        "authProviderId": "nnhi_idp"
+      },
+      {
+        "id": "enhi_02",
+        "source": "nnhi_pam",
+        "target": "nnhi_sa",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Credential checkout"
+      },
+      {
+        "id": "enhi_03",
+        "source": "nnhi_emp",
+        "target": "nnhi_sa",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Manual use"
+      },
+      {
+        "id": "enhi_04",
+        "source": "nnhi_sa",
+        "target": "nnhi_db",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Nightly batch"
+      },
+      {
+        "id": "enhi_05",
+        "source": "nnhi_sa",
+        "target": "nnhi_vault",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Secret retrieval"
+      },
+      {
+        "id": "enhi_06",
+        "source": "nnhi_ci",
+        "target": "nnhi_wi",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Credentials via OIDC token"
+      },
+      {
+        "id": "enhi_07",
+        "source": "nnhi_wi",
+        "target": "nnhi_api",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Deploy"
+      },
+      {
+        "id": "enhi_08",
+        "source": "nnhi_api",
+        "target": "nnhi_oc",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Integration job"
+      },
+      {
+        "id": "enhi_09",
+        "source": "nnhi_oc",
+        "target": "nnhi_saas",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "API call with client credentials"
+      },
+      {
+        "id": "enhi_10",
+        "source": "nnhi_rpa",
+        "target": "nnhi_api",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Order entry via UI automation"
+      },
+      {
+        "id": "enhi_11",
+        "source": "nnhi_iga",
+        "target": "nnhi_api",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Account provisioning"
+      },
+      {
+        "id": "enhi_12",
+        "source": "nnhi_iga",
+        "target": "nnhi_idp",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Account provisioning"
+      }
+    ],
+    "boundaries": [
+      {
+        "id": "bnhi_1",
+        "type": "ROUNDED",
+        "x": 20,
+        "y": -10,
+        "width": 988,
+        "height": 706,
+        "trustLevel": "Internal",
+        "macroTrust": "Security Zone"
+      },
+      {
+        "id": "bnhi_2",
+        "type": "RECT_DASHED",
+        "x": 1080,
+        "y": 290,
+        "width": 208,
+        "height": 406,
+        "trustLevel": "Partner"
+      }
+    ]
+  }
+}

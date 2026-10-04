@@ -44,6 +44,9 @@ Importing configuration files, exporting verification requests, and diff checks 
 | **Kong AI Gateway** | Configuration import (decK kong.yaml) | Generate the diagram from configuration; watch for new threats from configuration changes in PRs | [Threat Modeling Kong AI Gateway](kong-ai-gateway.md) |
 | **Postman** (Postman CLI, Newman) | Export of verification requests (Collection v2.1) | Check whether detected threats hold in the implementation and keep the checks as CI regression tests | [Verifying Threats with Postman](postman.md) |
 | **Salesforce Agentforce** | Dedicated stencils, threat rules, and template | Assess a Service agent setup; watch agent-definition changes in PRs | [Threat Modeling Salesforce Agentforce](agentforce.md) |
+| **Okta** | MCP (side by side, through the agent), dedicated stencils and threat rules | Cross-check diagram NHIs against existing service apps; confirm identity strength from the authentication method; find unused NHIs | [Threat Modeling NHIs and Identity Platforms](nhi-identity.md) |
+| **SailPoint** | MCP (side by side, through the agent), IGA stencil and threat rules | Find the least access that can be requested instead of excessive permissions | [Threat Modeling NHIs and Identity Platforms](nhi-identity.md) |
+| **CyberArk (Idira)** | MCP (side by side, through the agent), PAM stencil and threat rules | Cross-check diagram NHIs against Secrets Manager workloads | [Threat Modeling NHIs and Identity Platforms](nhi-identity.md) |
 | **Anthropic `defending-code-reference-harness`** | `THREAT_MODEL.md`-compatible export | Use the threat model as input to an AI-driven vulnerability review | [Turning Your Threat Model into a Security Context](security-context.md) |
 
 ---
@@ -57,6 +60,7 @@ Importing configuration files, exporting verification requests, and diff checks 
 | Draw the diagram from existing configuration | Kong AI Gateway |
 | Confirm that the threats you flagged are actually closed | Postman |
 | Assess a product-specific setup as is | Salesforce Agentforce |
+| Surface the risks of NHIs such as service accounts and AI agents | Okta, SailPoint, CyberArk (Idira) |
 | Put the threat model to work in vulnerability review | Anthropic `defending-code-reference-harness`, Snyk |
 
 ---

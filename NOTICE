@@ -271,6 +271,21 @@ verbatim.
                   src/features/postman-export/toPostmanCollection.ts,
                   guide/postman.md, guide/postman.ja.md
 
+--------------------------------------------------------------------------------
+19. Okta, Inc. / SailPoint Technologies, Inc. / CyberArk (Idira, Palo Alto
+    Networks) — MCP server documentation (Okta MCP Server, SailPoint MCP
+    Server, Secrets Manager MCP Server, Secure Cloud Access MCP Server)
+   https://github.com/okta/okta-mcp-server ,
+   https://developer.sailpoint.com/docs/extensibility/ ,
+   https://docs.cyberark.com/
+   Okta, SailPoint, CyberArk and Idira are trademarks of their respective
+   owners. The names are used descriptively to identify the products described
+   in the guide; this project is not affiliated with or endorsed by any of them.
+   Tool names and configuration keys are referenced by name only; no
+   documentation text is reproduced.
+
+   Referenced by: guide/nhi-identity.md, guide/nhi-identity.ja.md
+
 ================================================================================
 Runtime dependencies
 ================================================================================

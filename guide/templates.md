@@ -133,6 +133,21 @@ agent reads it and can send data out.
 Import it and **101 threats** are detected. For how Agentforce building blocks map to types and how to read
 the detected threats, see [Threat Modeling Salesforce Agentforce](agentforce.md).
 
+### The NHI and identity platform template
+
+A single diagram that puts service accounts, workload identities, OAuth clients and RPA bots together with privileged
+access management, identity governance and an IdP. It includes a path where an operator goes through privileged access
+management but also uses the same service account directly by hand (human use of an NHI).
+
+| File | Contents |
+|---|---|
+| [`templates/nhi-identity.en.json`](templates/nhi-identity.en.json) | English |
+| [`templates/nhi-identity.ja.json`](templates/nhi-identity.ja.json) | Japanese |
+
+**Inside:** 14 components, 12 data flows, 2 trust boundaries (inside the organization = Internal, external SaaS and IDaaS = Partner).
+Import it and **41 threats** are detected. For how the types map and how to read the threats, see
+[Threat Modeling NHIs and Identity Platforms](nhi-identity.md).
+
 ---
 
 ## 5. Why the flows run both ways

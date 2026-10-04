@@ -134,6 +134,21 @@ LINE の Webhook 署名未検証・チャネル乗っ取り、通話録音（生
 読み込むと **101 件**の脅威が検出されます。構成要素の対応づけと、検出される脅威の読み方は
 [Salesforce Agentforce を脅威モデリングする](agentforce.ja.md)を参照してください。
 
+### NHI と ID 基盤のテンプレート
+
+サービスアカウント・ワークロードID・OAuthクライアント・RPAボットと、特権アクセス管理・ID ガバナンス・IdP を
+1 枚にまとめたテンプレートです。運用担当が特権アクセス管理を経由しつつ、同じサービスアカウントを手作業で
+直接も使っている経路（人による NHI の利用）を含みます。
+
+| ファイル | 内容 |
+|---|---|
+| [`templates/nhi-identity.ja.json`](templates/nhi-identity.ja.json) | 日本語版 |
+| [`templates/nhi-identity.en.json`](templates/nhi-identity.en.json) | 英語版 |
+
+**中身：** コンポーネント 14・データフロー 12・トラスト境界 2（組織内＝Internal、外部 SaaS と IDaaS＝Partner）。
+読み込むと **41 件**の脅威が検出されます。型の対応と脅威の読み方は
+[NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md)を参照してください。
+
 ---
 
 ## 5. なぜ往復のフローを入れてあるのか
