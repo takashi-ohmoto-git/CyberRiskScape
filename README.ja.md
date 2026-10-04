@@ -4,7 +4,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Threat rules](https://img.shields.io/badge/threat%20rules-126-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-786%20passing-brightgreen.svg)](#開発)
+[![Tests](https://img.shields.io/badge/tests-1002%20passing-brightgreen.svg)](#開発)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 [English](README.md) | **日本語**
@@ -30,13 +30,31 @@
 
 | フレームワーク区分 | ルール数 | 内容 |
 |---|---:|---|
-| `STRIDE` | 60 | 古典的な脅威（なりすまし・改ざん・情報漏えい 等） |
-| `AI` | 25 | 敵対的 ML、モデル抽出、学習データ汚染 等 |
-| `AgenticAI` | 41 | 目標乗っ取り、ツール誤用、権限の持ち越し、メモリ汚染 等 |
+| `STRIDE` | 74 | 古典的な脅威（なりすまし・改ざん・情報漏えい 等） |
+| `AI` | 33 | 敵対的 ML、モデル抽出、学習データ汚染 等 |
+| `AgenticAI` | 42 | 目標乗っ取り、ツール誤用、権限の持ち越し、メモリ汚染 等 |
+
+### エコシステム — 開発・API・ID 基盤とつながる
+
+脅威モデルを図の中で終わらせず、設計・実装・検証で使うツールとつなぎます。**MCP サーバーを内蔵**し、
+API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤とファイルベースで連携します。外部への通信は
+行わないため、閉域環境でも使えます。
+
+| 連携先 | できること |
+|---|---|
+| **MCP**（Claude Code・GitHub Copilot・Cursor など） | コーディングエージェントが設計中に脅威を問い合わせ、構成図を更新する（[ガイド](guide/mcp-integration.ja.md)） |
+| **CI**（GitHub Actions） | 構成図の差分から新しい脅威を検出して PR を止め、結果を SARIF で出力する（[ガイド](guide/ci-integration.ja.md)） |
+| **API ゲートウェイ**（Kong AI Gateway） | decK の設定から構成図を自動生成し、設定の変更を PR で見張る（[ガイド](guide/kong-ai-gateway.ja.md)） |
+| **API テスト**（Postman・Postman CLI・Newman） | 検出した脅威を確かめる検証用リクエストを書き出す（[ガイド](guide/postman.ja.md)） |
+| **ID 基盤**（Microsoft Entra ID・Okta・Active Directory / LDAP） | IdP・ディレクトリの種別、資格情報の発行元、同期経路をモデル化し、トークン偽造や同期の特権などを評価する |
+| **AI エージェント基盤**（Salesforce Agentforce） | 専用のステンシル・脅威ルール・構成図テンプレートで評価する（[ガイド](guide/agentforce.ja.md)） |
+| **AI による脆弱性診断**（Anthropic `defending-code-reference-harness`） | 脅威モデルを `THREAT_MODEL.md` 互換で書き出し、診断の入力にする（[ガイド](guide/security-context.ja.md)） |
+
+連携できる製品と方法の一覧は [連携ガイド](guide/integrations.ja.md) を参照してください。
 
 ### 主な機能
 
-- **ビジュアル DFD エディタ** — 39 種のコンポーネント型（6 ライブラリ・8 カテゴリ）、
+- **ビジュアル DFD エディタ** — 57 種のコンポーネント型（9 ライブラリ・12 カテゴリ）、
   トラスト境界、データフローの暗号化区分・認証状態の表現
 - **脅威の自動検出** — 配置しただけで発火する内在脅威と、接続条件つきで発火する
   経路依存脅威を区別して検出
@@ -130,7 +148,7 @@ npm run test:watch   # テスト watch モード
 npx tsc --noEmit     # 型チェック（strict）
 ```
 
-変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 786 件の
+変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,002 件の
 テストが通ります。
 
 ---

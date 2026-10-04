@@ -4,7 +4,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Threat rules](https://img.shields.io/badge/threat%20rules-126-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-786%20passing-brightgreen.svg)](#development)
+[![Tests](https://img.shields.io/badge/tests-1002%20passing-brightgreen.svg)](#development)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 **English** | [日本語](README.ja.md)
@@ -38,15 +38,33 @@ long-term memory** as first-class component types, with a rule set to match.
 
 | Framework | Rules | Covers |
 |---|---:|---|
-| `STRIDE` | 60 | Spoofing, tampering, repudiation, information disclosure, DoS, elevation of privilege |
-| `AI` | 25 | Adversarial ML, model extraction, training data poisoning |
-| `AgenticAI` | 41 | Goal hijacking, tool misuse, privilege carry-over, memory poisoning |
+| `STRIDE` | 74 | Spoofing, tampering, repudiation, information disclosure, DoS, elevation of privilege |
+| `AI` | 33 | Adversarial ML, model extraction, training data poisoning |
+| `AgenticAI` | 42 | Goal hijacking, tool misuse, privilege carry-over, memory poisoning |
 
 This is where the project invests. Most threat modeling tools have zero rules in the third row.
 
+### Ecosystem — connected to your development, API, and identity stack
+
+The threat model does not stay inside the diagram: it connects to the tools you use to design, build, and verify.
+CyberRiskScape **ships an MCP server** and integrates file-based with API gateways, API testing, identity
+platforms, and AI agent platforms. It makes no outbound calls, so it also works in air-gapped environments.
+
+| Integrates with | What you get |
+|---|---|
+| **MCP** (Claude Code, GitHub Copilot, Cursor, and others) | Coding agents query threats and update the diagram while they design ([guide](guide/mcp-integration.md)) |
+| **CI** (GitHub Actions) | Detect new threats from diagram diffs, block the PR, and emit SARIF ([guide](guide/ci-integration.md)) |
+| **API gateways** (Kong AI Gateway) | Generate the diagram from your decK configuration and watch configuration changes in PRs ([guide](guide/kong-ai-gateway.md)) |
+| **API testing** (Postman, Postman CLI, Newman) | Export verification requests that check the detected threats ([guide](guide/postman.md)) |
+| **Identity platforms** (Microsoft Entra ID, Okta, Active Directory / LDAP) | Model IdP and directory kinds, credential issuers, and sync paths, and assess token forgery, sync privileges, and more |
+| **AI agent platforms** (Salesforce Agentforce) | Dedicated stencils, threat rules, and a diagram template ([guide](guide/agentforce.md)) |
+| **AI-driven vulnerability review** (Anthropic `defending-code-reference-harness`) | Export the threat model as `THREAT_MODEL.md`-compatible input for the review ([guide](guide/security-context.md)) |
+
+For the full list of products and how they connect, see [Integrations](guide/integrations.md).
+
 ### Features
 
-- **Visual DFD editor** — 39 component types across 6 libraries and 8 categories, trust
+- **Visual DFD editor** — 57 component types across 9 libraries and 12 categories, trust
   boundaries, and data flows carrying encryption, authentication, and semantic attributes
 - **Automatic threat detection** — distinguishes *inherent* threats (a component fires them
   just by existing) from *path-dependent* ones (they need a specific connection to exist)
@@ -139,7 +157,7 @@ npm run test:watch   # watch mode
 npx tsc --noEmit     # type check (strict)
 ```
 
-The standard check after a change is `npx tsc --noEmit` plus the test suite. 786 tests
+The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,002 tests
 currently pass.
 
 ---
