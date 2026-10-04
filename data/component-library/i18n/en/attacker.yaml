@@ -18,10 +18,13 @@ locale: en
 
 components:
   THREAT_ACTOR:
+    label: "Threat actors"
     description: "An external threat actor. Use the Type attribute to set motivation and capability, and objective to name the component being targeted."
 
   INSIDER_THREAT:
+    label: "Insider Threats"
     description: "An insider threat — an attacker who already holds legitimate access, such as an employee or a contractor. Use objective to name the component being targeted."
 
   AGENTIC_ATTACKER:
+    label: "Agentic Attacker"
     description: "An attacker who abuses an AI agent, or an autonomous agent acting as the attacker itself. Use objective to name the component being targeted."

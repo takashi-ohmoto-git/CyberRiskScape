@@ -59,7 +59,7 @@ components:
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, OTHER_DOCUMENT]
 
   - id: SHADOW
-    label: "Shadow"
+    label: "シャドークラウド"
     category: CLOUD
     icon: { kind: builtin, name: "cloud-off" }
     shape: rounded

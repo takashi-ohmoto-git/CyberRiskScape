@@ -34,7 +34,7 @@ categories:
 
 components:
   - id: THREAT_ACTOR
-    label: "Threat actors"
+    label: "脅威アクター"
     category: ATTACKER
     icon: { kind: builtin, name: "skull" }
     shape: rounded
@@ -42,7 +42,7 @@ components:
     description: "外部脅威アクター。Type 属性で動機・能力の区分を設定し、objective で標的コンポーネントを指定する。"
 
   - id: INSIDER_THREAT
-    label: "Insider Threats"
+    label: "内部脅威"
     category: ATTACKER
     icon: { kind: builtin, name: "user-x" }
     shape: rounded
@@ -50,7 +50,7 @@ components:
     description: "内部不正・内部脅威（従業員・委託先等の正規アクセス権を持つ攻撃者）。objective で標的コンポーネントを指定する。"
 
   - id: AGENTIC_ATTACKER
-    label: "Agentic Attacker"
+    label: "AIエージェント攻撃者"
     category: ATTACKER
     icon: { kind: builtin, name: "bot" }
     shape: rounded

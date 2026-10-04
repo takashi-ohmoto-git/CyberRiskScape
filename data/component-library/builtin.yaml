@@ -143,7 +143,7 @@ components:
     description: "API ゲートウェイ／リバースプロキシ／WAF。境界での認可と流入制御を担う。"
 
   - id: FRONT_END_SERVER
-    label: "Front-end Server"
+    label: "フロントエンドサーバー"
     category: NETWORK
     icon: { kind: builtin, name: "server" }
     shape: rounded
@@ -167,7 +167,7 @@ components:
     description: "アイデンティティプロバイダ（IdP）。SSO・フェデレーション・トークン発行を担う認証認可の中核。Zero Trust ではポリシー判断の起点となる。"
 
   - id: DIRECTORY
-    label: "Directory"
+    label: "ディレクトリ"
     category: IDENTITY
     icon: { kind: builtin, name: "users" }
     shape: rounded

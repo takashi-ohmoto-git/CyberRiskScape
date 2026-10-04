@@ -46,7 +46,7 @@ categories:
 components:
   # ── Services ────────────────────────────────────────────────
   - id: BACKEND_API
-    label: "バックエンド API"
+    label: "バックエンドAPI"
     category: SERVICES
     icon: { kind: builtin, name: "server-cog" }
     shape: rounded
@@ -55,7 +55,7 @@ components:
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, CREDENTIAL, LOG, OTHER_DOCUMENT]
 
   - id: API_CONTROL_PLANE
-    label: "API 管理プレーン"
+    label: "API管理プレーン"
     category: SERVICES
     icon: { kind: builtin, name: "sliders-horizontal" }
     shape: rounded
@@ -64,7 +64,7 @@ components:
     canContain: [CREDENTIAL, LOG, API_SPEC]
 
   - id: CI_PIPELINE
-    label: "CI/CD パイプライン"
+    label: "CI/CDパイプライン"
     category: SERVICES
     icon: { kind: builtin, name: "workflow" }
     shape: rounded
@@ -84,7 +84,7 @@ components:
 
   # ── App ─────────────────────────────────────────────────────
   - id: API_DEV_WORKSPACE
-    label: "API 開発ツール"
+    label: "API開発ツール"
     category: APP
     icon: { kind: builtin, name: "send" }
     shape: rounded
@@ -94,7 +94,7 @@ components:
 
   # ── Documents ───────────────────────────────────────────────
   - id: API_SPEC
-    label: "API 仕様書"
+    label: "API仕様書"
     category: DOCUMENTS
     icon: { kind: builtin, name: "file-json" }
     shape: rounded

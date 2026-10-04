@@ -67,6 +67,7 @@ components:
     description: "An API gateway, reverse proxy, or WAF. Handles authorization and ingress control at the boundary."
 
   FRONT_END_SERVER:
+    label: "Front-end Server"
     description: "An internet-facing entry point such as a web server or reverse proxy. Use the attackSurface attribute to state how it is exposed and what defenses are in place."
 
   CONNECTOR:
@@ -77,6 +78,7 @@ components:
     description: "An identity provider (IdP). Handles SSO, federation, and token issuance, and is the core of authentication and authorization. Under Zero Trust it is where policy decisions begin."
 
   DIRECTORY:
+    label: "Directory"
     description: "A directory service (Active Directory / LDAP). It is the identity store holding users, groups, entitlements and their credentials, and it authenticates in its own right (Kerberos and the like). Use IdP instead when the node issues tokens or handles federation."
 
   PERSONAL_INFO:

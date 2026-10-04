@@ -31,7 +31,7 @@ categories:
 
 components:
   - id: MCP_SERVER
-    label: "MCP サーバ"
+    label: "MCPサーバー"
     category: AI
     icon: { kind: builtin, name: "settings" }
     shape: rounded

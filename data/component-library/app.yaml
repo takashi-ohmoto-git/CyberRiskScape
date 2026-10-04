@@ -30,7 +30,7 @@ categories:
 
 components:
   - id: CHAT
-    label: "Chat"
+    label: "チャット"
     category: APP
     icon: { kind: builtin, name: "message-circle" }
     shape: rounded
@@ -46,7 +46,7 @@ components:
     description: "LINE 公式アカウント／Messaging API チャネル。外部のメッセージング基盤を経由して顧客とやり取りする。"
 
   - id: MAIL
-    label: "Mail"
+    label: "メール"
     category: APP
     icon: { kind: builtin, name: "mail" }
     shape: rounded
@@ -62,7 +62,7 @@ components:
     description: "CRM（顧客管理）アプリ。認可状況・所有状況を属性で設定する。"
 
   - id: OTHER_APP
-    label: "Other"
+    label: "その他のアプリ"
     category: APP
     icon: { kind: builtin, name: "app-window" }
     shape: rounded
@@ -70,7 +70,7 @@ components:
     description: "上記に該当しないその他の業務アプリ。認可状況・所有状況を属性で設定する。"
 
   - id: SHADOW_APP
-    label: "Shadow"
+    label: "シャドーアプリ"
     category: APP
     icon: { kind: builtin, name: "eye-off" }
     shape: rounded

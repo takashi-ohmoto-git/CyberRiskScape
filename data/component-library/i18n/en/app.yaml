@@ -20,15 +20,18 @@ locale: en
 
 components:
   CHAT:
+    label: "Chat"
     description: "A chat or messaging app. Use the attributes to set whether it is sanctioned and who owns it."
 
   MAIL:
+    label: "Mail"
     description: "A mail service or mail client. Use the attributes to set whether it is sanctioned and who owns it."
 
   CRM:
     description: "A CRM (customer relationship management) app. Use the attributes to set whether it is sanctioned and who owns it."
 
   OTHER_APP:
+    label: "Other"
     description: "Any other business app not covered above. Use the attributes to set whether it is sanctioned and who owns it."
 
   SHADOW_APP:
