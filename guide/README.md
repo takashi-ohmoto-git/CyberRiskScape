@@ -26,6 +26,7 @@ Nothing here needs to be installed — you can follow along in the
 | **[MCP Use Cases](mcp-use-cases.md)** | MCP in practice, by scenario: early-design research, turning key threats into tasks, checking the impact of a new component, self-review before a PR, using it with GitHub Copilot and Cursor, pairing with Snyk, and deciding what to allow |
 | **[Threat Modeling Salesforce Agentforce](agentforce.md)** | Mapping Agentforce building blocks to CyberRiskScape types, a diagram template for a customer-facing Service agent, the threats worth watching (such as ForcedLeak-style indirect prompt injection through externally writable CRM fields), which rules fire and what is not detected, and watching agent-definition changes in a PR |
 | **[Threat Modeling Kong AI Gateway](kong-ai-gateway.md)** | Drafting a diagram automatically from a Kong Gateway declarative configuration (decK kong.yaml) in the UI or CLI, how the configuration maps to types, the threats worth watching in an AI Gateway setup (Routes without authentication, tools exposed over MCP, the limits of guardrails, RAG, the control plane), and watching kong.yaml changes in a PR |
+| **[Verifying Threats with Postman](postman.md)** | Exporting check requests as a Postman Collection for the detected threats that can be verified over HTTP (no authentication, plaintext, BOLA, BFLA, rate limiting, management plane, prompt injection, system prompt disclosure, MCP tool descriptors), and running them in Postman, the Postman CLI or Newman to confirm countermeasures |
 | **[An Introduction to Secure by Design](secure-by-design.md)** | The thinking behind the tool: what Secure by Design means, why it is being asked for now, the four roles threat modeling plays, and CyberRiskScape as a Security Context Layer that executives, planners, security, audit and CI all share. Based on the CISA-led joint guidance |
 
 ## Where to start
@@ -46,6 +47,7 @@ Nothing here needs to be installed — you can follow along in the
   read [Using It from Coding Agents](mcp-integration.md).
 - **You want to threat-model a Salesforce Agentforce setup** — read [Threat Modeling Salesforce Agentforce](agentforce.md).
 - **You want to threat-model a Kong Gateway (AI Gateway) setup** — read [Threat Modeling Kong AI Gateway](kong-ai-gateway.md). You can draft the diagram from kong.yaml.
+- **You want to check whether detected threats hold in the implementation** — read [Verifying Threats with Postman](postman.md).
 - **You want to explain to someone why this work matters** —
   [An Introduction to Secure by Design](secure-by-design.md) is written to be read on its own.
 

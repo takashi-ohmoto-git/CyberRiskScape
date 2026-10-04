@@ -239,7 +239,8 @@ verbatim.
    only; no text is reproduced verbatim. See each project page for its license
    terms.
 
-   Referenced by: data/threat-library/api-platform.yaml
+   Referenced by: data/threat-library/api-platform.yaml,
+                  data/test-templates/postman.yaml
 
 --------------------------------------------------------------------------------
 17. Kong Inc. — Kong Gateway documentation (decK declarative configuration,
@@ -252,6 +253,19 @@ verbatim.
 
    Referenced by: src/features/kong-import/kongToLayer.ts,
                   guide/kong-ai-gateway.md, guide/kong-ai-gateway.ja.md
+
+--------------------------------------------------------------------------------
+18. Postman, Inc. — Postman Collection Format v2.1.0 (JSON Schema) and Postman
+    Learning Center (Postman CLI, Newman)
+   https://schema.getpostman.com/ , https://learning.postman.com/
+   Postman is a trademark of Postman, Inc. The name is used descriptively to
+   identify the file format that is written; this project is not affiliated
+   with or endorsed by Postman, Inc. The format is referenced by its published
+   schema; no documentation text is reproduced.
+
+   Referenced by: data/test-templates/postman.yaml,
+                  src/features/postman-export/toPostmanCollection.ts,
+                  guide/postman.md, guide/postman.ja.md
 
 ================================================================================
 Runtime dependencies
