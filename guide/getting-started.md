@@ -72,6 +72,9 @@ The screen has three parts:
 The tabs at the top (`ALL` / `Human Centric (STRIDE)` / `AI / LLM` / `Agent-Centric`) filter which
 threats the right pane shows. **They do not change the diagram itself.**
 
+The `?` (Help) button at the end of the top menu opens this page in a new tab —
+the English version when the interface language is EN, the Japanese one when it is JA.
+
 "Depth layer (L1)" in the left sidebar switches between diagrams of different granularity (L0–L3)
 within the same project. Leave it on L1 to begin with.
 
