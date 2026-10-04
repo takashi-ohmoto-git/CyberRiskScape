@@ -23,6 +23,7 @@ import { createCrsMcpServer } from '../mcp/server';
 import { BRANDING } from '../core/branding';
 import { kongToLayer } from '../features/kong-import/kongToLayer';
 import { layerToProject } from '../features/kong-import/toProject';
+import { conjurToLayer } from '../features/conjur-import/conjurToLayer';
 import { toPostmanCollection } from '../features/postman-export/toPostmanCollection';
 
 /**
@@ -45,6 +46,7 @@ const USAGE = `使い方:
   diff <base.json> <head.json> [options]
   triggers [options]
   import-kong <kong.yaml> [options]
+  import-conjur <policy.yml> [options]
   export-postman <project.json> [options]
   mcp [options]
 
@@ -70,6 +72,10 @@ triggers のオプション:
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
 import-kong のオプション（Kong の宣言設定から構成図の下書きを L1 に作り、プロジェクト JSON を出力）:
+  --locale <ja|en>                              ノード名の言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+import-conjur のオプション（Conjur / Secrets Manager のポリシーから NHI と読み取り経路の図を L1 に作り、プロジェクト JSON を出力）:
   --locale <ja|en>                              ノード名の言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
@@ -320,6 +326,34 @@ ${USAGE}`);
 }
 
 /**
+ * `import-conjur`：CyberArk（Idira）Conjur / Secrets Manager のポリシー YAML から NHI とシークレットの読み取り経路の
+ * 構成図を作り、プロジェクト JSON を出力する。annotation の値・シークレットの値は読まない（`conjurToLayer` 参照）。
+ */
+function runImportConjur(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。\n\n${USAGE}`);
+  }
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+
+  let text: string;
+  try {
+    text = readFileSync(file, 'utf-8');
+  } catch (e) {
+    fail(`ファイルを読み込めません: ${file}（${e instanceof Error ? e.message : String(e)}）`);
+  }
+  const result = conjurToLayer(text);
+  if (!result.ok) fail(result.error);
+
+  writeOutput(JSON.stringify(layerToProject(result.layer), null, 2), values.out);
+  const s = result.summary;
+  process.stderr.write(
+    `Conjur ポリシーを取り込みました（host ${s.hosts} / layer ${s.layers} / variable ${s.variables} / user ${s.users} / group ${s.groups} / permit ${s.permits} / grant ${s.grants}）\n`,
+  );
+}
+
+/**
  * `export-postman`：検出した脅威のうち HTTP で確かめられるものについて、確認リクエストの
  * Postman Collection（v2.1 JSON）を出力する。ホスト名・トークンは変数のまま出す。
  */
@@ -398,6 +432,8 @@ function main(): void {
     runTriggers(values);
   } else if (command === 'export-postman') {
     runExportPostman(values, positionals);
+  } else if (command === 'import-conjur') {
+    runImportConjur(values, positionals);
   } else if (command === 'import-kong') {
     runImportKong(values, positionals);
   } else if (command === 'mcp') {

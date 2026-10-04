@@ -14,6 +14,7 @@ import {
   type ParseTemplateResult,
 } from '../../features/templates/io';
 import { kongToLayer, type KongImportSummary } from '../../features/kong-import/kongToLayer';
+import { conjurToLayer, type ConjurImportSummary } from '../../features/conjur-import/conjurToLayer';
 
 type Tab = 'export' | 'import';
 
@@ -49,10 +50,12 @@ export function TemplateModal() {
   const [importedFileName, setImportedFileName] = useState<string | null>(null);
   /** Kong 設定から作った場合のみ、元設定の件数を表示する。 */
   const [kongSummary, setKongSummary] = useState<KongImportSummary | null>(null);
+  const [conjurSummary, setConjurSummary] = useState<ConjurImportSummary | null>(null);
   /** 既存要素ありの置換に対するインライン確認待ち（ブラウザダイアログを使わない方針）。 */
   const [confirming, setConfirming] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const kongInputRef = useRef<HTMLInputElement>(null);
+  const conjurInputRef = useRef<HTMLInputElement>(null);
 
   const activeCount = nodes.length + edges.length + boundaries.length;
 
@@ -68,6 +71,7 @@ export function TemplateModal() {
     setParsed(null);
     setImportedFileName(null);
     setKongSummary(null);
+    setConjurSummary(null);
     setConfirming(false);
   }, [isOpen, projectName, activeLayer]);
 
@@ -96,6 +100,7 @@ export function TemplateModal() {
     setParsed(parseTemplateFromJson(text));
     setImportedFileName(file.name);
     setKongSummary(null);
+    setConjurSummary(null);
     setConfirming(false);
   };
 
@@ -103,6 +108,16 @@ export function TemplateModal() {
     const result = kongToLayer(await file.text());
     setParsed(result);
     setKongSummary(result.ok ? result.summary : null);
+    setConjurSummary(null);
+    setImportedFileName(file.name);
+    setConfirming(false);
+  };
+
+  const handleConjurFile = async (file: File) => {
+    const result = conjurToLayer(await file.text());
+    setParsed(result);
+    setConjurSummary(result.ok ? result.summary : null);
+    setKongSummary(null);
     setImportedFileName(file.name);
     setConfirming(false);
   };
@@ -246,6 +261,28 @@ export function TemplateModal() {
               {t('project.templateModal.selectKong')}
             </button>
 
+            <p className="text-xs text-slate-400 leading-relaxed">
+              {t('project.templateModal.conjurIntro')}
+            </p>
+            <input
+              ref={conjurInputRef}
+              type="file"
+              accept=".yaml,.yml,application/yaml"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleConjurFile(file);
+                e.target.value = '';
+              }}
+            />
+            <button
+              onClick={() => conjurInputRef.current?.click()}
+              className="flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-wider bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg transition-colors"
+            >
+              <Upload size={14} />
+              {t('project.templateModal.selectConjur')}
+            </button>
+
             {importedFileName && parsed && (
               <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-3 text-xs">
                 <p className="text-slate-500 mb-1 truncate">{importedFileName}</p>
@@ -261,6 +298,11 @@ export function TemplateModal() {
                     {kongSummary && (
                       <span className="block text-slate-400 mt-1">
                         {t('project.templateModal.kongStats', { ...kongSummary })}
+                      </span>
+                    )}
+                    {conjurSummary && (
+                      <span className="block text-slate-400 mt-1">
+                        {t('project.templateModal.conjurStats', { ...conjurSummary })}
                       </span>
                     )}
                   </p>
