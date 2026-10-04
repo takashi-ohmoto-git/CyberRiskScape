@@ -14,6 +14,7 @@
 
 - CISA's **four steps for reducing Internet exposure** (identify → decide whether it is needed → reduce the risk → evaluate regularly)
 - How to **draw the exposures you find with Shodan and Censys on a diagram and evaluate them as threats**
+- How to **draft the diagram automatically from a Shodan export (.json.gz)**
 - How to show the effect of "removing exposure you do not need" and "protecting exposure you do need" as the
   **difference in threats before and after**
 - How to use the CLI in regular evaluation to **detect exposure you thought you had removed coming back**
@@ -40,7 +41,7 @@ threat rules for OT devices (Modbus, DNP3, EtherNet/IP, OPC UA, BACnet and so on
 
 | CISA step | What to do (CISA) | What to do in CyberRiskScape |
 |---|---|---|
-| **1. Identify current exposure** | Identify assets reachable from the Internet. Check your own IP ranges with Shodan, Censys, Thingful, Shadowserver and similar. Also check the remote access held by vendors, MSSPs and system integrators | Draw the exposures you find on the diagram (§4). Express exposure with the lines drawn from the Internet side and the **Attack Surface Attributes** of FRONT_END_SERVER / GATEWAY |
+| **1. Identify current exposure** | Identify assets reachable from the Internet. Check your own IP ranges with Shodan, Censys, Thingful, Shadowserver and similar. Also check the remote access held by vendors, MSSPs and system integrators | Draw the exposures you find on the diagram (§4). A Shodan export can be imported as a draft (§4.4). Express exposure with the lines drawn from the Internet side and the **Attack Surface Attributes** of FRONT_END_SERVER / GATEWAY |
 | **2. Decide whether the exposure is needed** | Keep only what the business needs to reach from the Internet; stop or restrict access to the rest | Decide per exposure whether it is needed. For those that are not, **delete the line** or **redraw** them behind a VPN or jump host (§5) |
 | **3. Reduce the risk of the exposure you keep** | Change default passwords, patch, put in a jump host, monitor traffic, add MFA | Set the Attack Surface Attributes (Source IP restriction, Remote access restriction, User authentication, Access log, WAF, DDoS protection) and line authentication (MFA) to match reality, and check **which threats go away and which remain** (§6) |
 | **4. Evaluate regularly** | Regularly check, with external search services or your own scans, whether unexpected ports are open in your IP ranges | Make the after-remediation diagram the source of truth and compare it with a diagram of new observations using `diff`. **Stop CI when new exposure appears** (§7) |
@@ -145,6 +146,52 @@ Lines that reach the search cluster and the local LLM without authentication and
 (`stride-edge-unauth-internet-001`, Critical), Eavesdropping (`stride-edge-plain-encryption-001`, High) and Direct
 Exposure Across a Trust Boundary (`stride-edge-internet-exposed-sensitive-001`, Critical).
 
+### 4.4 Draft the diagram from a Shodan export
+
+Export your Shodan search results to a file and load it, and you get a draft diagram drawn the way §4.3 describes.
+CyberRiskScape does not connect to Shodan (no API key is needed). You run the export yourself with your own Shodan account.
+
+```bash
+# Export the results for your IP range (creates exposure.json.gz; consumes Shodan credits depending on your plan)
+shodan download --limit 1000 exposure net:203.0.113.0/24
+# Export a single IP (creates 203.0.113.10.json.gz)
+shodan host --save 203.0.113.10
+```
+
+- **From the app**: Template → Import tab → **Select Shodan export**, and pick the `.json.gz` as is (no need to extract it).
+- **From the CLI**: `node dist-cli/main.js import-shodan exposure.json.gz --out exposure.json`
+
+Besides `.json.gz`, it also reads extracted JSON Lines, a JSON array of banners, and a host JSON (with an array of banners in `data`).
+
+![Importing a Shodan export](../assets/guide/exposure/05-shodan-import.png)
+
+**Mapping** (one node per service, that is, per IP and port pair; checked from the top):
+
+| Shodan information | CyberRiskScape type |
+|---|---|
+| Tag `ics` | `IOT` (there are no OT / ICS stencils; the description says so) |
+| Tag `ai`, product such as Ollama or vLLM, port 11434 | `LLM` (LLM model) |
+| Tag `database`, database ports (3306, 5432, 6379, 9200, 27017 and others) | `DATA_STORE` (Data store) |
+| Tag `vpn`, remote management ports (22, 23, 445, 3389, 5900–5903, 5938, 5985, 5986) | `GATEWAY` (API gateway) |
+| An HTTP response, ports 80, 443, 8080, 8443 | `FRONT_END_SERVER` (Front-end Server) |
+| None of the above | `PROCESS` (Process) |
+
+- Lines from the attacker are **TLS** if there was a TLS response, otherwise **Plain**. Authentication cannot be confirmed from outside, so every line is **Password**.
+  If you confirm that a service answers without authentication (a database, for example), change the line's authentication to **None**.
+- In the Attack Surface Attributes, "Global IP assigned" is set to **Yes**, and "WAF / WAP protection" is set to **Yes** only when Shodan detected a WAF.
+- The description lists the IP, port, product and version, tags, observation date, and the CVE IDs Shodan reported (**unverified**; up to 10).
+  CVEs are not treated as threats. Use them as a prompt to check patches.
+- **Not read**: banner text, HTTP HTML, headers and title, certificate contents, organization name and location. None of these appear on the diagram.
+- The limit is 300 services. Anything beyond is not imported, and the count is shown.
+
+![Diagram created from a Shodan export](../assets/guide/exposure/06-shodan-overview.png)
+
+A sample is in [`templates/shodan-sample.json`](templates/shodan-sample.json) (fictional data built with documentation addresses).
+It produces a diagram of 7 services (6 hosts) and **95** threats at the time of writing.
+
+The imported diagram is input for the step 2 decisions. Shodan cannot tell you where an asset is supposed to sit (DMZ or internal)
+or whether it is a vendor path, so finish the diagram by adding to it, as in the §3 templates.
+
 ---
 
 ## 5. Step 2 — Decide whether the exposure is needed
@@ -237,8 +284,18 @@ The diff report (`--format md`) also lists the **triggers** a person should revi
 3. Judge with `diff --fail-on High`, and take new exposure back to steps 2 and 3.
 4. Once it is dealt with, make that diagram the new baseline.
 
-> At present, drawing search results on the diagram is manual work. A feature to draft a diagram from files exported
-> from Shodan and Censys is under consideration.
+**Compare one Shodan import with the next.** In a diagram created by the §4.4 import, element IDs are derived from the IP and port,
+so you can `diff` the previous import against the current one directly. Only the threats of newly opened ports show up as added.
+
+```bash
+shodan download --limit 1000 2026-11 net:203.0.113.0/24
+node dist-cli/main.js import-shodan 2026-11.json.gz --out 2026-11.json
+node dist-cli/main.js diff 2026-10.json 2026-11.json --fail-on High
+```
+
+Adding one Redis (6379) banner to the sample and comparing gives 8 added and 0 removed, and the gate stops on 4 threats of High or above
+(Redis information disclosure and tampering, and eavesdropping and password-only authentication on its line) at the time of writing.
+A hand-drawn diagram (such as the §3 templates) and an imported one have different IDs, so you cannot `diff` the two against each other.
 
 ---
 
