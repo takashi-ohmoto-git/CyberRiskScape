@@ -119,12 +119,14 @@ describe('kongToLayer', () => {
     expect(edge(layer, 'kong-client', 'kong-gw-ai')).toMatchObject({ auth: 'None', encryption: 'Plain' });
   });
 
-  it('外部プロバイダの LLM は Partner 境界、自組織内（ollama）は Internal 境界に置く', () => {
+  it('外部プロバイダの LLM は Internet 境界（DMZ ではない）、自組織内（ollama）は Internal 境界に置く', () => {
     const { layer } = ok(KONG_YAML);
-    const partner = layer.boundaries.find((b) => b.trustLevel === 'Partner');
+    expect(layer.boundaries.some((b) => b.trustLevel === 'Partner' || b.type === 'RECT_DASHED')).toBe(false);
+    const external = layer.boundaries.find((b) => b.id === 'kong-b-external');
+    expect(external).toMatchObject({ type: 'RECT', trustLevel: 'Internet' });
     const inside = (label: string) => {
       const n = layer.nodes.find((x) => x.label === label)!;
-      return !!partner && n.x >= partner.x && n.x <= partner.x + partner.width;
+      return !!external && n.x >= external.x && n.x <= external.x + external.width;
     };
     expect(inside('openai / gpt-4o')).toBe(true);
     expect(inside('ollama / llama3')).toBe(false);

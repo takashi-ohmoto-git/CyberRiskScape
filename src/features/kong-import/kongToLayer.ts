@@ -115,7 +115,7 @@ const LOG_PLUGINS = new Set([
   'kafka-log',
 ]);
 
-/** 自組織内で動かすことが多いプロバイダ。それ以外は外部（Partner）に置く。 */
+/** 自組織内で動かすことが多いプロバイダ。それ以外は外部（Internet）に置く。 */
 const SELF_HOSTED_PROVIDERS = new Set(['ollama', 'vllm', 'llama', 'llama2']);
 
 const TLS_PROTOCOLS = new Set(['https', 'grpcs', 'tls', 'wss', 'tls_passthrough']);
@@ -401,7 +401,8 @@ export function kongToLayer(text: string): KongImportResult {
     if (aiGw) addEdge(aiGw.node.id, 'kong-guard', 'None', 'VPC', 'TLS', { dataFlow: 'bidirectional' });
   }
 
-  // 信頼境界：クライアント＝Internet、ゲートウェイと自組織内のサービス＝Internal、外部 LLM＝Partner。
+  // 信頼境界：クライアント＝Internet、ゲートウェイと自組織内のサービス＝Internal、外部の LLM プロバイダ＝Internet。
+  // インターネット上の外部組織は Partner（DMZ と表示される）ではなく Internet で囲む。
   const boundaries: DiagramBoundary[] = [];
   const box = (
     id: string,
@@ -425,7 +426,7 @@ export function kongToLayer(text: string): KongImportResult {
   box('kong-b-internal', [...gateways.map((g) => g.node.id), ...supportIds, ...internalIds], 'ROUNDED', 'Internal', {
     macroTrust: 'Security Zone',
   });
-  box('kong-b-partner', externalIds, 'RECT_DASHED', 'Partner');
+  box('kong-b-external', externalIds, 'RECT', 'Internet');
 
   const routeCount = services.reduce((n, s) => n + s.routes.length, 0);
   const pluginCount =
