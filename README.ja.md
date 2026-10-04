@@ -3,8 +3,8 @@
 **AI・LLM・エージェントシステム・PQC に対応した、OSS のビジュアル脅威モデリングツール**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-126-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-1002%20passing-brightgreen.svg)](#開発)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-160-orange.svg)](data/threat-library)
+[![Tests](https://img.shields.io/badge/tests-1030%20passing-brightgreen.svg)](#開発)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 [English](README.md) | **日本語**
@@ -55,7 +55,7 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 
 ### 主な機能
 
-- **ビジュアル DFD エディタ** — 57 種のコンポーネント型（9 ライブラリ・12 カテゴリ）、
+- **ビジュアル DFD エディタ** — 63 種のコンポーネント型（10 ライブラリ・12 カテゴリ）、
   トラスト境界、データフローの暗号化区分・認証状態の表現
 - **脅威の自動検出** — 配置しただけで発火する内在脅威と、接続条件つきで発火する
   経路依存脅威を区別して検出
@@ -149,7 +149,7 @@ npm run test:watch   # テスト watch モード
 npx tsc --noEmit     # 型チェック（strict）
 ```
 
-変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,002 件の
+変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,030 件の
 テストが通ります。
 
 ---

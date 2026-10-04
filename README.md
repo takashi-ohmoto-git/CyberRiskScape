@@ -3,8 +3,8 @@
 **Open-source visual threat modeling for AI, LLM, agentic systems, and post-quantum cryptography**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-126-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-1002%20passing-brightgreen.svg)](#development)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-160-orange.svg)](data/threat-library)
+[![Tests](https://img.shields.io/badge/tests-1030%20passing-brightgreen.svg)](#development)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 **English** | [日本語](README.ja.md)
@@ -23,7 +23,7 @@ how the screen is laid out, and how to work on the canvas, with screenshots.
 For the thinking behind it, see [An Introduction to Secure by Design](guide/secure-by-design.md).
 
 > **Interface language.** English and Japanese are both supported — use the JA / EN switch
-> in the top bar, and your choice is remembered. The interface, all 126 threat rules
+> in the top bar, and your choice is remembered. The interface, all 160 threat rules
 > (name, category, description, mitigations) and every component type label are
 > translated. Help is welcome.
 
@@ -65,7 +65,7 @@ For the full list of products and how they connect, see [Integrations](guide/int
 
 ### Features
 
-- **Visual DFD editor** — 57 component types across 9 libraries and 12 categories, trust
+- **Visual DFD editor** — 63 component types across 10 libraries and 12 categories, trust
   boundaries, and data flows carrying encryption, authentication, and semantic attributes
 - **Automatic threat detection** — distinguishes *inherent* threats (a component fires them
   just by existing) from *path-dependent* ones (they need a specific connection to exist)
@@ -158,7 +158,7 @@ npm run test:watch   # watch mode
 npx tsc --noEmit     # type check (strict)
 ```
 
-The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,002 tests
+The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,030 tests
 currently pass.
 
 ---
@@ -259,7 +259,7 @@ Near-term priorities, in order:
    detection confidence stated explicitly
 
 Done recently: an English UI with a language switcher, plus English translation overlays
-for all 126 threat rules and every component type label, all leaving the existing schemas
+for all 160 threat rules and every component type label, all leaving the existing schemas
 unchanged.
 
 ---
