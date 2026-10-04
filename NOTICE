@@ -241,6 +241,18 @@ verbatim.
 
    Referenced by: data/threat-library/api-platform.yaml
 
+--------------------------------------------------------------------------------
+17. Kong Inc. — Kong Gateway documentation (decK declarative configuration,
+    AI plugins)
+   https://developer.konghq.com/
+   Kong is a trademark of Kong Inc. The name is used descriptively to identify
+   the product whose configuration format is read; this project is not
+   affiliated with or endorsed by Kong Inc. Configuration keys and plugin names
+   are referenced by name only; no documentation text is reproduced.
+
+   Referenced by: src/features/kong-import/kongToLayer.ts,
+                  guide/kong-ai-gateway.md, guide/kong-ai-gateway.ja.md
+
 ================================================================================
 Runtime dependencies
 ================================================================================

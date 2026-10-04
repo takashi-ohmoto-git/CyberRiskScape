@@ -1,0 +1,71 @@
+# Sample Kong Gateway declarative configuration (decK) for the CyberRiskScape guide.
+# Kong ガイド用のサンプル宣言設定（decK）。
+#
+# Contains no real credentials. The API key is a vault reference.
+# 実際の資格情報は含みません。API キーは Vault 参照です。
+#
+# SPDX-License-Identifier: Apache-2.0
+
+_format_version: "3.0"
+
+vaults:
+  - name: env
+    prefix: kong-env
+
+services:
+  # Ordinary REST API protected by OpenID Connect. / OIDC で保護した通常の REST API
+  - name: orders-api
+    url: https://orders.internal.example:8443
+    routes:
+      - name: orders
+        paths: ["/orders"]
+        protocols: ["https"]
+    plugins:
+      - name: openid-connect
+        config:
+          issuer: https://idp.example.com/
+      - name: rate-limiting
+        config:
+          minute: 60
+          policy: local
+
+  # Customer support chat through AI Gateway. / AI Gateway 経由の問い合わせチャット
+  - name: support-chat
+    url: https://api.openai.com
+    routes:
+      - name: chat
+        paths: ["/chat"]
+        protocols: ["https"]
+    plugins:
+      - name: key-auth
+      - name: ai-proxy
+        config:
+          route_type: llm/v1/chat
+          auth:
+            header_name: Authorization
+            header_value: "{vault://kong-env/openai-key}"
+          model:
+            provider: openai
+            name: gpt-4o
+      - name: ai-prompt-guard
+        config:
+          deny_patterns:
+            - ".*ignore (all )?previous instructions.*"
+      - name: ai-rag-injector
+
+  # Internal tools exposed as MCP. / 社内ツールを MCP として公開
+  - name: internal-tools
+    url: http://mcp-tools.internal.example:8080
+    routes:
+      - name: mcp
+        paths: ["/mcp"]
+        protocols: ["http", "https"]
+    plugins:
+      - name: ai-mcp-proxy
+        config:
+          mode: passthrough-listener
+
+plugins:
+  - name: http-log
+    config:
+      http_endpoint: https://logs.internal.example/kong
