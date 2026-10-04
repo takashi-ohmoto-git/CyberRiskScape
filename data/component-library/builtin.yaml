@@ -62,7 +62,7 @@ components:
     shape: data-store
     color: "bg-transparent"
     description: "永続化されたデータの格納場所（DB、ファイルストア、キャッシュ）。"
-    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, OTHER_DOCUMENT]
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, API_SPEC, OTHER_DOCUMENT]
 
   # ── AI Components ───────────────────────────────────────────
   - id: LLM

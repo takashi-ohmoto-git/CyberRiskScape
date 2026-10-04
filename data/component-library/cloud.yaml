@@ -38,7 +38,7 @@ components:
     shape: rounded
     color: "bg-transparent"
     description: "SaaS（Software as a Service）。認可状況・所有状況を属性で設定する。"
-    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, OTHER_DOCUMENT]
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, API_SPEC, OTHER_DOCUMENT]
 
   - id: IAAS
     label: "IaaS"
