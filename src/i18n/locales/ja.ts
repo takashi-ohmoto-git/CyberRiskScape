@@ -28,6 +28,7 @@ const jaCore = {
   'topbar.focusMode': '集中モード',
   'topbar.showSidebar': 'サイドバーを表示',
   'topbar.language': '表示言語',
+  'topbar.help': 'ヘルプ（Getting Started を新しいタブで開く）',
 
   // {name}=ファイル名, {brand}=BRANDING.name
   'projectFile.loadFailed':

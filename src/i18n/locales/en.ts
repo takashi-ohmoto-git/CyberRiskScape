@@ -75,6 +75,7 @@ const enCore: Partial<Record<TranslationKey, string>> = {
   'topbar.focusMode': 'Focus mode',
   'topbar.showSidebar': 'Show sidebar',
   'topbar.language': 'Interface language',
+  'topbar.help': 'Help (opens Getting Started in a new tab)',
   'projectFile.loadFailed': '“{name}” could not be loaded (it may not be a {brand} project file).',
   'appliesToSummary.node.target.single': 'Applies to {type}.',
   'appliesToSummary.node.target.anyOf': 'Applies to any of {types}.',

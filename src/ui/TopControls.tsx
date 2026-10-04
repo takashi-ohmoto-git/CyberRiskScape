@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  CircleHelp,
   Library,
   Maximize,
   Minimize,
@@ -17,6 +18,7 @@ import {
 } from '../core/state/diagramStore';
 import { FRAMEWORK_VIEWS, FRAMEWORK_VIEW_LABEL_KEYS } from './frameworkLabels';
 import { useLocale, useT } from '../i18n';
+import { BRANDING } from '../core/branding';
 
 const LOCALES = ['ja', 'en'] as const;
 
@@ -42,7 +44,7 @@ export function TopControls() {
 
   return (
     <>
-    <div className="absolute top-6 left-6 z-10 flex gap-4">
+    <div className="absolute top-6 left-6 right-6 z-10 flex flex-wrap gap-4 pointer-events-none [&>*]:pointer-events-auto">
       <div className="flex gap-2 bg-slate-900/90 backdrop-blur-xl p-1.5 rounded-2xl border border-slate-700 shadow-2xl">
         {FRAMEWORK_VIEWS.map((f) => (
           <button
@@ -129,6 +131,17 @@ export function TopControls() {
       >
         {isFocusMode ? <Minimize size={18} /> : <Maximize size={18} />}
       </button>
+
+      <a
+        href={`${BRANDING.repoUrl}/blob/main/guide/getting-started${locale === 'ja' ? '.ja' : ''}.md`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-center bg-slate-900/90 backdrop-blur-xl p-2.5 rounded-2xl border border-slate-700 shadow-2xl hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition-all active:scale-95"
+        title={t('topbar.help')}
+        aria-label={t('topbar.help')}
+      >
+        <CircleHelp size={18} />
+      </a>
     </div>
 
     {/* ズームコントロール（右下）。−／倍率%（クリックで 100%）／＋／全体表示 */}

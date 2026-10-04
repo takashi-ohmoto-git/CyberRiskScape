@@ -12,4 +12,6 @@ export const BRANDING = {
   tagline: 'AI脅威モデリング',
   /** ブラウザタイトル等で使うフルタイトル。 */
   fullTitle: 'CyberRiskScape — AI脅威モデリング',
+  /** 公開リポジトリの URL。 */
+  repoUrl: 'https://github.com/takashi-ohmoto-git/CyberRiskScape',
 } as const;
