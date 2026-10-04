@@ -30,6 +30,7 @@ CyberRiskScape を使う人のためのドキュメントです。
 | **[NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md)** | サービスアカウント・ワークロードID・OAuthクライアント・RPAボット、特権アクセス管理（PAM）・ID ガバナンス（IGA）の描き方と、OWASP NHI Top 10 にもとづく脅威。Okta・SailPoint・CyberArk（Idira）の MCP サーバーと組み合わせて、図と実際の ID の状態を突き合わせる方法 |
 | **[インターネット露出を減らす](exposure-reduction.ja.md)** | CISA の「Internet Exposure Reduction Guidance」の 4 ステップ（把握・必要性の判断・リスクの低減・定期評価）に沿って、Shodan・Censys で見つけた露出（Web・VPN・RDP・データベース・ローカル LLM）を構成図に描き（Shodan は書き出しから自動生成）、対応前後の脅威の差で効果を示し、定期評価で露出の再発を CLI で検知する方法 |
 | **[脅威を Postman で確かめる](postman.ja.md)** | 検出した脅威のうち HTTP で確かめられるもの（認証なし・平文・BOLA・BFLA・レート制限・管理面・プロンプトインジェクション・システムプロンプト開示・MCP のツール記述子）について、確認リクエストを Postman Collection で書き出し、Postman・Postman CLI・Newman で実行して対策を確かめる方法 |
+| **[AI駆動開発における Secure by Design と脅威モデリング](ai-driven-development.ja.md)** | AI が設計・実装・レビューを担う開発で、脅威モデルを「AI が読み書きし、人が判断する正本」として回す考え方と、企画・設計・実装・レビュー・検証・評価・運用の工程ごとに CyberRiskScape でできること、AI そのものの脅威モデル化、AI と人の境界、段階的な導入。各ガイドへの地図 |
 | **[Secure by Design 入門](secure-by-design.ja.md)** | 背景にある考え方。Secure by Design とは何か、なぜ今求められるのか、脅威モデリングが担う 4 つの役割、そして経営層・企画・セキュリティ・監査・CI が 1 つの脅威モデルを共有する Security Context Layer としての CyberRiskScape の役割。CISA 主導の国際共同ガイダンスに基づく |
 
 ## どこから読むか
@@ -54,6 +55,7 @@ CyberRiskScape を使う人のためのドキュメントです。
 - **サービスアカウントや AI エージェントなど NHI のリスクを洗い出したい** — [NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md) へ。
 - **インターネットに出ている資産を棚卸しして減らしたい** — [インターネット露出を減らす](exposure-reduction.ja.md) へ。Shodan・Censys の結果から始められます。
 - **検出した脅威が実装でも成立するか確かめたい** — [脅威を Postman で確かめる](postman.ja.md) へ。
+- **AI駆動開発で脅威モデリングをどう続けるか、全体像を知りたい** — [AI駆動開発における Secure by Design と脅威モデリング](ai-driven-development.ja.md) へ。
 - **この取り組みの意義を誰かに説明したい** — [Secure by Design 入門](secure-by-design.ja.md) は
   単独で読める内容になっています。
 

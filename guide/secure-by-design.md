@@ -200,6 +200,7 @@ structure, enumerating the threats, keeping the reasoning, and exporting the res
 
 ## Where to go next
 
+- What you can do at each stage of AI-driven development — [Secure by Design and Threat Modeling in AI-Driven Development](ai-driven-development.md)
 - The tool in practice — [Getting Started with CyberRiskScape](getting-started.md)
 - Build one yourself — [Your First Threat Model](first-threat-model.md)
 - Features and how the rules are organized — [README.md](../README.md)

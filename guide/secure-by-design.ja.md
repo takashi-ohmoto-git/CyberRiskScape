@@ -198,6 +198,7 @@ CyberRiskScape が目指すのは、図を描くための単発のツールで�
 
 ## 次に読むもの
 
+- AI駆動開発の工程ごとにできること — [AI駆動開発における Secure by Design と脅威モデリング](ai-driven-development.ja.md)
 - 実際の操作 — [はじめに — CyberRiskScape 入門](getting-started.ja.md)
 - 手を動かして作図する — [はじめての脅威モデル](first-threat-model.ja.md)
 - 機能一覧・脅威ルールの構成 — [README.ja.md](../README.ja.md)

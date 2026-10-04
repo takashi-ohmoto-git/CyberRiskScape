@@ -30,6 +30,7 @@ Nothing here needs to be installed — you can follow along in the
 | **[Threat Modeling NHIs and Identity Platforms](nhi-identity.md)** | How to draw service accounts, workload identities, OAuth clients, RPA bots, privileged access management (PAM) and identity governance (IGA), the threats based on the OWASP NHI Top 10, and pairing with the Okta, SailPoint and CyberArk (Idira) MCP servers to cross-check the diagram against the real state of your identities |
 | **[Reducing Internet Exposure](exposure-reduction.md)** | Following the four steps of CISA's Internet Exposure Reduction Guidance (assess, decide what must stay exposed, reduce risk, reassess regularly): draw the exposures you find with Shodan and Censys (web, VPN, RDP, databases, local LLMs; generated automatically from a Shodan export), show the effect as the difference in threats before and after, and catch exposures that come back with the CLI |
 | **[Verifying Threats with Postman](postman.md)** | Exporting check requests as a Postman Collection for the detected threats that can be verified over HTTP (no authentication, plaintext, BOLA, BFLA, rate limiting, management plane, prompt injection, system prompt disclosure, MCP tool descriptors), and running them in Postman, the Postman CLI or Newman to confirm countermeasures |
+| **[Secure by Design and Threat Modeling in AI-Driven Development](ai-driven-development.md)** | How to run the threat model as a source of record that AI reads and writes and people decide on, in development where AI handles design, implementation and review; what CyberRiskScape enables at each stage (planning, design, implementation, review, verification, assessment, operations); threat modeling AI itself; where the line between AI and people sits; and a staged rollout. A map to the other guides |
 | **[An Introduction to Secure by Design](secure-by-design.md)** | The thinking behind the tool: what Secure by Design means, why it is being asked for now, the four roles threat modeling plays, and CyberRiskScape as a Security Context Layer that executives, planners, security, audit and CI all share. Based on the CISA-led joint guidance |
 
 ## Where to start
@@ -54,6 +55,7 @@ Nothing here needs to be installed — you can follow along in the
 - **You want to surface the risks of NHIs such as service accounts and AI agents** — read [Threat Modeling NHIs and Identity Platforms](nhi-identity.md).
 - **You want to inventory and reduce what is exposed to the internet** — read [Reducing Internet Exposure](exposure-reduction.md). You can start from Shodan and Censys results.
 - **You want to check whether detected threats hold in the implementation** — read [Verifying Threats with Postman](postman.md).
+- **You want the big picture of keeping threat modeling going in AI-driven development** — read [Secure by Design and Threat Modeling in AI-Driven Development](ai-driven-development.md).
 - **You want to explain to someone why this work matters** —
   [An Introduction to Secure by Design](secure-by-design.md) is written to be read on its own.
 
