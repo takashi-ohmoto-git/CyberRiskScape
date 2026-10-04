@@ -1,0 +1,235 @@
+{
+  "schemaVersion": 1,
+  "kind": "cyberriskscape-template",
+  "name": "外部露出の評価 — 対応後（不要な露出の削除とリスク低減）",
+  "layer": {
+    "nodes": [
+      {
+        "id": "nexp_actor",
+        "type": "THREAT_ACTOR",
+        "x": 60,
+        "y": 80,
+        "label": "インターネット上の攻撃者",
+        "threatActorType": "CyberCriminals"
+      },
+      {
+        "id": "nexp_emp",
+        "type": "USER",
+        "x": 60,
+        "y": 320,
+        "label": "社員（リモート勤務）",
+        "userTrustAttribute": "Employee"
+      },
+      {
+        "id": "nexp_vendor",
+        "type": "EXTERNAL_ENTITY",
+        "x": 60,
+        "y": 560,
+        "label": "保守ベンダー"
+      },
+      {
+        "id": "nexp_web",
+        "type": "FRONT_END_SERVER",
+        "x": 400,
+        "y": 80,
+        "label": "公開Webサイト（443）",
+        "attackSurface": {
+          "hasGlobalIp": true,
+          "hasRemoteAccessRestriction": true,
+          "hasAccessLog": true,
+          "hasWafProtection": true,
+          "hasDdosProtection": true
+        }
+      },
+      {
+        "id": "nexp_vpn",
+        "type": "GATEWAY",
+        "x": 400,
+        "y": 320,
+        "label": "SSL-VPN（443）",
+        "attackSurface": {
+          "hasGlobalIp": true,
+          "hasRemoteAccessRestriction": true,
+          "hasUserAuthentication": true,
+          "hasAccessLog": true,
+          "hasDdosProtection": true
+        }
+      },
+      {
+        "id": "nexp_es",
+        "type": "DATA_STORE",
+        "x": 760,
+        "y": 60,
+        "label": "検索基盤（Elasticsearch 9200）"
+      },
+      {
+        "id": "nexp_ollama",
+        "type": "LLM",
+        "x": 760,
+        "y": 250,
+        "label": "ローカルLLM（Ollama 11434）"
+      },
+      {
+        "id": "nexp_jump",
+        "type": "GATEWAY",
+        "x": 760,
+        "y": 440,
+        "label": "踏み台サーバー（ジャンプホスト）",
+        "attackSurface": {
+          "hasGlobalIp": false,
+          "hasSourceIpRestriction": true,
+          "hasRemoteAccessRestriction": true,
+          "hasUserAuthentication": true,
+          "hasAccessLog": true
+        }
+      },
+      {
+        "id": "nexp_app",
+        "type": "PROCESS",
+        "x": 1080,
+        "y": 440,
+        "label": "業務サーバー"
+      },
+      {
+        "id": "nexp_db",
+        "type": "DATA_STORE",
+        "x": 1080,
+        "y": 200,
+        "label": "顧客DB"
+      }
+    ],
+    "edges": [
+      {
+        "id": "eexp_01",
+        "source": "nexp_actor",
+        "target": "nexp_web",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "閲覧"
+      },
+      {
+        "id": "eexp_02",
+        "source": "nexp_actor",
+        "target": "nexp_vpn",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "VPNログイン試行"
+      },
+      {
+        "id": "eexp_03",
+        "source": "nexp_emp",
+        "target": "nexp_vpn",
+        "auth": "MFA",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "リモート接続"
+      },
+      {
+        "id": "eexp_10",
+        "source": "nexp_web",
+        "target": "nexp_db",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "顧客データの参照"
+      },
+      {
+        "id": "eexp_11",
+        "source": "nexp_web",
+        "target": "nexp_es",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "検索"
+      },
+      {
+        "id": "eexp_12",
+        "source": "nexp_app",
+        "target": "nexp_db",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "顧客データの参照"
+      },
+      {
+        "id": "eexp_13",
+        "source": "nexp_app",
+        "target": "nexp_ollama",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "推論の呼び出し"
+      },
+      {
+        "id": "eexp_15",
+        "source": "nexp_vendor",
+        "target": "nexp_vpn",
+        "auth": "MFA",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "リモート保守"
+      },
+      {
+        "id": "eexp_16",
+        "source": "nexp_vpn",
+        "target": "nexp_jump",
+        "auth": "MFA",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "リモート接続"
+      },
+      {
+        "id": "eexp_09",
+        "source": "nexp_jump",
+        "target": "nexp_app",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "管理操作"
+      }
+    ],
+    "boundaries": [
+      {
+        "id": "bexp_internet",
+        "type": "RECT",
+        "x": 20,
+        "y": 20,
+        "width": 260,
+        "height": 720,
+        "trustLevel": "Internet"
+      },
+      {
+        "id": "bexp_dmz",
+        "type": "ROUNDED",
+        "x": 340,
+        "y": 20,
+        "width": 280,
+        "height": 440,
+        "trustLevel": "Internet",
+        "macroTrust": "Public Area"
+      },
+      {
+        "id": "bexp_internal",
+        "type": "ROUNDED",
+        "x": 700,
+        "y": -20,
+        "width": 580,
+        "height": 600,
+        "trustLevel": "Internal",
+        "macroTrust": "Security Zone"
+      }
+    ]
+  }
+}

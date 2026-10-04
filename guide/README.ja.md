@@ -28,6 +28,7 @@ CyberRiskScape を使う人のためのドキュメントです。
 | **[Salesforce Agentforce を脅威モデリングする](agentforce.ja.md)** | Agentforce の構成要素と CyberRiskScape の型の対応、顧客向け Service agent の構成図テンプレート、外部から書き込める CRM 項目を経由する間接プロンプトインジェクション（ForcedLeak 型）など押さえたい脅威と、検出されるルール・されないこと、エージェント定義の変更を PR で見張る方法 |
 | **[Kong AI Gateway を脅威モデリングする](kong-ai-gateway.ja.md)** | Kong Gateway の宣言設定（decK の kong.yaml）から構成図の下書きを自動で作る方法（画面・CLI）、設定と型の対応、AI Gateway の構成で押さえたい脅威（認証のない Route・MCP として公開したツール・ガードレールの限界・RAG・管理プレーン）と、kong.yaml の変更を PR で見張る方法 |
 | **[NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md)** | サービスアカウント・ワークロードID・OAuthクライアント・RPAボット、特権アクセス管理（PAM）・ID ガバナンス（IGA）の描き方と、OWASP NHI Top 10 にもとづく脅威。Okta・SailPoint・CyberArk（Idira）の MCP サーバーと組み合わせて、図と実際の ID の状態を突き合わせる方法 |
+| **[インターネット露出を減らす](exposure-reduction.ja.md)** | CISA の「Internet Exposure Reduction Guidance」の 4 ステップ（把握・必要性の判断・リスクの低減・定期評価）に沿って、Shodan・Censys で見つけた露出（Web・VPN・RDP・データベース・ローカル LLM）を構成図に描き、対応前後の脅威の差で効果を示し、定期評価で露出の再発を CLI で検知する方法 |
 | **[脅威を Postman で確かめる](postman.ja.md)** | 検出した脅威のうち HTTP で確かめられるもの（認証なし・平文・BOLA・BFLA・レート制限・管理面・プロンプトインジェクション・システムプロンプト開示・MCP のツール記述子）について、確認リクエストを Postman Collection で書き出し、Postman・Postman CLI・Newman で実行して対策を確かめる方法 |
 | **[Secure by Design 入門](secure-by-design.ja.md)** | 背景にある考え方。Secure by Design とは何か、なぜ今求められるのか、脅威モデリングが担う 4 つの役割、そして経営層・企画・セキュリティ・監査・CI が 1 つの脅威モデルを共有する Security Context Layer としての CyberRiskScape の役割。CISA 主導の国際共同ガイダンスに基づく |
 
@@ -51,6 +52,7 @@ CyberRiskScape を使う人のためのドキュメントです。
 - **Salesforce Agentforce の構成を脅威モデル化したい** — [Salesforce Agentforce を脅威モデリングする](agentforce.ja.md) へ。
 - **Kong Gateway（AI Gateway）の構成を脅威モデル化したい** — [Kong AI Gateway を脅威モデリングする](kong-ai-gateway.ja.md) へ。kong.yaml から図の下書きを作れます。
 - **サービスアカウントや AI エージェントなど NHI のリスクを洗い出したい** — [NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md) へ。
+- **インターネットに出ている資産を棚卸しして減らしたい** — [インターネット露出を減らす](exposure-reduction.ja.md) へ。Shodan・Censys の結果から始められます。
 - **検出した脅威が実装でも成立するか確かめたい** — [脅威を Postman で確かめる](postman.ja.md) へ。
 - **この取り組みの意義を誰かに説明したい** — [Secure by Design 入門](secure-by-design.ja.md) は
   単独で読める内容になっています。
