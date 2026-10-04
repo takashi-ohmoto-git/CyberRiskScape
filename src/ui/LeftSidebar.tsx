@@ -33,6 +33,7 @@ import { renderIcon } from '../component-library/iconRegistry';
 import { saveProject } from '../features/persistence/repository';
 import { buildThreatReport, toCsv, toJson, toDCRHThreatModelMarkdown } from '../features/export/threatReport';
 import { triggerDownload } from '../features/export/download';
+import { toPostmanCollection } from '../features/postman-export/toPostmanCollection';
 import { reportFilename } from '../features/export/exportFiles';
 import { useLocale, useT, type TranslationKey } from '../i18n';
 
@@ -101,7 +102,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
     }
   };
 
-  const handleExportReport = (format: 'csv' | 'json' | 'DCRH-threat-model') => {
+  const handleExportReport = (format: 'csv' | 'json' | 'DCRH-threat-model' | 'postman') => {
     const s = useDiagramStore.getState();
     const input = {
       threats,
@@ -117,6 +118,9 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
       triggerDownload(`${base}.csv`, toCsv(buildThreatReport(input)), 'text/csv;charset=utf-8', true);
     } else if (format === 'json') {
       triggerDownload(`${base}.json`, toJson(buildThreatReport(input)), 'application/json');
+    } else if (format === 'postman') {
+      const { collection } = toPostmanCollection(input);
+      triggerDownload(`${base}.postman_collection.json`, JSON.stringify(collection, null, 2), 'application/json');
     } else {
       const date = new Date().toISOString().slice(0, 10);
       triggerDownload(
@@ -265,6 +269,13 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                   >
                     <Download size={12} className="text-emerald-400 shrink-0" />
                     {t('project.sidebar.exportDcrh')}
+                  </button>
+                  <button
+                    onClick={() => handleExportReport('postman')}
+                    className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
+                  >
+                    <Download size={12} className="text-emerald-400 shrink-0" />
+                    {t('project.sidebar.exportPostman')}
                   </button>
                   <button
                     onClick={() => openExportModal('pdf')}

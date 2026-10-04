@@ -138,4 +138,18 @@ export const jaReport = {
   'report.pdf.appendix.heading': '付録：レイヤー別の脅威',
   'report.pdf.detail.firstStep': 'まず着手すべき対策',
   'report.pdf.detail.layer': 'レイヤー',
+  // ── Postman Collection（検証用リクエスト）──
+  'postman.collectionName': '{target} — セキュリティ検証（{layer}）',
+  'postman.desc.intro': '{product} が {layer} の脅威モデルから生成した、検出脅威を確かめるための確認リクエストです。',
+  'postman.desc.howTo':
+    'コレクション変数（*_host・token_user_a など）を自分のテスト環境の値に設定してから実行してください。Postman CLI（postman collection run）・Newman でも実行できます。',
+  'postman.desc.authorizedOnly': '自分が管理する、または検証の許可を得たシステムに対してだけ実行してください。',
+  'postman.desc.summary': 'リクエスト {requests} 件（対象の脅威 {covered} 件）。HTTP で確かめる対応表が無い脅威 {uncovered} 件はテストを作っていません。',
+  'postman.desc.threats': '確かめる脅威',
+  'postman.var.host': '{node} に届く入口のホスト名（例: api.example.com）',
+  'postman.var.path': '{node} の確認に使うパス',
+  'postman.var.tokenUserA': '一般利用者（利用者 A）のアクセストークン',
+  'postman.var.objectIdUserB': '利用者 B が所有するレコードの ID',
+  'postman.var.canary': '応答に含まれてはいけないカナリア文字列',
+  'postman.var.systemPromptMarker': 'テスト環境のシステムプロンプトに入れておく目印の文字列',
 } as const;

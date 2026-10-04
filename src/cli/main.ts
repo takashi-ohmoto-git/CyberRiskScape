@@ -23,6 +23,7 @@ import { createCrsMcpServer } from '../mcp/server';
 import { BRANDING } from '../core/branding';
 import { kongToLayer } from '../features/kong-import/kongToLayer';
 import { layerToProject } from '../features/kong-import/toProject';
+import { toPostmanCollection } from '../features/postman-export/toPostmanCollection';
 
 /**
  * CyberRiskScape ヘッドレス CLI。
@@ -44,6 +45,7 @@ const USAGE = `使い方:
   diff <base.json> <head.json> [options]
   triggers [options]
   import-kong <kong.yaml> [options]
+  export-postman <project.json> [options]
   mcp [options]
 
 analyze のオプション:
@@ -69,6 +71,12 @@ triggers のオプション:
 
 import-kong のオプション（Kong の宣言設定から構成図の下書きを L1 に作り、プロジェクト JSON を出力）:
   --locale <ja|en>                              ノード名の言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+export-postman のオプション（検出脅威を確かめる確認リクエストを Postman Collection v2.1 で出力）:
+  --layer <L0|L1|L2|L3>                         対象レイヤー（既定: ノードがある最初のレイヤー）
+  --framework <STRIDE|AI|AgenticAI|ALL>         対象フレームワーク（既定: ALL）
+  --locale <ja|en>                              表示言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
 mcp のオプション（stdio の MCP サーバーとして起動。stdout は MCP プロトコル専用）:
@@ -312,6 +320,40 @@ ${USAGE}`);
 }
 
 /**
+ * `export-postman`：検出した脅威のうち HTTP で確かめられるものについて、確認リクエストの
+ * Postman Collection（v2.1 JSON）を出力する。ホスト名・トークンは変数のまま出す。
+ */
+function runExportPostman(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  const layer = parseEnum(values.layer, LAYER_KEYS, 'layer');
+  const framework = parseEnum(values.framework, FRAMEWORKS, 'framework');
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+
+  const raw = readJsonFile(file);
+  let results: LayerAnalysisResult[];
+  try {
+    results = analyzeProject(raw, { layer, framework, locale });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  const target = results[0];
+  if (!target) fail('ノードのあるレイヤーがありません。');
+
+  const { collection, summary } = toPostmanCollection(target.input);
+  writeOutput(JSON.stringify(collection, null, 2), values.out);
+  process.stderr.write(
+    `Postman Collection を出力しました（${target.layer}・リクエスト ${summary.requests} 件・対象の脅威 ${summary.coveredThreats} 件・対象外 ${summary.uncoveredThreats} 件）
+`,
+  );
+}
+
+/**
  * `mcp`：stdio の MCP サーバーとして起動する。stdout はプロトコル専用のため、
  * ここから先は stdout に何も書かない（ログ・エラーは stderr）。
  */
@@ -354,6 +396,8 @@ function main(): void {
     runDiff(values, positionals);
   } else if (command === 'triggers') {
     runTriggers(values);
+  } else if (command === 'export-postman') {
+    runExportPostman(values, positionals);
   } else if (command === 'import-kong') {
     runImportKong(values, positionals);
   } else if (command === 'mcp') {

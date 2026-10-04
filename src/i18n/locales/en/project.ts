@@ -19,6 +19,7 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'project.sidebar.exportCsv': 'Download CSV',
   'project.sidebar.exportJson': 'Download JSON',
   'project.sidebar.exportDcrh': 'DCRH THREAT_MODEL.md (Anthropic-compatible)',
+  'project.sidebar.exportPostman': 'Postman Collection (verification requests)',
   'project.sidebar.exportPdf': 'PDF report (choose layers)',
   'project.sidebar.exportPng': 'PNG image (choose layers)',
   'project.sidebar.newProject': 'New project',

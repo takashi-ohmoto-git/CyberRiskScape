@@ -21,6 +21,7 @@ export const jaProject = {
   'project.sidebar.exportCsv': 'CSV ダウンロード',
   'project.sidebar.exportJson': 'JSON ダウンロード',
   'project.sidebar.exportDcrh': 'DCRH THREAT_MODEL.md（Anthropic 公式互換）',
+  'project.sidebar.exportPostman': 'Postman Collection（検証用リクエスト）',
   'project.sidebar.exportPdf': 'PDF レポート（レイヤー選択）',
   'project.sidebar.exportPng': 'PNG 画像（レイヤー選択）',
   'project.sidebar.newProject': '新規作成',
