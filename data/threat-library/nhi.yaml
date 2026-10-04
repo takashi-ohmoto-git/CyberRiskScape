@@ -1,0 +1,326 @@
+# 非人間アイデンティティ（NHI）と、特権アクセス管理（PAM）・ID ガバナンス（IGA）の脅威ルール。
+#
+# 対象は data/component-library/nhi.yaml の 6 型。NHI は 4 型（SERVICE_ACCOUNT / WORKLOAD_IDENTITY /
+# OAUTH_CLIENT / RPA_BOT）を anyOf でまとめて扱い、型ごとに固有の脅威（ワークロード ID 連携の信頼設定）だけ
+# 個別のルールにする。
+#
+# 図の描き方の約束（このファイルのルールが前提にする接続）:
+#   - NHI を**使う側**（ワークロード・CI・エージェント・人）から NHI へエッジを引き、NHI から**アクセス先**へ
+#     エッジを引く。人 → NHI のエッジは「人が NHI を使っている」（NHI10）を表す。
+#   - NHI が持つ資格情報は CREDENTIAL を内包して表す。静的な鍵か、暗号学的・ハードウェアに束縛された ID かは
+#     NHI ノードの identityTier で宣言する（未設定は「ラベルのみ」＝静的な鍵として扱う）。
+#
+# 出典:
+#   - OWASP Non-Human Identities Top 10（2025）
+#     https://owasp.org/www-project-non-human-identities-top-10/
+#     （NHI1 Improper Offboarding / NHI5 Overprivileged NHI / NHI7 Long-Lived Secrets /
+#      NHI8 Environment Isolation / NHI9 NHI Reuse / NHI10 Human Use of NHI）
+#   - NIST SP 800-207 Zero Trust Architecture（短命の資格情報・継続的な検証）
+#     https://csrc.nist.gov/pubs/sp/800/207/final
+#   本文は逐語転載せず日本語要約のみ。
+#
+#   SPDX-License-Identifier: Apache-2.0
+#   ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+#   出典の帰属表示は NOTICE を参照。
+#
+# 重複回避方針:
+#   - 資格情報そのものの静的保管・散在（NHI2 Secret Leakage）は zt-credential-sprawl-static-secret-001
+#     （canonicalId: credential-sprawl、CREDENTIAL 型）が扱う。本ファイルの長期シークレットのルールは
+#     「NHI が静的な鍵で動いていること」を NHI ノードの主体として扱い、subject が異なる。
+#   - エージェント発の静的 API キー・弱いサービス認証（NHI4）は weak-service-auth 群が扱う（エッジ視点）。
+#   - AI エージェント自身の権限過大は excessive-agency / agent-runtime-privilege-scope が扱う。本ファイルは
+#     エージェント以外の NHI の権限を扱う。
+#   - シークレット管理への権限集中は api-secrets-vault-concentration-001（secrets-vault-concentration、
+#     SECRETS_VAULT 型）が扱う。PAM は特権セッションの仲介と、PAM を経由しない経路の残存という固有の
+#     論点を持つため、別の canonicalId とする。
+#   - 発行元 IdP を持たないローカル資格情報は identity-local-credential-outside-idp-001 が扱う（エッジ視点）。
+#
+# mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
+# description は Can/Cannot ペアと blast radius を意識して記述する。
+
+schemaVersion: 1
+
+rules:
+  # ── NHI1: 不適切なオフボーディング（所有者不在・不要になった NHI の残存）──────
+  - id: nhi-improper-offboarding-001
+    canonicalId: nhi-improper-offboarding
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "NHI の不適切なオフボーディング（所有者不在・不要な NHI の残存）"
+    severity: Medium
+    description: "{{nodeName}} の所有者（責任を持つ人やチーム）が決まっていない、または用途が終わったあとも無効化されていない場合、使われていない資格情報と権限が残り続ける。プロジェクトの終了や担当者の異動で誰も把握しなくなった NHI は、資格情報が漏れても気付かれず、攻撃者は正規の NHI として長期間アクセスできる（Can）。一方、すべての NHI に所有者と用途・期限を登録し、所有者の異動・用途の終了・一定期間の未使用を契機に無効化していれば、残存した NHI が攻撃の足場になる期間は限られる（Cannot）。blast radius は {{nodeName}} に付与された権限の範囲全体。"
+    mitigation: "[Foundation] NHI の台帳を作り、所有者・用途・作成日・最終利用日を記録する。所有者のいない NHI と、一定期間（例：90 日）使われていない NHI を洗い出して無効化する。 [Enterprise] 所有者の退職・異動、アプリケーションの廃止を契機に NHI の見直しを自動で起票する。NHI の作成を申請制にし、所有者と期限の登録を必須にする。 [Advanced] NHI の利用状況を継続的に監視し、未使用や所有者不在を検知して自動で無効化する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: SERVICE_ACCOUNT
+        - nodeType: WORKLOAD_IDENTITY
+        - nodeType: OAUTH_CLIENT
+        - nodeType: RPA_BOT
+      # 所有者と期限の管理は、接続関係に依存しない NHI の存在そのものに伴う内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "ID.AM-07"
+    references:
+      - title: "OWASP Non-Human Identities Top 10 2025 - NHI1:2025 Improper Offboarding"
+        url: "https://owasp.org/www-project-non-human-identities-top-10/"
+
+  # ── NHI5: 過剰な権限 ───────────────────────────────────────
+  - id: nhi-overprivileged-001
+    canonicalId: nhi-overprivileged
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "NHI の過剰な権限"
+    severity: High
+    description: "{{nodeName}} に、用途に必要な範囲を超えた権限（管理者ロール、広いスコープ、すべてのリソースへの読み書き等）が付いている場合、{{nodeName}} の資格情報を入手した攻撃者や、{{nodeName}} を使うワークロードを乗っ取った攻撃者は、その権限の範囲で横展開・データの窃取・設定の改ざんができる（Can）。NHI は作成時に「動くように」広めの権限を付けたまま見直されないことが多く、人のアカウントより権限が大きいことも珍しくない。一方、NHI ごとに必要な操作とリソースだけを許可し、実際の利用状況をもとに定期的に権限を削っていれば、資格情報を入手されても到達できる範囲は用途の範囲に限られる（Cannot）。blast radius は {{nodeName}} の権限が届く全リソース。"
+    mitigation: "[Foundation] NHI ごとに付与されている権限・スコープ・ロールを棚卸しし、管理者ロールや全リソースへの権限を用途に必要な範囲へ絞る。OAuth クライアントのスコープも同様に見直す。 [Enterprise] 実際に使われた権限（アクセスログ・利用状況）をもとに、未使用の権限を定期的に削除する。権限の付与を申請・承認制にする。 [Advanced] 必要なときだけ権限を付与し、使い終わったら外す（just-in-time・ゼロスタンディング権限）。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: SERVICE_ACCOUNT
+        - nodeType: WORKLOAD_IDENTITY
+        - nodeType: OAUTH_CLIENT
+        - nodeType: RPA_BOT
+      # アクセス先へのエッジ（NHI → リソース）があるとき発火する。
+      connection:
+        direction: outbound
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "OWASP Non-Human Identities Top 10 2025 - NHI5:2025 Overprivileged NHI"
+        url: "https://owasp.org/www-project-non-human-identities-top-10/"
+
+  # ── NHI7: 長期の静的シークレット ──────────────────────────────
+  - id: nhi-long-lived-secret-001
+    canonicalId: nhi-long-lived-secret
+    framework: STRIDE
+    category: "Spoofing"
+    name: "NHI の長期の静的シークレット"
+    severity: High
+    description: "{{nodeName}} が、有効期限の無い、または長い API キー・パスワード・クライアントシークレットで動いている場合、その値がコード・設定・ログ・CI のどこか 1 か所から漏れれば、攻撃者は失効されるまで {{nodeName}} になりすまし続けられる（Can）。静的な値はコピーでき、漏れても正規の利用と区別しにくく、ローテーションは止めにくい本番系ほど後回しになる。一方、ワークロード ID 連携や秘密鍵による署名（private key JWT・mTLS）で短命のトークンを発行し、静的な値を持たないか、持つ場合も自動でローテーションしていれば、漏れた値で使える期間は短く、なりすましは長続きしない（Cannot）。blast radius は {{nodeName}} の権限の範囲と、漏えいから失効までの期間。"
+    mitigation: "[Foundation] NHI の資格情報の種類（静的なキー・パスワード／証明書／短命トークン）と有効期限を棚卸しする。静的な値はシークレット管理に移し、ローテーションの期限を決める。 [Enterprise] 静的なクライアントシークレットを、秘密鍵による署名（private key JWT・mTLS）やワークロード ID 連携による短命トークンに置き換える。ローテーションを自動化する。 [Advanced] 資格情報をハードウェア（HSM・TPM）や実行基盤の証明に束縛し、コピーできる静的な値そのものを無くす。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: SERVICE_ACCOUNT
+        - nodeType: OAUTH_CLIENT
+        - nodeType: RPA_BOT
+      connection:
+        required: false
+      # identityTier が Cryptographic / HardwareBound と明示宣言された NHI は対象外
+      # （未設定は LabelOnly＝静的な鍵として扱い発火する）。
+      agentAttributes:
+        identityTier: [LabelOnly]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+    references:
+      - title: "OWASP Non-Human Identities Top 10 2025 - NHI7:2025 Long-Lived Secrets"
+        url: "https://owasp.org/www-project-non-human-identities-top-10/"
+      # 資格情報そのものの保管・散在（CREDENTIAL ノード視点）は credential-sprawl が扱う（別 canonicalId）。
+
+  # ── NHI8: 環境の分離 ───────────────────────────────────────
+  - id: nhi-environment-isolation-001
+    canonicalId: nhi-environment-isolation
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "NHI の環境分離の不備（開発と本番での共用）"
+    severity: Medium
+    description: "{{nodeName}} やその資格情報を、開発・検証と本番で共用している場合、管理の緩い開発環境（開発者の端末、検証用の CI、共有のテスト環境）から資格情報が漏れれば、そのまま本番にアクセスできる（Can）。開発用に作った NHI に本番の権限が付いたまま残っていることも多い。一方、環境ごとに別の NHI と資格情報を用意し、開発・検証の NHI には本番のリソースへの権限を付けず、ネットワークでも分離していれば、開発環境での漏えいは本番に届かない（Cannot）。blast radius は、共用している NHI が届く本番のリソース全体。"
+    mitigation: "[Foundation] 環境（開発・検証・本番）ごとに NHI と資格情報を分ける。開発・検証の NHI に本番の権限が付いていないか確認する。 [Enterprise] 本番の NHI の資格情報は本番の実行基盤からだけ取得できるようにし、開発者の端末や検証用の CI からは取得できないようにする。 [Advanced] ワークロード ID 連携で、資格情報の発行条件に環境（実行基盤・ブランチ・デプロイ先）を含める。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: SERVICE_ACCOUNT
+        - nodeType: WORKLOAD_IDENTITY
+        - nodeType: OAUTH_CLIENT
+        - nodeType: RPA_BOT
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "OWASP Non-Human Identities Top 10 2025 - NHI8:2025 Environment Isolation"
+        url: "https://owasp.org/www-project-non-human-identities-top-10/"
+
+  # ── NHI9: 使い回し ───────────────────────────────────────
+  - id: nhi-reuse-001
+    canonicalId: nhi-reuse
+    framework: STRIDE
+    category: "Repudiation"
+    name: "NHI の使い回し（複数のワークロードでの共用）"
+    severity: Medium
+    description: "{{nodeName}} を、複数のアプリケーション・ワークロード・エージェントが共用している場合、どれか 1 つが侵害されれば、攻撃者は {{nodeName}} の権限ですべての共用先の権限を得る（Can）。権限は全利用者の和になりやすく、ログには同じ NHI の名前しか残らないため、どのワークロードの操作かを区別できず、不正の検知と調査も難しくなる。一方、ワークロードごとに専用の NHI を用意し、それぞれに必要な権限だけを付けていれば、1 つの侵害の影響はそのワークロードの範囲に留まり、操作も特定できる（Cannot）。blast radius は {{nodeName}} を共用するすべてのワークロードの権限の和。"
+    mitigation: "[Foundation] NHI ごとに利用しているワークロードを洗い出し、複数で共用している NHI を特定する。共用をやめ、ワークロードごとに専用の NHI を用意する計画を立てる。 [Enterprise] NHI の作成時に利用するワークロードを 1 つ登録させ、別のワークロードからの利用を検知する。 [Advanced] ワークロード ID 連携で、実行基盤の証明に紐づいた NHI だけを発行し、共用そのものをできなくする。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: SERVICE_ACCOUNT
+        - nodeType: OAUTH_CLIENT
+        - nodeType: RPA_BOT
+      # NHI を使うワークロードからの接続（ワークロード → NHI）があるとき発火する。
+      connection:
+        direction: inbound
+        peerType: [PROCESS, BACKEND_API, FRONT_END_SERVER, CI_PIPELINE, AGENT, SUB_AGENT, TOOL, MCP_SERVER, OTHER_APP]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-03"
+    references:
+      - title: "OWASP Non-Human Identities Top 10 2025 - NHI9:2025 NHI Reuse"
+        url: "https://owasp.org/www-project-non-human-identities-top-10/"
+
+  # ── NHI10: 人による NHI の利用 ─────────────────────────────────
+  - id: nhi-human-use-001
+    canonicalId: nhi-human-use
+    framework: STRIDE
+    category: "Repudiation"
+    name: "人による NHI の利用"
+    severity: High
+    description: "人が {{nodeName}} の資格情報を使って、手作業でシステムを操作している。NHI には通常 MFA や条件付きアクセスが掛からないため、人の認証の統制を迂回でき、操作は NHI の名前で記録されるので誰が行ったかを特定できない（Can）。NHI の資格情報を人が知っていることは、退職・異動後も使い続けられる経路にもなる。一方、人の作業は人のアカウント（必要なら特権アクセス管理を経由した一時的な権限）で行い、NHI の資格情報は人が取り出せない場所に置いていれば、人が NHI として振る舞うことはできず、操作は個人に帰属する（Cannot）。blast radius は {{nodeName}} の権限の範囲と、責任追跡が失われる操作のすべて。"
+    mitigation: "[Foundation] 人が NHI の資格情報を使っている作業を洗い出し、人のアカウントでの作業に切り替える。NHI の資格情報を知っている人を把握し、異動・退職時に資格情報をローテーションする。 [Enterprise] NHI の資格情報をシークレット管理に置き、人が取り出せないようにする。人の特権作業は特権アクセス管理を経由させ、セッションを記録する。 [Advanced] NHI のサインインの場所・時間帯・操作の傾向を監視し、人による利用の兆候（対話的なログイン等）を検知する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: SERVICE_ACCOUNT
+        - nodeType: WORKLOAD_IDENTITY
+        - nodeType: OAUTH_CLIENT
+        - nodeType: RPA_BOT
+      # 人（またはその端末）から NHI への接続＝人が NHI を使っている構成でのみ発火する。
+      connection:
+        direction: inbound
+        peerType: [USER, HUMAN_OPERATOR, PC, SMARTPHONE, INSIDER_THREAT]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-02"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-03"
+    references:
+      - title: "OWASP Non-Human Identities Top 10 2025 - NHI10:2025 Human Use of NHI"
+        url: "https://owasp.org/www-project-non-human-identities-top-10/"
+
+  # ── WORKLOAD_IDENTITY: 連携の信頼設定の過剰な許可 ──────────────────
+  - id: nhi-workload-federation-trust-001
+    canonicalId: workload-identity-federation-trust
+    framework: STRIDE
+    category: "Spoofing"
+    name: "ワークロード ID 連携の信頼条件が広すぎる"
+    severity: High
+    description: "{{nodeName}} は、外部の発行元（CI・別のクラウド・Kubernetes 等）が発行したトークンを根拠に資格情報を受け取る。信頼の条件（発行元・リポジトリ・ブランチ・環境・サービスアカウント名等）をワイルドカードや発行元だけで許可している場合、同じ発行元を使える別のリポジトリ・ブランチ・テナントのワークロードが {{nodeName}} として資格情報を取得できる（Can）。静的なシークレットが無くても、信頼条件の広さがそのままなりすましの入口になる。一方、信頼条件を、許可するリポジトリ・ブランチ（またはタグ）・環境・オーディエンスまで具体的に指定し、本番の権限を持つ ID は保護されたブランチやデプロイ環境からだけ取得できるようにしていれば、条件外のワークロードは {{nodeName}} になれない（Cannot）。blast radius は {{nodeName}} の権限の範囲全体。"
+    mitigation: "[Foundation] ワークロード ID 連携の信頼条件を棚卸しし、ワイルドカードや発行元だけの条件を、リポジトリ・ブランチ・環境・オーディエンスまで具体的に指定した条件に置き換える。 [Enterprise] 本番の権限を持つ ID は、保護されたブランチ・承認付きのデプロイ環境からのトークンに限って発行する。信頼条件の変更をレビュー必須にする。 [Advanced] 信頼条件をコードとして管理し、広すぎる条件を CI で検出して止める。資格情報の発行を監視し、想定外の発行元・条件からの取得を検知する。"
+    appliesTo:
+      kind: node
+      nodeType: WORKLOAD_IDENTITY
+      # 資格情報を受け取るワークロード・発行元と接続されているとき発火する。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "OWASP Non-Human Identities Top 10 2025 - NHI4:2025 Insecure Authentication（関連マッピング）"
+        url: "https://owasp.org/www-project-non-human-identities-top-10/"
+      - title: "NIST SP 800-207 - Zero Trust Architecture（短命の資格情報と、リクエストごとの検証）"
+        url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+
+  # ── PAM: 特権の集約点としてのリスク ──────────────────────────────
+  - id: pam-privileged-concentration-001
+    canonicalId: pam-privileged-concentration
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "特権アクセス管理への特権の集中"
+    severity: High
+    description: "{{nodeName}} は、ドメイン管理者・データベース管理者・クラウドの管理者などの特権資格情報を保管し、特権セッションを仲介する。{{nodeName}} の管理者権限や、資格情報を払い出せる広い権限を入手した攻撃者は、配下のすべてのシステムの特権を正規の手順で取得できる（Can）。払い出しは正規の操作として記録されるため、異常として扱われにくい。一方、{{nodeName}} の管理者を少数に限って MFA と承認を必須にし、払い出しを対象ごと・時間ごとに絞り、払い出しとセッションを独立した監視基盤で確認していれば、1 つのアカウントを奪われても特権の一括取得はできず、不審な払い出しは検知される（Cannot）。blast radius は {{nodeName}} が管理するすべての特権アカウントと、その先のシステム。"
+    mitigation: "[Foundation] 特権アクセス管理 の管理者アカウントを最小限にし、フィッシング耐性のある MFA を必須にする。払い出しの権限を、利用者ごとに必要な対象と時間帯に絞る。 [Enterprise] 重要な特権の払い出しを承認制にし、払い出しと特権セッションのログを SIEM に送って監視する。払い出し後に資格情報を自動でローテーションする。 [Advanced] 特権を常時持たせず、作業のたびに一時的な権限を発行する（ゼロスタンディング権限）。PAM の基盤自体を、ほかの管理系から分離した環境で運用する。"
+    appliesTo:
+      kind: node
+      nodeType: PAM
+      # 特権資格情報を払い出す先（管理者・ワークロード・管理対象のシステム）と接続されているとき発火する。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-03"
+    references:
+      - title: "NIST SP 800-207 - Zero Trust Architecture（特権の最小化と継続的な検証）"
+        url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+      # 一般のシークレット管理への権限集中は secrets-vault-concentration が扱う（別 canonicalId）。
+
+  # ── PAM: PAM を経由しない特権経路の残存 ────────────────────────────
+  - id: pam-bypass-path-001
+    canonicalId: pam-bypass-path
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "特権アクセス管理を経由しない特権経路の残存"
+    severity: Medium
+    description: "{{nodeName}} を導入していても、管理対象のシステムに直接ログインできる経路（ローカルの管理者アカウント、緊急用アカウント、直接の SSH・RDP、クラウドのルートアカウント）が残っている場合、攻撃者や内部の利用者はその経路を使って、払い出しの承認とセッションの記録を迂回できる（Can）。緊急用アカウントは使われないまま資格情報が変わらず、存在自体が忘れられることも多い。一方、管理対象への特権のログインを {{nodeName}} 経由に限定し（ネットワークで直接の管理ポートを閉じる）、緊急用アカウントは資格情報を封印して使用時に通知・事後確認する運用にしていれば、記録の無い特権操作はできない（Cannot）。blast radius は、直接ログインできる経路が残るすべての管理対象。"
+    mitigation: "[Foundation] 管理対象のシステムごとに、特権アクセス管理 を経由しない特権のログイン経路（ローカル管理者・緊急用アカウント・直接の管理ポート）を洗い出す。緊急用アカウントの資格情報を 特権アクセス管理 に保管し、使用時に通知する。 [Enterprise] 管理ポートへの接続を 特権アクセス管理 の中継元からだけ許可する。ローカル管理者のパスワードを端末ごとに異なる値にして自動でローテーションする。 [Advanced] 特権アクセス管理 を経由しない特権ログインを検知して警告し、緊急用アカウントの使用を事後レビューの対象にする。"
+    appliesTo:
+      kind: node
+      nodeType: PAM
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "NIST SP 800-207 - Zero Trust Architecture（ポリシー強制点の迂回の防止）"
+        url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+
+  # ── IGA: プロビジョニング用の特権の集中 ───────────────────────────
+  - id: iga-connector-privilege-001
+    canonicalId: iga-connector-privilege
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "IDガバナンスの接続用特権による全システムへの波及"
+    severity: High
+    description: "{{nodeName}} は、各システムにアカウントを作成・変更・削除するため、それぞれのシステムへの接続用の特権資格情報を持つ。{{nodeName}} の管理者権限や接続用の資格情報を入手した攻撃者は、任意のシステムに正規の手順でアカウントを作り、権限を付けられる（Can）。作成は承認済みの配布として記録されるため、異常として扱われにくい。一方、接続用の資格情報を各システムで必要な操作だけに絞ってシークレット管理に置き、{{nodeName}} の管理操作と、承認を経ない配布を独立して監視していれば、1 つの侵害で全システムの権限を得ることはできず、不審な配布は検知される（Cannot）。blast radius は {{nodeName}} が接続しているすべてのシステムのアカウントと権限。"
+    mitigation: "[Foundation] 接続先ごとの接続用アカウントの権限を、配布に必要な操作（アカウントの作成・変更・無効化）だけに絞る。接続用の資格情報をシークレット管理に置く。IDガバナンス の管理者を少数に限り MFA を必須にする。 [Enterprise] 承認のワークフローを経ない配布・権限付与を検知する。IDガバナンス の管理操作のログを SIEM に送る。 [Advanced] 接続用の資格情報を短命化し、配布の都度発行する。IDガバナンス の設定変更（接続先・ルール）をコードとして管理しレビューする。"
+    appliesTo:
+      kind: node
+      nodeType: IGA
+      # アカウントを配布する先のシステムと接続されているとき発火する。
+      connection:
+        direction: outbound
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "GV.RR-04"
+    references:
+      - title: "OWASP Non-Human Identities Top 10 2025 - NHI5:2025 Overprivileged NHI（関連マッピング）"
+        url: "https://owasp.org/www-project-non-human-identities-top-10/"
+
+  # ── IGA: 棚卸しの形骸化と NHI の管理対象外 ─────────────────────────
+  - id: iga-certification-gap-001
+    canonicalId: iga-certification-gap
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "権限の棚卸しの形骸化と NHI の管理対象外"
+    severity: Medium
+    description: "{{nodeName}} の権限の棚卸しが、件数の多さから中身を確認せずに一括承認されている場合や、NHI・AI エージェントが棚卸しの対象に入っていない場合、不要になった権限やアカウントが承認済みとして残り続ける（Can）。NHI は人の異動・退職のような契機が無いため、棚卸しから漏れると無期限に残る。一方、棚卸しを所有者ごとに小さく分け、未使用の権限を事前に示して判断させ、NHI と AI エージェントにも所有者を付けて対象に含めていれば、不要な権限は棚卸しの周期で取り除かれる（Cannot）。blast radius は棚卸しから漏れた、または形式的に承認された権限のすべて。"
+    mitigation: "[Foundation] 棚卸しの対象に NHI と AI エージェントを含め、それぞれに所有者を設定する。承認の結果（全件承認の割合・確認にかけた時間）を確認する。 [Enterprise] 未使用・高リスクの権限を優先して表示し、所有者ごとに小さな単位で棚卸しする。一括承認を制限する。 [Advanced] 利用状況にもとづいて不要な権限を自動で取り除き、棚卸しは例外の判断に集中させる。"
+    appliesTo:
+      kind: node
+      nodeType: IGA
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "ID.AM-07"
+    references:
+      - title: "OWASP Non-Human Identities Top 10 2025 - NHI1:2025 Improper Offboarding（関連マッピング）"
+        url: "https://owasp.org/www-project-non-human-identities-top-10/"

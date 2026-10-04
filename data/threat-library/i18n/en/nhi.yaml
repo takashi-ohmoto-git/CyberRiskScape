@@ -1,0 +1,106 @@
+# English overlay for `data/threat-library/nhi.yaml`.
+#
+# The Japanese file is the source of truth: only `name` / `category` / `description` /
+# `mitigation` (plus `references[].title` where present) are translated here, keyed by
+# rule id. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - Keep `{{token}}` placeholders exactly as they appear in the original.
+#   - Keep the `[Foundation]` / `[Enterprise]` / `[Advanced]` markup.
+#   - Preserve the Can / Cannot pair and the blast radius statement in `description`.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+rules:
+  nhi-improper-offboarding-001:
+    name: "Improper offboarding of NHIs (no owner, unneeded NHIs left behind)"
+    description: "If {{nodeName}} has no owner (a person or team responsible for it), or is not disabled after its purpose ends, unused credentials and permissions remain. An NHI that nobody tracks after a project ends or its owner moves on can leak its credentials unnoticed, and an attacker can use it as a legitimate NHI for a long time (Can). If, on the other hand, every NHI is registered with an owner, purpose and expiry, and is disabled when the owner moves, the purpose ends, or it goes unused for a set period, a leftover NHI can serve as a foothold only briefly (Cannot). The blast radius is the full scope of the permissions granted to {{nodeName}}."
+    mitigation: "[Foundation] Build an NHI inventory recording owner, purpose, creation date and last use. Identify NHIs without an owner and NHIs unused for a set period (for example, 90 days), and disable them. [Enterprise] Automatically open a review of NHIs when their owner leaves or moves, or when the application is retired. Require a request for NHI creation, with the owner and expiry mandatory. [Advanced] Continuously monitor NHI usage, and detect and automatically disable unused or ownerless NHIs."
+    references:
+      "0":
+        title: "OWASP Non-Human Identities Top 10 2025 - NHI1:2025 Improper Offboarding"
+
+  nhi-overprivileged-001:
+    name: "Overprivileged NHI"
+    description: "If {{nodeName}} holds permissions beyond what its purpose needs (an administrator role, broad scopes, read/write on every resource), an attacker who obtains {{nodeName}}'s credentials, or who takes over a workload that uses {{nodeName}}, can move laterally, steal data and tamper with settings within those permissions (Can). NHIs are often given broad permissions at creation \"to make it work\" and never reviewed, and it is not unusual for them to hold more privilege than human accounts. If, on the other hand, each NHI is allowed only the operations and resources its purpose needs, and permissions are regularly trimmed based on actual usage, stolen credentials reach only the scope of that purpose (Cannot). The blast radius is every resource within reach of {{nodeName}}'s permissions."
+    mitigation: "[Foundation] Inventory the permissions, scopes and roles granted to each NHI, and narrow administrator roles and all-resource permissions to what the purpose needs. Review OAuth client scopes in the same way. [Enterprise] Regularly remove unused permissions based on actually used permissions (access logs, usage data). Put permission grants through request and approval. [Advanced] Grant permissions only when needed and remove them afterwards (just-in-time, zero standing privilege)."
+    references:
+      "0":
+        title: "OWASP Non-Human Identities Top 10 2025 - NHI5:2025 Overprivileged NHI"
+
+  nhi-long-lived-secret-001:
+    name: "Long-lived static secrets on an NHI"
+    description: "If {{nodeName}} runs on an API key, password or client secret with no expiry or a long one, a leak of that value from any one place — code, configuration, logs or CI — lets an attacker impersonate {{nodeName}} until it is revoked (Can). Static values can be copied, leaks are hard to tell apart from legitimate use, and rotation is postponed most for the production systems that are hardest to stop. If, on the other hand, short-lived tokens are issued through workload identity federation or private-key signing (private key JWT, mTLS) and no static value is held — or any that is held is rotated automatically — a leaked value is usable only briefly and impersonation does not last (Cannot). The blast radius is the scope of {{nodeName}}'s permissions and the time between leak and revocation."
+    mitigation: "[Foundation] Inventory each NHI's credential type (static key or password / certificate / short-lived token) and expiry. Move static values into a secrets manager and set rotation deadlines. [Enterprise] Replace static client secrets with private-key signing (private key JWT, mTLS) or short-lived tokens via workload identity federation. Automate rotation. [Advanced] Bind credentials to hardware (HSM, TPM) or to proof from the runtime platform, eliminating copyable static values altogether."
+    references:
+      "0":
+        title: "OWASP Non-Human Identities Top 10 2025 - NHI7:2025 Long-Lived Secrets"
+
+  nhi-environment-isolation-001:
+    name: "Insufficient environment isolation for NHIs (shared between development and production)"
+    description: "If {{nodeName}} or its credentials are shared between development/testing and production, a leak from a loosely managed development environment (a developer's machine, a test CI, a shared test environment) gives direct access to production (Can). NHIs created for development often keep production permissions as well. If, on the other hand, each environment has its own NHIs and credentials, development and test NHIs have no permissions on production resources, and the environments are also separated on the network, a leak in development does not reach production (Cannot). The blast radius is every production resource the shared NHI can reach."
+    mitigation: "[Foundation] Use separate NHIs and credentials for each environment (development, testing, production). Check that development and test NHIs have no production permissions. [Enterprise] Make production NHI credentials retrievable only from the production runtime, not from developer machines or test CI. [Advanced] Include the environment (runtime platform, branch, deployment target) in the conditions for issuing credentials through workload identity federation."
+    references:
+      "0":
+        title: "OWASP Non-Human Identities Top 10 2025 - NHI8:2025 Environment Isolation"
+
+  nhi-reuse-001:
+    name: "NHI reuse (shared across multiple workloads)"
+    description: "If several applications, workloads or agents share {{nodeName}}, compromising any one of them gives an attacker {{nodeName}}'s permissions over everything it is shared with (Can). Its permissions tend to become the union of all users' needs, and because the logs only show the same NHI name, operations cannot be attributed to a workload, which makes detecting and investigating abuse hard. If, on the other hand, each workload has its own NHI with only the permissions it needs, one compromise stays within that workload, and operations can be attributed (Cannot). The blast radius is the union of the permissions of every workload that shares {{nodeName}}."
+    mitigation: "[Foundation] List the workloads using each NHI and identify NHIs shared by more than one. Plan to stop sharing and give each workload its own NHI. [Enterprise] Register a single workload when creating an NHI, and detect use from any other workload. [Advanced] Issue NHIs only bound to proof from the runtime platform through workload identity federation, making sharing impossible."
+    references:
+      "0":
+        title: "OWASP Non-Human Identities Top 10 2025 - NHI9:2025 NHI Reuse"
+
+  nhi-human-use-001:
+    name: "Human use of an NHI"
+    description: "A person is operating systems manually with {{nodeName}}'s credentials. NHIs are usually exempt from MFA and conditional access, so this bypasses the controls on human authentication, and because operations are recorded under the NHI's name, nobody can tell who performed them (Can). A person who knows an NHI's credentials also keeps a path in after leaving or changing roles. If, on the other hand, human work is done with human accounts (with temporary privileges through privileged access management where needed) and NHI credentials are kept where people cannot retrieve them, a person cannot act as the NHI and operations are attributed to individuals (Cannot). The blast radius is the scope of {{nodeName}}'s permissions and every operation whose accountability is lost."
+    mitigation: "[Foundation] Identify work where people use NHI credentials and move it to human accounts. Track who knows each NHI's credentials and rotate them when those people move or leave. [Enterprise] Keep NHI credentials in a secrets manager where people cannot retrieve them. Route human privileged work through privileged access management and record the sessions. [Advanced] Monitor NHI sign-in location, time of day and operation patterns, and detect signs of human use (interactive logins and the like)."
+    references:
+      "0":
+        title: "OWASP Non-Human Identities Top 10 2025 - NHI10:2025 Human Use of NHI"
+
+  nhi-workload-federation-trust-001:
+    name: "Workload identity federation trust conditions are too broad"
+    description: "{{nodeName}} receives credentials based on tokens issued by an external issuer (CI, another cloud, Kubernetes and so on). If the trust conditions (issuer, repository, branch, environment, service account name and so on) are wildcards or check only the issuer, workloads from other repositories, branches or tenants that can use the same issuer can obtain credentials as {{nodeName}} (Can). Even without static secrets, the breadth of the trust conditions becomes the way in for impersonation. If, on the other hand, the trust conditions specify the allowed repository, branch (or tag), environment and audience, and identities with production permissions can be obtained only from protected branches or deployment environments, workloads outside those conditions cannot become {{nodeName}} (Cannot). The blast radius is the full scope of {{nodeName}}'s permissions."
+    mitigation: "[Foundation] Inventory workload identity federation trust conditions, and replace wildcard or issuer-only conditions with ones that specify repository, branch, environment and audience. [Enterprise] Issue identities with production permissions only for tokens from protected branches and approval-gated deployment environments. Require review for changes to trust conditions. [Advanced] Manage trust conditions as code and stop overly broad conditions in CI. Monitor credential issuance and detect retrieval from unexpected issuers or conditions."
+    references:
+      "0":
+        title: "OWASP Non-Human Identities Top 10 2025 - NHI4:2025 Insecure Authentication (related mapping)"
+      "1":
+        title: "NIST SP 800-207 - Zero Trust Architecture (short-lived credentials and per-request verification)"
+
+  pam-privileged-concentration-001:
+    name: "Concentration of privilege in privileged access management"
+    description: "{{nodeName}} stores privileged credentials such as domain, database and cloud administrators and brokers privileged sessions. An attacker who obtains administrator rights on {{nodeName}}, or broad rights to check out credentials, can obtain privileges on every managed system through the legitimate procedure (Can). Checkouts are recorded as legitimate operations, so they are rarely treated as anomalies. If, on the other hand, {{nodeName}}'s administrators are few and required to use MFA and approval, checkouts are narrowed by target and time, and checkouts and sessions are reviewed on an independent monitoring platform, taking over one account does not yield privileges in bulk, and suspicious checkouts are detected (Cannot). The blast radius is every privileged account {{nodeName}} manages and the systems behind them."
+    mitigation: "[Foundation] Keep administrator accounts for privileged access management to a minimum and require phishing-resistant MFA. Narrow checkout rights to the targets and time windows each user needs. [Enterprise] Require approval for checkouts of important privileges, and send checkout and privileged-session logs to the SIEM for monitoring. Rotate credentials automatically after checkout. [Advanced] Do not keep standing privileges; issue temporary privileges for each task (zero standing privilege). Run the privileged access management platform itself in an environment separated from other management systems."
+    references:
+      "0":
+        title: "NIST SP 800-207 - Zero Trust Architecture (minimizing privilege and continuous verification)"
+
+  pam-bypass-path-001:
+    name: "Privileged paths that bypass privileged access management"
+    description: "Even with {{nodeName}} in place, if paths remain for logging in directly to managed systems (local administrator accounts, break-glass accounts, direct SSH or RDP, cloud root accounts), attackers and insiders can use them to bypass checkout approval and session recording (Can). Break-glass accounts often go unused with unchanged credentials, and their very existence is forgotten. If, on the other hand, privileged logins to managed systems are limited to going through {{nodeName}} (closing direct management ports on the network), and break-glass accounts have sealed credentials with notification and after-the-fact review on use, privileged operations cannot happen without a record (Cannot). The blast radius is every managed system that still has a direct login path."
+    mitigation: "[Foundation] For each managed system, identify privileged login paths that bypass privileged access management (local administrators, break-glass accounts, direct management ports). Store break-glass credentials in privileged access management and notify on use. [Enterprise] Allow connections to management ports only from the privileged access management relay. Give local administrator passwords a different value per machine and rotate them automatically. [Advanced] Detect and alert on privileged logins that bypass privileged access management, and make break-glass use subject to after-the-fact review."
+    references:
+      "0":
+        title: "NIST SP 800-207 - Zero Trust Architecture (preventing bypass of policy enforcement points)"
+
+  iga-connector-privilege-001:
+    name: "Identity governance connector privileges reaching every system"
+    description: "To create, change and delete accounts on each system, {{nodeName}} holds privileged credentials for connecting to each of them. An attacker who obtains administrator rights on {{nodeName}} or its connector credentials can create accounts on any system and grant them permissions through the legitimate procedure (Can). The creation is recorded as approved provisioning, so it is rarely treated as an anomaly. If, on the other hand, connector credentials are limited on each system to the operations provisioning needs and kept in a secrets manager, and {{nodeName}}'s administrative operations and any provisioning outside the approval workflow are monitored independently, one compromise cannot yield permissions on every system, and suspicious provisioning is detected (Cannot). The blast radius is the accounts and permissions on every system {{nodeName}} connects to."
+    mitigation: "[Foundation] Limit each connector account's permissions to what provisioning needs (creating, changing and disabling accounts). Keep connector credentials in a secrets manager. Keep identity governance administrators few and require MFA. [Enterprise] Detect provisioning and permission grants that skip the approval workflow. Send identity governance administrative logs to the SIEM. [Advanced] Make connector credentials short-lived and issue them per provisioning run. Manage identity governance configuration changes (connectors, rules) as code and review them."
+    references:
+      "0":
+        title: "OWASP Non-Human Identities Top 10 2025 - NHI5:2025 Overprivileged NHI (related mapping)"
+
+  iga-certification-gap-001:
+    name: "Rubber-stamp access reviews and NHIs outside governance"
+    description: "If {{nodeName}}'s access reviews are approved in bulk without checking because of their volume, or NHIs and AI agents are not in scope, unneeded permissions and accounts stay on as approved (Can). NHIs lack triggers like a person's move or departure, so once missed by reviews they remain indefinitely. If, on the other hand, reviews are split into small units per owner, unused permissions are flagged up front, and NHIs and AI agents are given owners and included, unneeded permissions are removed at every review cycle (Cannot). The blast radius is every permission that slipped through reviews or was approved as a formality."
+    mitigation: "[Foundation] Include NHIs and AI agents in access reviews and assign an owner to each. Check review outcomes (share of approve-all decisions, time spent reviewing). [Enterprise] Surface unused and high-risk permissions first, and review in small units per owner. Restrict bulk approval. [Advanced] Remove unneeded permissions automatically based on usage, and focus reviews on exception decisions."
+    references:
+      "0":
+        title: "OWASP Non-Human Identities Top 10 2025 - NHI1:2025 Improper Offboarding (related mapping)"

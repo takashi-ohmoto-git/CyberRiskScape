@@ -1,0 +1,35 @@
+# English overlay for `data/component-library/nhi.yaml`.
+#
+# The Japanese file is the source of truth: only `label` and `description` are
+# translated here, keyed by component type id. Anything omitted falls back to the
+# original text.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+components:
+  SERVICE_ACCOUNT:
+    label: "Service account"
+    description: "A technical account not tied to a person (a directory or cloud service account, or a shared account). Often runs on long-lived passwords or keys."
+
+  WORKLOAD_IDENTITY:
+    label: "Workload identity"
+    description: "A workload's identity, such as an IAM role, managed identity or workload identity federation, that receives short-lived credentials based on proof from the runtime platform."
+
+  OAUTH_CLIENT:
+    label: "OAuth client"
+    description: "A service app or M2M client that accesses APIs with client credentials or similar. Holds a client secret or private key and its granted scopes."
+
+  RPA_BOT:
+    label: "RPA bot"
+    description: "A bot that automates screen operations or business procedures. Often runs with a person's account or a shared account's credentials."
+
+  PAM:
+    label: "Privileged access management (PAM)"
+    description: "A platform that vaults and checks out credentials for privileged accounts and brokers and records privileged sessions."
+
+  IGA:
+    label: "Identity governance (IGA)"
+    description: "A platform that provisions, changes and removes accounts for people and NHIs across systems and reviews their access. Holds privileged credentials for connecting to each system."

@@ -195,6 +195,11 @@ export const IDENTITY_TIER_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set([
   'TOOL',
   'CONNECTOR',
   'USER',
+  // 非人間アイデンティティ（NHI）：静的な鍵か、暗号学的・ハードウェアに束縛された ID かを宣言する。
+  'SERVICE_ACCOUNT',
+  'WORKLOAD_IDENTITY',
+  'OAUTH_CLIENT',
+  'RPA_BOT',
 ]);
 // blastRadius は全ノード型で有意味（applicable 制限なし）。
 
