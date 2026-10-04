@@ -101,7 +101,7 @@ A single diagram of a contact center that mixes human operators and AI.
 | [`templates/contact-center.en.json`](templates/contact-center.en.json) | English |
 | [`templates/contact-center.ja.json`](templates/contact-center.ja.json) | Japanese |
 
-**Inside:** 15 components, 25 data flows, 3 trust boundaries (customer side = Internet, LINE = Partner, in-house contact center = Internal).
+**Inside:** 15 components, 25 data flows, 3 trust boundaries (customer side = Internet, LINE = Internet, in-house contact center = Internal).
 
 Four handling patterns share the one diagram:
 
@@ -113,7 +113,7 @@ Four handling patterns share the one diagram:
 The common parts are an IVR in front of the PBX, voiceprint authentication, call recording, a CRM
 (`tool_invocation`), an LLM (intent analysis / summary) and the AI-to-human escalation.
 
-Import it and **61 threats** are detected. The main ones: voiceprint bypass with cloned voices,
+Import it and **62 threats** are detected. The main ones: voiceprint bypass with cloned voices,
 social engineering of human operators by phone, STS guardrail gaps, prompt injection through
 STT (spoken input), PBX toll fraud and caller ID spoofing, unverified LINE webhook signatures and
 channel takeover, and exposure of call recordings (biometric data).
@@ -129,8 +129,8 @@ agent reads it and can send data out.
 | [`templates/agentforce-service-agent.en.json`](templates/agentforce-service-agent.en.json) | English |
 | [`templates/agentforce-service-agent.ja.json`](templates/agentforce-service-agent.ja.json) | Japanese |
 
-**Inside:** 14 components, 25 data flows, 3 trust boundaries (customers and outsiders = Internet, Salesforce org = Internal, external API / external MCP server = Partner).
-Import it and **101 threats** are detected. For how Agentforce building blocks map to types and how to read
+**Inside:** 14 components, 25 data flows, 3 trust boundaries (customers and outsiders = Internet, Salesforce org = Internal, external API / external MCP server = Internet).
+Import it and **103 threats** are detected. For how Agentforce building blocks map to types and how to read
 the detected threats, see [Threat Modeling Salesforce Agentforce](agentforce.md).
 
 ### The NHI and identity platform template
@@ -144,7 +144,7 @@ management but also uses the same service account directly by hand (human use of
 | [`templates/nhi-identity.en.json`](templates/nhi-identity.en.json) | English |
 | [`templates/nhi-identity.ja.json`](templates/nhi-identity.ja.json) | Japanese |
 
-**Inside:** 14 components, 12 data flows, 2 trust boundaries (inside the organization = Internal, external SaaS and IDaaS = Partner).
+**Inside:** 14 components, 12 data flows, 2 trust boundaries (inside the organization = Internal, external SaaS and IDaaS = Internet).
 Import it and **41 threats** are detected. For how the types map and how to read the threats, see
 [Threat Modeling NHIs and Identity Platforms](nhi-identity.md).
 

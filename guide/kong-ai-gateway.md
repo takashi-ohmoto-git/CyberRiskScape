@@ -43,7 +43,7 @@ rules as any other diagram.
 | Kong Gateway itself | `GATEWAY` (API gateway) / `AI_GATEWAY` | Services that use AI plugins go through the AI Gateway, the rest through the API gateway. If both exist, two gateways are drawn |
 | Admin API (management plane) | `API_CONTROL_PLANE` (API control plane) | Always drawn — a configuration file implies a management plane |
 | Service (ordinary API) | `BACKEND_API` (Backend API) | Named after the Service. An https upstream URL means encrypted, http means plaintext |
-| Service + `ai-proxy` | `LLM` | Named "provider / model". External providers such as OpenAI sit in a Partner boundary; ollama, vllm and llama sit inside the organization |
+| Service + `ai-proxy` | `LLM` | Named "provider / model". External providers such as OpenAI sit on the internet side (an Internet boundary); ollama, vllm and llama sit inside the organization |
 | Service + `ai-proxy-advanced` | `LLM` (one per target) | Each load-balancing target becomes its own LLM |
 | Service + `ai-mcp-proxy` | `MCP_SERVER` (MCP server) | |
 | Service + `ai-a2a-proxy` | `AGENT` (AI agent) | |

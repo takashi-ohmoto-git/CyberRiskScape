@@ -42,7 +42,7 @@
 | Kong Gateway 本体 | `GATEWAY`（API ゲートウェイ）／`AI_GATEWAY` | AI 系プラグインを使うサービスは AI Gateway、それ以外は API ゲートウェイが受けます。両方あれば 2 つに分けて描きます |
 | Admin API（管理面） | `API_CONTROL_PLANE`（API管理プレーン） | 設定ファイルがある＝管理面がある、とみなして常に置きます |
 | Service（通常の API） | `BACKEND_API`（バックエンドAPI） | 名前は Service 名。転送先 URL が https なら暗号化あり、http なら平文 |
-| Service ＋ `ai-proxy` | `LLM` | 名前は「プロバイダ / モデル名」。OpenAI など外部のプロバイダは Partner の境界、ollama・vllm・llama は組織内に置きます |
+| Service ＋ `ai-proxy` | `LLM` | 名前は「プロバイダ / モデル名」。OpenAI など外部のプロバイダはインターネット側（Internet の境界）、ollama・vllm・llama は組織内に置きます |
 | Service ＋ `ai-proxy-advanced` | `LLM`（転送先ごと） | 負荷分散先のモデルをそれぞれ 1 つの LLM として描きます |
 | Service ＋ `ai-mcp-proxy` | `MCP_SERVER`（MCPサーバー） | |
 | Service ＋ `ai-a2a-proxy` | `AGENT`（AIエージェント） | |

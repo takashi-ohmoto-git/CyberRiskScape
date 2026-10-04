@@ -46,8 +46,8 @@
 | Reasoning engine / BYOLLM | `LLM` | |
 | Einstein Trust Layer | `EINSTEIN_TRUST_LAYER` (dedicated library "Salesforce Agentforce") | Place it between the agent and the LLM. The dedicated rules (§4.2, §4.5, §4.7) fire on **agents connected to this type**. You can disable the library in the left sidebar; this only removes it from the palette and does not change placed diagrams, threat detection or saved data |
 | Actions (Apex, Flow, prompt, standard action) | `TOOL` | From the agent, `semantic: tool_invocation`. Note the run permission (user / system) in the description |
-| External MCP server (`mcpTool://`) | `MCP_SERVER` | Place it outside the org (Partner or Internet) |
-| External API (`externalService://`, Named Credential target) | `SAAS` or `EXTERNAL_ENTITY` | Place it outside the org |
+| External MCP server (`mcpTool://`) | `MCP_SERVER` | Place it outside the org (in an Internet boundary) |
+| External API (`externalService://`, Named Credential target) | `SAAS` or `EXTERNAL_ENTITY` | Place it outside the org (in an Internet boundary) |
 | CRM objects (leads, cases, accounts) | `CRM` | Draw the externally writable entry points (such as Web-to-Lead) from a separate `USER` / `EXTERNAL_ENTITY` |
 | Data Cloud retrieval (retriever) | `DB` | Use `semantic: rag_retrieval` on the return flow |
 | Web-to-Lead, Experience Cloud, messaging | `USER` (Guest) / `EXTERNAL_ENTITY` | Place them in the external boundary (Internet) |
@@ -72,7 +72,7 @@ This template puts a customer-facing Service agent and an internal Employee agen
 | [`templates/agentforce-service-agent.ja.json`](templates/agentforce-service-agent.ja.json) | Japanese |
 
 **What is in it:** 14 components, 25 data flows, 3 trust boundaries (customers and outsiders = Internet,
-the Salesforce org = Internal, external API / external MCP server = Partner).
+the Salesforce org = Internal, external API / external MCP server = Internet).
 
 - **Customer-facing flow** — customer → Service agent → Trust Layer → LLM. The Service agent uses actions
   (Flow / Apex), Data Cloud retrieval, an external API, an external MCP server and hand-off to a human
@@ -84,7 +84,7 @@ the Salesforce org = Internal, external API / external MCP server = Partner).
 Import works the same way as in [the templates page](templates.md). Open **Template** in the left sidebar,
 choose **Import**, select the JSON, and apply it.
 
-**After loading, 101 threats** are detected (17 Critical, 61 High, 23 Medium).
+**After loading, 103 threats** are detected (19 Critical, 61 High, 23 Medium).
 
 ### 3.1 Assumptions in the diagram (placeholder attributes)
 
@@ -249,6 +249,7 @@ That is the opposite direction and is outside this template.
 | Tool descriptor poisoning / line jumping (`mcp-tool-descriptor-poisoning-001`) | Critical | External MCP server |
 | MCP server impersonation / typosquatting (`mcp-server-impersonation-typosquatting-001`) | High | External MCP server |
 | Prompt input from outside the trust boundary (`maestro-agent-untrusted-ingress-001`) | High | Data flows such as "tool response" |
+| Direct exposure across the trust boundary (`stride-edge-internet-exposed-sensitive-001`) | Critical | Response data flows from the external MCP server and external API to the Service agent |
 
 ![Tool descriptor poisoning on the external MCP server](../assets/guide/agentforce/04-mcp-poisoning.png)
 
@@ -374,7 +375,7 @@ Read the .agent files under force-app/main/default/aiAuthoringBundles/ and turn 
 structure into a CyberRiskScape diagram.
 - Add the agent, the actions (by target kind), external services and external MCP servers, using the
   types you confirm with list_component_types
-- Set the semantic of actions to tool_invocation. Put external services and external MCP servers in a Partner boundary
+- Set the semantic of actions to tool_invocation. Put external services and external MCP servers in an Internet boundary
 - List the write actions whose require_user_confirmation is False and report them
 - Do not read the contents of Flow or Apex; report them as "needs confirmation"
 First show me, with dryRun, the threats that would be added.

@@ -381,12 +381,12 @@
       },
       {
         "id": "bcc0002",
-        "type": "RECT_DASHED",
+        "type": "RECT",
         "x": 262,
         "y": 450,
         "width": 190,
         "height": 190,
-        "trustLevel": "Partner"
+        "trustLevel": "Internet"
       },
       {
         "id": "bcc0003",

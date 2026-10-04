@@ -242,12 +242,12 @@
       },
       {
         "id": "bnhi_2",
-        "type": "RECT_DASHED",
+        "type": "RECT",
         "x": 1080,
         "y": 290,
         "width": 208,
         "height": 406,
-        "trustLevel": "Partner"
+        "trustLevel": "Internet"
       }
     ]
   }

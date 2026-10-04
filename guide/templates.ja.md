@@ -102,7 +102,7 @@ GitHub 上でファイルを開き、**Raw** からダウンロードしてく�
 | [`templates/contact-center.ja.json`](templates/contact-center.ja.json) | 日本語版 |
 | [`templates/contact-center.en.json`](templates/contact-center.en.json) | 英語版 |
 
-**中身：** コンポーネント 15・データフロー 25・トラスト境界 3（顧客側＝Internet、LINE＝Partner、社内コンタクトセンター＝Internal）。
+**中身：** コンポーネント 15・データフロー 25・トラスト境界 3（顧客側＝Internet、LINE＝Internet、社内コンタクトセンター＝Internal）。
 
 4 つの応対パターンが同じ図に入っています。
 
@@ -114,7 +114,7 @@ GitHub 上でファイルを開き、**Raw** からダウンロードしてく�
 共通部分として、PBX の前段の IVR、声紋認証、通話録音、CRM（`tool_invocation`）、LLM（インテント分析・要約）、
 AI から有人へのエスカレーションを含みます。
 
-読み込むと **61 件**の脅威が検出されます。主なもの：声紋認証のクローン音声による突破、
+読み込むと **62 件**の脅威が検出されます。主なもの：声紋認証のクローン音声による突破、
 有人オペレーターへの電話のソーシャルエンジニアリング、STS のガードレール漏れ、
 STT 経由の発話によるプロンプトインジェクション、PBX の不正発信（toll fraud）・発信者番号の偽装、
 LINE の Webhook 署名未検証・チャネル乗っ取り、通話録音（生体情報）の漏えい。
@@ -130,8 +130,8 @@ LINE の Webhook 署名未検証・チャネル乗っ取り、通話録音（生
 | [`templates/agentforce-service-agent.ja.json`](templates/agentforce-service-agent.ja.json) | 日本語版 |
 | [`templates/agentforce-service-agent.en.json`](templates/agentforce-service-agent.en.json) | 英語版 |
 
-**中身：** コンポーネント 14・データフロー 25・トラスト境界 3（顧客・外部＝Internet、Salesforce 組織＝Internal、外部 API／外部 MCP サーバー＝Partner）。
-読み込むと **101 件**の脅威が検出されます。構成要素の対応づけと、検出される脅威の読み方は
+**中身：** コンポーネント 14・データフロー 25・トラスト境界 3（顧客・外部＝Internet、Salesforce 組織＝Internal、外部 API／外部 MCP サーバー＝Internet）。
+読み込むと **103 件**の脅威が検出されます。構成要素の対応づけと、検出される脅威の読み方は
 [Salesforce Agentforce を脅威モデリングする](agentforce.ja.md)を参照してください。
 
 ### NHI と ID 基盤のテンプレート
@@ -145,7 +145,7 @@ LINE の Webhook 署名未検証・チャネル乗っ取り、通話録音（生
 | [`templates/nhi-identity.ja.json`](templates/nhi-identity.ja.json) | 日本語版 |
 | [`templates/nhi-identity.en.json`](templates/nhi-identity.en.json) | 英語版 |
 
-**中身：** コンポーネント 14・データフロー 12・トラスト境界 2（組織内＝Internal、外部 SaaS と IDaaS＝Partner）。
+**中身：** コンポーネント 14・データフロー 12・トラスト境界 2（組織内＝Internal、外部 SaaS と IDaaS＝Internet）。
 読み込むと **41 件**の脅威が検出されます。型の対応と脅威の読み方は
 [NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md)を参照してください。
 

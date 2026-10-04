@@ -48,8 +48,8 @@
 | 推論エンジン／BYOLLM | `LLM` | |
 | Einstein Trust Layer | `EINSTEIN_TRUST_LAYER`（専用ライブラリ「Salesforce Agentforce」） | エージェントと LLM の間に置く。専用ルール（§4.2・§4.5・§4.7）は、**この型とつながったエージェント**に発火する。ライブラリは左サイドバーで無効化でき、無効にするとパレットから消えるだけで、配置済みの図・脅威検出・保存データは変わらない |
 | アクション（Apex・Flow・プロンプト・標準アクション） | `TOOL` | エージェントからは `semantic: tool_invocation`。実行権限（ユーザー／システム）は説明欄に書く |
-| 外部 MCP サーバー（`mcpTool://`） | `MCP_SERVER` | 組織の外に置く（Partner または Internet） |
-| 外部 API（`externalService://`、Named Credential 先） | `SAAS` または `EXTERNAL_ENTITY` | 組織の外に置く |
+| 外部 MCP サーバー（`mcpTool://`） | `MCP_SERVER` | 組織の外（Internet の境界）に置く |
+| 外部 API（`externalService://`、Named Credential 先） | `SAAS` または `EXTERNAL_ENTITY` | 組織の外（Internet の境界）に置く |
 | CRM オブジェクト（リード・ケース・取引先） | `CRM` | 外部から書き込める入口（Web-to-Lead など）を別の `USER`／`EXTERNAL_ENTITY` から引く |
 | Data Cloud の検索拡張（retriever） | `DB` | 取得結果の復路は `semantic: rag_retrieval` |
 | Web-to-Lead・Experience Cloud・メッセージング | `USER`（Guest）／`EXTERNAL_ENTITY` | 外部境界（Internet）に置く |
@@ -74,7 +74,7 @@
 | [`templates/agentforce-service-agent.en.json`](templates/agentforce-service-agent.en.json) | 英語版 |
 
 **中身：** コンポーネント 14・データフロー 25・トラスト境界 3
-（顧客・外部＝Internet、Salesforce 組織＝Internal、外部 API／外部 MCP サーバー＝Partner）。
+（顧客・外部＝Internet、Salesforce 組織＝Internal、外部 API／外部 MCP サーバー＝Internet）。
 
 - **顧客向けの流れ** — 顧客 → Service agent → Trust Layer → LLM。Service agent は、アクション
   （Flow／Apex）・Data Cloud の検索・外部 API・外部 MCP サーバー・人へのエスカレーションを使う
@@ -86,7 +86,7 @@
 読み込み方は[テンプレートの章](templates.ja.md#3-読み込むimport)と同じです。
 左サイドバーの **Template** → **Import** で JSON を選び、**適用**します。
 
-**読み込むと 101 件**（Critical 17・High 61・Medium 23）の脅威が検出されます。
+**読み込むと 103 件**（Critical 19・High 61・Medium 23）の脅威が検出されます。
 
 ### 3.1 図の前提（仮置きの属性）
 
@@ -256,6 +256,7 @@ Agentforce は外部の MCP サーバーを呼び出せます（Beta。許可リ
 | ツール記述子ポイズニング／Line jumping（`mcp-tool-descriptor-poisoning-001`） | Critical | 外部 MCP サーバー |
 | MCP サーバーのなりすまし／タイポスクワッティング（`mcp-server-impersonation-typosquatting-001`） | High | 外部 MCP サーバー |
 | 信頼境界外からのプロンプト入力（`maestro-agent-untrusted-ingress-001`） | High | 「ツール応答」などのデータフロー |
+| Trust Boundary 跨ぎの直接暴露（`stride-edge-internet-exposed-sensitive-001`） | Critical | 外部 MCP サーバー・外部 API から Service agent への応答のデータフロー |
 
 ![外部 MCP サーバーのツール記述子ポイズニング](../assets/guide/agentforce/04-mcp-poisoning.png)
 
@@ -383,7 +384,7 @@ force-app/main/default/aiAuthoringBundles/ 配下の .agent ファイルを読�
 このエージェントの構成を CyberRiskScape の構成図にしてください。
 - エージェント・アクション（target の種類ごと）・外部サービス・外部 MCP を、
   list_component_types で確認した型で追加する
-- アクションは semantic を tool_invocation にする。外部サービスと外部 MCP は Partner の境界に置く
+- アクションは semantic を tool_invocation にする。外部サービスと外部 MCP は Internet の境界に置く
 - require_user_confirmation が False の書き込み系アクションを、一覧にして報告する
 - Flow・Apex の中身と実行権限は読まず、「要確認」として報告する
 まず dryRun で、増える脅威を教えてください。

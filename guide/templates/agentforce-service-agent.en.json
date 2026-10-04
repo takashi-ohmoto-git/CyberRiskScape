@@ -391,12 +391,12 @@
       },
       {
         "id": "bag0002",
-        "type": "RECT_DASHED",
+        "type": "RECT",
         "x": 1070,
         "y": 70,
         "width": 185,
         "height": 380,
-        "trustLevel": "Partner"
+        "trustLevel": "Internet"
       },
       {
         "id": "bag0003",
