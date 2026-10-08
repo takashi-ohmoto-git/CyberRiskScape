@@ -59,7 +59,8 @@ verbatim.
 
    Referenced by: data/threat-library/identity.yaml,
                   data/threat-library/zero-trust-access.yaml,
-                  data/threat-library/web-form.yaml
+                  data/threat-library/web-form.yaml,
+                  data/threat-library/payment-page.yaml
 
 --------------------------------------------------------------------------------
 3. Model Context Protocol — Security Best Practices
@@ -241,7 +242,8 @@ verbatim.
 --------------------------------------------------------------------------------
 16. OWASP Foundation — OWASP API Security Top 10 2023, OWASP Top 10 CI/CD
     Security Risks, OWASP Non-Human Identities Top 10 2025, OWASP Cheat Sheet
-    Series (Secrets Management, File Upload), OWASP Top 10 2021, OWASP
+    Series (Secrets Management, File Upload, Third Party JavaScript
+    Management), OWASP Top 10 2021, OWASP
     Automated Threats to Web Applications
    https://owasp.org/API-Security/ ,
    https://owasp.org/www-project-top-10-ci-cd-security-risks/ ,
@@ -256,6 +258,7 @@ verbatim.
                   data/threat-library/nhi.yaml,
                   data/component-library/nhi.yaml,
                   data/threat-library/web-form.yaml,
+                  data/threat-library/payment-page.yaml,
                   data/test-templates/postman.yaml
 
 --------------------------------------------------------------------------------
@@ -303,6 +306,19 @@ verbatim.
    Referenced by: guide/nhi-identity.md, guide/nhi-identity.ja.md,
                   src/features/conjur-import/conjurToLayer.ts,
                   guide/templates/conjur-policy.yml
+
+--------------------------------------------------------------------------------
+20. Payment card security standards
+   - PCI Security Standards Council, PCI DSS v4.0 (Requirements 6.4.3 and
+     11.6.1)
+     https://www.pcisecuritystandards.org/
+     © PCI Security Standards Council, LLC. Requirement numbers are referenced
+     as factual identifiers only; no PCI SSC text is reproduced.
+   - クレジット取引セキュリティ対策協議会「クレジットカード・セキュリティガイドライン」
+     (Japan Credit Transaction Security Council)
+     出典明記の上での要約参照。
+
+   Referenced by: data/threat-library/payment-page.yaml
 
 ================================================================================
 Runtime dependencies

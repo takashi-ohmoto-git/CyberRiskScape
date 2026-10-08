@@ -1,0 +1,104 @@
+# 決済ページ（PAYMENT_PAGE）と外部スクリプト・拡張アプリ（THIRD_PARTY_EXTENSION）の固有脅威。
+# EC サイトの決済画面に第三者のコードが入り込み、利用者を偽の決済ページへ誘導したり、
+# 入力されたカード情報を盗み取ったりする Web スキミングを扱う。
+#
+# 出典（一次情報のみをルールの根拠とする。二次情報だけで裏付く事実は本文に用いない）:
+#   - PCI Security Standards Council, PCI DSS v4.0（要件 6.4.3 決済ページのスクリプト管理、
+#     11.6.1 決済ページの改ざん検知）。
+#   - クレジット取引セキュリティ対策協議会「クレジットカード・セキュリティガイドライン」。
+#   - OWASP Cheat Sheet Series（Third Party JavaScript Management）。
+#   - MITRE ATT&CK（T1195 Supply Chain Compromise）。
+#   本文は逐語転載せず日本語要約のみ。
+#
+#   SPDX-License-Identifier: Apache-2.0
+#   ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+#   出典の帰属表示は NOTICE を参照。
+#
+# 重複回避方針:
+#   - 決済ページを配信する Web サーバーへの Web シェル設置 → webserver-webshell-implant-001
+#     （canonicalId: web-shell-implant、FRONT_END_SERVER）でカバー済み。
+#   - AI エージェントが呼び出す取引先ツールのサプライチェーン侵害 → maestro-partner-supply-chain-tool-001
+#     （canonicalId: partner-tool-supply-chain）が扱う。本ファイルの拡張アプリのルールは、
+#     利用者のブラウザで動く第三者コードを対象とし、subject も異なるため別カードとする。
+#   - 偽決済ページへの誘導（経路依存）と、改ざん検知・スクリプト管理の欠如（内在）は
+#     同じ決済ページで両方発火しうるが、前者は「つながっている拡張アプリが起点」、後者は
+#     「どこから仕込まれても気づけない」という別の問いなので canonicalId を分ける。
+
+schemaVersion: 1
+
+rules:
+  # ── 外部コードによる偽決済ページへの誘導・カード情報の窃取（経路依存）──
+  - id: payment-checkout-redirect-skimming-001
+    canonicalId: payment-page-skimming
+    framework: STRIDE
+    category: "Spoofing"
+    name: "外部コードによる偽決済ページへの誘導とカード情報の窃取"
+    severity: Critical
+    description: "{{nodeName}} には、外部スクリプト・拡張アプリ（EC プラットフォームのアプリ、タグマネージャー、外部 JavaScript 等）のコードが組み込まれている。そのコードは利用者のブラウザ上で、自社のコードと同じ権限で動く。拡張アプリの開発元が侵害されたり、アプリ自体が悪意あるものに差し替えられたりすると、攻撃者は購入手続きの途中で利用者を偽の決済ページへ誘導したり、正規の入力欄に入力された値を外部へ送信したりして、カード番号・有効期限・セキュリティコード・決済サービスのログイン情報・氏名や住所を盗み取れる（Can）。誘導は正規の購入ボタンから始まるため、偽ページの見た目が粗くても利用者は手続きの続きだと考えて入力してしまいやすく、偽ページでの支払いは自社の注文として残らないため、事業者側も被害に気づくのが遅れる。一方、決済ページに読み込むスクリプトを許可リストで限定し、決済ページの内容とスクリプトの変更を検知し、カード情報の入力を決済代行会社がホストする画面（リダイレクト型やトークン型）で行わせていれば、拡張アプリのコードが乗っ取られてもカード情報には触れられず、改ざんにも早期に気づける（Cannot）。blast radius は改ざんされていた期間に購入手続きをした全利用者のカード情報と個人情報、および不正利用・二次被害への対応。"
+    mitigation: "[Foundation] 決済ページで動く外部スクリプト・拡張アプリを棚卸しし、決済に必要なものだけを残す。カード情報の入力は決済代行会社がホストする画面で行い、自社ページではカード情報を扱わない（非保持化）。拡張アプリの追加・権限変更は管理者の承認制にする。 [Enterprise] 決済ページに Content-Security-Policy を設定し、読み込めるスクリプトと送信先を許可リストで限定する。決済ページの内容・スクリプト・HTTP ヘッダーの変更を検知する仕組みを置き、検知時の停止手順を決めておく。外部スクリプトにはサブリソース完全性（SRI）を付ける。 [Advanced] 決済ページを外部スクリプトを一切読み込まない専用ページに分離する。購入完了率や決済代行会社側の取引件数を監視し、決済ページへ進んだのに注文が成立しない状況を異常として検知する。"
+    appliesTo:
+      kind: node
+      nodeType: PAYMENT_PAGE
+      # 第三者コードが決済ページに組み込まれている経路があるときのみ発火する。
+      # 組み込みの向きは描き方が揺れるため direction は限定しない。
+      connection:
+        peerType: [THIRD_PARTY_EXTENSION]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "GV.SC-07"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "PCI DSS v4.0（要件 6.4.3 決済ページのスクリプト管理、11.6.1 決済ページの改ざん検知）"
+        url: "https://www.pcisecuritystandards.org/document_library/"
+      - title: "OWASP Cheat Sheet Series - Third Party JavaScript Management Cheat Sheet"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/Third_Party_Javascript_Management_Cheat_Sheet.html"
+
+  # ── 決済ページの改ざん検知・スクリプト管理の欠如（内在）────────────
+  - id: payment-page-integrity-gap-001
+    canonicalId: payment-page-integrity-monitoring-gap
+    framework: STRIDE
+    category: "Tampering"
+    name: "決済ページの改ざん検知とスクリプト管理の欠如"
+    severity: High
+    description: "{{nodeName}} は利用者がカード情報を入力する画面で、攻撃者にとって最も価値の高い改ざん対象である。管理画面のアカウント乗っ取り、Web サーバーや CMS の脆弱性、外部スクリプトの侵害のいずれかで、攻撃者は決済ページに入力値を盗み取るコード（スキマー）を仕込んだり、偽の決済ページへの誘導を差し込んだりできる（Can）。正規の決済処理はそのまま動くことが多いため、ページの内容とスクリプトの変更を監視していなければ、カード会社からの不正利用の連絡で初めて気づくことになり、その間の全取引が被害に遭う。一方、決済ページに読み込むスクリプトを棚卸しして許可されたものだけに限定し、利用者のブラウザに届く決済ページの内容とスクリプトの変更を定期的に検知し、管理画面を多要素認証とアクセス元の制限で守っていれば、改ざんを仕込まれにくく、仕込まれても短時間で検知して止められる（Cannot）。blast radius は改ざんに気づくまでの期間に購入手続きをした全利用者のカード情報と個人情報。"
+    mitigation: "[Foundation] 決済ページで読み込むスクリプトを一覧化し、それぞれの必要性と承認者を記録する。EC サイトの管理画面に多要素認証とアクセス元の制限をかける。カード情報は決済代行会社がホストする画面で入力させる（非保持化）。 [Enterprise] 利用者のブラウザに届く決済ページの内容・スクリプト・HTTP ヘッダーの変更を定期的に検知し、検知時の停止と調査の手順を決める。Content-Security-Policy で読み込めるスクリプトと送信先を限定する。 [Advanced] 決済ページを外部スクリプトを読み込まない専用ページに分離し、変更をデプロイ経路からのものだけに限定する。改ざんを想定した訓練（決済停止・利用者への告知・カード会社への連絡）を行う。"
+    appliesTo:
+      kind: node
+      nodeType: PAYMENT_PAGE
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+    references:
+      - title: "PCI DSS v4.0（要件 6.4.3 決済ページのスクリプト管理、11.6.1 決済ページの改ざん検知）"
+        url: "https://www.pcisecuritystandards.org/document_library/"
+      - title: "クレジット取引セキュリティ対策協議会「クレジットカード・セキュリティガイドライン」（EC 加盟店のカード情報の非保持化と脆弱性対策）"
+
+  # ── 外部スクリプト・拡張アプリの過剰権限とサプライチェーン侵害（内在）──
+  - id: third-party-extension-supply-chain-001
+    canonicalId: third-party-extension-supply-chain
+    framework: STRIDE
+    category: "Tampering"
+    name: "外部スクリプト・拡張アプリの過剰権限とサプライチェーン侵害"
+    severity: High
+    description: "{{nodeName}} は第三者が開発・配信するコードで、自社のページや店舗データに対して導入時に許可した権限で動く。開発元のアカウントや配信基盤が侵害されたり、アプリの更新に悪意あるコードが混入したり、悪意ある開発元へ譲渡されたりすると、攻撃者は自社のコードを一切変えずに、ページの改ざん・入力値の盗み取り・顧客データや注文データの読み出しを行える（Can）。更新は開発元の都合で自動的に反映されることが多く、導入時の審査だけでは防げない。一方、導入する拡張アプリを必要最小限に絞り、許可する権限（ページへのスクリプト挿入、顧客データの読み取り等）を用途に必要な範囲に限定し、導入済みアプリと権限を定期的に見直し、不要になったものを削除していれば、侵害されたアプリが触れられる範囲は限られる（Cannot）。blast radius は {{nodeName}} に許可した権限で触れられる全ページ・全顧客データ・全注文。"
+    mitigation: "[Foundation] 導入済みの拡張アプリ・外部スクリプトを棚卸しし、使っていないものを削除する。導入・権限変更は管理者の承認制にし、許可する権限を用途に必要な範囲に限定する。 [Enterprise] 開発元の実績・セキュリティ対応・更新履歴を導入前に確認する。外部スクリプトはバージョンを固定し、サブリソース完全性（SRI）を付ける。導入済みアプリと権限を定期的に見直す。 [Advanced] 決済・ログイン等の重要なページでは拡張アプリのコードを動かさない構成にする。外部スクリプトの動作（送信先・読み取るデータ）を監視し、想定外の送信を検知する。"
+    appliesTo:
+      kind: node
+      nodeType: THIRD_PARTY_EXTENSION
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "GV.SC-07"
+      - standard: nist-csf-2.0
+        ref: "ID.AM-02"
+    references:
+      - title: "MITRE ATT&CK T1195 Supply Chain Compromise"
+        url: "https://attack.mitre.org/techniques/T1195/"
+      - title: "OWASP Cheat Sheet Series - Third Party JavaScript Management Cheat Sheet"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/Third_Party_Javascript_Management_Cheat_Sheet.html"

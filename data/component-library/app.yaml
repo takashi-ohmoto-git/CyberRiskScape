@@ -53,6 +53,22 @@ components:
     color: "bg-transparent"
     description: "問い合わせ・資料請求・申込などの Web フォーム。外部の不特定者が自由記述を送り込む入口になる。"
 
+  - id: PAYMENT_PAGE
+    label: "決済ページ"
+    category: APP
+    icon: { kind: builtin, name: "credit-card" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "EC サイトのチェックアウト（決済）画面。利用者がクレジットカード情報や決済サービスのログイン情報を入力する。"
+
+  - id: THIRD_PARTY_EXTENSION
+    label: "外部スクリプト・拡張アプリ"
+    category: APP
+    icon: { kind: builtin, name: "puzzle" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "EC プラットフォームのアプリ、CMS のプラグイン、タグマネージャー、外部 JavaScript など、自社ページに第三者のコードを組み込む仕組み。"
+
   - id: MAIL
     label: "メール"
     category: APP

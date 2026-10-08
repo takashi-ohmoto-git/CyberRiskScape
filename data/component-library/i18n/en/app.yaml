@@ -44,3 +44,11 @@ components:
   WEB_FORM:
     label: "Web form"
     description: "A contact, inquiry or sign-up form on the web. An entry point where anyone outside can submit free text."
+
+  PAYMENT_PAGE:
+    label: "Payment page"
+    description: "The checkout (payment) page of an e-commerce site, where users enter card details or log in to a payment service."
+
+  THIRD_PARTY_EXTENSION:
+    label: "Third-party script / app"
+    description: "Any way third-party code is built into your own pages, such as e-commerce platform apps, CMS plugins, tag managers and external JavaScript."

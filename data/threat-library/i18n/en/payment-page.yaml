@@ -1,0 +1,43 @@
+# English overlay for `data/threat-library/payment-page.yaml`.
+#
+# The Japanese file is the source of truth: only `name` / `category` / `description` /
+# `mitigation` (plus `conditions[].description` and `references[].title` where present)
+# are translated here, keyed by rule id. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - Keep `{{token}}` placeholders exactly as they appear in the original.
+#   - Keep the `[Foundation]` / `[Enterprise]` / `[Advanced]` markup — the maturity
+#     tiers are re-derived from this text.
+#   - Preserve the Can / Cannot pair and the blast radius statement in `description`.
+#   - `references` is keyed by the index in the original array, and only the entries
+#     that need translating are listed. Keep a genuinely Japanese document title as
+#     its original title and add an English gloss; `url` is never translated.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+rules:
+  payment-checkout-redirect-skimming-001:
+    name: "Redirect to a fake payment page and card theft by third-party code"
+    description: "{{nodeName}} has code from third-party scripts or apps built into it (e-commerce platform apps, tag managers, external JavaScript and so on). That code runs in the user's browser with the same privileges as your own code. If the app's developer is compromised, or the app itself is swapped for a malicious one, an attacker can send users to a fake payment page partway through checkout, or send values typed into the genuine fields to an outside server, and steal card numbers, expiry dates, security codes, payment-service login details, names and addresses (Can). Because the redirect starts from the genuine checkout button, users tend to assume it is the next step and enter their details even when the fake page looks crude. Payments made on the fake page leave no order on your side, so the business is slow to notice as well. If, on the other hand, the scripts loaded on the payment page are limited by an allowlist, changes to the page content and scripts are detected, and card details are entered on a page hosted by the payment service provider (redirect or tokenization), the third-party code cannot touch card data even if it is hijacked, and tampering is noticed early (Cannot). The blast radius is the card and personal data of every user who went through checkout while the page was tampered with, plus the response to fraudulent use and follow-on harm."
+    mitigation: "[Foundation] Take stock of the third-party scripts and apps running on the payment page, and keep only those checkout needs. Have card details entered on a page hosted by the payment service provider so your own pages never handle card data. Require administrator approval to add apps or change their permissions. [Enterprise] Set a Content-Security-Policy on the payment page to allowlist the scripts it may load and the destinations it may send to. Put a mechanism in place to detect changes to the payment page's content, scripts and HTTP headers, and decide in advance how to halt checkout when it fires. Add Subresource Integrity (SRI) to external scripts. [Advanced] Separate the payment page into a dedicated page that loads no external scripts at all. Monitor checkout completion rates and transaction counts on the payment service provider's side, and treat users reaching the payment page without orders being placed as an anomaly."
+    references:
+      "0":
+        title: "PCI DSS v4.0 (Requirement 6.4.3 payment page script management, 11.6.1 payment page tamper detection)"
+
+  payment-page-integrity-gap-001:
+    name: "No tamper detection or script management on the payment page"
+    description: "{{nodeName}} is where users enter card details, which makes it the most valuable target for tampering. Through a hijacked admin account, a vulnerability in the web server or CMS, or a compromised external script, an attacker can plant code on the payment page that steals what is typed (a skimmer), or insert a redirect to a fake payment page (Can). The genuine payment flow usually keeps working, so without monitoring for changes to page content and scripts, the first sign is a fraud report from the card company, and every transaction in the meantime is affected. If, on the other hand, the scripts loaded on the payment page are inventoried and limited to approved ones, changes to the payment page content and scripts as delivered to the user's browser are detected regularly, and the admin screen is protected with multi-factor authentication and access source restrictions, tampering is hard to plant and, if planted, is detected and stopped quickly (Cannot). The blast radius is the card and personal data of every user who went through checkout before the tampering was noticed."
+    mitigation: "[Foundation] List the scripts loaded on the payment page, recording why each is needed and who approved it. Protect the e-commerce site's admin screen with multi-factor authentication and access source restrictions. Have card details entered on a page hosted by the payment service provider so your own pages never handle card data. [Enterprise] Regularly detect changes to the payment page's content, scripts and HTTP headers as delivered to the user's browser, and define procedures for halting and investigating when a change is found. Use a Content-Security-Policy to limit the scripts that can load and the destinations they can send to. [Advanced] Separate the payment page into a dedicated page that loads no external scripts, and allow changes only through the deployment pipeline. Run exercises that assume tampering (halting checkout, notifying users, contacting card companies)."
+    references:
+      "0":
+        title: "PCI DSS v4.0 (Requirement 6.4.3 payment page script management, 11.6.1 payment page tamper detection)"
+      "1":
+        title: "クレジット取引セキュリティ対策協議会「クレジットカード・セキュリティガイドライン」 (Japan Credit Transaction Security Council, Credit Card Security Guidelines: card data non-retention and vulnerability measures for e-commerce merchants)"
+
+  third-party-extension-supply-chain-001:
+    name: "Excessive permissions and supply chain compromise of third-party scripts and apps"
+    description: "{{nodeName}} is code developed and delivered by a third party, and it runs against your pages and store data with the permissions granted at installation. If the developer's account or delivery infrastructure is compromised, malicious code slips into an update, or the app is handed over to a malicious developer, an attacker can tamper with pages, steal what users type, and read customer and order data without changing any of your own code (Can). Updates are often applied automatically on the developer's schedule, so a review at installation alone cannot prevent this. If, on the other hand, installed apps are kept to the minimum, the permissions granted (inserting scripts into pages, reading customer data and so on) are limited to what the use requires, and installed apps and permissions are reviewed regularly with unneeded ones removed, what a compromised app can reach stays limited (Cannot). The blast radius is every page, all customer data and every order reachable with the permissions granted to {{nodeName}}."
+    mitigation: "[Foundation] Take stock of installed third-party apps and scripts, and remove those not in use. Require administrator approval for installs and permission changes, and limit permissions to what the use requires. [Enterprise] Check the developer's track record, security practices and update history before installing. Pin external script versions and add Subresource Integrity (SRI). Review installed apps and their permissions regularly. [Advanced] Do not run third-party app code on critical pages such as checkout and login. Monitor what external scripts do (where they send data and what they read), and detect unexpected transmissions."
