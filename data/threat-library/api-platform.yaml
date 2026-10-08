@@ -21,6 +21,10 @@
 #     （CICD-SEC-4 Poisoned Pipeline Execution / CICD-SEC-6 Insufficient Credential Hygiene）
 #   - OWASP Secrets Management Cheat Sheet
 #     https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html
+#   - OWASP API Security Top 10 2023（API4 Unrestricted Resource Consumption /
+#     API6 Unrestricted Access to Sensitive Business Flows）、OWASP Automated Threats to
+#     Web Applications（OAT-011 Scraping）、OWASP MASVS
+#   - IETF RFC 8252（OAuth 2.0 for Native Apps）、RFC 7636（PKCE）
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -33,7 +37,11 @@
 #     でカバー済み。本ファイルの BOLA ルールは「ゲートウェイでは判定できない、レコード・項目単位の
 #     所有者チェック」をバックエンド側の責務として扱う。別 canonicalId。
 #   - ゲートウェイのレート制限（API4 相当）は stride-gateway-dos-001（gateway-resource-exhaustion）で
-#     カバー済み。本ファイルでは扱わない。
+#     カバー済み。本ファイルでは扱わない。ただし api-bulk-data-harvesting-001 は可用性ではなく
+#     「正常な応答を積み上げた個人情報の大量取得」を扱うため別 canonicalId とする。
+#   - api-mobile-embedded-secret-001 / api-bulk-data-harvesting-001 は BOLA ルールと同じノードで
+#     発火しうるが、それぞれ「アプリを介さない直接呼び出し」「取得量の制限・検知」という別の問いで、
+#     BOLA と組み合わさって大量漏えいに至る経路の構成要素として別カードにする。
 #   - 管理面のインターネット露出は stride-web-remote-mgmt-exposed-001
 #     （canonicalId: web-remote-management-exposure、FRONT_END_SERVER / GATEWAY の攻撃面属性）と
 #     同じ脅威。API_CONTROL_PLANE は攻撃面属性を持たないため、エッジ視点のルールを同じ canonicalId で置く。
@@ -242,3 +250,65 @@ rules:
     references:
       - title: "OWASP API Security Top 10 2023 - API9:2023 Improper Inventory Management"
         url: "https://owasp.org/API-Security/editions/2023/en/0xa9-improper-inventory-management/"
+
+  # ── BACKEND_API / GATEWAY: モバイルアプリに埋め込んだ秘密情報への依存（経路依存）──
+  - id: api-mobile-embedded-secret-001
+    canonicalId: api-mobile-embedded-client-secret
+    framework: STRIDE
+    category: "Spoofing"
+    name: "モバイルアプリに埋め込んだ秘密情報による呼び出し元の確認"
+    severity: High
+    description: "{{nodeName}} はスマートフォンのアプリから呼び出される。アプリの中に API キー・クライアントシークレット・署名用の鍵を埋め込み、それを持っていることを「正規のアプリからの呼び出し」の証明にしている場合、攻撃者はアプリを入手して解析するだけでその値を取り出し、アプリを介さずにスクリプトから {{nodeName}} を直接呼び出せる（Can）。アプリは利用者の端末に配布されるため、難読化しても秘密情報は守れない（OAuth 2.0 でも、ネイティブアプリはシークレットを秘匿できない公開クライアントとして扱う）。アプリを経由しない呼び出しは、アプリ側の画面遷移や入力チェックを前提にした制限をすべて素通りし、BOLA などの認可不備と組み合わさると大量の情報取得につながる。一方、アプリに埋め込んだ値を認証にも認可にも使わず、利用者ごとのトークン（PKCE を用いた認可コードフロー等）で呼び出し元の利用者を確かめ、すべての認可判断をサーバー側で行っていれば、取り出した値だけでは何もできない（Cannot）。blast radius はアプリに埋め込んだ値で呼び出せる {{nodeName}} の全機能。"
+    mitigation: "[Foundation] アプリに埋め込んだ API キーやシークレットを、認証・認可の根拠として使わない（アプリの識別や利用量の集計に限る）。利用者の認証は、PKCE を用いた OAuth 2.0 の認可コードフロー等で発行した、利用者ごとの短命なトークンで行う。認可の判断はすべてサーバー側で行い、アプリ側のチェックに頼らない。 [Enterprise] 一度でも配布したアプリに含まれていた秘密情報は漏えい済みとして扱い、ローテーションできる設計にする。OS が提供するアプリ・端末の正当性確認（App Attest / Play Integrity 等）を、補助的なシグナルとして取り入れる。 [Advanced] リリースするアプリのビルドを解析し、秘密情報の埋め込みを CI で検出する。アプリを経由しない呼び出しのパターン（アプリでは起こらない順序・頻度）を検知する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: BACKEND_API
+        - nodeType: GATEWAY
+      # スマートフォンのアプリから呼び出される経路があるときのみ発火する。
+      connection:
+        direction: inbound
+        peerType: [SMARTPHONE]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+    references:
+      - title: "IETF RFC 8252 - OAuth 2.0 for Native Apps（ネイティブアプリは公開クライアント）"
+        url: "https://www.rfc-editor.org/rfc/rfc8252"
+      - title: "IETF RFC 7636 - Proof Key for Code Exchange by OAuth Public Clients（PKCE）"
+        url: "https://www.rfc-editor.org/rfc/rfc7636"
+      - title: "OWASP Mobile Application Security Verification Standard（MASVS）"
+        url: "https://mas.owasp.org/MASVS/"
+
+  # ── BACKEND_API / GATEWAY: 個人情報の大量取得の制限・検知の欠如（経路依存）──
+  - id: api-bulk-data-harvesting-001
+    canonicalId: api-bulk-data-harvesting
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "API を使った個人情報の大量取得の制限・検知の欠如"
+    severity: High
+    description: "{{nodeName}} は利用者の端末から呼び出され、会員情報や注文情報などの個人情報を返す。1 つのアカウント・トークン・送信元から取得できる件数や頻度に上限が無く、取得量の異常を監視していない場合、攻撃者は認可不備・漏えいしたトークン・大量に用意したアカウントのいずれかを足がかりに、スクリプトで呼び出しを繰り返し、数日のうちに数十万〜数百万件の個人情報を集められる（Can）。一件ずつの応答は正常な形をしているため、マルウェアや侵入の痕跡が無く、エラー監視やサーバーの負荷監視では気づけない。一方、利用者・トークン・送信元ごとに取得件数と頻度の上限を設け、通常の利用ではありえない件数や、多数の異なる利用者のデータへのアクセスを検知して自動で遮断していれば、足がかりを得られても取得できるのは一部にとどまり、短時間で止められる（Cannot）。blast radius は検知・遮断までの間に取得された全件で、上限が無ければ {{nodeName}} が扱う全利用者の個人情報。"
+    mitigation: "[Foundation] 個人情報を返す API ごとに、利用者・トークン・送信元 IP 単位の呼び出し回数の上限を設ける。1 回の応答で返す件数と項目を必要最小限にする（一覧にページングの上限を設ける）。アクセスログに呼び出し元の利用者と取得したレコードの所有者を残す。 [Enterprise] 1 つのアカウント・トークン・送信元が多数の異なる利用者のデータを取得するパターンを検知し、自動で遮断・通知する。Bot 管理や送信元の評価で、アプリ以外からの機械的な呼び出しを抑える。個人情報を返す API の利用量を日次で監視する。 [Advanced] 取得量の異常を検知したときに、トークンの失効・アカウント停止・API の一時停止まで自動で実行する手順を整える。レコードの ID を推測できない値にし、列挙そのものを難しくする。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: BACKEND_API
+        - nodeType: GATEWAY
+      # 利用者の端末・利用者から呼び出される経路があるときのみ発火する。
+      connection:
+        direction: inbound
+        peerType: [SMARTPHONE, PC, USER, EXTERNAL_ENTITY]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "DE.CM-01"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+    references:
+      - title: "OWASP API Security Top 10 2023 - API6:2023 Unrestricted Access to Sensitive Business Flows"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa6-unrestricted-access-to-sensitive-business-flows/"
+      - title: "OWASP API Security Top 10 2023 - API4:2023 Unrestricted Resource Consumption"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/"
+      - title: "OWASP Automated Threats to Web Applications（OAT-011 Scraping）"
+        url: "https://owasp.org/www-project-automated-threats-to-web-applications/"
