@@ -22,9 +22,10 @@
 #   - OWASP Secrets Management Cheat Sheet
 #     https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html
 #   - OWASP API Security Top 10 2023（API4 Unrestricted Resource Consumption /
-#     API6 Unrestricted Access to Sensitive Business Flows）、OWASP Automated Threats to
-#     Web Applications（OAT-011 Scraping）、OWASP MASVS
-#   - IETF RFC 8252（OAuth 2.0 for Native Apps）、RFC 7636（PKCE）
+#     API6 Unrestricted Access to Sensitive Business Flows / API2 Broken Authentication /
+#     API5 Broken Function Level Authorization）、OWASP JSON Web Token Cheat Sheet、
+#     OWASP Automated Threats to Web Applications（OAT-011 Scraping）、OWASP MASVS
+#   - IETF RFC 8252（OAuth 2.0 for Native Apps）、RFC 7636（PKCE）、RFC 8725（JWT BCP）
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -36,6 +37,9 @@
 #     stride-gateway-elevation-of-privilege-001（canonicalId: gateway-authorization-gap、GATEWAY 型）
 #     でカバー済み。本ファイルの BOLA ルールは「ゲートウェイでは判定できない、レコード・項目単位の
 #     所有者チェック」をバックエンド側の責務として扱う。別 canonicalId。
+#     ゲートウェイを置かずに利用者が直接呼ぶ構成もあるため、機能単位の認可（API5 BFLA）も
+#     api-backend-function-level-authorization-001（canonicalId: api-function-level-authorization）として
+#     バックエンド側に置く。subject が異なるため GATEWAY のルールとは別カードになる。
 #   - ゲートウェイのレート制限（API4 相当）は stride-gateway-dos-001（gateway-resource-exhaustion）で
 #     カバー済み。本ファイルでは扱わない。ただし api-bulk-data-harvesting-001 は可用性ではなく
 #     「正常な応答を積み上げた個人情報の大量取得」を扱うため別 canonicalId とする。
@@ -50,6 +54,10 @@
 #     基盤（SECRETS_VAULT）」と「クラウドで共有される開発ツール（API_DEV_WORKSPACE）」「CI」という
 #     置き場所ごとの固有の経路を扱い、subject が異なるため別 canonicalId とする。
 #   - 呼び出し時の静的 API キー利用（弱いサービス認証）は weak-service-auth 群が扱う。
+#   - IdP が発行したトークンの受け側検証は zt-idp-token-validation-gap-001（canonicalId:
+#     idp-relying-party-validation-gap、IdP からのエッジ）が扱う。api-token-session-validation-gap-001 は
+#     IdP を描かない構成（アプリのサーバーが自前でセッション・JWT を発行・検証する）も含め、
+#     利用者の端末から呼ばれる API 側の検証を扱う。subject が異なるため別 canonicalId とする。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する。
@@ -312,3 +320,56 @@ rules:
         url: "https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/"
       - title: "OWASP Automated Threats to Web Applications（OAT-011 Scraping）"
         url: "https://owasp.org/www-project-automated-threats-to-web-applications/"
+
+  # ── BACKEND_API: 機能単位の認可不備（API5 BFLA）──────────────────
+  - id: api-backend-function-level-authorization-001
+    canonicalId: api-function-level-authorization
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "機能単位の認可不備（BFLA）"
+    severity: High
+    description: "{{nodeName}} が、管理者用・社内業務用・他システム連携用の API と、一般の利用者向けの API を同じ入口で提供している。各 API が「呼び出し元のトークンの種類・役割で、この機能を使ってよいか」を確かめていない場合、一般の利用者として正規にログインした攻撃者は、アプリの通信から推測した URL やメソッド（GET を PUT・DELETE に変える、/users/me を /admin/users に変える等）を試すだけで、他の会員の一覧取得・検索・一括出力や、権限の変更などの管理機能を呼び出せる（Can）。アプリの画面に管理機能のボタンが無いことは防御にならない。一方、すべての API で呼び出し元の役割と許可された機能を照合し、既定を拒否にして、管理用・内部用の API を利用者向けとは別の入口・別のトークン発行元に分けていれば、利用者のトークンでは管理機能に届かない（Cannot）。blast radius は利用者のトークンで呼び出せてしまう管理機能すべてと、それらが扱う全利用者のデータ。"
+    mitigation: "[Foundation] すべての API で、呼び出し元の役割（一般利用者・管理者・内部システム）と、その API の機能を使ってよいかを照合する。既定は拒否とし、許可する役割を API ごとに明示する。メソッドごと（GET・PUT・DELETE 等）にも判定する。 [Enterprise] 管理用・内部用の API を、利用者向けとは別のホスト・別のネットワーク経路で提供し、利用者向けのトークンでは到達できない構成にする。利用者のトークンで管理用 API を呼ぶテストケースを CI で毎回実行する。 [Advanced] 認可の判定をポリシーエンジンに集約し、API 仕様書の役割定義と実装の差を継続的に検査する。利用者のトークンによる管理用 API の呼び出しを検知・通知する。"
+    appliesTo:
+      kind: node
+      nodeType: BACKEND_API
+      # 呼び出し元からの入力を受けるとき発火する（BOLA ルールと同じ前提）。
+      connection:
+        direction: inbound
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "OWASP API Security Top 10 2023 - API5:2023 Broken Function Level Authorization"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa5-broken-function-level-authorization/"
+
+  # ── BACKEND_API / GATEWAY: トークン・セッションの検証不備（API2）──────
+  - id: api-token-session-validation-gap-001
+    canonicalId: api-token-validation-gap
+    framework: STRIDE
+    category: "Spoofing"
+    name: "API でのトークン・セッションの検証不備"
+    severity: High
+    description: "{{nodeName}} は、利用者の端末から送られるセッショントークンや JWT で呼び出し元の利用者を確かめている。署名を検証せずにトークンの中の会員 ID を信用している、有効期限やログアウト・失効を確認していない、トークンの用途（表示用・特定機能用）や権限の範囲（スコープ）を見ていない、のいずれかがあると、攻撃者はトークンの中身を書き換えて他の会員になりすましたり、期限切れや盗んだトークンを使い続けたり、権限の弱いトークンで個人情報を返す API まで呼び出したりできる（Can）。署名アルゴリズムの指定（alg）を受け取ったトークン任せにしていると、署名なしや別の鍵による偽造トークンも受理してしまう。一方、すべてのリクエストでサーバー側の鍵による署名・発行元・宛先（audience）・有効期限・失効を検証し、受け付けるアルゴリズムを固定し、API ごとに必要なスコープを確かめていれば、書き換えたトークンも期限切れのトークンも権限の足りないトークンも拒否される（Cannot）。blast radius はなりすませる全利用者のデータと、そのトークンで呼べる全機能。"
+    mitigation: "[Foundation] すべてのリクエストで、トークンの署名・発行元・宛先（audience）・有効期限を検証する。受け付ける署名アルゴリズムをサーバー側で固定し、署名なしのトークンを拒否する。会員 ID は、リクエストのパラメーターや署名を検証していないトークンの値ではなく、署名を検証したトークンの主体（sub）だけから得る。 [Enterprise] API ごとに必要なスコープ・用途を定め、それを満たさないトークンを拒否する（表示用のトークンで個人情報 API を呼ばせない）。アクセストークンの有効期限を短くし、ログアウト・パスワード変更・不正検知時に失効させる仕組みを持つ。トークン検証を共通のライブラリやゲートウェイに集約する。 [Advanced] トークンを端末やクライアントに紐づけ（DPoP・mTLS 等による送信者制約）、盗まれたトークンを別の端末から使えないようにする。検証失敗や失効済みトークンの利用を監視する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: BACKEND_API
+        - nodeType: GATEWAY
+      # 利用者の端末・利用者からトークン付きで呼び出される経路があるときのみ発火する。
+      connection:
+        direction: inbound
+        peerType: [SMARTPHONE, PC, USER, EXTERNAL_ENTITY]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "OWASP API Security Top 10 2023 - API2:2023 Broken Authentication"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/"
+      - title: "IETF RFC 8725 - JSON Web Token Best Current Practices"
+        url: "https://www.rfc-editor.org/rfc/rfc8725"
+      - title: "OWASP Cheat Sheet Series - JSON Web Token for Java Cheat Sheet"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html"
