@@ -71,7 +71,7 @@ rules:
       # 社外由来の文章を持つため、入力経路そのものを前提条件とする近似で扱う。
       connection:
         direction: inbound
-        peerType: [CRM, MAIL, CHAT, OTHER_APP, SAAS]
+        peerType: [CRM, MAIL, CHAT, OTHER_APP, SAAS, WEB_FORM]
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.DS-01"

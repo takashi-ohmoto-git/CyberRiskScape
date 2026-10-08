@@ -58,7 +58,8 @@ verbatim.
    reproduced verbatim.
 
    Referenced by: data/threat-library/identity.yaml,
-                  data/threat-library/zero-trust-access.yaml
+                  data/threat-library/zero-trust-access.yaml,
+                  data/threat-library/web-form.yaml
 
 --------------------------------------------------------------------------------
 3. Model Context Protocol — Security Best Practices
@@ -107,6 +108,8 @@ verbatim.
 
    U.S. National Security Agency (NSA)
    - Commercial National Security Algorithm Suite 2.0 (CNSA 2.0)
+   - Detect and Prevent Web Shell Malware (2020, with the Australian Signals
+     Directorate) — referenced by data/threat-library/web-form.yaml
    https://www.nsa.gov/
 
    Works of the U.S. Government; not subject to copyright protection in the
@@ -160,7 +163,8 @@ verbatim.
 
 --------------------------------------------------------------------------------
 11. Other public authorities
-   個人情報保護委員会「個人情報の保護に関する法律についてのガイドライン」に関する Q&A
+   個人情報保護委員会「個人情報の保護に関する法律についてのガイドライン」に関する Q&A、
+   および同ガイドライン（通則編）
    (Personal Information Protection Commission, Japan)
    https://www.ppc.go.jp/
    出典明記の上での要約参照。
@@ -176,7 +180,12 @@ verbatim.
    © European Union Agency for Law Enforcement Cooperation. Referenced by
    citation and short summary only.
 
-   Referenced by: data/threat-library/voice-contact-center.yaml
+   独立行政法人情報処理推進機構（IPA）「安全なウェブサイトの作り方」
+   https://www.ipa.go.jp/
+   出典明記の上での要約参照。
+
+   Referenced by: data/threat-library/voice-contact-center.yaml,
+                  data/threat-library/web-form.yaml
 
 --------------------------------------------------------------------------------
 12. LY Corporation — LINE Developers documentation and LY Corporation notices
@@ -232,11 +241,13 @@ verbatim.
 --------------------------------------------------------------------------------
 16. OWASP Foundation — OWASP API Security Top 10 2023, OWASP Top 10 CI/CD
     Security Risks, OWASP Non-Human Identities Top 10 2025, OWASP Cheat Sheet
-    Series (Secrets Management)
+    Series (Secrets Management, File Upload), OWASP Top 10 2021, OWASP
+    Automated Threats to Web Applications
    https://owasp.org/API-Security/ ,
    https://owasp.org/www-project-top-10-ci-cd-security-risks/ ,
    https://owasp.org/www-project-non-human-identities-top-10/ ,
-   https://cheatsheetseries.owasp.org/
+   https://cheatsheetseries.owasp.org/ , https://owasp.org/Top10/ ,
+   https://owasp.org/www-project-automated-threats-to-web-applications/
    Referenced by category name, risk ID and URL with a short Japanese summary
    only; no text is reproduced verbatim. See each project page for its license
    terms.
@@ -244,6 +255,7 @@ verbatim.
    Referenced by: data/threat-library/api-platform.yaml,
                   data/threat-library/nhi.yaml,
                   data/component-library/nhi.yaml,
+                  data/threat-library/web-form.yaml,
                   data/test-templates/postman.yaml
 
 --------------------------------------------------------------------------------

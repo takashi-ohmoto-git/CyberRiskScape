@@ -1,0 +1,163 @@
+# Web フォーム（WEB_FORM）と公開 Web サーバー（FRONT_END_SERVER）の固有脅威。
+# 問い合わせ・資料請求・申込フォームのように、社外の不特定者が自由記述や添付ファイルを
+# 送り込める入口と、そこを足がかりにした Web シェルの設置を扱う。
+#
+# 出典（一次情報のみをルールの根拠とする。二次情報だけで裏付く事実は本文に用いない）:
+#   - MITRE ATT&CK（T1505.003 Server Software Component: Web Shell、
+#     T1190 Exploit Public-Facing Application）。
+#   - NSA / Australian Signals Directorate, "Detect and Prevent Web Shell Malware"（2020）。
+#   - OWASP Foundation（OWASP Top 10 2021 A03 Injection、File Upload Cheat Sheet、
+#     Automated Threats to Web Applications）。
+#   - IPA「安全なウェブサイトの作り方」（メールヘッダ・インジェクション）。
+#   - 個人情報保護委員会「個人情報の保護に関する法律についてのガイドライン（通則編）」
+#     （安全管理措置）。
+#   本文は逐語転載せず日本語要約のみ。
+#
+#   SPDX-License-Identifier: Apache-2.0
+#   ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+#   出典の帰属表示は NOTICE を参照。
+#
+# 重複回避方針:
+#   - フォームの文章が LLM / AGENT に読み込まれる間接プロンプトインジェクション →
+#     owasp-llm01-indirect-business-record-001（canonicalId: indirect-prompt-injection）の
+#     peerType に WEB_FORM を加えてカバー。本ファイルでは扱わない。
+#   - 公開 Web サーバーに WAF が無いこと自体 → stride-web-no-waf-001（canonicalId:
+#     web-missing-waf）でカバー済み。本ファイルの入力値インジェクションは「フォームの値を
+#     受け取る下流側が解釈してしまう」脅威で、subject も WEB_FORM なので別カードとする。
+#   - 公開 Web サーバーの DDoS → stride-web-no-ddos-protection-001（canonicalId:
+#     web-missing-ddos-protection）でカバー済み。本ファイルの Bot 悪用は、正規の送信として
+#     受け付けられる大量投稿・自動返信メールの踏み台化を扱う。
+#   - フォーム送信の平文伝送 → stride-edge-plain-encryption-001（canonicalId:
+#     plaintext-transmission）でカバー済み。
+#   - Web シェルは WEB_FORM（添付ファイル経由）と FRONT_END_SERVER（公開アプリの脆弱性経由）の
+#     2 ルールで canonicalId: web-shell-implant を共有する。subject が異なるため別カードになる。
+
+schemaVersion: 1
+
+rules:
+  # ── Web シェル: フォームの添付ファイル経由 ─────────────────────
+  - id: webform-webshell-upload-001
+    canonicalId: web-shell-implant
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "添付ファイル経由の Web シェル設置"
+    severity: Critical
+    description: "{{nodeName}} が添付ファイル（履歴書・画像・見積依頼書など）を受け付ける場合、攻撃者はサーバー上で実行できるスクリプト（PHP・JSP・ASPX 等）を画像や文書に見せかけて送り込める。保存先が Web から到達でき、そのファイルをサーバーが実行してしまう構成では、攻撃者は保存されたファイルの URL を開くだけで任意のコマンドを実行でき、以後はそのファイルを裏口（Web シェル）として使い続けられる（Can）。拡張子や Content-Type だけの検査は、二重拡張子・大文字小文字の違い・偽装した MIME 型で回避される。一方、受け付けるファイル形式を許可リストで限定し、保存時にファイル名をサーバー側で振り直し、保存先を Web から直接到達できない場所（または実行権限の無いストレージ）に分けていれば、送り込んだファイルが実行されることはない（Cannot）。blast radius は Web サーバーの実行権限で触れられる全データと、そこから到達できる内部ネットワーク。"
+    mitigation: "[Foundation] 添付ファイルが本当に必要か見直し、不要なら受け付けない。受け付ける場合は拡張子を許可リストで限定し、ファイルの中身（マジックバイト）でも形式を確かめる。保存時のファイル名はサーバー側で生成し、保存先は Web 公開ディレクトリの外に置く。 [Enterprise] 添付ファイルはスクリプトを実行しないオブジェクトストレージ等に保存し、ダウンロード時は Content-Disposition: attachment で返す。マルウェア検査を通し、サイズと件数を制限する。Web 公開ディレクトリでのファイル作成・変更を監視する。 [Advanced] 画像・文書は再エンコード（無害化）してから保存する。ファイルの受け取りと処理を権限の小さい隔離環境に分け、Web サーバー本体からは書き込めない構成にする。"
+    appliesTo:
+      kind: node
+      nodeType: WEB_FORM
+      # 添付ファイルの有無はノード属性で表せないため、フォームが何かへ繋がっていれば発火させる近似で扱う。
+      connection:
+        direction: any
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-06"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "MITRE ATT&CK T1505.003 Server Software Component: Web Shell"
+        url: "https://attack.mitre.org/techniques/T1505/003/"
+      - title: "OWASP Cheat Sheet Series - File Upload Cheat Sheet"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html"
+      - title: "NSA / Australian Signals Directorate - Detect and Prevent Web Shell Malware (2020)"
+        url: "https://media.defense.gov/2020/Jun/09/2002313081/-1/-1/0/CSI-DETECT-AND-PREVENT-WEB-SHELL-MALWARE-20200422.PDF"
+
+  # ── Web シェル: 公開 Web サーバーの脆弱性経由 ──────────────────
+  - id: webserver-webshell-implant-001
+    canonicalId: web-shell-implant
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "公開アプリの脆弱性悪用による Web シェル設置"
+    severity: Critical
+    description: "{{nodeName}} はインターネットから到達できる。Web アプリや CMS・プラグイン・ミドルウェアに既知の脆弱性（ファイルアップロード・パストラバーサル・デシリアライズ・コマンドインジェクション等）が残っていると、攻撃者はそれを突いて Web 公開ディレクトリにスクリプトを書き込み、Web シェルとして常駐させられる（Can）。Web シェルは通常の HTTP(S) 通信に紛れるため、ファイアウォールや通信量の監視では見つけにくく、パッチを当てた後も裏口として残り続ける。一方、公開アプリの脆弱性を期限を決めて修正し、Web サーバーの実行ユーザーが公開ディレクトリへ書き込めない構成にし、公開ディレクトリのファイル変更と Web サーバーから起動されるプロセスを監視していれば、書き込みも常駐も成立しない（Cannot）。blast radius は Web サーバーの実行権限で触れられる全データと、そこから横展開できる内部ネットワーク。"
+    mitigation: "[Foundation] 公開アプリ・CMS・プラグイン・ミドルウェアの脆弱性を期限を決めて修正し、使っていない機能やプラグインは削除する。Web サーバーの実行ユーザーから公開ディレクトリへの書き込み権限を外す。 [Enterprise] 公開ディレクトリのファイル改ざんを検知する（ファイル整合性監視）。Web サーバーのプロセスがシェルやコマンドを起動したことを EDR で検知する。WAF の前段配置と、Web サーバーから内部ネットワーク・インターネットへの通信の制限を併用する。 [Advanced] デプロイ物を読み取り専用のイメージとして配布し、実行中のサーバーではファイルを書き換えられない構成にする。Web シェルの侵害を想定した調査・再構築の手順を用意する。"
+    appliesTo:
+      kind: node
+      nodeType: FRONT_END_SERVER
+      connection:
+        required: false
+      attackSurface:
+        hasGlobalIp: true
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "ID.RA-01"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "MITRE ATT&CK T1505.003 Server Software Component: Web Shell"
+        url: "https://attack.mitre.org/techniques/T1505/003/"
+      - title: "MITRE ATT&CK T1190 Exploit Public-Facing Application"
+        url: "https://attack.mitre.org/techniques/T1190/"
+      - title: "NSA / Australian Signals Directorate - Detect and Prevent Web Shell Malware (2020)"
+        url: "https://media.defense.gov/2020/Jun/09/2002313081/-1/-1/0/CSI-DETECT-AND-PREVENT-WEB-SHELL-MALWARE-20200422.PDF"
+
+  # ── 入力値が下流で解釈されるインジェクション（経路依存）──────────
+  - id: webform-input-injection-001
+    canonicalId: web-form-input-injection
+    framework: STRIDE
+    category: "Tampering"
+    name: "フォーム入力値による下流システムへのインジェクション"
+    severity: High
+    description: "{{nodeName}} の入力値は、データベース・通知メール・CRM・管理画面などの下流へ渡される。下流がその値をデータとしてではなく SQL・HTML・メールヘッダーの一部として解釈すると、攻撃者はフォームの入力欄から、データベースの読み出しや改ざん（SQL インジェクション）、問い合わせを閲覧した担当者のブラウザでのスクリプト実行（格納型 XSS）、改行を含む値による宛先の追加（メールヘッダー・インジェクション）を引き起こせる（Can）。格納型 XSS は社内の担当者が管理画面を開いた時点で動くため、担当者の権限で社内システムを操作されうる。一方、下流のそれぞれがプレースホルダー（パラメーター化クエリ）・出力時のエスケープ・ヘッダー値の改行除去を行い、フォーム側でも項目ごとに型と長さを検証していれば、入力値はデータとしてしか扱われない（Cannot）。blast radius はフォームの値を受け取る全ての下流システムと、管理画面を閲覧する担当者の権限。"
+    mitigation: "[Foundation] データベースへの登録はプレースホルダー（パラメーター化クエリ）で行う。管理画面・通知メール等で入力値を表示するときは出力先に応じてエスケープする。メールの件名・宛先等のヘッダーに入力値を使わない（使う場合は改行を除去する）。 [Enterprise] 項目ごとに型・長さ・文字種の許可リストで検証する。管理画面に Content-Security-Policy を設定する。WAF を前段に置き、インジェクションの試行をログで監視する。 [Advanced] フォームの受信と下流への連携を分け、連携時に項目単位で正規化・検証する。問い合わせ内容を閲覧する管理画面を社内からのアクセスと強い認証に限定する。"
+    appliesTo:
+      kind: node
+      nodeType: WEB_FORM
+      # 入力値を受け取る下流があるときのみ発火する。
+      connection:
+        direction: outbound
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-06"
+    references:
+      - title: "OWASP Top 10 2021 - A03 Injection"
+        url: "https://owasp.org/Top10/A03_2021-Injection/"
+      - title: "IPA「安全なウェブサイトの作り方」（SQL インジェクション・クロスサイト・スクリプティング・メールヘッダ・インジェクション）"
+
+  # ── Bot による大量投稿・自動返信メールの踏み台化（内在）─────────────
+  - id: webform-automated-abuse-001
+    canonicalId: web-form-automated-abuse
+    framework: STRIDE
+    category: "Denial of Service"
+    name: "Bot による大量投稿と自動返信メールの踏み台化"
+    severity: Medium
+    description: "{{nodeName}} は認証なしで誰でも送信できる。攻撃者は Bot で大量の送信を行い、問い合わせ窓口を広告・詐欺の投稿で埋めて本物の問い合わせを埋もれさせられる（Can）。送信者のメールアドレスに自動返信する構成では、他人のメールアドレスを入力して送信を繰り返すことで、自社のドメインから第三者へ大量のメールを送らせ、名前欄などに書いた URL や文面をフィッシングに使える。結果として自社ドメインが迷惑メール送信元として扱われ、正規のメールまで届かなくなる。一方、送信回数の制限と Bot 判定を設け、自動返信には入力された文面を載せず、送信元の確認が済むまで返信を最小限にしていれば、大量投稿も踏み台化も成立しない（Cannot）。blast radius は問い合わせ窓口の運用と、自社ドメインのメール到達性。"
+    mitigation: "[Foundation] 送信元 IP・メールアドレス単位で送信回数を制限する。自動返信メールには入力された名前・本文・URL を載せず、定型文だけにする。 [Enterprise] CAPTCHA 等の Bot 判定を設ける。送信ドメインに SPF・DKIM・DMARC を設定し、送信量の急増を監視する。 [Advanced] 自動返信の前にメールアドレスの確認（確認リンクのクリック）を挟む。Bot 管理サービスで振る舞いに基づく判定を行う。"
+    appliesTo:
+      kind: node
+      nodeType: WEB_FORM
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-04"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-01"
+    references:
+      - title: "OWASP Automated Threats to Web Applications（OAT-017 Spamming）"
+        url: "https://owasp.org/www-project-automated-threats-to-web-applications/"
+
+  # ── 入力内容の通知による個人情報の拡散（経路依存）───────────────
+  - id: webform-pii-propagation-001
+    canonicalId: web-form-pii-propagation
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "通知メール・チャットへの転送による個人情報の拡散"
+    severity: Medium
+    description: "{{nodeName}} の入力内容（氏名・連絡先・相談内容）が、通知メールやチャットへそのまま転送されている。転送先では、メーリングリストの全員・チャンネルの全参加者・メールの転送先が個人情報を読めるうえ、メールボックスやチャット履歴に保存期限なく残り続ける（Can）。誤った宛先の設定や、外部の参加者がいるチャンネルへの通知で、社外へ漏れることもある。一方、通知には受付番号と管理画面へのリンクだけを載せ、入力内容はアクセス権を絞った管理画面で閲覧する構成にしていれば、転送先のメール・チャットからは個人情報を読めない（Cannot）。blast radius は通知先で閲覧できる全員と、通知が残っている期間に受け付けた全ての問い合わせ。"
+    mitigation: "[Foundation] 通知メール・チャットには受付番号と管理画面へのリンクだけを載せ、入力内容を本文に含めない。通知先の宛先・チャンネルを棚卸しし、外部の参加者がいる宛先に通知しない。 [Enterprise] 問い合わせ内容は担当者に限定した管理画面・CRM で閲覧させ、閲覧ログを残す。問い合わせデータの保存期間を定め、期限を過ぎたものを削除する。 [Advanced] 相談内容に含まれる個人情報や機微情報を自動で検出・マスキングしてから下流へ渡す。"
+    appliesTo:
+      kind: node
+      nodeType: WEB_FORM
+      connection:
+        direction: outbound
+        peerType: [MAIL, CHAT, LINE]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "個人情報保護委員会「個人情報の保護に関する法律についてのガイドライン（通則編）」（安全管理措置）"
+        url: "https://www.ppc.go.jp/personalinfo/legal/guidelines_tsusoku/"

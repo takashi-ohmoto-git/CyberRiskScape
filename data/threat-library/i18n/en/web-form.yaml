@@ -1,0 +1,54 @@
+# English overlay for `data/threat-library/web-form.yaml`.
+#
+# The Japanese file is the source of truth: only `name` / `category` / `description` /
+# `mitigation` (plus `conditions[].description` and `references[].title` where present)
+# are translated here, keyed by rule id. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - Keep `{{token}}` placeholders exactly as they appear in the original.
+#   - Keep the `[Foundation]` / `[Enterprise]` / `[Advanced]` markup — the maturity
+#     tiers are re-derived from this text.
+#   - Preserve the Can / Cannot pair and the blast radius statement in `description`.
+#   - `references` is keyed by the index in the original array, and only the entries
+#     that need translating are listed. Keep a genuinely Japanese document title as
+#     its original title and add an English gloss; `url` is never translated.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+rules:
+  webform-webshell-upload-001:
+    name: "Web shell planted through a file attachment"
+    description: "If {{nodeName}} accepts attachments (résumés, images, quote requests and so on), an attacker can submit a script the server can run (PHP, JSP, ASPX and the like) disguised as an image or document. Where the storage location is reachable from the web and the server executes that file, the attacker only has to open the stored file's URL to run arbitrary commands, and can keep using the file as a back door (a web shell) from then on (Can). Checks on the extension or Content-Type alone are bypassed with double extensions, case variations and spoofed MIME types. If, on the other hand, the accepted file types are limited by an allowlist, the server renames files when it stores them, and the storage location is kept out of direct web reach (or on storage with no execute permission), a submitted file is never executed (Cannot). The blast radius is all data reachable with the web server's execution privileges, and the internal network reachable from it."
+    mitigation: "[Foundation] Review whether attachments are really needed, and stop accepting them if not. If they are accepted, limit extensions with an allowlist and also confirm the format from the file contents (magic bytes). Generate stored file names on the server side, and keep the storage location outside the web root. [Enterprise] Store attachments on storage that does not execute scripts, such as object storage, and serve downloads with Content-Disposition: attachment. Run malware scanning and limit size and count. Monitor file creation and changes in the web root. [Advanced] Re-encode (sanitize) images and documents before storing them. Separate file intake and processing into an isolated, low-privilege environment so that the web server itself cannot write files."
+    references:
+      "2":
+        title: "NSA / Australian Signals Directorate - Detect and Prevent Web Shell Malware (2020)"
+
+  webserver-webshell-implant-001:
+    name: "Web shell planted by exploiting a public-facing application"
+    description: "{{nodeName}} is reachable from the internet. If known vulnerabilities remain in the web application, CMS, plugins or middleware (file upload, path traversal, deserialization, command injection and so on), an attacker can exploit them to write a script into the web root and keep it there as a web shell (Can). A web shell blends into ordinary HTTP(S) traffic, so firewalls and traffic monitoring rarely spot it, and it stays behind as a back door even after the patch is applied. If, on the other hand, vulnerabilities in the public application are fixed within a set deadline, the web server's runtime user cannot write to the web root, and file changes in the web root and processes spawned by the web server are monitored, neither the write nor the persistence succeeds (Cannot). The blast radius is all data reachable with the web server's execution privileges, and the internal network an attacker can move laterally into from it."
+    mitigation: "[Foundation] Fix vulnerabilities in the public application, CMS, plugins and middleware within a set deadline, and remove unused features and plugins. Remove write permission on the web root from the web server's runtime user. [Enterprise] Detect tampering with files in the web root (file integrity monitoring). Use EDR to detect the web server process launching shells or commands. Combine a WAF in front with restrictions on traffic from the web server to the internal network and the internet. [Advanced] Ship deployments as read-only images so files cannot be rewritten on the running server. Prepare procedures for investigating and rebuilding after a web shell compromise."
+
+  webform-input-injection-001:
+    name: "Injection into downstream systems through form input"
+    description: "Input to {{nodeName}} is passed downstream to a database, notification mail, CRM, admin screen and so on. If a downstream system interprets that value as part of SQL, HTML or a mail header instead of as data, an attacker can use the form fields to read or alter the database (SQL injection), run a script in the browser of the staff member who views the inquiry (stored XSS), or add recipients with a value containing line breaks (mail header injection) (Can). Stored XSS fires when internal staff open the admin screen, so internal systems can be operated with that staff member's privileges. If, on the other hand, each downstream system uses placeholders (parameterized queries), escapes on output and strips line breaks from header values, and the form also validates type and length per field, input is only ever handled as data (Cannot). The blast radius is every downstream system that receives the form's values, and the privileges of the staff who view the admin screen."
+    mitigation: "[Foundation] Insert into the database with placeholders (parameterized queries). Escape input values for the output context when showing them in admin screens, notification mail and so on. Do not use input values in mail headers such as the subject or recipients (strip line breaks if you must). [Enterprise] Validate each field against an allowlist of type, length and character set. Set a Content-Security-Policy on the admin screen. Put a WAF in front and monitor injection attempts in the logs. [Advanced] Separate form intake from the hand-off to downstream systems, and normalize and validate each field during the hand-off. Restrict the admin screen used to view inquiries to internal access with strong authentication."
+    references:
+      "1":
+        title: "IPA「安全なウェブサイトの作り方」 (IPA, How to Secure Your Web Site: SQL injection, cross-site scripting, mail header injection)"
+
+  webform-automated-abuse-001:
+    name: "Bot flooding and abuse of auto-reply mail as a relay"
+    description: "Anyone can submit {{nodeName}} without authentication. An attacker can send submissions in bulk with a bot and flood the inquiry desk with advertising and scam posts, burying genuine inquiries (Can). Where the form auto-replies to the sender's address, repeated submissions with someone else's address make the company's own domain send large volumes of mail to third parties, and a URL or text written in the name field can be used for phishing. The company's domain then gets treated as a spam source, and even legitimate mail stops being delivered. If, on the other hand, submission rate limits and bot detection are in place, auto-replies carry none of the submitted text, and replies are kept to a minimum until the sender is confirmed, neither flooding nor relay abuse succeeds (Cannot). The blast radius is the operation of the inquiry desk and the deliverability of the company domain's mail."
+    mitigation: "[Foundation] Limit the number of submissions per source IP and per mail address. Make auto-reply mail a fixed text that includes none of the submitted name, message or URLs. [Enterprise] Add bot detection such as CAPTCHA. Configure SPF, DKIM and DMARC for the sending domain, and monitor for sudden jumps in sending volume. [Advanced] Confirm the mail address (a click on a confirmation link) before sending an auto-reply. Use a bot management service for behavior-based detection."
+
+  webform-pii-propagation-001:
+    name: "Personal data spread by forwarding to notification mail or chat"
+    description: "What is entered in {{nodeName}} (name, contact details, inquiry content) is forwarded as is to notification mail or chat. At the destination, everyone on the mailing list, every channel member and anyone the mail is forwarded to can read the personal data, and it stays in mailboxes and chat history with no retention limit (Can). A wrong recipient setting, or a notification to a channel with external members, can also leak it outside the company. If, on the other hand, notifications carry only a reference number and a link to the admin screen, and the content is viewed in an admin screen with narrowed access rights, the personal data cannot be read from the destination mail or chat (Cannot). The blast radius is everyone who can read the notifications, and every inquiry received during the time the notifications remain."
+    mitigation: "[Foundation] Put only a reference number and a link to the admin screen in notification mail and chat, and leave the submitted content out of the body. Take stock of notification recipients and channels, and do not notify destinations with external members. [Enterprise] Let staff view inquiry content only in an admin screen or CRM restricted to those in charge, and keep viewing logs. Set a retention period for inquiry data and delete it once expired. [Advanced] Automatically detect and mask personal or sensitive information in the inquiry content before passing it downstream."
+    references:
+      "0":
+        title: "個人情報保護委員会「個人情報の保護に関する法律についてのガイドライン（通則編）」 (Personal Information Protection Commission, Guidelines on the Act on the Protection of Personal Information, General Rules: security control measures)"

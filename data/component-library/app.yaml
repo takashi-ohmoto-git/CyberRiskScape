@@ -45,6 +45,14 @@ components:
     color: "bg-transparent"
     description: "LINE 公式アカウント／Messaging API チャネル。外部のメッセージング基盤を経由して顧客とやり取りする。"
 
+  - id: WEB_FORM
+    label: "Webフォーム"
+    category: APP
+    icon: { kind: builtin, name: "clipboard-pen" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "問い合わせ・資料請求・申込などの Web フォーム。外部の不特定者が自由記述を送り込む入口になる。"
+
   - id: MAIL
     label: "メール"
     category: APP
