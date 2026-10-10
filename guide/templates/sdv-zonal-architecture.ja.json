@@ -1,0 +1,414 @@
+{
+  "schemaVersion": 1,
+  "kind": "cyberriskscape-template",
+  "name": "SDV ゾーン型アーキテクチャ（参照テンプレート）",
+  "layer": {
+    "nodes": [
+      {
+        "id": "nsdv_app",
+        "type": "SMARTPHONE",
+        "x": 40,
+        "y": 60,
+        "label": "スマホアプリ",
+        "managedState": "Unmanaged"
+      },
+      {
+        "id": "nsdv_be",
+        "type": "BACKEND_API",
+        "x": 40,
+        "y": 230,
+        "label": "車両バックエンド"
+      },
+      {
+        "id": "nsdv_ota",
+        "type": "OTA_SERVER",
+        "x": 40,
+        "y": 400,
+        "label": "OTA 配信サーバー"
+      },
+      {
+        "id": "nsdv_pki",
+        "type": "VEHICLE_PKI",
+        "x": 40,
+        "y": 570,
+        "label": "車両 PKI"
+      },
+      {
+        "id": "nsdv_csms",
+        "type": "BACKEND_API",
+        "x": 40,
+        "y": 900,
+        "label": "充電事業者バックエンド"
+      },
+      {
+        "id": "nsdv_tcu",
+        "type": "TCU",
+        "x": 420,
+        "y": 60,
+        "label": "TCU"
+      },
+      {
+        "id": "nsdv_ivi",
+        "type": "IVI",
+        "x": 420,
+        "y": 220,
+        "label": "IVI"
+      },
+      {
+        "id": "nsdv_obu",
+        "type": "V2X_OBU",
+        "x": 420,
+        "y": 540,
+        "label": "V2X 車載器"
+      },
+      {
+        "id": "nsdv_obd",
+        "type": "OBD_PORT",
+        "x": 420,
+        "y": 380,
+        "label": "OBD-II 診断ポート"
+      },
+      {
+        "id": "nsdv_hpc",
+        "type": "CENTRAL_COMPUTE",
+        "x": 700,
+        "y": 60,
+        "label": "セントラルコンピュート（HPC）"
+      },
+      {
+        "id": "nsdv_gw",
+        "type": "CENTRAL_GATEWAY",
+        "x": 700,
+        "y": 300,
+        "label": "セントラルゲートウェイ"
+      },
+      {
+        "id": "nsdv_trunk",
+        "type": "IN_VEHICLE_NETWORK",
+        "x": 940,
+        "y": 300,
+        "label": "車載Ethernet（幹線）"
+      },
+      {
+        "id": "nsdv_zf",
+        "type": "ZONE_CONTROLLER",
+        "x": 1140,
+        "y": 120,
+        "label": "ゾーンコントローラ（前）"
+      },
+      {
+        "id": "nsdv_zr",
+        "type": "ZONE_CONTROLLER",
+        "x": 1140,
+        "y": 500,
+        "label": "ゾーンコントローラ（後）"
+      },
+      {
+        "id": "nsdv_adas",
+        "type": "ADAS_SENSOR",
+        "x": 940,
+        "y": 100,
+        "label": "ADAS センサー（カメラ・レーダー）"
+      },
+      {
+        "id": "nsdv_canf",
+        "type": "IN_VEHICLE_NETWORK",
+        "x": 1340,
+        "y": 120,
+        "label": "CAN（前ゾーン）"
+      },
+      {
+        "id": "nsdv_canr",
+        "type": "IN_VEHICLE_NETWORK",
+        "x": 1340,
+        "y": 500,
+        "label": "CAN（後ゾーン）"
+      },
+      {
+        "id": "nsdv_brake",
+        "type": "ECU",
+        "x": 1540,
+        "y": 40,
+        "label": "制動 ECU"
+      },
+      {
+        "id": "nsdv_steer",
+        "type": "ECU",
+        "x": 1540,
+        "y": 210,
+        "label": "ステアリング ECU"
+      },
+      {
+        "id": "nsdv_body",
+        "type": "ECU",
+        "x": 1540,
+        "y": 500,
+        "label": "ボディ ECU"
+      },
+      {
+        "id": "nsdv_rsu",
+        "type": "V2X_RSU",
+        "x": 420,
+        "y": 790,
+        "label": "路側機"
+      },
+      {
+        "id": "nsdv_chg",
+        "type": "EV_CHARGER",
+        "x": 1760,
+        "y": 900,
+        "label": "EV 充電器"
+      },
+      {
+        "id": "nsdv_diag",
+        "type": "DIAGNOSTIC_TOOL",
+        "x": 700,
+        "y": 790,
+        "label": "診断機（整備工場）"
+      }
+    ],
+    "edges": [
+      {
+        "id": "esdv_01",
+        "source": "nsdv_tcu",
+        "target": "nsdv_be",
+        "auth": "MFA",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "テレメトリ・遠隔操作"
+      },
+      {
+        "id": "esdv_02",
+        "source": "nsdv_ota",
+        "target": "nsdv_tcu",
+        "auth": "MFA",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "更新パッケージ"
+      },
+      {
+        "id": "esdv_03",
+        "source": "nsdv_app",
+        "target": "nsdv_be",
+        "auth": "MFA",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "遠隔操作"
+      },
+      {
+        "id": "esdv_04",
+        "source": "nsdv_pki",
+        "target": "nsdv_obu",
+        "auth": "MFA",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "証明書"
+      },
+      {
+        "id": "esdv_05",
+        "source": "nsdv_obu",
+        "target": "nsdv_rsu",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "Plain",
+        "dataFlow": "outbound",
+        "dataFlowName": "V2X メッセージ"
+      },
+      {
+        "id": "esdv_06",
+        "source": "nsdv_rsu",
+        "target": "nsdv_obu",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "Plain",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "esdv_07",
+        "source": "nsdv_chg",
+        "target": "nsdv_csms",
+        "auth": "MFA",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "OCPP"
+      },
+      {
+        "id": "esdv_08",
+        "source": "nsdv_chg",
+        "target": "nsdv_zr",
+        "auth": "MFA",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "ISO 15118"
+      },
+      {
+        "id": "esdv_09",
+        "source": "nsdv_tcu",
+        "target": "nsdv_gw",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "Plain",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "esdv_10",
+        "source": "nsdv_ivi",
+        "target": "nsdv_gw",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "Plain",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "esdv_11",
+        "source": "nsdv_obu",
+        "target": "nsdv_gw",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "Plain",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "esdv_12",
+        "source": "nsdv_obd",
+        "target": "nsdv_gw",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "Plain",
+        "dataFlow": "outbound",
+        "dataFlowName": "診断要求"
+      },
+      {
+        "id": "esdv_13",
+        "source": "nsdv_diag",
+        "target": "nsdv_obd",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "Plain",
+        "dataFlow": "outbound",
+        "dataFlowName": "診断要求"
+      },
+      {
+        "id": "esdv_14",
+        "source": "nsdv_hpc",
+        "target": "nsdv_trunk",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "制御メッセージ"
+      },
+      {
+        "id": "esdv_15",
+        "source": "nsdv_gw",
+        "target": "nsdv_trunk",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "esdv_16",
+        "source": "nsdv_zf",
+        "target": "nsdv_trunk",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "esdv_17",
+        "source": "nsdv_zr",
+        "target": "nsdv_trunk",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "esdv_18",
+        "source": "nsdv_adas",
+        "target": "nsdv_zf",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "Plain",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "esdv_19",
+        "source": "nsdv_zf",
+        "target": "nsdv_canf",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "Plain",
+        "dataFlow": "outbound",
+        "dataFlowName": "制御メッセージ"
+      },
+      {
+        "id": "esdv_20",
+        "source": "nsdv_zr",
+        "target": "nsdv_canr",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "Plain",
+        "dataFlow": "outbound",
+        "dataFlowName": "制御メッセージ"
+      },
+      {
+        "id": "esdv_21",
+        "source": "nsdv_canf",
+        "target": "nsdv_brake",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "Plain",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "esdv_22",
+        "source": "nsdv_canf",
+        "target": "nsdv_steer",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "Plain",
+        "dataFlow": "outbound"
+      },
+      {
+        "id": "esdv_23",
+        "source": "nsdv_canr",
+        "target": "nsdv_body",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "Plain",
+        "dataFlow": "outbound"
+      }
+    ],
+    "boundaries": [
+      {
+        "id": "bsdv_0001",
+        "type": "RECT",
+        "x": 14,
+        "y": 20,
+        "width": 240,
+        "height": 1000,
+        "trustLevel": "Internet"
+      },
+      {
+        "id": "bsdv_0002",
+        "type": "ROUNDED",
+        "x": 380,
+        "y": 0,
+        "width": 1320,
+        "height": 700,
+        "trustLevel": "Internal",
+        "macroTrust": "Security Zone",
+        "vlanName": "車両"
+      }
+    ]
+  }
+}

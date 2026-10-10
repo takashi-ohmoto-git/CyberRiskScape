@@ -3,8 +3,8 @@
 **AI・LLM・エージェントシステム・PQC に対応した、OSS のビジュアル脅威モデリングツール**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-193-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-1163%20passing-brightgreen.svg)](#開発)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-212-orange.svg)](data/threat-library)
+[![Tests](https://img.shields.io/badge/tests-1178%20passing-brightgreen.svg)](#開発)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 [English](README.md) | **日本語**
@@ -49,13 +49,14 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 | **ID 基盤・NHI**（Okta・SailPoint・CyberArk（Idira）・Microsoft Entra ID・Active Directory / LDAP） | IdP・ディレクトリ・NHI・PAM・IGA をモデル化して評価し、Conjur のポリシーから図を自動生成、各社の MCP サーバーと組み合わせて実際の ID の状態と突き合わせる（[ガイド](guide/nhi-identity.ja.md)） |
 | **ASM・外部露出**（Shodan） | `shodan download` の書き出しから露出サービスの図を自動生成し、CISA の 4 ステップに沿って評価・削減、前回との差分で新しい露出を検知する（[ガイド](guide/exposure-reduction.ja.md)） |
 | **AI エージェント基盤**（Salesforce Agentforce） | 専用のステンシル・脅威ルール・構成図テンプレートで評価する（[ガイド](guide/agentforce.ja.md)） |
+| **車載・SDV**（コネクテッドカー） | 専用のステンシル（Vehicle (SDV) カテゴリ）・UN R155 Annex 5 を出典とする脅威ルール・ゾーン型アーキテクチャの構成図テンプレートで評価する（[ガイド](guide/sdv.ja.md)） |
 | **AI による脆弱性診断**（Anthropic `defending-code-reference-harness`） | 脅威モデルを `THREAT_MODEL.md` 互換で書き出し、診断の入力にする（[ガイド](guide/security-context.ja.md)） |
 
 連携できる製品と方法の一覧は [連携ガイド](guide/integrations.ja.md) を参照してください。
 
 ### 主な機能
 
-- **ビジュアル DFD エディタ** — 88 種のコンポーネント型（12 ライブラリ・15 カテゴリ）、
+- **ビジュアル DFD エディタ** — 103 種のコンポーネント型（13 ライブラリ・16 カテゴリ）、
   トラスト境界、データフローの暗号化区分・認証状態の表現。ネットワーク・セキュリティ機器
   （クラウドの同等サービスの例つき）、Storage & Databases、DFD 標準記法（Yourdon 法）で
   表示する Basic Shapes (DFD) を収録
@@ -156,7 +157,7 @@ npm run test:watch   # テスト watch モード
 npx tsc --noEmit     # 型チェック（strict）
 ```
 
-変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,163 件の
+変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,178 件の
 テストが通ります。
 
 ---

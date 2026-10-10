@@ -3,8 +3,8 @@
 **Open-source visual threat modeling for AI, LLM, agentic systems, and post-quantum cryptography**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-193-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-1163%20passing-brightgreen.svg)](#development)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-212-orange.svg)](data/threat-library)
+[![Tests](https://img.shields.io/badge/tests-1178%20passing-brightgreen.svg)](#development)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 **English** | [日本語](README.ja.md)
@@ -23,7 +23,7 @@ how the screen is laid out, and how to work on the canvas, with screenshots.
 For the thinking behind it, see [An Introduction to Secure by Design](guide/secure-by-design.md).
 
 > **Interface language.** English and Japanese are both supported — use the JA / EN switch
-> in the top bar, and your choice is remembered. The interface, all 193 threat rules
+> in the top bar, and your choice is remembered. The interface, all 212 threat rules
 > (name, category, description, mitigations) and every component type label are
 > translated. Help is welcome.
 
@@ -59,13 +59,14 @@ platforms, and AI agent platforms. It makes no outbound calls, so it also works 
 | **Identity platforms and NHIs** (Okta, SailPoint, CyberArk (Idira), Microsoft Entra ID, Active Directory / LDAP) | Model and assess IdPs, directories, NHIs, PAM and IGA, generate the diagram from a Conjur policy, and pair with each vendor's MCP server to cross-check against the real state of your identities ([guide](guide/nhi-identity.md)) |
 | **ASM and external exposure** (Shodan) | Generate a diagram of exposed services from a `shodan download` export, assess and reduce exposure along CISA's four steps, and catch new exposure by diffing against the previous import ([guide](guide/exposure-reduction.md)) |
 | **AI agent platforms** (Salesforce Agentforce) | Dedicated stencils, threat rules, and a diagram template ([guide](guide/agentforce.md)) |
+| **Automotive** (SDV, connected cars) | Dedicated stencils (Vehicle (SDV) category), threat rules based on UN R155 Annex 5, and a zonal-architecture diagram template ([guide](guide/sdv.md)) |
 | **AI-driven vulnerability review** (Anthropic `defending-code-reference-harness`) | Export the threat model as `THREAT_MODEL.md`-compatible input for the review ([guide](guide/security-context.md)) |
 
 For the full list of products and how they connect, see [Integrations](guide/integrations.md).
 
 ### Features
 
-- **Visual DFD editor** — 88 component types across 12 libraries and 15 categories, trust
+- **Visual DFD editor** — 103 component types across 13 libraries and 16 categories, trust
   boundaries, and data flows carrying encryption, authentication, and semantic attributes.
   The library covers network and security appliances (with examples of the equivalent cloud
   services), Storage & Databases, and Basic Shapes (DFD) drawn in the classic Yourdon notation
@@ -166,7 +167,7 @@ npm run test:watch   # watch mode
 npx tsc --noEmit     # type check (strict)
 ```
 
-The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,163 tests
+The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,178 tests
 currently pass.
 
 ---
@@ -267,7 +268,7 @@ Near-term priorities, in order:
    detection confidence stated explicitly
 
 Done recently: an English UI with a language switcher, plus English translation overlays
-for all 193 threat rules and every component type label, all leaving the existing schemas
+for all 212 threat rules and every component type label, all leaving the existing schemas
 unchanged.
 
 ---
