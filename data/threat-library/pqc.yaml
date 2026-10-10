@@ -16,6 +16,7 @@
 #   - NIST SP 800-38F "Recommendation for Block Cipher Modes of Operation: Methods for Key Wrapping"
 #     （対称鍵による鍵ラッピング）。https://csrc.nist.gov/
 #   - NIST FIPS 140-3 "Security Requirements for Cryptographic Modules"。https://csrc.nist.gov/
+#   - IEEE 802.1AE "Media Access Control (MAC) Security"（MACsec による回線の暗号化）。https://standards.ieee.org/
 #   本文は逐語転載せず日本語要約のみ。クロスマッピングは references にコメント併記する。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -43,6 +44,12 @@
 #     近接するが、対象が鍵の保管装置（ハードウェアの更新周期に縛られる）で、鍵ラッピング経由の HNDL を
 #     含むため別 canonicalId とする（統合の可否は人間判断に残す）。
 #   - TLS インスペクション・CDN・STARTTLS 等、PQC 以外の終端機器の脅威は network-infra.yaml が扱う。
+#
+#   network-infra に追加した DEDICATED_LINE（専用線 / 閉域接続）に合わせて追加した 1 ルール:
+#   - 閉域接続の TLS の古典鍵交換による HNDL → pqc-dedicated-line-hndl-001。既存 HNDL と同じ脅威なので
+#     canonicalId: harvest-now-decrypt-later を共有する。VPN 版と同じく対象区間専用の description を持つ
+#     別ルール。encryption は [TLS] のみ（平文の区間は今すぐ読めるため、network-infra.yaml の
+#     netinfra-dedicated-line-unencrypted-001（canonicalId: plaintext-transmission）が扱う）。
 #
 # framework について:
 #   スキーマの FrameworkSchema は enum ['STRIDE','AI','AgenticAI'] で閉じており、新値 "PQC" の
@@ -276,3 +283,33 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/38/f/final"
       - title: "NIST FIPS 203 - Module-Lattice-Based Key-Encapsulation Mechanism (ML-KEM)"
         url: "https://csrc.nist.gov/pubs/fips/203/final"
+
+  # ── 専用線 / 閉域接続の TLS の古典鍵交換による HNDL ─────────────────────
+  # 既存 HNDL と同じ脅威。専用線 / 閉域接続の TLS の区間を対象にした別ルール（平文の区間は
+  # network-infra.yaml の netinfra-dedicated-line-unencrypted-001 が扱う）。
+  - id: pqc-dedicated-line-hndl-001
+    canonicalId: harvest-now-decrypt-later
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "専用線 / 閉域接続の古典鍵交換による Harvest Now, Decrypt Later"
+    severity: Medium
+    description: "{{sourceName}} と {{targetName}} の間の通信は専用線 / 閉域接続を通り、TLS で暗号化されている。閉域接続は通信事業者の伝送設備・コロケーション施設を経由するため、その区間にアクセスできる者は暗号文を今のうちに収集・保存できる。TLS の鍵交換が古典暗号（ECDHE 等）だけで行われている場合、将来の暗号学的に十分な量子計算機（CRQC）で鍵交換を破り、記録された通信を遡って復号できる（Can）。閉域接続はデータベースの複製やバックアップなど、量が多く長期の秘匿が必要なデータを運ぶことが多く、収集の価値が高い。一方、これは将来時点の復号であり、現在の通信のリアルタイムな盗聴・改ざんを可能にするものではない。TLS の鍵交換を PQC ハイブリッド（X25519MLKEM768 等）にするか、対称の事前共有鍵から鍵を導出する MACsec や、量子耐性の事前共有鍵（PPK）を併用した IPsec を回線に重ねていれば、収集された暗号文を将来復号することはできない（Cannot）。blast radius は {{sourceName}} と {{targetName}} の間で閉域接続を通る通信のうち、秘匿期間が CRQC の出現時期を超えるもの。"
+    mitigation: "[Foundation] 閉域接続を通る通信の暗号方式と、運ぶデータの秘匿期間を棚卸しし、長期の秘匿が必要なデータ（複製・バックアップ等）が通る区間を特定する。 [Enterprise] その区間の TLS を PQC ハイブリッドの鍵交換に対応した版へ更新する。回線に MACsec（事前共有の 256 ビット鍵）や、量子耐性の事前共有鍵（PPK）を併用した IPsec を重ねる。 [Advanced] 長期の秘匿が必要なデータはアプリ層でも PQC / ハイブリッドで暗号化し、回線や TLS の暗号だけに依存しない。"
+    appliesTo:
+      kind: edge
+      # 専用線 / 閉域接続の両側の区間のうち、TLS のものだけで発火する（平文は netinfra-dedicated-line-unencrypted-001）。
+      anyOf:
+        - targetType: [DEDICATED_LINE]
+          encryption: [TLS]
+        - sourceType: [DEDICATED_LINE]
+          encryption: [TLS]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+    references:
+      - title: "NIST IR 8547 - Transition to Post-Quantum Cryptography Standards"
+        url: "https://csrc.nist.gov/pubs/ir/8547/ipd"
+      - title: "IEEE 802.1AE - Media Access Control (MAC) Security（MACsec によるリンク暗号化）"
+        url: "https://standards.ieee.org/"
+      - title: "NIST SP 800-77 Rev.1 - Guide to IPsec VPNs"
+        url: "https://csrc.nist.gov/pubs/sp/800/77/r1/final"

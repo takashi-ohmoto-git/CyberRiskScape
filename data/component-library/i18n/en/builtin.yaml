@@ -64,7 +64,7 @@ components:
 
   GATEWAY:
     label: "API gateway"
-    description: "An API gateway or reverse proxy. Handles authorization and ingress control at the boundary."
+    description: "An API gateway or reverse proxy. Handles authorization and ingress control at the boundary. In the cloud this includes Amazon API Gateway, Azure API Management, Google Cloud API Gateway and Apigee, and OCI API Gateway."
 
   FRONT_END_SERVER:
     label: "Front-end Server"
@@ -72,7 +72,7 @@ components:
 
   CONNECTOR:
     label: "Connector"
-    description: "A relay node (a message broker, an iPaaS, a sidecar proxy)."
+    description: "A relay node (a message broker, an iPaaS, a sidecar proxy). In the cloud this includes Amazon SQS, SNS, EventBridge and MSK, Azure Service Bus and Event Hubs, Google Cloud Pub/Sub, OCI Streaming, and, as a database proxy, Amazon RDS Proxy."
 
   IDENTITY_PROVIDER:
     description: "An identity provider (IdP). Handles SSO, federation, and token issuance, and is the core of authentication and authorization. Under Zero Trust it is where policy decisions begin."

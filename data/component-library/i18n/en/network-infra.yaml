@@ -16,19 +16,19 @@ components:
 
   ROUTER:
     label: "Router / L3 switch"
-    description: "A router or layer 3 switch. Normally passes encryption through; with IPsec enabled it wraps traffic in an outer encrypted tunnel."
+    description: "A router or layer 3 switch. Normally passes encryption through; with IPsec enabled it wraps traffic in an outer encrypted tunnel. In the cloud this includes AWS Transit Gateway and NAT Gateway, Azure Virtual WAN and NAT Gateway, Google Cloud Router and Cloud NAT, and OCI DRG and NAT Gateway (all pass encryption through)."
 
   LOAD_BALANCER:
     label: "Load balancer"
-    description: "A load balancer. In L7 mode (SSL offload) it terminates TLS and reconnects to the backend re-encrypted or in plaintext; in L4 mode it passes encryption through."
+    description: "A load balancer. In L7 mode (SSL offload) it terminates TLS and reconnects to the backend re-encrypted or in plaintext; in L4 mode it passes encryption through. In the cloud this includes AWS ALB (terminates) and NLB (terminates only with a TLS listener), Azure Application Gateway (terminates) and Azure Load Balancer (passes through), Google Cloud Load Balancing, and OCI Load Balancer and Network Load Balancer. Gateway Load Balancer (AWS / Azure), which steers traffic to inspection appliances, passes encryption through."
 
   CDN:
     label: "CDN"
-    description: "A CDN. Terminates the user's TLS at the edge and reconnects to the origin over a separate TLS session. Also represents L7 DDoS protection."
+    description: "A CDN. Terminates the user's TLS at the edge and reconnects to the origin over a separate TLS session. Also represents L7 DDoS protection. In the cloud this includes Amazon CloudFront, Azure Front Door, and Google Cloud CDN and Media CDN."
 
   VPN_GATEWAY:
     label: "VPN gateway"
-    description: "A VPN gateway. Terminates IPsec / SSL-VPN tunnels without changing the encryption of traffic inside the tunnel (reverse-proxy-style SSL-VPN does terminate it)."
+    description: "A VPN gateway. Terminates IPsec / SSL-VPN tunnels without changing the encryption of traffic inside the tunnel (reverse-proxy-style SSL-VPN does terminate it). In the cloud this includes AWS Site-to-Site VPN and Client VPN, Azure VPN Gateway, Google Cloud VPN, and OCI Site-to-Site VPN."
 
   WIRELESS_AP:
     label: "Wireless access point"
@@ -40,28 +40,48 @@ components:
 
   FIREWALL:
     label: "Firewall"
-    description: "A firewall. Normally passes encryption through; with TLS inspection (SSL decryption) it decrypts and re-signs certificates with an internal CA. With VPN features it terminates tunnels."
+    description: "A firewall. Normally passes encryption through; with TLS inspection (SSL decryption) it decrypts and re-signs certificates with an internal CA. With VPN features it terminates tunnels. In the cloud this includes AWS Network Firewall, Azure Firewall Premium, Google Cloud NGFW Enterprise, and OCI Network Firewall (all offer TLS inspection)."
 
   WAF:
     label: "WAF"
-    description: "A WAF. Reverse-proxy mode terminates TLS; out-of-band mode imports the server's private key and decrypts passively (relies on static RSA key exchange, so it stops working with TLS 1.3 / PQC)."
+    description: "A WAF. Reverse-proxy mode terminates TLS; out-of-band mode imports the server's private key and decrypts passively (relies on static RSA key exchange, so it stops working with TLS 1.3 / PQC). In the cloud this includes AWS WAF, Azure WAF, Google Cloud Armor, and OCI WAF. Most cloud WAFs are features attached to a load balancer or CDN, and it is the attachment target that terminates TLS."
 
   IDS_IPS:
     label: "IDS / IPS"
-    description: "An IDS / IPS. Normally passes encryption through; some deployments import keys to decrypt passively or inspect content together with a decryption device."
+    description: "An IDS / IPS. Normally passes encryption through; some deployments import keys to decrypt passively or inspect content together with a decryption device. In the cloud this includes Google Cloud IDS and the IDPS of Azure Firewall Premium."
 
   SECURE_WEB_GATEWAY:
     label: "Proxy / SWG"
-    description: "A forward proxy / secure web gateway. Decrypts and inspects users' outbound TLS and re-signs certificates with an internal CA."
+    description: "A forward proxy / secure web gateway. Decrypts and inspects users' outbound TLS and re-signs certificates with an internal CA. In the cloud this includes Google Cloud Secure Web Proxy."
 
   SASE:
     label: "SASE / SSE"
-    description: "SASE / SSE. Tunnels from the device to a PoP, where TLS is decrypted and inspected before reconnecting externally."
+    description: "SASE / SSE. Tunnels from the device to a PoP, where TLS is decrypted and inspected before reconnecting externally. Among cloud providers' offerings this includes Microsoft Entra Internet Access (Global Secure Access)."
 
   EMAIL_GATEWAY:
     label: "Email gateway"
-    description: "An email gateway. Terminates and re-establishes STARTTLS at each relay hop; does not alter message-body encryption such as S/MIME."
+    description: "An email gateway. Terminates and re-establishes STARTTLS at each relay hop; does not alter message-body encryption such as S/MIME. In the cloud this includes Amazon SES, the email service of Azure Communication Services, and OCI Email Delivery."
 
   HSM:
     label: "HSM"
-    description: "A hardware security module. Stores keys and performs cryptographic operations in tamper-resistant hardware. Not on the data path, but it holds private keys of TLS-terminating devices and key-wrapping keys, so support for large PQC keys constrains migration."
+    description: "A hardware security module. Stores keys and performs cryptographic operations in tamper-resistant hardware. Not on the data path, but it holds private keys of TLS-terminating devices and key-wrapping keys, so support for large PQC keys constrains migration. In the cloud this includes AWS CloudHSM, Azure Managed HSM and Dedicated HSM, Google Cloud HSM, and OCI Vault (HSM-protected keys)."
+
+  BASTION:
+    label: "Bastion"
+    description: "A bastion host. Terminates TLS from an administrator's browser or similar and reconnects to the target server over SSH / RDP (the encryption changes at each segment). In the cloud this includes AWS Systems Manager Session Manager and EC2 Instance Connect Endpoint, Azure Bastion, Google Cloud IAP TCP forwarding, and OCI Bastion."
+
+  ZTNA_PROXY:
+    label: "ZTNA / identity-aware proxy"
+    description: "A ZTNA / identity-aware proxy. Terminates the user's TLS, authenticates and authorizes, then relays to the internal application over a separate connection. In the cloud this includes AWS Verified Access, Microsoft Entra Private Access and Application Proxy, and Google Cloud Identity-Aware Proxy."
+
+  DEDICATED_LINE:
+    label: "Dedicated line / private connectivity"
+    description: "A dedicated line / private connectivity. Not encrypted by default (even though it is private, it is a plaintext segment from the standpoint of eavesdropping and future decryption by quantum computers). Encrypted only when MACsec or IPsec is layered on top. In the cloud this includes AWS Direct Connect, Azure ExpressRoute, Google Cloud Interconnect, and OCI FastConnect."
+
+  PRIVATE_ENDPOINT:
+    label: "Private endpoint"
+    description: "A private endpoint. The private entry point to a cloud service; passes encryption through (the destination service terminates TLS). In the cloud this includes AWS PrivateLink (interface VPC endpoints), Azure Private Link (private endpoints), Google Cloud Private Service Connect, and OCI private endpoints."
+
+  SERVICE_MESH:
+    label: "Service mesh"
+    description: "A service mesh. Per-service sidecars (or node proxies) terminate and re-establish mTLS between services. Traffic between the app and its sidecar is often plaintext. In the cloud this includes Amazon VPC Lattice and ECS Service Connect, the Istio add-on for AKS, Google Cloud Service Mesh, and OCI Service Mesh."

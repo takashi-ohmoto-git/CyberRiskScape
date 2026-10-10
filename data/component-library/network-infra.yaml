@@ -1,9 +1,11 @@
 # Network & Security Infrastructure コンポーネントライブラリ。
 #
 # PQC 移行支援で「経路上で暗号が変わる箇所（終端・復号・トンネル化）」を描くための
-# ネットワーク機器・セキュリティ製品の 14 型：
-#   NETWORK : L2_SWITCH / ROUTER / LOAD_BALANCER / CDN / VPN_GATEWAY / WIRELESS_AP / SBC
-#   PROTECT : FIREWALL / WAF / IDS_IPS / SECURE_WEB_GATEWAY / SASE / EMAIL_GATEWAY
+# ネットワーク機器・セキュリティ製品の 19 型：
+#   NETWORK : L2_SWITCH / ROUTER / LOAD_BALANCER / CDN / VPN_GATEWAY / WIRELESS_AP / SBC /
+#             DEDICATED_LINE / PRIVATE_ENDPOINT / SERVICE_MESH
+#   PROTECT : FIREWALL / WAF / IDS_IPS / SECURE_WEB_GATEWAY / SASE / EMAIL_GATEWAY /
+#             BASTION / ZTNA_PROXY
 #   IDENTITY: HSM
 #
 # builtin ではないため、LeftSidebar のライブラリトグルで無効化できる。
@@ -47,7 +49,7 @@ components:
     icon: { kind: builtin, name: "router" }
     shape: rounded
     color: "bg-transparent"
-    description: "ルーター / L3 スイッチ。通常は暗号を透過する。IPsec 有効時は外側に暗号トンネルを付ける。"
+    description: "ルーター / L3 スイッチ。通常は暗号を透過する。IPsec 有効時は外側に暗号トンネルを付ける。クラウドでは AWS Transit Gateway・NAT ゲートウェイ / Azure Virtual WAN・NAT Gateway / Google Cloud Router・Cloud NAT / OCI DRG・NAT ゲートウェイ等が該当する（いずれも暗号は透過）。"
 
   - id: LOAD_BALANCER
     label: "ロードバランサー"
@@ -55,7 +57,7 @@ components:
     icon: { kind: builtin, name: "split" }
     shape: rounded
     color: "bg-transparent"
-    description: "ロードバランサー。L7 動作（SSL オフロード）では TLS を終端し、バックエンドへ再暗号化または平文で再接続する。L4 動作では暗号を透過する。"
+    description: "ロードバランサー。L7 動作（SSL オフロード）では TLS を終端し、バックエンドへ再暗号化または平文で再接続する。L4 動作では暗号を透過する。クラウドでは AWS ALB（終端）・NLB（TLS リスナー使用時のみ終端）/ Azure Application Gateway（終端）・Azure Load Balancer（透過）/ Google Cloud Load Balancing / OCI Load Balancer・Network Load Balancer 等が該当する。検査装置へ振り分ける Gateway Load Balancer（AWS / Azure）は透過。"
 
   - id: CDN
     label: "CDN"
@@ -63,7 +65,7 @@ components:
     icon: { kind: builtin, name: "globe" }
     shape: rounded
     color: "bg-transparent"
-    description: "CDN。利用者からの TLS をエッジで終端し、オリジンへ別の TLS で再接続する。L7 の DDoS 対策もここで表す。"
+    description: "CDN。利用者からの TLS をエッジで終端し、オリジンへ別の TLS で再接続する。L7 の DDoS 対策もここで表す。クラウドでは Amazon CloudFront / Azure Front Door / Google Cloud CDN・Media CDN 等が該当する。"
 
   - id: VPN_GATEWAY
     label: "VPNゲートウェイ"
@@ -71,7 +73,7 @@ components:
     icon: { kind: builtin, name: "cable" }
     shape: rounded
     color: "bg-transparent"
-    description: "VPN ゲートウェイ。IPsec / SSL-VPN のトンネルを終端する。トンネル内の通信の暗号は変えない（SSL-VPN のリバースプロキシ型は終端する）。"
+    description: "VPN ゲートウェイ。IPsec / SSL-VPN のトンネルを終端する。トンネル内の通信の暗号は変えない（SSL-VPN のリバースプロキシ型は終端する）。クラウドでは AWS Site-to-Site VPN・Client VPN / Azure VPN Gateway / Google Cloud VPN / OCI Site-to-Site VPN 等が該当する。"
 
   - id: WIRELESS_AP
     label: "無線アクセスポイント"
@@ -95,7 +97,7 @@ components:
     icon: { kind: builtin, name: "brick-wall" }
     shape: rounded
     color: "bg-green-600"
-    description: "ファイアウォール。通常は暗号を透過する。TLS インスペクション（SSL 復号）有効時は復号し、社内 CA で証明書を再署名する。VPN 機能を持つ場合はトンネルを終端する。"
+    description: "ファイアウォール。通常は暗号を透過する。TLS インスペクション（SSL 復号）有効時は復号し、社内 CA で証明書を再署名する。VPN 機能を持つ場合はトンネルを終端する。クラウドでは AWS Network Firewall / Azure Firewall Premium / Google Cloud NGFW Enterprise / OCI Network Firewall 等が該当する（いずれも TLS インスペクション機能を持つ）。"
 
   - id: WAF
     label: "WAF"
@@ -103,7 +105,7 @@ components:
     icon: { kind: builtin, name: "scan-search" }
     shape: rounded
     color: "bg-green-600"
-    description: "WAF。リバースプロキシ型は TLS を終端する。アウトオブバンド型はサーバーの秘密鍵を取り込んで受動的に復号する（静的 RSA 鍵交換に依存するため TLS 1.3 / PQC で機能しなくなる）。"
+    description: "WAF。リバースプロキシ型は TLS を終端する。アウトオブバンド型はサーバーの秘密鍵を取り込んで受動的に復号する（静的 RSA 鍵交換に依存するため TLS 1.3 / PQC で機能しなくなる）。クラウドでは AWS WAF / Azure WAF / Google Cloud Armor / OCI WAF 等が該当する。クラウドの WAF の多くはロードバランサーや CDN に付ける機能で、TLS を終端しているのは付け先側。"
 
   - id: IDS_IPS
     label: "IDS / IPS"
@@ -111,7 +113,7 @@ components:
     icon: { kind: builtin, name: "radar" }
     shape: rounded
     color: "bg-green-600"
-    description: "IDS / IPS。通常は暗号を透過する。鍵を取り込んで受動復号する構成や、復号装置と組み合わせて中身を検査する構成がある。"
+    description: "IDS / IPS。通常は暗号を透過する。鍵を取り込んで受動復号する構成や、復号装置と組み合わせて中身を検査する構成がある。クラウドでは Google Cloud IDS / Azure Firewall Premium の IDPS 等が該当する。"
 
   - id: SECURE_WEB_GATEWAY
     label: "プロキシ / SWG"
@@ -119,7 +121,7 @@ components:
     icon: { kind: builtin, name: "scan-eye" }
     shape: rounded
     color: "bg-green-600"
-    description: "フォワードプロキシ / SWG。利用者の外向き TLS を復号して検査し、社内 CA で証明書を再署名する。"
+    description: "フォワードプロキシ / SWG。利用者の外向き TLS を復号して検査し、社内 CA で証明書を再署名する。クラウドでは Google Cloud Secure Web Proxy 等が該当する。"
 
   - id: SASE
     label: "SASE / SSE"
@@ -127,7 +129,7 @@ components:
     icon: { kind: builtin, name: "globe-lock" }
     shape: rounded
     color: "bg-green-600"
-    description: "SASE / SSE。端末から PoP までをトンネルで結び、PoP で TLS を復号・検査してから外部へ再接続する。"
+    description: "SASE / SSE。端末から PoP までをトンネルで結び、PoP で TLS を復号・検査してから外部へ再接続する。クラウド事業者のものでは Microsoft Entra Internet Access（Global Secure Access）等が該当する。"
 
   - id: EMAIL_GATEWAY
     label: "メールゲートウェイ"
@@ -135,7 +137,7 @@ components:
     icon: { kind: builtin, name: "mail-check" }
     shape: rounded
     color: "bg-green-600"
-    description: "メールゲートウェイ。中継ごとに STARTTLS を終端・再接続する。S/MIME 等のメール本文の暗号は変えない。"
+    description: "メールゲートウェイ。中継ごとに STARTTLS を終端・再接続する。S/MIME 等のメール本文の暗号は変えない。クラウドでは Amazon SES / Azure Communication Services のメール / OCI Email Delivery 等が該当する。"
 
   - id: HSM
     label: "HSM"
@@ -143,4 +145,44 @@ components:
     icon: { kind: builtin, name: "microchip" }
     shape: rounded
     color: "bg-fuchsia-600"
-    description: "HSM。暗号鍵を耐タンパ性のある専用装置で保管・演算する。通信経路上の機器ではないが、TLS 終端機器の秘密鍵や鍵ラッピングの鍵を保管するため、PQC の大きな鍵に対応できるかが移行の制約になる。"
+    description: "HSM。暗号鍵を耐タンパ性のある専用装置で保管・演算する。通信経路上の機器ではないが、TLS 終端機器の秘密鍵や鍵ラッピングの鍵を保管するため、PQC の大きな鍵に対応できるかが移行の制約になる。クラウドでは AWS CloudHSM / Azure Managed HSM・Dedicated HSM / Google Cloud HSM / OCI Vault（HSM 保護鍵）等が該当する。"
+
+  - id: BASTION
+    label: "踏み台"
+    category: PROTECT
+    icon: { kind: builtin, name: "door-closed" }
+    shape: rounded
+    color: "bg-green-600"
+    description: "踏み台。管理者のブラウザ等からの TLS を終端し、対象サーバーへ SSH / RDP で再接続する（区間ごとに暗号方式が変わる）。クラウドでは AWS Systems Manager Session Manager・EC2 Instance Connect Endpoint / Azure Bastion / Google Cloud IAP の TCP 転送 / OCI Bastion 等が該当する。"
+
+  - id: ZTNA_PROXY
+    label: "ZTNA / ID認識プロキシ"
+    category: PROTECT
+    icon: { kind: builtin, name: "user-check" }
+    shape: rounded
+    color: "bg-green-600"
+    description: "ZTNA / ID 認識プロキシ。利用者の TLS を終端して認証・認可した後、社内アプリへ別の接続で中継する。クラウドでは AWS Verified Access / Microsoft Entra Private Access・アプリケーションプロキシ / Google Cloud Identity-Aware Proxy 等が該当する。"
+
+  - id: DEDICATED_LINE
+    label: "専用線 / 閉域接続"
+    category: NETWORK
+    icon: { kind: builtin, name: "spline" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "専用線 / 閉域接続。既定では暗号化されない（閉域でも、盗聴や将来の量子計算機による復号の観点では平文区間）。MACsec や IPsec を重ねた場合にのみ暗号化される。クラウドでは AWS Direct Connect / Azure ExpressRoute / Google Cloud Interconnect / OCI FastConnect 等が該当する。"
+
+  - id: PRIVATE_ENDPOINT
+    label: "プライベートエンドポイント"
+    category: NETWORK
+    icon: { kind: builtin, name: "plug" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "プライベートエンドポイント。クラウドサービスへ閉域で接続する入口で、暗号は透過する（TLS を終端するのは接続先のサービス）。クラウドでは AWS PrivateLink（インターフェイス VPC エンドポイント）/ Azure Private Link（プライベートエンドポイント）/ Google Cloud Private Service Connect / OCI プライベートエンドポイント等が該当する。"
+
+  - id: SERVICE_MESH
+    label: "サービスメッシュ"
+    category: NETWORK
+    icon: { kind: builtin, name: "network" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "サービスメッシュ。各サービスのサイドカー（またはノードのプロキシ）がサービス間の mTLS を終端・再接続する。アプリとサイドカーの間は平文のことが多い。クラウドでは Amazon VPC Lattice・ECS Service Connect / AKS の Istio アドオン / Google Cloud Service Mesh / OCI Service Mesh 等が該当する。"

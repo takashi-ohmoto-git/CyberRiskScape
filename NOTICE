@@ -85,7 +85,8 @@ verbatim.
 5. U.S. National Institute of Standards and Technology (NIST)
    - SP 800-46 Rev.2, SP 800-124 Rev.2, SP 800-207, SP 800-63A, SP 800-63B,
      SP 800-63B-4, SP 800-58, SP 800-41 Rev.1, SP 800-52 Rev.2,
-     SP 800-57 Part 1 Rev.5, SP 800-77 Rev.1, SP 800-153, SP 800-38F
+     SP 800-57 Part 1 Rev.5, SP 800-77 Rev.1, SP 800-153, SP 800-38F,
+     SP 800-53 Rev.5, SP 800-204A, SP 800-207A
    - IR 8259 / 8259A, IR 8547
    - FIPS 203 (ML-KEM), FIPS 204 (ML-DSA), FIPS 205 (SLH-DSA), FIPS 140-3
    - AI Risk Management Framework 1.0 (AI 100-1)
@@ -345,6 +346,24 @@ verbatim.
    https://standards.ieee.org/
    © IEEE. Standard numbers and titles are referenced as factual identifiers
    only; no IEEE text is reproduced.
+
+   Referenced by: data/threat-library/network-infra.yaml,
+                  data/threat-library/pqc.yaml
+
+--------------------------------------------------------------------------------
+23. Cloud provider and service mesh documentation
+   - Amazon Web Services — AWS PrivateLink documentation, "Control access to
+     VPC endpoints using endpoint policies"
+   - Microsoft — Microsoft Learn, "Azure Private Endpoint DNS configuration"
+     and "Configure MACsec on ExpressRoute Direct ports"
+   - Google Cloud — Identity-Aware Proxy, "Securing your app with signed
+     headers"; "VPC Service Controls overview"
+   - Istio (a Cloud Native Computing Foundation project) — "Security" concepts
+   https://docs.aws.amazon.com/ , https://learn.microsoft.com/ ,
+   https://cloud.google.com/ , https://istio.io/
+   © The respective owners. Referenced by title and URL with a short Japanese
+   summary only; no documentation text is reproduced. Product and service names
+   are trademarks of their respective owners.
 
    Referenced by: data/threat-library/network-infra.yaml
 

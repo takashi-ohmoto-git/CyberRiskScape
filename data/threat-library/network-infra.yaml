@@ -1,6 +1,8 @@
-# ネットワーク機器・セキュリティ製品（network-infra コンポーネントライブラリの 14 型）の固有脅威。
+# ネットワーク機器・セキュリティ製品（network-infra コンポーネントライブラリの 19 型）の固有脅威。
 # 境界機器の侵入起点化、TLS インスペクション用 CA 鍵、CDN による第三者の TLS 終端、
-# STARTTLS のダウングレード、L2 のなりすまし、不正アクセスポイントを扱う。
+# STARTTLS のダウングレード、L2 のなりすまし、不正アクセスポイントに加え、
+# 踏み台への管理経路の集中、ZTNA プロキシへのアクセス判定の集中と迂回、専用線の平文区間、
+# プライベートエンドポイント経由の持ち出し、サービスメッシュの mTLS 非強制とメッシュ CA の侵害を扱う。
 # PQC 移行に直結するもの（受動復号・HSM・VPN トンネルの HNDL）は pqc.yaml に置く。
 #
 # 出典（一般的な基準のみを根拠とする。個別の事故報告は出典・事例に用いない）:
@@ -13,6 +15,14 @@
 #   - IETF RFC 8461（SMTP MTA Strict Transport Security）/ RFC 7672（SMTP Security via
 #     Opportunistic DANE TLS）。
 #   - IEEE 802.1X（ポートベースのネットワークアクセス制御）/ IEEE 802.1AE（MACsec）。
+#   - NIST SP 800-207 "Zero Trust Architecture" / SP 800-207A "A Zero Trust Architecture Model for
+#     Access Control in Cloud-Native Applications in Multi-Location Environments"。
+#   - NIST SP 800-204A "Building Secure Microservices-based Applications Using Service-Mesh Architecture"。
+#   - NIST SP 800-53 Rev.5 "Security and Privacy Controls for Information Systems and Organizations"
+#     （AC-17 リモートアクセス・AC-6 最小権限）。
+#   - クラウド事業者の公式ドキュメント（AWS PrivateLink のエンドポイントポリシー、Azure Private Link の
+#     DNS 構成、Azure ExpressRoute の MACsec、Google Cloud IAP の署名付きヘッダー、Google Cloud VPC
+#     Service Controls）と Istio のセキュリティの概念の説明。
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -39,6 +49,29 @@
 #   - CDN（第三者が運用するエッジ）は境界機器ルールの対象から外す（パッチ適用の主体が利用者ではない）。
 #     CDN の固有脅威は CDN のルールで扱う。
 #
+#   network-infra に追加した 5 型（BASTION / ZTNA_PROXY / DEDICATED_LINE / PRIVATE_ENDPOINT /
+#   SERVICE_MESH）について:
+#   - BASTION の Internet 露出 → 境界機器ルールの targetType に BASTION を足し、conditions で踏み台向けの
+#     description を出す（自前の踏み台は修正の適用が利用者の責任で、マネージド型でも認証と到達範囲は
+#     利用者の設定に依存するため。CDN と違い除外しない）。
+#   - 踏み台への特権セッション・資格情報の集中 → PAM の pam-privileged-concentration-001 と同じ脅威
+#     （管理経路の集約点の侵害で配下の全システムへ管理者として到達）。canonicalId を共有し、踏み台専用の
+#     description を持つ別ルールにする（ノード型が違うため同一 subject では畳み込まれない）。
+#     踏み台を経由しない直接の管理経路は pam-bypass-path と同種だが、本ルールの mitigation で触れるに留める。
+#   - ZTNA_PROXY → zt-implicit-trust-network-location-001（閉域網の無認証、エッジ）・zt-vpn-broad-network-
+#     access-001（VPN の到達範囲、エッジ）は ZTNA を導入していない経路の欠陥で、本ファイルのルールは
+#     ZTNA プロキシ自体（ノード）へのアクセス判定の集中と迂回を扱う。IdP 自体の侵害は idp-token-forgery /
+#     idp-single-point-of-failure（IdP ノード）が扱い、本ルールは ZTNA 側から見た依存として述べるに留める。
+#     迂回と利用者情報ヘッダーの偽装は api-gateway-bypass（BACKEND_API 宛てエッジ）と機構が近いが、
+#     subject（ZTNA ノード / API 宛てエッジ）が異なるため別 canonicalId とする。
+#   - DEDICATED_LINE の平文区間 → 汎用の平文ルール（stride-edge-plain-encryption-001）と同じ脅威のため
+#     canonicalId: plaintext-transmission を共有する。同じエッジでは 1 枚に畳み込まれ、二重計上しない。
+#     専用線の HNDL（TLS の古典鍵交換）は pqc.yaml の pqc-dedicated-line-hndl-001 が扱う。
+#   - PRIVATE_ENDPOINT の持ち出し・公開経路へのフォールバック → 既存に同義のルールは無い。新規。
+#   - SERVICE_MESH → mTLS の非強制とメッシュ CA の侵害は機構も対策も異なるため 2 ルールに分ける。
+#     メッシュ CA は TLS インスペクション用 CA（利用者端末が信頼する CA で外部サイトを偽造）とは
+#     信頼する主体と偽造の対象が異なるため別 canonicalId とする。
+#
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する。
 
@@ -59,8 +92,15 @@ rules:
       when:
         # 境界機器が Internet 側の送信元から接続を受けるときに発火する。
         # CDN は第三者が運用するエッジのため対象外（netinfra-cdn-third-party-tls-termination-001 が扱う）。
-        targetType: [FIREWALL, VPN_GATEWAY, LOAD_BALANCER, WAF, ROUTER, SBC, EMAIL_GATEWAY]
+        # BASTION を追加（2026-10）：Internet から到達できる踏み台は管理経路の入口で、自前の踏み台は
+        # 修正の適用が利用者の責任になる。マネージド型でも認証の強さと到達範囲は利用者の設定に依存するため
+        # CDN と違い除外しない。踏み台向けの description は conditions で出し分ける。
+        targetType: [FIREWALL, VPN_GATEWAY, LOAD_BALANCER, WAF, ROUTER, SBC, EMAIL_GATEWAY, BASTION]
         sourceTrust: [Internet]
+      conditions:
+        - when:
+            targetType: [BASTION]
+          description: "{{targetName}} は信頼境界の外（Internet 扱い）にある {{sourceName}} から到達できる踏み台である。踏み台は配下のサーバーへの管理経路の入口のため、攻撃者は公開された SSH / RDP / Web コンソールに対して既知の脆弱性を悪用したり、パスワードの総当たりや流出した資格情報の試行を行ったりして、成功すれば内部のサーバーへ管理者として到達できる（Can）。自前で構築した踏み台サーバーでは、OS とリモート接続ソフトウェアの修正の適用が利用者の責任になる。マネージドの踏み台では修正は事業者が行うが、認証の強さと到達できるサーバーの絞り込みは利用者の設定に依存する。一方、踏み台への接続を IdP の認証（フィッシング耐性のある MFA）や ZTNA の後ろに置いてインターネットから直接到達できないようにするか、受信ポートを持たない接続方式（エージェントからの外向き接続）を使い、自前の踏み台の修正を期限内に適用していれば、公開された面への総当たりや既知の手口は成立しない（Cannot）。blast radius は {{targetName}} から到達できるすべてのサーバーと、その管理者権限。"
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "ID.RA-01"
@@ -209,3 +249,173 @@ rules:
     references:
       - title: "NIST SP 800-153 - Guidelines for Securing Wireless Local Area Networks (WLANs)（不正アクセスポイントの検知と無線の構成）"
         url: "https://csrc.nist.gov/pubs/sp/800/153/final"
+
+  # ── 踏み台への特権セッション・資格情報の集中（内在）────────────────────
+  # PAM の pam-privileged-concentration-001 と同じ脅威。踏み台専用の description を持つ別ルール。
+  - id: netinfra-bastion-privileged-path-concentration-001
+    canonicalId: pam-privileged-concentration
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "踏み台への特権セッションと資格情報の集中"
+    severity: High
+    description: "{{nodeName}} は管理者の接続を受けて対象サーバーへ SSH / RDP で中継する、管理経路の集約点である。{{nodeName}} には特権セッションが集まり、対象サーバーへの接続に使う資格情報（SSH の秘密鍵・管理者パスワード・クラウドの権限）が置かれていることも多い。{{nodeName}} 自体や、その管理権限・利用者の資格情報を奪った攻撃者は、配下のすべてのサーバーへ正規の管理経路で管理者として到達でき、実行中の特権セッションを盗み見たり乗っ取ったりできる（Can）。操作は正規の管理経路を通るため、通常の運用と区別しにくい。一方、{{nodeName}} の利用に IdP 経由のフィッシング耐性のある MFA を必須にし、対象サーバーの資格情報を {{nodeName}} に置かず接続のたびに短命の資格情報（証明書・一時トークン）を発行し、利用者ごとに到達できるサーバーを絞り、セッションを記録して独立した監視基盤へ送っていれば、1 つのアカウントや踏み台が奪われても全サーバーへの到達や資格情報の持ち出しはできず、不審な操作は検知される（Cannot）。blast radius は {{nodeName}} から到達できるすべてのサーバーと、その管理者権限。"
+    mitigation: "[Foundation] 踏み台の利用に MFA を必須にし、利用者ごとに到達できるサーバーと時間帯を絞る。踏み台に対象サーバーの SSH の秘密鍵やパスワードを置かない。踏み台の OS・ソフトウェアを最新に保ち、踏み台の上で管理以外の作業をしない。 [Enterprise] 認証を IdP に集約してフィッシング耐性のある MFA を使い、対象サーバーへの接続に短命の証明書や一時的な資格情報を使う。特権セッションを記録し、操作ログを SIEM に送って監視する。踏み台を経由しない直接の管理経路（管理ポートの開放）を塞ぐ。 [Advanced] 常設の到達権限を持たせず、作業の承認ごとに一時的な権限を与える（ジャストインタイム）。踏み台をセッションごとに作り直す使い捨ての構成にするか、受信ポートを持たないマネージドの接続方式にして、踏み台そのものを攻撃面にしない。"
+    appliesTo:
+      kind: node
+      nodeType: BASTION
+      # 特権セッションと資格情報が集まることは踏み台の役割そのもので、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-03"
+    references:
+      - title: "NIST SP 800-207 - Zero Trust Architecture（ポリシー強制点と、リクエストごとの最小権限の付与）"
+        url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+      - title: "NIST SP 800-53 Rev.5 - Security and Privacy Controls for Information Systems and Organizations（AC-17 リモートアクセス / AC-6 最小権限）"
+        url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"
+
+  # ── ZTNA プロキシへのアクセス判定の集中と迂回（内在）────────────────────
+  - id: netinfra-ztna-proxy-access-concentration-001
+    canonicalId: ztna-proxy-access-concentration
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "ZTNA / ID 認識プロキシへのアクセス判定の集中と迂回"
+    severity: High
+    description: "{{nodeName}} は利用者の TLS を終端し、IdP の認証結果と端末の状態をもとに社内アプリへのアクセスを判定して中継する。すべてのアプリへのアクセスの可否が {{nodeName}} のポリシーと、それが信頼する IdP に集約されるため、ポリシーの誤り（広すぎるアプリの範囲・全員を許可する規則・端末状態の確認漏れ）、IdP の侵害やトークンの偽造、{{nodeName}} の管理コンソールや事業者の侵害があると、攻撃者は配下の全アプリへ正規の利用者として到達できる（Can）。通信は {{nodeName}} で一度平文になるため、事業者の設備で中身を読まれる余地もある。また、アプリが {{nodeName}} 以外の経路（社内ネットワーク・VPN）からも到達でき、{{nodeName}} が付けた利用者情報のヘッダーを検証せずに信用している場合、攻撃者は {{nodeName}} を迂回してヘッダーを偽装し、任意の利用者になりすませる。一方、アプリごとに許可する利用者と端末の状態を最小限に定義して変更をレビューし、管理コンソールを MFA と監査ログで保護し、アプリへの接続を {{nodeName}} からの経路に限ったうえで、アプリ側でも {{nodeName}} が付けた署名付きの利用者情報（署名付きヘッダー・JWT）を検証していれば、1 つの規則の誤りで全アプリが開くことはなく、迂回や偽装した利用者情報は受け付けられない（Cannot）。blast radius は {{nodeName}} の背後にある全アプリと、その利用者のデータ。"
+    mitigation: "[Foundation] アプリごとに許可する利用者・グループ・端末の状態を明示し、全員を許可する規則や広いネットワーク範囲の規則を使わない。管理コンソールの管理者を少数に限り MFA を必須にする。アプリへの接続を ZTNA プロキシ（またはそのコネクタ）からの経路に限り、社内ネットワークや VPN からの直接の到達を塞ぐ。 [Enterprise] アプリ側で、ZTNA プロキシが付けた署名付きの利用者情報（署名付きヘッダー・JWT）の署名・発行者・オーディエンスを検証し、署名の無いヘッダーを信用しない。ポリシーの変更をレビュー必須にし、監査ログを SIEM に送る。IdP の障害・侵害時の影響範囲と切り戻しの手順を確認する。 [Advanced] ポリシーをコードとして管理し、広すぎる規則を CI で検出して止める。アクセスのたびに端末の状態とリスクを再評価し、セッション中でも条件が変われば接続を切る。機密性の高いアプリはアプリ側でも認可を行い、プロキシ単独の判定に依存しない。"
+    appliesTo:
+      kind: node
+      nodeType: ZTNA_PROXY
+      # アクセス判定と TLS 終端が集まることは ZTNA プロキシの役割そのもので、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "NIST SP 800-207 - Zero Trust Architecture（ポリシー決定点・ポリシー強制点と、その迂回の防止）"
+        url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+      - title: "Google Cloud - Identity-Aware Proxy: Securing your app with signed headers（プロキシが付けた利用者情報の検証）"
+        url: "https://cloud.google.com/iap/docs/signed-headers-howto"
+
+  # ── 専用線 / 閉域接続の平文区間（経路依存）────────────────────────────
+  # 汎用の平文ルール（stride-edge-plain-encryption-001）と同じ脅威。canonicalId を共有し、同じエッジでは
+  # 1 枚に畳み込まれる（severity が同じ High のため、ライブラリの読み込み順で先に来る本ルールが代表になる）。
+  - id: netinfra-dedicated-line-unencrypted-001
+    canonicalId: plaintext-transmission
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "専用線 / 閉域接続の暗号化していない区間の盗聴"
+    severity: High
+    description: "{{sourceName}} と {{targetName}} の間の通信は専用線 / 閉域接続を通るが、暗号化されていない。閉域接続はインターネットからは隔てられているが、通信事業者の伝送設備・中継局・コロケーション施設の配線や機器を経由しており、その区間に物理的・論理的にアクセスできる者（事業者の設備の侵害、施設内での不正な接続、回線の誤った収容）は、通信をそのまま読み、改ざんできる（Can）。「閉域だから安全」という前提で認証や暗号化を省いた業務通信（データベースの複製・ファイル転送・管理通信）がまとめて流れるため、1 か所の盗聴で得られる情報が多い。平文のまま記録された通信は、将来の量子計算機を待たずにいつでも読める。一方、回線に MACsec（IEEE 802.1AE）や IPsec を重ねるか、アプリの通信を TLS にしていれば、事業者の設備で傍受されても中身は読めず、改ざんは検知される（Cannot）。blast radius は {{sourceName}} と {{targetName}} の間で専用線 / 閉域接続を通る全通信。"
+    mitigation: "[Foundation] 専用線 / 閉域接続を通る通信を棚卸しし、平文のプロトコル（データベースの複製・ファイル転送・管理通信等）を TLS 等の暗号化された方式に切り替える。閉域であることを理由に認証や暗号化を省かない。 [Enterprise] 回線に MACsec（対応するポート・回線で）または IPsec VPN を重ね、回線全体を暗号化する。暗号化の鍵を定期的に更新し、暗号化されていない状態に落ちたら警告する設定にする。 [Advanced] 回線の暗号化だけに頼らず、アプリ間の通信もすべて相互認証付きの TLS にする（多層の暗号化）。長期の秘匿が必要な通信は PQC ハイブリッドの鍵交換に対応した方式にする。"
+    appliesTo:
+      kind: edge
+      # 専用線 / 閉域接続の両側の区間のうち、平文のものだけで発火する（TLS の区間は pqc-dedicated-line-hndl-001）。
+      anyOf:
+        - targetType: [DEDICATED_LINE]
+          encryption: [Plain]
+        - sourceType: [DEDICATED_LINE]
+          encryption: [Plain]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+    references:
+      - title: "NIST SP 800-52 Rev.2 - Guidelines for the Selection, Configuration, and Use of TLS Implementations（通信の暗号化）"
+        url: "https://csrc.nist.gov/pubs/sp/800/52/r2/final"
+      - title: "NIST SP 800-77 Rev.1 - Guide to IPsec VPNs（拠点間の回線の暗号化）"
+        url: "https://csrc.nist.gov/pubs/sp/800/77/r1/final"
+      - title: "IEEE 802.1AE - Media Access Control (MAC) Security（MACsec によるリンク暗号化）"
+        url: "https://standards.ieee.org/"
+      - title: "Microsoft Learn - Configure MACsec on ExpressRoute Direct ports（閉域接続での MACsec）"
+        url: "https://learn.microsoft.com/azure/expressroute/expressroute-howto-macsec"
+
+  # ── プライベートエンドポイント経由の持ち出しと公開経路へのフォールバック（内在）──
+  - id: netinfra-private-endpoint-exfiltration-001
+    canonicalId: private-endpoint-data-exfiltration
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "プライベートエンドポイント経由の攻撃者所有リソースへの持ち出しと公開経路へのフォールバック"
+    severity: Medium
+    description: "{{nodeName}} は閉域ネットワークからクラウドサービスへ接続する入口で、ネットワーク上は同じ種類のサービスへの通信として扱われる。エンドポイントポリシー（接続先のアカウント・リソースの制限）を設定していない場合、閉域内の侵害されたワークロードや内部の利用者は、{{nodeName}} を通じて攻撃者が所有する別のアカウントのストレージ等へデータを書き出せる（Can）。通信は閉域内で完結し、宛先も正規のサービスに見えるため、インターネットへの出口の監視や許可リストでは止まらない。また、プライベート DNS の設定が欠けている、または一部の環境（オンプレミス等）で解決されない場合、サービス名は公開のアドレスに解決され、通信は気づかれないまま公開経路へ出て、閉域を前提にした制御を通らない。一方、エンドポイントポリシーで接続先を自組織のアカウント・リソースに限定し、サービス側のポリシーでも {{nodeName}} 経由以外のアクセスを拒否し（データ境界の制御）、閉域内の全環境でプライベート DNS の解決を確認していれば、攻撃者のリソースへの持ち出しも公開経路への迂回もできない（Cannot）。blast radius は {{nodeName}} を使える閉域内のワークロードが扱う全データ。"
+    mitigation: "[Foundation] プライベートエンドポイントごとにエンドポイントポリシーを設定し、接続先を自組織のアカウント・リソースに限定する。閉域内のすべての環境（オンプレミスからの名前解決を含む）で、サービス名がプライベートアドレスに解決されることを確認する。 [Enterprise] サービス側のリソースポリシーで、プライベートエンドポイント経由かつ自組織からのアクセスだけを許可し、不要な公開エンドポイントを無効にする。データ境界の制御（VPC Service Controls 等）で組織外のリソースへの書き出しを拒否する。プライベートエンドポイント経由の操作をクラウドの監査ログで監視する。 [Advanced] データ境界のポリシーをコードとして管理して全アカウントに一律に適用し、自組織外のリソースへのアクセスや公開アドレスへの名前解決を検知して警告する。"
+    appliesTo:
+      kind: node
+      nodeType: PRIVATE_ENDPOINT
+      # 接続先を制限しない限り同種のサービスなら何にでも届くことはプライベートエンドポイントの性質で、
+      # 接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "AWS - Control access to VPC endpoints using endpoint policies（エンドポイントポリシーによる接続先の制限）"
+        url: "https://docs.aws.amazon.com/vpc/latest/privatelink/vpc-endpoints-access.html"
+      - title: "Microsoft Learn - Azure Private Endpoint DNS configuration（プライベートエンドポイントの名前解決）"
+        url: "https://learn.microsoft.com/azure/private-link/private-endpoint-dns"
+      - title: "Google Cloud - VPC Service Controls overview（データ境界による持ち出しの防止）"
+        url: "https://cloud.google.com/vpc-service-controls/docs/overview"
+
+  # ── サービスメッシュの mTLS の非強制とサイドカーまでの平文区間（内在）────────
+  - id: netinfra-service-mesh-mtls-not-enforced-001
+    canonicalId: service-mesh-mtls-not-enforced
+    framework: STRIDE
+    category: "Spoofing"
+    name: "サービスメッシュの mTLS の非強制（permissive モード）とサイドカーまでの平文区間"
+    severity: Medium
+    description: "{{nodeName}} はサービス間の通信を各サービスのサイドカー（またはノードのプロキシ）で mTLS にする。移行中によく使われる permissive モード（mTLS と平文の両方を受け付ける）のままにしている場合、メッシュの外にある攻撃者のワークロードや侵害されたメッシュ外のポッドは、平文でサービスに直接接続し、相互認証もサービス ID による認可も素通りできる（Can）。サイドカーを入れ忘れたサービスや、サイドカーを経由しない経路（ホストネットワーク・ポッド IP への直接の接続）でも同じことが起きる。また、アプリとサイドカーの間は通常は平文で、同じポッドやノードで動く侵害されたコンテナ、ノードの権限を持つ攻撃者は暗号化される前の通信を読める。一方、mTLS を strict モード（平文を拒否）にし、サービスごとの認可ポリシーを既定拒否で定義し、サイドカーの注入漏れを検知して、ノードの権限とコンテナの分離を保っていれば、メッシュの外からの平文の接続やサービス ID を持たない接続は拒否される（Cannot）。blast radius は mTLS を強制していないサービスと、そこから到達できるメッシュ内のサービス。"
+    mitigation: "[Foundation] mTLS を strict モード（平文を拒否）にする。permissive モードは移行期間に限り、期限と対象を決めて管理する。サイドカーが注入されていないサービスと、メッシュを経由しない経路を洗い出す。 [Enterprise] サービスごとの認可ポリシーを既定拒否で定義し、送信元のサービス ID ごとに許可する。サイドカーの注入漏れや permissive の設定をアドミッション制御で拒否する。ノードとコンテナの権限を最小にし、同じポッドに不要なコンテナを同居させない。 [Advanced] mTLS の状態と認可の判定をメッシュのテレメトリーで監視し、平文の接続や想定外の送信元を検知する。機密性の高いサービスはアプリ自身でも送信元を認証・認可し、メッシュの設定だけに依存しない。"
+    appliesTo:
+      kind: node
+      nodeType: SERVICE_MESH
+      # mTLS の強制の度合いとサイドカーまでの平文区間はメッシュの構成の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+    references:
+      - title: "NIST SP 800-204A - Building Secure Microservices-based Applications Using Service-Mesh Architecture（サービス間の mTLS と認可）"
+        url: "https://csrc.nist.gov/pubs/sp/800/204/a/final"
+      - title: "NIST SP 800-207A - A Zero Trust Architecture Model for Access Control in Cloud-Native Applications in Multi-Location Environments（サービス ID に基づくアクセス制御）"
+        url: "https://csrc.nist.gov/pubs/sp/800/207/a/final"
+      - title: "Istio - Security concepts（ピア認証のモードと認可ポリシー）"
+        url: "https://istio.io/latest/docs/concepts/security/"
+
+  # ── メッシュ CA の鍵の侵害によるサービスのなりすまし（内在）─────────────
+  - id: netinfra-service-mesh-ca-key-compromise-001
+    canonicalId: service-mesh-ca-key-compromise
+    framework: STRIDE
+    category: "Spoofing"
+    name: "メッシュ CA の鍵の侵害によるサービスのなりすまし"
+    severity: High
+    description: "{{nodeName}} の制御プレーンは、各サービスのサイドカーへサービス ID（SPIFFE ID 等）を表す証明書を発行するメッシュ CA を持つ。メッシュ CA の署名鍵が盗まれる（Kubernetes のシークレットに置かれた鍵の読み出し、制御プレーンの侵害等）と、攻撃者は任意のサービスの証明書を作り、mTLS とサービス ID に基づく認可を通過して、決済・認証などあらゆるサービスになりすませる（Can）。制御プレーンの権限があれば、認可ポリシーの書き換えや通信の転送先の変更もできる。一方、メッシュ CA を組織の PKI の配下の中間 CA にして署名鍵を鍵管理サービスや HSM に置いて取り出せないようにし、ワークロード証明書の有効期間を短くし、制御プレーンとシークレットへのアクセスを最小限の管理者に絞って監視していれば、鍵そのものは持ち出せず、偽造できる範囲と期間も限られる（Cannot）。blast radius は {{nodeName}} に参加するすべてのサービスの ID と、それに基づく認可。"
+    mitigation: "[Foundation] メッシュ CA の署名鍵の保管場所を確認し、自己署名のルート CA を既定のまま Kubernetes のシークレットに置かない。制御プレーンの名前空間とシークレットを読める権限を最小限の管理者に絞る。ワークロード証明書の有効期間を短くする。 [Enterprise] メッシュ CA を組織の PKI の配下の中間 CA にし、署名鍵を鍵管理サービスや HSM に置く（外部 CA との連携）。制御プレーンの設定変更とシークレットへのアクセスを監査ログで監視する。 [Advanced] メッシュ CA の失効と再発行、全ワークロードの証明書の入れ替えを短時間で行える手順を用意し、訓練する。ワークロード ID の発行に、ノードやワークロードの検証（アテステーション）を組み合わせる。"
+    appliesTo:
+      kind: node
+      nodeType: SERVICE_MESH
+      # サービス ID を発行する CA を持つことはメッシュの機能そのもので、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "NIST SP 800-204A - Building Secure Microservices-based Applications Using Service-Mesh Architecture（メッシュの証明書の発行と鍵の保護）"
+        url: "https://csrc.nist.gov/pubs/sp/800/204/a/final"
+      - title: "NIST SP 800-57 Part 1 Rev.5 - Recommendation for Key Management（CA 鍵の保護と有効期間）"
+        url: "https://csrc.nist.gov/pubs/sp/800/57/pt1/r5/final"
+      - title: "Istio - Security concepts（ID と証明書の管理）"
+        url: "https://istio.io/latest/docs/concepts/security/"
