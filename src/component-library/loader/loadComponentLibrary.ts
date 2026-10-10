@@ -157,9 +157,11 @@ export function loadComponentLibraries(files: readonly RawYamlFile[]): LoadResul
     }
   }
 
-  // カテゴリを order 昇順 → id 辞書順でソート
+  // カテゴリをラベルのアルファベット順（大文字小文字を区別しない）→ id 辞書順でソート。
+  // ライブラリが増えて order の手動採番では並びを保てなくなったため（2026-10-10）。order は互換のため残す
   const categories = [...categoriesById.values()].sort(
-    (a, b) => a.order - b.order || a.id.localeCompare(b.id),
+    (a, b) =>
+      a.label.localeCompare(b.label, 'en', { sensitivity: 'base' }) || a.id.localeCompare(b.id),
   );
 
   return { libraries, categories, components, componentToLibrary, warnings };

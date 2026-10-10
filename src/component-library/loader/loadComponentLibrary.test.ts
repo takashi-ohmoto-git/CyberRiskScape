@@ -61,6 +61,12 @@ describe('loadComponentLibraries - 同梱データ', () => {
     const result = loadComponentLibraries(loadAllYamlFiles());
     expect(result.warnings).toEqual([]);
   });
+
+  it('カテゴリはラベルのアルファベット順に並ぶ', () => {
+    const labels = loadComponentLibraries(loadAllYamlFiles()).categories.map((c) => c.label);
+    const sorted = [...labels].sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
+    expect(labels).toEqual(sorted);
+  });
 });
 
 describe('parseComponentLibraryFile - バリデーション', () => {

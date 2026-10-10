@@ -36,7 +36,8 @@ export function Legend() {
 
   // 描画前に「使われている記号」を集計。カテゴリ順→ラベル順でコンポーネントを安定整列する。
   const componentTypes = presentComponentTypes(nodes);
-  const categoryOrder = new Map(registry.getCategories().map((c) => [c.id, c.order]));
+  // パレットと同じ並び（registry のカテゴリ順）に揃える
+  const categoryOrder = new Map(registry.getCategories().map((c, i) => [c.id, i]));
   const components = componentTypes
     .map((type) => ({ type, def: registry.get(type) }))
     .sort((a, b) => {
