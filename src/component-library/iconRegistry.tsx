@@ -99,6 +99,9 @@ import {
   AudioWaveform,
   Lock,
   Link,
+  Equal,
+  Square,
+  CircleDot,
   type LucideIcon,
 } from 'lucide-react';
 import { cloneElement, createElement, type ReactElement } from 'react';
@@ -210,6 +213,9 @@ const BUILTIN_ICONS: Record<string, LucideIcon> = {
   'audio-waveform': AudioWaveform,
   lock: Lock,
   link: Link,
+  equal: Equal,
+  square: Square,
+  'circle-dot': CircleDot,
 };
 
 const FALLBACK_ICON: LucideIcon = HelpCircle;

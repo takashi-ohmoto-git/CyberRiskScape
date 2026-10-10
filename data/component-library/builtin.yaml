@@ -45,7 +45,7 @@ components:
   - id: EXTERNAL_ENTITY
     label: "外部主体"
     category: CLASSIC_DFD
-    icon: { kind: builtin, name: "building-2" }
+    icon: { kind: builtin, name: "square" }
     shape: rectangle
     color: "bg-transparent"
     description: "システム境界の外側にいるアクター（顧客、外部システム、規制当局など）。"
@@ -53,7 +53,7 @@ components:
   - id: PROCESS
     label: "プロセス"
     category: CLASSIC_DFD
-    icon: { kind: builtin, name: "cog" }
+    icon: { kind: builtin, name: "circle" }
     shape: circle
     color: "bg-transparent"
     description: "データを変換・処理する機能要素。Yourdon 記法では円で表現。"
@@ -61,7 +61,7 @@ components:
   - id: DATA_STORE
     label: "データストア"
     category: CLASSIC_DFD
-    icon: { kind: builtin, name: "hard-drive" }
+    icon: { kind: builtin, name: "equal" }
     shape: data-store
     color: "bg-transparent"
     description: "永続化されたデータの格納場所（DB、ファイルストア、キャッシュ）。"
@@ -156,7 +156,7 @@ components:
   - id: CONNECTOR
     label: "コネクタ"
     category: NETWORK
-    icon: { kind: builtin, name: "circle" }
+    icon: { kind: builtin, name: "circle-dot" }
     shape: connector
     color: "bg-transparent"
     description: "中継ノード（メッセージブローカー、iPaaS、サイドカープロキシ）。クラウドでは Amazon SQS・SNS・EventBridge・MSK / Azure Service Bus・Event Hubs / Google Cloud Pub/Sub / OCI Streaming、DB プロキシの Amazon RDS Proxy 等が該当する。"

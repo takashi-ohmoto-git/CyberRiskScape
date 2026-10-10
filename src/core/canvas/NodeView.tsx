@@ -12,6 +12,7 @@ import { SEVERITY_BG } from '../model/severityColors';
 import { getNodeDisplayName } from '../model/nodeDisplay';
 import { formatElementalId } from '../model/elementalId';
 import { SHAPE_DIMENSIONS } from './nodeGeometry';
+import { isDfdNotationCategory } from './dfdNotation';
 import { useLocale, useT } from '../../i18n';
 
 /** 未登録コンポーネント型のフォールバック表示。 */
@@ -110,6 +111,7 @@ export function NodeView({
   const shape: ShapeKind = config?.shape ?? FALLBACK_SHAPE;
   const color = config?.color ?? FALLBACK_COLOR;
   const style = SHAPE_STYLES[shape];
+  const dfdNotation = isDfdNotationCategory(config?.category);
   const dims = SHAPE_DIMENSIONS[shape];
   const severity = maxSeverity(threats);
   const visibleChildren = childNodes.slice(0, BADGE_VISIBLE_LIMIT);
@@ -190,16 +192,24 @@ export function NodeView({
         </div>
       )}
 
-      <div
-        className={`${color} ${style.iconWrapper} text-white flex items-center justify-center`}
-      >
-        {renderIcon(config?.icon ?? { kind: 'builtin', name: 'box' }, { size: style.iconSize })}
-      </div>
-
-      {style.showLabel && (
-        <span className="text-xs font-black text-center uppercase tracking-widest text-slate-400 px-1 leading-tight">
+      {dfdNotation ? (
+        <span className="text-sm font-bold text-center text-slate-200 px-3 leading-tight break-words max-w-full">
           {getNodeDisplayName(node)}
         </span>
+      ) : (
+        <>
+          <div
+            className={`${color} ${style.iconWrapper} text-white flex items-center justify-center`}
+          >
+            {renderIcon(config?.icon ?? { kind: 'builtin', name: 'box' }, { size: style.iconSize })}
+          </div>
+
+          {style.showLabel && (
+            <span className="text-xs font-black text-center uppercase tracking-widest text-slate-400 px-1 leading-tight">
+              {getNodeDisplayName(node)}
+            </span>
+          )}
+        </>
       )}
 
       <button
