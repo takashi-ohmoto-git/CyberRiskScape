@@ -66,7 +66,7 @@ For how to load them, see [Creating and Using Templates](templates.md).
 (Internet) are an attacker, a remote employee and a maintenance vendor; in the organization's public segment (DMZ) are
 the public website and an SSL-VPN. Lines also reach straight from the Internet to the search cluster (Elasticsearch),
 the local LLM (Ollama), the remote desktop of a business server and a maintenance PC (TeamViewer), all of which should
-be internal. Loading it produces **91 threats** (Critical 13, High 43, Medium 35) at the time of writing.
+be internal. Loading it produces **102 threats** (Critical 16, High 46, Medium 40) at the time of writing.
 
 ---
 
@@ -187,7 +187,7 @@ Besides `.json.gz`, it also reads extracted JSON Lines, a JSON array of banners,
 ![Diagram created from a Shodan export](../assets/guide/exposure/06-shodan-overview.png)
 
 A sample is in [`templates/shodan-sample.json`](templates/shodan-sample.json) (fictional data built with documentation addresses).
-It produces a diagram of 7 services (6 hosts) and **96** threats at the time of writing.
+It produces a diagram of 7 services (6 hosts) and **104** threats at the time of writing.
 
 The imported diagram is input for the step 2 decisions. Shodan cannot tell you where an asset is supposed to sit (DMZ or internal)
 or whether it is a vendor path, so finish the diagram by adding to it, as in the §3 templates.
@@ -229,7 +229,7 @@ How CISA's measures map to CyberRiskScape inputs.
 
 ![Diagram after remediation](../assets/guide/exposure/03-after.png)
 
-In the "after" diagram, threats drop to **63** (Critical 6, High 27, Medium 30) at the time of writing.
+In the "after" diagram, threats drop to **75** (Critical 8, High 33, Medium 34) at the time of writing.
 
 ![Attack Surface Attributes of the public website after remediation](../assets/guide/exposure/04-web-after.png)
 
@@ -245,9 +245,10 @@ reason.
 | AiTM phishing session-token theft (MFA bypass) (`zt-aitm-session-token-theft-001`) | Even with MFA, push notifications and one-time codes can be defeated by adversary-in-the-middle phishing | Mitigate by moving to the **phishing-resistant MFA** (FIDO2 / passkeys) that CISA recommends |
 | Local credentials that bypass the central IdP (`identity-local-credential-outside-idp-001`) | The diagram does not show an IdP | If the VPN's authentication is delegated to an IdP, place the IdP on the diagram and set it as the line's "credential issuer" |
 
-**Some measures cannot be expressed on the diagram.** CISA's "change default passwords" and "patch, and replace
-products that are out of support" have no attribute on the diagram. Record them in the control implementation status or
-notes on the threat card, and check them in the step 4 regular evaluation.
+**Some measures cannot be expressed on the diagram.** CISA's "change default passwords" has no attribute on the diagram.
+Record it in the control implementation status or notes on the threat card, and check it in the step 4 regular evaluation.
+For "patch", you can record the patch status in the **Operational posture** section of the node panel. When it is missing or
+not entered, `posture-patch-missing-001` appears (Critical for a public server with a Global IP).
 
 ---
 
@@ -263,14 +264,15 @@ node dist-cli/main.js diff baseline.json current.json --fail-on High
 ```
 
 Comparing the after-remediation diagram, as the baseline, with a diagram where the exposure you thought you had removed
-(RDP, search cluster, local LLM, TeamViewer) has come back finds **24** new threats of High or above and stops with exit
+(RDP, search cluster, local LLM, TeamViewer) has come back finds **26** new threats of High or above and stops with exit
 code 1 (confirmed with the templates, at the time of writing; DF and C numbers vary by diagram). Adding `--locale en`
 makes the threat names and node labels English.
 
 ```text
---fail-on High: 24 new unsuppressed threat(s) at or above the threshold.
-  - [Critical] DF9 Unauthenticated queries Spoofing
-  - [Critical] DF10 Unauthenticated API calls Spoofing
+--fail-on High: 26 new unsuppressed threat(s) at or above the threshold.
+  - [Critical] C8 Remote Desktop (RDP 3389) Patches for known vulnerabilities are not applied
+  - [High] C9 Maintenance PC (TeamViewer 5938) Patches for known vulnerabilities are not applied
+  - [Critical] DF11 Unauthenticated queries Spoofing
   ...
 ```
 
@@ -293,8 +295,8 @@ node dist-cli/main.js import-shodan 2026-11.json.gz --out 2026-11.json
 node dist-cli/main.js diff 2026-10.json 2026-11.json --fail-on High
 ```
 
-Adding one Redis (6379) banner to the sample and comparing gives 8 added and 0 removed, and the gate stops on 4 threats of High or above
-(Redis information disclosure and tampering, and eavesdropping and password-only authentication on its line) at the time of writing.
+Adding one Redis (6379) banner to the sample and comparing gives 11 added and 0 removed, and the gate stops on 5 threats of High or above
+(Redis information disclosure, tampering and short log retention, and eavesdropping and password-only authentication on its line) at the time of writing.
 A hand-drawn diagram (such as the §3 templates) and an imported one have different IDs, so you cannot `diff` the two against each other.
 
 ---
@@ -315,7 +317,7 @@ entry points to protect first.
   necessarily reflect the latest state
 - **Settings that cannot be seen from outside are unknown.** Enter source IP restrictions, WAF, logs and the like only
   after confirming them. Setting them to "Yes" on a guess only makes the threats look like they are gone
-- **Default passwords, patch status and known vulnerabilities (CVEs) are not assessed.** Read the results together with
+- **Default passwords and known vulnerabilities (CVEs) are not assessed.** Patches are judged only from the status entered in the operational posture (`posture-patch-missing-001` when missing or not entered). Read the results together with
   vulnerability scans and patch management
 - **Attack Surface Attributes exist only on front-end servers and API gateways.** The exposure of data stores and LLMs
   is expressed through the authentication and encryption of the lines from the Internet

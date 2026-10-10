@@ -118,7 +118,7 @@ It gives you a yardstick for **which maturity level to aim at** when designing a
 
 ## 7. Things to keep in mind
 
-- **Not every threat has a mapped item.** 103 of the 126 threat rules currently carry compliance
+- **Not every threat has a mapped item.** 198 of the 221 threat rules currently carry compliance
   references. A threat without one is a point that sits outside those frameworks.
 - **What the exports include depends on the format.** The PDF report lists each threat's mapped items
   with their titles, and the JSON export carries them as `complianceRefs`. The CSV has no compliance

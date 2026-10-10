@@ -1,0 +1,303 @@
+{
+  "schemaVersion": 1,
+  "kind": "cyberriskscape-template",
+  "name": "Membership site - after (for the IPA alert check)",
+  "layer": {
+    "nodes": [
+      {
+        "id": "nms_member",
+        "type": "USER",
+        "x": 60,
+        "y": 70,
+        "label": "Member",
+        "userTrustAttribute": "Guest"
+      },
+      {
+        "id": "nms_phone",
+        "type": "SMARTPHONE",
+        "x": 0,
+        "y": 0,
+        "label": "Member's smartphone",
+        "parentId": "nms_member",
+        "managedState": "Unmanaged"
+      },
+      {
+        "id": "nms_pay",
+        "type": "BACKEND_API",
+        "x": 60,
+        "y": 430,
+        "label": "Payment provider API",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Provider",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-10"
+        }
+      },
+      {
+        "id": "nms_mail",
+        "type": "MAIL",
+        "x": 60,
+        "y": 250,
+        "label": "Email delivery service (SaaS)",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Both",
+          "encryptionAtRest": "ProviderManagedKey",
+          "accountReview": "Periodic",
+          "lastReviewedAt": "2026-10-10"
+        }
+      },
+      {
+        "id": "nms_idp",
+        "type": "IDENTITY_PROVIDER",
+        "x": 60,
+        "y": 610,
+        "label": "Workforce IdP",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "accountReview": "Periodic",
+          "lastReviewedAt": "2026-10-10"
+        }
+      },
+      {
+        "id": "nms_front",
+        "type": "FRONT_END_SERVER",
+        "x": 440,
+        "y": 70,
+        "label": "Member site (front end)",
+        "attackSurface": {
+          "hasGlobalIp": true,
+          "hasUserAuthentication": true,
+          "hasAccessLog": true,
+          "hasWafProtection": true,
+          "hasDdosProtection": true
+        },
+        "posture": {
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-10"
+        }
+      },
+      {
+        "id": "nms_form",
+        "type": "WEB_FORM",
+        "x": 440,
+        "y": 250,
+        "label": "Web form (sign-up / inquiry)",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-10"
+        }
+      },
+      {
+        "id": "nms_admin",
+        "type": "FRONT_END_SERVER",
+        "x": 440,
+        "y": 610,
+        "label": "Admin console",
+        "attackSurface": {
+          "hasGlobalIp": true,
+          "hasSourceIpRestriction": true,
+          "hasRemoteAccessRestriction": true,
+          "hasUserAuthentication": true,
+          "hasAccessLog": true,
+          "hasWafProtection": true
+        },
+        "posture": {
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-10"
+        }
+      },
+      {
+        "id": "nms_ops",
+        "type": "USER",
+        "x": 60,
+        "y": 790,
+        "label": "Operator",
+        "userTrustAttribute": "Employee"
+      },
+      {
+        "id": "nms_pc",
+        "type": "PC",
+        "x": 0,
+        "y": 0,
+        "label": "Operator's PC",
+        "parentId": "nms_ops",
+        "managedState": "Managed",
+        "posture": {
+          "encryptionAtRest": "CustomerManagedKey",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-10"
+        }
+      },
+      {
+        "id": "nms_api",
+        "type": "BACKEND_API",
+        "x": 840,
+        "y": 430,
+        "label": "Member API",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-10"
+        }
+      },
+      {
+        "id": "nms_db",
+        "type": "DATABASE",
+        "x": 840,
+        "y": 610,
+        "label": "Member DB",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "encryptionAtRest": "CustomerManagedKey",
+          "patchStatus": "UpToDate",
+          "accountReview": "Periodic",
+          "lastReviewedAt": "2026-10-10"
+        }
+      },
+      {
+        "id": "nms_pii",
+        "type": "PERSONAL_INFO",
+        "x": 0,
+        "y": 0,
+        "label": "Member personal data",
+        "parentId": "nms_db",
+        "posture": {
+          "dataNecessity": "Required",
+          "recordVolume": "Under100K",
+          "lastReviewedAt": "2026-10-10"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "ems_01",
+        "source": "nms_member",
+        "target": "nms_front",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "Member login and browsing"
+      },
+      {
+        "id": "ems_02",
+        "source": "nms_front",
+        "target": "nms_form",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "Form input"
+      },
+      {
+        "id": "ems_03",
+        "source": "nms_form",
+        "target": "nms_api",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "Sign-up / inquiry processing"
+      },
+      {
+        "id": "ems_04",
+        "source": "nms_api",
+        "target": "nms_db",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "Member data read/write"
+      },
+      {
+        "id": "ems_05",
+        "source": "nms_api",
+        "target": "nms_pay",
+        "auth": "ApiKey",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "Payment request"
+      },
+      {
+        "id": "ems_06",
+        "source": "nms_form",
+        "target": "nms_mail",
+        "auth": "ApiKey",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "Completion notice (with personal data)"
+      },
+      {
+        "id": "ems_07",
+        "source": "nms_ops",
+        "target": "nms_admin",
+        "auth": "Passkey",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "Operations",
+        "authProviderId": "nms_idp"
+      },
+      {
+        "id": "ems_08",
+        "source": "nms_admin",
+        "target": "nms_api",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "Admin operations"
+      }
+    ],
+    "boundaries": [
+      {
+        "id": "bms_net",
+        "type": "RECT",
+        "x": 20,
+        "y": 20,
+        "width": 300,
+        "height": 920,
+        "trustLevel": "Internet"
+      },
+      {
+        "id": "bms_dmz",
+        "type": "ROUNDED",
+        "x": 380,
+        "y": 20,
+        "width": 340,
+        "height": 780,
+        "trustLevel": "Internet",
+        "macroTrust": "Public Area"
+      },
+      {
+        "id": "bms_int",
+        "type": "ROUNDED",
+        "x": 780,
+        "y": 360,
+        "width": 340,
+        "height": 440,
+        "trustLevel": "Internal",
+        "macroTrust": "Security Zone"
+      }
+    ]
+  }
+}

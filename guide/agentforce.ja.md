@@ -86,7 +86,7 @@
 読み込み方は[テンプレートの章](templates.ja.md#3-読み込むimport)と同じです。
 左サイドバーの **Template** → **Import** で JSON を選び、**適用**します。
 
-**読み込むと 103 件**（Critical 19・High 61・Medium 23）の脅威が検出されます。
+**読み込むと 117 件**（Critical 19・High 66・Medium 32）の脅威が検出されます。
 
 ### 3.1 図の前提（仮置きの属性）
 

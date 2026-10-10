@@ -3,8 +3,8 @@
 **AI・LLM・エージェントシステム・PQC に対応した、OSS のビジュアル脅威モデリングツール**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-214-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-1181%20passing-brightgreen.svg)](#開発)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-221-orange.svg)](data/threat-library)
+[![Tests](https://img.shields.io/badge/tests-1252%20passing-brightgreen.svg)](#開発)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 [English](README.md) | **日本語**
@@ -30,7 +30,7 @@
 
 | フレームワーク区分 | ルール数 | 内容 |
 |---|---:|---|
-| `STRIDE` | 118 | 古典的な脅威（なりすまし・改ざん・情報漏えい 等） |
+| `STRIDE` | 146 | 古典的な脅威（なりすまし・改ざん・情報漏えい 等） |
 | `AI` | 33 | 敵対的 ML、モデル抽出、学習データ汚染 等 |
 | `AgenticAI` | 42 | 目標乗っ取り、ツール誤用、権限の持ち越し、メモリ汚染 等 |
 
@@ -69,6 +69,13 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
   （CRYPTREC 暗号リスト表 2・NIST FIPS 203/204/205 に基づく）を出し、簡易レポート（CSV）を
   出力（[ガイド](guide/pqc-migration.ja.md)）
 - **レイヤー間の複製** — 深度レイヤーと PQC レイヤーの間で、下書きとして図を複製
+- **運用状況の記録** — 図だけでは分からないことをノードごとに記録：ログ（取得・保持期間・確認できる主体）、
+  保管時の暗号化、パッチの適用状況、アカウント棚卸し、保有データの必要性と件数規模、最終点検日。
+  未入力は「対策なし」として評価（[ガイド](guide/ipa-alert-2026-10.ja.md)）
+- **注意喚起チェックリスト** — 公表された注意喚起の対策（同梱：IPA 注意喚起 2026-10-09 の 17 項目）を
+  図に当てはめ、項目ごとに「要対応・未入力・リスク受容・問題なし・対象なし」と関係ノードを一覧。
+  点検が古いノードの一覧、CSV 出力、CI 用の `checklist --fail-on-action` に対応
+  （[ガイド](guide/ipa-alert-2026-10.ja.md)）
 - **コンプライアンスマッピング** — 検出脅威を NIST CSF 2.0（128 項目）/
   NIST AI RMF（72 項目）/ AI 事業者ガイドライン（34 項目）に紐付け
 - **リスク評価** — Impact × Likelihood スコアリング、リスク対応方針（低減・受容・移転・回避）の記録
@@ -157,7 +164,7 @@ npm run test:watch   # テスト watch モード
 npx tsc --noEmit     # 型チェック（strict）
 ```
 
-変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,181 件の
+変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,252 件の
 テストが通ります。
 
 ---

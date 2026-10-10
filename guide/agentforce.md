@@ -84,7 +84,7 @@ the Salesforce org = Internal, external API / external MCP server = Internet).
 Import works the same way as in [the templates page](templates.md). Open **Template** in the left sidebar,
 choose **Import**, select the JSON, and apply it.
 
-**After loading, 103 threats** are detected (19 Critical, 61 High, 23 Medium).
+**After loading, 117 threats** are detected (19 Critical, 66 High, 32 Medium).
 
 ### 3.1 Assumptions in the diagram (placeholder attributes)
 

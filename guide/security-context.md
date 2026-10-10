@@ -16,7 +16,7 @@ read**.
 
 This chapter follows [Assessing Risk in Analytics](analytics-assessment.md) and uses the **AI
 chatbot diagram** built in [Your First Threat Model](first-threat-model.md) as-is (User ⇄ Front-end
-Server ⇄ LLM ⇄ RAG ⇄ Data store, 48 threats).
+Server ⇄ LLM ⇄ RAG ⇄ Data store, 56 threats).
 
 ---
 

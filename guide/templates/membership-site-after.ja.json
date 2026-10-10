@@ -1,0 +1,303 @@
+{
+  "schemaVersion": 1,
+  "kind": "cyberriskscape-template",
+  "name": "会員サイト — 対策後（IPA 注意喚起の確認用）",
+  "layer": {
+    "nodes": [
+      {
+        "id": "nms_member",
+        "type": "USER",
+        "x": 60,
+        "y": 70,
+        "label": "会員",
+        "userTrustAttribute": "Guest"
+      },
+      {
+        "id": "nms_phone",
+        "type": "SMARTPHONE",
+        "x": 0,
+        "y": 0,
+        "label": "会員のスマートフォン",
+        "parentId": "nms_member",
+        "managedState": "Unmanaged"
+      },
+      {
+        "id": "nms_pay",
+        "type": "BACKEND_API",
+        "x": 60,
+        "y": 430,
+        "label": "決済代行サービスの API",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Provider",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-10"
+        }
+      },
+      {
+        "id": "nms_mail",
+        "type": "MAIL",
+        "x": 60,
+        "y": 250,
+        "label": "メール配信サービス（SaaS）",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Both",
+          "encryptionAtRest": "ProviderManagedKey",
+          "accountReview": "Periodic",
+          "lastReviewedAt": "2026-10-10"
+        }
+      },
+      {
+        "id": "nms_idp",
+        "type": "IDENTITY_PROVIDER",
+        "x": 60,
+        "y": 610,
+        "label": "従業員の IdP",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "accountReview": "Periodic",
+          "lastReviewedAt": "2026-10-10"
+        }
+      },
+      {
+        "id": "nms_front",
+        "type": "FRONT_END_SERVER",
+        "x": 440,
+        "y": 70,
+        "label": "会員サイト（フロントエンド）",
+        "attackSurface": {
+          "hasGlobalIp": true,
+          "hasUserAuthentication": true,
+          "hasAccessLog": true,
+          "hasWafProtection": true,
+          "hasDdosProtection": true
+        },
+        "posture": {
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-10"
+        }
+      },
+      {
+        "id": "nms_form",
+        "type": "WEB_FORM",
+        "x": 440,
+        "y": 250,
+        "label": "Webフォーム（会員登録・問い合わせ）",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-10"
+        }
+      },
+      {
+        "id": "nms_admin",
+        "type": "FRONT_END_SERVER",
+        "x": 440,
+        "y": 610,
+        "label": "管理画面",
+        "attackSurface": {
+          "hasGlobalIp": true,
+          "hasSourceIpRestriction": true,
+          "hasRemoteAccessRestriction": true,
+          "hasUserAuthentication": true,
+          "hasAccessLog": true,
+          "hasWafProtection": true
+        },
+        "posture": {
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-10"
+        }
+      },
+      {
+        "id": "nms_ops",
+        "type": "USER",
+        "x": 60,
+        "y": 790,
+        "label": "運用者",
+        "userTrustAttribute": "Employee"
+      },
+      {
+        "id": "nms_pc",
+        "type": "PC",
+        "x": 0,
+        "y": 0,
+        "label": "運用者の PC",
+        "parentId": "nms_ops",
+        "managedState": "Managed",
+        "posture": {
+          "encryptionAtRest": "CustomerManagedKey",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-10"
+        }
+      },
+      {
+        "id": "nms_api",
+        "type": "BACKEND_API",
+        "x": 840,
+        "y": 430,
+        "label": "会員 API",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-10"
+        }
+      },
+      {
+        "id": "nms_db",
+        "type": "DATABASE",
+        "x": 840,
+        "y": 610,
+        "label": "会員 DB",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "encryptionAtRest": "CustomerManagedKey",
+          "patchStatus": "UpToDate",
+          "accountReview": "Periodic",
+          "lastReviewedAt": "2026-10-10"
+        }
+      },
+      {
+        "id": "nms_pii",
+        "type": "PERSONAL_INFO",
+        "x": 0,
+        "y": 0,
+        "label": "会員の個人情報",
+        "parentId": "nms_db",
+        "posture": {
+          "dataNecessity": "Required",
+          "recordVolume": "Under100K",
+          "lastReviewedAt": "2026-10-10"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "ems_01",
+        "source": "nms_member",
+        "target": "nms_front",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "会員のログイン・閲覧"
+      },
+      {
+        "id": "ems_02",
+        "source": "nms_front",
+        "target": "nms_form",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "フォーム入力"
+      },
+      {
+        "id": "ems_03",
+        "source": "nms_form",
+        "target": "nms_api",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "登録・問い合わせの処理"
+      },
+      {
+        "id": "ems_04",
+        "source": "nms_api",
+        "target": "nms_db",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "会員データの読み書き"
+      },
+      {
+        "id": "ems_05",
+        "source": "nms_api",
+        "target": "nms_pay",
+        "auth": "ApiKey",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "決済の依頼"
+      },
+      {
+        "id": "ems_06",
+        "source": "nms_form",
+        "target": "nms_mail",
+        "auth": "ApiKey",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "完了通知（個人情報を含む）"
+      },
+      {
+        "id": "ems_07",
+        "source": "nms_ops",
+        "target": "nms_admin",
+        "auth": "Passkey",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "運用操作",
+        "authProviderId": "nms_idp"
+      },
+      {
+        "id": "ems_08",
+        "source": "nms_admin",
+        "target": "nms_api",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "管理操作"
+      }
+    ],
+    "boundaries": [
+      {
+        "id": "bms_net",
+        "type": "RECT",
+        "x": 20,
+        "y": 20,
+        "width": 300,
+        "height": 920,
+        "trustLevel": "Internet"
+      },
+      {
+        "id": "bms_dmz",
+        "type": "ROUNDED",
+        "x": 380,
+        "y": 20,
+        "width": 340,
+        "height": 780,
+        "trustLevel": "Internet",
+        "macroTrust": "Public Area"
+      },
+      {
+        "id": "bms_int",
+        "type": "ROUNDED",
+        "x": 780,
+        "y": 360,
+        "width": 340,
+        "height": 440,
+        "trustLevel": "Internal",
+        "macroTrust": "Security Zone"
+      }
+    ]
+  }
+}

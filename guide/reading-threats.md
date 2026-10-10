@@ -21,7 +21,7 @@ The header carries three things:
 | What you see | What it means |
 |---|---|
 | `ALL MODE` | Which framework view is currently shown (follows the tabs at the top) |
-| `48 ISSUES` | The number of threats that are **not suppressed** |
+| `56 ISSUES` | The number of threats that are **not suppressed** |
 | Add scenario | Add a threat by hand that detection will never produce (see below) |
 
 The framework tabs (`ALL` / `Human Centric (STRIDE)` / `AI / LLM` / `Agent-Centric`) filter this
@@ -174,7 +174,7 @@ judgment began**.
 How to use the PDF and PNG exports is covered in [Exporting PDF Reports and Diagram Images](report-export.md).
 
 For CSV, JSON and DCRH, what gets exported is **the list you are currently looking at**. As the menu says — "Export the
-threats currently shown (L1 / ALL, 48)" — **the depth layer and the framework tab both apply**.
+threats currently shown (L1 / ALL, 56)" — **the depth layer and the framework tab both apply**.
 To cut out one particular view, switch tabs first, then export.
 
 Suppressed threats are included too, **carrying their status ("False positive", "Accepted") and the

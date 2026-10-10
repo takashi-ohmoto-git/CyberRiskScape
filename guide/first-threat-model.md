@@ -182,7 +182,7 @@ store or a similar tamperable source. With only the request path (LLM → RAG) d
 Draw the return path (RAG → LLM) and the defining threat of a RAG design —
 **instructions planted in the retrieved documents** — shows up.
 
-In this diagram, the four return flows took detection from **43 threats to 48**.
+In this diagram, the four return flows took detection from **51 threats to 56**.
 
 It is also worth setting the **`rag_retrieval` semantic** on Vector DB / RAG → LLM model, which says
 explicitly that the path carries retrieved content.
@@ -237,7 +237,7 @@ edge of the box, a component whose center is inside counts as inside.
 
 ## 7. Reading the result
 
-The right pane now lists the threats — 48 of them in this example (the count depends on which
+The right pane now lists the threats — 56 of them in this example (the count depends on which
 attributes you set).
 
 ![The detected threats](../assets/guide/en/chatbot/09-threats.png)

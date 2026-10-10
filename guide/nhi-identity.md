@@ -74,7 +74,7 @@ For how to load it, see [Creating and Using Templates](templates.md).
 **Contents:** 14 components, 12 data flows and 2 trust boundaries. It includes an operator going through privileged
 access management while also using the same service account directly by hand, CI issuing credentials to a workload
 identity with an OIDC token, an order API calling an external SaaS through an OAuth client, and IGA provisioning
-accounts to each system. Loading it produces **42 threats** at the time of writing.
+accounts to each system. Loading it produces **70 threats** at the time of writing.
 
 ---
 
@@ -244,7 +244,7 @@ variables, an operations group, and an operator granted a host role).
 
 ![Diagram built from a Conjur policy](../assets/guide/nhi/05-conjur-overview.png)
 
-The sample produces **21 threats** at the time of writing. nightly-batch, which runs on an API key, gets "Long-lived static
+The sample produces **25 threats** at the time of writing. nightly-batch, which runs on an API key, gets "Long-lived static
 secrets" and, because alice holds its role, "Human use of an NHI"; the authn-jwt and authn-k8s hosts get "Workload identity
 federation trust conditions"; and Conjur gets "Concentration of privilege in the secrets manager".
 

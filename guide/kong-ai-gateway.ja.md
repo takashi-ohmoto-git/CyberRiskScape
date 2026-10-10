@@ -97,7 +97,7 @@ node dist-cli/main.js analyze model.json --format md
 
 ![Kong 設定から生成した構成図](../assets/guide/kong/02-overview.png)
 
-このサンプルでは **49 件**（Critical 7・High 27・Medium 15）の脅威が検出されます（執筆時点）。
+このサンプルでは **71 件**（Critical 8・High 38・Medium 25）の脅威が検出されます（執筆時点）。
 
 ### 4.1 図の前提（取り込み後に見直す属性）
 

@@ -3,8 +3,8 @@
 **Open-source visual threat modeling for AI, LLM, agentic systems, and post-quantum cryptography**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-214-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-1181%20passing-brightgreen.svg)](#development)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-221-orange.svg)](data/threat-library)
+[![Tests](https://img.shields.io/badge/tests-1252%20passing-brightgreen.svg)](#development)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 **English** | [日本語](README.ja.md)
@@ -23,7 +23,7 @@ how the screen is laid out, and how to work on the canvas, with screenshots.
 For the thinking behind it, see [An Introduction to Secure by Design](guide/secure-by-design.md).
 
 > **Interface language.** English and Japanese are both supported — use the JA / EN switch
-> in the top bar, and your choice is remembered. The interface, all 214 threat rules
+> in the top bar, and your choice is remembered. The interface, all 221 threat rules
 > (name, category, description, mitigations) and every component type label are
 > translated. Help is welcome.
 
@@ -38,7 +38,7 @@ long-term memory** as first-class component types, with a rule set to match.
 
 | Framework | Rules | Covers |
 |---|---:|---|
-| `STRIDE` | 118 | Spoofing, tampering, repudiation, information disclosure, DoS, elevation of privilege |
+| `STRIDE` | 146 | Spoofing, tampering, repudiation, information disclosure, DoS, elevation of privilege |
 | `AI` | 33 | Adversarial ML, model extraction, training data poisoning |
 | `AgenticAI` | 42 | Goal hijacking, tool misuse, privilege carry-over, memory poisoning |
 
@@ -80,6 +80,15 @@ For the full list of products and how they connect, see [Integrations](guide/int
   and a PQC verdict (based on the CRYPTREC Cryptographic Algorithm List, Table 2, and NIST FIPS
   203/204/205), and a simple report (CSV) can be exported ([guide](guide/pqc-migration.md))
 - **Layer copy** — copy a depth layer to the PQC layer (or back) as a draft
+- **Operational posture record** — record per node what a diagram cannot show on its own:
+  logging (collection, retention, who can review), encryption at rest, patch status, account
+  review, whether held data is still needed and how many records, and the last review date.
+  Blank fields are evaluated as "no countermeasure" ([guide](guide/ipa-alert-2026-10.md))
+- **Alert checklist** — apply a published alert's measures (bundled: the IPA alert of
+  2026-10-09, 17 items) to your diagram. Each item shows action needed / not entered / risk
+  accepted / no issue / not applicable with the related nodes, plus the nodes whose review
+  record is old. Export CSV or run it in CI with `checklist --fail-on-action`
+  ([guide](guide/ipa-alert-2026-10.md))
 - **Compliance mapping** — maps detected threats to NIST CSF 2.0 (128 items), NIST AI RMF
   (72 items), and Japan's AI Business Operator Guidelines (34 items)
 - **Risk assessment** — Impact × Likelihood scoring and risk treatment decisions (mitigate / accept /
@@ -167,7 +176,7 @@ npm run test:watch   # watch mode
 npx tsc --noEmit     # type check (strict)
 ```
 
-The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,181 tests
+The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,252 tests
 currently pass.
 
 ---
@@ -268,7 +277,7 @@ Near-term priorities, in order:
    detection confidence stated explicitly
 
 Done recently: an English UI with a language switcher, plus English translation overlays
-for all 214 threat rules and every component type label, all leaving the existing schemas
+for all 221 threat rules and every component type label, all leaving the existing schemas
 unchanged.
 
 ---

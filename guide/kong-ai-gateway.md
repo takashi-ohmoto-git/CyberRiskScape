@@ -99,7 +99,7 @@ support chat that connects to OpenAI through `ai-proxy` (`support-chat`, with `k
 
 ![Diagram generated from a Kong configuration](../assets/guide/kong/02-overview.png)
 
-This sample produces **49 threats** (7 Critical, 27 High, 15 Medium) at the time of writing.
+This sample produces **71 threats** (8 Critical, 38 High, 25 Medium) at the time of writing.
 
 ### 4.1 Assumptions on the diagram (attributes to review after importing)
 

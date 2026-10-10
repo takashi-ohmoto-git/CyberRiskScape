@@ -8,7 +8,7 @@ screen**.
 
 This chapter follows [Reading the Threat Panel](reading-threats.md) and uses the **AI chatbot
 diagram** built in [Your First Threat Model](first-threat-model.md) (User ⇄ Front-end Server ⇄ LLM ⇄
-RAG ⇄ Data store, 48 threats).
+RAG ⇄ Data store, 56 threats).
 
 ---
 
@@ -31,7 +31,7 @@ Open **Analytics** (the bar-chart icon) in the top toolbar.
 
 ![Analytics as it opens](../assets/guide/en/analytics/01-open.png)
 
-The header reads "Layer L1 / 16 elements / 48 threats". **The current depth layer is the scope.**
+The header reads "Layer L1 / 16 elements / 56 threats". **The current depth layer is the scope.**
 
 | Pane | What it holds |
 |---|---|
@@ -43,7 +43,7 @@ The header reads "Layer L1 / 16 elements / 48 threats". **The current depth laye
 
 ## 3. Step 1 — narrow the scope
 
-Trying to work through 48 threats in order is how this stops getting done. Filter first.
+Trying to work through 56 threats in order is how this stops getting done. Filter first.
 
 ![Filtering to High or above](../assets/guide/en/analytics/02-filter.png)
 

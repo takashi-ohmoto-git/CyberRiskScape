@@ -89,7 +89,7 @@ User ⇄ Front-end Server ⇄ LLM model ⇄ Vector DB / RAG ⇄ Data store
 - Vector DB / RAG → LLM model (the search result) carries the **`rag_retrieval` semantic**
 - The boundaries are External boundary (Internet), DMZ and Macro segmentation (Internal)
 
-Import it and **48 threats** are detected straight away. Every chapter from
+Import it and **56 threats** are detected straight away. Every chapter from
 [Reading the Threat Panel](reading-threats.md) onward assumes this state.
 
 ### The contact center template
@@ -113,7 +113,7 @@ Four handling patterns share the one diagram:
 The common parts are an IVR in front of the PBX, voiceprint authentication, call recording, a CRM
 (`tool_invocation`), an LLM (intent analysis / summary) and the AI-to-human escalation.
 
-Import it and **62 threats** are detected. The main ones: voiceprint bypass with cloned voices,
+Import it and **83 threats** are detected. The main ones: voiceprint bypass with cloned voices,
 social engineering of human operators by phone, STS guardrail gaps, prompt injection through
 STT (spoken input), PBX toll fraud and caller ID spoofing, unverified LINE webhook signatures and
 channel takeover, and exposure of call recordings (biometric data).
@@ -130,7 +130,7 @@ agent reads it and can send data out.
 | [`templates/agentforce-service-agent.ja.json`](templates/agentforce-service-agent.ja.json) | Japanese |
 
 **Inside:** 14 components, 25 data flows, 3 trust boundaries (customers and outsiders = Internet, Salesforce org = Internal, external API / external MCP server = Internet).
-Import it and **103 threats** are detected. For how Agentforce building blocks map to types and how to read
+Import it and **117 threats** are detected. For how Agentforce building blocks map to types and how to read
 the detected threats, see [Threat Modeling Salesforce Agentforce](agentforce.md).
 
 ### The NHI and identity platform template
@@ -145,7 +145,7 @@ management but also uses the same service account directly by hand (human use of
 | [`templates/nhi-identity.ja.json`](templates/nhi-identity.ja.json) | Japanese |
 
 **Inside:** 14 components, 12 data flows, 2 trust boundaries (inside the organization = Internal, external SaaS and IDaaS = Internet).
-Import it and **41 threats** are detected. For how the types map and how to read the threats, see
+Import it and **70 threats** are detected. For how the types map and how to read the threats, see
 [Threat Modeling NHIs and Identity Platforms](nhi-identity.md).
 
 ---
@@ -174,7 +174,7 @@ looks one-way to the threat engine.
 - **Round-trip diagram**: Vector DB / RAG → LLM model exists, and **instructions planted in the
   retrieved documents** — the defining threat of a RAG design — is reported.
 
-In this configuration, adding the four return flows took detection from **43 threats to 48**.
+In this configuration, adding the four return flows took detection from **51 threats to 56**.
 
 ### The rule of thumb
 
