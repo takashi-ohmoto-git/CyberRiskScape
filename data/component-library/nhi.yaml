@@ -34,7 +34,7 @@ library:
 
 categories:
   - id: IDENTITY
-    label: "Identity & Secrets"
+    label: "Identity & Access"
     order: 32
 
 components:

@@ -1,5 +1,5 @@
 # Built-in component library for CyberRiskScape.
-# Default 13 component types covering Classic DFD, AI/LLM components, and
+# Default 13 component types covering Basic Shapes (DFD), AI/LLM components, and
 # users/devices, network edge and identity primitives. Bundled with the application; cannot be disabled.
 #
 # To add custom components, create a separate YAML in this directory or upload
@@ -15,11 +15,11 @@ library:
   version: "1.0"
   license: "Apache-2.0"
   builtin: true
-  description: "Default component set: Classic DFD primitives, AI components, users/devices, network edge, and identity."
+  description: "Default component set: Basic Shapes (DFD) primitives, AI components, users/devices, network edge, and identity."
 
 categories:
   - id: CLASSIC_DFD
-    label: "Classic DFD"
+    label: "Basic Shapes (DFD)"
     order: 10
   - id: AI
     label: "AI Components"
@@ -31,14 +31,17 @@ categories:
     label: "Network & Edge"
     order: 30
   - id: IDENTITY
-    label: "Identity & Secrets"
+    label: "Identity & Access"
     order: 32
   - id: DOCUMENTS
     label: "Documents"
     order: 40
+  - id: SERVERS
+    label: "Servers"
+    order: 41
 
 components:
-  # ── Classic DFD ─────────────────────────────────────────────
+  # ── Basic Shapes (DFD) ─────────────────────────────────────────────
   - id: EXTERNAL_ENTITY
     label: "外部主体"
     category: CLASSIC_DFD
@@ -144,7 +147,7 @@ components:
 
   - id: FRONT_END_SERVER
     label: "フロントエンドサーバー"
-    category: NETWORK
+    category: SERVERS
     icon: { kind: builtin, name: "server" }
     shape: rounded
     color: "bg-transparent"

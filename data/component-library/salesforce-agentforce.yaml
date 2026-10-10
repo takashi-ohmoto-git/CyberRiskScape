@@ -34,17 +34,17 @@ library:
   license: "Apache-2.0"
   description: "Salesforce Agentforce の製品固有の構成要素（Einstein Trust Layer）。エージェント本体・アクションは汎用の AGENT・TOOL で表す。"
 
-# 既存 protect ライブラリのカテゴリを idempotent に再宣言（label/order を一致させる）。
+# AI カテゴリを idempotent に再宣言（label/order を一致させる）。
 categories:
-  - id: PROTECT
-    label: "Protect"
-    order: 25
+  - id: AI
+    label: "AI Components"
+    order: 20
 
 components:
   - id: EINSTEIN_TRUST_LAYER
     label: "Einstein Trust Layer"
-    category: PROTECT
+    category: AI
     icon: { kind: builtin, name: "shield-half" }
     shape: rounded
-    color: "bg-green-600"
+    color: "bg-violet-600"
     description: "Salesforce の LLM 呼び出しの前後に入る保護層（データマスキング・ゼロデータ保持・毒性検知・プロンプト防御・監査）。エージェントと LLM の間に置く。"

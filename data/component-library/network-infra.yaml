@@ -2,11 +2,14 @@
 #
 # PQC 移行支援で「経路上で暗号が変わる箇所（終端・復号・トンネル化）」を描くための
 # ネットワーク機器・セキュリティ製品の 18 型：
-#   NETWORK : L2_SWITCH / ROUTER / LOAD_BALANCER / CDN / VPN_GATEWAY / WIRELESS_AP / SBC /
-#             PRIVATE_ENDPOINT / SERVICE_MESH
-#   PROTECT : FIREWALL / WAF / IDS_IPS / SECURE_WEB_GATEWAY / SASE / EMAIL_GATEWAY /
-#             BASTION / ZTNA_PROXY
-#   IDENTITY: HSM
+#   NETWORK        : L2_SWITCH / ROUTER / LOAD_BALANCER / CDN / VPN_GATEWAY / WIRELESS_AP /
+#                    SERVICE_MESH
+#   PROTECT        : FIREWALL / WAF / IDS_IPS / SECURE_WEB_GATEWAY / SASE / EMAIL_GATEWAY /
+#                    ZTNA_PROXY（ラベルは Security Controls）
+#   CONTACT_CENTER : SBC
+#   CLOUD          : PRIVATE_ENDPOINT
+#   SERVERS        : BASTION
+#   CRYPTO_KEYS    : HSM
 #
 # builtin ではないため、LeftSidebar のライブラリトグルで無効化できる。
 #
@@ -28,11 +31,20 @@ categories:
     label: "Network & Edge"
     order: 30
   - id: PROTECT
-    label: "Protect"
+    label: "Security Controls"
     order: 25
-  - id: IDENTITY
-    label: "Identity & Secrets"
-    order: 32
+  - id: CONTACT_CENTER
+    label: "Contact Center"
+    order: 33
+  - id: CRYPTO_KEYS
+    label: "Crypto & Keys"
+    order: 43
+  - id: SERVERS
+    label: "Servers"
+    order: 41
+  - id: CLOUD
+    label: "Cloud"
+    order: 35
 
 components:
   - id: L2_SWITCH
@@ -85,7 +97,7 @@ components:
 
   - id: SBC
     label: "SBC"
-    category: NETWORK
+    category: CONTACT_CENTER
     icon: { kind: builtin, name: "phone-forwarded" }
     shape: rounded
     color: "bg-transparent"
@@ -141,18 +153,18 @@ components:
 
   - id: HSM
     label: "HSM"
-    category: IDENTITY
+    category: CRYPTO_KEYS
     icon: { kind: builtin, name: "microchip" }
     shape: rounded
-    color: "bg-fuchsia-600"
+    color: "bg-transparent"
     description: "HSM。暗号鍵を耐タンパ性のある専用装置で保管・演算する。通信経路上の機器ではないが、TLS 終端機器の秘密鍵や鍵ラッピングの鍵を保管するため、PQC の大きな鍵に対応できるかが移行の制約になる。クラウドでは AWS CloudHSM / Azure Managed HSM・Dedicated HSM / Google Cloud HSM / OCI Vault（HSM 保護鍵）等が該当する。"
 
   - id: BASTION
     label: "踏み台"
-    category: PROTECT
+    category: SERVERS
     icon: { kind: builtin, name: "door-closed" }
     shape: rounded
-    color: "bg-green-600"
+    color: "bg-transparent"
     description: "踏み台。管理者のブラウザ等からの TLS を終端し、対象サーバーへ SSH / RDP で再接続する（区間ごとに暗号方式が変わる）。クラウドでは AWS Systems Manager Session Manager・EC2 Instance Connect Endpoint / Azure Bastion / Google Cloud IAP の TCP 転送 / OCI Bastion 等が該当する。"
 
   - id: ZTNA_PROXY
@@ -165,7 +177,7 @@ components:
 
   - id: PRIVATE_ENDPOINT
     label: "プライベートエンドポイント"
-    category: NETWORK
+    category: CLOUD
     icon: { kind: builtin, name: "link" }
     shape: rounded
     color: "bg-transparent"

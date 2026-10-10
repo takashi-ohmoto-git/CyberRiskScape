@@ -31,23 +31,23 @@ library:
 
 categories:
   - id: SERVICES
-    label: "Services"
+    label: "API & DevOps"
     order: 31
-  - id: IDENTITY
-    label: "Identity & Secrets"
-    order: 32
-  - id: APP
-    label: "App"
-    order: 36
   - id: DOCUMENTS
     label: "Documents"
     order: 40
+  - id: SERVERS
+    label: "Servers"
+    order: 41
+  - id: CRYPTO_KEYS
+    label: "Crypto & Keys"
+    order: 43
 
 components:
   # ── Services ────────────────────────────────────────────────
   - id: BACKEND_API
     label: "バックエンドAPI"
-    category: SERVICES
+    category: SERVERS
     icon: { kind: builtin, name: "server-cog" }
     shape: rounded
     color: "bg-transparent"
@@ -75,17 +75,17 @@ components:
   # ── Identity & Secrets ──────────────────────────────────────
   - id: SECRETS_VAULT
     label: "シークレット管理"
-    category: IDENTITY
+    category: CRYPTO_KEYS
     icon: { kind: builtin, name: "folder-key" }
     shape: rounded
-    color: "bg-fuchsia-600"
+    color: "bg-transparent"
     description: "API キー・トークン・証明書を保管し、実行時に払い出すシークレット管理（Vault / KMS 等）。"
     canContain: [CREDENTIAL]
 
   # ── App ─────────────────────────────────────────────────────
   - id: API_DEV_WORKSPACE
     label: "API開発ツール"
-    category: APP
+    category: SERVICES
     icon: { kind: builtin, name: "square-terminal" }
     shape: rounded
     color: "bg-transparent"
