@@ -28,6 +28,10 @@ for entering assessments, see [Assessing Risk in Analytics](analytics-assessment
 CSV, JSON and DCRH export **the list you are currently looking at** (one depth layer).
 PDF and PNG differ in that **you choose which layers to export**.
 
+While the PQC layer is selected, **Report** also offers a **PQC migration report (CSV)**, a simple
+per-segment report for PQC migration. It is a separate output from the five items above; see
+[Supporting PQC Migration](pqc-migration.md).
+
 In every format, the output reflects **the current framework tab (ALL / STRIDE / AI / MAESTRO) and
 your custom rules**. The numbers come from the same data as CSV and JSON, so the formats never disagree.
 
@@ -207,6 +211,7 @@ The first time, the font (about 9 MB) has to download. Later exports are faster.
 ## Where to go next
 
 - Assess and record threats — [Assessing Risk in Analytics](analytics-assessment.md)
+- Exporting the PQC migration report — [Supporting PQC Migration](pqc-migration.md)
 - Reading the panel, and the CSV / JSON exports — [Reading the Threat Panel](reading-threats.md)
 - Lining threats up against standards — [The Compliance Map](compliance-map.md)
 - Using the exported Markdown as input for an AI — [Turning Your Threat Model into an AI-Readable Security Context](security-context.md)

@@ -28,6 +28,10 @@ PDF は CISO・経営層への報告を想定した、1 枚サマリ付きの報
 CSV / JSON / DCRH は**いま表示している脅威一覧**（深度レイヤーは 1 つ）をそのまま書き出します。
 PDF と PNG は、**出力するレイヤーを自分で選べる**点が違います。
 
+PQC レイヤーを選んでいるときは、**Report** に **PQC移行支援レポート（CSV）** も出ます。
+PQC 移行のための区間単位の簡易レポートで、上の 5 項目とは別の出力です。
+詳しくは [PQC 移行を支援する](pqc-migration.ja.md) を参照してください。
+
 どの形式でも、出力は**現在のフレームワークタブ（ALL / STRIDE / AI / MAESTRO）とカスタムルール**の
 状態を反映します。数値は CSV / JSON と同じデータから作られるので、形式間で食い違うことはありません。
 
@@ -206,6 +210,7 @@ PDF の「有効脅威数」は**受容・誤検知を除いた数**です。CSV
 ## 次に読むもの
 
 - 脅威を評価して記録する — [Analytics でリスクを評価する](analytics-assessment.ja.md)
+- PQC 移行支援レポートを出力する — [PQC 移行を支援する](pqc-migration.ja.md)
 - 脅威パネルの読み方と、CSV / JSON の出力 — [脅威パネルの読み方](reading-threats.ja.md)
 - 規格との対応を確認する — [コンプライアンスマップ](compliance-map.ja.md)
 - 書き出した Markdown を AI の入力として使う — [脅威モデルを AI が読める Security Context に変換する](security-context.ja.md)

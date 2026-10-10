@@ -3,8 +3,8 @@
 **Open-source visual threat modeling for AI, LLM, agentic systems, and post-quantum cryptography**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-172-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-1033%20passing-brightgreen.svg)](#development)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-193-orange.svg)](data/threat-library)
+[![Tests](https://img.shields.io/badge/tests-1163%20passing-brightgreen.svg)](#development)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 **English** | [日本語](README.ja.md)
@@ -23,7 +23,7 @@ how the screen is laid out, and how to work on the canvas, with screenshots.
 For the thinking behind it, see [An Introduction to Secure by Design](guide/secure-by-design.md).
 
 > **Interface language.** English and Japanese are both supported — use the JA / EN switch
-> in the top bar, and your choice is remembered. The interface, all 172 threat rules
+> in the top bar, and your choice is remembered. The interface, all 193 threat rules
 > (name, category, description, mitigations) and every component type label are
 > translated. Help is welcome.
 
@@ -38,7 +38,7 @@ long-term memory** as first-class component types, with a rule set to match.
 
 | Framework | Rules | Covers |
 |---|---:|---|
-| `STRIDE` | 74 | Spoofing, tampering, repudiation, information disclosure, DoS, elevation of privilege |
+| `STRIDE` | 118 | Spoofing, tampering, repudiation, information disclosure, DoS, elevation of privilege |
 | `AI` | 33 | Adversarial ML, model extraction, training data poisoning |
 | `AgenticAI` | 42 | Goal hijacking, tool misuse, privilege carry-over, memory poisoning |
 
@@ -65,12 +65,20 @@ For the full list of products and how they connect, see [Integrations](guide/int
 
 ### Features
 
-- **Visual DFD editor** — 66 component types across 10 libraries and 12 categories, trust
-  boundaries, and data flows carrying encryption, authentication, and semantic attributes
+- **Visual DFD editor** — 88 component types across 12 libraries and 15 categories, trust
+  boundaries, and data flows carrying encryption, authentication, and semantic attributes.
+  The library covers network and security appliances (with examples of the equivalent cloud
+  services), Storage & Databases, and Basic Shapes (DFD) drawn in the classic Yourdon notation
 - **Automatic threat detection** — distinguishes *inherent* threats (a component fires them
   just by existing) from *path-dependent* ones (they need a specific connection to exist)
 - **Attack path analysis** — maps routes from attacker to asset and identifies choke points
   where several routes converge on one defensible node
+- **PQC migration support** — draw a design on a PQC layer, separate from the depth layers,
+  and trace a route from sender to destination, split into segments at each node that
+  terminates or decrypts the encryption. Each segment gets a termination verdict, a likelihood,
+  and a PQC verdict (based on the CRYPTREC Cryptographic Algorithm List, Table 2, and NIST FIPS
+  203/204/205), and a simple report (CSV) can be exported ([guide](guide/pqc-migration.md))
+- **Layer copy** — copy a depth layer to the PQC layer (or back) as a draft
 - **Compliance mapping** — maps detected threats to NIST CSF 2.0 (128 items), NIST AI RMF
   (72 items), and Japan's AI Business Operator Guidelines (34 items)
 - **Risk assessment** — Impact × Likelihood scoring and risk treatment decisions (mitigate / accept /
@@ -158,7 +166,7 @@ npm run test:watch   # watch mode
 npx tsc --noEmit     # type check (strict)
 ```
 
-The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,033 tests
+The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,163 tests
 currently pass.
 
 ---
@@ -259,7 +267,7 @@ Near-term priorities, in order:
    detection confidence stated explicitly
 
 Done recently: an English UI with a language switcher, plus English translation overlays
-for all 172 threat rules and every component type label, all leaving the existing schemas
+for all 193 threat rules and every component type label, all leaving the existing schemas
 unchanged.
 
 ---

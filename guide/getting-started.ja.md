@@ -92,7 +92,7 @@
 
 ### 4.1 コンポーネントを置く
 
-左サイドバーの `LIBRARY` からカテゴリ（`CLASSIC DFD` / `AI COMPONENTS` など）を開き、
+左サイドバーの `LIBRARY` からカテゴリ（`BASIC SHAPES (DFD)` / `AI COMPONENTS` など）を開き、
 置きたいコンポーネントをクリックします。
 
 ![コンポーネントパレット](../assets/guide/palette.png)

@@ -3,8 +3,8 @@
 **AI・LLM・エージェントシステム・PQC に対応した、OSS のビジュアル脅威モデリングツール**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-172-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-1033%20passing-brightgreen.svg)](#開発)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-193-orange.svg)](data/threat-library)
+[![Tests](https://img.shields.io/badge/tests-1163%20passing-brightgreen.svg)](#開発)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 [English](README.md) | **日本語**
@@ -30,7 +30,7 @@
 
 | フレームワーク区分 | ルール数 | 内容 |
 |---|---:|---|
-| `STRIDE` | 74 | 古典的な脅威（なりすまし・改ざん・情報漏えい 等） |
+| `STRIDE` | 118 | 古典的な脅威（なりすまし・改ざん・情報漏えい 等） |
 | `AI` | 33 | 敵対的 ML、モデル抽出、学習データ汚染 等 |
 | `AgenticAI` | 42 | 目標乗っ取り、ツール誤用、権限の持ち越し、メモリ汚染 等 |
 
@@ -55,12 +55,19 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 
 ### 主な機能
 
-- **ビジュアル DFD エディタ** — 66 種のコンポーネント型（10 ライブラリ・12 カテゴリ）、
-  トラスト境界、データフローの暗号化区分・認証状態の表現
+- **ビジュアル DFD エディタ** — 88 種のコンポーネント型（12 ライブラリ・15 カテゴリ）、
+  トラスト境界、データフローの暗号化区分・認証状態の表現。ネットワーク・セキュリティ機器
+  （クラウドの同等サービスの例つき）、Storage & Databases、DFD 標準記法（Yourdon 法）で
+  表示する Basic Shapes (DFD) を収録
 - **脅威の自動検出** — 配置しただけで発火する内在脅威と、接続条件つきで発火する
   経路依存脅威を区別して検出
 - **攻撃経路グラフ分析** — 攻撃者から資産に至る経路を可視化し、チョークポイント
   （複数経路が集中する防御点）を特定
+- **PQC 移行支援** — 深度レイヤーとは別の PQC レイヤーに構成を描き、送信元から送信先までの経路を、
+  暗号を終端・復号するノードで区間に分けて分析。区間ごとに終端判定・蓋然性・PQC 判定
+  （CRYPTREC 暗号リスト表 2・NIST FIPS 203/204/205 に基づく）を出し、簡易レポート（CSV）を
+  出力（[ガイド](guide/pqc-migration.ja.md)）
+- **レイヤー間の複製** — 深度レイヤーと PQC レイヤーの間で、下書きとして図を複製
 - **コンプライアンスマッピング** — 検出脅威を NIST CSF 2.0（128 項目）/
   NIST AI RMF（72 項目）/ AI 事業者ガイドライン（34 項目）に紐付け
 - **リスク評価** — Impact × Likelihood スコアリング、リスク対応方針（低減・受容・移転・回避）の記録
@@ -149,7 +156,7 @@ npm run test:watch   # テスト watch モード
 npx tsc --noEmit     # 型チェック（strict）
 ```
 
-変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,033 件の
+変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,163 件の
 テストが通ります。
 
 ---

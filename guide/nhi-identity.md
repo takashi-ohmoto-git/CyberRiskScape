@@ -33,7 +33,7 @@ API keys and service accounts they use are handled directly determines the blast
 
 ## 2. Mapping products and building blocks to CyberRiskScape types
 
-All types are in the **Identity & Secrets** category. The four NHI types show the credentials they hold as a contained
+All types are in the **Identity & Access** category. The four NHI types show the credentials they hold as a contained
 "Credentials" element, and declare with the node's **Identity Tier** whether they run on a static key, a cryptographic
 identity, or a hardware-bound identity.
 

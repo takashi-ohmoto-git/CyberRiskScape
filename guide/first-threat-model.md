@@ -115,10 +115,10 @@ Open the categories under `LIBRARY` in the left sidebar and click these five:
 | # | Component | Category |
 |---|---|---|
 | 1 | User | `USERS & DEVICES` |
-| 2 | Front-end Server | `NETWORK & EDGE` |
+| 2 | Front-end Server | `SERVERS` |
 | 3 | LLM model | `AI COMPONENTS` |
 | 4 | Vector DB / RAG | `AI COMPONENTS` |
-| 5 | Data store | `CLASSIC DFD` |
+| 5 | Data store | `BASIC SHAPES (DFD)` |
 
 Each one appears at **a fixed spot on the canvas**. Drag them into a row, left to right.
 

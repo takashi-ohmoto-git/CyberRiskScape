@@ -93,7 +93,7 @@ This is the part that matters. These are all the operations you need in order to
 
 ### 4.1 Placing a component
 
-Open a category under `LIBRARY` in the left sidebar (`CLASSIC DFD`, `AI COMPONENTS` and so on) and
+Open a category under `LIBRARY` in the left sidebar (`BASIC SHAPES (DFD)`, `AI COMPONENTS` and so on) and
 click the component you want.
 
 ![The component palette](../assets/guide/en/palette.png)
