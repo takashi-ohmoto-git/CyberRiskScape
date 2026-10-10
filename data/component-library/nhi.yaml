@@ -47,7 +47,6 @@ components:
     color: "bg-fuchsia-600"
     description: "人に紐づかない技術アカウント（ディレクトリやクラウドのサービスアカウント、共有アカウント）。長期のパスワードや鍵で動くことが多い。"
     canContain: [CREDENTIAL]
-    posture: [accountReview]
 
   - id: WORKLOAD_IDENTITY
     label: "ワークロードID"

@@ -1,0 +1,92 @@
+# English overlay for `data/threat-library/operations-posture.yaml`.
+#
+# The Japanese file is the source of truth: only `name` / `category` / `description` /
+# `mitigation` (plus `conditions[].description` and `references[].title` where present)
+# are translated here, keyed by rule id. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - Keep `{{token}}` placeholders exactly as they appear in the original.
+#   - Keep the `[Foundation]` / `[Enterprise]` / `[Advanced]` markup — the maturity
+#     tiers are re-derived from this text.
+#   - Preserve the Can / Cannot pair and the blast radius statement in `description`.
+#   - `references` is keyed by the index in the original array, and only the entries
+#     that need translating are listed. `url` is never translated.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+rules:
+  posture-log-not-collected-001:
+    category: "Repudiation"
+    name: "Logs are not collected (compromise cannot be detected or investigated)"
+    description: "If {{nodeName}} does not collect logs of access, authentication, and administrative operations, an attacker who takes over an account and logs in, performs unauthorized operations, or exfiltrates data leaves no record behind (Can). Signs of compromise (a spike in failed logins, unusual source addresses or times of day) go unnoticed, and even after the compromise is discovered it is impossible to establish when, through which path, and which data was touched, which makes it hard to determine the scope of the leak, notify affected individuals and regulators, or decide how far to contain. On the other hand, if authentication, administrative operations, and data access on {{nodeName}} are recorded and forwarded to a location outside the administrative control of {{nodeName}}, the compromise remains on record and both anomaly detection and after-the-fact investigation are possible (Cannot). The blast radius is the traceability of every operation performed on {{nodeName}}."
+    mitigation: "[Foundation] Enable logging of authentication successes and failures, administrative operations, account creation and changes, and data access on the component. For external services, check which logs the provider collects and which ones you as the customer can see, and use a higher plan or a log export feature if needed. [Enterprise] Forward logs as they are generated to a log platform (SIEM, etc.) outside the component's administrative control, and alert when log delivery stops. Use normal levels of failed logins, source addresses, and times of day as a baseline to detect anomalies. [Advanced] Aggregate per-service logs so they can be correlated by a common correlation ID and timestamp, and automatically detect gaps in the logs. Add tamper detection (hash chains, WORM) to stored logs."
+    references:
+      "0":
+        title: "IPA - Countermeasures to take promptly in light of data breaches caused by unauthorized access (2026-10-09; review what is logged and how long logs are retained)"
+
+  posture-log-retention-short-001:
+    category: "Repudiation"
+    name: "Log retention is too short to look back when a compromise is discovered"
+    description: "If the log retention period of {{nodeName}} is short, then for a compromise that takes a long time to be discovered, the logs of the attacker's initial intrusion and of the operations that followed have already been deleted (Can). Compromises are often discovered months later through outside reports or information from public authorities, and without logs to look back on at that point, the starting point, duration, and range of exfiltrated data cannot be established, and the affected individuals cannot be narrowed down. If it has not been sorted out who can see which logs and until when, logs that exist only on the provider's side of an external service may not be obtainable in time. On the other hand, if logs of {{nodeName}} are retained for at least one year (including long-term storage for important logs) in a place you can access yourself, the entire period of a compromise can be investigated even if discovery is late (Cannot). The blast radius is the traceability of every operation performed on {{nodeName}} during the period past retention."
+    mitigation: "[Foundation] Check the log retention period of the component and set it to at least one year as a guideline. For external services, sort out which logs and retention periods are visible to the provider and to you, and periodically export logs whose customer-side retention is insufficient to your own log platform. [Enterprise] Combine immediately searchable storage (about 12 months) with low-cost long-term storage (about 18 months or more) to keep high-importance logs longer. Store them outside the component's administrative control and monitor changes to retention settings. [Advanced] Define and document retention periods from regulatory, contractual, and incident response requirements, and automate tamper detection on stored logs and reliable disposal of logs past their retention period."
+    references:
+      "0":
+        title: "IPA - Countermeasures to take promptly in light of data breaches caused by unauthorized access (2026-10-09; sort out log retention periods and who can review the logs)"
+      "1":
+        title: "OMB M-21-31 - Improving the Federal Government's Investigative and Remediation Capabilities Related to Cybersecurity Incidents (log retention)"
+
+  posture-log-retention-short-002:
+    category: "Repudiation"
+    name: "Access log retention is too short to look back when a compromise is discovered"
+    description: "{{nodeName}} collects access logs, but if their retention period is short, then for a compromise that takes a long time to be discovered, the access logs of the attacker's first probing for vulnerabilities and of the moment of intrusion have already been deleted (Can). Attacks on internet-facing servers and APIs are often discovered months later, and without logs to look back on at that point, the starting point, duration, and which APIs or pages were used to obtain what cannot be established. On the other hand, if the access logs of {{nodeName}} are retained for at least one year on a log platform outside the server's own administrative control, the entire period of a compromise can be investigated even if discovery is late (Cannot). The blast radius is the traceability of every request {{nodeName}} received during the period past retention."
+    mitigation: "[Foundation] Check the access log retention period of the component and set it to at least one year as a guideline. Sort out who can review the logs and where (your organization, the cloud or hosting provider). [Enterprise] Combine immediately searchable storage (about 12 months) with low-cost long-term storage (about 18 months or more), forwarding logs to a log platform outside the component's administrative control. Monitor changes to retention settings. [Advanced] Define and document retention periods from regulatory, contractual, and incident response requirements, and automate tamper detection on stored logs and reliable disposal of logs past their retention period."
+    references:
+      "0":
+        title: "IPA - Countermeasures to take promptly in light of data breaches caused by unauthorized access (2026-10-09; review what is logged and how long logs are retained)"
+      "1":
+        title: "OMB M-21-31 - Improving the Federal Government's Investigative and Remediation Capabilities Related to Cybersecurity Incidents (log retention)"
+
+  posture-encryption-at-rest-missing-001:
+    category: "Information Disclosure"
+    name: "Data is not encrypted at rest (readable when media, backups, or snapshots are taken)"
+    description: "If the data stored by {{nodeName}} is not encrypted, anyone who obtains it through a path that bypasses the application's authentication and access control, that is, the disk or device itself, backups, snapshots, exported files, or media sent for disposal or repair, can read the data as is (Can). In the cloud, the same happens through misconfigured snapshot sharing or copies made by an account whose administrative privileges were taken over. On the other hand, if the data of {{nodeName}} is encrypted at rest and the keys are managed separately from the data (a key management service or HSM) with tightly restricted access, media and copies cannot be read without the keys even if they are taken (Cannot). However, data is decrypted transparently for anyone who accesses {{nodeName}} with legitimate privileges, so encryption alone does not help against account takeover. The blast radius is all data stored in {{nodeName}} and in its backups and copies."
+    mitigation: "[Foundation] Enable encryption at rest for the component (full-disk encryption, database or storage encryption features), and confirm that it also covers backups, snapshots, and exports. On PCs and smartphones, enforce full-disk encryption through device management. [Enterprise] When storing personal data or confidential information, use keys you control (customer-managed keys) and separate permission to use the keys from data administration. Monitor key usage through audit logs, and make media unreadable at disposal by destroying the keys. [Advanced] Encrypt particularly sensitive items at the application layer (column- or field-level encryption, tokenization) so that even storage and database administrators never see plaintext. Protect keys with an HSM and rotate them regularly."
+    references:
+      "0":
+        title: "IPA - Countermeasures to take promptly in light of data breaches caused by unauthorized access (2026-10-09; data encryption)"
+      "2":
+        title: "NIST SP 800-209 - Security Guidelines for Storage Infrastructure (encryption of stored data and backups)"
+
+  posture-patch-missing-001:
+    category: "Elevation of Privilege"
+    name: "Patches for known vulnerabilities are not applied"
+    description: "If patches for publicly disclosed vulnerabilities have not been applied to the OS, middleware, applications, or firmware of {{nodeName}}, an attacker can use the published vulnerability information and exploit code to take over {{nodeName}}, bypass authentication, or escalate privileges (Can). The time between disclosure of a vulnerability and the start of exploitation keeps getting shorter, and attacks are carried out through automated scanning, so the period a patch remains unapplied is itself an opportunity for intrusion. On the other hand, if the components and versions of {{nodeName}} are known, patches are applied within deadlines starting with vulnerabilities known to be exploited (CISA KEV, etc.), and workarounds are applied to anything that cannot be patched immediately, intrusion through publicly known techniques does not succeed (Cannot). Undisclosed (zero-day) vulnerabilities require separate defense in depth. The blast radius is the privileges of {{nodeName}} and everything reachable using {{nodeName}} as a foothold."
+    mitigation: "[Foundation] Record the components of the target (OS, middleware, libraries, firmware) and their versions in an asset inventory, and check for unapplied patches. Apply patches for vulnerabilities known to be exploited (CISA KEV, IPA urgent advisories, etc.) with top priority, and replace products that are out of support. [Enterprise] Set patching deadlines based on vulnerability severity and exploitation status, and make the path from verification in a test environment to production rollout a routine procedure. When a patch cannot be applied immediately, record the workaround (disabling the feature, restricting access) and its deadline. Verify patch status regularly through scanning. [Advanced] Automatically match the component list (SBOM) against vulnerability information and automate patching. Move to rebuilding and replacing immutable images, eliminating manual patching of individual servers."
+    references:
+      "0":
+        title: "IPA - Countermeasures to take promptly in light of data breaches caused by unauthorized access (2026-10-09; check for unapplied vulnerability patches)"
+      "2":
+        title: "CISA - Known Exploited Vulnerabilities Catalog (prioritized remediation of vulnerabilities known to be exploited)"
+
+  posture-account-review-missing-001:
+    category: "Spoofing"
+    name: "No or irregular account review (accounts of former employees, ended contractors, and unneeded accounts remain)"
+    description: "If the accounts of {{nodeName}} are not reviewed regularly, accounts of employees who have left or changed roles, external staff whose contracts have ended, accounts created for testing, and API keys or integration accounts that are no longer used remain enabled (Can). Using leaked or guessed passwords, an attacker logs in to an account that nobody notices because it has no owner, and operates {{nodeName}} as a legitimate user. Without a review, accounts that should never have been created, or accounts that were disabled but have been re-enabled, are not found either. On the other hand, if the accounts and privileges of {{nodeName}} are reviewed regularly by owner and disabled in step with the end of employment or contracts, no ownerless accounts remain and suspicious accounts are found within the review cycle (Cannot). The blast radius is every privilege held by the accounts left on {{nodeName}}."
+    mitigation: "[Foundation] List the accounts of the target and check each one's owner, purpose, and last login date. Build account deactivation into the procedures for leaving, transfer, and contract termination, and review accounts at least every six months (privileged accounts more often). [Enterprise] Integrate with the identity platform (IdP, IGA) to automate account creation and deactivation from HR and contract information. Automatically disable accounts that have not been used for a set period, and monitor account creation, enablement, and privilege changes through logs. [Advanced] Eliminate standing privileged accounts and grant privileges only when needed and for a limited time. Record review outcomes (approvals and revocations) and check that reviews have not become a formality (the share of blanket approvals)."
+    references:
+      "0":
+        title: "IPA - Countermeasures to take promptly in light of data breaches caused by unauthorized access (2026-10-09; review how account reviews are operated)"
+
+  posture-data-minimization-001:
+    category: "Information Disclosure"
+    name: "Unneeded or unreviewed data is kept (making the damage of a leak unnecessarily large)"
+    description: "If {{nodeName}} continues to be kept after it is no longer needed, or without deciding whether it is needed, then when the system that stores it is compromised, data that should already have been deleted is exfiltrated along with everything else (Can). Exfiltrated data becomes material for threats to publish it or an object of illicit trade, and the more records there are, the greater the burden of notifying individuals, reporting to regulators, and compensation, and the greater the secondary damage. On the other hand, if the purpose and retention period of {{nodeName}} are defined and data that is no longer needed is deleted without delay (including rendering it unable to identify specific individuals), a compromise exposes only the minimum data the business needs (Cannot). The blast radius is every record in {{nodeName}} and the individuals concerned."
+    mitigation: "[Foundation] Record the purpose of use, retention period, record count, and storage location of the target in an inventory, and delete data that is no longer needed (members who have left, customers whose transactions have ended, survey data whose purpose has been met, etc.). For data whose retention period is set by law, delete it once that period has passed. [Enterprise] Automate deletion of data past its retention period, and include copies of the same data outside production (development, testing, and analytics copies). Keep only the necessary fields and delete, anonymize, or pseudonymize the rest. [Advanced] Design collection to limit fields to what is needed from the start (data minimization), keep continuous track of the types and volume of data held, and periodically check that it is not growing unchecked."
+    references:
+      "0":
+        title: "IPA - Countermeasures to take promptly in light of data breaches caused by unauthorized access (2026-10-09; reconsider whether to keep the data at all)"
+      "1":
+        title: "Personal Information Protection Commission (Japan) - Guidelines on the Act on the Protection of Personal Information (General Rules), 3-4-1 (Article 22: deletion of personal data that is no longer needed)"

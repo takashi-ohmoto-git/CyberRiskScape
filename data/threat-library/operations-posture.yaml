@@ -1,0 +1,487 @@
+# 運用状況（ノードの posture 属性）にもとづく脅威。ログの取得と保持期間、保管時の暗号化、
+# 既知の脆弱性に対するパッチの適用、アカウントの棚卸し、データ資産の保有の必要性を扱う。
+# いずれも構成図の形ではなく「その構成要素をどう運用しているか」の状態で決まる脅威で、
+# 利用者がノードの「運用状況」に入力した値（未入力は対策なしとして扱う）で発火する。
+#
+# 出典（一般的な基準のみを根拠とする。個別の事故報告は出典・事例に用いない）:
+#   - IPA「不正アクセスによる漏えい等の事案を踏まえ、速やかに実施すべき対策等について」（2026-10-09）
+#     （ログの取得内容・保持期間の見直し、ログを誰が確認できるかの整理、未適用パッチの確認、
+#     アカウント棚卸の運用見直し、データ保有の是非の再検討、データの暗号化）。
+#   - NIST SP 800-92 "Guide to Computer Security Log Management"（2006）と
+#     NIST SP 800-92 Rev.1 初期公開草案 "Cybersecurity Log Management Planning Guide"（2023-10）
+#     （ログの生成・転送・保管・廃棄の管理、インシデントの調査のためのログ）。
+#   - OMB M-21-31（2021-08）（ログの保持期間：アクティブな保管 12 か月＋コールドストレージ 18 か月）。
+#   - NIST SP 800-111 "Guide to Storage Encryption Technologies for End User Devices"（保管時の暗号化）と
+#     NIST SP 800-209 "Security Guidelines for Storage Infrastructure"（保管データとバックアップの暗号化）。
+#   - NIST SP 800-40 Rev.4 "Guide to Enterprise Patch Management Planning" と
+#     CISA Known Exploited Vulnerabilities Catalog（パッチの計画的な適用、悪用が確認された脆弱性の優先）。
+#   - 個人情報の保護に関する法律 第 22 条（利用する必要がなくなった個人データの遅滞なき消去の努力義務）と
+#     個人情報保護委員会「個人情報の保護に関する法律についてのガイドライン（通則編）」3-4-1。
+#   本文は逐語転載せず日本語要約のみ。
+#
+#   SPDX-License-Identifier: Apache-2.0
+#   ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+#   出典の帰属表示は NOTICE を参照。
+#
+# 対象の型:
+#   posture 条件は、ノードの型がそのフィールドのグループ（data/component-library/*.yaml の `posture:`）を
+#   宣言していないと成立しない。各ルールの anyOf は、そのグループを宣言している型をそのまま列挙した
+#   （型の posture 宣言を変えたら anyOf も合わせること）。
+#
+# 重複回避方針:
+#   既存の汎用ルールは「その型ならいつでも当てはまる問い」として常に発火する。本ファイルのルールは
+#   利用者が入力した運用状況（または未入力）でだけ発火する「状態の指摘」で、問いの範囲が狭く
+#   同義ではないため既存の canonicalId を再利用せず、別グループとした（粒度は仮置き。人間判断）。
+#   - ログの取得なし ↔ stride-data-store-repudiation-001（data-store-repudiation。WORM・改ざん検知を含む
+#     監査追跡の一般論）、identity-idp-authentication-log-gap-001（idp-authentication-log-gap。IdP の
+#     証跡の外部転送・改ざん耐性）。どちらも「取得しているか」の状態は見ないため併存させる。
+#   - 公開サーバー・API ゲートウェイのログの取得なし → stride-web-no-access-log-001（attackSurface.hasAccessLog）
+#     でカバー済み。この 2 型は log グループを持たないため posture-log-not-collected-001 の対象に入らない。
+#   - ログの保持期間：ログを取得していないノードに保持期間のカードを重ねない。
+#     - log グループの型 → posture-log-retention-short-001。logCollection が NotCollected のノードは除く
+#       （取得の欠如は posture-log-not-collected-001 が出す）。
+#     - 公開サーバー・API ゲートウェイ → posture-log-retention-short-002。attackSurface.hasAccessLog を
+#       true と入力したノードだけ（未入力・false は stride-web-no-access-log-001 が出す）。
+#     1 本のルールでは「型ごとに別の除外条件」を書けないため 2 本に分け、同じ canonicalId で束ねた。
+#   - 保管時の暗号化なし ↔ stride-data-store-info-disclosure-001（data-store-info-disclosure。アクセス制御と
+#     暗号化の一般論）、endpoint-loss-credential-exposure 系（PC・スマートフォンの紛失時の認証情報）、
+#     memory-store-sensitive-data-accumulation-001（記憶への蓄積）。いずれも暗号化の有無の状態は見ないため併存。
+#   - パッチの未適用 ↔ netinfra-edge-device-exploitation-001（network-edge-device-exploitation）はエッジ
+#     （Internet からの到達）を subject にするため別 subject。endpoint-iot-default-credentials-unpatchable-001
+#     は「適用できない」機器の性質の問いで、未適用の状態とは別。
+#   - アカウント棚卸しの欠如 ↔ iga-certification-gap-001（iga-certification-gap）は棚卸しの「形骸化」で、
+#     棚卸しの「欠如・不定期」とは別。SERVICE_ACCOUNT は nhi-improper-offboarding-001（所有者不在・不要な
+#     NHI の残存）が同じ問いを常に出すため対象から外した（同じノードに同義のカードを 2 枚出さない）。
+#   - 不要なデータの保有 ↔ voice-biometric-recording-exposure-001（通話録音の漏えい・目的外利用）は
+#     保有の必要性を見ないため併存。
+#
+#   内在的な脅威（運用の状態は図の接続に依存しない）なので、すべて connection.required: false。
+#   attackSurface は公開サーバー・API ゲートウェイ以外では未入力が「Global IP あり」に解釈されるため、
+#   attackSurface を条件にするときは必ず nodeType: [FRONT_END_SERVER, GATEWAY] と組み合わせる。
+#
+# mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
+# description は Can/Cannot ペアと blast radius を意識して記述する。
+
+schemaVersion: 1
+
+rules:
+  # ── ログを取得していない ─────────────────────────────────────
+  - id: posture-log-not-collected-001
+    canonicalId: log-not-collected
+    framework: STRIDE
+    category: "Repudiation"
+    name: "ログを取得していない（侵害の検知・調査ができない）"
+    severity: Medium
+    description: "{{nodeName}} でアクセス・認証・管理操作のログを取得していない場合、攻撃者がアカウントを乗っ取ってログインしても、不正な操作やデータの持ち出しを行っても、その記録が残らない（Can）。侵害の兆候（ログイン失敗の急増・普段と違う接続元や時間帯）に気づけず、発覚した後も、いつ・どの経路で・どのデータに触れたかを確定できないため、漏えいの範囲を特定して本人や当局へ報告することも、封じ込めの範囲を決めることも難しくなる。一方、{{nodeName}} の認証・管理操作・データへのアクセスを記録し、{{nodeName}} の管理権限が及ばない場所へ転送していれば、侵害は記録として残り、異常の検知と事後の調査が成立する（Cannot）。blast radius は {{nodeName}} で起きたすべての操作の追跡可能性。"
+    mitigation: "[Foundation] 対象の認証の成否・管理操作・アカウントの作成と変更・データへのアクセスを記録対象として有効にする。外部サービスでは、提供者が取得しているログと利用者が確認できるログの範囲を確かめ、必要なら上位のプランやログの出力機能を使う。 [Enterprise] ログを発生と同時に 対象の管理権限の及ばないログ基盤（SIEM 等）へ転送し、ログの送信が止まったこと自体を通知の対象にする。平時のログイン失敗数・接続元・時間帯を基準として、異常を検知する。 [Advanced] サービスごとのログを共通の相関 ID と時刻で突き合わせられる形で集約し、ログの欠損区間を自動で検出する。保管したログに改ざん検知（ハッシュチェーン・WORM）を付ける。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: MCP_SERVER
+        - nodeType: MEMORY_STORE
+        - nodeType: BACKEND_API
+        - nodeType: API_CONTROL_PLANE
+        - nodeType: CI_PIPELINE
+        - nodeType: SECRETS_VAULT
+        - nodeType: API_DEV_WORKSPACE
+        - nodeType: CHAT
+        - nodeType: LINE
+        - nodeType: WEB_FORM
+        - nodeType: PAYMENT_PAGE
+        - nodeType: MAIL
+        - nodeType: CRM
+        - nodeType: OTHER_APP
+        - nodeType: DATA_STORE
+        - nodeType: DB
+        - nodeType: IDENTITY_PROVIDER
+        - nodeType: DIRECTORY
+        - nodeType: SAAS
+        - nodeType: IAAS
+        - nodeType: PAAS
+        - nodeType: ROUTER
+        - nodeType: LOAD_BALANCER
+        - nodeType: CDN
+        - nodeType: VPN_GATEWAY
+        - nodeType: SBC
+        - nodeType: FIREWALL
+        - nodeType: WAF
+        - nodeType: IDS_IPS
+        - nodeType: SECURE_WEB_GATEWAY
+        - nodeType: SASE
+        - nodeType: EMAIL_GATEWAY
+        - nodeType: HSM
+        - nodeType: BASTION
+        - nodeType: ZTNA_PROXY
+        - nodeType: SERVICE_MESH
+        - nodeType: PAM
+        - nodeType: IGA
+        - nodeType: AI_GATEWAY
+        - nodeType: CENTRAL_GATEWAY
+        - nodeType: TCU
+        - nodeType: OTA_SERVER
+        - nodeType: VEHICLE_PKI
+        - nodeType: DATABASE
+        - nodeType: STORAGE
+        - nodeType: BACKUP_STORAGE
+        - nodeType: IMMUTABLE_BACKUP
+        - nodeType: PBX
+        - nodeType: IVR
+      connection:
+        required: false
+      posture:
+        logCollection: [NotCollected, Unknown]
+      conditions:
+        # 個人情報・機密情報を格納しているノードでは、漏えいの範囲を特定できないことの影響が大きい。
+        - when:
+            containsType: [PERSONAL_INFO, CONFIDENTIAL_INFO, VOICE_RECORDING]
+          severity: High
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-04"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-01"
+    references:
+      - title: "IPA - 不正アクセスによる漏えい等の事案を踏まえ、速やかに実施すべき対策等について（2026-10-09。ログ取得内容、保持期間の見直し）"
+        url: "https://www.ipa.go.jp/security/security-alert/2026/alert20261009.html"
+      - title: "NIST SP 800-92 - Guide to Computer Security Log Management"
+        url: "https://csrc.nist.gov/pubs/sp/800/92/final"
+      - title: "NIST SP 800-92 Rev.1 (Initial Public Draft) - Cybersecurity Log Management Planning Guide"
+        url: "https://csrc.nist.gov/pubs/sp/800/92/r1/ipd"
+
+  # ── ログの保持期間が短い（log グループの型）────────────────────────
+  - id: posture-log-retention-short-001
+    canonicalId: log-retention-insufficient
+    framework: STRIDE
+    category: "Repudiation"
+    name: "ログの保持期間が短く、侵害の発覚時に遡って調べられない"
+    severity: High
+    description: "{{nodeName}} のログの保持期間が短い場合、侵入から発覚までに時間がかかった侵害では、攻撃者が最初に侵入した時点や、その後に行った操作のログがすでに消えている（Can）。侵害は数か月たってから外部の通報や公的機関の情報で発覚することが多く、そのときに遡れるログが無いと、侵入の起点・期間・持ち出されたデータの範囲を確定できず、漏えいの対象者を絞れない。誰がどのログをいつまで確認できるかが整理されていないと、外部サービスでは提供者側にしか無いログを期限内に入手できないこともある。一方、{{nodeName}} のログを少なくとも 1 年以上（重要なログは長期の保管も含めて）保持し、利用者自身が確認できる場所に保管していれば、発覚が遅れても侵害の全期間を遡って調べられる（Cannot）。blast radius は保持期間を過ぎた期間に {{nodeName}} で起きたすべての操作の追跡可能性。"
+    mitigation: "[Foundation] 対象のログの保持期間を確かめ、少なくとも 1 年以上を目安に設定する。外部サービスでは、提供者と利用者のそれぞれが確認できるログの種類と保持期間を整理し、利用者側で保持期間が足りないログは定期的に自組織のログ基盤へ取り出して保管する。 [Enterprise] すぐに検索できる保管（目安 12 か月）と、低コストの長期保管（目安 18 か月以上）を組み合わせ、重要度の高いログを長く残す。保管先は 対象の管理権限が及ばない場所にし、保持期間の変更を監視する。 [Advanced] 保持期間を規制・契約・インシデント対応の要件から決めて文書化し、保管したログの改ざん検知と、期間を過ぎたログの確実な廃棄までを自動化する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: MCP_SERVER
+        - nodeType: MEMORY_STORE
+        - nodeType: BACKEND_API
+        - nodeType: API_CONTROL_PLANE
+        - nodeType: CI_PIPELINE
+        - nodeType: SECRETS_VAULT
+        - nodeType: API_DEV_WORKSPACE
+        - nodeType: CHAT
+        - nodeType: LINE
+        - nodeType: WEB_FORM
+        - nodeType: PAYMENT_PAGE
+        - nodeType: MAIL
+        - nodeType: CRM
+        - nodeType: OTHER_APP
+        - nodeType: DATA_STORE
+        - nodeType: DB
+        - nodeType: IDENTITY_PROVIDER
+        - nodeType: DIRECTORY
+        - nodeType: SAAS
+        - nodeType: IAAS
+        - nodeType: PAAS
+        - nodeType: ROUTER
+        - nodeType: LOAD_BALANCER
+        - nodeType: CDN
+        - nodeType: VPN_GATEWAY
+        - nodeType: SBC
+        - nodeType: FIREWALL
+        - nodeType: WAF
+        - nodeType: IDS_IPS
+        - nodeType: SECURE_WEB_GATEWAY
+        - nodeType: SASE
+        - nodeType: EMAIL_GATEWAY
+        - nodeType: HSM
+        - nodeType: BASTION
+        - nodeType: ZTNA_PROXY
+        - nodeType: SERVICE_MESH
+        - nodeType: PAM
+        - nodeType: IGA
+        - nodeType: AI_GATEWAY
+        - nodeType: CENTRAL_GATEWAY
+        - nodeType: TCU
+        - nodeType: OTA_SERVER
+        - nodeType: VEHICLE_PKI
+        - nodeType: DATABASE
+        - nodeType: STORAGE
+        - nodeType: BACKUP_STORAGE
+        - nodeType: IMMUTABLE_BACKUP
+        - nodeType: PBX
+        - nodeType: IVR
+      connection:
+        required: false
+      posture:
+        # ログを取得していないノード（NotCollected）は posture-log-not-collected-001 が出すため除く。
+        logCollection: [Collected, Unknown]
+        logRetention: [Under90Days, Under1Year, Unknown]
+      conditions:
+        - when:
+            posture:
+              logRetention: [Under1Year]
+          severity: Medium
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-04"
+      - standard: nist-csf-2.0
+        ref: "RS.AN-03"
+    references:
+      - title: "IPA - 不正アクセスによる漏えい等の事案を踏まえ、速やかに実施すべき対策等について（2026-10-09。ログの保有期間と確認できる主体の整理）"
+        url: "https://www.ipa.go.jp/security/security-alert/2026/alert20261009.html"
+      - title: "OMB M-21-31 - Improving the Federal Government's Investigative and Remediation Capabilities Related to Cybersecurity Incidents（ログの保持期間）"
+        url: "https://www.whitehouse.gov/wp-content/uploads/2021/08/M-21-31-Improving-the-Federal-Governments-Investigative-and-Remediation-Capabilities-Related-to-Cybersecurity-Incidents.pdf"
+      - title: "NIST SP 800-92 - Guide to Computer Security Log Management"
+        url: "https://csrc.nist.gov/pubs/sp/800/92/final"
+
+  # ── ログの保持期間が短い（公開サーバー・API ゲートウェイ）─────────────────
+  - id: posture-log-retention-short-002
+    canonicalId: log-retention-insufficient
+    framework: STRIDE
+    category: "Repudiation"
+    name: "アクセスログの保持期間が短く、侵害の発覚時に遡って調べられない"
+    severity: High
+    description: "{{nodeName}} はアクセスログを取得しているが、保持期間が短い場合、侵入から発覚までに時間がかかった侵害では、攻撃者が最初に脆弱性を探った通信や侵入した時点のアクセスログがすでに消えている（Can）。外部に公開しているサーバー・API への攻撃は、発覚が数か月後になることが多く、そのときに遡れるログが無いと、侵入の起点・期間・どの API やページから何を取得されたかを確定できない。一方、{{nodeName}} のアクセスログを少なくとも 1 年以上保持し、サーバー自身の管理権限が及ばないログ基盤に保管していれば、発覚が遅れても侵害の全期間を遡って調べられる（Cannot）。blast radius は保持期間を過ぎた期間に {{nodeName}} が受けたすべてのリクエストの追跡可能性。"
+    mitigation: "[Foundation] 対象のアクセスログの保持期間を確かめ、少なくとも 1 年以上を目安に設定する。ログを誰がどこで確認できるか（自組織・クラウドやホスティングの提供者）を整理する。 [Enterprise] すぐに検索できる保管（目安 12 か月）と、低コストの長期保管（目安 18 か月以上）を組み合わせ、対象の管理権限が及ばないログ基盤へ転送して保管する。保持期間の変更を監視する。 [Advanced] 保持期間を規制・契約・インシデント対応の要件から決めて文書化し、保管したログの改ざん検知と、期間を過ぎたログの確実な廃棄までを自動化する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: FRONT_END_SERVER
+        - nodeType: GATEWAY
+      connection:
+        required: false
+      # アクセスログを取得していない（未入力・false）ノードは stride-web-no-access-log-001 が出すため除く。
+      attackSurface:
+        hasAccessLog: true
+      posture:
+        logRetention: [Under90Days, Under1Year, Unknown]
+      conditions:
+        - when:
+            posture:
+              logRetention: [Under1Year]
+          severity: Medium
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-04"
+      - standard: nist-csf-2.0
+        ref: "RS.AN-03"
+    references:
+      - title: "IPA - 不正アクセスによる漏えい等の事案を踏まえ、速やかに実施すべき対策等について（2026-10-09。ログ取得内容、保持期間の見直し）"
+        url: "https://www.ipa.go.jp/security/security-alert/2026/alert20261009.html"
+      - title: "OMB M-21-31 - Improving the Federal Government's Investigative and Remediation Capabilities Related to Cybersecurity Incidents（ログの保持期間）"
+        url: "https://www.whitehouse.gov/wp-content/uploads/2021/08/M-21-31-Improving-the-Federal-Governments-Investigative-and-Remediation-Capabilities-Related-to-Cybersecurity-Incidents.pdf"
+      - title: "NIST SP 800-92 - Guide to Computer Security Log Management"
+        url: "https://csrc.nist.gov/pubs/sp/800/92/final"
+
+  # ── 保管時の暗号化なし ──────────────────────────────────────
+  - id: posture-encryption-at-rest-missing-001
+    canonicalId: data-at-rest-unencrypted
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "保管時に暗号化していない（媒体・バックアップ・スナップショットの持ち出しで読まれる）"
+    severity: Medium
+    description: "{{nodeName}} が保管するデータを暗号化していない場合、アプリケーションの認証やアクセス制御を通らない経路、つまりディスクや端末そのもの、バックアップ・スナップショット・エクスポートしたファイル、廃棄や修理に出した媒体を入手した者は、データをそのまま読める（Can）。クラウドでは、スナップショットの共有設定の誤りや、管理権限を奪われたアカウントによる複製でも同じことが起きる。一方、{{nodeName}} のデータを保管時に暗号化し、鍵をデータとは別の場所（鍵管理サービス・HSM）で管理してアクセスを絞っていれば、媒体や複製を持ち出されても鍵が無ければ読めない（Cannot）。ただし、正規の権限で {{nodeName}} にアクセスした者には透過的に復号されるため、アカウントの乗っ取りには暗号化だけでは効かない。blast radius は {{nodeName}} とそのバックアップ・複製に保管された全データ。"
+    mitigation: "[Foundation] 対象の保管時の暗号化（ディスク全体の暗号化・データベースやストレージの暗号化機能）を有効にし、バックアップ・スナップショット・エクスポートにも暗号化が及ぶことを確かめる。PC・スマートフォンではディスク全体の暗号化を端末管理で強制する。 [Enterprise] 個人情報・機密情報を保管する場合は利用者が管理する鍵（顧客管理鍵）を使い、鍵の利用権限をデータの管理者と分ける。鍵の利用を監査ログで監視し、媒体の廃棄時は鍵の破棄で読めなくする。 [Advanced] 特に機微な項目はアプリケーション層で暗号化（列・項目単位の暗号化、トークン化）し、ストレージやデータベースの管理者にも平文を見せない。鍵を HSM で保護し、定期的に更新する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: MEMORY_STORE
+        - nodeType: SECRETS_VAULT
+        - nodeType: CHAT
+        - nodeType: MAIL
+        - nodeType: CRM
+        - nodeType: DATA_STORE
+        - nodeType: DB
+        - nodeType: PC
+        - nodeType: SMARTPHONE
+        - nodeType: SAAS
+        - nodeType: IAAS
+        - nodeType: PAAS
+        - nodeType: DATABASE
+        - nodeType: STORAGE
+        - nodeType: BACKUP_STORAGE
+        - nodeType: IMMUTABLE_BACKUP
+      connection:
+        required: false
+      posture:
+        encryptionAtRest: [None, Unknown]
+      conditions:
+        - when:
+            containsType: [PERSONAL_INFO, CONFIDENTIAL_INFO, VOICE_RECORDING]
+          severity: High
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+    references:
+      - title: "IPA - 不正アクセスによる漏えい等の事案を踏まえ、速やかに実施すべき対策等について（2026-10-09。データの暗号化）"
+        url: "https://www.ipa.go.jp/security/security-alert/2026/alert20261009.html"
+      - title: "NIST SP 800-111 - Guide to Storage Encryption Technologies for End User Devices"
+        url: "https://csrc.nist.gov/pubs/sp/800/111/final"
+      - title: "NIST SP 800-209 - Security Guidelines for Storage Infrastructure（保管データとバックアップの暗号化）"
+        url: "https://csrc.nist.gov/pubs/sp/800/209/final"
+
+  # ── 既知の脆弱性に対するパッチの未適用 ───────────────────────────
+  - id: posture-patch-missing-001
+    canonicalId: known-vulnerability-unpatched
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "既知の脆弱性に対するパッチの未適用"
+    severity: High
+    description: "{{nodeName}} の OS・ミドルウェア・アプリケーション・ファームウェアに、公開済みの脆弱性に対するパッチが適用されていない場合、攻撃者は公開された脆弱性情報や攻撃コードを使って {{nodeName}} を掌握したり、認証を回避したり、権限を昇格したりできる（Can）。脆弱性が公開されてから悪用が始まるまでの時間は短くなっており、攻撃は自動化された探索で行われるため、未適用の期間がそのまま侵入の機会になる。一方、{{nodeName}} の構成要素とバージョンを把握し、悪用が確認された脆弱性（CISA KEV 等）から優先して期限内にパッチを適用し、すぐに適用できないものには回避策を当てていれば、公開済みの手口による侵入は成立しない（Cannot）。未公開の脆弱性（ゼロデイ）には別の多層防御が要る。blast radius は {{nodeName}} の権限と、{{nodeName}} を足場に到達できる範囲。"
+    mitigation: "[Foundation] 対象の構成要素（OS・ミドルウェア・ライブラリ・ファームウェア）とバージョンを資産台帳に載せ、未適用のパッチが無いかを確かめる。悪用が確認された脆弱性（CISA KEV・IPA の緊急情報等）は最優先で適用し、サポートが終了した製品は更新する。 [Enterprise] 脆弱性の重大度と悪用状況にもとづいて適用期限を決め、検証環境での確認から本番への適用までを定常の手順にする。すぐに適用できない場合の回避策（機能の無効化・アクセスの制限）と、その期限を記録する。適用状況を定期的にスキャンで確かめる。 [Advanced] 構成要素の一覧（SBOM）と脆弱性情報を自動で突き合わせ、適用を自動化する。不変のイメージを作り直して入れ替える運用にし、個別のサーバーへの手作業の適用をなくす。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: MCP_SERVER
+        - nodeType: BACKEND_API
+        - nodeType: API_CONTROL_PLANE
+        - nodeType: WEB_FORM
+        - nodeType: PC
+        - nodeType: SMARTPHONE
+        - nodeType: IOT
+        - nodeType: GATEWAY
+        - nodeType: FRONT_END_SERVER
+        - nodeType: DIRECTORY
+        - nodeType: IAAS
+        - nodeType: L2_SWITCH
+        - nodeType: ROUTER
+        - nodeType: LOAD_BALANCER
+        - nodeType: VPN_GATEWAY
+        - nodeType: WIRELESS_AP
+        - nodeType: SBC
+        - nodeType: FIREWALL
+        - nodeType: WAF
+        - nodeType: IDS_IPS
+        - nodeType: SECURE_WEB_GATEWAY
+        - nodeType: EMAIL_GATEWAY
+        - nodeType: HSM
+        - nodeType: BASTION
+        - nodeType: ZTNA_PROXY
+        - nodeType: SERVICE_MESH
+        - nodeType: PAM
+        - nodeType: IGA
+        - nodeType: AI_GATEWAY
+        - nodeType: ECU
+        - nodeType: ZONE_CONTROLLER
+        - nodeType: CENTRAL_COMPUTE
+        - nodeType: CENTRAL_GATEWAY
+        - nodeType: TCU
+        - nodeType: IVI
+        - nodeType: V2X_OBU
+        - nodeType: V2X_RSU
+        - nodeType: DIAGNOSTIC_TOOL
+        - nodeType: EV_CHARGER
+        - nodeType: OTA_SERVER
+        - nodeType: ADAS_SENSOR
+        - nodeType: DATABASE
+        - nodeType: STORAGE
+        - nodeType: BACKUP_STORAGE
+        - nodeType: PBX
+        - nodeType: IVR
+      connection:
+        required: false
+      posture:
+        patchStatus: [Missing, Unknown]
+      conditions:
+        # Global IP を持つ公開サーバー・API ゲートウェイは、インターネットからの自動探索の対象になる。
+        # attackSurface は他の型では未入力が「Global IP あり」に解釈されるため、型を必ず絞る。
+        - when:
+            nodeType: [FRONT_END_SERVER, GATEWAY]
+            attackSurface:
+              hasGlobalIp: true
+          severity: Critical
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "ID.RA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-02"
+    references:
+      - title: "IPA - 不正アクセスによる漏えい等の事案を踏まえ、速やかに実施すべき対策等について（2026-10-09。未適用の脆弱性対応パッチの確認）"
+        url: "https://www.ipa.go.jp/security/security-alert/2026/alert20261009.html"
+      - title: "NIST SP 800-40 Rev.4 - Guide to Enterprise Patch Management Planning"
+        url: "https://csrc.nist.gov/pubs/sp/800/40/r4/final"
+      - title: "CISA - Known Exploited Vulnerabilities Catalog（悪用が確認された脆弱性の優先修正）"
+        url: "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+
+  # ── アカウント棚卸しの運用がない・不定期 ─────────────────────────
+  - id: posture-account-review-missing-001
+    canonicalId: account-review-gap
+    framework: STRIDE
+    category: "Spoofing"
+    name: "アカウント棚卸しの運用がない・不定期（退職者・委託終了者・不要なアカウントが残る）"
+    severity: Medium
+    description: "{{nodeName}} のアカウントを定期的に棚卸ししていない場合、退職者・異動者・委託の終了した外部の担当者・検証用に作ったアカウントや、使われなくなった API キー・連携用アカウントが有効なまま残る（Can）。攻撃者は流出したパスワードや推測で、持ち主がいないため誰も気づかないアカウントにログインし、正規の利用者として {{nodeName}} を操作できる。作ったはずのないアカウントや、無効にしたはずなのに有効に戻されたアカウントも、棚卸しが無ければ見つからない。一方、{{nodeName}} のアカウントと権限を所有者ごとに定期的に確認し、人事・契約の終了と連動して無効化していれば、持ち主のいないアカウントは残らず、不審なアカウントは棚卸しの周期内に見つかる（Cannot）。blast radius は {{nodeName}} に残ったアカウントが持つすべての権限。"
+    mitigation: "[Foundation] 対象のアカウントの一覧を出し、所有者・用途・最終ログイン日を確かめる。退職・異動・委託終了の手続きにアカウントの無効化を組み込み、少なくとも半年に 1 回（特権アカウントはより短い周期で）棚卸しする。 [Enterprise] ID 管理基盤（IdP・IGA）と連携して、人事・契約の情報からアカウントの作成と無効化を自動化する。一定期間使われていないアカウントを自動で無効にし、アカウントの作成・有効化・権限変更をログで監視する。 [Advanced] 常時有効な特権アカウントをなくし、必要なときだけ期限付きで権限を付与する。棚卸しの結果（承認・取り消し）を記録し、形骸化していないか（全件承認の割合）を確認する。"
+    appliesTo:
+      kind: node
+      # SERVICE_ACCOUNT は nhi-improper-offboarding-001 が同じ問いを常に出すため対象外。
+      anyOf:
+        - nodeType: API_CONTROL_PLANE
+        - nodeType: CI_PIPELINE
+        - nodeType: SECRETS_VAULT
+        - nodeType: API_DEV_WORKSPACE
+        - nodeType: CHAT
+        - nodeType: LINE
+        - nodeType: MAIL
+        - nodeType: CRM
+        - nodeType: OTHER_APP
+        - nodeType: IDENTITY_PROVIDER
+        - nodeType: DIRECTORY
+        - nodeType: SAAS
+        - nodeType: IAAS
+        - nodeType: PAAS
+        - nodeType: CDN
+        - nodeType: SASE
+        - nodeType: PAM
+        - nodeType: IGA
+        - nodeType: DATABASE
+        - nodeType: PBX
+      connection:
+        required: false
+      posture:
+        accountReview: [None, Irregular, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "IPA - 不正アクセスによる漏えい等の事案を踏まえ、速やかに実施すべき対策等について（2026-10-09。アカウント棚卸の運用見直し）"
+        url: "https://www.ipa.go.jp/security/security-alert/2026/alert20261009.html"
+
+  # ── 不要・要検討のデータの保有 ──────────────────────────────────
+  - id: posture-data-minimization-001
+    canonicalId: data-retention-unnecessary
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "不要・要検討のデータを保有し続けている（漏えい時の被害が不要に大きい）"
+    severity: Medium
+    description: "{{nodeName}} を利用する必要がなくなった後も、または必要かどうかを判断しないまま保有し続けている場合、格納先のシステムが侵害されたときに、本来なら消去されていたはずのデータまで一緒に持ち出される（Can）。持ち出されたデータは公開すると脅迫する材料や不正な売買の対象になり、件数が多いほど本人への通知・当局への報告・補償の負担と、二次被害が大きくなる。一方、{{nodeName}} の保有の目的と期間を決め、利用する必要がなくなったデータを遅滞なく消去する（特定の個人を識別できない形にすることを含む）運用にしていれば、侵害されても持ち出されるのは業務に必要な最小限のデータに限られる（Cannot）。blast radius は {{nodeName}} に含まれる全件と、その本人。"
+    mitigation: "[Foundation] 対象の利用目的・保有期間・件数・保管場所を台帳に記録し、利用する必要がなくなったデータ（退会者・取引の終了した顧客・目的を終えた調査データ等）を消去する。法令で保存期間が決まっているものは、その期間を過ぎたら消去する。 [Enterprise] 保有期間を過ぎたデータの消去を自動化し、本番以外の環境（開発・検証・分析用の複製）にある同じデータも対象にする。必要な項目だけを残し、他は削除・匿名化・仮名化する。 [Advanced] 収集の時点で必要な項目を絞る設計（データ最小化）にし、保有するデータの種類と件数を継続的に把握して、増え続けていないかを定期的に確認する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: PERSONAL_INFO
+        - nodeType: CONFIDENTIAL_INFO
+        - nodeType: VOICE_RECORDING
+        - nodeType: OTHER_DOCUMENT
+      # データ資産は親ノード（DB・ストレージ等）に格納された子ノードで、エッジを持たないことが多い。
+      connection:
+        required: false
+      posture:
+        dataNecessity: [NotRequired, UnderReview, Unknown]
+      conditions:
+        # 10 万件以上（Under1M・Over1M）と、件数が分からないもの。
+        - when:
+            posture:
+              recordVolume: [Under1M, Over1M, Unknown]
+          severity: High
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "ID.AM-07"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+    references:
+      - title: "IPA - 不正アクセスによる漏えい等の事案を踏まえ、速やかに実施すべき対策等について（2026-10-09。データ保有の是非の再検討）"
+        url: "https://www.ipa.go.jp/security/security-alert/2026/alert20261009.html"
+      - title: "個人情報保護委員会 - 個人情報の保護に関する法律についてのガイドライン（通則編）3-4-1（法第 22 条：利用する必要がなくなった個人データの消去）"
+        url: "https://www.ppc.go.jp/personalinfo/legal/guidelines_tsusoku/"

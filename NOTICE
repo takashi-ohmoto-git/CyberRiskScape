@@ -87,7 +87,8 @@ verbatim.
      SP 800-63B-4, SP 800-63C-4, SP 800-58, SP 800-41 Rev.1, SP 800-52 Rev.2,
      SP 800-57 Part 1 Rev.5, SP 800-77 Rev.1, SP 800-153, SP 800-38F,
      SP 800-53 Rev.5, SP 800-204A, SP 800-207A, SP 800-208, SP 800-209,
-     SP 800-34 Rev.1
+     SP 800-34 Rev.1, SP 800-92, SP 800-92 Rev.1 (Initial Public Draft),
+     SP 800-111, SP 800-40 Rev.4
    - IR 8259 / 8259A, IR 8374, IR 8547
    - FIPS 203 (ML-KEM), FIPS 204 (ML-DSA), FIPS 205 (SLH-DSA), FIPS 140-3
    - AI Risk Management Framework 1.0 (AI 100-1)
@@ -110,6 +111,8 @@ verbatim.
      data/threat-library/network-infra.yaml
    - Cybersecurity Advisory AA23-320A, Scattered Spider (with FBI)
    - #StopRansomware Guide — referenced by data/threat-library/storage.yaml
+   - The KEV Catalog is also referenced by
+     data/threat-library/operations-posture.yaml
    - Shifting the Balance of Cybersecurity Risk: Principles and Approaches for
      Secure by Design Software (October 2023, with NSA, FBI and international
      partners) — summarized in guide/secure-by-design.md
@@ -196,6 +199,20 @@ verbatim.
 
    Referenced by: data/threat-library/voice-contact-center.yaml,
                   data/threat-library/web-form.yaml
+
+   独立行政法人情報処理推進機構（IPA）「不正アクセスによる漏えい等の事案を踏まえ、
+   速やかに実施すべき対策等について」（2026年10月9日）
+   https://www.ipa.go.jp/security/security-alert/2026/alert20261009.html
+   個人情報の保護に関する法律 第22条、および個人情報保護委員会「個人情報の保護に
+   関する法律についてのガイドライン（通則編）」3-4-1
+   https://www.ppc.go.jp/personalinfo/legal/guidelines_tsusoku/
+   U.S. Office of Management and Budget (OMB), Memorandum M-21-31 (2021) —
+   log retention periods (a work of the U.S. Government; not subject to
+   copyright protection in the United States, 17 U.S.C. §105)
+   https://www.whitehouse.gov/
+   出典明記の上での要約参照。NIST の各文書は 5. を参照。
+
+   Referenced by: data/threat-library/operations-posture.yaml
 
 --------------------------------------------------------------------------------
 12. LY Corporation — LINE Developers documentation and LY Corporation notices
