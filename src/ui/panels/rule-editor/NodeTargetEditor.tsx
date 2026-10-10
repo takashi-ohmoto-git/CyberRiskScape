@@ -9,6 +9,7 @@ import { useLocale, useT } from '../../../i18n';
 import { ChipGroup, toggleInArray } from './ChipGroup';
 import { AttackSurfaceEditor } from './AttackSurfaceEditor';
 import { AgentAttributesEditor } from './AgentAttributesEditor';
+import { SegmentEditor } from './SegmentEditor';
 
 /**
  * ②マッチ条件（Node ルール）（§2.25 Phase D / D3）。
@@ -212,6 +213,15 @@ export function NodeTargetEditor({
         </div>
         <p className="text-xs text-slate-500 leading-relaxed">
           {t('ruleEditor.nodeTarget.authProviderRoleNote')}
+        </p>
+      </div>
+
+      {/* 所属区画 */}
+      <div className="flex flex-col gap-2 border-t border-slate-700/60 pt-3">
+        <SubLabel>{t('ruleEditor.nodeTarget.segmentLabel')}</SubLabel>
+        <SegmentEditor value={node.segment} onChange={(segment) => onChange({ ...node, segment })} />
+        <p className="text-xs text-slate-500 leading-relaxed">
+          {t('ruleEditor.nodeTarget.segmentNote')}
         </p>
       </div>
     </div>

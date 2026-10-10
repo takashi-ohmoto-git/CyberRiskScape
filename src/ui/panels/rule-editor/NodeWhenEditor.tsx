@@ -8,6 +8,7 @@ import { useLocale, useT } from '../../../i18n';
 import { ChipGroup, toggleInArray } from './ChipGroup';
 import { AttackSurfaceEditor } from './AttackSurfaceEditor';
 import { AgentAttributesEditor } from './AgentAttributesEditor';
+import { SegmentEditor } from './SegmentEditor';
 
 /**
  * ノード条件（`conditions[].when`）の編集。Edge 側の `EdgeWhenLeafEditor` に対応する
@@ -74,6 +75,8 @@ export function NodeWhenEditor({
         value={when.agentAttributes}
         onChange={(agentAttributes) => onChange({ ...when, agentAttributes })}
       />
+
+      <SegmentEditor value={when.segment} onChange={(segment) => onChange({ ...when, segment })} />
 
       <AxisRow label={t('ruleEditor.nodeWhen.attackSurfaceLabel')}>
         <AttackSurfaceEditor

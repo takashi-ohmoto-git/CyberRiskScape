@@ -120,6 +120,15 @@ describe('summarizeAppliesTo - kind: node', () => {
     expect(text).toContain('発行元としての位置づけ=Sole');
   });
 
+  it('segment が発火条件文に出る', () => {
+    const appliesTo: AppliesTo = {
+      kind: 'node',
+      nodeType: 'DATA_STORE',
+      segment: { status: ['NotEnforced'] },
+    };
+    expect(summarizeAppliesTo(appliesTo, 'ja')).toContain('所属区画の条件: 適用状態=NotEnforced');
+  });
+
   it('conditions（severity 段階分け）は発火条件文に出さない', () => {
     const appliesTo: AppliesTo = {
       kind: 'node',
@@ -164,6 +173,19 @@ describe('summarizeAppliesTo - kind: edge', () => {
     expect(text).toContain('宛先=LLM');
     expect(text).toContain('暗号化=Plain');
     expect(text).toContain('または');
+  });
+
+  it('区画の軸（オブジェクト値）は入れ子で書く', () => {
+    const appliesTo: AppliesTo = {
+      kind: 'edge',
+      when: {
+        segmentRelation: ['Cross'],
+        targetSegment: { environment: ['Production'], status: ['NotEnforced'] },
+      },
+    };
+    const text = summarizeAppliesTo(appliesTo, 'ja');
+    expect(text).toContain('両端の区画の関係=Cross');
+    expect(text).toContain('宛先の区画(環境=Production、適用状態=NotEnforced)');
   });
 
   it('field ラベル解決: network / encryption 単体でも日本語ラベルに置換される', () => {

@@ -13,6 +13,12 @@ import type { ThreatRule } from '../../threat-library/schema/threatRule';
 import { renderEdgeTemplate, renderNodeTemplate } from './renderTemplate';
 import { resolveNodeTrust } from './resolveNodeTrust';
 import {
+  resolveNodeSegment,
+  segmentRelationOf,
+  UNSEGMENTED,
+  type ResolvedSegment,
+} from './resolveNodeSegment';
+import {
   authProviderRoleOf,
   buildAuthProviderClosure,
   dependentsOf,
@@ -56,6 +62,7 @@ type NodeAxisMatch = Omit<NodeWhenLeaf, 'nodeType'>;
 type ConnectionRequirement = NonNullable<NodeAppliesTo['connection']>;
 type AttackSurfaceMatch = NonNullable<NodeAppliesTo['attackSurface']>;
 type AgentAttributesMatch = NonNullable<NodeAppliesTo['agentAttributes']>;
+type SegmentMatch = NonNullable<NodeAppliesTo['segment']>;
 
 /**
  * `agentAttributes` 未指定ノードのベースライン値。
@@ -159,14 +166,35 @@ function collectNodeAssumptionFlags(
   return flags.length > 0 ? flags : undefined;
 }
 
+/**
+ * 所属区画の条件。各フィールドは OR、フィールド間は AND。
+ * 区画外のノードは environment / sensitiveData を持たないため、それらの条件は不成立になる。
+ */
+function matchSegment(seg: ResolvedSegment, match: SegmentMatch): boolean {
+  if (match.status && !match.status.includes(seg.status)) return false;
+  if (match.environment && (!seg.environment || !match.environment.includes(seg.environment)))
+    return false;
+  if (match.sensitiveData && (!seg.sensitiveData || !match.sensitiveData.includes(seg.sensitiveData)))
+    return false;
+  return true;
+}
+
+/** エッジ両端の境界由来の値（trustLevel と所属区画）。 */
+interface EdgeEndpoints {
+  sourceTrust: TrustLevel;
+  targetTrust: TrustLevel;
+  sourceSegment: ResolvedSegment;
+  targetSegment: ResolvedSegment;
+}
+
 function matchEdgeWhen(
   when: EdgeWhenLeaf,
   edge: DiagramEdge,
   source: DiagramNode,
   target: DiagramNode,
-  sourceTrust: TrustLevel,
-  targetTrust: TrustLevel,
+  ends: EdgeEndpoints,
 ): boolean {
+  const { sourceTrust, targetTrust } = ends;
   if (when.auth && !when.auth.includes(edge.auth)) return false;
   if (when.network && !when.network.includes(edge.network)) return false;
   if (when.encryption && !when.encryption.includes(edge.encryption)) return false;
@@ -213,6 +241,13 @@ function matchEdgeWhen(
     const state = edge.authProviderId ? 'Declared' : 'Undeclared';
     if (!when.authProvider.includes(state)) return false;
   }
+  if (when.sourceSegment && !matchSegment(ends.sourceSegment, when.sourceSegment)) return false;
+  if (when.targetSegment && !matchSegment(ends.targetSegment, when.targetSegment)) return false;
+  if (
+    when.segmentRelation &&
+    !when.segmentRelation.includes(segmentRelationOf(ends.sourceSegment, ends.targetSegment))
+  )
+    return false;
   return true;
 }
 
@@ -225,19 +260,11 @@ function matchEdgeApplies(
   edge: DiagramEdge,
   source: DiagramNode,
   target: DiagramNode,
-  sourceTrust: TrustLevel,
-  targetTrust: TrustLevel,
+  ends: EdgeEndpoints,
 ): boolean {
-  if (applies.when)
-    return matchEdgeWhen(applies.when, edge, source, target, sourceTrust, targetTrust);
-  if (applies.allOf)
-    return applies.allOf.every((w) =>
-      matchEdgeWhen(w, edge, source, target, sourceTrust, targetTrust),
-    );
-  if (applies.anyOf)
-    return applies.anyOf.some((w) =>
-      matchEdgeWhen(w, edge, source, target, sourceTrust, targetTrust),
-    );
+  if (applies.when) return matchEdgeWhen(applies.when, edge, source, target, ends);
+  if (applies.allOf) return applies.allOf.every((w) => matchEdgeWhen(w, edge, source, target, ends));
+  if (applies.anyOf) return applies.anyOf.some((w) => matchEdgeWhen(w, edge, source, target, ends));
   return false;
 }
 
@@ -257,7 +284,12 @@ function matchNodeApplies(applies: NodeAppliesTo, node: DiagramNode): boolean {
  * `nodeType` はここでは見ない（`appliesTo` 側が単一文字列 / `anyOf`、`when` 側が配列で
  * 形が違うため、それぞれの呼び出し側で判定する）。
  */
-function matchNodeAxes(axes: NodeAxisMatch, node: DiagramNode, role: AuthProviderRole): boolean {
+function matchNodeAxes(
+  axes: NodeAxisMatch,
+  node: DiagramNode,
+  role: AuthProviderRole,
+  segment: ResolvedSegment,
+): boolean {
   if (axes.attackSurface && !matchAttackSurface(node, axes.attackSurface)) return false;
   if (axes.agentAttributes && !matchAgentAttributes(node, axes.agentAttributes)) return false;
   if (axes.identityProviderKind) {
@@ -268,13 +300,19 @@ function matchNodeAxes(axes: NodeAxisMatch, node: DiagramNode, role: AuthProvide
   // 発行元としての位置づけは参照グラフからの派生値なので、常にいずれかの値を持つ
   //（誰からも参照されていなければ `Unused`）。
   if (axes.authProviderRole && !axes.authProviderRole.includes(role)) return false;
+  if (axes.segment && !matchSegment(segment, axes.segment)) return false;
   return true;
 }
 
 /** `conditions[].when` の評価。`nodeType` は配列で OR。 */
-function matchNodeWhen(when: NodeWhenLeaf, node: DiagramNode, role: AuthProviderRole): boolean {
+function matchNodeWhen(
+  when: NodeWhenLeaf,
+  node: DiagramNode,
+  role: AuthProviderRole,
+  segment: ResolvedSegment,
+): boolean {
   if (when.nodeType && !when.nodeType.includes(node.type)) return false;
-  return matchNodeAxes(when, node, role);
+  return matchNodeAxes(when, node, role, segment);
 }
 
 /**
@@ -332,6 +370,7 @@ export function detectThreats({
   const threats: DetectedThreat[] = [];
   const nodeById = new Map(nodes.map((n) => [n.id, n] as const));
   const trustByNodeId = resolveNodeTrust(nodes, boundaries ?? []);
+  const segmentByNodeId = resolveNodeSegment(nodes, boundaries ?? []);
   // 発行元ごとの依存コンポーネント。説明文の `{{dependentCount}}` /
   // `{{dependentNames}}` 展開に使う。境界と同じく図全体から 1 回だけ導出する。
   const authProviderClosure = buildAuthProviderClosure(nodes, edges);
@@ -347,13 +386,14 @@ export function detectThreats({
         if (!matchNodeConnection(node, edges, nodeById, nodeApplies.connection, authProviderClosure))
           continue;
         const role = authProviderRoleOf(authProviderClosure, node.id);
-        if (!matchNodeAxes(nodeApplies, node, role)) continue;
+        const segment = segmentByNodeId.get(node.id) ?? UNSEGMENTED;
+        if (!matchNodeAxes(nodeApplies, node, role, segment)) continue;
 
         let severity: Severity = rule.severity;
         let description: string = rule.description;
         if (nodeConditions) {
           for (const cond of nodeConditions) {
-            if (!matchNodeWhen(cond.when, node, role)) continue;
+            if (!matchNodeWhen(cond.when, node, role, segment)) continue;
             if (cond.severity !== undefined) severity = cond.severity;
             if (cond.description !== undefined) description = cond.description;
             break;
@@ -392,17 +432,19 @@ export function detectThreats({
       const sourceNode = nodeById.get(edge.source);
       const targetNode = nodeById.get(edge.target);
       if (!sourceNode || !targetNode) continue;
-      const sourceTrust = trustByNodeId.get(sourceNode.id) ?? 'Internet';
-      const targetTrust = trustByNodeId.get(targetNode.id) ?? 'Internet';
-      if (!matchEdgeApplies(edgeApplies, edge, sourceNode, targetNode, sourceTrust, targetTrust))
-        continue;
+      const ends: EdgeEndpoints = {
+        sourceTrust: trustByNodeId.get(sourceNode.id) ?? 'Internet',
+        targetTrust: trustByNodeId.get(targetNode.id) ?? 'Internet',
+        sourceSegment: segmentByNodeId.get(sourceNode.id) ?? UNSEGMENTED,
+        targetSegment: segmentByNodeId.get(targetNode.id) ?? UNSEGMENTED,
+      };
+      if (!matchEdgeApplies(edgeApplies, edge, sourceNode, targetNode, ends)) continue;
 
       let severity: Severity = rule.severity;
       let description: string = rule.description;
       if (conditions) {
         for (const cond of conditions) {
-          if (!matchEdgeWhen(cond.when, edge, sourceNode, targetNode, sourceTrust, targetTrust))
-            continue;
+          if (!matchEdgeWhen(cond.when, edge, sourceNode, targetNode, ends)) continue;
           if (cond.severity !== undefined) severity = cond.severity;
           if (cond.description !== undefined) description = cond.description;
           break;

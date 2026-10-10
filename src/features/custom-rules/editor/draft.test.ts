@@ -68,6 +68,38 @@ const fixtures: Record<string, ThreatRule> = {
       authProviderRole: ['Sole'],
     },
   },
+  nodeWithSegment: {
+    id: 'node-segment-001',
+    framework: 'STRIDE',
+    category: 'Information Disclosure',
+    severity: 'Medium',
+    description: 'data store in unenforced segment',
+    appliesTo: {
+      kind: 'node',
+      nodeType: 'DATA_STORE',
+      segment: { status: ['NotEnforced', 'PartiallyEnforced'], environment: ['Production'] },
+      conditions: [{ when: { segment: { sensitiveData: ['Confidential'] } }, severity: 'High' }],
+    },
+  },
+  // 編集で落ちていた軸（IdP 種別・発行元の宣言状態）と区画の軸をまとめて往復させる
+  edgeWithIdentityAndSegmentAxes: {
+    id: 'edge-identity-segment-001',
+    framework: 'STRIDE',
+    category: 'Elevation of Privilege',
+    severity: 'High',
+    description: 'dev to prod',
+    appliesTo: {
+      kind: 'edge',
+      when: {
+        sourceIdentityProviderKind: ['Directory'],
+        targetIdentityProviderKind: ['IDaaS'],
+        authProvider: ['Undeclared'],
+        segmentRelation: ['Cross'],
+        sourceSegment: { environment: ['Development', 'Staging'] },
+        targetSegment: { environment: ['Production'], status: ['Enforced'] },
+      },
+    },
+  },
   nodeWithConditions: {
     id: 'node-conditions-001',
     framework: 'STRIDE',

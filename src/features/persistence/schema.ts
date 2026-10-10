@@ -128,7 +128,7 @@ const PersistedEdgeSchema = z.object({
 
 const MacroTrustAttributeSchema = z.enum(['Public Area', 'Office Area', 'Security Zone']);
 const MicroTrustAttributeSchema = z.enum(['Development', 'Staging', 'Production']);
-const MicroSegmentationStatusSchema = z.enum(['適用済み', '未適用']);
+const MicroSegmentationStatusSchema = z.enum(['適用済み', '部分適用', '未適用']);
 const SensitiveDataSchema = z.enum(['無し', '個人情報', '機密情報']);
 
 const PersistedBoundarySchema = z.object({

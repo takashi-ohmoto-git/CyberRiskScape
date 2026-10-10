@@ -52,8 +52,11 @@ export type MacroTrustAttribute = 'Public Area' | 'Office Area' | 'Security Zone
 /** マイクロセグメンテーション境界の TRUST ATTRIBUTE。 */
 export type MicroTrustAttribute = 'Development' | 'Staging' | 'Production';
 
-/** マイクロセグメンテーション適用状態。 */
-export type MicroSegmentationStatus = '適用済み' | '未適用';
+/**
+ * マイクロセグメンテーション適用状態。
+ * `部分適用` は一部のサービス（ポート）だけを強制している状態（例：Illumio の Selective Enforcement）。
+ */
+export type MicroSegmentationStatus = '適用済み' | '部分適用' | '未適用';
 
 /** 機密データ区分。 */
 export type SensitiveData = '無し' | '個人情報' | '機密情報';

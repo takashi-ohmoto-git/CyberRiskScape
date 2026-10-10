@@ -117,6 +117,9 @@ export const jaRuleEditor = {
   'ruleEditor.edgeLeaf.axis.sourceIdentityProviderKind': '発信元の IdP 種別',
   'ruleEditor.edgeLeaf.axis.targetIdentityProviderKind': '宛先の IdP 種別',
   'ruleEditor.edgeLeaf.axis.authProvider': '資格情報の発行元',
+  'ruleEditor.edgeLeaf.axis.segmentRelation': '両端の区画の関係',
+  'ruleEditor.edgeLeaf.axis.sourceSegment': '発信元の区画:',
+  'ruleEditor.edgeLeaf.axis.targetSegment': '宛先の区画:',
   'ruleEditor.edgeLeaf.axis.sourceType': 'source 型',
   'ruleEditor.edgeLeaf.axis.targetType': 'target 型',
 
@@ -145,6 +148,12 @@ export const jaRuleEditor = {
   'ruleEditor.nodeTarget.authProviderRoleLabel': '発行元としての位置づけ',
   'ruleEditor.nodeTarget.authProviderRoleNote':
     'Sole = 単独依存 / Shared = 他と併用 / Unused = 誰からも参照されていない。既存ルールをこの軸で絞ると、資格情報の発行元が 1 つも宣言されていない図では全ノードが Unused になり、今出ている検出が消える。精密化は新規ルールか下の分岐で行う。',
+  'ruleEditor.nodeTarget.segmentLabel': '所属区画（任意・OR）',
+  'ruleEditor.nodeTarget.segmentNote':
+    '所属区画＝ノードを含む最内側のマイクロセグメンテーション境界。区画外のノードは status が Unsegmented で、環境・機密データ区分の条件には当たらない。既存ルールをこの軸で絞ると、区画を描かない図で今出ている検出が消える。精密化は新規ルールか下の分岐で行う。',
+  'ruleEditor.segment.status': '適用状態',
+  'ruleEditor.segment.environment': '環境',
+  'ruleEditor.segment.sensitiveData': '機密データ区分',
   'ruleEditor.nodeWhen.nodeTypeLabel': 'ノード型（任意・OR）',
   'ruleEditor.nodeWhen.attackSurfaceLabel': '攻撃面',
 

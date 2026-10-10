@@ -60,6 +60,7 @@ export function ConditionDiagram({ appliesTo, centerType }: ConditionDiagramProp
         locale,
       ),
       ...toChipEntries(conn?.peerAttackSurface, locale),
+      ...toChipEntries(appliesTo.segment as unknown as Record<string, unknown> | undefined, locale),
     ];
 
     return (

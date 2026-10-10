@@ -16,6 +16,7 @@ import {
   Radius,
   ShieldAlert,
   ShieldCheck,
+  ShieldHalf,
   Users,
 } from 'lucide-react';
 import type {
@@ -105,6 +106,7 @@ interface MicroStatusOption {
 function getMicroStatusOptions(t: TFunc): MicroStatusOption[] {
   return [
     { val: '適用済み', label: t('panels.boundary.microStatus.applied'), icon: <ShieldCheck size={14} />, color: 'text-emerald-400' },
+    { val: '部分適用', label: t('panels.boundary.microStatus.partial'), icon: <ShieldHalf size={14} />, color: 'text-amber-400' },
     { val: '未適用', label: t('panels.boundary.microStatus.notApplied'), icon: <ShieldAlert size={14} />, color: 'text-rose-400' },
   ];
 }

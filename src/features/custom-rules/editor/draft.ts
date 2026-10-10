@@ -9,6 +9,7 @@ import {
   type Framework,
   type MitigationTiers,
   type Reference,
+  type SegmentMatch,
   type Severity,
   type ThreatRule,
 } from '../../../threat-library/schema/threatRule';
@@ -41,7 +42,19 @@ type NodeWhen = NodeConditionCase['when'];
  * Edge ルールのリーフ（5+ 軸）。各軸は常に通常配列（空 = 未指定）。
  * スキーマ側は `.nonempty()` の tuple 型だが、draft は編集途中に空を許すため要素配列に緩める。
  */
-export type EdgeLeafDraft = { [K in keyof EdgeWhenLeaf]-?: NonNullable<EdgeWhenLeaf[K]>[number][] };
+export type EdgeLeafDraft = {
+  [K in keyof EdgeArrayAxes]-?: NonNullable<EdgeArrayAxes[K]>[number][];
+} & {
+  sourceSegment: SegmentDraft;
+  targetSegment: SegmentDraft;
+};
+/** 配列の軸だけ（所属区画 `sourceSegment` / `targetSegment` はオブジェクトなので別扱い）。 */
+type EdgeArrayAxes = Omit<EdgeWhenLeaf, 'sourceSegment' | 'targetSegment'>;
+
+/** 所属区画の条件。各フィールド常に通常配列（空 = 未指定）。 */
+export type SegmentDraft = {
+  [K in keyof SegmentMatch]-?: NonNullable<SegmentMatch[K]>[number][];
+};
 
 /** Attack Surface 条件。各属性 true/false/null（null = 不問）。 */
 export type AttackSurfaceDraft = { [K in keyof AttackSurfaceMatch]-?: boolean | null };
@@ -62,6 +75,7 @@ export interface NodeWhenDraft {
   agentAttributes: AgentAttributesDraft;
   identityProviderKind: string[];
   authProviderRole: string[];
+  segment: SegmentDraft;
 }
 
 /** ノードルールの severity / description 段階分岐（`conditions[]` の 1 ケース）。 */
@@ -107,6 +121,8 @@ export interface NodeDraft {
   identityProviderKind: string[];
   /** 発行元としての位置づけ（OR）。空 = 未指定。 */
   authProviderRole: string[];
+  /** 所属区画。 */
+  segment: SegmentDraft;
   /** severity / description の段階分岐（first-match-wins）。 */
   conditions: NodeConditionCaseDraft[];
 }
@@ -154,7 +170,22 @@ const EDGE_AXES = [
   'sourceUserTrust',
   'targetUserTrust',
   'semantic',
+  'sourceIdentityProviderKind',
+  'targetIdentityProviderKind',
+  'authProvider',
+  'segmentRelation',
+] as const satisfies readonly (keyof EdgeArrayAxes)[];
+
+const SEGMENT_AXES = [
+  'sourceSegment',
+  'targetSegment',
 ] as const satisfies readonly (keyof EdgeLeafDraft)[];
+
+const SEGMENT_KEYS = [
+  'status',
+  'environment',
+  'sensitiveData',
+] as const satisfies readonly (keyof SegmentDraft)[];
 
 const ATTACK_SURFACE_KEYS = [
   'hasGlobalIp',
@@ -191,7 +222,14 @@ export function emptyLeaf(): EdgeLeafDraft {
     sourceIdentityProviderKind: [],
     targetIdentityProviderKind: [],
     authProvider: [],
+    segmentRelation: [],
+    sourceSegment: emptySegment(),
+    targetSegment: emptySegment(),
   };
+}
+
+export function emptySegment(): SegmentDraft {
+  return { status: [], environment: [], sensitiveData: [] };
 }
 
 export function emptyAttackSurface(): AttackSurfaceDraft {
@@ -227,6 +265,7 @@ export function emptyNodeWhen(): NodeWhenDraft {
     agentAttributes: emptyAgentAttributes(),
     identityProviderKind: [],
     authProviderRole: [],
+    segment: emptySegment(),
   };
 }
 
@@ -239,6 +278,7 @@ export function emptyNodeDraft(): NodeDraft {
     agentAttributes: emptyAgentAttributes(),
     identityProviderKind: [],
     authProviderRole: [],
+    segment: emptySegment(),
     conditions: [],
   };
 }
@@ -272,6 +312,19 @@ function leafToDraft(leaf: EdgeWhenLeaf): EdgeLeafDraft {
   const out = emptyLeaf();
   for (const k of EDGE_AXES) {
     const v = leaf[k];
+    if (v) (out[k] as unknown[]) = [...v];
+  }
+  for (const k of SEGMENT_AXES) {
+    const v = leaf[k];
+    if (v) out[k] = segmentToDraft(v);
+  }
+  return out;
+}
+
+function segmentToDraft(match: SegmentMatch): SegmentDraft {
+  const out = emptySegment();
+  for (const k of SEGMENT_KEYS) {
+    const v = match[k];
     if (v) (out[k] as unknown[]) = [...v];
   }
   return out;
@@ -342,6 +395,7 @@ function nodeWhenToDraft(w: NodeWhen): NodeWhenDraft {
     agentAttributes: w.agentAttributes ? agentToDraft(w.agentAttributes) : emptyAgentAttributes(),
     identityProviderKind: w.identityProviderKind ? [...w.identityProviderKind] : [],
     authProviderRole: w.authProviderRole ? [...w.authProviderRole] : [],
+    segment: w.segment ? segmentToDraft(w.segment) : emptySegment(),
   };
 }
 
@@ -368,6 +422,7 @@ function nodeToDraft(applies: NodeAppliesTo): NodeDraft {
       : emptyAgentAttributes(),
     identityProviderKind: applies.identityProviderKind ? [...applies.identityProviderKind] : [],
     authProviderRole: applies.authProviderRole ? [...applies.authProviderRole] : [],
+    segment: applies.segment ? segmentToDraft(applies.segment) : emptySegment(),
     conditions: (applies.conditions ?? []).map(nodeConditionToDraft),
   };
 }
@@ -399,7 +454,20 @@ function cleanLeaf(leaf: EdgeLeafDraft): Record<string, unknown> {
     const v = leaf[k];
     if (v.length > 0) out[k] = v;
   }
+  for (const k of SEGMENT_AXES) {
+    const seg = buildSegment(leaf[k]);
+    if (seg) out[k] = seg;
+  }
   return out;
+}
+
+function buildSegment(d: SegmentDraft): Record<string, string[]> | undefined {
+  const out: Record<string, string[]> = {};
+  for (const k of SEGMENT_KEYS) {
+    const v = d[k];
+    if (v.length > 0) out[k] = [...v];
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
 }
 
 function buildAttackSurface(d: AttackSurfaceDraft): Record<string, boolean> | undefined {
@@ -460,6 +528,8 @@ function buildNodeWhen(w: NodeWhenDraft): Record<string, unknown> {
   if (agent) out.agentAttributes = agent;
   if (w.identityProviderKind.length > 0) out.identityProviderKind = [...w.identityProviderKind];
   if (w.authProviderRole.length > 0) out.authProviderRole = [...w.authProviderRole];
+  const seg = buildSegment(w.segment);
+  if (seg) out.segment = seg;
   return out;
 }
 
@@ -487,6 +557,8 @@ function buildNodeAppliesTo(node: NodeDraft): Record<string, unknown> {
     out.identityProviderKind = [...node.identityProviderKind];
   }
   if (node.authProviderRole.length > 0) out.authProviderRole = [...node.authProviderRole];
+  const seg = buildSegment(node.segment);
+  if (seg) out.segment = seg;
   if (node.conditions.length > 0) out.conditions = node.conditions.map(buildNodeConditionCase);
   return out;
 }

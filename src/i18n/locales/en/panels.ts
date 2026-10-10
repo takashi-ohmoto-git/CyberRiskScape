@@ -138,6 +138,7 @@ export const enPanels: Partial<Record<TranslationKey, string>> = {
   'panels.boundary.trust.partner': 'Partner',
   'panels.boundary.trust.internet': 'Internet',
   'panels.boundary.microStatus.applied': 'Applied',
+  'panels.boundary.microStatus.partial': 'Partially applied',
   'panels.boundary.microStatus.notApplied': 'Not applied',
   'panels.boundary.sensitiveData.none': 'None',
   'panels.boundary.sensitiveData.pii': 'PII',

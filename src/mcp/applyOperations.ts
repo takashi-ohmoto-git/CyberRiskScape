@@ -197,7 +197,7 @@ const EdgeSetSchema = opObject({
 
 const MacroTrustSchema = z.enum(['Public Area', 'Office Area', 'Security Zone']);
 const MicroTrustSchema = z.enum(['Development', 'Staging', 'Production']);
-const MicroStatusSchema = z.enum(['適用済み', '未適用']);
+const MicroStatusSchema = z.enum(['適用済み', '部分適用', '未適用']);
 const SensitiveDataSchema = z.enum(['無し', '個人情報', '機密情報']);
 const BoundaryTypeSchema = z.enum([
   'RECT',

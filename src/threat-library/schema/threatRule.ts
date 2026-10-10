@@ -142,6 +142,48 @@ export const AgentAttributesMatchSchema = z
     { message: 'agentAttributes match must include at least one of agency / blastRadius / identityTier' },
   );
 
+/**
+ * ノードの**所属区画**（最内側のマイクロセグメンテーション境界 ROUNDED_DASHED）から導出する値。
+ * 図に保存はしない派生軸。導出規則は `resolveNodeSegment`（`src/core/threat-engine/resolveNodeSegment.ts`）を
+ * 一次ソースとする。
+ *
+ * - `status`：区画の適用状態。どの区画にも属さないノードは `Unsegmented`
+ * - `environment` / `sensitiveData`：区画の属性。区画外のノードは値を持たず、条件を書くと不成立
+ *
+ * ルール側は英語の列挙で書き、保存データの日本語値（適用済み等）とはエンジンが写像する。
+ */
+export const SegmentStatusSchema = z.enum([
+  'Enforced',
+  'PartiallyEnforced',
+  'NotEnforced',
+  'Unsegmented',
+]);
+export const SegmentEnvironmentSchema = z.enum(['Development', 'Staging', 'Production']);
+export const SegmentSensitiveDataSchema = z.enum(['None', 'PersonalData', 'Confidential']);
+/**
+ * エッジ両端の所属区画の関係。
+ * - `Same`：同じ区画 / `Cross`：別の区画（片側だけ区画外を含む） / `None`：両端とも区画外
+ */
+export const SegmentRelationSchema = z.enum(['Same', 'Cross', 'None']);
+
+/**
+ * 所属区画による絞り込み条件。各フィールドは配列（OR）、フィールド間は AND。
+ *
+ * **既存ルールをこの軸で絞ってはいけない**（区画を描かない図で現在の検出が消える）。
+ * ライブラリのルールは `Unsegmented` を発火条件にしない（区画を描かない図の全ノードに出るため）。
+ * 精密化は「新しいルールを足す」か「`conditions` で severity を上げる」で行う。
+ */
+export const SegmentMatchSchema = z
+  .object({
+    status: z.array(SegmentStatusSchema).nonempty().optional(),
+    environment: z.array(SegmentEnvironmentSchema).nonempty().optional(),
+    sensitiveData: z.array(SegmentSensitiveDataSchema).nonempty().optional(),
+  })
+  .refine(
+    (s) => s.status !== undefined || s.environment !== undefined || s.sensitiveData !== undefined,
+    { message: 'segment match must include at least one of status / environment / sensitiveData' },
+  );
+
 export const ConnectionDirectionSchema = z.enum(['any', 'inbound', 'outbound']);
 
 /**
@@ -201,6 +243,7 @@ const NodeWhenSchema = z
     agentAttributes: AgentAttributesMatchSchema.optional(),
     identityProviderKind: z.array(IdentityProviderKindSchema).nonempty().optional(),
     authProviderRole: z.array(AuthProviderRoleSchema).nonempty().optional(),
+    segment: SegmentMatchSchema.optional(),
   })
   .refine(
     (w) =>
@@ -208,7 +251,8 @@ const NodeWhenSchema = z
       w.attackSurface !== undefined ||
       w.agentAttributes !== undefined ||
       w.identityProviderKind !== undefined ||
-      w.authProviderRole !== undefined,
+      w.authProviderRole !== undefined ||
+      w.segment !== undefined,
     { message: 'node when must include at least one condition' },
   );
 
@@ -274,6 +318,8 @@ const NodeAppliesToSchema = z.object({
    * 精密化は「新しいルールを足す」か「`conditions` で severity を上げる」で行う。
    */
   authProviderRole: z.array(AuthProviderRoleSchema).nonempty().optional(),
+  /** 所属区画（マイクロセグメンテーション境界）による絞り込み。詳細は `SegmentMatchSchema`。 */
+  segment: SegmentMatchSchema.optional(),
   /**
    * 同一ルール内で severity / description を分岐させる場合に使用。
    * エッジルールの `conditions` と同じ first-match-wins。
@@ -335,6 +381,12 @@ const EdgeWhenSchema = z
      * 他の全エッジ軸と同じ形にしてルールエディタの汎用機構に乗せるため。
      */
     authProvider: z.array(AuthProviderStateSchema).nonempty().optional(),
+    /** source ノードの所属区画。詳細は `SegmentMatchSchema`。 */
+    sourceSegment: SegmentMatchSchema.optional(),
+    /** target ノードの所属区画。 */
+    targetSegment: SegmentMatchSchema.optional(),
+    /** 両端の所属区画の関係（同一区画・別区画・両端とも区画外）。 */
+    segmentRelation: z.array(SegmentRelationSchema).nonempty().optional(),
   })
   .refine(
     (w) =>
@@ -352,7 +404,10 @@ const EdgeWhenSchema = z
       w.semantic !== undefined ||
       w.sourceIdentityProviderKind !== undefined ||
       w.targetIdentityProviderKind !== undefined ||
-      w.authProvider !== undefined,
+      w.authProvider !== undefined ||
+      w.sourceSegment !== undefined ||
+      w.targetSegment !== undefined ||
+      w.segmentRelation !== undefined,
     { message: 'edge when must include at least one condition' },
   );
 
@@ -515,6 +570,7 @@ export type ConnectionDirection = z.infer<typeof ConnectionDirectionSchema>;
 export type ConnectionRequirement = z.infer<typeof ConnectionRequirementSchema>;
 export type AttackSurfaceMatch = z.infer<typeof AttackSurfaceMatchSchema>;
 export type AgentAttributesMatch = z.infer<typeof AgentAttributesMatchSchema>;
+export type SegmentMatch = z.infer<typeof SegmentMatchSchema>;
 export type MitigationTiers = z.infer<typeof MitigationTiersSchema>;
 export type ComplianceRef = z.infer<typeof ComplianceRefSchema>;
 export type Reference = z.infer<typeof ReferenceSchema>;

@@ -115,6 +115,9 @@ export const enRuleEditor: Partial<Record<TranslationKey, string>> = {
   'ruleEditor.edgeLeaf.axis.sourceIdentityProviderKind': 'Source IdP kind',
   'ruleEditor.edgeLeaf.axis.targetIdentityProviderKind': 'Target IdP kind',
   'ruleEditor.edgeLeaf.axis.authProvider': 'Credential issuer',
+  'ruleEditor.edgeLeaf.axis.segmentRelation': 'Segment relation',
+  'ruleEditor.edgeLeaf.axis.sourceSegment': 'Source segment:',
+  'ruleEditor.edgeLeaf.axis.targetSegment': 'Target segment:',
   'ruleEditor.edgeLeaf.axis.sourceType': 'source type',
   'ruleEditor.edgeLeaf.axis.targetType': 'target type',
 
@@ -145,6 +148,12 @@ export const enRuleEditor: Partial<Record<TranslationKey, string>> = {
   'ruleEditor.nodeTarget.authProviderRoleLabel': 'Role as credential provider',
   'ruleEditor.nodeTarget.authProviderRoleNote':
     'Sole = the only provider relied on / Shared = used alongside others / Unused = referenced by nobody. Narrowing an existing rule by this axis turns every node into Unused in diagrams that declare no credential provider, silently dropping current detections. Add a new rule, or use the branches below, instead.',
+  'ruleEditor.nodeTarget.segmentLabel': 'Segment (optional, OR)',
+  'ruleEditor.nodeTarget.segmentNote':
+    'Segment = the innermost micro-segmentation boundary containing the node. Nodes outside any segment have status Unsegmented and never match environment or sensitive-data conditions. Narrowing an existing rule by this axis drops current detections in diagrams without segments. Add a new rule, or use the branches below, instead.',
+  'ruleEditor.segment.status': 'Status',
+  'ruleEditor.segment.environment': 'Environment',
+  'ruleEditor.segment.sensitiveData': 'Sensitive data',
   'ruleEditor.nodeWhen.nodeTypeLabel': 'Node type (optional, OR)',
   'ruleEditor.nodeWhen.attackSurfaceLabel': 'Attack surface',
 

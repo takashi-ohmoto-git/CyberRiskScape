@@ -50,6 +50,7 @@ const jaCore = {
   'appliesToSummary.node.attackSurface': '対象ノード自身の攻撃面条件: {conditions}',
   'appliesToSummary.node.agentAttributes': 'エージェント属性条件: {conditions}',
   'appliesToSummary.node.identityAxes': 'アイデンティティ条件: {conditions}',
+  'appliesToSummary.node.segment': '所属区画の条件: {conditions}',
   'appliesToSummary.edge.when': 'エッジ条件: {conditions}',
   'appliesToSummary.edge.allOf': 'エッジ条件（すべて満たす）: {groups}',
   'appliesToSummary.edge.anyOf': 'エッジ条件（いずれか満たす）: {groups}',
@@ -82,6 +83,12 @@ const jaCore = {
   'appliesToSummary.field.agency': '自律度',
   'appliesToSummary.field.blastRadius': '影響範囲',
   'appliesToSummary.field.identityTier': 'アイデンティティ強度',
+  'appliesToSummary.field.sourceSegment': '発信元の区画',
+  'appliesToSummary.field.targetSegment': '宛先の区画',
+  'appliesToSummary.field.segmentRelation': '両端の区画の関係',
+  'appliesToSummary.field.status': '適用状態',
+  'appliesToSummary.field.environment': '環境',
+  'appliesToSummary.field.sensitiveData': '機密データ区分',
 
   // ── ThreatCard「検出根拠」セクション ──
   'threatCard.detectionBasis.heading': '検出根拠',

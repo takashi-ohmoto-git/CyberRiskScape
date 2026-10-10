@@ -57,6 +57,12 @@ const FIELD_LABEL_KEYS: Record<string, TranslationKey> = {
   agency: 'appliesToSummary.field.agency',
   blastRadius: 'appliesToSummary.field.blastRadius',
   identityTier: 'appliesToSummary.field.identityTier',
+  sourceSegment: 'appliesToSummary.field.sourceSegment',
+  targetSegment: 'appliesToSummary.field.targetSegment',
+  segmentRelation: 'appliesToSummary.field.segmentRelation',
+  status: 'appliesToSummary.field.status',
+  environment: 'appliesToSummary.field.environment',
+  sensitiveData: 'appliesToSummary.field.sensitiveData',
 };
 
 /** フィールド名を日本語ラベルへ解決する。未収録キーは元のキー名をそのまま返す。 */
@@ -73,11 +79,17 @@ function formatBooleanMap(match: AttackSurfaceMatch, locale: Locale): string {
     .join('、');
 }
 
-/** 配列値マップ（AgentAttributesMatch / EdgeWhen）を `ラベル=v1/v2` の列挙文字列にする。 */
+/**
+ * 配列値マップ（AgentAttributesMatch / EdgeWhen）を `ラベル=v1/v2` の列挙文字列にする。
+ * 値がオブジェクト（エッジの `sourceSegment` 等）のときは `ラベル(中身)` と入れ子で書く。
+ */
 function formatArrayMap(match: EdgeWhenLike, locale: Locale, typeKeys: readonly string[] = []): string {
   return Object.entries(match)
     .filter(([, v]) => v !== undefined)
     .map(([k, v]) => {
+      if (!Array.isArray(v)) {
+        return `${resolveFieldLabel(k, locale)}(${formatArrayMap(v as EdgeWhenLike, locale)})`;
+      }
       const values = v as string[];
       const rendered = typeKeys.includes(k)
         ? values.map((t) => resolveTypeLabel(t, locale))
@@ -182,6 +194,14 @@ function summarizeNode(appliesTo: Extract<AppliesTo, { kind: 'node' }>, locale: 
     parts.push(
       translate('appliesToSummary.node.identityAxes', locale, {
         conditions: formatArrayMap(identityAxes, locale),
+      }),
+    );
+  }
+
+  if (appliesTo.segment) {
+    parts.push(
+      translate('appliesToSummary.node.segment', locale, {
+        conditions: formatArrayMap(appliesTo.segment as unknown as EdgeWhenLike, locale),
       }),
     );
   }

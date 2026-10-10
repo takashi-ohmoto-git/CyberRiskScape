@@ -8,11 +8,13 @@ import {
   UserTrustAttributeSchema,
   AuthProviderStateSchema,
   IdentityProviderKindSchema,
+  SegmentRelationSchema,
 } from '../../../threat-library/schema/threatRule';
 import { getComponentRegistry } from '../../../component-library/defaultRegistry';
 import type { EdgeLeafDraft } from '../../../features/custom-rules/editor/draft';
 import { useLocale, useT, type TranslationKey } from '../../../i18n';
 import { ChipGroup, toggleInArray } from './ChipGroup';
+import { SegmentEditor } from './SegmentEditor';
 
 /**
  * Edge リーフ（5+ 軸）の編集（§2.25 Phase D / ②マッチ条件・③分岐で共用）。
@@ -37,6 +39,7 @@ const ENUM_AXES = [
   { key: 'sourceIdentityProviderKind', labelKey: 'ruleEditor.edgeLeaf.axis.sourceIdentityProviderKind', options: IdentityProviderKindSchema.options },
   { key: 'targetIdentityProviderKind', labelKey: 'ruleEditor.edgeLeaf.axis.targetIdentityProviderKind', options: IdentityProviderKindSchema.options },
   { key: 'authProvider', labelKey: 'ruleEditor.edgeLeaf.axis.authProvider', options: AuthProviderStateSchema.options },
+  { key: 'segmentRelation', labelKey: 'ruleEditor.edgeLeaf.axis.segmentRelation', options: SegmentRelationSchema.options },
 ] as const satisfies readonly { key: string; labelKey: TranslationKey; options: readonly string[] }[];
 
 const TYPE_AXES = [
@@ -87,6 +90,18 @@ export function EdgeWhenLeafEditor({
           />
         </AxisRow>
       ))}
+      <SegmentEditor
+        compact
+        label={t('ruleEditor.edgeLeaf.axis.sourceSegment')}
+        value={leaf.sourceSegment}
+        onChange={(sourceSegment) => onChange({ ...leaf, sourceSegment })}
+      />
+      <SegmentEditor
+        compact
+        label={t('ruleEditor.edgeLeaf.axis.targetSegment')}
+        value={leaf.targetSegment}
+        onChange={(targetSegment) => onChange({ ...leaf, targetSegment })}
+      />
     </div>
   );
 }

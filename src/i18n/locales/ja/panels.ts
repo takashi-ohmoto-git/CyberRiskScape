@@ -139,6 +139,7 @@ export const jaPanels = {
   'panels.boundary.trust.partner': '取引先 (Partner)',
   'panels.boundary.trust.internet': 'インターネット (Internet)',
   'panels.boundary.microStatus.applied': '適用済み',
+  'panels.boundary.microStatus.partial': '部分適用',
   'panels.boundary.microStatus.notApplied': '未適用',
   'panels.boundary.sensitiveData.none': '無し',
   'panels.boundary.sensitiveData.pii': '個人情報',
