@@ -51,13 +51,14 @@ export const jaChecklist = {
   'checklist.csv.col.no': '項目 No',
   'checklist.csv.col.item': '項目',
   'checklist.csv.col.status': '状態',
-  'checklist.csv.col.targets': '対象ノード数',
+  'checklist.csv.col.targets': '対象の型のノード数',
+  'checklist.csv.col.relatedCount': '関係ノード数',
   'checklist.csv.col.action': '要対応',
   'checklist.csv.col.unfilled': '未入力',
   'checklist.csv.col.accepted': 'リスク受容',
   'checklist.csv.col.nodes': '関係ノード',
   'checklist.csv.col.howTo': '確かめ方',
-  'checklist.csv.col.rules': '関係する脅威ルール',
+  'checklist.csv.col.actionNodes': '確認が必要なノード',
 
   // CLI の Markdown 出力
   'checklist.md.summary': '集計',

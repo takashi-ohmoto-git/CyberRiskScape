@@ -60,12 +60,13 @@ export function toChecklistCsv(ctx: ChecklistReportContext): string {
       tr('checklist.csv.col.item'),
       tr('checklist.csv.col.status'),
       tr('checklist.csv.col.targets'),
+      tr('checklist.csv.col.relatedCount'),
       tr('checklist.csv.col.action'),
       tr('checklist.csv.col.unfilled'),
       tr('checklist.csv.col.accepted'),
       tr('checklist.csv.col.nodes'),
       tr('checklist.csv.col.howTo'),
-      tr('checklist.csv.col.rules'),
+      tr('checklist.csv.col.actionNodes'),
     ]),
   ];
   for (const g of result.groups) {
@@ -77,12 +78,13 @@ export function toChecklistCsv(ctx: ChecklistReportContext): string {
           r.item.title,
           statusLabel(r, locale),
           String(r.targetNodeCount),
+          String(r.nodes.length),
           String(r.counts.action),
           String(r.counts.unfilled),
           String(r.counts.accepted),
           r.nodes.map((n) => n.label).join(LIST_SEPARATOR),
           r.item.howTo,
-          r.item.ruleIds.join(LIST_SEPARATOR),
+          r.actionNodes.map((n) => n.label).join(LIST_SEPARATOR),
         ]),
       );
     }
@@ -168,6 +170,7 @@ export function toChecklistJson(ctx: ChecklistReportContext): object {
         targetNodeCount: r.targetNodeCount,
         counts: r.counts,
         nodes: r.nodes.map((n) => n.label),
+        actionNodes: r.actionNodes.map((n) => n.label),
         howTo: r.item.howTo,
         ruleIds: r.item.ruleIds,
       })),

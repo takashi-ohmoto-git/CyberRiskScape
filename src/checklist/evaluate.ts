@@ -25,6 +25,8 @@ export interface ItemResult {
   status: ItemStatus;
   /** 関係ノード（検出の対象。重複なし）。 */
   nodes: RelatedNode[];
+  /** 確認が必要なノード（要対応の検出があるノード。重複なし）。 */
+  actionNodes: RelatedNode[];
   /** 図にある `targetTypes` のノード数。 */
   targetNodeCount: number;
   /** 検出件数の内訳（誤検知は含めない）。 */
@@ -106,25 +108,31 @@ export function evaluateChecklist(input: EvaluateChecklistInput): ChecklistResul
     const targetNodeCount = nodes.filter((n) => types.has(n.type)).length;
     const counts = { action: 0, unfilled: 0, accepted: 0 };
     const nodeIds: string[] = [];
+    const actionNodeIds: string[] = [];
     for (const t of detected) {
       if (!item.ruleIds.some((r) => matchesRule(t, r))) continue;
       if (t.suppression?.status === 'false-positive') continue; // 誤検知は除外
       if (t.suppression?.status === 'accepted') counts.accepted++;
       else if (t.assumptionFlags?.some((f) => f === 'attackSurface' || f === 'posture')) counts.unfilled++;
-      else counts.action++;
+      else {
+        counts.action++;
+        if (!actionNodeIds.includes(t.nodeId)) actionNodeIds.push(t.nodeId);
+      }
       if (!nodeIds.includes(t.nodeId)) nodeIds.push(t.nodeId);
     }
-    const related = nodeIds.flatMap((id) => {
-      const n = nodeById.get(id);
-      return n ? [relatedNode(n)] : [];
-    });
+    const toRelated = (ids: string[]) =>
+      ids.flatMap((id) => {
+        const n = nodeById.get(id);
+        return n ? [relatedNode(n)] : [];
+      });
+    const related = toRelated(nodeIds);
     let status: ItemStatus;
     if (counts.action + counts.unfilled + counts.accepted === 0 && targetNodeCount === 0) status = 'notApplicable';
     else if (counts.action > 0) status = 'action';
     else if (counts.unfilled > 0) status = 'unfilled';
     else if (counts.accepted > 0) status = 'accepted';
     else status = 'ok';
-    return { item, status, nodes: related, targetNodeCount, counts };
+    return { item, status, nodes: related, actionNodes: toRelated(actionNodeIds), targetNodeCount, counts };
   };
 
   const groups: GroupResult[] = checklist.groups.map((group) => ({

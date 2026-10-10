@@ -347,8 +347,8 @@ The summary at the top is **Action needed 13, Not entered 0, Risk accepted 0, No
 
 ![Nodes with an outdated or missing review record (before)](../assets/guide/ipa-alert/06-checklist-before-bottom.en.png)
 
-**CSV export.** **Export CSV** at the top right writes a per-item CSV (status, number of target nodes, counts of action needed / not
-entered / accepted, related nodes, how to check, related rules). Add owners and due dates in a spreadsheet to make a ledger for
+**CSV export.** **Export CSV** at the top right writes a per-item CSV (status, number of nodes of target types, number of related nodes, counts of action
+needed / not entered / accepted, related nodes, how to check, nodes to check = nodes with action-needed detections). Add owners and due dates in a spreadsheet to make a ledger for
 operations.
 
 **The same list from the CLI.** Pass the project JSON you saved from the diagram (write it out with **File (save / open)** in the left
