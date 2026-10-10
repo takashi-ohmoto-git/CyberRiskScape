@@ -73,10 +73,6 @@ behaviors:
     default: terminate
     alternatives: []
     note: "利用者の TLS を終端して認証・認可した後、社内アプリへ別の接続で中継する。アプリ側の区間の暗号を確認する。"
-  - componentType: DEDICATED_LINE
-    default: passthrough
-    alternatives: [tunnel]
-    note: "既定では暗号化されない（平文区間）。MACsec や IPsec を重ねているかを確認する。"
   - componentType: PRIVATE_ENDPOINT
     default: passthrough
     alternatives: []

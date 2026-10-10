@@ -79,7 +79,6 @@ import {
   Router,
   ScanEye,
   ScanSearch,
-  Spline,
   Split,
   UserCheck,
   type LucideIcon,
@@ -173,7 +172,6 @@ const BUILTIN_ICONS: Record<string, LucideIcon> = {
   router: Router,
   'scan-eye': ScanEye,
   'scan-search': ScanSearch,
-  spline: Spline,
   split: Split,
   'user-check': UserCheck,
 };

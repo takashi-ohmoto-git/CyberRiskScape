@@ -45,11 +45,13 @@
 #     含むため別 canonicalId とする（統合の可否は人間判断に残す）。
 #   - TLS インスペクション・CDN・STARTTLS 等、PQC 以外の終端機器の脅威は network-infra.yaml が扱う。
 #
-#   network-infra に追加した DEDICATED_LINE（専用線 / 閉域接続）に合わせて追加した 1 ルール:
-#   - 閉域接続の TLS の古典鍵交換による HNDL → pqc-dedicated-line-hndl-001。既存 HNDL と同じ脅威なので
-#     canonicalId: harvest-now-decrypt-later を共有する。VPN 版と同じく対象区間専用の description を持つ
+#   専用線・VPN の区間（エッジの network: [VPN]、画面表示「専用線 (VPN)」）に合わせて追加した 1 ルール:
+#   - TLS の古典鍵交換による HNDL → pqc-dedicated-line-hndl-001。既存 HNDL と同じ脅威なので
+#     canonicalId: harvest-now-decrypt-later を共有する（ストア宛て・VPN ゲートウェイの HNDL と同じエッジに
+#     当たった場合は 1 枚に畳み込まれる）。VPN ゲートウェイ版と同じく対象区間専用の description を持つ
 #     別ルール。encryption は [TLS] のみ（平文の区間は今すぐ読めるため、network-infra.yaml の
 #     netinfra-dedicated-line-unencrypted-001（canonicalId: plaintext-transmission）が扱う）。
+#     内部値 VPN は専用線と IPsec VPN の両方を含むため、どちらの解釈でも誤りにならない文面にした。
 #
 # framework について:
 #   スキーマの FrameworkSchema は enum ['STRIDE','AI','AgenticAI'] で閉じており、新値 "PQC" の
@@ -284,25 +286,23 @@ rules:
       - title: "NIST FIPS 203 - Module-Lattice-Based Key-Encapsulation Mechanism (ML-KEM)"
         url: "https://csrc.nist.gov/pubs/fips/203/final"
 
-  # ── 専用線 / 閉域接続の TLS の古典鍵交換による HNDL ─────────────────────
-  # 既存 HNDL と同じ脅威。専用線 / 閉域接続の TLS の区間を対象にした別ルール（平文の区間は
+  # ── 専用線・VPN（network: VPN）の TLS の古典鍵交換による HNDL ─────────────
+  # 既存 HNDL と同じ脅威。専用線・VPN の TLS の区間を対象にした別ルール（平文の区間は
   # network-infra.yaml の netinfra-dedicated-line-unencrypted-001 が扱う）。
   - id: pqc-dedicated-line-hndl-001
     canonicalId: harvest-now-decrypt-later
     framework: STRIDE
     category: "Information Disclosure"
-    name: "専用線 / 閉域接続の古典鍵交換による Harvest Now, Decrypt Later"
+    name: "専用線・VPN の区間での古典鍵交換による Harvest Now, Decrypt Later"
     severity: Medium
-    description: "{{sourceName}} と {{targetName}} の間の通信は専用線 / 閉域接続を通り、TLS で暗号化されている。閉域接続は通信事業者の伝送設備・コロケーション施設を経由するため、その区間にアクセスできる者は暗号文を今のうちに収集・保存できる。TLS の鍵交換が古典暗号（ECDHE 等）だけで行われている場合、将来の暗号学的に十分な量子計算機（CRQC）で鍵交換を破り、記録された通信を遡って復号できる（Can）。閉域接続はデータベースの複製やバックアップなど、量が多く長期の秘匿が必要なデータを運ぶことが多く、収集の価値が高い。一方、これは将来時点の復号であり、現在の通信のリアルタイムな盗聴・改ざんを可能にするものではない。TLS の鍵交換を PQC ハイブリッド（X25519MLKEM768 等）にするか、対称の事前共有鍵から鍵を導出する MACsec や、量子耐性の事前共有鍵（PPK）を併用した IPsec を回線に重ねていれば、収集された暗号文を将来復号することはできない（Cannot）。blast radius は {{sourceName}} と {{targetName}} の間で閉域接続を通る通信のうち、秘匿期間が CRQC の出現時期を超えるもの。"
-    mitigation: "[Foundation] 閉域接続を通る通信の暗号方式と、運ぶデータの秘匿期間を棚卸しし、長期の秘匿が必要なデータ（複製・バックアップ等）が通る区間を特定する。 [Enterprise] その区間の TLS を PQC ハイブリッドの鍵交換に対応した版へ更新する。回線に MACsec（事前共有の 256 ビット鍵）や、量子耐性の事前共有鍵（PPK）を併用した IPsec を重ねる。 [Advanced] 長期の秘匿が必要なデータはアプリ層でも PQC / ハイブリッドで暗号化し、回線や TLS の暗号だけに依存しない。"
+    description: "{{sourceName}} と {{targetName}} の間の通信は専用線・VPN（画面表示「専用線 (VPN)」）の区間を通り、TLS で暗号化されている。専用線（AWS Direct Connect / Azure ExpressRoute / Google Cloud Interconnect / OCI FastConnect 等の閉域接続を含む）は通信事業者の伝送設備・コロケーション施設を経由し、IPsec VPN のトンネルは公衆網を通ることが多いため、その区間にアクセスできる者は暗号文を今のうちに収集・保存できる。TLS の鍵交換が古典暗号（ECDHE 等）だけで行われている場合、将来の暗号学的に十分な量子計算機（CRQC）で鍵交換を破り、記録された通信を遡って復号できる（Can）。IPsec のトンネルを重ねていても、その鍵交換（IKEv2 の Diffie-Hellman / ECDH）が古典暗号だけなら同じく将来復号の対象になり、トンネルの終端点より内側の区間と終端装置の上では TLS だけが通信を守る。専用線・VPN はデータベースの複製やバックアップなど、量が多く長期の秘匿が必要なデータを運ぶことが多く、収集の価値が高い。一方、これは将来時点の復号であり、現在の通信のリアルタイムな盗聴・改ざんを可能にするものではない。TLS の鍵交換を PQC ハイブリッド（X25519MLKEM768 等）にしていれば、収集された暗号文を将来復号することはできない（Cannot）。回線に対称の事前共有鍵から鍵を導出する MACsec や、量子耐性の事前共有鍵（PPK）を併用した IPsec を重ねれば、回線上で収集された暗号文も将来復号されない。blast radius は {{sourceName}} と {{targetName}} の間で専用線・VPN を通る通信のうち、秘匿期間が CRQC の出現時期を超えるもの。"
+    mitigation: "[Foundation] 専用線・VPN を通る通信の暗号方式（TLS と、重ねている場合は IPsec の鍵交換方式）と、運ぶデータの秘匿期間を棚卸しし、長期の秘匿が必要なデータ（複製・バックアップ等）が通る区間を特定する。 [Enterprise] その区間の TLS を PQC ハイブリッドの鍵交換に対応した版へ更新する。専用線（クラウドの閉域接続を含む）には MACsec（事前共有の 256 ビット鍵）を重ね、IPsec VPN には量子耐性の事前共有鍵（PPK）か IKEv2 の追加の鍵交換（ML-KEM）を併用する。 [Advanced] 長期の秘匿が必要なデータはアプリ層でも PQC / ハイブリッドで暗号化し、回線や TLS の暗号だけに依存しない。"
     appliesTo:
       kind: edge
-      # 専用線 / 閉域接続の両側の区間のうち、TLS のものだけで発火する（平文は netinfra-dedicated-line-unencrypted-001）。
-      anyOf:
-        - targetType: [DEDICATED_LINE]
-          encryption: [TLS]
-        - sourceType: [DEDICATED_LINE]
-          encryption: [TLS]
+      # 専用線・VPN（network: VPN）の区間のうち、TLS のものだけで発火する（平文は netinfra-dedicated-line-unencrypted-001）。
+      when:
+        network: [VPN]
+        encryption: [TLS]
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.DS-02"

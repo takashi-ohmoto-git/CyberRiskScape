@@ -1,4 +1,4 @@
-# ネットワーク機器・セキュリティ製品（network-infra コンポーネントライブラリの 19 型）の固有脅威。
+# ネットワーク機器・セキュリティ製品（network-infra コンポーネントライブラリの 18 型）の固有脅威。
 # 境界機器の侵入起点化、TLS インスペクション用 CA 鍵、CDN による第三者の TLS 終端、
 # STARTTLS のダウングレード、L2 のなりすまし、不正アクセスポイントに加え、
 # 踏み台への管理経路の集中、ZTNA プロキシへのアクセス判定の集中と迂回、専用線の平文区間、
@@ -49,8 +49,7 @@
 #   - CDN（第三者が運用するエッジ）は境界機器ルールの対象から外す（パッチ適用の主体が利用者ではない）。
 #     CDN の固有脅威は CDN のルールで扱う。
 #
-#   network-infra に追加した 5 型（BASTION / ZTNA_PROXY / DEDICATED_LINE / PRIVATE_ENDPOINT /
-#   SERVICE_MESH）について:
+#   network-infra に追加した 4 型（BASTION / ZTNA_PROXY / PRIVATE_ENDPOINT / SERVICE_MESH）について:
 #   - BASTION の Internet 露出 → 境界機器ルールの targetType に BASTION を足し、conditions で踏み台向けの
 #     description を出す（自前の踏み台は修正の適用が利用者の責任で、マネージド型でも認証と到達範囲は
 #     利用者の設定に依存するため。CDN と違い除外しない）。
@@ -64,13 +63,21 @@
 #     idp-single-point-of-failure（IdP ノード）が扱い、本ルールは ZTNA 側から見た依存として述べるに留める。
 #     迂回と利用者情報ヘッダーの偽装は api-gateway-bypass（BACKEND_API 宛てエッジ）と機構が近いが、
 #     subject（ZTNA ノード / API 宛てエッジ）が異なるため別 canonicalId とする。
-#   - DEDICATED_LINE の平文区間 → 汎用の平文ルール（stride-edge-plain-encryption-001）と同じ脅威のため
-#     canonicalId: plaintext-transmission を共有する。同じエッジでは 1 枚に畳み込まれ、二重計上しない。
-#     専用線の HNDL（TLS の古典鍵交換）は pqc.yaml の pqc-dedicated-line-hndl-001 が扱う。
 #   - PRIVATE_ENDPOINT の持ち出し・公開経路へのフォールバック → 既存に同義のルールは無い。新規。
 #   - SERVICE_MESH → mTLS の非強制とメッシュ CA の侵害は機構も対策も異なるため 2 ルールに分ける。
 #     メッシュ CA は TLS インスペクション用 CA（利用者端末が信頼する CA で外部サイトを偽造）とは
 #     信頼する主体と偽造の対象が異なるため別 canonicalId とする。
+#
+#   専用線 / 閉域接続はノード型を設けず、エッジの network: [VPN]（画面表示「専用線 (VPN)」）で表す
+#   （専用線は機器ではなくリンクのため）:
+#   - network:[VPN] かつ平文の区間 → netinfra-dedicated-line-unencrypted-001。汎用の平文ルール
+#     （stride-edge-plain-encryption-001）と同じ脅威のため canonicalId: plaintext-transmission を共有する。
+#     同じエッジでは 1 枚に畳み込まれ、二重計上しない。本ルールは「閉域だから安全」と考えてアプリ層を
+#     暗号化しないことの危険を述べる。内部値 VPN は専用線（既定で暗号化されない）と IPsec VPN（トンネル
+#     自体は暗号化される）の両方を含むため、どちらの解釈でも誤りにならない文面にした。
+#   - network:[VPN, VPC] かつ無認証 → zt-implicit-trust-network-location-001 が扱う。問いが認証で
+#     平文ルールとは対象が異なるため統合しない。
+#   - 専用線・VPN の TLS の区間の HNDL（古典鍵交換）→ pqc.yaml の pqc-dedicated-line-hndl-001 が扱う。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する。
@@ -303,25 +310,23 @@ rules:
       - title: "Google Cloud - Identity-Aware Proxy: Securing your app with signed headers（プロキシが付けた利用者情報の検証）"
         url: "https://cloud.google.com/iap/docs/signed-headers-howto"
 
-  # ── 専用線 / 閉域接続の平文区間（経路依存）────────────────────────────
+  # ── 専用線・VPN（network: VPN）の暗号化していない区間（経路依存）──────────
   # 汎用の平文ルール（stride-edge-plain-encryption-001）と同じ脅威。canonicalId を共有し、同じエッジでは
   # 1 枚に畳み込まれる（severity が同じ High のため、ライブラリの読み込み順で先に来る本ルールが代表になる）。
   - id: netinfra-dedicated-line-unencrypted-001
     canonicalId: plaintext-transmission
     framework: STRIDE
     category: "Information Disclosure"
-    name: "専用線 / 閉域接続の暗号化していない区間の盗聴"
+    name: "専用線・VPN の区間で暗号化していない通信の盗聴"
     severity: High
-    description: "{{sourceName}} と {{targetName}} の間の通信は専用線 / 閉域接続を通るが、暗号化されていない。閉域接続はインターネットからは隔てられているが、通信事業者の伝送設備・中継局・コロケーション施設の配線や機器を経由しており、その区間に物理的・論理的にアクセスできる者（事業者の設備の侵害、施設内での不正な接続、回線の誤った収容）は、通信をそのまま読み、改ざんできる（Can）。「閉域だから安全」という前提で認証や暗号化を省いた業務通信（データベースの複製・ファイル転送・管理通信）がまとめて流れるため、1 か所の盗聴で得られる情報が多い。平文のまま記録された通信は、将来の量子計算機を待たずにいつでも読める。一方、回線に MACsec（IEEE 802.1AE）や IPsec を重ねるか、アプリの通信を TLS にしていれば、事業者の設備で傍受されても中身は読めず、改ざんは検知される（Cannot）。blast radius は {{sourceName}} と {{targetName}} の間で専用線 / 閉域接続を通る全通信。"
-    mitigation: "[Foundation] 専用線 / 閉域接続を通る通信を棚卸しし、平文のプロトコル（データベースの複製・ファイル転送・管理通信等）を TLS 等の暗号化された方式に切り替える。閉域であることを理由に認証や暗号化を省かない。 [Enterprise] 回線に MACsec（対応するポート・回線で）または IPsec VPN を重ね、回線全体を暗号化する。暗号化の鍵を定期的に更新し、暗号化されていない状態に落ちたら警告する設定にする。 [Advanced] 回線の暗号化だけに頼らず、アプリ間の通信もすべて相互認証付きの TLS にする（多層の暗号化）。長期の秘匿が必要な通信は PQC ハイブリッドの鍵交換に対応した方式にする。"
+    description: "{{sourceName}} と {{targetName}} の間の通信は専用線・VPN（画面表示「専用線 (VPN)」）の区間を通るが、通信自体は暗号化されていない。専用線（AWS Direct Connect / Azure ExpressRoute / Google Cloud Interconnect / OCI FastConnect 等の閉域接続を含む）はインターネットから隔てられているが、既定では暗号化されず、通信事業者の伝送設備・中継局・コロケーション施設の配線や機器を経由する。IPsec VPN の場合も、トンネルで暗号化されるのは終端装置どうしの間だけで、トンネルの終端点より内側の区間と終端装置の上では平文になる。そのため、事業者の設備・終端装置・終端点より内側のネットワークのいずれかにアクセスできる者（設備や終端装置の侵害、施設内での不正な接続、回線の誤った収容、内側の区間に入り込んだ攻撃者）は、通信をそのまま読み、改ざんできる（Can）。「閉域だから安全」「VPN を通るから安全」という前提でアプリ層の暗号化や認証を省いた業務通信（データベースの複製・ファイル転送・管理通信）がまとめて流れるため、1 か所の盗聴で得られる情報が多い。平文のまま記録された通信は、将来の量子計算機を待たずにいつでも読める。一方、アプリの通信を TLS 等で端から端まで暗号化していれば、回線や終端装置の上で傍受されても中身は読めず、改ざんは検知される（Cannot）。回線の暗号化（MACsec・IPsec）は事業者の設備での傍受を防ぐが、終端点より内側の区間は守らない。blast radius は {{sourceName}} と {{targetName}} の間で専用線・VPN を通る全通信。"
+    mitigation: "[Foundation] 専用線・VPN を通る通信を棚卸しし、平文のプロトコル（データベースの複製・ファイル転送・管理通信等）を TLS 等の暗号化された方式に切り替える。閉域であること、VPN を通ることを理由にアプリ層の暗号化や認証を省かない。 [Enterprise] 暗号化されていない専用線（クラウドの閉域接続を含む）には、対応するポート・回線で MACsec（IEEE 802.1AE）を有効にするか IPsec VPN を重ね、回線全体を暗号化する。暗号化の鍵を定期的に更新し、暗号化されていない状態に落ちたら警告する設定にする。IPsec VPN では、トンネルの終端点より内側の区間も平文のままにしない。 [Advanced] 回線やトンネルの暗号化だけに頼らず、アプリ間の通信もすべて相互認証付きの TLS にする（多層の暗号化）。長期の秘匿が必要な通信は PQC ハイブリッドの鍵交換に対応した方式にする。"
     appliesTo:
       kind: edge
-      # 専用線 / 閉域接続の両側の区間のうち、平文のものだけで発火する（TLS の区間は pqc-dedicated-line-hndl-001）。
-      anyOf:
-        - targetType: [DEDICATED_LINE]
-          encryption: [Plain]
-        - sourceType: [DEDICATED_LINE]
-          encryption: [Plain]
+      # 専用線・VPN（network: VPN）の区間のうち、平文のものだけで発火する（TLS の区間は pqc-dedicated-line-hndl-001）。
+      when:
+        network: [VPN]
+        encryption: [Plain]
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.DS-02"

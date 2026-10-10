@@ -39,8 +39,6 @@ behaviors:
     note: "Terminates the administrator's TLS and reconnects to the target over SSH / RDP. Confirm the cipher setup of each leg."
   ZTNA_PROXY:
     note: "Terminates the user's TLS, authenticates and authorizes, then relays to the internal app over a separate connection. Confirm encryption on the app-side leg."
-  DEDICATED_LINE:
-    note: "Not encrypted by default (a plaintext segment). Confirm whether MACsec or IPsec is layered on top."
   PRIVATE_ENDPOINT:
     note: "A private entrance to a cloud service; passes encryption through. The destination service is what terminates TLS."
   SERVICE_MESH:

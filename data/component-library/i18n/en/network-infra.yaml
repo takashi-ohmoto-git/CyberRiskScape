@@ -74,10 +74,6 @@ components:
     label: "ZTNA / identity-aware proxy"
     description: "A ZTNA / identity-aware proxy. Terminates the user's TLS, authenticates and authorizes, then relays to the internal application over a separate connection. In the cloud this includes AWS Verified Access, Microsoft Entra Private Access and Application Proxy, and Google Cloud Identity-Aware Proxy."
 
-  DEDICATED_LINE:
-    label: "Dedicated line / private connectivity"
-    description: "A dedicated line / private connectivity. Not encrypted by default (even though it is private, it is a plaintext segment from the standpoint of eavesdropping and future decryption by quantum computers). Encrypted only when MACsec or IPsec is layered on top. In the cloud this includes AWS Direct Connect, Azure ExpressRoute, Google Cloud Interconnect, and OCI FastConnect."
-
   PRIVATE_ENDPOINT:
     label: "Private endpoint"
     description: "A private endpoint. The private entry point to a cloud service; passes encryption through (the destination service terminates TLS). In the cloud this includes AWS PrivateLink (interface VPC endpoints), Azure Private Link (private endpoints), Google Cloud Private Service Connect, and OCI private endpoints."
