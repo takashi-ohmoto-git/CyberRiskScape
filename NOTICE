@@ -377,6 +377,26 @@ verbatim.
    Referenced by: data/threat-library/network-infra.yaml,
                   data/threat-library/storage.yaml
 
+--------------------------------------------------------------------------------
+24. United Nations Economic Commission for Europe (UNECE), World Forum for
+    Harmonization of Vehicle Regulations (WP.29)
+   - UN Regulation No. 155 — Uniform provisions concerning the approval of
+     vehicles with regards to cyber security and cyber security management
+     system, Annex 5 "List of threats and corresponding mitigations"
+   - UN Regulation No. 156 (software update and software update management
+     system) — referenced by name only
+   https://unece.org/
+
+   The text consulted is the version published in the Official Journal of the
+   European Union (OJ L 2025/5, up to Supplement 3 to the original version),
+   available on EUR-Lex: https://eur-lex.europa.eu/eli/reg/2025/5/oj/eng
+   Only the UNECE original texts are legally authentic.
+   Threat numbers, attack example numbers and mitigation numbers (M1-M24) are
+   referenced as factual identifiers with a short Japanese summary only; no
+   text is reproduced verbatim.
+
+   Referenced by: data/threat-library/sdv.yaml
+
 ================================================================================
 Runtime dependencies
 ================================================================================

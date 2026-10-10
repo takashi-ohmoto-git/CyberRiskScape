@@ -1,0 +1,542 @@
+# SDV（Software Defined Vehicle）・コネクテッドカーの脅威ルール。
+# sdv コンポーネントライブラリの 15 型（ECU / ZONE_CONTROLLER / CENTRAL_COMPUTE / CENTRAL_GATEWAY /
+# TCU / IVI / IN_VEHICLE_NETWORK / OBD_PORT / V2X_OBU / V2X_RSU / DIAGNOSTIC_TOOL / EV_CHARGER /
+# OTA_SERVER / VEHICLE_PKI / ADAS_SENSOR）に対する固有の脅威を扱う。
+#
+# 出典（一般的な基準のみを根拠とする。特定のメーカー・車種の攻撃事例や、個別の事故報告は用いない）:
+#   - UN Regulation No. 155 "Uniform provisions concerning the approval of vehicles with regards to
+#     cyber security and cyber security management system"（UNECE WP.29）, Annex 5
+#     "List of threats and corresponding mitigations"。
+#     Part A Table A1 の脅威番号（1〜32）と攻撃例の番号（例：11.1）、Part B / Part C の対策番号（M1〜M24）を
+#     各ルールの references に「UN R155 Annex 5 Table A1 #<脅威番号>（攻撃例 <番号>）／対策 M<番号>」の形で記す。
+#     参照したテキストは EU 官報版（Supplement 3 to the original version まで反映、OJ L 2025/5）:
+#     https://eur-lex.europa.eu/eli/reg/2025/5/oj/eng （法的効力を持つのは UNECE の原文のみ）。
+#   - UN Regulation No. 156（ソフトウェア更新管理システム）は名称の参照のみ。
+#   - NIST SP 800-208 "Recommendation for Stateful Hash-Based Signature Schemes"（LMS / XMSS）、
+#     NIST FIPS 204 / 205、NSA CNSA 2.0（ファームウェア署名の PQC 移行）。https://csrc.nist.gov/ , https://www.nsa.gov/
+#   本文は逐語転載せず日本語要約のみ。
+#
+#   SPDX-License-Identifier: Apache-2.0
+#   ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+#   出典の帰属表示は NOTICE を参照。
+#
+# 重複回避方針:
+#   Annex 5 の脅威のうち、車両の外のサーバーに関するもの（Table A1 #1〜#3：内部者による権限の悪用、
+#   サーバーへの不正アクセス、サーバーの停止、データ漏えい）は、車両バックエンドを BACKEND_API で描く前提で
+#   既存の汎用ルールに任せ、本ファイルに置かない:
+#   - 内部者による権限の悪用（#1.1 / #3.1）→ zt-insider-legitimate-access-abuse-001（insider-legitimate-access-abuse）
+#   - バックエンドへの不正アクセス・認可不備（#1.2 / #3.3）→ api-platform.yaml の BOLA / BFLA / トークン検証、
+#     ゲートウェイを経由しない直接到達（api-gateway-bypass。送信元に TCU を追加した）
+#   - 保管データの漏えい（#3.x）→ stride-data-store-*-001 / storage.yaml
+#   - 平文の通信（#7.1）→ stride-edge-plain-encryption-001（plaintext-transmission）。車載ネットワークの
+#     エッジを平文で描くとこのルールも出る（車内の盗聴は CAN ではなく機密データの扱いの問題のため、
+#     本ファイルでは重ねない）。
+#   PQC に関するもの:
+#   - ファームウェア署名の量子脆弱性（#26.1〜26.3）→ sdv-firmware-signature-pqc-001。IOT 向けの
+#     pqc-long-lived-device-signature-001 と同じ脅威なので canonicalId: long-lived-non-pqc-signature を共有する。
+#     既存ルールの対象に ECU 等を足さず、車両寿命・Mosca の不等式・CAN-FD の帯域を書いた車両専用の
+#     description を持つ別ルールにした（pqc-vpn-tunnel-hndl-001 と同じ流儀）。
+#   - CBOM 欠如・crypto-agility の欠如（pqc.yaml）の対象には SDV 型を足さない（同じノードに PQC の
+#     カードを重ねない。暗号の棚卸しと差し替え可能性は sdv-firmware-signature-pqc-001 の mitigation で扱う）。
+#   - 車両 PKI・V2X の証明書の量子脆弱性は、署名の検証側（ECU 等）と同じ問いのため sdv-firmware-signature-pqc-001
+#     の conditions で VEHICLE_PKI 向けの説明を出す（V2X の署名の PQC 化は標準化途上のため対象外）。
+#   既存の IoT 向けルール（endpoint-iot-default-credentials-unpatchable-001）の対象に ECU を足さない。
+#   車載機器のデフォルト・開発用の資格情報は #28.2 として sdv-ecu-key-extraction-debug-access-001 が扱う。
+#   本ファイルが新規に追加する canonicalId はいずれも単一ルールのグループ（2026-10-10 ユーザー確認済み。OBD ポートと診断機、
+#   OTA 更新手順と署名鍵は対策が別物のため分けたまま）。
+#
+#   接続前提モデリング:
+#   - 機器そのものの性質（物理的な入力面・保持する鍵・内部の分離・更新の検証方式）は内在的な脅威として
+#     connection.required: false にする。
+#   - 経路に依存するもの（ゲートウェイが外部接続面とつながる、OBD ポート・診断機・充電器が車両側の機器と
+#     つながる）は peerType で前提のチャネルを指定する。
+#   - 攻撃面属性（attackSurface）は FRONT_END_SERVER / GATEWAY でしか入力できないため使わない。
+#
+# framework は全ルール STRIDE（スキーマの enum に車両向けの値は無く、追加しない）。
+# mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
+# description は Can/Cannot ペアと blast radius を意識して記述する。
+
+schemaVersion: 1
+
+rules:
+  # ── 車載ネットワークへの不正メッセージの注入・なりすまし ───────────────────
+  - id: sdv-in-vehicle-message-injection-001
+    canonicalId: in-vehicle-message-injection
+    framework: STRIDE
+    category: "Spoofing"
+    name: "車載ネットワークへの不正メッセージの注入・なりすまし"
+    severity: High
+    description: "{{nodeName}} が CAN / CAN-FD / LIN のように送信元の認証を持たないバスの場合、バスにつながる ECU・診断ポート・外部接続面のどれか 1 つを掌握した攻撃者は、別の ECU になりすまして制動・操舵・ボディ制御などのメッセージ ID で任意のメッセージを送り、受信側の ECU にそれを正規の指示として処理させられる（Can）。メッセージの中身が正しい形式であれば、受信側は送信元を区別できない。一方、重要なメッセージに SecOC 等のメッセージ認証コード（MAC）とフレッシュネス値を付けて受信側で検証していれば、鍵を持たない ECU から注入したメッセージは受け付けられず、記録したメッセージの再送も通らない（Cannot）。注入の起点を得るには、別途バスにつながる機器の掌握や物理的な接続が必要になる。blast radius は {{nodeName}} につながる全 ECU の機能（走行・制動に関わるものを含む）。"
+    mitigation: "[Foundation] 車載ネットワーク を流れるメッセージを洗い出し、走行・制動・ドアロック等に関わるメッセージを特定する。外部接続面（TCU・IVI・OBD ポート）を、走行系のバスへ直接つながず、ゲートウェイを通す構成にする。 [Enterprise] 重要なメッセージに SecOC 等のメッセージ認証（MAC とフレッシュネス値）を付け、受信側で検証する。鍵は ECU の HSM / SHE に保管する。車載ネットワークに侵入検知（IDS）を置き、想定外の送信元・周期・メッセージ ID を検出する。 [Advanced] 車載Ethernet の区間には MACsec 等による認証と暗号化を使い、検知結果を車両の外のセキュリティ監視（VSOC）に集めて車両群全体で相関分析する。"
+    appliesTo:
+      kind: node
+      nodeType: IN_VEHICLE_NETWORK
+      # バスに何かがつながっていることが注入の前提（既定の接続要件：任意方向に 1 本以上）。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-01"
+    references:
+      - title: "UN R155 Annex 5 Table A1 #11（攻撃例 11.1）・#6（攻撃例 6.1）／対策 M15・M10（Table B1）"
+        url: "https://eur-lex.europa.eu/eli/reg/2025/5/oj/eng"
+
+  # ── CAN バスのフラッディングによるサービス妨害 ─────────────────────────
+  - id: sdv-in-vehicle-bus-flooding-dos-001
+    canonicalId: in-vehicle-bus-flooding
+    framework: STRIDE
+    category: "Denial of Service"
+    name: "車載ネットワークのフラッディングによるサービス妨害"
+    # 車両の安全に関わる機能が止まり得るため、汎用の DoS ルール（Medium）より上の High（ユーザー決定 2026-10-10）。
+    severity: High
+    description: "{{nodeName}} につながる機器を掌握した攻撃者は、優先度の高い（ID の小さい）メッセージを高頻度で送り続けてバスの調停を独占し、他の ECU のメッセージを送れなくできる。特定の ECU にエラーを起こすメッセージを送り続けて、その ECU をバスから切り離させる（バスオフ）こともできる（Can）。走行・制動に関わるメッセージが届かなくなると、受信側は機能を縮退させるか停止する。一方、ゲートウェイが外部接続面からのメッセージの送信レートと ID を制限し、走行系のバスを外部接続面と分けていれば、外部から得た足場だけで走行系のバスを埋めることはできない。受信側が周期の途絶を検出して安全な状態へ移る設計なら、妨害を危険な動作には変えられない（Cannot）。blast radius は {{nodeName}} を使う全機能の可用性。"
+    mitigation: "[Foundation] 走行系のバスと、外部接続面・インフォテインメント系のバスを分け、ゲートウェイで中継するメッセージの ID を許可リストで制限する。受信側の ECU で、周期メッセージの途絶を検出して安全な状態に移る処理（フェイルセーフ）を確認する。 [Enterprise] ゲートウェイ・ゾーンコントローラで送信元ごとの送信レートを制限し、車載ネットワークの侵入検知（IDS）で異常な送信量・エラーの増加を検出する。 [Advanced] 検知結果を車両の外のセキュリティ監視（VSOC）に送り、車両群で同じ兆候が出ていないかを相関分析して、更新による対処につなげる。"
+    appliesTo:
+      kind: node
+      nodeType: IN_VEHICLE_NETWORK
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-03"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-01"
+    references:
+      - title: "UN R155 Annex 5 Table A1 #24（攻撃例 24.1）／対策 M13（Table B5）"
+        url: "https://eur-lex.europa.eu/eli/reg/2025/5/oj/eng"
+
+  # ── ゲートウェイの不備によるネットワーク分離の回避 ───────────────────────
+  - id: sdv-gateway-network-separation-bypass-001
+    canonicalId: vehicle-network-separation-bypass
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "ゲートウェイの不備による車載ネットワーク分離の回避"
+    severity: High
+    description: "{{nodeName}} は外部接続面（TCU・IVI・OBD ポート・V2X 車載器・診断機・EV 充電器）とつながり、走行系のネットワークとの間の防壁になっている。中継の規則が広すぎる（外部接続面からの任意の ID を走行系へ転送する）、診断要求を認証なしで通す、{{nodeName}} 自身の管理機能や脆弱性が外部接続面から届く、といった不備があると、外部接続面を掌握した攻撃者は分離を飛び越えて走行系のバスへ任意のメッセージを送れる（Can）。一方、{{nodeName}} がメッセージ ID・方向・送信元ごとの許可リストで中継を制限し、診断要求は認証済みのセッションでだけ転送し、{{nodeName}} 自身のファームウェアが署名検証されていれば、外部接続面を掌握しただけでは走行系へ届かない（Cannot）。blast radius は {{nodeName}} の内側にある全ネットワークと、そこにつながる全 ECU。"
+    mitigation: "[Foundation] ゲートウェイ の中継規則を、メッセージ ID・方向・送信元の許可リストで定義し、外部接続面から走行系へ転送するメッセージを最小にする。診断要求は認証済みのセッションでのみ転送する。使っていないポート・サービスを閉じる。 [Enterprise] ゲートウェイ のファームウェアをセキュアブートと署名付きの更新で守り、中継の規則を変える操作を認証・記録する。外部接続面ごとに別のネットワークセグメントに分け、ゲートウェイ で侵入検知を行う。 [Advanced] 車載Ethernet の区間でメッセージ・ストリーム単位の認証（MACsec / SecOC）を使い、ゲートウェイを通っても、正規の送信元の鍵を持たないメッセージは受信側で受け付けられないようにする。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: CENTRAL_GATEWAY
+        - nodeType: ZONE_CONTROLLER
+      # 外部接続面とつながっていることが分離回避の前提チャネル（つながっていなければ回避する対象の経路が無い）。
+      connection:
+        direction: any
+        peerType: [TCU, IVI, OBD_PORT, V2X_OBU, DIAGNOSTIC_TOOL, EV_CHARGER]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "UN R155 Annex 5 Table A1 #29（攻撃例 29.2）／対策 M23（Table B6）"
+        url: "https://eur-lex.europa.eu/eli/reg/2025/5/oj/eng"
+
+  # ── OBD 診断ポートを経由した攻撃・パラメータの改ざん ─────────────────────
+  - id: sdv-obd-port-diagnostic-access-abuse-001
+    canonicalId: obd-port-diagnostic-access-abuse
+    framework: STRIDE
+    category: "Tampering"
+    name: "OBD 診断ポートを経由した攻撃・車両パラメータの改ざん"
+    severity: High
+    description: "{{nodeName}} は車室内にあり、差し込んだ機器から車載ネットワークへ直接メッセージを送れる。攻撃者は車室内に入れる短い時間に機器を差し込むか、利用者が自ら差し込んだ市販のドングル（携帯電話網・Bluetooth・Wi-Fi でつながるもの）を乗っ取って、診断要求で車両の設定値（走行距離・制御パラメータ・機能の有効化等）を書き換えたり、不正なメッセージを注入したりできる（Can）。ドングルが外部とつながる場合は、物理的に近づかなくても遠隔から同じことができる。一方、{{nodeName}} からの通信をゲートウェイが受け、診断要求は ECU 側で認証（UDS の認証・セキュリティアクセスを車両ごとの鍵で行う）しなければ書き込めない設計であれば、差し込んだ機器から設定値を書き換えたり、走行系のバスへ任意のメッセージを送ったりはできない（Cannot）。blast radius は {{nodeName}} から到達できる全 ECU の設定値と機能。"
+    mitigation: "[Foundation] OBD ポート を走行系のバスに直接つながず、ゲートウェイを経由させる。走行中の診断要求、書き込み系の診断要求を制限する。 [Enterprise] 診断の書き込み・ECU の再プログラミングを、車両ごとの鍵による認証（UDS の認証サービス、証明書ベースの認証）が済んだセッションでのみ許可する。OBD ポート からの通信を侵入検知の対象にし、想定外の機器の接続や大量の診断要求を検出する。 [Advanced] 診断の認可を、バックエンドで発行する短期の認可トークン（作業ごと・車両ごと）に結びつけ、設定値の変更を記録して改ざんを検出できるようにする。"
+    appliesTo:
+      kind: node
+      nodeType: OBD_PORT
+      # 車載ネットワーク側の機器とつながっていることが攻撃の前提チャネル。
+      connection:
+        direction: any
+        peerType: [IN_VEHICLE_NETWORK, CENTRAL_GATEWAY, ZONE_CONTROLLER, ECU, CENTRAL_COMPUTE]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "UN R155 Annex 5 Table A1 #18（攻撃例 18.3）・#25（攻撃例 25.1）／対策 M22（Table B4）・M7（Table B5）"
+        url: "https://eur-lex.europa.eu/eli/reg/2025/5/oj/eng"
+
+  # ── 診断機の侵害・診断セッションの認証の不備 ───────────────────────────
+  - id: sdv-diagnostic-tool-session-abuse-001
+    canonicalId: diagnostic-session-auth-gap
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "診断機の侵害・診断セッションの認証の不備による不正な書き換え"
+    severity: High
+    description: "{{nodeName}} は ECU の再プログラミングや設定の書き込みができる高い権限で車両につながる。診断セッションの認証が、全車両で共通の鍵や、推測・解析できるアルゴリズム（固定のシード・キー）に頼っている場合、{{nodeName}} の端末やソフトウェアを掌握した攻撃者、あるいは診断ソフトから鍵を取り出した攻撃者は、任意の車両に悪性の診断メッセージを送り、ECU のソフトウェアや設定を書き換えられる（Can）。整備士がだまされて不正なソフトウェアを書き込んでしまう場合も同じ結果になる。一方、診断の認証を車両ごと・ECU ごとの鍵または証明書で行い、書き込むソフトウェアを ECU 側で署名検証し、{{nodeName}} の利用者を個人単位で認証していれば、1 台の診断機を掌握しても他の車両の認証は通らず、署名の無いソフトウェアは書き込めない（Cannot）。blast radius は {{nodeName}} が接続しうる全車両の、診断で書き換えられる全 ECU。"
+    mitigation: "[Foundation] 診断機 の利用者を個人単位で認証し、診断ソフトと端末を最新に保つ。全車両共通の固定鍵によるセキュリティアクセスを使わない。 [Enterprise] 診断の認証を車両ごと・ECU ごとの鍵、または証明書ベースの認証（UDS の認証サービス）にし、鍵は 診断機 に置かずバックエンドで都度払い出す。書き込むソフトウェアは ECU 側で署名を検証する。診断の操作を記録する。 [Advanced] 診断の権限を作業指示・車両・時間で限定した短期の認可トークンにし、利用者の役割（最小権限）に応じて実行できる診断サービスを絞る。"
+    appliesTo:
+      kind: node
+      nodeType: DIAGNOSTIC_TOOL
+      # 車両側の機器（ポート・ゲートウェイ・ECU）とつながっていることが診断セッションの前提チャネル。
+      connection:
+        direction: any
+        peerType: [OBD_PORT, CENTRAL_GATEWAY, ZONE_CONTROLLER, ECU, CENTRAL_COMPUTE, IN_VEHICLE_NETWORK, TCU]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "UN R155 Annex 5 Table A1 #11（攻撃例 11.3）・#9（攻撃例 9.1）・#15（攻撃例 15.1）／対策 M10・M9（Table B1）・M18（Table B3）"
+        url: "https://eur-lex.europa.eu/eli/reg/2025/5/oj/eng"
+
+  # ── テレマティクスを経由した遠隔攻撃・遠隔操作機能の悪用 ───────────────────
+  - id: sdv-telematics-remote-attack-001
+    canonicalId: telematics-remote-attack
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "テレマティクスを経由した遠隔攻撃・遠隔操作機能の悪用"
+    # 遠隔から車両群に及ぶため Critical（ユーザー決定 2026-10-10）。
+    severity: Critical
+    description: "{{nodeName}} は携帯電話網から到達でき、ドアの解錠・空調・充電の開始などの遠隔操作をバックエンドから受け付ける。携帯電話網側に不要なポート・サービスが開いている、遠隔操作の指示の送信元と真正性を検証していない、{{nodeName}} のソフトウェアに既知の脆弱性が残っている、といった場合、攻撃者は車両に近づかずに {{nodeName}} を掌握するか、遠隔操作の指示を偽造でき、同じ構成の車両群へ一斉に攻撃を広げられる（Can）。{{nodeName}} から車載ネットワークへ届けば、走行系への攻撃の足場にもなる。一方、{{nodeName}} が外部からの着信を受け付けず（車両側から接続を張る）、遠隔操作の指示をバックエンドの署名と相互認証で検証し、{{nodeName}} と走行系の間をゲートウェイで分けていれば、携帯電話網から {{nodeName}} を直接攻撃することも、偽の指示を実行させることもできない（Cannot）。blast radius は同じ {{nodeName}} を載せた全車両と、遠隔操作できる全機能。"
+    mitigation: "[Foundation] TCU の携帯電話網側で待ち受けるポート・サービスを洗い出して不要なものを閉じ、APN を専用にして外部からの着信を受け付けない構成にする。遠隔操作の指示は相互認証した TLS の上で受け取る。 [Enterprise] 遠隔操作の指示ごとにバックエンドの署名を検証し、利用者の認可・時刻・車両の状態（走行中は受け付けない等）を確認する。TCU のソフトウェアの脆弱性を継続的に管理し、OTA で修正する。TCU と走行系の間をゲートウェイで分ける。 [Advanced] TCU の挙動と遠隔操作の要求を車両の外のセキュリティ監視（VSOC）で監視し、車両群で異常が出たら遠隔操作機能を一斉に止められるようにする。"
+    appliesTo:
+      kind: node
+      nodeType: TCU
+      # 携帯電話網から到達できることは TCU そのものの性質（車外の接続先を図に描かなくても成立する）。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+      - standard: nist-csf-2.0
+        ref: "ID.RA-01"
+    references:
+      - title: "UN R155 Annex 5 Table A1 #16（攻撃例 16.1・16.2）・#29（攻撃例 29.1）／対策 M20（Table B4）・M23（Table B6）"
+        url: "https://eur-lex.europa.eu/eli/reg/2025/5/oj/eng"
+
+  # ── IVI の第三者アプリ・USB / メディア経由のマルウェア ─────────────────────
+  - id: sdv-ivi-third-party-app-media-malware-001
+    canonicalId: ivi-third-party-app-media-malware
+    framework: STRIDE
+    category: "Tampering"
+    name: "インフォテインメントの第三者アプリ・USB / メディア経由のマルウェア"
+    severity: High
+    description: "{{nodeName}} は第三者のアプリを動かし、USB・Bluetooth・Wi-Fi・スマートフォン連携で外部の機器やメディアを受け付ける。安全性の低いアプリや改ざんされたアプリ、細工したメディアファイル・USB 機器を受け付けると、攻撃者は {{nodeName}} 上でコードを実行し、連絡先・位置履歴などの個人情報を取り出したり、{{nodeName}} を足場に車載ネットワークへ攻撃を広げたりできる（Can）。一方、アプリは署名と審査を通したものだけをサンドボックスで動かし、メディアの解析処理を権限の低いプロセスに分け、{{nodeName}} と走行系の間をゲートウェイで分けていれば、{{nodeName}} 上でコードを実行されても走行系へ届かず、他のアプリのデータも読めない（Cannot）。blast radius は {{nodeName}} が保持する個人情報と、{{nodeName}} から到達できる車載ネットワーク。"
+    mitigation: "[Foundation] IVI にインストールできるアプリを、署名を検証した審査済みのものに限る。USB で受け付けるデバイスの種類を絞り、USB からのソフトウェアの書き込みを無効にする。 [Enterprise] アプリをサンドボックスで動かして権限を最小にし、メディアの解析処理を分離したプロセスで動かす。IVI と走行系の間をゲートウェイで分け、IVI から送れるメッセージを制限する。 [Advanced] IVI の上で動くソフトウェアの振る舞いを監視して車両の外のセキュリティ監視（VSOC）に送り、悪性のアプリを車両群から遠隔で無効にできるようにする。"
+    appliesTo:
+      kind: node
+      nodeType: IVI
+      # アプリ・USB・Bluetooth の入口は IVI そのものの性質で、図に接続を描かなくても成立する。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-05"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-02"
+    references:
+      - title: "UN R155 Annex 5 Table A1 #17（攻撃例 17.1）・#18（攻撃例 18.1・18.2）・#10（攻撃例 10.1）／対策 M21・M22（Table B4）・M14（Table B1）"
+        url: "https://eur-lex.europa.eu/eli/reg/2025/5/oj/eng"
+
+  # ── OTA 更新手順の侵害・更新前のソフトウェアの改ざん ─────────────────────
+  - id: sdv-ota-update-compromise-001
+    canonicalId: ota-update-compromise
+    framework: STRIDE
+    category: "Tampering"
+    name: "OTA 更新手順の侵害・更新前のソフトウェアの改ざん"
+    severity: Critical
+    description: "{{nodeName}} は署名した更新パッケージを車両群へ配信する。ビルド・署名・配信の手順のどこかに入り込んだ攻撃者は、改ざんしたソフトウェアを正規の手順に乗せて署名させる（更新の手順そのものは正しく動いていても、署名の前にソフトウェアが改ざんされている）か、配信の対象・順序・メタデータを書き換えて、車両群へ一斉に不正な更新を配れる（Can）。一方、署名するソフトウェアを再現可能なビルドと受け入れ検証で確かめ、署名の役割を分けて複数の鍵で署名し（Uptane のように役割ごとのメタデータを車両側で検証する）、車両側の ECU が署名・版数・対象車両を検証していれば、1 か所に入り込んだだけでは車両に受け付けられる更新は作れない（Cannot）。blast radius は {{nodeName}} が配信する全車両の、更新の対象となる全 ECU。"
+    mitigation: "[Foundation] 更新パッケージの作成・署名・配信の手順を分け、各段階の担当と権限を最小にする。車両側で署名・版数・対象車両を検証してから適用する。 [Enterprise] 署名するソフトウェアを、ビルドの来歴（SBOM・ビルドの記録）と受け入れ検証で確認してから署名する。役割ごとに別の鍵で署名したメタデータを車両側で検証する方式（Uptane 等）を使う。更新の配信を段階的に行い、異常があれば止める。 [Advanced] 更新の配信と適用の結果を車両群から集めて監視し、想定外の更新を検出したら車両群への配信を止めて巻き戻せるようにする。UN R156 のソフトウェア更新管理システムの手順と整合させる。"
+    appliesTo:
+      kind: node
+      nodeType: OTA_SERVER
+      # 更新の手順の侵害は配信サーバーの運用・構成の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-02"
+      - standard: nist-csf-2.0
+        ref: "GV.SC-07"
+    references:
+      - title: "UN R155 Annex 5 Table A1 #12（攻撃例 12.1・12.3）／対策 M16（Table B2）"
+        url: "https://eur-lex.europa.eu/eli/reg/2025/5/oj/eng"
+
+  # ── ソフトウェア提供者の署名鍵の漏えい ─────────────────────────────────
+  - id: sdv-software-signing-key-compromise-001
+    canonicalId: software-signing-key-compromise
+    framework: STRIDE
+    category: "Spoofing"
+    name: "ソフトウェア提供者の署名鍵の漏えいによる不正な更新"
+    severity: Critical
+    description: "{{nodeName}} が使う更新の署名鍵が、署名サーバーのファイル・ビルド環境の変数・開発者の端末などに置かれている場合、それを取り出した攻撃者は任意のソフトウェアに正規の署名を付けられ、車両側の署名検証を通して不正な更新を適用させられる（Can）。署名鍵は全車両の更新の信頼の根であり、鍵を作り直すには車両側の信頼の起点（公開鍵・証明書）の入れ替えが要るため、漏えいからの回復に時間がかかる。一方、署名鍵を HSM の中で生成・使用して取り出せないようにし、署名の操作を複数人の承認と記録で管理し、役割ごとに別の鍵で署名していれば、鍵そのものを持ち出すことはできず、1 つの鍵や 1 人の権限では車両に受け付けられる更新を作れない（Cannot）。blast radius は {{nodeName}} の署名を信頼する全車両の全 ECU。"
+    mitigation: "[Foundation] 署名鍵を HSM で生成・保管し、鍵をファイルとして取り出せない設定にする。署名鍵を使える人・システムを最小にし、署名の操作を記録する。 [Enterprise] 署名の操作に複数人の承認を求め、署名する内容（ハッシュ・対象車両・版数）を記録する。役割ごとに別の鍵で署名する方式（Uptane のルート・ターゲット等）にし、オフラインの鍵（ルート）で日常の署名鍵を失効・入れ替えできるようにする。 [Advanced] 署名鍵の漏えいを想定した鍵の入れ替え手順を車両側の信頼の起点の更新まで含めて訓練し、署名の記録を透明性ログで第三者が検証できるようにする。"
+    appliesTo:
+      kind: node
+      nodeType: OTA_SERVER
+      # 署名鍵の保管方法はサーバーの運用の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "UN R155 Annex 5 Table A1 #12（攻撃例 12.4）／対策 M11（Table B2）"
+        url: "https://eur-lex.europa.eu/eli/reg/2025/5/oj/eng"
+
+  # ── ファームウェアのダウングレード（リプレイ） ───────────────────────────
+  - id: sdv-firmware-downgrade-replay-001
+    canonicalId: firmware-downgrade-replay
+    framework: STRIDE
+    category: "Tampering"
+    name: "ファームウェアのダウングレード（古い正規版の再適用）"
+    severity: High
+    description: "{{nodeName}} の更新の検証が署名の正しさだけを見て版数を確かめない場合、攻撃者は過去に正規に署名された古いファームウェア（既知の脆弱性を含むもの）を記録しておき、更新の経路やゲートウェイを通じて {{nodeName}} に再適用させられる（Can）。署名は正しいため検証を通り、修正済みの脆弱性を再び悪用できるようになる。一方、{{nodeName}} が改ざんできない領域（HSM / SHE のカウンタ・OTP）に最小版数を保持し、それより古い版の適用と起動を拒否していれば、正規の署名を持つ古い版でも適用できない（Cannot）。blast radius は {{nodeName}} の機能と、過去の版に含まれる全脆弱性。"
+    mitigation: "[Foundation] 更新の検証で、署名に加えて版数を確認し、現在より古い版の適用を拒否する。 [Enterprise] 最小版数を HSM / SHE のカウンタや OTP など改ざんできない領域に保持し、セキュアブートでも古い版の起動を拒否する（ロールバック防止）。更新のメタデータに有効期限を付け、古いメタデータの再送も拒否する。 [Advanced] 脆弱性の修正を含む版を出したら最小版数を引き上げ、車両群の版数を監視して古い版で動く車両を検出する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: ECU
+        - nodeType: ZONE_CONTROLLER
+        - nodeType: CENTRAL_COMPUTE
+        - nodeType: CENTRAL_GATEWAY
+      # 版数の検証方式は機器の更新・起動の設計の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-02"
+    references:
+      - title: "UN R155 Annex 5 Table A1 #6（攻撃例 6.3）／対策 M10（Table B1）・M16（Table B2）"
+        url: "https://eur-lex.europa.eu/eli/reg/2025/5/oj/eng"
+
+  # ── 正規の更新の妨害 ───────────────────────────────────────────────
+  - id: sdv-update-denial-001
+    canonicalId: vehicle-update-denial
+    framework: STRIDE
+    category: "Denial of Service"
+    name: "正規の更新の配信の妨害"
+    severity: Medium
+    description: "攻撃者は {{nodeName}} やその前段のネットワークへのサービス妨害、または車両側で古い更新情報を見せ続ける（新しい更新が無いように見せる）ことで、重要な修正を含む更新が車両群に届かないようにできる（Can）。脆弱性の修正が届かない間、車両群は既知の脆弱性を抱えたまま走り続ける。一方、{{nodeName}} を冗長化して DDoS 対策を置き、車両側が更新情報の有効期限を確かめて古い情報を拒否し、更新が届かない車両を監視していれば、配信の妨害は一時的な遅れにとどまり、気付かないまま放置されることはない（Cannot）。blast radius は {{nodeName}} から更新を受ける全車両の、修正が遅れる期間。"
+    mitigation: "[Foundation] 配信サーバー を冗長化し、DDoS 対策のある配信基盤（CDN 等）を使う。配信できない状態からの復旧手順を用意する。 [Enterprise] 更新のメタデータに有効期限を付けて車両側で確認し、古い情報を見せ続ける攻撃（フリーズ攻撃）を拒否する。更新の適用状況を車両ごとに監視し、一定期間届かない車両を検出する。 [Advanced] 配信の経路を複数持ち（携帯電話網・Wi-Fi・販売店での更新）、重要な修正は経路を変えても届けられるようにする。"
+    appliesTo:
+      kind: node
+      nodeType: OTA_SERVER
+      # 配信の妨害は配信先（車両側）とつながっていることが前提（既定の接続要件：任意方向に 1 本以上）。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-03"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-02"
+    references:
+      - title: "UN R155 Annex 5 Table A1 #13（攻撃例 13.1）／対策 M3（Table B2・Table C1）"
+        url: "https://eur-lex.europa.eu/eli/reg/2025/5/oj/eng"
+
+  # ── V2X メッセージのなりすまし・Sybil 攻撃・悪性の V2X メッセージ ─────────────
+  - id: sdv-v2x-message-spoofing-sybil-001
+    canonicalId: v2x-message-spoofing
+    framework: STRIDE
+    category: "Spoofing"
+    name: "V2X メッセージのなりすまし・Sybil 攻撃"
+    severity: High
+    description: "{{nodeName}} は他の車両・路側機からの無線メッセージ（位置・速度・危険情報・信号情報）を受け取り、運転支援の判断に使う。受信したメッセージの署名と送信元の証明書を検証しない、または正規の証明書を持つ機器が掌握された場合、攻撃者は存在しない車両・事故・渋滞を装ったメッセージを送ったり、複数の証明書を使い分けて多数の車両がいるように見せたり（Sybil 攻撃）して、周囲の車両の判断を誤らせられる（Can）。一方、すべての受信メッセージの署名を検証し、失効した証明書を拒否し、メッセージの内容を自車のセンサーや位置の妥当性と照らし合わせていれば、鍵を持たない攻撃者の偽メッセージは受け付けられず、正規の証明書を悪用した場合も不整合として検出・失効できる（Cannot）。blast radius は {{nodeName}} の無線の届く範囲にいる全車両の判断。"
+    mitigation: "[Foundation] 受信する V2X メッセージの署名と証明書を必ず検証し、検証できないメッセージを運転支援の判断に使わない。秘密鍵を HSM に保管する。 [Enterprise] 失効した証明書の情報を定期的に取り込み、拒否する。メッセージの内容（位置・速度）を自車のセンサー・地図・物理的な妥当性と照らし合わせる（誤動作の検出）。 [Advanced] 不整合を検出したら、その送信元を車両の外の誤動作検出の仕組み（SCMS の誤動作報告等）へ報告し、証明書の失効につなげる。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: V2X_OBU
+        - nodeType: V2X_RSU
+      # 無線で誰からでも受信できることは V2X 機器そのものの性質（送信元の車両を図に描かなくても成立する）。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+    references:
+      - title: "UN R155 Annex 5 Table A1 #4（攻撃例 4.1・4.2）・#11（攻撃例 11.2）／対策 M10・M11（Table B1）"
+        url: "https://eur-lex.europa.eu/eli/reg/2025/5/oj/eng"
+
+  # ── 車両 PKI の CA 鍵の侵害・誤発行・失効の不備 ─────────────────────────
+  - id: sdv-vehicle-pki-trust-compromise-001
+    canonicalId: vehicle-pki-trust-compromise
+    framework: STRIDE
+    category: "Spoofing"
+    name: "車両 PKI の CA 鍵の侵害・証明書の誤発行・失効の不備"
+    # 全車両の信頼の根のため、OTA の署名鍵と同じ Critical（ユーザー決定 2026-10-10）。
+    severity: Critical
+    description: "{{nodeName}} は ECU・V2X・Plug & Charge の証明書を発行し、車両・機器はそれを信頼の根にして相手を確かめる。CA の秘密鍵が HSM の外にある、発行の要求者の確認が甘い（1 台の機器に大量の証明書を出す、廃車・盗難の機器にも出し続ける）、失効の情報が車両に届かない、といった場合、攻撃者は正規の証明書を得て ECU・V2X 機器・充電器になりすましたり、多数の証明書で Sybil 攻撃をしたりでき、漏えいした証明書を止めることもできない（Can）。一方、CA 鍵を HSM で保管してルート CA をオフラインにし、発行を機器の認証（製造時に入れた鍵）と発行数の上限で制限し、失効の情報を車両へ定期的に配っていれば、正規の機器の鍵を持たない攻撃者は証明書を得られず、漏えいした証明書は失効で止められる（Cannot）。blast radius は {{nodeName}} を信頼の根にする全車両・全機器。"
+    mitigation: "[Foundation] CA の秘密鍵を HSM で生成・保管し、ルート CA はオフラインで運用する。証明書を発行する前に、機器の認証（製造時に入れた鍵による登録）を必須にする。 [Enterprise] 機器ごとの発行数・発行頻度に上限を設け、異常な発行を検出する。失効の情報（CRL 等）を車両・機器へ定期的に配り、廃車・盗難・誤動作の機器の証明書を失効させる。CA の操作に複数人の承認と記録を求める。 [Advanced] 証明書の有効期間と鍵長を車両の寿命に合わせて見直し、CA 鍵の侵害を想定した信頼の根の入れ替え手順を車両側まで含めて用意する。"
+    appliesTo:
+      kind: node
+      nodeType: VEHICLE_PKI
+      # CA 鍵の保管・発行・失効の運用は PKI そのものの性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+    references:
+      - title: "UN R155 Annex 5 Table A1 #4（攻撃例 4.2）・#20（攻撃例 20.1）・#26（攻撃例 26.1）／対策 M11（Table B1）・M7（Table B5）・M23（Table B6）"
+        url: "https://eur-lex.europa.eu/eli/reg/2025/5/oj/eng"
+
+  # ── ECU からの暗号鍵の抽出・開発用のデバッグポートの残存 ───────────────────
+  - id: sdv-ecu-key-extraction-debug-access-001
+    canonicalId: ecu-key-extraction-debug-access
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "ECU からの暗号鍵の抽出・開発用のデバッグポートの残存"
+    severity: High
+    description: "{{nodeName}} の基板に JTAG 等のデバッグポートが有効なまま残る、開発用の証明書・パスワードが残る、暗号鍵を HSM / SHE ではなく通常のフラッシュメモリに置く、といった場合、車両や中古部品を手に入れた攻撃者は {{nodeName}} からファームウェアと暗号鍵（メッセージ認証・診断の認証・証明書の秘密鍵）を取り出せる（Can）。鍵が全車両・全 ECU で共通なら、1 台から取り出した鍵で他の車両のメッセージ認証や診断の認証も破れる。一方、量産品でデバッグポートを無効化（または認証付きに）し、鍵を HSM / SHE の中で生成・使用して外に出さず、鍵を車両ごと・ECU ごとに分けていれば、基板に触れても鍵は取り出せず、取り出せた場合の影響もその 1 台にとどまる（Cannot）。blast radius は {{nodeName}} の鍵で守っている通信・認証と、鍵が共通なら同じ鍵を持つ全車両。"
+    mitigation: "[Foundation] 量産品でデバッグポート（JTAG 等）を無効化し、開発用の証明書・パスワード・テスト用の機能を取り除く。鍵を全車両・全 ECU で共通にしない。 [Enterprise] 暗号鍵を HSM / SHE の中で生成・使用し、外へ取り出せないようにする。デバッグポートを残す場合は、ECU ごとの鍵による認証付きにする。 [Advanced] サイドチャネル・故障注入への耐性を評価した HSM を使い、鍵の漏えいを想定して車両ごとの鍵を遠隔で入れ替えられるようにする。"
+    appliesTo:
+      kind: node
+      nodeType: ECU
+      # デバッグポートと鍵の保管場所は機器のハードウェア設計の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+    references:
+      - title: "UN R155 Annex 5 Table A1 #19（攻撃例 19.3）・#28（攻撃例 28.2）／対策 M11（Table B5）・M23（Table B6）"
+        url: "https://eur-lex.europa.eu/eli/reg/2025/5/oj/eng"
+
+  # ── 充電パラメータの改ざん・充電器を経由した攻撃 ─────────────────────────
+  - id: sdv-ev-charging-manipulation-001
+    canonicalId: ev-charging-manipulation
+    framework: STRIDE
+    category: "Tampering"
+    name: "充電パラメータの改ざん・充電器を経由した車両への攻撃"
+    severity: High
+    description: "{{nodeName}} は充電ケーブル越しに ISO 15118 で車両と、OCPP で充電事業者のバックエンドとつながる。{{nodeName}} を掌握した攻撃者、または {{nodeName}} とバックエンドの間に入り込んだ攻撃者は、充電電圧・電力・電池温度の上限などの充電パラメータを偽ったり、充電の開始・停止の指示を偽造したりして、電池を傷めたり充電を妨げたりできる。Plug & Charge の証明書を盗めば他人の契約で課金させられ、車両側の充電の通信処理に脆弱性があれば車両への入口にもなる（Can）。一方、車両側の電池管理が自らの測定値で電圧・電流・温度の上限を強制し、{{nodeName}} と車両・バックエンドの通信を証明書による相互認証の TLS で守り、{{nodeName}} のファームウェアを署名検証していれば、偽のパラメータで電池を危険な状態にすることも、なりすまして課金させることもできない（Cannot）。blast radius は {{nodeName}} で充電する全車両と、その利用者の契約。"
+    mitigation: "[Foundation] 車両側の電池管理で、充電器からの指示にかかわらず電圧・電流・温度の上限を自らの測定値で強制する。充電器 とバックエンドの通信（OCPP）を TLS と充電器ごとの認証で守る。 [Enterprise] ISO 15118 の通信を証明書による TLS で守り、Plug & Charge の証明書と秘密鍵を 充電器 と車両の安全な領域に保管する。充電器 のファームウェアを署名付きで更新し、保守用のポート・アカウントを閉じる。 [Advanced] 充電の記録（指示・測定値）を車両とバックエンドで突き合わせて異常を検出し、掌握が疑われる 充電器 を遠隔で停止できるようにする。"
+    appliesTo:
+      kind: node
+      nodeType: EV_CHARGER
+      # 充電器が車両やバックエンドとつながっていることが攻撃の前提（既定の接続要件：任意方向に 1 本以上）。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+    references:
+      - title: "UN R155 Annex 5 Table A1 #25（攻撃例 25.2）・#16（攻撃例 16.1）／対策 M7（Table B5）・M20（Table B4）"
+        url: "https://eur-lex.europa.eu/eli/reg/2025/5/oj/eng"
+
+  # ── センサー入力のなりすまし・妨害・センサーの改ざん ─────────────────────
+  - id: sdv-adas-sensor-spoofing-001
+    canonicalId: adas-sensor-spoofing
+    framework: STRIDE
+    category: "Spoofing"
+    name: "センサー入力のなりすまし・妨害（GNSS スプーフィング等）"
+    severity: High
+    description: "{{nodeName}} は電波・光・画像を直接受け取るため、攻撃者は車両に触れずに偽の GNSS 信号で位置を誤らせる、レーダー・LiDAR に偽の反射を返して存在しない物体を見せる、強い光や妨害電波で認識を止める、標識・路面に細工をしてカメラの認識を誤らせる、といった攻撃ができる。物理的に近づける攻撃者は、センサーを不正な部品に替えたり、センサーと ECU の間に機器を挟んでデータを書き換えたりもできる（Can）。一方、複数の種類のセンサー（カメラ・レーダー・LiDAR・地図・車輪速）の結果を照らし合わせて不整合を検出し、GNSS には認証付きの信号や慣性航法との照合を使い、センサーと ECU の間の通信を認証していれば、1 種類のセンサーを欺いても判断全体は誤らず、部品の差し替えや挟み込みも検出できる（Cannot）。blast radius は {{nodeName}} の出力を使う運転支援・自動運転の判断。"
+    mitigation: "[Foundation] センサー の出力を単独で使わず、別の種類のセンサー・地図・車両の運動と照らし合わせて妥当性を確認する。妨害や不整合を検出したら、運転支援を縮退させて運転者へ引き継ぐ。 [Enterprise] センサーと ECU の間の通信を認証し（SecOC 等）、センサーの部品を認証して不正な部品への差し替えを検出する。GNSS は認証付きの信号（Galileo OSNMA 等）や慣性航法との照合を使う。 [Advanced] センサーの不整合・妨害の検出結果を車両の外のセキュリティ監視（VSOC）へ送り、同じ場所での攻撃を車両群で相関分析する。"
+    appliesTo:
+      kind: node
+      nodeType: ADAS_SENSOR
+      # 電波・光・画像を受け取ることはセンサーそのものの性質（攻撃者の送信機を図に描かなくても成立する）。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "DE.AE-03"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-03"
+    references:
+      - title: "UN R155 Annex 5 Table A1 #4（攻撃例 4.1）・#16（攻撃例 16.3）・#32（攻撃例 32.1）／対策 M10（Table B1）・M20（Table B4）・M9（Table B8）、複数の情報源の照合（Table B5 の #20.3〜20.4 の対策）"
+        url: "https://eur-lex.europa.eu/eli/reg/2025/5/oj/eng"
+
+  # ── 所有者・利用者の変更時の個人データの残存 ────────────────────────────
+  - id: sdv-ownership-change-personal-data-residue-001
+    canonicalId: vehicle-ownership-change-data-residue
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "所有者・利用者の変更時の個人データの残存"
+    severity: Medium
+    description: "{{nodeName}} は連絡先・通話履歴・位置履歴・よく行く場所・ペアリングしたスマートフォン・アプリのアカウントなどの個人データを保持する。車両が売却・返却・レンタル・カーシェアで別の人の手に渡るときに、これらが消去されず、前の利用者のアカウントの連携も解除されない場合、次の利用者や中古車を扱う事業者は前の利用者の個人データを読めて、連携が残ったアプリから車両を操作し続けることもできる（Can）。一方、利用者ごとのデータを利用者ごとの鍵で暗号化して所有者の変更時に鍵ごと消去し、アカウントの連携の解除と初期化をバックエンドと連動して確実に行っていれば、次の利用者が前の利用者の個人データを読むことも、前の利用者が車両を操作し続けることもできない（Cannot）。blast radius は {{nodeName}} に残る、これまでの全利用者の個人データ。"
+    mitigation: "[Foundation] 利用者が自分の個人データを消去し、アカウントの連携を解除できる初期化機能を用意し、売却・返却時の手順に組み込む。 [Enterprise] 利用者ごとのデータを利用者ごとの鍵で暗号化し、初期化時に鍵を消去する（暗号学的消去）。所有者の変更をバックエンドで管理し、前の所有者のアカウントの連携と遠隔操作の権限を自動で解除する。 [Advanced] 車両に保持する個人データを必要最小限にし、保持期間を定めて自動で消去する。レンタル・カーシェアでは利用の終了ごとに自動で初期化する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: IVI
+        - nodeType: CENTRAL_COMPUTE
+      # 個人データの保持と初期化の仕組みは機器そのものの性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "GV.OC-03"
+    references:
+      - title: "UN R155 Annex 5 Table A1 #31（攻撃例 31.1）・#19（攻撃例 19.2）／対策 M24（Table B7）・M8（Table B5）"
+        url: "https://eur-lex.europa.eu/eli/reg/2025/5/oj/eng"
+
+  # ── セントラルコンピュートの混在クリティカリティの分離不備・権限昇格 ───────────
+  - id: sdv-central-compute-isolation-escalation-001
+    canonicalId: central-compute-isolation-escalation
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "セントラルコンピュートでの重要度の異なるソフトウェアの分離不備・権限昇格"
+    severity: High
+    description: "{{nodeName}} ではハイパーバイザーやコンテナの上で、インフォテインメント・コネクティビティのように外部とつながる重要度の低いソフトウェアと、運転支援・車両制御のように安全に関わるソフトウェアが同居する。ハイパーバイザーの脆弱性、仮想マシン間の共有メモリ・通信路の過剰な権限、root 権限で動くサービスがあると、外部とつながる側でコードを実行した攻撃者は特権を得て、安全に関わる側のソフトウェアやその鍵・通信を操作できる（Can）。一方、重要度の異なるソフトウェアを分離の強度が評価されたハイパーバイザーで分け、仮想マシン間の通信を必要なものだけに認可し、各サービスを最小権限で動かしていれば、外部とつながる側でコードを実行されても安全に関わる側へは届かない（Cannot）。blast radius は {{nodeName}} の上で動く全機能と、{{nodeName}} からつながる車載ネットワーク。"
+    mitigation: "[Foundation] セントラルコンピュート の上で動くソフトウェアを重要度で分け、外部とつながるソフトウェアと安全に関わるソフトウェアを別の仮想マシン・区画で動かす。サービスを root 権限で動かさない。 [Enterprise] 仮想マシン間の共有メモリ・通信路を必要なものだけに絞って認可し、区画ごとに鍵とデバッグの権限を分ける。ハイパーバイザー・OS の脆弱性を継続的に管理し、OTA で修正する。 [Advanced] 分離の強度が評価されたハイパーバイザー（マイクロカーネル等）を使い、区画ごとの強制アクセス制御と実行時の完全性検証を行う。"
+    appliesTo:
+      kind: node
+      nodeType: CENTRAL_COMPUTE
+      # ソフトウェアの同居と分離の強度は機器の設計の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "UN R155 Annex 5 Table A1 #9（攻撃例 9.1）・#29（攻撃例 29.2）／対策 M9（Table B1）・M23（Table B6）"
+        url: "https://eur-lex.europa.eu/eli/reg/2025/5/oj/eng"
+
+  # ── 車両寿命に対して量子脆弱なファームウェア署名・証明書 ──────────────────
+  # pqc-long-lived-device-signature-001（IOT）と同じ脅威。車両専用の description を持つ別ルール。
+  - id: sdv-firmware-signature-pqc-001
+    canonicalId: long-lived-non-pqc-signature
+    framework: STRIDE
+    category: "Tampering"
+    name: "車両寿命に対して量子脆弱なファームウェア署名の検証"
+    severity: Medium
+    description: "{{nodeName}} がファームウェアの署名を RSA / ECDSA だけで検証し、その検証鍵（信頼の起点）を書き換えられない場合、車両は開発から廃車まで 20 年近く使われるため、その間に暗号学的に十分な量子計算機（CRQC）が現れると、攻撃者は公開鍵から署名鍵を導き、偽のファームウェアに正しい署名を付けて検証を通せる（Can）。Mosca の不等式で言えば、署名を信頼し続ける期間（車両の使用期間）と、署名方式を移行するのにかかる期間（車両の開発・ECU の調達のリードタイム）の和が CRQC の出現までの期間を超えやすく、量産開始後に気付いても検証の仕組みを入れ替えられない。一方、セキュアブートと更新の検証が LMS / XMSS（SP 800-208）や ML-DSA / SLH-DSA の署名を検証でき、信頼の起点を安全に入れ替えられる設計なら、古典署名の危殆化の前に署名方式を切り替えて偽造を防げる（Cannot）。これは将来時点の偽造であり、現在の署名を直ちに破るものではない。PQC の署名は大きく、CAN-FD の帯域と ECU の処理能力が制約になるため、署名の検証はゲートウェイやセントラルコンピュートでまとめて行うなどの設計が要る。blast radius は {{nodeName}} を載せた全車両の、残りの使用期間。"
+    mitigation: "[Foundation] 車両の ECU ごとに、ファームウェアの署名方式・鍵長・信頼の起点の格納場所と書き換えの可否、想定使用期間を棚卸しし、使用期間が PQC の移行期限を超えるものを特定する（暗号の棚卸し）。 [Enterprise] 新しく開発する ECU のセキュアブートと更新の検証を、LMS / XMSS（SP 800-208）または ML-DSA / SLH-DSA に対応させ、署名方式と信頼の起点を後から入れ替えられる設計にする（crypto-agility）。CAN-FD の帯域と ECU の処理能力を踏まえ、署名の検証を行う場所（ゲートウェイ・セントラルコンピュート・各 ECU）を決める。 [Advanced] 古典署名と PQC 署名を併用するハイブリッド署名で移行し、HSM / SHE の PQC 対応を ECU の調達要件に入れる。CNSA 2.0 等のファームウェア署名の移行期限を車両の開発計画に組み込む。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: ECU
+        - nodeType: ZONE_CONTROLLER
+        - nodeType: CENTRAL_COMPUTE
+        - nodeType: CENTRAL_GATEWAY
+        - nodeType: OTA_SERVER
+        - nodeType: VEHICLE_PKI
+      # 署名方式と信頼の起点の入れ替え可否は機器・基盤の設計の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+      # 署名する側（OTA 配信サーバー）・証明書を発行する側（車両 PKI）には、検証する側と別の説明を出す。
+      conditions:
+        - when:
+            nodeType: [OTA_SERVER]
+          description: "{{nodeName}} が更新の署名を RSA / ECDSA だけで行っている場合、車両側はその公開鍵で検証し続けるため、車両の使用期間（20 年近く）の間に暗号学的に十分な量子計算機（CRQC）が現れると、攻撃者は公開鍵から {{nodeName}} の署名鍵を導き、任意のソフトウェアに正しい署名を付けて車両群に適用させられる（Can）。Mosca の不等式で言えば、署名を信頼し続ける期間と、署名方式を移行する期間（車両側の検証の入れ替えを含む）の和が CRQC の出現までの期間を超えやすい。一方、{{nodeName}} が LMS / XMSS（SP 800-208）や ML-DSA / SLH-DSA の署名（または古典署名との併用）に対応し、車両側が新しい署名方式を検証できるよう前もって移行していれば、古典署名の危殆化の前に切り替えて偽造を防げる（Cannot）。LMS / XMSS は状態を持つ署名のため、署名の状態（使った鍵の番号）を HSM で厳密に管理する必要がある。blast radius は {{nodeName}} の署名を信頼する全車両の、残りの使用期間。"
+        - when:
+            nodeType: [VEHICLE_PKI]
+          description: "{{nodeName}} のルート CA・中間 CA の鍵が RSA / ECDSA で、有効期間が車両の使用期間（20 年近く）に合わせて長く設定されている場合、その間に暗号学的に十分な量子計算機（CRQC）が現れると、攻撃者は公開鍵から CA の秘密鍵を導き、ECU・V2X・Plug & Charge の正規の証明書を自由に発行できる（Can）。短い鍵と長い有効期間の組み合わせは、量子計算機が無くても危殆化の時間を与える。一方、PQC（ML-DSA 等）またはハイブリッドの CA を用意して、車両側の信頼の起点を前もって追加・入れ替えられるようにしていれば、古典暗号の CA が危殆化する前に新しい CA へ移行できる（Cannot）。blast radius は {{nodeName}} を信頼の根にする全車両・全機器の、残りの使用期間。"
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-02"
+    references:
+      - title: "UN R155 Annex 5 Table A1 #26（攻撃例 26.1・26.2・26.3）／対策 M23（Table B6）"
+        url: "https://eur-lex.europa.eu/eli/reg/2025/5/oj/eng"
+      - title: "NIST SP 800-208 - Recommendation for Stateful Hash-Based Signature Schemes（LMS / XMSS）"
+        url: "https://csrc.nist.gov/pubs/sp/800/208/final"
+      - title: "NIST FIPS 204 - Module-Lattice-Based Digital Signature Standard (ML-DSA)"
+        url: "https://csrc.nist.gov/pubs/fips/204/final"
+      - title: "NSA CNSA 2.0 - Commercial National Security Algorithm Suite 2.0（ファームウェア署名の移行期限）"
+        url: "https://www.nsa.gov/"

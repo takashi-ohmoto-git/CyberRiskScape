@@ -1,0 +1,71 @@
+# English overlay for `data/component-library/sdv.yaml`.
+#
+# The Japanese file is the source of truth: only `label` and `description` are
+# translated here, keyed by component type id. Anything omitted falls back to the
+# original text.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+components:
+  ECU:
+    label: "ECU"
+    description: "An in-vehicle electronic control unit on buses such as CAN, handling driving, braking or body control. The key points are firmware integrity (secure boot) and where keys and certificates are held; an embedded HSM / SHE is expressed with the node's cryptographic information."
+
+  ZONE_CONTROLLER:
+    label: "Zone controller"
+    description: "A controller that aggregates sensors, actuators and ECUs for each physical zone of the vehicle and relays them to the central compute over in-vehicle Ethernet. It forms a network boundary inside the vehicle, so authenticating and filtering its traffic is the key point."
+
+  CENTRAL_COMPUTE:
+    label: "Central compute (HPC)"
+    description: "A high-performance in-vehicle computer that consolidates many functions. Software of different criticality runs side by side on a hypervisor and is updated over the air, so isolation strength and software integrity are the key points."
+
+  CENTRAL_GATEWAY:
+    label: "Central gateway"
+    description: "An in-vehicle gateway that relays traffic between in-vehicle networks. It is the barrier between the externally connected side (TCU, OBD-II, IVI) and the driving-related networks, so routing, filtering and authorization of diagnostic requests are the key points."
+
+  TCU:
+    label: "Telematics unit (TCU)"
+    description: "A communication unit that connects the vehicle to the cloud over the cellular network. It is an externally reachable attack surface and handles SIM and communication authentication keys as well as vehicle location and driving data."
+
+  IVI:
+    label: "In-vehicle infotainment (IVI)"
+    description: "An in-vehicle infotainment system providing navigation, media and smartphone integration. It has many user-facing entry points (Bluetooth, USB, Wi-Fi, apps) and holds personal data such as contacts and location history."
+
+  IN_VEHICLE_NETWORK:
+    label: "In-vehicle network"
+    description: "A type for drawing an in-vehicle bus or segment (CAN / CAN-FD / LIN / FlexRay / automotive Ethernet) as a node. CAN and similar buses have no sender authentication, so ECUs on the same bus tend to trust one another."
+
+  OBD_PORT:
+    label: "OBD-II diagnostic port"
+    description: "The physical diagnostic connector (OBD-II) inside the cabin. It connects directly to in-vehicle networks, so diagnostic requests and message injection from a plugged-in device are the key points."
+
+  V2X_OBU:
+    label: "V2X on-board unit (OBU)"
+    description: "An on-board unit that communicates wirelessly with other vehicles, roadside units and pedestrians (V2X OBU). It is reachable over the air, holds the certificates and private keys used to sign messages, and transmits position data."
+
+  V2X_RSU:
+    label: "Roadside unit (RSU)"
+    description: "A roadside unit installed along the road that sends signal and traffic information to vehicles and receives data from them (V2X RSU). It is deployed outdoors where it is physically reachable, and holds the certificates and private keys used to sign messages."
+
+  DIAGNOSTIC_TOOL:
+    label: "Diagnostic tool"
+    description: "A diagnostic tool used at workshops and dealerships to diagnose and reprogram (reflash) vehicles. It can reach in-vehicle networks with high privilege and handles credentials used to authorize ECU access, so authenticating the tool and its operator is the key point."
+
+  EV_CHARGER:
+    label: "EV charger"
+    description: "Equipment that charges electric vehicles. It talks to the vehicle over the charging cable using ISO 15118 and to the charging operator's backend using OCPP. It handles Plug & Charge certificates and user authentication and billing data."
+
+  OTA_SERVER:
+    label: "OTA server"
+    description: "A server that signs software update packages and distributes them to vehicles over the air (OTA). If the signing key leaks, a malicious update can be pushed to every vehicle, so protecting the signing key and verifying updates are the key points. It is in scope of UN-R156 (SUMS)."
+
+  VEHICLE_PKI:
+    label: "Vehicle PKI"
+    description: "A certificate infrastructure that issues and revokes certificates for ECUs, V2X (such as SCMS) and Plug & Charge. The root and intermediate CA private keys are the trust anchor for the whole fleet, so key protection and revocation management are the key points."
+
+  ADAS_SENSOR:
+    label: "ADAS sensor"
+    description: "Cameras, LiDAR, radar and GNSS for driver assistance and automated driving. They are physical input surfaces that receive radio, light and images directly, so spoofing and jamming that feed false signals to deceive perception are the key points."

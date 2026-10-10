@@ -103,8 +103,9 @@ rules:
     mitigation: "[Foundation] 利用者や外部システムからバックエンド API へ直接到達できる経路を塞ぎ、ゲートウェイ経由に一本化する（ネットワークの許可リスト、プライベート接続）。ゲートウェイが付けたヘッダーを、ゲートウェイ以外からのリクエストでは信用しない。 [Enterprise] ゲートウェイとバックエンドの間を相互 TLS で認証する。バックエンド側でもトークンの署名・有効期限・スコープを検証する（ゲートウェイの検証に依存しない）。 [Advanced] サービスメッシュ等でサービス間の通信を個別に認可し、ゲートウェイの外側からの到達を構造的に不可能にする。"
     appliesTo:
       kind: edge
+      # TCU（sdv ライブラリ）は車両からバックエンドを呼ぶ外部の呼び出し元のため加える（車両バックエンドは BACKEND_API で描く）。
       when:
-        sourceType: [USER, PC, SMARTPHONE, IOT, EXTERNAL_ENTITY, OTHER_APP, API_DEV_WORKSPACE]
+        sourceType: [USER, PC, SMARTPHONE, IOT, EXTERNAL_ENTITY, OTHER_APP, API_DEV_WORKSPACE, TCU]
         targetType: [BACKEND_API]
     complianceRefs:
       - standard: nist-csf-2.0

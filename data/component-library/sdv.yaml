@@ -1,0 +1,173 @@
+# SDV（Software Defined Vehicle）コンポーネントライブラリ。
+#
+# 車両とその周辺（整備・充電・更新・証明書）を描くための 15 型（カテゴリ SDV、ラベル Vehicle (SDV)）：
+#   ECU                : 車載の電子制御ユニット
+#   ZONE_CONTROLLER    : ゾーンごとに機器を束ねるゾーンコントローラ
+#   CENTRAL_COMPUTE    : 機能を集約するセントラルコンピュート（HPC）
+#   CENTRAL_GATEWAY    : 車載ネットワーク間を中継するセントラルゲートウェイ
+#   TCU                : 携帯電話網で車両とクラウドをつなぐテレマティクスユニット
+#   IVI                : 車載インフォテインメント
+#   IN_VEHICLE_NETWORK : CAN / CAN-FD / LIN / FlexRay / 車載Ethernet のバス・セグメント
+#   OBD_PORT           : OBD-II 診断ポート
+#   V2X_OBU            : V2X 車載器
+#   V2X_RSU            : 路側機
+#   DIAGNOSTIC_TOOL    : 整備工場・販売店の診断ツール／リプログラミングツール
+#   EV_CHARGER         : EV 充電器（ISO 15118 / OCPP）
+#   OTA_SERVER         : OTA 配信サーバー（UN-R156 SUMS）
+#   VEHICLE_PKI        : ECU・V2X・Plug & Charge の証明書を発行する車両 PKI
+#   ADAS_SENSOR        : カメラ・LiDAR・レーダー・GNSS
+#
+# 既存の型で代用するもの：
+#   スマホアプリ                           : SMARTPHONE
+#   車両バックエンド / テレマティクスサーバー : BACKEND_API
+#   充電事業者のバックエンド（CSMS）       : BACKEND_API / SAAS
+#   ネットワーク HSM                       : HSM
+#   ECU 内蔵 HSM / SHE                     : ノードの暗号情報（keyStorage）で表す
+#   車両そのもの                           : 信頼境界
+#
+# builtin ではないため、LeftSidebar のライブラリトグルで無効化できる。
+#
+# ライセンス: Apache-2.0（同梱）
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+library:
+  id: sdv
+  title: "Vehicle (SDV)"
+  version: "1.0"
+  license: "Apache-2.0"
+  description: "コネクテッドカー・SDV の車載機器、車外の接続先、整備・充電・更新・証明書の基盤の型。"
+
+categories:
+  - id: SDV
+    label: "Vehicle (SDV)"
+    order: 44
+
+components:
+  - id: ECU
+    label: "ECU"
+    category: SDV
+    icon: { kind: builtin, name: "circuit-board" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "車載の電子制御ユニット。CAN などの車載ネットワークに接続し、走行・制動・ボディ制御などを担う。ファームウェアの正当性（セキュアブート）と、暗号鍵・証明書をどこに持つかが要点で、内蔵 HSM / SHE はノードの暗号情報で表す。"
+    canContain: [CREDENTIAL]
+
+  - id: ZONE_CONTROLLER
+    label: "ゾーンコントローラ"
+    category: SDV
+    icon: { kind: builtin, name: "layout-grid" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "車両の物理的な区画（ゾーン）ごとにセンサー・アクチュエーター・ECU を束ね、車載Ethernetでセントラルコンピュートへ中継する制御装置。ゾーン内外のネットワーク境界になるため、通信の認証とフィルタリングが要点。"
+
+  - id: CENTRAL_COMPUTE
+    label: "セントラルコンピュート（HPC）"
+    category: SDV
+    icon: { kind: builtin, name: "cpu" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "複数の機能を集約して動かす車載の高性能コンピュータ（HPC）。ハイパーバイザー上で異なる重要度のソフトウェアが同居し、更新も受けるため、分離の強度とソフトウェアの正当性が要点。"
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, CREDENTIAL, LOG]
+
+  - id: CENTRAL_GATEWAY
+    label: "セントラルゲートウェイ"
+    category: SDV
+    icon: { kind: builtin, name: "arrow-left-right" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "車載ネットワーク間の通信を中継する車両内のゲートウェイ。外部接続（TCU・OBD-II・IVI）側と、走行系ネットワークの間の防壁になるため、ルーティングとフィルタリング、診断要求の認可が要点。"
+
+  - id: TCU
+    label: "テレマティクスユニット（TCU）"
+    category: SDV
+    icon: { kind: builtin, name: "signal" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "携帯電話網で車両とクラウドをつなぐ通信ユニット。車外から到達できる外部接続面であり、SIM と通信の認証鍵、車両の位置・走行情報を扱う。"
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, CREDENTIAL, LOG]
+
+  - id: IVI
+    label: "車載インフォテインメント（IVI）"
+    category: SDV
+    icon: { kind: builtin, name: "monitor-play" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "ナビ・音楽・スマートフォン連携などを提供する車載の情報娯楽システム。Bluetooth・USB・Wi-Fi・アプリなど利用者側の入口が多い外部接続面で、連絡先や位置履歴などの個人情報を保持する。"
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, CREDENTIAL, LOG]
+
+  - id: IN_VEHICLE_NETWORK
+    label: "車載ネットワーク"
+    category: SDV
+    icon: { kind: builtin, name: "cable" }
+    shape: connector
+    color: "bg-transparent"
+    description: "CAN / CAN-FD / LIN / FlexRay / 車載Ethernet のバスやセグメントをノードとして描くための型。CAN などは送信元の認証がなく、同じバスにつながる ECU 同士は互いを信頼する前提になりやすい。"
+
+  - id: OBD_PORT
+    label: "OBD-II診断ポート"
+    category: SDV
+    icon: { kind: builtin, name: "unplug" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "車室内にある車両診断用の物理コネクタ（OBD-II）。車載ネットワークへ直接つながるため、差し込まれた機器からの診断要求や不正なメッセージの注入が要点。"
+
+  - id: V2X_OBU
+    label: "V2X車載器（OBU）"
+    category: SDV
+    icon: { kind: builtin, name: "radio" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "他車両・路側機・歩行者と無線で通信する車載器（V2X OBU）。外部から電波で到達できる接続面で、メッセージ署名用の証明書と秘密鍵を持ち、位置情報を送信する。"
+
+  - id: V2X_RSU
+    label: "路側機（RSU）"
+    category: SDV
+    icon: { kind: builtin, name: "radio-tower" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "道路沿いに設置され、車両へ信号・交通情報を送り、車両からの情報を受ける路側機（V2X RSU）。屋外に設置され物理的に近づける外部接続面で、メッセージ署名用の証明書と秘密鍵を持つ。"
+
+  - id: DIAGNOSTIC_TOOL
+    label: "診断機"
+    category: SDV
+    icon: { kind: builtin, name: "stethoscope" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "整備工場・販売店で車両の診断やリプログラミング（ソフトウェア書き換え）に使う診断ツール。車載ネットワークへ高い権限で接続でき、ECU の認可に使う資格情報も扱うため、ツールと利用者の認証が要点。"
+
+  - id: EV_CHARGER
+    label: "EV充電器"
+    category: SDV
+    icon: { kind: builtin, name: "battery-charging" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "電気自動車を充電する設備。車両とは充電ケーブル経由で ISO 15118 により、充電事業者のバックエンドとは OCPP により通信する。Plug & Charge の証明書と、利用者の認証・課金情報を扱う。"
+
+  - id: OTA_SERVER
+    label: "OTA配信サーバー"
+    category: SDV
+    icon: { kind: builtin, name: "cloud-download" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "ソフトウェア更新パッケージに署名し、車両へ無線（OTA）で配信するサーバー。署名鍵が漏れると全車両に不正な更新を配れるため、署名鍵の保護と更新の検証が要点。UN-R156（SUMS）の対象になる。"
+    canContain: [SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]
+
+  - id: VEHICLE_PKI
+    label: "車両PKI"
+    category: SDV
+    icon: { kind: builtin, name: "file-badge" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "ECU・V2X（SCMS など）・Plug & Charge の証明書を発行・失効する認証基盤。ルート CA と中間 CA の秘密鍵が全車両の信頼の根になるため、鍵の保護と失効管理が要点。"
+    canContain: [CREDENTIAL, LOG]
+
+  - id: ADAS_SENSOR
+    label: "ADASセンサー"
+    category: SDV
+    icon: { kind: builtin, name: "aperture" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "運転支援・自動運転のためのカメラ・LiDAR・レーダー・GNSS。電波・光・画像を直接受け取る物理的な入力面で、偽の信号を与えて認識を欺く攻撃（スプーフィング・ジャミング）が要点。"
