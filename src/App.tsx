@@ -25,6 +25,7 @@ import { TopControls } from './ui/TopControls';
 import { LinkingIndicator } from './ui/LinkingIndicator';
 import { ProjectEditModal } from './ui/panels/ProjectEditModal';
 import { ComplianceMapModal } from './ui/panels/ComplianceMapModal';
+import { ChecklistModal } from './ui/panels/ChecklistModal';
 import { AnalyticsModal } from './ui/panels/AnalyticsModal';
 import { ManualThreatModal } from './ui/panels/ManualThreatModal';
 import { CustomRulesManagerModal } from './ui/panels/CustomRulesManagerModal';
@@ -118,6 +119,7 @@ export default function App() {
 
       <ProjectEditModal />
       <ComplianceMapModal />
+      <ChecklistModal />
       <AnalyticsModal threats={threats} />
       <ManualThreatModal />
       <CustomRulesManagerModal />

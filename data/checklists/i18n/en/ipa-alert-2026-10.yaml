@@ -1,0 +1,76 @@
+# English overlay for ipa-alert-2026-10.yaml (titles and how-to text only).
+# Source: IPA (Information-technology Promotion Agency, Japan), 2026-10-09
+#   https://www.ipa.go.jp/security/security-alert/2026/alert20261009.html
+# Paraphrased summary of the "measures to take promptly"; not a verbatim translation and not endorsed by IPA.
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+checklist:
+  title: "IPA alert (Oct 2026): measures to take promptly"
+  source:
+    publisher: "Information-technology Promotion Agency, Japan (IPA)"
+    title: "Measures to take promptly in light of incidents of data leakage through unauthorized access (Japanese)"
+
+groups:
+  public-app:
+    title: "Applications exposed to the outside"
+    items:
+      ipa-01:
+        title: "Review what is exposed externally"
+        howTo: "Fill in the Attack Surface Attribute of each public entry point as it really is, and check that no line reaches an admin console or API control plane from the internet. Also record patch status under operations."
+      ipa-02:
+        title: "Strengthen authentication (MFA, passwords)"
+        howTo: "Set the Authentication of the line from users to the public app as it really is. Lines whose crossing marker is red (none) or yellow (password, API key, MFA) are candidates for review."
+      ipa-03:
+        title: "Review privileges granted to accounts"
+        howTo: "Set the User Trust of users (employee, contractor, partner, guest) and check their lines to sensitive systems. Specify the IdP as the credential issuer."
+      ipa-04:
+        title: "Review management of API integrations per component"
+        howTo: "Draw APIs as Backend API and API Gateway, and check that no line bypasses the gateway. Put the authentication method of each integration on its line."
+      ipa-05:
+        title: "Review privileges granted per component"
+        howTo: "Draw the accounts used by APIs, batches and integrations as NHIs (service accounts, OAuth clients, etc.) and show what they have privileges on with lines."
+      ipa-06:
+        title: "Review what logs are kept and for how long"
+        howTo: "Fill in the Access Log attribute of public entry points and the operations posture of nodes (log collection, retention, who can review) as they really are."
+      ipa-07:
+        title: "Consider additional security measures"
+        howTo: "Mitigations on each threat card are written in Foundation / Enterprise / Advanced tiers. Take the tier after your current one as a candidate. Also record patch status under operations."
+  external-service:
+    title: "External services your organization uses"
+    items:
+      ipa-08:
+        title: "Strengthen authentication (MFA, passwords)"
+        howTo: "Set the Authentication of lines from users to SaaS and VPN as it really is. Look for lines whose crossing marker is red or yellow."
+      ipa-09:
+        title: "Review the scope of account grants"
+        howTo: "Draw contractors, partners and guests with distinct User Trust, and check their lines to SaaS and data."
+      ipa-10:
+        title: "Review the account inventory process"
+        howTo: "Set the credential issuer of lines to the IdP. A line without it is a candidate for a local account outside the IdP. Record the review process in the operations posture of the node."
+      ipa-11:
+        title: "Review management of API integrations per component"
+        howTo: "Draw the integrations between SaaS and your systems (OAuth clients, service accounts, RPA bots) and put the authentication method on their lines."
+      ipa-12:
+        title: "Review what logs are kept and for how long"
+        howTo: "For each SaaS, enter in the operations posture who can review the logs (you or the provider) and the retention period."
+      ipa-13:
+        title: "Consider applicable security measures"
+        howTo: "Drawing unmanaged external services as Shadow Cloud / Shadow App surfaces them as uncontrolled use. The mitigation tiers are the same as item 7."
+  data:
+    title: "Data you hold"
+    items:
+      ipa-14:
+        title: "Reconsider whether to hold the data"
+        howTo: "Store personal information in the node that holds it, and see where and how much there is. Enter the necessity and record volume of the data asset in the operations posture."
+      ipa-15:
+        title: "Reconsider where the data is stored"
+        howTo: "Check which trust boundary the data store sits in and how many hops it is from the internet. Set the personal-information store as an OBJECTIVE in attack path analysis to see the paths from entry points."
+      ipa-16:
+        title: "Review data-access logs and retention"
+        howTo: "In the operations posture of databases and storage, enter log collection, retention and who can review."
+      ipa-17:
+        title: "Encrypt data"
+        howTo: "Check encryption in transit with the Encryption of lines. Enter encryption at rest in the operations posture of the node."

@@ -1,7 +1,14 @@
 import { readFileSync, statSync, writeFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import { parseArgs } from 'node:util';
-import { analyzeProject, evaluateGate, type LayerAnalysisResult } from './analyze';
+import {
+  analyzeProject,
+  analyzeResolvedProject,
+  evaluateGate,
+  resolveProject,
+  type LayerAnalysisResult,
+  type ResolvedProject,
+} from './analyze';
 import { toSarif } from './sarif';
 import {
   diffProjects,
@@ -27,6 +34,9 @@ import { layerToProject } from '../features/kong-import/toProject';
 import { conjurToLayer } from '../features/conjur-import/conjurToLayer';
 import { shodanToLayer } from '../features/shodan-import/shodanToLayer';
 import { toPostmanCollection } from '../features/postman-export/toPostmanCollection';
+import { getChecklists } from '../checklist/bundled';
+import { evaluateChecklist } from '../checklist/evaluate';
+import { toChecklistCsv, toChecklistJson, toChecklistMarkdown } from '../checklist/report';
 
 /**
  * CyberRiskScape ヘッドレス CLI。
@@ -38,6 +48,7 @@ import { toPostmanCollection } from '../features/postman-export/toPostmanCollect
 const ANALYZE_FORMATS = ['json', 'sarif', 'md'] as const;
 const DIFF_FORMATS = ['md', 'json'] as const;
 const TRIGGERS_FORMATS = ['md', 'json'] as const;
+const CHECKLIST_FORMATS = ['md', 'json', 'csv'] as const;
 
 const FRAMEWORKS: readonly FrameworkView[] = ['STRIDE', 'AI', 'AgenticAI', 'ALL'];
 const SEVERITIES: readonly Severity[] = ['Low', 'Medium', 'High', 'Critical'];
@@ -47,6 +58,7 @@ const USAGE = `使い方:
   analyze <project.json> [options]
   diff <base.json> <head.json> [options]
   triggers [options]
+  checklist <project.json> --id <checklistId> [options]
   import-kong <kong.yaml> [options]
   import-conjur <policy.yml> [options]
   import-shodan <export.json[.gz]> [options]
@@ -71,6 +83,15 @@ diff のオプション:
 triggers のオプション:
   --format <md|json>                            出力形式（既定: md）
   --triggers <file>                             実行トリガー定義 YAML（既定: 同梱の T1〜T8。指定時は翻訳オーバーレイ非適用）
+  --locale <ja|en>                              表示言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+checklist のオプション（注意喚起チェックリストを構成図に当てはめ、項目ごとの状態を出す。実機の点検の代わりではない）:
+  --id <checklistId>                            チェックリスト ID（必須。例: ipa-alert-2026-10）
+  --format <md|json|csv>                        出力形式（既定: md）
+  --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある最初のレイヤー）
+  --as-of <YYYY-MM-DD>                          「点検が古い」判定の基準日（既定: 今日）
+  --fail-on-action                              状態が「要対応」の項目があれば exit 1
   --locale <ja|en>                              表示言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
@@ -100,7 +121,7 @@ mcp のオプション（stdio の MCP サーバーとして起動。stdout は 
 共通:
   --help                                        このヘルプを表示
 
-終了コード: 0=成功 / 1=--fail-on によるゲート不合格 / 2=入力・引数エラー`;
+終了コード: 0=成功 / 1=--fail-on / --fail-on-action によるゲート不合格 / 2=入力・引数エラー`;
 
 function fail(message: string): never {
   process.stderr.write(`${message}\n`);
@@ -176,6 +197,9 @@ function parseCliArgs() {
       layer: { type: 'string' },
       framework: { type: 'string' },
       'fail-on': { type: 'string' },
+      'fail-on-action': { type: 'boolean' },
+      id: { type: 'string' },
+      'as-of': { type: 'string' },
       triggers: { type: 'string' },
       locale: { type: 'string' },
       out: { type: 'string' },
@@ -298,6 +322,67 @@ function runTriggers(values: CliValues): void {
 
   const output = format === 'json' ? triggersToJson(triggers) : triggersToMarkdown(triggers);
   writeOutput(output, values.out);
+}
+
+/**
+ * `checklist`：注意喚起チェックリスト（`data/checklists/`）を構成図に当てはめ、項目ごとの状態
+ * （要対応 / 未入力 / リスク受容 / 問題なし / 対象なし）と、点検が古い・未記録のノードを出す。
+ * 同梱ルールのみで評価する（カスタムルール・誤検知やリスク受容の記録はプロジェクト JSON のものを使う）。
+ */
+function runChecklist(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  const format = parseEnum(values.format, CHECKLIST_FORMATS, 'format') ?? 'md';
+  const layer = parseEnum(values.layer, LAYER_KEYS, 'layer');
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+
+  const checklists = getChecklists(locale);
+  const checklist = checklists.find((c) => c.checklist.id === values.id);
+  if (!checklist) {
+    fail(translate('checklist.cli.unknownId', locale, {
+      id: values.id ?? '',
+      ids: checklists.map((c) => c.checklist.id).join(' | '),
+    }));
+  }
+
+  const asOf = values['as-of'] ?? new Date().toISOString().slice(0, 10);
+  const asOfDate = /^\d{4}-\d{2}-\d{2}$/.test(asOf) ? new Date(`${asOf}T00:00:00Z`) : undefined;
+  if (!asOfDate || Number.isNaN(asOfDate.getTime()) || asOfDate.toISOString().slice(0, 10) !== asOf) {
+    fail(translate('checklist.cli.invalidAsOf', locale, { value: asOf }));
+  }
+
+  const raw = readJsonFile(file);
+  let resolved: ResolvedProject;
+  let results: LayerAnalysisResult[];
+  try {
+    resolved = resolveProject(raw);
+    results = analyzeResolvedProject(resolved, { layer, framework: 'ALL', locale });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  const target = results[0];
+  if (!target) fail(translate('checklist.cli.noNodes', locale));
+
+  const result = evaluateChecklist({ checklist, nodes: target.input.nodes, threats: target.threats, asOf });
+  const ctx = { result, project: resolved.projectMeta, layer: target.layer, locale };
+  const output =
+    format === 'json'
+      ? JSON.stringify(toChecklistJson(ctx), null, 2)
+      : format === 'csv'
+        ? toChecklistCsv(ctx)
+        : toChecklistMarkdown(ctx);
+  writeOutput(output, values.out);
+
+  if (values['fail-on-action'] && result.summary.action > 0) {
+    process.stderr.write(`${translate('checklist.cli.failOnAction', locale, { count: result.summary.action })}
+`);
+    process.exitCode = 1;
+  }
 }
 
 /**
@@ -469,6 +554,8 @@ function main(): void {
     runDiff(values, positionals);
   } else if (command === 'triggers') {
     runTriggers(values);
+  } else if (command === 'checklist') {
+    runChecklist(values, positionals);
   } else if (command === 'export-postman') {
     runExportPostman(values, positionals);
   } else if (command === 'import-conjur') {

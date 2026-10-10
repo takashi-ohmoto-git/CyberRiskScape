@@ -9,6 +9,7 @@ import { enThreats } from './en/threats';
 import { enReport } from './en/report';
 import { enDiff } from './en/diff';
 import { enCliTriggers } from './en/cliTriggers';
+import { enChecklist } from './en/checklist';
 
 
 /**
@@ -183,4 +184,5 @@ export const en: Partial<Record<TranslationKey, string>> = {
   ...enReport,
   ...enDiff,
   ...enCliTriggers,
+  ...enChecklist,
 };

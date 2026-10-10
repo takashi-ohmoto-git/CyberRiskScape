@@ -368,6 +368,8 @@ interface DiagramState {
   isComplianceMapOpen: boolean;
   /** Analytics（ElementalID 単位リスト）モーダルの開閉状態（UI 表示用、永続化しない）。 */
   isAnalyticsOpen: boolean;
+  /** 注意喚起チェックリストモーダルの開閉状態（UI 表示用、永続化しない）。 */
+  isChecklistOpen: boolean;
   /** 脅威ライブラリ・インスペクタ（読み取り専用）モーダルの開閉状態（UI 表示用、永続化しない）。 */
   isLibraryInspectorOpen: boolean;
   /** Template（Import / Export）モーダルの開閉状態（UI 表示用、永続化しない）。 */
@@ -533,6 +535,8 @@ interface DiagramState {
   closeComplianceMap: () => void;
   openAnalytics: () => void;
   closeAnalytics: () => void;
+  openChecklist: () => void;
+  closeChecklist: () => void;
   openLibraryInspector: () => void;
   closeLibraryInspector: () => void;
   openTemplate: () => void;
@@ -641,6 +645,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   isProjectEditOpen: false,
   isComplianceMapOpen: false,
   isAnalyticsOpen: false,
+  isChecklistOpen: false,
   isLibraryInspectorOpen: false,
   isTemplateModalOpen: false,
   exportModalMode: null,
@@ -1247,6 +1252,8 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
   openAnalytics: () => set({ isAnalyticsOpen: true }),
   closeAnalytics: () => set({ isAnalyticsOpen: false }),
+  openChecklist: () => set({ isChecklistOpen: true }),
+  closeChecklist: () => set({ isChecklistOpen: false }),
 
   openLibraryInspector: () => set({ isLibraryInspectorOpen: true }),
   closeLibraryInspector: () => set({ isLibraryInspectorOpen: false }),

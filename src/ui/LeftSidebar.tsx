@@ -1,5 +1,6 @@
 import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import {
+  ClipboardCheck,
   Copy,
   Download,
   FilePlus,
@@ -71,6 +72,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
   const openProjectEdit = useDiagramStore((s) => s.openProjectEdit);
   const openTemplate = useDiagramStore((s) => s.openTemplate);
   const openExportModal = useDiagramStore((s) => s.openExportModal);
+  const openChecklist = useDiagramStore((s) => s.openChecklist);
   const openCopyLayer = useDiagramStore((s) => s.openCopyLayer);
   const openProjectFile = useDiagramStore((s) => s.openProjectFile);
   const openNewProjectConfirm = useDiagramStore((s) => s.openNewProjectConfirm);
@@ -327,6 +329,13 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                   >
                     <Download size={12} className="text-emerald-400 shrink-0" />
                     {t('project.sidebar.exportPostman')}
+                  </button>
+                  <button
+                    onClick={openChecklist}
+                    className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
+                  >
+                    <ClipboardCheck size={12} className="text-emerald-400 shrink-0" />
+                    {t('checklist.menu')}
                   </button>
                   <button
                     onClick={() => openExportModal('pdf')}

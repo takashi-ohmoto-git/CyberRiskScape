@@ -1,0 +1,174 @@
+# 注意喚起チェックリスト：IPA「不正アクセスによる漏えい等の事案を踏まえ、速やかに実施すべき対策等について」
+# 出典：独立行政法人情報処理推進機構（IPA）、2026-10-09
+#   https://www.ipa.go.jp/security/security-alert/2026/alert20261009.html
+# 「速やかに取り組むべき対策」17 項目を要約したもの（逐語転載ではない）。IPA が作成・認定・推奨するものではない。
+# 項目と脅威ルール・コンポーネント型の対応は本ツール側の解釈。判定の規則は src/checklist/evaluate.ts。
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+checklist:
+  id: ipa-alert-2026-10
+  title: "IPA 注意喚起（2026-10）速やかに取り組むべき対策"
+  source:
+    publisher: "独立行政法人情報処理推進機構（IPA）"
+    title: "不正アクセスによる漏えい等の事案を踏まえ、速やかに実施すべき対策等について"
+    url: "https://www.ipa.go.jp/security/security-alert/2026/alert20261009.html"
+    publishedAt: "2026-10-09"
+  staleDays: 30
+
+groups:
+  - id: public-app
+    title: "外部に公開しているアプリケーション"
+    items:
+      - id: ipa-01
+        title: "外部公開範囲の見直し"
+        howTo: "公開している入口ごとに Attack Surface Attribute を実態どおりに入力し、インターネットから管理画面や API 管理プレーンに線が届いていないか確かめる。パッチの適用状況も運用状況に記録する。"
+        targetTypes: [FRONT_END_SERVER, GATEWAY, BACKEND_API, API_CONTROL_PLANE, VPN_GATEWAY, FIREWALL, LOAD_BALANCER]
+        ruleIds:
+          - stride-web-global-ip-exposure-001
+          - stride-web-no-source-ip-restriction-001
+          - stride-web-remote-mgmt-exposed-001
+          - api-control-plane-internet-exposure-001
+          - netinfra-edge-device-exploitation-001
+          - webserver-webshell-implant-001
+          - posture-patch-missing-001
+      - id: ipa-02
+        title: "認証機能（多要素認証・パスワード）の強化"
+        howTo: "利用者から公開アプリへの接続の Authentication を実態どおりに選ぶ。越境マーカーが赤（なし）か黄（パスワード・API キー・MFA）の線が見直しの候補。"
+        targetTypes: [FRONT_END_SERVER, GATEWAY, BACKEND_API, API_CONTROL_PLANE]
+        ruleIds:
+          - stride-web-no-user-auth-001
+          - stride-edge-unauth-internet-001
+          - stride-edge-password-internet-001
+          - zt-aitm-session-token-theft-001
+      - id: ipa-03
+        title: "アカウントへの権限付与の見直し"
+        howTo: "利用者の User Trust（社員・委託先・取引先・ゲスト）を設定し、機微なシステムへの線を確かめる。認証の発行元を IdP に指定する。"
+        targetTypes: [FRONT_END_SERVER, BACKEND_API, GATEWAY, IDENTITY_PROVIDER, DIRECTORY]
+        ruleIds:
+          - zt-external-collaborator-broad-access-001
+          - identity-local-credential-outside-idp-001
+      - id: ipa-04
+        title: "API 連携など構成要素単位の管理状況の見直し"
+        howTo: "API をバックエンド API と API ゲートウェイで描き、ゲートウェイを通らない直接の線が無いか確かめる。連携先ごとの認証方式を線に入れる。"
+        targetTypes: [BACKEND_API, GATEWAY, API_CONTROL_PLANE, API_SPEC]
+        ruleIds:
+          - api-spec-improper-inventory-001
+          - api-backend-gateway-bypass-001
+          - api-token-session-validation-gap-001
+          - zt-bearer-token-replay-001
+      - id: ipa-05
+        title: "構成要素単位の権限付与などの見直し"
+        howTo: "API・バッチ・連携が使うアカウントを NHI（サービスアカウント・OAuth クライアント等）で描き、何に権限を持つかを線で表す。"
+        targetTypes: [BACKEND_API, SERVICE_ACCOUNT, WORKLOAD_IDENTITY, OAUTH_CLIENT, RPA_BOT]
+        ruleIds:
+          - api-backend-object-level-authorization-001
+          - api-backend-function-level-authorization-001
+          - nhi-overprivileged-001
+          - nhi-long-lived-secret-001
+      - id: ipa-06
+        title: "ログの取得内容・保持期間の見直し"
+        howTo: "公開の入口の Attack Surface Attribute「アクセスログ」と、ノードの運用状況（ログの取得・保持期間・確認先）を実態どおりに入力する。"
+        targetTypes: [FRONT_END_SERVER, GATEWAY, BACKEND_API, IDENTITY_PROVIDER]
+        ruleIds:
+          - stride-web-no-access-log-001
+          - stride-web-blind-perimeter-001
+          - identity-idp-authentication-log-gap-001
+          - posture-log-not-collected-001
+          - posture-log-retention-short-001
+          - posture-log-retention-short-002
+      - id: ipa-07
+        title: "追加で実施できるセキュリティ対策の検討"
+        howTo: "各脅威カードの対策は Foundation / Enterprise / Advanced の段階で書かれている。今の段階の次を候補にする。パッチの適用状況も運用状況に記録する。"
+        targetTypes: [FRONT_END_SERVER, GATEWAY, BACKEND_API, WAF]
+        ruleIds:
+          - stride-web-no-waf-001
+          - stride-web-no-ddos-protection-001
+          - api-bulk-data-harvesting-001
+          - posture-patch-missing-001
+
+  - id: external-service
+    title: "自組織が利用している外部サービス"
+    items:
+      - id: ipa-08
+        title: "認証機能（多要素認証・パスワード）の強化"
+        howTo: "利用者から SaaS や VPN への線の Authentication を実態どおりに選ぶ。越境マーカーが赤か黄の線を探す。"
+        targetTypes: [SAAS, VPN_GATEWAY, ZTNA_PROXY]
+        ruleIds:
+          - stride-edge-password-internet-001
+          - zt-aitm-session-token-theft-001
+          - zt-vpn-broad-network-access-001
+      - id: ipa-09
+        title: "アカウント付与範囲の見直し"
+        howTo: "委託先・取引先・ゲストの利用者を User Trust で区別して描き、SaaS やデータへの線を確かめる。"
+        targetTypes: [SAAS, VPN_GATEWAY]
+        ruleIds:
+          - zt-external-collaborator-broad-access-001
+      - id: ipa-10
+        title: "アカウント棚卸しの運用見直し"
+        howTo: "線の資格情報の発行元を IdP に指定する。指定が無い線は IdP を経由しないローカルアカウントの候補。棚卸しの運用はノードの運用状況に記録する。"
+        targetTypes: [SAAS, IDENTITY_PROVIDER, IGA, DIRECTORY]
+        ruleIds:
+          - identity-local-credential-outside-idp-001
+          - iga-certification-gap-001
+          - posture-account-review-missing-001
+      - id: ipa-11
+        title: "API 連携など構成要素単位の管理状況の見直し"
+        howTo: "SaaS と自組織のシステムを結ぶ連携（OAuth クライアント・サービスアカウント・RPA ボット）を描き、認証方式を線に入れる。"
+        targetTypes: [SAAS, OAUTH_CLIENT, SERVICE_ACCOUNT, RPA_BOT]
+        ruleIds:
+          - nhi-long-lived-secret-001
+          - nhi-overprivileged-001
+          - zt-bearer-token-replay-001
+          - zt-credential-sprawl-static-secret-001
+      - id: ipa-12
+        title: "ログの取得内容・保持期間の見直し"
+        howTo: "SaaS ごとに、ログを提供者と自組織のどちらで確認できるか、保持期間はどれだけかを運用状況に入力する。"
+        targetTypes: [SAAS, IDENTITY_PROVIDER]
+        ruleIds:
+          - identity-idp-authentication-log-gap-001
+          - posture-log-not-collected-001
+          - posture-log-retention-short-001
+      - id: ipa-13
+        title: "適用できるセキュリティ対策の検討"
+        howTo: "把握していない外部サービスをシャドークラウド・シャドーアプリで描くと統制外の利用として出る。対策の段階は項目 7 と同じ。"
+        targetTypes: [SAAS, SHADOW, SHADOW_APP]
+        ruleIds:
+          - zt-shadow-asset-governance-gap-001
+          - zt-shadow-service-sensitive-input-001
+
+  - id: data
+    title: "保有するデータ"
+    items:
+      - id: ipa-14
+        title: "データ保有の是非の再検討"
+        howTo: "個人情報を保管先のノードに格納して、どこに・いくつあるかを図で見る。データ資産の保有の必要性と件数規模を運用状況に入力する。"
+        targetTypes: [DATABASE, STORAGE, BACKUP_STORAGE, PERSONAL_INFO, WEB_FORM]
+        ruleIds:
+          - stride-data-store-info-disclosure-001
+          - webform-pii-propagation-001
+          - posture-data-minimization-001
+      - id: ipa-15
+        title: "データ保管場所の再検討"
+        howTo: "保管先がどの信頼境界にあり、インターネットから何ホップで届くかを確かめる。攻撃経路分析で個人情報の保管先を OBJECTIVE にすると、入口からの経路が出る。"
+        targetTypes: [DATABASE, STORAGE, BACKUP_STORAGE, PERSONAL_INFO]
+        ruleIds:
+          - storage-public-access-misconfiguration-001
+          - stride-data-store-info-disclosure-001
+      - id: ipa-16
+        title: "データアクセスのログ取得内容・保持期間の見直し"
+        howTo: "データベース・ストレージの運用状況に、ログの取得・保持期間・確認先を入力する。"
+        targetTypes: [DATABASE, STORAGE, BACKUP_STORAGE]
+        ruleIds:
+          - stride-data-store-repudiation-001
+          - posture-log-not-collected-001
+          - posture-log-retention-short-001
+      - id: ipa-17
+        title: "データの暗号化"
+        howTo: "通信路の暗号化は線の Encryption で確かめる。保管時の暗号化はノードの運用状況に入力する。"
+        targetTypes: [DATABASE, STORAGE, BACKUP_STORAGE, PC, SMARTPHONE]
+        ruleIds:
+          - stride-edge-plain-encryption-001
+          - pqc-crypto-inventory-cbom-gap-001
+          - posture-encryption-at-rest-missing-001

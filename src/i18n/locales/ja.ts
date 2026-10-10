@@ -21,6 +21,7 @@ import { jaThreats } from './ja/threats';
 import { jaReport } from './ja/report';
 import { jaDiff } from './ja/diff';
 import { jaCliTriggers } from './ja/cliTriggers';
+import { jaChecklist } from './ja/checklist';
 
 const jaCore = {
   'app.loading': '読み込み中…',
@@ -208,6 +209,7 @@ export const ja = {
   ...jaReport,
   ...jaDiff,
   ...jaCliTriggers,
+  ...jaChecklist,
 } as const;
 
 /** 全翻訳キーの型。en 等の他ロケールはこの部分集合を持つ。 */
