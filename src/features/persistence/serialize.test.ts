@@ -710,3 +710,59 @@ describe('PQC レイヤー', () => {
     expect(resolveIdCounters(resolved.layers, loaded!.idCounters).idCounters.PQC.node).toBe(1);
   });
 });
+
+describe('暗号属性（PQC）の永続化', () => {
+  it('node.crypto / edge.crypto / cryptoFlows を round-trip で保持する', () => {
+    const pqc: LayerData = {
+      nodes: [
+        {
+          id: 'n1',
+          type: 'LOAD_BALANCER',
+          x: 0,
+          y: 0,
+          crypto: {
+            termination: 'passthrough',
+            managedBy: 'provider',
+            signature: 'ML-DSA-65',
+            keyStorage: 'hsm',
+            algorithmUpdatable: 'yes',
+          },
+        },
+        { id: 'n2', type: 'DB', x: 100, y: 0 },
+      ],
+      edges: [
+        {
+          id: 'e1',
+          source: 'n1',
+          target: 'n2',
+          auth: 'None',
+          network: 'VPC',
+          encryption: 'TLS',
+          crypto: { protocol: 'TLS', version: '1.3', kex: 'X25519MLKEM768', signature: 'RSA 2048' },
+        },
+      ],
+      boundaries: [],
+      annotations: [],
+      cryptoFlows: [{ id: 'f1', sourceId: 'n1', targetId: 'n2', label: 'LB→DB' }],
+    };
+    const persisted = serializeProject({
+      ...STATE,
+      layers: { L0: EMPTY_LAYER, L1: EMPTY_LAYER, L2: EMPTY_LAYER, L3: EMPTY_LAYER, PQC: pqc },
+    });
+    const restored = deserializeProject(JSON.parse(JSON.stringify(persisted)));
+    expect(restored?.layers?.PQC).toEqual(pqc);
+    const resolved = resolveLayers(restored!);
+    expect(resolved.layers.PQC.cryptoFlows).toEqual(pqc.cryptoFlows);
+  });
+
+  it('crypto を持たない旧データは cryptoFlows なしで読み込める', () => {
+    const restored = deserializeProject(serializeProject(STATE));
+    expect(resolveLayers(restored!).layers.L1.cryptoFlows).toBeUndefined();
+  });
+
+  it('termination に不正な値があるとスキーマ検証で拒否される', () => {
+    const persisted = JSON.parse(JSON.stringify(serializeProject(STATE)));
+    persisted.layers.L1.nodes[0].crypto = { termination: 'bogus' };
+    expect(deserializeProject(persisted)).toBeNull();
+  });
+});

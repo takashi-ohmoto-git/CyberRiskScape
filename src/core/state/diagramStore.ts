@@ -5,6 +5,7 @@ import type {
   ComponentTypeId,
   ControlStatusState,
   ControlStatusValue,
+  CryptoFlow,
   DiagramAnnotation,
   DiagramBoundary,
   DiagramEdge,
@@ -450,6 +451,9 @@ interface DiagramState {
   deleteNode: (id: string) => void;
   deleteEdge: (id: string) => void;
   deleteBoundary: (id: string) => void;
+  /** PQC レイヤーの通信フロー（レポート対象）の追加・削除。入力 UI は後続。 */
+  addCryptoFlow: (flow: Omit<CryptoFlow, 'id'>) => void;
+  removeCryptoFlow: (id: string) => void;
   updateNode: <K extends keyof DiagramNode>(id: string, field: K, value: DiagramNode[K]) => void;
   updateEdge: <K extends keyof DiagramEdge>(id: string, field: K, value: DiagramEdge[K]) => void;
   updateBoundary: <K extends keyof DiagramBoundary>(
@@ -831,6 +835,10 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
           delete rest.targetNodeId;
           return rest;
         }),
+        // 削除対象を送信元・送信先にしていた暗号フローは消す。
+        ...(l.cryptoFlows
+          ? { cryptoFlows: l.cryptoFlows.filter((f) => f.sourceId !== id && f.targetId !== id) }
+          : {}),
       })),
       selectedNodeIds: s.selectedNodeIds.filter((nid) => nid !== id),
     }));
@@ -852,6 +860,24 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       })),
       selectedBoundaryIds: s.selectedBoundaryIds.filter((bid) => bid !== id),
     }));
+  },
+
+  addCryptoFlow: (flow) => {
+    get().recordHistory();
+    set((s) =>
+      withActiveLayer(s, (l) => ({
+        cryptoFlows: [...(l.cryptoFlows ?? []), { ...flow, id: nextId('cf') }],
+      })),
+    );
+  },
+
+  removeCryptoFlow: (id) => {
+    get().recordHistory();
+    set((s) =>
+      withActiveLayer(s, (l) => ({
+        cryptoFlows: (l.cryptoFlows ?? []).filter((f) => f.id !== id),
+      })),
+    );
   },
 
   updateNode: (id, field, value) => {
@@ -1080,11 +1106,23 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
         else delete next.targetNodeId;
         return next;
       });
+      // 暗号フローは端点を付け替え、端点が複製元に居ないものは落とす。
+      const cryptoFlows: CryptoFlow[] = [];
+      for (const f of src.cryptoFlows ?? []) {
+        const sourceId = remap(f.sourceId);
+        const targetId = remap(f.targetId);
+        if (sourceId && targetId) {
+          cryptoFlows.push({ ...structuredClone(f), id: nextId('cf'), sourceId, targetId });
+        }
+      }
 
       const cf = s.idCounters[from];
       const ct = s.idCounters[to];
       return {
-        layers: { ...s.layers, [to]: { nodes, edges, boundaries, annotations } },
+        layers: {
+          ...s.layers,
+          [to]: { nodes, edges, boundaries, annotations, ...(cryptoFlows.length ? { cryptoFlows } : {}) },
+        },
         idCounters: {
           ...s.idCounters,
           [to]: {
@@ -1113,7 +1151,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
         const nodes = renumberKind(l.nodes);
         const edges = renumberKind(l.edges);
         const boundaries = renumberKind(l.boundaries);
-        layers[key] = { nodes, edges, boundaries, annotations: l.annotations };
+        layers[key] = { ...l, nodes, edges, boundaries };
         idCounters[key] = {
           node: nodes.length,
           edge: edges.length,

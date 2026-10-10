@@ -24,6 +24,7 @@ import {
   AGENCY_APPLICABLE,
   ATTACK_OBJECTIVE_APPLICABLE,
   AUTH_PROVIDER_APPLICABLE,
+  CRYPTO_TERMINATIONS,
   IDENTITY_TIER_APPLICABLE,
   IDP_KIND_APPLICABLE,
   LAYER_KEYS,
@@ -153,6 +154,24 @@ const AgentAttributesSchema = z
   })
   .strict();
 
+const NodeCryptoSchema = z
+  .object({
+    termination: z.enum(CRYPTO_TERMINATIONS).optional(),
+    managedBy: z.enum(['self', 'provider']).optional(),
+    signature: z.string().max(200).optional(),
+    keyStorage: z.enum(['hsm', 'kms', 'software', 'unknown']).optional(),
+    algorithmUpdatable: z.enum(['yes', 'no', 'unknown']).optional(),
+  })
+  .strict();
+const EdgeCryptoSchema = z
+  .object({
+    protocol: z.string().max(200).optional(),
+    version: z.string().max(200).optional(),
+    kex: z.string().max(200).optional(),
+    signature: z.string().max(200).optional(),
+  })
+  .strict();
+
 /** ノード属性（description を含む）。add / update で共通。 */
 const nodeAttrShape = {
   description: descStr.optional(),
@@ -166,6 +185,7 @@ const nodeAttrShape = {
   authProviderId: idStr.optional(),
   attackSurface: AttackSurfaceSchema.optional(),
   agentAttributes: AgentAttributesSchema.optional(),
+  crypto: NodeCryptoSchema.optional(),
 };
 
 /** `update_node.set`：許可リスト。null は「その属性を消す」。 */
@@ -182,6 +202,7 @@ const NodeSetSchema = opObject({
   authProviderId: idStr.nullable().optional(),
   attackSurface: AttackSurfaceSchema.nullable().optional(),
   agentAttributes: AgentAttributesSchema.nullable().optional(),
+  crypto: NodeCryptoSchema.nullable().optional(),
 });
 
 /** `update_edge.set`：source / target は変更不可（付け替えは delete + add）。 */
@@ -193,6 +214,7 @@ const EdgeSetSchema = opObject({
   dataFlowName: z.string().min(1).max(80).nullable().optional(),
   semantic: EdgeSemanticSchema.nullable().optional().describe(SEMANTIC_DESC),
   authProviderId: idStr.nullable().optional(),
+  crypto: EdgeCryptoSchema.nullable().optional(),
 });
 
 const MacroTrustSchema = z.enum(['Public Area', 'Office Area', 'Security Zone']);
@@ -264,6 +286,7 @@ export const OperationSchema = z.discriminatedUnion(
       dataFlowName: z.string().min(1).max(80).optional(),
       semantic: EdgeSemanticSchema.optional().describe(SEMANTIC_DESC),
       authProviderId: idStr.optional(),
+      crypto: EdgeCryptoSchema.optional(),
     }),
   opObject({
       op: z.literal('update_edge'),
@@ -546,6 +569,9 @@ function applyDeleteNode(work: Work, op: Extract<Operation, { op: 'delete_node' 
     delete rest.targetNodeId;
     return rest;
   });
+  if (l.cryptoFlows) {
+    l.cryptoFlows = l.cryptoFlows.filter((f) => f.sourceId !== id && f.targetId !== id);
+  }
   return id;
 }
 
@@ -574,6 +600,7 @@ function applyAddEdge(work: Work, op: Extract<Operation, { op: 'add_edge' }>): s
     ...(op.dataFlowName !== undefined ? { dataFlowName: op.dataFlowName } : {}),
     ...(op.semantic !== undefined ? { semantic: op.semantic } : {}),
     ...(authProviderId !== undefined ? { authProviderId } : {}),
+    ...(op.crypto !== undefined ? { crypto: op.crypto } : {}),
   };
   work.layer.edges.push(edge);
   work.counters.edge = seq;
@@ -787,6 +814,7 @@ export function applyOperations(
       edges: [...source.edges],
       boundaries: [...source.boundaries],
       annotations: [...source.annotations],
+      ...(source.cryptoFlows ? { cryptoFlows: [...source.cryptoFlows] } : {}),
     },
     counters: { ...counted.idCounters[layer] },
     refs: new Map(),

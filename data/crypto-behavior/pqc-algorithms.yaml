@@ -1,0 +1,26 @@
+# PQC 判定の基準表。鍵交換・署名のアルゴリズム名を、大文字小文字を区別しない部分一致の
+# トークンで「量子耐性あり / 量子脆弱 / 移行中」に分類する。分類の考え方は独自の整理で、
+# 各文書の本文は転載しない。
+# 出典（参照のみ）:
+#   - CRYPTREC 暗号リスト（LS-0001-2022R2、令和 8 年 3 月 30 日更新）表 2 PQC リスト
+#   - NIST FIPS 203（ML-KEM）/ FIPS 204（ML-DSA）/ FIPS 205（SLH-DSA）
+#   - NIST SP 800-208（LMS / XMSS のステートフルハッシュ署名）
+#   - NIST IR 8547（PQC への移行）
+#
+# ハイブリッド方式（例 X25519MLKEM768）は複数の分類に当たるため、priority の先頭から
+# 順に当たった分類を採用する（pqc > transitional > vulnerable）。
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+priority: [pqc, transitional, vulnerable]
+classes:
+  pqc:
+    # 量子耐性あり
+    tokens: [ML-KEM, MLKEM, ML-DSA, MLDSA, SLH-DSA, LMS, XMSS]
+  transitional:
+    # 移行中の暫定方式（ドラフト名のため標準化済みの ML-KEM とは区別する）
+    tokens: [Kyber]
+  vulnerable:
+    # 量子計算機で破られる公開鍵暗号（Shor のアルゴリズム）
+    tokens: [ECDHE, ECDH, X25519, X448, P-256, P-384, P-521, secp, RSA, DHE, FFDHE, ECDSA, EdDSA, Ed25519, Ed448, DSA]

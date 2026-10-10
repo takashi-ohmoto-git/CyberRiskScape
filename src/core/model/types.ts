@@ -350,12 +350,71 @@ export interface DiagramAnnotation {
   targetNodeId?: string;
 }
 
+/**
+ * 暗号の終端判定（PQC 移行支援）。経路上のノードが暗号をどう扱うか。
+ * - passthrough: 中身を変えない
+ * - terminate: 終端して再接続する
+ * - inspect: 中間者型の復号＋社内 CA による再署名
+ * - tunnel: 外側に暗号を被せる
+ * - passive-decrypt: 鍵を取り込んで受動的に復号する（PQC 移行の阻害要因）
+ * - unknown: 判定不能
+ */
+export const CRYPTO_TERMINATIONS = [
+  'passthrough',
+  'terminate',
+  'inspect',
+  'tunnel',
+  'passive-decrypt',
+  'unknown',
+] as const;
+export type CryptoTermination = (typeof CRYPTO_TERMINATIONS)[number];
+
+/** 暗号の管理主体。provider＝クラウド事業者が TLS ポリシー・証明書鍵を管理する。 */
+export type CryptoManagedBy = 'self' | 'provider';
+/** 秘密鍵の保管場所。 */
+export type CryptoKeyStorage = 'hsm' | 'kms' | 'software' | 'unknown';
+/** 暗号方式を設定で変更できるか（ハードコードの有無）。 */
+export type CryptoAlgorithmUpdatable = 'yes' | 'no' | 'unknown';
+
+/** ノードの暗号属性（PQC レイヤーで入力。すべて optional）。 */
+export interface NodeCrypto {
+  /** 型の既定値（data/crypto-behavior）をノード単位で上書きする＝「確定」。 */
+  termination?: CryptoTermination;
+  managedBy?: CryptoManagedBy;
+  /** このノードが使う／検証する署名方式（例: ML-DSA-65 / ECDSA P-256 / LMS）。 */
+  signature?: string;
+  keyStorage?: CryptoKeyStorage;
+  algorithmUpdatable?: CryptoAlgorithmUpdatable;
+}
+
+/** エッジの暗号属性（PQC レイヤーで入力。すべて optional）。 */
+export interface EdgeCrypto {
+  /** TLS / IPsec / SSH / QUIC など。 */
+  protocol?: string;
+  /** 1.3 / IKEv2 など。 */
+  version?: string;
+  /** 鍵交換方式（例: X25519MLKEM768 / ECDHE P-256）。 */
+  kex?: string;
+  /** サーバー証明書の署名方式（例: ML-DSA-65 / RSA 2048）。 */
+  signature?: string;
+}
+
+/** PQC レポートの対象にする「送信元→送信先」の組。 */
+export interface CryptoFlow {
+  id: string;
+  sourceId: string;
+  targetId: string;
+  label?: string;
+}
+
 /** 1 レイヤー分のダイアグラムデータ。 */
 export interface LayerData {
   nodes: DiagramNode[];
   edges: DiagramEdge[];
   boundaries: DiagramBoundary[];
   annotations: DiagramAnnotation[];
+  /** PQC レイヤーで使う、レポート対象の通信フロー。ノード削除時は store 側で消える。 */
+  cryptoFlows?: CryptoFlow[];
 }
 
 export const EMPTY_LAYER: LayerData = { nodes: [], edges: [], boundaries: [], annotations: [] };
@@ -506,6 +565,8 @@ export interface DiagramNode {
    * エンジンは型で絞らず、宣言されたものを読むだけ。発行元削除時は store 側で解除される。
    */
   authProviderId?: string;
+  /** 暗号属性（PQC 移行支援。PQC レイヤーで入力）。 */
+  crypto?: NodeCrypto;
 }
 
 export interface DiagramEdge {
@@ -543,6 +604,8 @@ export interface DiagramEdge {
    * と解釈する。フィールドを増やさずに Zero Trust の identity 脅威シグナルを表現するための規約。
    */
   authProviderId?: string;
+  /** 暗号の詳細（PQC 移行支援。PQC レイヤーで入力）。`encryption` は変えずに併用する。 */
+  crypto?: EdgeCrypto;
 }
 
 export interface DiagramBoundary {

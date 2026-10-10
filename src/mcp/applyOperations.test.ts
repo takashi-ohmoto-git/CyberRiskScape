@@ -391,3 +391,54 @@ describe('不変条件', () => {
     expect(deserializeProject(JSON.parse(JSON.stringify(project)))).not.toBeNull();
   });
 });
+
+describe('暗号属性（PQC）', () => {
+  it('add_node / update_node / add_edge / update_edge で crypto を受け付け、null で消せる', () => {
+    const { project } = apply(
+      [
+        { op: 'add_node', ref: 'lb', type: 'LOAD_BALANCER', label: 'LB', crypto: { termination: 'passthrough' } },
+        { op: 'update_node', id: '@lb', set: { crypto: { termination: 'terminate', keyStorage: 'kms' } } },
+        { op: 'add_edge', source: 'n-user', target: '@lb', auth: 'None', network: 'Internet', encryption: 'TLS', crypto: { kex: 'ECDHE P-256' } },
+      ],
+      'L1',
+    );
+    const layer = l1(project);
+    const lb = layer.nodes.find((n) => n.label === 'LB')!;
+    expect(lb.crypto).toEqual({ termination: 'terminate', keyStorage: 'kms' });
+    const edge = layer.edges.find((e) => e.target === lb.id)!;
+    expect(edge.crypto).toEqual({ kex: 'ECDHE P-256' });
+
+    const updated = apply([{ op: 'update_edge', id: 'e-1', set: { crypto: { protocol: 'TLS', kex: 'X25519MLKEM768' } } }]);
+    expect(l1(updated.project).edges[0].crypto).toEqual({ protocol: 'TLS', kex: 'X25519MLKEM768' });
+    const cleared = apply([{ op: 'update_edge', id: 'e-1', set: { crypto: null } }]);
+    expect(l1(cleared.project).edges[0].crypto).toBeUndefined();
+  });
+
+  it('不正な termination は拒否される', () => {
+    expect(() => apply([{ op: 'update_node', id: 'n-llm', set: { crypto: { termination: 'bogus' } } }])).toThrow(
+      McpOperationError,
+    );
+  });
+
+  it('既存の cryptoFlows を保持し、delete_node で端点のフローを消す', () => {
+    const raw = fixture() as { layers: Record<string, Record<string, unknown>> };
+    raw.layers.PQC = {
+      nodes: [
+        { id: 'p1', seq: 1, type: 'USER', x: 0, y: 0 },
+        { id: 'p2', seq: 2, type: 'DB', x: 100, y: 0 },
+        { id: 'p3', seq: 3, type: 'LLM', x: 200, y: 0 },
+      ],
+      edges: [],
+      boundaries: [],
+      annotations: [],
+      cryptoFlows: [
+        { id: 'f1', sourceId: 'p1', targetId: 'p2' },
+        { id: 'f2', sourceId: 'p1', targetId: 'p3' },
+      ],
+    };
+    const kept = apply([{ op: 'add_node', type: 'LLM', label: 'X' }], 'PQC', raw);
+    expect(kept.project.layers!.PQC!.cryptoFlows).toHaveLength(2);
+    const deleted = apply([{ op: 'delete_node', id: 'p2' }], 'PQC', raw);
+    expect(deleted.project.layers!.PQC!.cryptoFlows!.map((f) => f.id)).toEqual(['f2']);
+  });
+});

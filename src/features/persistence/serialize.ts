@@ -165,6 +165,7 @@ export function resolveLayers(loaded: PersistedProject): {
           edges: data.edges as LayerData['edges'],
           boundaries: data.boundaries,
           annotations: data.annotations ?? [],
+          ...(data.cryptoFlows ? { cryptoFlows: data.cryptoFlows } : {}),
         };
         return acc;
       },
@@ -250,7 +251,7 @@ export function resolveIdCounters(
     nextLayers[key] =
       n.items === layer.nodes && e.items === layer.edges && b.items === layer.boundaries
         ? layer
-        : { nodes: n.items, edges: e.items, boundaries: b.items, annotations: layer.annotations };
+        : { ...layer, nodes: n.items, edges: e.items, boundaries: b.items };
     idCounters[key] = { node: n.counter, edge: e.counter, boundary: b.counter };
   }
   return { layers: nextLayers, idCounters };

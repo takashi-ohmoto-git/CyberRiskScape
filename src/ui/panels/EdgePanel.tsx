@@ -21,6 +21,7 @@ import { AUTH_PROVIDER_APPLICABLE } from '../../core/model/types';
 import { getNodeDisplayName } from '../../core/model/nodeDisplay';
 import { selectActiveNodes, useDiagramStore } from '../../core/state/diagramStore';
 import { useT } from '../../i18n';
+import { EdgeCryptoSection } from './CryptoSections';
 
 type TFunc = ReturnType<typeof useT>;
 
@@ -303,6 +304,7 @@ export function EdgePanel({ edge }: EdgePanelProps) {
             ))}
           </div>
         </section>
+        <EdgeCryptoSection edge={edge} />
         <button
           onClick={() => onDelete(edge.id)}
           className="w-full py-3 rounded-xl bg-rose-600/10 text-rose-500 border border-rose-600/30 text-xs font-black hover:bg-rose-600/20"

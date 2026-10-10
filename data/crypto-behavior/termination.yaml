@@ -1,0 +1,107 @@
+# 暗号の終端判定の既定値（PQC 移行支援）。コンポーネント型ごとに、経路上で暗号がどう扱われるか
+# （透過 / 終端 / 復号検査 / トンネル / 受動復号）の既定値と、取りうる別の構成を示す。
+# 型の description と一般公開された設計基準に基づく独自の整理で、条文の転載はしない。
+# 出典（参照のみ）:
+#   - NIST SP 800-52 Rev.2（TLS の実装ガイドライン）
+#   - NIST SP 800-77 Rev.1（IPsec VPN のガイド）
+#   - NIST SP 800-41 Rev.1（ファイアウォールとポリシーのガイドライン）
+#   - NIST SP 800-57 Part 1 Rev.5（鍵管理）
+#   - 各クラウド事業者の公開ドキュメントに記載の一般的な挙動
+# 既定値は「推定」であり、ノードの crypto.termination（確定）が優先される。
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+behaviors:
+  - componentType: L2_SWITCH
+    default: passthrough
+    alternatives: []
+    note: "通常は暗号を透過する。MACsec を有効にしている場合はリンク区間ごとに暗号化されるので、有効かどうかを確認する。"
+  - componentType: ROUTER
+    default: passthrough
+    alternatives: [tunnel]
+    note: "通常は暗号を透過する。IPsec を有効にして外側にトンネルを付けていないか確認する。"
+  - componentType: LOAD_BALANCER
+    default: terminate
+    alternatives: [passthrough]
+    note: "L7（SSL オフロード）では TLS を終端する。L4 では透過。バックエンドへ再暗号化か平文かを確認する。"
+  - componentType: CDN
+    default: terminate
+    alternatives: []
+    note: "利用者からの TLS をエッジで終端し、オリジンへ別の TLS で再接続する。オリジン側の暗号方式を確認する。"
+  - componentType: WAF
+    default: terminate
+    alternatives: [passive-decrypt, passthrough]
+    note: "リバースプロキシ型は TLS を終端する。アウトオブバンド型は秘密鍵を取り込んで受動復号するため、TLS 1.3 / PQC では機能しない。クラウドでは付け先（LB・CDN）が終端する。"
+  - componentType: IDS_IPS
+    default: passthrough
+    alternatives: [passive-decrypt, inspect]
+    note: "通常は暗号を透過する。鍵を取り込んで受動復号する構成や、復号装置と組み合わせる構成でないか確認する。"
+  - componentType: FIREWALL
+    default: passthrough
+    alternatives: [inspect, tunnel]
+    note: "通常は透過。TLS インスペクション有効時は復号して社内 CA で再署名し、VPN 機能を使う場合はトンネルを終端する。有効な機能を確認する。"
+  - componentType: SECURE_WEB_GATEWAY
+    default: inspect
+    alternatives: [passthrough]
+    note: "利用者の外向き TLS を復号して検査し、社内 CA で再署名する。検査対象外のカテゴリがあるか確認する。"
+  - componentType: SASE
+    default: inspect
+    alternatives: [tunnel]
+    note: "端末から PoP までをトンネルで結び、PoP で TLS を復号・検査して再接続する。復号の対象範囲と PoP 以降の暗号を確認する。"
+  - componentType: VPN_GATEWAY
+    default: tunnel
+    alternatives: [terminate]
+    note: "IPsec / SSL-VPN のトンネルを終端するが、内側の通信の暗号は変えない。SSL-VPN のリバースプロキシ型は終端する。IKE の鍵交換方式を確認する。"
+  - componentType: WIRELESS_AP
+    default: tunnel
+    alternatives: []
+    note: "無線区間を WPA2 / WPA3 で暗号化する。有線側の暗号は変えない。EAP-TLS の証明書の署名方式を確認する。"
+  - componentType: SBC
+    default: terminate
+    alternatives: []
+    note: "SIP-TLS / SRTP を終端し、内側へ別の暗号で再接続する。両側の暗号方式を確認する。"
+  - componentType: EMAIL_GATEWAY
+    default: terminate
+    alternatives: []
+    note: "中継ごとに STARTTLS を終端・再接続する。S/MIME 等の本文暗号は変えない。次の中継先との TLS 設定を確認する。"
+  - componentType: BASTION
+    default: terminate
+    alternatives: []
+    note: "管理者からの TLS を終端し、対象サーバーへ SSH / RDP で再接続する。区間ごとの暗号方式を確認する。"
+  - componentType: ZTNA_PROXY
+    default: terminate
+    alternatives: []
+    note: "利用者の TLS を終端して認証・認可した後、社内アプリへ別の接続で中継する。アプリ側の区間の暗号を確認する。"
+  - componentType: DEDICATED_LINE
+    default: passthrough
+    alternatives: [tunnel]
+    note: "既定では暗号化されない（平文区間）。MACsec や IPsec を重ねているかを確認する。"
+  - componentType: PRIVATE_ENDPOINT
+    default: passthrough
+    alternatives: []
+    note: "クラウドサービスへの閉域の入口で、暗号は透過する。TLS を終端するのは接続先のサービス側。"
+  - componentType: SERVICE_MESH
+    default: terminate
+    alternatives: []
+    note: "サイドカー（またはノードのプロキシ）がサービス間の mTLS を終端・再接続する。アプリとサイドカーの間が平文でないか確認する。"
+  - componentType: GATEWAY
+    default: terminate
+    alternatives: []
+    note: "API ゲートウェイ等として TLS を終端し、バックエンドへ再接続する。バックエンド側が再暗号化か平文かを確認する。"
+  - componentType: FRONT_END_SERVER
+    default: terminate
+    alternatives: []
+    note: "フロントエンドとして TLS を終端し、内側のサーバーへ再接続する。内側の区間の暗号を確認する。"
+  - componentType: CONNECTOR
+    default: terminate
+    alternatives: []
+    note: "コネクタ（メッセージング・DB プロキシ等）は接続ごとに終端し、蓄積転送することが多い。前後の区間の暗号を確認する。"
+  - componentType: AI_GATEWAY
+    default: terminate
+    alternatives: []
+    note: "AI ゲートウェイは TLS を終端して内容を検査し、モデル提供側へ再接続する。上流（モデル API）側の暗号を確認する。"
+  - componentType: PBX
+    default: terminate
+    alternatives: []
+    note: "PBX は SIP-TLS / SRTP を終端し、別の区間へ再接続する。トランク側の暗号方式を確認する。"

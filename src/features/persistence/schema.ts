@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CRYPTO_TERMINATIONS } from '../../core/model/types';
 import {
   AgencyLevelSchema,
   AuthTypeSchema,
@@ -77,6 +78,32 @@ const PersistedAgentAttributesSchema = z.object({
   identityTier: IdentityTierSchema.optional(),
 });
 
+const CryptoTerminationSchema = z.enum(CRYPTO_TERMINATIONS);
+
+/** ノードの暗号属性（PQC 移行支援）。後方互換のため optional。 */
+const PersistedNodeCryptoSchema = z.object({
+  termination: CryptoTerminationSchema.optional(),
+  managedBy: z.enum(['self', 'provider']).optional(),
+  signature: z.string().max(200).optional(),
+  keyStorage: z.enum(['hsm', 'kms', 'software', 'unknown']).optional(),
+  algorithmUpdatable: z.enum(['yes', 'no', 'unknown']).optional(),
+});
+
+/** エッジの暗号属性（PQC 移行支援）。後方互換のため optional。 */
+const PersistedEdgeCryptoSchema = z.object({
+  protocol: z.string().max(200).optional(),
+  version: z.string().max(200).optional(),
+  kex: z.string().max(200).optional(),
+  signature: z.string().max(200).optional(),
+});
+
+const PersistedCryptoFlowSchema = z.object({
+  id: z.string().min(1),
+  sourceId: z.string().min(1),
+  targetId: z.string().min(1),
+  label: z.string().max(200).optional(),
+});
+
 const PersistedNodeSchema = z.object({
   id: z.string().min(1),
   /** ElementalID 採番（§2.26）。後方互換のため optional（旧データはロード時にマイグレ）。 */
@@ -105,6 +132,8 @@ const PersistedNodeSchema = z.object({
   attackSurface: PersistedAttackSurfaceSchema.optional(),
   /** エージェント特有属性（AGENT/TOOL/CONNECTOR/USER 用、後方互換のため optional） */
   agentAttributes: PersistedAgentAttributesSchema.optional(),
+  /** 暗号属性（PQC 移行支援、後方互換のため optional） */
+  crypto: PersistedNodeCryptoSchema.optional(),
 });
 
 const PersistedEdgeSchema = z.object({
@@ -124,6 +153,8 @@ const PersistedEdgeSchema = z.object({
   semantic: EdgeSemanticSchema.optional(),
   /** 資格情報の発行元ノード id（§2.39 B-1、後方互換のため optional。未設定＝ローカル資格情報）。 */
   authProviderId: z.string().min(1).optional(),
+  /** 暗号の詳細（PQC 移行支援、後方互換のため optional） */
+  crypto: PersistedEdgeCryptoSchema.optional(),
 });
 
 const MacroTrustAttributeSchema = z.enum(['Public Area', 'Office Area', 'Security Zone']);
@@ -188,6 +219,8 @@ export const PersistedLayerDataSchema = z.object({
   boundaries: z.array(PersistedBoundarySchema),
   /** 後方互換のため optional（旧データは注釈なしとして読み込む）。 */
   annotations: z.array(PersistedAnnotationSchema).optional(),
+  /** PQC レイヤーの通信フロー。後方互換のため optional。 */
+  cryptoFlows: z.array(PersistedCryptoFlowSchema).optional(),
 });
 
 const PersistedLayersSchema = z.object({

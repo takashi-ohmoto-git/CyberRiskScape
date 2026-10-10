@@ -1,0 +1,57 @@
+# English overlay for `data/crypto-behavior/termination.yaml`.
+#
+# The Japanese file is the source of truth: only `note` is translated here, keyed by
+# componentType. Anything omitted falls back to the original text.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+behaviors:
+  L2_SWITCH:
+    note: "Normally passes encryption through unchanged. If MACsec is enabled, each link segment is encrypted separately, so confirm whether it is on."
+  ROUTER:
+    note: "Normally passes encryption through unchanged. Check whether IPsec is enabled and adds an outer tunnel."
+  LOAD_BALANCER:
+    note: "Terminates TLS at L7 (SSL offload); passes it through at L4. Confirm whether the backend leg is re-encrypted or plaintext."
+  CDN:
+    note: "Terminates the user's TLS at the edge and reconnects to the origin with separate TLS. Confirm the cipher setup on the origin leg."
+  WAF:
+    note: "Reverse-proxy type terminates TLS. Out-of-band type imports the server key and decrypts passively, which breaks with TLS 1.3 / PQC. In the cloud the attached LB or CDN is what terminates."
+  IDS_IPS:
+    note: "Normally passes encryption through. Check whether it imports keys to decrypt passively or sits behind a decryption device."
+  FIREWALL:
+    note: "Normally passes through. With TLS inspection it decrypts and re-signs with an internal CA; with VPN features it terminates tunnels. Confirm which features are enabled."
+  SECURE_WEB_GATEWAY:
+    note: "Decrypts and inspects users' outbound TLS and re-signs with an internal CA. Confirm which categories are exempt from inspection."
+  SASE:
+    note: "Tunnels from the device to a PoP, then decrypts, inspects and reconnects TLS there. Confirm the decryption scope and the cipher setup beyond the PoP."
+  VPN_GATEWAY:
+    note: "Terminates the IPsec / SSL-VPN tunnel but leaves inner encryption unchanged; reverse-proxy SSL-VPN terminates. Confirm the IKE key exchange method."
+  WIRELESS_AP:
+    note: "Encrypts the wireless leg with WPA2 / WPA3; the wired side is unchanged. Confirm the signature algorithm of EAP-TLS certificates."
+  SBC:
+    note: "Terminates SIP-TLS / SRTP and reconnects inward with separate encryption. Confirm the cipher setup on both sides."
+  EMAIL_GATEWAY:
+    note: "Terminates and re-establishes STARTTLS at each hop; S/MIME body encryption is unchanged. Confirm TLS settings toward the next hop."
+  BASTION:
+    note: "Terminates the administrator's TLS and reconnects to the target over SSH / RDP. Confirm the cipher setup of each leg."
+  ZTNA_PROXY:
+    note: "Terminates the user's TLS, authenticates and authorizes, then relays to the internal app over a separate connection. Confirm encryption on the app-side leg."
+  DEDICATED_LINE:
+    note: "Not encrypted by default (a plaintext segment). Confirm whether MACsec or IPsec is layered on top."
+  PRIVATE_ENDPOINT:
+    note: "A private entrance to a cloud service; passes encryption through. The destination service is what terminates TLS."
+  SERVICE_MESH:
+    note: "Sidecars (or node proxies) terminate and re-establish service-to-service mTLS. Check whether the app-to-sidecar leg is plaintext."
+  GATEWAY:
+    note: "Terminates TLS as an API gateway or similar and reconnects to the backend. Confirm whether the backend leg is re-encrypted or plaintext."
+  FRONT_END_SERVER:
+    note: "Terminates TLS as a front end and reconnects to inner servers. Confirm encryption on the inner leg."
+  CONNECTOR:
+    note: "Connectors (messaging, DB proxies, etc.) usually terminate each connection and store-and-forward. Confirm encryption on the legs before and after."
+  AI_GATEWAY:
+    note: "An AI gateway terminates TLS, inspects the content, and reconnects to the model provider. Confirm encryption on the upstream (model API) leg."
+  PBX:
+    note: "A PBX terminates SIP-TLS / SRTP and reconnects on another leg. Confirm the cipher setup on the trunk side."
