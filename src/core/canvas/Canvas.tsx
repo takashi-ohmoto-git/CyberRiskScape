@@ -177,6 +177,15 @@ export function Canvas({ threats, children }: CanvasProps) {
     beginMarquee(rect.left, rect.top, e.clientX - rect.left, e.clientY - rect.top);
   };
 
+  // ホイール（中ボタン）を押しながらのドラッグはパン。ノード・境界の上から始めてもパンするよう
+  // capture 段階で処理し、ブラウザの自動スクロールも止める。
+  const onCanvasMouseDownCapture = (e: MouseEvent<HTMLElement>) => {
+    if (e.button !== 1) return;
+    e.preventDefault();
+    e.stopPropagation();
+    beginPan(e.clientX, e.clientY);
+  };
+
   const onBoundaryMouseDown = (e: MouseEvent, boundaryId: string) => {
     e.stopPropagation();
     beginBoundaryInteraction(boundaryId, e.clientX, e.clientY, e.shiftKey);
@@ -197,6 +206,7 @@ export function Canvas({ threats, children }: CanvasProps) {
     <main
       ref={mainRef}
       onMouseDown={onCanvasMouseDown}
+      onMouseDownCapture={onCanvasMouseDownCapture}
       className={`flex-1 relative overflow-hidden transition-colors duration-300 ${cursor}`}
       style={{
         // ドットグリッドはビューポートに追従させる（パンで動き、ズームで間隔が変わる）。
