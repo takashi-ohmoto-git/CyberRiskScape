@@ -49,7 +49,7 @@
 | `ai-rag-injector` | `DB`（ベクターDB / RAG） | LLM への取得経路（`semantic: rag_retrieval`）として描きます |
 | ガード系プラグイン | `GUARDRAIL`（ガードレール） | `ai-prompt-guard`・`ai-semantic-prompt-guard`・`ai-semantic-response-guard`・`ai-sanitizer`・`ai-lakera-guard`・`ai-azure-content-safety`・`ai-aws-guardrails`・`ai-gcp-model-armor`・`ai-custom-guardrail` |
 | `vaults`／`{vault://…}` 参照 | `SECRETS_VAULT`（シークレット管理） | |
-| 認証系プラグイン | クライアント → ゲートウェイの接続の「認証」 | `key-auth`・`basic-auth`・`hmac-auth`・`jwt`・`oauth2`・`openid-connect`・`ldap-auth`・`mtls-auth` など。**すべて「パスワード認証」扱い**（§7） |
+| 認証系プラグイン | クライアント → ゲートウェイの接続の「認証」 | `key-auth`・`basic-auth`・`hmac-auth`・`jwt`・`oauth2`・`openid-connect`・`ldap-auth`・`mtls-auth` など。プラグインごとに認証方式を決める：`key-auth`・`hmac-auth` → APIキー、`basic-auth`・`ldap-auth` → ID/パスワード、`jwt`・`oauth2`・`openid-connect` → トークン、`mtls-auth` → 証明書（§7） |
 | Route の `protocols` | クライアント → ゲートウェイの接続の「暗号化」 | `http` を許す Route が 1 つでもあれば平文 |
 | `ip-restriction`・ログ系プラグイン | API ゲートウェイの攻撃面属性 | 送信元 IP 制限・アクセスログを「あり」にします |
 | Consumer | 図にしません | 件数だけ表示します。資格情報は読みません |
@@ -97,7 +97,7 @@ node dist-cli/main.js analyze model.json --format md
 
 ![Kong 設定から生成した構成図](../assets/guide/kong/02-overview.png)
 
-このサンプルでは **47 件**（Critical 7・High 24・Medium 16）の脅威が検出されます（執筆時点）。
+このサンプルでは **49 件**（Critical 7・High 27・Medium 15）の脅威が検出されます（執筆時点）。
 
 ### 4.1 図の前提（取り込み後に見直す属性）
 
@@ -212,8 +212,8 @@ node dist-cli/main.js diff base.json head.json --format md --fail-on High --out 
 ## 7. 限界
 
 - **プラグインがあっても「対策済み」にはなりません。** 取り込みは図を作るだけで、対策の実装状況は自動では付きません
-- **認証の強さは控えめに見積もります。** 認証系プラグインはすべて「パスワード認証」扱いです。MFA かどうかは
-  IdP 側の設定で決まり、`kong.yaml` からは分かりません
+- **認証の強さは控えめに見積もります。** 認証方式はプラグインの種類から決め、1 つのサービスに複数の認証プラグインがあれば最も弱いものを採ります。
+  MFA やパスキーを求めているかは IdP 側の設定で決まり、`kong.yaml` からは分からないため、図には出しません
 - **クライアント → ゲートウェイの接続は 1 本**で、最も弱い Route の評価になります。Route ごとの評価が必要なら、
   図でクライアントを分けて接続を描き直してください
 - **ゲートウェイの Global IP・WAF・DDoS 対策・管理面の制限は分かりません**（§4.1）。Kong Konnect の API は呼びません

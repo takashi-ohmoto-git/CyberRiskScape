@@ -17,6 +17,10 @@
 #     トークン偽造）。https://attack.mitre.org/techniques/T1606/002/
 #   - OWASP Top 10 for LLM Applications（ガードレール・フィルタの確率的限界の背景）。
 #     https://genai.owasp.org/llm-top-10/
+#   - IETF RFC 9700（OAuth 2.0 Security BCP）・RFC 9449（DPoP）・RFC 8705（OAuth mTLS と
+#     証明書に束縛したトークン）・RFC 5280（X.509 証明書と CRL）・RFC 6960（OCSP）、
+#     NIST SP 800-63C-4（ベアラー型と鍵所持型のアサーション）・SP 800-57 Part 1 Rev.5
+#     （鍵の保護と有効期間）。エッジの認証方式 Token / Certificate のルール（2026-10-10）。
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -58,6 +62,14 @@
 #     エッジ）が target 型を問わず既にカバーするため、本ファイルの IdP ルールは
 #     「IdP 自体の侵害（トークン偽造）」「集中点としての単一障害」「IdP 発行トークンの
 #     受け側（relying party）検証不備」の 3 subject に限定する。
+#   - エッジの認証方式の拡張（2026-10-10。None / Password / ApiKey / Token / MFA / Passkey /
+#     Certificate。序列は CISA ZTMM v2 の Authentication の段階：Traditional＝Password・ApiKey・MFA、
+#     Initial＝Token、Advanced＝Passkey・Certificate）に追従し、公衆網上の段階ごとの残存リスクを
+#     次のように分担する：Password・ApiKey → stride-edge-password-internet-001、MFA →
+#     zt-aitm-session-token-theft-001、Token → zt-bearer-token-replay-001（正規トークンの窃取・
+#     再利用。検証不備は api-token-validation-gap / idp-relying-party-validation-gap が扱う）、
+#     Certificate → zt-client-certificate-lifecycle-001（秘密鍵・失効・期限。CA 側の侵害は
+#     各 CA ノードのルール、署名方式の耐量子移行は pqc.yaml が扱う）。Passkey 固有のルールは置かない。
 #   - AI_GATEWAY / GUARDRAIL も protect ライブラリへ同時追加した新型（カバレッジ 0 から
 #     開始）。ジェイルブレイク自体（LLM ノード視点）→ atlas-aml-t0054-llm-jailbreak-001
 #     でカバー済。本ファイルの GUARDRAIL ルールは「ガードレール単体依存」（GUARDRAIL
@@ -121,10 +133,13 @@ rules:
         # 業務 DB・ストレージ（storage ライブラリ）も VPN 接続後に到達できる機微な保管先のため加える。
         targetType: [DB, DATA_STORE, LLM, AGENT, MCP_SERVER, MEMORY_STORE, SAAS, IAAS, PAAS, DATABASE, STORAGE]
       conditions:
+        # CISA ZTMM v2 の段階で MFA（Traditional）より強い Token（Initial）・Passkey / Certificate
+        # （Advanced）も同じ Low にする（2026-10-10）。本ルールの論点は認証後の到達範囲で、
+        # 認証方式を強めても広さは変わらないため Low 未満にはしない。
         - when:
-            auth: [MFA]
+            auth: [Token, MFA, Passkey, Certificate]
           severity: Low
-          description: "{{sourceName}} から {{targetName}} への VPN 経由アクセスは MFA で保護されているが、認証後のネットワーク到達範囲は広いままである（Can: アカウント・端末侵害時に同一セグメント内の探索が可能）。横展開余地を限定するには、アプリケーション単位の ZTNA / マイクロセグメンテーションへの移行が有効（Cannot: 経路が存在しなければ侵害は当該アプリに限定される）。"
+          description: "{{sourceName}} から {{targetName}} への VPN 経由アクセスは MFA・トークン・パスキー・証明書のいずれかで認証されているが、認証後のネットワーク到達範囲は広いままである（Can: アカウント・端末侵害時に同一セグメント内の探索が可能）。横展開余地を限定するには、アプリケーション単位の ZTNA / マイクロセグメンテーションへの移行が有効（Cannot: 経路が存在しなければ侵害は当該アプリに限定される）。"
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.IR-01"
@@ -145,13 +160,16 @@ rules:
     name: "AiTM フィッシングによるセッショントークン窃取（MFA 迂回）"
     severity: Medium
     description: "{{sourceName}} から {{targetName}} への公衆網経由ログインが MFA で保護されていても、OTP・プッシュ承認型の MFA は AiTM（Adversary-in-the-Middle）フィッシングプロキシでリアルタイム中継でき、攻撃者は認証完了後のセッショントークン（cookie）を窃取して MFA を事実上迂回できる（Can）。窃取トークンの有効期間中、攻撃者は正規セッションとして {{targetName}} を操作できる。一方、FIDO2/WebAuthn のようにオリジンへ暗号学的に束縛された認証器を用いればプロキシ中継自体が成立せず（Impossible）、加えてトークンをデバイスへ束縛していれば窃取トークン単独の再利用も成立しない（Cannot）。blast radius は窃取されたセッションの権限範囲。"
-    mitigation: "[Foundation] 管理者・特権アカウントから順に phishing-resistant MFA（FIDO2/WebAuthn/パスキー）へ移行する。SMS・音声 OTP は廃止する。 [Enterprise] 全ユーザへ phishing-resistant MFA を展開し、セッショントークンに短い有効期限と再認証条件（IP・デバイス変化時）を設定する。AiTM インフラの検知（TLS フィンガープリント等）を導入する。 [Advanced] トークンバインディング / デバイス束縛資格情報により窃取トークンを別環境から再利用不能にする。継続的アクセス評価（CAEP 等）でセッション失効を即時伝搬する。"
+    mitigation: "[Foundation] 管理者・特権アカウントから順に phishing-resistant MFA（FIDO2/WebAuthn/パスキー）へ移行する（移行した経路は図のエッジの認証を「パスキー」にすると本脅威の対象外になる）。SMS・音声 OTP は廃止する。 [Enterprise] 全ユーザへ phishing-resistant MFA を展開し、セッショントークンに短い有効期限と再認証条件（IP・デバイス変化時）を設定する。AiTM インフラの検知（TLS フィンガープリント等）を導入する。 [Advanced] トークンバインディング / デバイス束縛資格情報により窃取トークンを別環境から再利用不能にする。継続的アクセス評価（CAEP 等）でセッション失効を即時伝搬する。"
     appliesTo:
       kind: edge
       when:
         # Password × Internet は stride-edge-password-internet-001、USER ノード視点の
         # アカウント乗っ取り一般は stride-user-spoofing-001 が扱う。本ルールは
         # 「MFA があっても phishing 耐性がなければ中継される」差分のみを扱う。
+        # Passkey・Certificate（2026-10-10 追加）はオリジン・鍵に束縛されたフィッシング耐性の
+        # 方式で中継が成立しないため対象外。Token はログイン後のトークン提示の経路で、
+        # 窃取・再利用は zt-bearer-token-replay-001 が扱う。
         auth: [MFA]
         network: [Internet]
         sourceType: [USER, PC, SMARTPHONE]
@@ -163,6 +181,81 @@ rules:
         url: "https://pages.nist.gov/800-63-3/sp800-63b.html"
       - title: "CISA - Implementing Phishing-Resistant MFA"
         url: "https://www.cisa.gov/sites/default/files/publications/fact-sheet-implementing-phishing-resistant-mfa-508c.pdf"
+
+  # ── 送信者制約のないベアラートークンの窃取・再利用（Token × 公衆網）───────────
+  # canonicalId bearer-token-replay は AiTM（人のログインの中継）と対策が別のため独立。severity High はユーザー決定（2026-10-10）。
+  - id: zt-bearer-token-replay-001
+    canonicalId: bearer-token-replay
+    framework: STRIDE
+    category: "Spoofing"
+    name: "送信者制約のないベアラートークンの窃取・再利用"
+    severity: High
+    description: "{{sourceName}} から {{targetName}} への公衆網経由の呼び出しは、OAuth 2.0 / OIDC / JWT のトークンで認証されている。トークンが持っているだけで使えるベアラー型の場合、攻撃者はクライアント側の保存場所（ブラウザのストレージ・端末・設定ファイル）、ログやエラー報告、侵害した中継点、誤った宛先への送信のいずれかからトークンを手に入れれば、有効期限まで別の端末から {{sourceName}} として {{targetName}} を呼び出せる（Can）。リフレッシュトークンまで漏れれば、アクセストークンを取り直して利用を延ばせる。一方、トークンを送信者の鍵に束縛し（DPoP、mTLS に束縛したトークン）、{{targetName}} が提示のたびに鍵の所持を確かめていれば、盗んだトークンだけでは使えず、アクセストークンを短命にしてリフレッシュトークンを使い捨て（ローテーション）にしていれば、漏えいの影響は短い期間に限られる（Cannot）。blast radius はトークンのスコープで {{targetName}} に許された操作と、その有効期間。"
+    mitigation: "[Foundation] アクセストークンの有効期限を短くし（分〜時間単位）、スコープと宛先（audience）を受け側の用途に必要な最小に絞る。トークンをログ・URL・エラー報告に出さず、クライアント側は OS の保護された保管領域に置く。リフレッシュトークンは使うたびに入れ替え（ローテーション）、再利用を検知したら一連のトークンを失効させる。 [Enterprise] トークンを送信者の鍵に束縛する（DPoP、または mTLS に束縛したトークン）。受け側は提示のたびに鍵の所持を検証し、束縛の無いトークンを拒否する。ログアウト・端末の紛失・不正の検知の際に失効を即時に反映する。 [Advanced] 束縛する鍵を端末のハードウェア（TPM・セキュアエンクレーブ）やワークロードの証明（アテステーション）に結びつけ、鍵ごと持ち出せないようにする。継続的アクセス評価（CAEP / Shared Signals）で、セッション中のリスクの変化をトークンの失効へつなぐ。"
+    appliesTo:
+      kind: edge
+      when:
+        # Token（2026-10-10 追加）は CISA ZTMM v2 の Initial。公衆網上では窃取したトークンを
+        # どこからでも提示できるため、ここに限定する（閉域網内のトークンは対象外）。
+        # トークンの検証不備（署名・audience・失効の確認漏れ）は api-token-session-validation-gap-001
+        # （BACKEND_API / GATEWAY のノード視点）と zt-idp-token-validation-gap-001（IdP → 受け側）、
+        # ログインの中継による窃取は zt-aitm-session-token-theft-001（auth: MFA）が扱う。
+        # 本ルールは「正しく検証されている正規のトークンが盗まれて再利用される」差分のみ。
+        auth: [Token]
+        network: [Internet]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "IETF RFC 9700 - Best Current Practice for OAuth 2.0 Security（送信者制約のあるアクセストークン・リフレッシュトークンのローテーション）"
+        url: "https://www.rfc-editor.org/rfc/rfc9700"
+      - title: "IETF RFC 9449 - OAuth 2.0 Demonstrating Proof of Possession (DPoP)（トークンを送信者の鍵に束縛する）"
+        url: "https://www.rfc-editor.org/rfc/rfc9449"
+      - title: "IETF RFC 8705 - OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access Tokens（証明書に束縛したアクセストークン）"
+        url: "https://www.rfc-editor.org/rfc/rfc8705"
+      - title: "NIST SP 800-63C-4 - Digital Identity Guidelines: Federation and Assertions（ベアラー型と鍵所持型のアサーション）"
+        url: "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-63C-4.pdf"
+      - title: "CISA - Zero Trust Maturity Model v2（Identity ピラー Authentication: Initial）"
+        url: "https://www.cisa.gov/zero-trust-maturity-model"
+
+  # ── クライアント証明書の秘密鍵の保護・失効確認・期限切れ（Certificate × 公衆網）──
+  # canonicalId client-certificate-lifecycle-gap は独立。severity Medium はユーザー決定（2026-10-10。期限切れによる停止・失効確認の欠如を重く見る）。
+  - id: zt-client-certificate-lifecycle-001
+    canonicalId: client-certificate-lifecycle-gap
+    framework: STRIDE
+    category: "Spoofing/Denial of Service"
+    name: "クライアント証明書の秘密鍵の窃取・失効確認の欠如・期限切れによる停止"
+    severity: Medium
+    description: "{{sourceName}} から {{targetName}} への公衆網経由の通信は、クライアント証明書（mTLS・機器証明書）で認証されている。証明書による認証は秘密鍵を持つ者だけが通れる強い方式だが、秘密鍵がファイルとして {{sourceName}} に置かれていてコピーできる、{{targetName}} が証明書の失効を確認していない、のいずれかがあると、攻撃者は機器や端末の侵害・盗難・廃棄品から取り出した秘密鍵で、証明書の有効期限まで {{sourceName}} になりすませる（Can）。機器証明書は有効期間が数年以上と長いことが多く、失効を確認しない限り止める手段が無い。逆に、更新の仕組みが無いまま期限切れを迎えると、正規の {{sourceName}} が一斉に接続できなくなる。一方、秘密鍵を TPM・HSM・セキュアエレメントの中で生成して外へ出さず、{{targetName}} が失効（CRL・OCSP）を確認し、証明書の有効期間を短くして更新を自動化していれば、鍵は持ち出せず、漏えいした機器は失効で止められ、期限切れによる停止も起きない（Cannot）。blast radius は {{sourceName}} の証明書で {{targetName}} に許された操作と、失効までの期間（期限切れの場合は {{sourceName}} が担う機能の停止）。"
+    mitigation: "[Foundation] クライアント証明書の台帳（発行先・有効期限・発行元の CA・鍵の保管場所）を作り、期限切れの前に通知・更新する。受け側で、信頼する CA を必要なものに限定し、失効（CRL・OCSP）を確認する。 [Enterprise] 証明書の発行と更新を自動化し（ACME・EST・SCEP 等）、有効期間を短くする。秘密鍵を TPM・HSM・セキュアエレメントの中で生成して外へ出さない。機器の廃棄・盗難・所有者の変更の際に証明書を失効させる手順を持つ。 [Advanced] 鍵の生成と証明書の発行に機器の証明（アテステーション）を必須にし、正規の機器の中で生成された鍵にだけ証明書を出す。ワークロードには SPIFFE 等で短命の証明書を自動で配る。証明書の署名方式の耐量子計算機暗号への移行は pqc の各ルールが扱う。"
+    appliesTo:
+      kind: edge
+      when:
+        # Certificate（2026-10-10 追加）は CISA ZTMM v2 の Advanced。方式そのものは強いため、
+        # 鍵が現場の機器・端末にあり、失効の確認が効きにくい公衆網の経路に限定し、Medium とする（ユーザー決定 2026-10-10）。
+        # CA 側の侵害は sdv-vehicle-pki-trust-compromise-001・netinfra-service-mesh-ca-key-compromise-001・
+        # netinfra-tls-inspection-ca-key-compromise-001（いずれも CA ノード視点）、署名方式の
+        # 耐量子移行は pqc.yaml、NHI の静的シークレットは nhi-long-lived-secret-001 が扱う。
+        auth: [Certificate]
+        network: [Internet]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+    references:
+      - title: "IETF RFC 5280 - Internet X.509 Public Key Infrastructure Certificate and CRL Profile（証明書の有効期間と失効リスト）"
+        url: "https://www.rfc-editor.org/rfc/rfc5280"
+      - title: "IETF RFC 6960 - X.509 Internet Public Key Infrastructure Online Certificate Status Protocol - OCSP（失効のオンライン確認）"
+        url: "https://www.rfc-editor.org/rfc/rfc6960"
+      - title: "IETF RFC 8705 - OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access Tokens（mTLS によるクライアント認証）"
+        url: "https://www.rfc-editor.org/rfc/rfc8705"
+      - title: "NIST SP 800-57 Part 1 Rev.5 - Recommendation for Key Management（秘密鍵の保護と鍵の有効期間）"
+        url: "https://csrc.nist.gov/pubs/sp/800/57/pt1/r5/final"
+      - title: "CISA - Zero Trust Maturity Model v2（Identity ピラー Authentication: Advanced）"
+        url: "https://www.cisa.gov/zero-trust-maturity-model"
 
   # ── シャドー IT / シャドー AI：統制外資産のガバナンスギャップ（intrinsic）──
   - id: zt-shadow-asset-governance-gap-001

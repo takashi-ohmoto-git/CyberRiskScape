@@ -36,7 +36,7 @@ rules:
     description: "VPN access from {{sourceName}} to {{targetName}} follows a perimeter model that, once authentication succeeds, grants broad network-layer reach. Compromising a single VPN account lets an attacker reach resources across the segment that have nothing to do with the compromised user's actual job, sharply lowering the cost of lateral-movement reconnaissance (Can). If, instead, application-level brokered access such as ZTNA or an identity-aware proxy is used and no network path exists to resources the user is not authorized for, the blast radius of an account compromise is limited to that single application (Cannot)."
     mitigation: "[Foundation] Split VPN profiles by business role and minimize the segments and ports each one can reach (retire full-tunnel access on a flat network). [Enterprise] Move to application-level ZTNA / identity-aware proxy so no network path exists to unauthorized resources, and use micro-segmentation to restrict east-west traffic. [Advanced] Continuously re-evaluate and dynamically recompute access scope during the session, incorporating device posture and behavioral signals."
     conditions:
-      - description: "VPN access from {{sourceName}} to {{targetName}} is protected by MFA, but the network reach granted after authentication remains broad (Can: an account or endpoint compromise still allows exploration within the same segment). Moving to application-level ZTNA / micro-segmentation is effective at limiting the room for lateral movement (Cannot: if no path exists, compromise is confined to that single application)."
+      - description: "VPN access from {{sourceName}} to {{targetName}} is authenticated with MFA, a token, a passkey, or a certificate, but the network reach granted after authentication remains broad (Can: an account or endpoint compromise still allows exploration within the same segment). Moving to application-level ZTNA / micro-segmentation is effective at limiting the room for lateral movement (Cannot: if no path exists, compromise is confined to that single application)."
     references:
       "0":
         title: "NIST SP 800-207 - Zero Trust Architecture (migrating away from perimeter-based remote access)"
@@ -47,10 +47,44 @@ rules:
     category: "Spoofing"
     name: "AiTM phishing session-token theft (MFA bypass)"
     description: "Even when a login from {{sourceName}} to {{targetName}} over the public network is protected by MFA, OTP- and push-approval-based MFA can be relayed in real time by an AiTM (Adversary-in-the-Middle) phishing proxy, letting an attacker steal the post-authentication session token (cookie) and effectively bypass MFA (Can). For as long as the stolen token remains valid, the attacker can operate {{targetName}} as the legitimate session. If, instead, an authenticator cryptographically bound to the origin, FIDO2/WebAuthn, is used, proxy relay itself cannot succeed (Impossible), and if the token is also device-bound, reuse of a stolen token alone does not succeed either (Cannot). The blast radius is the privilege scope of the stolen session."
-    mitigation: "[Foundation] Move admin and privileged accounts to phishing-resistant MFA (FIDO2/WebAuthn/passkeys) first. Retire SMS and voice OTP. [Enterprise] Roll out phishing-resistant MFA to all users, and set short session-token lifetimes with re-authentication triggers (IP or device change). Deploy detection for AiTM infrastructure (e.g. TLS fingerprinting). [Advanced] Make stolen tokens unusable outside their original environment through token binding / device-bound credentials. Propagate session revocation immediately with continuous access evaluation (e.g. CAEP)."
+    mitigation: "[Foundation] Move admin and privileged accounts to phishing-resistant MFA (FIDO2/WebAuthn/passkeys) first (once a path has moved, setting the edge's authentication to \"Passkey\" in the diagram takes it out of scope of this threat). Retire SMS and voice OTP. [Enterprise] Roll out phishing-resistant MFA to all users, and set short session-token lifetimes with re-authentication triggers (IP or device change). Deploy detection for AiTM infrastructure (e.g. TLS fingerprinting). [Advanced] Make stolen tokens unusable outside their original environment through token binding / device-bound credentials. Propagate session revocation immediately with continuous access evaluation (e.g. CAEP)."
     references:
       "0":
         title: "NIST SP 800-63B - Digital Identity Guidelines (verifier impersonation resistance)"
+
+  zt-bearer-token-replay-001:
+    category: "Spoofing"
+    name: "Theft and replay of bearer tokens without sender constraint"
+    description: "Calls from {{sourceName}} to {{targetName}} over the public network are authenticated with an OAuth 2.0 / OIDC / JWT token. If the token is a bearer token, usable by anyone who holds it, an attacker who obtains it from the client's storage (browser storage, the device, a configuration file), from logs or error reports, from a compromised intermediary, or from a request sent to the wrong destination can call {{targetName}} as {{sourceName}} from another device until the token expires (Can). If a refresh token leaks as well, the attacker can obtain new access tokens and extend that use. If, instead, the token is bound to the sender's key (DPoP, or a token bound to mTLS) and {{targetName}} verifies possession of the key on every presentation, a stolen token alone is useless, and if access tokens are short-lived and refresh tokens are single-use (rotated), the impact of a leak is limited to a short period (Cannot). The blast radius is the operations on {{targetName}} that the token's scope permits, for as long as it is valid."
+    mitigation: "[Foundation] Keep access-token lifetimes short (minutes to hours), and narrow the scope and audience to the minimum the receiving side needs. Keep tokens out of logs, URLs, and error reports, and store them on the client in the OS's protected storage. Rotate refresh tokens on every use, and revoke the whole token family when reuse is detected. [Enterprise] Bind tokens to the sender's key (DPoP, or tokens bound to mTLS). Have the receiving side verify possession of the key on every presentation and reject unbound tokens. Apply revocation immediately on logout, device loss, or fraud detection. [Advanced] Tie the binding key to the device's hardware (TPM, secure enclave) or to workload attestation so the key cannot be taken out together with the token. Use continuous access evaluation (CAEP / Shared Signals) to turn risk changes during the session into token revocation."
+    references:
+      "0":
+        title: "IETF RFC 9700 - Best Current Practice for OAuth 2.0 Security (sender-constrained access tokens; refresh-token rotation)"
+      "1":
+        title: "IETF RFC 9449 - OAuth 2.0 Demonstrating Proof of Possession (DPoP) (binding tokens to the sender's key)"
+      "2":
+        title: "IETF RFC 8705 - OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access Tokens (certificate-bound access tokens)"
+      "3":
+        title: "NIST SP 800-63C-4 - Digital Identity Guidelines: Federation and Assertions (bearer vs. holder-of-key assertions)"
+      "4":
+        title: "CISA - Zero Trust Maturity Model v2 (Identity pillar, Authentication: Initial)"
+
+  zt-client-certificate-lifecycle-001:
+    category: "Spoofing/Denial of Service"
+    name: "Client certificate private-key theft, missing revocation checks, and outages from expiry"
+    description: "Communication from {{sourceName}} to {{targetName}} over the public network is authenticated with a client certificate (mTLS, device certificate). Certificate authentication is a strong method that only the holder of the private key can pass, but if the private key sits on {{sourceName}} as a copyable file, or {{targetName}} does not check revocation, an attacker who extracts the private key from a compromised, stolen, or discarded device or endpoint can impersonate {{sourceName}} until the certificate expires (Can). Device certificates often have validity periods of several years or more, and unless revocation is checked there is no way to stop them. Conversely, if the certificate expires with no renewal mechanism in place, the legitimate {{sourceName}} devices all lose their connection at once. If, instead, the private key is generated inside a TPM, HSM, or secure element and never leaves it, {{targetName}} checks revocation (CRL, OCSP), and certificate lifetimes are short with automated renewal, the key cannot be taken out, a leaked device can be stopped by revocation, and expiry does not cause outages (Cannot). The blast radius is the operations on {{targetName}} that {{sourceName}}'s certificate permits, until revocation (or, on expiry, the outage of the functions {{sourceName}} carries)."
+    mitigation: "[Foundation] Keep an inventory of client certificates (subject, expiry, issuing CA, where the key is stored), and notify and renew before expiry. On the receiving side, limit the trusted CAs to those needed and check revocation (CRL, OCSP). [Enterprise] Automate certificate issuance and renewal (ACME, EST, SCEP, etc.) and shorten validity periods. Generate private keys inside a TPM, HSM, or secure element and never export them. Have a procedure to revoke certificates when a device is discarded, stolen, or changes owner. [Advanced] Require device attestation for key generation and certificate issuance, issuing certificates only for keys generated inside genuine devices. Distribute short-lived certificates to workloads automatically with SPIFFE or similar. Migration of the certificate signature algorithm to post-quantum cryptography is handled by the pqc rules."
+    references:
+      "0":
+        title: "IETF RFC 5280 - Internet X.509 Public Key Infrastructure Certificate and CRL Profile (certificate validity and revocation lists)"
+      "1":
+        title: "IETF RFC 6960 - X.509 Internet Public Key Infrastructure Online Certificate Status Protocol - OCSP (online revocation checking)"
+      "2":
+        title: "IETF RFC 8705 - OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access Tokens (client authentication with mTLS)"
+      "3":
+        title: "NIST SP 800-57 Part 1 Rev.5 - Recommendation for Key Management (protection of private keys and key lifetimes)"
+      "4":
+        title: "CISA - Zero Trust Maturity Model v2 (Identity pillar, Authentication: Advanced)"
 
   zt-shadow-asset-governance-gap-001:
     category: "Shadow IT"

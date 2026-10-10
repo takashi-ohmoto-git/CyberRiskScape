@@ -31,7 +31,7 @@ rules:
     description: "Authentication for tool execution privileges is insufficient. The call from the agent to {{targetName}} is not adequately protected, creating a risk of privilege escalation and lateral movement."
     mitigation: "Require strong authentication such as MFA before the tool call, and minimize the execution scope."
     conditions:
-      - description: "The call to {{targetName}} is protected by MFA."
+      - description: "The call to {{targetName}} is authenticated with MFA, a token, a passkey, or a certificate."
 
   maestro-agent-memory-poisoning-001:
     category: "Memory"

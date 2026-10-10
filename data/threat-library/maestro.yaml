@@ -48,11 +48,15 @@ rules:
         targetType: [TOOL]
       # MFA 接続時は同一ルールを Low 重大度の情報通知として再利用する。
       # severity / description のみ上書きし、ルール ID は維持する。
+      # CISA ZTMM v2 の段階で MFA（Traditional）より強い Token（Initial）・Passkey / Certificate
+      # （Advanced）も同じ Low にする（2026-10-10）。MFA より重く出ると序列と逆転するため。
+      # ApiKey は静的な共有シークレットで Password と同じ扱い（High のまま。
+      # anthropic-zt-static-api-key-001 と同じ canonicalId で 1 枚に畳み込まれる）。
       conditions:
         - when:
-            auth: [MFA]
+            auth: [Token, MFA, Passkey, Certificate]
           severity: Low
-          description: "{{targetName}}への呼び出しは MFA で保護されています。"
+          description: "{{targetName}}への呼び出しは MFA・トークン・パスキー・証明書のいずれかで認証されています。"
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.AA-03"

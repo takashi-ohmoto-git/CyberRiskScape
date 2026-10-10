@@ -374,15 +374,23 @@ rules:
     canonicalId: password-only-internet-channel
     framework: STRIDE
     category: "Spoofing"
-    name: "パスワード単独認証 / 公衆網"
+    name: "パスワード・API キー単独の認証 / 公衆網"
     severity: High
     description: "{{sourceName}}から{{targetName}}への公衆網経由通信がパスワードのみで保護されています。総当たり・リスト型攻撃・フィッシングへの耐性が不足しています。"
-    mitigation: "MFA を追加し、可能なら閉域網（VPN/VPC）経由に切り替える。フィッシング耐性のある認証（WebAuthn）を優先。"
+    mitigation: "MFA を追加し、可能なら閉域網（VPN/VPC）経由に切り替える。フィッシング耐性のある認証（WebAuthn）を優先。API キーの場合は、短命のトークン（OAuth 2.0 のクライアントクレデンシャル等）か証明書（mTLS）による認証に置き換え、移行までは送信元の制限・キーの用途の限定・定期的なローテーションを行う。"
     appliesTo:
       kind: edge
       when:
-        auth: [Password]
+        # ApiKey（2026-10-10 追加）は Password と同じ Traditional の静的な共有シークレットで、
+        # 公衆網上では同じく 1 つの値の漏えいだけで成立する。追加前は API キーを Password で
+        # 描いていたため、ここに含めて検出を引き継ぐ。AGENT 発の静的キーは
+        # anthropic-zt-static-api-key-001 も当たる（Password と同じく別 canonicalId で併発。従来どおり）。
+        auth: [Password, ApiKey]
         network: [Internet]
+      conditions:
+        - when:
+            auth: [ApiKey]
+          description: "{{sourceName}}から{{targetName}}への公衆網経由通信が API キー（長寿命の共有シークレット）だけで保護されています。キーはクライアントの設定・コード・ログ・端末のどこか 1 か所から漏れれば、攻撃者は失効されるまで正規の呼び出し元として {{targetName}} を呼び出せ、正規の利用と区別もしにくい（Can）。一方、短命のトークンや証明書（mTLS）による認証に置き換え、移行までは送信元の制限とキーの権限の限定をしていれば、漏れたキーだけで使える範囲と期間は限られる（Cannot）。blast radius はそのキーに許された {{targetName}} の操作の範囲と、漏えいから失効までの期間。"
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.AA-01"

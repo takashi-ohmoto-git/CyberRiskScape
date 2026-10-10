@@ -85,7 +85,7 @@ select the JSON, and apply it.
 - **Internet side** — smartphone app, vehicle backend, OTA delivery server, vehicle PKI, charging operator backend
 - **Physical and wireless counterparts outside the vehicle** — roadside unit, EV charger, diagnostic tool (workshop)
 
-**After loading, 69 threats** are detected (6 Critical, 48 High, 15 Medium). All 19 SDV-specific rules fire (42 findings).
+**After loading, 73 threats** are detected (6 Critical, 48 High, 19 Medium). Four of the Medium findings concern client-certificate private keys, revocation checks, and expiry on the public-network paths authenticated by certificate (`zt-client-certificate-lifecycle-001`). All 19 SDV-specific rules fire (42 findings).
 
 ### 3.1 Assumptions in the diagram (placeholder attributes)
 

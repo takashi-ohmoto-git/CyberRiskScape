@@ -50,7 +50,7 @@ rules as any other diagram.
 | `ai-rag-injector` | `DB` (Vector DB / RAG) | Drawn as a retrieval path into the LLM (`semantic: rag_retrieval`) |
 | Guard plugins | `GUARDRAIL` (Guardrail) | `ai-prompt-guard`, `ai-semantic-prompt-guard`, `ai-semantic-response-guard`, `ai-sanitizer`, `ai-lakera-guard`, `ai-azure-content-safety`, `ai-aws-guardrails`, `ai-gcp-model-armor`, `ai-custom-guardrail` |
 | `vaults` / `{vault://…}` references | `SECRETS_VAULT` (Secrets manager) | |
-| Authentication plugins | "Authentication" on the client → gateway connection | `key-auth`, `basic-auth`, `hmac-auth`, `jwt`, `oauth2`, `openid-connect`, `ldap-auth`, `mtls-auth` and others. **All treated as password authentication** (§7) |
+| Authentication plugins | "Authentication" on the client → gateway connection | `key-auth`, `basic-auth`, `hmac-auth`, `jwt`, `oauth2`, `openid-connect`, `ldap-auth`, `mtls-auth` and others. The method is set per plugin: `key-auth` and `hmac-auth` → API key, `basic-auth` and `ldap-auth` → ID/password, `jwt`, `oauth2` and `openid-connect` → token, `mtls-auth` → certificate (§7) |
 | Route `protocols` | "Encryption" on the client → gateway connection | Plaintext if any Route allows `http` |
 | `ip-restriction` and logging plugins | Attack-surface attributes of the API gateway | Set source-IP restriction and access logging to "yes" |
 | Consumers | Not drawn | Only the count is shown; credentials are not read |
@@ -99,7 +99,7 @@ support chat that connects to OpenAI through `ai-proxy` (`support-chat`, with `k
 
 ![Diagram generated from a Kong configuration](../assets/guide/kong/02-overview.png)
 
-This sample produces **47 threats** (7 Critical, 24 High, 16 Medium) at the time of writing.
+This sample produces **49 threats** (7 Critical, 27 High, 15 Medium) at the time of writing.
 
 ### 4.1 Assumptions on the diagram (attributes to review after importing)
 
@@ -216,8 +216,9 @@ T8 (change to models, training data or RAG sources)**. For wiring this into GitH
 
 - **A plugin does not make a threat "mitigated".** The import only builds the diagram; control status is not set
   automatically
-- **Authentication strength is estimated conservatively.** Every authentication plugin counts as password
-  authentication. Whether MFA is enforced depends on the IdP and cannot be read from `kong.yaml`
+- **Authentication strength is estimated conservatively.** The method comes from the plugin type, and when one service has several
+  authentication plugins the weakest is used. Whether MFA or passkeys are required depends on the IdP and cannot be read
+  from `kong.yaml`, so the diagram does not show it
 - **The client → gateway connection is a single edge** assessed at the weakest Route. If you need per-Route
   assessment, split the client on the diagram and redraw the connections
 - **The gateway's global IP, WAF, DDoS protection and management-plane restrictions are unknown** (§4.1). The

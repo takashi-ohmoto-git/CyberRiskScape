@@ -66,7 +66,7 @@ For how to load them, see [Creating and Using Templates](templates.md).
 (Internet) are an attacker, a remote employee and a maintenance vendor; in the organization's public segment (DMZ) are
 the public website and an SSL-VPN. Lines also reach straight from the Internet to the search cluster (Elasticsearch),
 the local LLM (Ollama), the remote desktop of a business server and a maintenance PC (TeamViewer), all of which should
-be internal. Loading it produces **88 threats** (Critical 12, High 41, Medium 35) at the time of writing.
+be internal. Loading it produces **91 threats** (Critical 13, High 43, Medium 35) at the time of writing.
 
 ---
 
@@ -140,7 +140,7 @@ In the "before" diagram, these threats appear on the remote desktop.
 | Direct Global IP Exposure (`stride-web-global-ip-exposure-001`) | High | Global IP Yes |
 | Unrestricted Source IP Access (`stride-web-no-source-ip-restriction-001`) | High | Global IP Yes × Source IP restriction No |
 | Blind Perimeter: Public and Unlogged (`stride-web-blind-perimeter-001`) | High | Global IP Yes × Access log No |
-| Password-Only Authentication over a Public Network (`stride-edge-password-internet-001`) | High | A line over the Internet is Password |
+| Password- or API-Key-Only Authentication over a Public Network (`stride-edge-password-internet-001`) | High | A line over the Internet is Password |
 
 Lines that reach the search cluster and the local LLM without authentication and in plaintext produce Spoofing
 (`stride-edge-unauth-internet-001`, Critical), Eavesdropping (`stride-edge-plain-encryption-001`, High) and Direct
@@ -187,7 +187,7 @@ Besides `.json.gz`, it also reads extracted JSON Lines, a JSON array of banners,
 ![Diagram created from a Shodan export](../assets/guide/exposure/06-shodan-overview.png)
 
 A sample is in [`templates/shodan-sample.json`](templates/shodan-sample.json) (fictional data built with documentation addresses).
-It produces a diagram of 7 services (6 hosts) and **95** threats at the time of writing.
+It produces a diagram of 7 services (6 hosts) and **96** threats at the time of writing.
 
 The imported diagram is input for the step 2 decisions. Shodan cannot tell you where an asset is supposed to sit (DMZ or internal)
 or whether it is a vendor path, so finish the diagram by adding to it, as in the §3 templates.
@@ -222,14 +222,14 @@ How CISA's measures map to CyberRiskScape inputs.
 | CISA measure | How to express it in CyberRiskScape | Threats that go away |
 |---|---|---|
 | Put in a jump host and funnel administrative access through it | Place a `GATEWAY` (jump host) internally with Global IP No, Source IP restriction Yes, Remote access restriction Yes, User authentication Yes and Access log Yes. Route administrative lines through the jump host | Exposed Remote Management Interface, Direct Global IP Exposure and others (the RDP entry point goes away entirely) |
-| Add MFA (at least on the jump host) | Set the lines from employees and vendors to the SSL-VPN, and from the SSL-VPN to the jump host, to **MFA** | Password-Only Authentication over a Public Network (goes away from the employee and vendor lines; remains on the line that represents the attacker's login attempts) |
+| Add MFA (at least on the jump host) | Set the lines from employees and vendors to the SSL-VPN, and from the SSL-VPN to the jump host, to **MFA** | Password- or API-Key-Only Authentication over a Public Network (goes away from the employee and vendor lines; remains on the line that represents the attacker's login attempts) |
 | Monitor inbound and outbound traffic | Set "Access log" in the Attack Surface Attributes to **Yes** | Missing Access Log, Blind Perimeter: Public and Unlogged |
 | Keep management planes off the Internet (go through a centrally managed gateway or VPN) | Set "Remote access restriction" to **Yes** | Exposed Remote Management Interface |
 | (Protecting the public web; not an explicit CISA item) | Set "WAF / WAP protection" and "DoS / DDoS protection" to **Yes** | Missing Application-Layer Attack Protection, Missing DoS/DDoS Protection |
 
 ![Diagram after remediation](../assets/guide/exposure/03-after.png)
 
-In the "after" diagram, threats drop to **60** (Critical 5, High 25, Medium 30) at the time of writing.
+In the "after" diagram, threats drop to **63** (Critical 6, High 27, Medium 30) at the time of writing.
 
 ![Attack Surface Attributes of the public website after remediation](../assets/guide/exposure/04-web-after.png)
 

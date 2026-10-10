@@ -64,7 +64,9 @@ rules:
           auth: [None]
         - sourceType: [AGENT]
           targetType: [TOOL, CONNECTOR, DB, LLM]
-          auth: [Password]
+          # ApiKey（2026-10-10 追加）が本来の対象。Password はサービスの Basic 認証等と、
+          # ApiKey 追加前に API キーを Password で描いた図のために残す。
+          auth: [Password, ApiKey]
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.AA-01"

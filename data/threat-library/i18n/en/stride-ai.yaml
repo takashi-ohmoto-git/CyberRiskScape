@@ -126,9 +126,11 @@ rules:
 
   stride-edge-password-internet-001:
     category: "Spoofing"
-    name: "Password-Only Authentication over a Public Network"
+    name: "Password- or API-Key-Only Authentication over a Public Network"
     description: "Communication from {{sourceName}} to {{targetName}} over the public network is protected by a password alone, which is not resilient against brute-force attacks, credential-stuffing attacks, or phishing."
-    mitigation: "Add MFA and, where possible, switch to a closed network path (VPN/VPC). Prefer phishing-resistant authentication such as WebAuthn."
+    mitigation: "Add MFA and, where possible, switch to a closed network path (VPN/VPC). Prefer phishing-resistant authentication such as WebAuthn. For an API key, replace it with authentication by a short-lived token (such as the OAuth 2.0 client credentials grant) or a certificate (mTLS); until then, restrict the source, limit what the key can do, and rotate it regularly."
+    conditions:
+      - description: "Communication from {{sourceName}} to {{targetName}} over the public network is protected by an API key alone, a long-lived shared secret. If the key leaks from any one place, the client's configuration, code, logs, or device, an attacker can call {{targetName}} as the legitimate caller until the key is revoked, and the calls are hard to tell apart from legitimate use (Can). If, instead, the key is replaced with authentication by a short-lived token or a certificate (mTLS), and in the meantime the source is restricted and the key's privileges are limited, the scope and duration of what a leaked key alone can do are limited (Cannot). The blast radius is the range of operations on {{targetName}} that the key permits, and the period from leak to revocation."
 
   stride-edge-unmanaged-device-sensitive-001:
     category: "Spoofing/Tampering"

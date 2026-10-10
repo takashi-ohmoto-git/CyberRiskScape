@@ -60,7 +60,7 @@
 **対応前の図の中身：** コンポーネント 11・データフロー 14・トラスト境界 3。外部境界（Internet）に攻撃者・リモート勤務の
 社員・保守ベンダーを、自組織の公開セグメント（DMZ）に公開 Web サイトと SSL-VPN を置いています。本来は社内にあるはずの
 検索基盤（Elasticsearch）・ローカル LLM（Ollama）・業務サーバーのリモートデスクトップ・保守用端末（TeamViewer）にも、
-インターネットから直接線が届いています。読み込むと **88 件**（Critical 12・High 41・Medium 35）の脅威が検出されます（執筆時点）。
+インターネットから直接線が届いています。読み込むと **91 件**（Critical 13・High 43・Medium 35）の脅威が検出されます（執筆時点）。
 
 ---
 
@@ -131,7 +131,7 @@ CISA は、システムインテグレーター・MSSP・ベンダーが持つ�
 | グローバルIP直接公開（`stride-web-global-ip-exposure-001`） | High | Global IP 有り |
 | 送信元IP無制限アクセス（`stride-web-no-source-ip-restriction-001`） | High | Global IP 有り × 送信元 IP 制限 無し |
 | 盲点境界：公開×無ログ（`stride-web-blind-perimeter-001`） | High | Global IP 有り × アクセスログ 無し |
-| パスワード単独認証 / 公衆網（`stride-edge-password-internet-001`） | High | インターネット経由の線が Password |
+| パスワード・API キー単独の認証 / 公衆網（`stride-edge-password-internet-001`） | High | インターネット経由の線が Password |
 
 検索基盤とローカル LLM へ認証なし・平文で届く線には、なりすまし（`stride-edge-unauth-internet-001`、Critical）・
 盗聴（`stride-edge-plain-encryption-001`、High）・Trust Boundary 跨ぎの直接暴露（`stride-edge-internet-exposed-sensitive-001`、Critical）が出ます。
@@ -177,7 +177,7 @@ shodan host --save 203.0.113.10
 ![Shodan の書き出しから作った図](../assets/guide/exposure/06-shodan-overview.png)
 
 試すためのサンプルを [`templates/shodan-sample.json`](templates/shodan-sample.json) に置いています（説明用のアドレスで作った架空のデータ）。
-サンプルからは 7 サービス（6 ホスト）の図ができ、**95 件**の脅威が検出されます（執筆時点）。
+サンプルからは 7 サービス（6 ホスト）の図ができ、**96 件**の脅威が検出されます（執筆時点）。
 
 取り込んだ図は、ステップ 2 の判断の材料です。社内のどこにあるはずのものか（DMZ か社内か）、ベンダーの経路かは Shodan からは
 分からないので、§3 のテンプレートのように描き足して仕上げます。
@@ -210,14 +210,14 @@ CISA の対策と、CyberRiskScape の入力項目の対応です。
 | CISA の対策 | CyberRiskScape での表し方 | 消える脅威 |
 |---|---|---|
 | 踏み台（ジャンプホスト）を置き、管理のアクセスをそこに集める | 社内に `GATEWAY`（踏み台サーバー）を置き、Global IP 無し・送信元 IP 制限 有り・リモートアクセス制限 有り・ユーザー認証 有り・アクセスログ 有り。管理の線は踏み台を経由させる | 管理面リモートアクセス、グローバルIP直接公開 など（RDP の入口ごと消える） |
-| MFA を入れる（少なくとも踏み台では必ず） | 社員・ベンダーから SSL-VPN への線と、SSL-VPN から踏み台への線を **MFA** にする | パスワード単独認証 / 公衆網（社員・ベンダーの線から消える。攻撃者のログイン試行を表す線には残る） |
+| MFA を入れる（少なくとも踏み台では必ず） | 社員・ベンダーから SSL-VPN への線と、SSL-VPN から踏み台への線を **MFA** にする | パスワード・API キー単独の認証 / 公衆網（社員・ベンダーの線から消える。攻撃者のログイン試行を表す線には残る） |
 | 入出力の通信を監視する | Attack Surface Attribute の「アクセスログ」を**有り** | アクセスログ欠如、盲点境界：公開×無ログ |
 | 管理面をインターネットに出さない（集中管理されたゲートウェイ・VPN を通す） | 「リモートアクセス制限」を**有り** | 管理面リモートアクセス |
 | （公開 Web の保護。CISA の明示の項目ではない） | 「WAF / WAP による保護」「DoS / DDoS 保護」を**有り** | アプリケーション層攻撃保護欠如、DoS/DDoS保護欠如 |
 
 ![対応後の構成図](../assets/guide/exposure/03-after.png)
 
-対応後の図では脅威が **60 件**（Critical 5・High 25・Medium 30）に減ります（執筆時点）。
+対応後の図では脅威が **63 件**（Critical 6・High 27・Medium 30）に減ります（執筆時点）。
 
 ![対応後の公開 Web サイトの Attack Surface Attribute](../assets/guide/exposure/04-web-after.png)
 
