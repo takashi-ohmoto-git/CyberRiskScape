@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { POSTURE_ENUM_KEYS, POSTURE_FIELD_VALUES } from '../../core/model/types';
 
 /**
  * 脅威ライブラリの Zod スキーマ定義。
@@ -110,6 +111,62 @@ export const AttackSurfaceMatchSchema = z
       a.hasDdosProtection !== undefined,
     { message: 'attackSurface must include at least one condition' },
   );
+
+/** `YYYY-MM-DD` で、実在する日付であること。 */
+export const PostureDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'must be YYYY-MM-DD')
+  .refine(
+    (v) => {
+      const d = new Date(`${v}T00:00:00Z`);
+      return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
+    },
+    {
+      message: 'must be a valid calendar date',
+    },
+  );
+
+/** ノードの運用状況（保存・MCP 共通の形）。全フィールド optional。値の一次ソースは `POSTURE_FIELD_VALUES`。 */
+export const NodePostureSchema = z.object({
+  logCollection: z.enum(POSTURE_FIELD_VALUES.logCollection).optional(),
+  logRetention: z.enum(POSTURE_FIELD_VALUES.logRetention).optional(),
+  logReviewer: z.enum(POSTURE_FIELD_VALUES.logReviewer).optional(),
+  encryptionAtRest: z.enum(POSTURE_FIELD_VALUES.encryptionAtRest).optional(),
+  patchStatus: z.enum(POSTURE_FIELD_VALUES.patchStatus).optional(),
+  accountReview: z.enum(POSTURE_FIELD_VALUES.accountReview).optional(),
+  dataNecessity: z.enum(POSTURE_FIELD_VALUES.dataNecessity).optional(),
+  recordVolume: z.enum(POSTURE_FIELD_VALUES.recordVolume).optional(),
+  lastReviewedAt: PostureDateSchema.optional(),
+  reviewNote: z.string().max(2000).optional(),
+});
+
+/** 列挙値に `'Unknown'`（未入力）を足した、OR 指定用の非空配列。 */
+const postureValues = <const T extends readonly [string, ...string[]]>(values: T) =>
+  z.array(z.enum([...values, 'Unknown'])).nonempty().optional();
+
+/**
+ * 運用状況によるノード絞り込み条件。各フィールドは配列（**OR**）、フィールド間は **AND**。
+ * 値には列挙値に加えて `'Unknown'`（未入力）を指定できる。
+ *
+ * - ノードの型がそのフィールドのグループ（コンポーネントライブラリの `posture:`）を
+ *   宣言していなければ不成立（入力できない属性で発火させない）。
+ * - ノード側の未設定は `'Unknown'` として評価する（＝対策なし扱い。結果に `posture` フラグが付く）。
+ * - `lastReviewedAt` / `reviewNote` は記録用で、条件にしない。
+ */
+export const PostureMatchSchema = z
+  .object({
+    logCollection: postureValues(POSTURE_FIELD_VALUES.logCollection),
+    logRetention: postureValues(POSTURE_FIELD_VALUES.logRetention),
+    logReviewer: postureValues(POSTURE_FIELD_VALUES.logReviewer),
+    encryptionAtRest: postureValues(POSTURE_FIELD_VALUES.encryptionAtRest),
+    patchStatus: postureValues(POSTURE_FIELD_VALUES.patchStatus),
+    accountReview: postureValues(POSTURE_FIELD_VALUES.accountReview),
+    dataNecessity: postureValues(POSTURE_FIELD_VALUES.dataNecessity),
+    recordVolume: postureValues(POSTURE_FIELD_VALUES.recordVolume),
+  })
+  .refine((p) => POSTURE_ENUM_KEYS.some((k) => p[k] !== undefined), {
+    message: 'posture match must include at least one field',
+  });
 
 /**
  * Node ルール用の単一リーフ（葉）。`anyOf` の中身として再利用する。
@@ -244,6 +301,9 @@ const NodeWhenSchema = z
     identityProviderKind: z.array(IdentityProviderKindSchema).nonempty().optional(),
     authProviderRole: z.array(AuthProviderRoleSchema).nonempty().optional(),
     segment: SegmentMatchSchema.optional(),
+    posture: PostureMatchSchema.optional(),
+    /** 子ノード（`parentId` がこのノード）の型が列挙のいずれかであること。 */
+    containsType: z.array(ComponentTypeIdSchema).nonempty().optional(),
   })
   .refine(
     (w) =>
@@ -252,7 +312,9 @@ const NodeWhenSchema = z
       w.agentAttributes !== undefined ||
       w.identityProviderKind !== undefined ||
       w.authProviderRole !== undefined ||
-      w.segment !== undefined,
+      w.segment !== undefined ||
+      w.posture !== undefined ||
+      w.containsType !== undefined,
     { message: 'node when must include at least one condition' },
   );
 
@@ -320,6 +382,10 @@ const NodeAppliesToSchema = z.object({
   authProviderRole: z.array(AuthProviderRoleSchema).nonempty().optional(),
   /** 所属区画（マイクロセグメンテーション境界）による絞り込み。詳細は `SegmentMatchSchema`。 */
   segment: SegmentMatchSchema.optional(),
+  /** 運用状況による絞り込み。詳細は `PostureMatchSchema`。未入力は対策なしとして扱う。 */
+  posture: PostureMatchSchema.optional(),
+  /** 子ノード（`parentId` がこのノード）の型による絞り込み。例：個人情報を格納した DB。 */
+  containsType: z.array(ComponentTypeIdSchema).nonempty().optional(),
   /**
    * 同一ルール内で severity / description を分岐させる場合に使用。
    * エッジルールの `conditions` と同じ first-match-wins。
@@ -569,6 +635,7 @@ export type AppliesTo = z.infer<typeof AppliesToSchema>;
 export type ConnectionDirection = z.infer<typeof ConnectionDirectionSchema>;
 export type ConnectionRequirement = z.infer<typeof ConnectionRequirementSchema>;
 export type AttackSurfaceMatch = z.infer<typeof AttackSurfaceMatchSchema>;
+export type PostureMatch = z.infer<typeof PostureMatchSchema>;
 export type AgentAttributesMatch = z.infer<typeof AgentAttributesMatchSchema>;
 export type SegmentMatch = z.infer<typeof SegmentMatchSchema>;
 export type MitigationTiers = z.infer<typeof MitigationTiersSchema>;

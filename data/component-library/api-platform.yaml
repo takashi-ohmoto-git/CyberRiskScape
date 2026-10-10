@@ -53,6 +53,7 @@ components:
     color: "bg-transparent"
     description: "ゲートウェイの背後にあるバックエンド API・マイクロサービス。業務データへの認可を最終的に担う。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, CREDENTIAL, LOG, OTHER_DOCUMENT]
+    posture: [log, patch]
 
   - id: API_CONTROL_PLANE
     label: "API管理プレーン"
@@ -62,6 +63,7 @@ components:
     color: "bg-transparent"
     description: "API ゲートウェイの Admin API・管理コンソール・構成の配布元。ルーティングと認証設定を書き換えられる管理面。"
     canContain: [CREDENTIAL, LOG, API_SPEC]
+    posture: [log, patch, accountReview]
 
   - id: CI_PIPELINE
     label: "CI/CDパイプライン"
@@ -73,6 +75,7 @@ components:
     canContain: [SOURCE_CODE, CREDENTIAL, LOG, API_SPEC]
 
   # ── Identity & Secrets ──────────────────────────────────────
+    posture: [log, accountReview]
   - id: SECRETS_VAULT
     label: "シークレット管理"
     category: CRYPTO_KEYS
@@ -83,6 +86,7 @@ components:
     canContain: [CREDENTIAL]
 
   # ── App ─────────────────────────────────────────────────────
+    posture: [log, encryptionAtRest, accountReview]
   - id: API_DEV_WORKSPACE
     label: "API開発ツール"
     category: SERVICES
@@ -93,6 +97,7 @@ components:
     canContain: [CREDENTIAL, API_SPEC, OTHER_DOCUMENT]
 
   # ── Documents ───────────────────────────────────────────────
+    posture: [log, accountReview]
   - id: API_SPEC
     label: "API仕様書"
     category: DOCUMENTS

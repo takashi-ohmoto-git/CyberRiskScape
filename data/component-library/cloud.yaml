@@ -39,6 +39,7 @@ components:
     color: "bg-transparent"
     description: "SaaS（Software as a Service）。認可状況・所有状況を属性で設定する。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, API_SPEC, OTHER_DOCUMENT]
+    posture: [log, encryptionAtRest, accountReview]
 
   - id: IAAS
     label: "IaaS"
@@ -48,6 +49,7 @@ components:
     color: "bg-transparent"
     description: "IaaS（Infrastructure as a Service）。認可状況・所有状況を属性で設定する。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, OTHER_DOCUMENT]
+    posture: [log, encryptionAtRest, patch, accountReview]
 
   - id: PAAS
     label: "PaaS"
@@ -57,6 +59,7 @@ components:
     color: "bg-transparent"
     description: "PaaS（Platform as a Service）。認可状況・所有状況を属性で設定する。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, OTHER_DOCUMENT]
+    posture: [log, encryptionAtRest, accountReview]
 
   - id: SHADOW
     label: "シャドークラウド"

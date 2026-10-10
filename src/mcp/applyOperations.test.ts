@@ -162,6 +162,34 @@ describe('正常系：ノード', () => {
     expect(l1(project).nodes.find((n) => n.id === 'n-llm')!.authProviderId).toBeUndefined();
   });
 
+  it('update_node：posture は型が宣言したフィールドだけ設定でき、null で消せる', () => {
+    const { project } = apply([
+      {
+        op: 'update_node',
+        id: 'n-db',
+        set: { posture: { logRetention: 'Under1Year', encryptionAtRest: 'None', lastReviewedAt: '2026-10-10' } },
+      },
+    ]);
+    expect(l1(project).nodes.find((n) => n.id === 'n-db')!.posture).toEqual({
+      logRetention: 'Under1Year',
+      encryptionAtRest: 'None',
+      lastReviewedAt: '2026-10-10',
+    });
+    const cleared = apply([{ op: 'update_node', id: 'n-db', set: { posture: null } }]).project;
+    expect(l1(cleared).nodes.find((n) => n.id === 'n-db')!.posture).toBeUndefined();
+  });
+
+  it('update_node：型が宣言していない posture フィールドと不正な日付は拒否する', () => {
+    // USER は posture グループを持たない（点検記録のみ）
+    reasonOf(() =>
+      apply([{ op: 'update_node', id: 'n-user', set: { posture: { patchStatus: 'Missing' } } }]),
+    );
+    apply([{ op: 'update_node', id: 'n-user', set: { posture: { reviewNote: 'ok' } } }]);
+    reasonOf(() =>
+      apply([{ op: 'update_node', id: 'n-db', set: { posture: { lastReviewedAt: '2026-02-30' } } }]),
+    );
+  });
+
   it('update_node（boundaryId）：再配置で境界の内外を移動する', () => {
     const into = apply([{ op: 'update_node', id: 'n-user', boundaryId: 'b-1' }]);
     expect(owningIds(into.project, 'n-user')).toEqual(['b-1']);

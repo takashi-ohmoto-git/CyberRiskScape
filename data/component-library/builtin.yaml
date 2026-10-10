@@ -68,6 +68,7 @@ components:
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, API_SPEC, OTHER_DOCUMENT]
 
   # ── AI Components ───────────────────────────────────────────
+    posture: [log, encryptionAtRest]
   - id: LLM
     label: "LLMモデル"
     category: AI
@@ -84,6 +85,7 @@ components:
     color: "bg-violet-600"
     description: "埋め込みベクトルや RAG インデックスを保持するストア。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]
+    posture: [log, encryptionAtRest]
 
   - id: TOOL
     label: "外部ツール / API"
@@ -119,6 +121,7 @@ components:
     color: "bg-yellow-600"
     description: "PC 端末。managedState で MDM 配下か BYOD かを表現。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]
+    posture: [encryptionAtRest, patch]
 
   - id: SMARTPHONE
     label: "スマートフォン"
@@ -128,6 +131,7 @@ components:
     color: "bg-yellow-600"
     description: "モバイル端末。managedState で MDM 配下か BYOD かを表現。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]
+    posture: [encryptionAtRest, patch]
 
   - id: IOT
     label: "IoT"
@@ -136,6 +140,7 @@ components:
     shape: rounded
     color: "bg-yellow-600"
     description: "IoT 機器・組込デバイス。多くは Unmanaged 扱い。"
+    posture: [patch]
 
   - id: GATEWAY
     label: "APIゲートウェイ"
@@ -144,6 +149,7 @@ components:
     shape: rounded
     color: "bg-transparent"
     description: "API ゲートウェイ／リバースプロキシ。境界での認可と流入制御を担う。クラウドでは Amazon API Gateway / Azure API Management / Google Cloud API Gateway・Apigee / OCI API Gateway 等が該当する。"
+    posture: [logRetention, patch]
 
   - id: FRONT_END_SERVER
     label: "フロントエンドサーバー"
@@ -152,6 +158,7 @@ components:
     shape: rounded
     color: "bg-transparent"
     description: "Web サーバー・リバースプロキシ等の外部公開ポイント。attackSurface 属性で公開条件・防御策の有無を表現する。"
+    posture: [logRetention, patch]
 
   - id: CONNECTOR
     label: "コネクタ"
@@ -168,6 +175,7 @@ components:
     shape: rounded
     color: "bg-fuchsia-600"
     description: "アイデンティティプロバイダ（IdP）。SSO・フェデレーション・トークン発行を担う認証認可の中核。Zero Trust ではポリシー判断の起点となる。"
+    posture: [log, accountReview]
 
   - id: DIRECTORY
     label: "ディレクトリ"
@@ -179,6 +187,7 @@ components:
     canContain: [PERSONAL_INFO, CREDENTIAL]
 
   # ── Documents ───────────────────────────────────────────────
+    posture: [log, patch, accountReview]
   - id: PERSONAL_INFO
     label: "個人情報"
     category: DOCUMENTS
@@ -186,6 +195,7 @@ components:
     shape: rounded
     color: "bg-cyan-600"
     description: "氏名・住所・連絡先などの個人を識別し得る情報（PII）。"
+    posture: [dataAsset]
 
   - id: CONFIDENTIAL_INFO
     label: "機密情報"
@@ -194,6 +204,7 @@ components:
     shape: rounded
     color: "bg-cyan-600"
     description: "事業秘密・契約情報・非公開資料など、漏洩時の影響が大きい情報。"
+    posture: [dataAsset]
 
   - id: SOURCE_CODE
     label: "ソースコード"
@@ -226,6 +237,7 @@ components:
     shape: rounded
     color: "bg-cyan-600"
     description: "通話の録音データ。声そのものが生体情報であり、通話内容に個人情報・機密情報を含み得る。"
+    posture: [dataAsset]
 
   - id: OTHER_DOCUMENT
     label: "その他"
@@ -234,3 +246,4 @@ components:
     shape: rounded
     color: "bg-cyan-600"
     description: "上記カテゴリに該当しないドキュメント・データ資産。"
+    posture: [dataAsset]

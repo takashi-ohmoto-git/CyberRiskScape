@@ -40,6 +40,7 @@ components:
     color: "bg-transparent"
     description: "業務データベース（RDB / NoSQL）。クラウドでは Amazon RDS・Aurora・DynamoDB / Azure SQL Database・Cosmos DB / Google Cloud SQL・Spanner・Firestore / OCI Autonomous Database 等が該当する。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, OTHER_DOCUMENT]
+    posture: [log, encryptionAtRest, patch, accountReview]
 
   - id: STORAGE
     label: "ストレージ"
@@ -49,6 +50,7 @@ components:
     color: "bg-transparent"
     description: "ファイルやオブジェクトを保管するストレージ（NAS / SAN / オブジェクトストレージ）。クラウドでは Amazon S3・EFS / Azure Blob Storage・Azure Files / Google Cloud Storage・Filestore / OCI Object Storage・File Storage 等が該当する。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, API_SPEC, OTHER_DOCUMENT]
+    posture: [log, encryptionAtRest, patch]
 
   - id: BACKUP_STORAGE
     label: "バックアップストレージ"
@@ -58,6 +60,7 @@ components:
     color: "bg-transparent"
     description: "バックアップの保管先（バックアップサーバー・テープ・クラウドのバックアップ）。本番と同じ資格情報やドメインで管理していると、本番と一緒に削除・暗号化される。クラウドでは AWS Backup / Azure Backup / Google Cloud Backup and DR / OCI のバックアップ機能等が該当する。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, OTHER_DOCUMENT]
+    posture: [log, encryptionAtRest, patch]
 
   - id: IMMUTABLE_BACKUP
     label: "イミュータブルバックアップ"
@@ -67,3 +70,4 @@ components:
     color: "bg-transparent"
     description: "保持期間中は書き換え・削除できないバックアップ（WORM / オブジェクトロック）。ランサムウェアからの復旧の最後の砦になる。クラウドでは Amazon S3 Object Lock・AWS Backup Vault Lock / Azure の不変ストレージ / Google Cloud Storage の保持ロック / OCI Object Storage の保持ルール等が該当する。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, OTHER_DOCUMENT]
+    posture: [log, encryptionAtRest]

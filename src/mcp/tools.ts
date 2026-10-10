@@ -12,6 +12,7 @@ import {
   IDENTITY_TIER_APPLICABLE,
   IDP_KIND_APPLICABLE,
   LAYER_KEYS,
+  POSTURE_ENUM_KEYS,
   SANCTION_ATTRIBUTE_APPLICABLE,
   THREAT_ACTOR_TYPE_APPLICABLE,
   isSuppressed,
@@ -370,7 +371,7 @@ export function diffModels(
 // ─────────────────────────────────────────────── 5. list_component_types
 
 /** 型 id に設定できる属性の一覧（`types.ts` の適用対象集合から判定）。 */
-function applicableAttributes(id: string): string[] {
+function applicableAttributes(id: string, registry: ReturnType<typeof getComponentRegistry>): string[] {
   const attrs = ['label', 'description', 'agentAttributes.blastRadius'];
   if (id === 'USER') attrs.push('userTrustAttribute');
   if (id === 'PC' || id === 'SMARTPHONE' || id === 'IOT') attrs.push('managedState');
@@ -381,6 +382,10 @@ function applicableAttributes(id: string): string[] {
   if (THREAT_ACTOR_TYPE_APPLICABLE.has(id)) attrs.push('threatActorType');
   if (ATTACK_OBJECTIVE_APPLICABLE.has(id)) attrs.push('attackObjectiveId');
   if (IDP_KIND_APPLICABLE.has(id)) attrs.push('identityProviderKind');
+  attrs.push('posture.lastReviewedAt', 'posture.reviewNote');
+  for (const k of POSTURE_ENUM_KEYS) {
+    if (registry.acceptsPostureField(id, k)) attrs.push(`posture.${k}`);
+  }
   return attrs;
 }
 
@@ -393,7 +398,7 @@ export function listComponentTypes(locale: Locale = 'ja'): Record<string, unknow
     category: c.category,
     categoryLabel: categoryLabel.get(c.category) ?? c.category,
     canContain: c.canContain ?? [],
-    attributes: applicableAttributes(c.id),
+    attributes: applicableAttributes(c.id, registry),
     /** エッジの `authProviderId` で資格情報の発行元に指定できるか。 */
     canBeAuthProvider: AUTH_PROVIDER_APPLICABLE.has(c.id),
   }));

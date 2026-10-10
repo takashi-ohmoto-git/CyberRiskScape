@@ -58,6 +58,7 @@ import { useLocale, useT } from '../../i18n';
 import { ThreatCard } from './ThreatCard';
 import { AttackTreeModal } from './AttackTreeModal';
 import { CryptoPathSection, NodeCryptoSection } from './CryptoSections';
+import { PostureSection } from './PostureSection';
 
 type TFunc = ReturnType<typeof useT>;
 
@@ -803,6 +804,8 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
             </p>
           </div>
         )}
+
+        <PostureSection node={node} />
 
         <div className="bg-slate-800/50 rounded-2xl border border-slate-700">
           <button

@@ -4,6 +4,7 @@ import type {
   ComponentTypeId,
   LibraryMeta,
 } from './schema/component';
+import { POSTURE_GROUP_FIELDS, type PostureEnumKey, type PostureGroup } from '../core/model/types';
 import type { LoadResult } from './loader/loadComponentLibrary';
 
 /**
@@ -54,6 +55,16 @@ export class ComponentRegistry {
   /** コンポーネントが属するライブラリ ID を返す（無ければ undefined）。 */
   getLibraryIdOf(componentId: ComponentTypeId): string | undefined {
     return this.componentToLibrary.get(componentId);
+  }
+
+  /** 型が運用状況（Posture）で宣言しているグループ。未宣言・未登録は空。 */
+  getPostureGroups(id: ComponentTypeId): readonly PostureGroup[] {
+    return this.componentsById.get(id)?.posture ?? [];
+  }
+
+  /** 型が運用状況のこのフィールドを入力できる（宣言したグループに含まれる）か。 */
+  acceptsPostureField(id: ComponentTypeId, field: PostureEnumKey): boolean {
+    return this.getPostureGroups(id).some((g) => POSTURE_GROUP_FIELDS[g].includes(field));
   }
 
   /**

@@ -425,6 +425,50 @@ describe('PersistedProjectSchema', () => {
     expect(r.success).toBe(false);
   });
 
+  // ─── posture ──────────
+  it('posture: 全フィールド指定を受理する', () => {
+    const r = PersistedProjectSchema.safeParse({
+      ...VALID_PROJECT,
+      nodes: [
+        {
+          ...VALID_PROJECT.nodes[0],
+          posture: {
+            logCollection: 'Collected',
+            logRetention: 'OneYearOrMore',
+            logReviewer: 'Both',
+            encryptionAtRest: 'ProviderManagedKey',
+            patchStatus: 'Missing',
+            accountReview: 'Irregular',
+            dataNecessity: 'UnderReview',
+            recordVolume: 'Over1M',
+            lastReviewedAt: '2026-02-28',
+            reviewNote: 'メモ',
+          },
+        },
+      ],
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it('posture: 未知の列挙値を拒否する', () => {
+    const r = PersistedProjectSchema.safeParse({
+      ...VALID_PROJECT,
+      nodes: [{ ...VALID_PROJECT.nodes[0], posture: { logRetention: 'Forever' } }],
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it.each(['2026-13-01', '2026-02-30', '2026/10/10', '20261010', ''])(
+    'posture: 不正な lastReviewedAt %s を拒否する',
+    (bad) => {
+      const r = PersistedProjectSchema.safeParse({
+        ...VALID_PROJECT,
+        nodes: [{ ...VALID_PROJECT.nodes[0], posture: { lastReviewedAt: bad } }],
+      });
+      expect(r.success).toBe(false);
+    },
+  );
+
   // ─── agentAttributes ──────────
   it('agentAttributes: 3 フィールド全指定を受理する', () => {
     const r = PersistedProjectSchema.safeParse({

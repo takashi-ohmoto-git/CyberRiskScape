@@ -141,6 +141,72 @@ export interface AttackSurfaceAttribute {
 export type AttackSurfaceKey = keyof AttackSurfaceAttribute;
 
 /**
+ * 運用状況（Posture）属性の列挙値。一次ソース（保存スキーマ・MCP・ルールスキーマはここから作る）。
+ * 未設定は脅威エンジンで `'Unknown'`（対策なし扱い）として評価する。
+ */
+export const POSTURE_FIELD_VALUES = {
+  /** ログの取得（公開サーバー・API ゲートウェイは attackSurface.hasAccessLog を使う） */
+  logCollection: ['Collected', 'NotCollected'],
+  /** ログの保持期間 */
+  logRetention: ['Under90Days', 'Under1Year', 'OneYearOrMore'],
+  /** ログを確認できる主体（自組織・提供者・両方） */
+  logReviewer: ['Self', 'Provider', 'Both'],
+  /** 保管時の暗号化 */
+  encryptionAtRest: ['None', 'ProviderManagedKey', 'CustomerManagedKey'],
+  /** 既知の脆弱性に対するパッチの適用状況 */
+  patchStatus: ['UpToDate', 'Missing'],
+  /** アカウント棚卸しの運用 */
+  accountReview: ['Periodic', 'Irregular', 'None'],
+  /** データ資産の保有の必要性 */
+  dataNecessity: ['Required', 'UnderReview', 'NotRequired'],
+  /** データ資産の件数規模 */
+  recordVolume: ['Under1K', 'Under100K', 'Under1M', 'Over1M'],
+} as const;
+
+export type PostureEnumKey = keyof typeof POSTURE_FIELD_VALUES;
+export const POSTURE_ENUM_KEYS = Object.keys(POSTURE_FIELD_VALUES) as PostureEnumKey[];
+
+/**
+ * 型ごとの適用範囲の単位。どの型がどのグループを持つかは
+ * コンポーネントライブラリ YAML の `posture:` で宣言する（コードに型のリストを持たない）。
+ */
+export const POSTURE_GROUPS = [
+  'log',
+  'logRetention',
+  'encryptionAtRest',
+  'patch',
+  'accountReview',
+  'dataAsset',
+] as const;
+export type PostureGroup = (typeof POSTURE_GROUPS)[number];
+
+/** グループ → 入力できるフィールド。`lastReviewedAt` / `reviewNote` は全型共通なのでここに含めない。 */
+export const POSTURE_GROUP_FIELDS: Readonly<Record<PostureGroup, readonly PostureEnumKey[]>> = {
+  log: ['logCollection', 'logRetention', 'logReviewer'],
+  logRetention: ['logRetention', 'logReviewer'],
+  encryptionAtRest: ['encryptionAtRest'],
+  patch: ['patchStatus'],
+  accountReview: ['accountReview'],
+  dataAsset: ['dataNecessity', 'recordVolume'],
+};
+
+/** 運用状況。すべて optional。未設定は `Unknown`＝対策なしとして脅威を評価する。 */
+export interface NodePosture {
+  logCollection?: (typeof POSTURE_FIELD_VALUES.logCollection)[number];
+  logRetention?: (typeof POSTURE_FIELD_VALUES.logRetention)[number];
+  logReviewer?: (typeof POSTURE_FIELD_VALUES.logReviewer)[number];
+  encryptionAtRest?: (typeof POSTURE_FIELD_VALUES.encryptionAtRest)[number];
+  patchStatus?: (typeof POSTURE_FIELD_VALUES.patchStatus)[number];
+  accountReview?: (typeof POSTURE_FIELD_VALUES.accountReview)[number];
+  dataNecessity?: (typeof POSTURE_FIELD_VALUES.dataNecessity)[number];
+  recordVolume?: (typeof POSTURE_FIELD_VALUES.recordVolume)[number];
+  /** 最終点検日（YYYY-MM-DD）。記録用で脅威の判定には使わない。全型で入力可。 */
+  lastReviewedAt?: string;
+  /** 点検メモ。記録用。全型で入力可。 */
+  reviewNote?: string;
+}
+
+/**
  * エージェント自律度（OWASP "Least Agency" / Anthropic Excessive Agency 由来）。
  *
  * - None: エージェント性なし（人手のみ、ツール扱い）
@@ -523,6 +589,11 @@ export interface DiagramNode {
    */
   attackSurface?: AttackSurfaceAttribute;
   /**
+   * 運用状況（ログ・暗号化・パッチ・棚卸し・データ資産・点検記録）。入力できる項目は
+   * コンポーネント型の `posture` 宣言で決まる。未設定は「対策なし」として脅威エンジンが扱う。
+   */
+  posture?: NodePosture;
+  /**
    * クラウドサービス / 業務アプリの認可状況（[[SANCTION_ATTRIBUTE_APPLICABLE]] の型用）。
    * それ以外の型では未使用。未指定は「不明」扱い。
    */
@@ -699,8 +770,9 @@ export interface DetectedThreat {
  * 自動検出が insecure baseline に依存した軸。
  * - attackSurface: 攻撃面フィールド未設定を baseline（開放寄り）で評価
  * - agentAttributes: agency/blastRadius/identityTier 未設定を最悪値で評価
+ * - posture: 運用状況（ログ・暗号化等）の未入力を「対策なし」として評価
  */
-export type DetectionAssumptionFlag = 'attackSurface' | 'agentAttributes';
+export type DetectionAssumptionFlag = 'attackSurface' | 'agentAttributes' | 'posture';
 
 /**
  * ユーザーが手動で追加する脅威シナリオ。自動検出（`DetectedThreat`）とは別系統の

@@ -21,6 +21,20 @@ describe('summarizeAppliesTo - kind: node', () => {
     expect(text).toContain('または');
   });
 
+  it('posture / containsType を要約に出す', () => {
+    const appliesTo: AppliesTo = {
+      kind: 'node',
+      nodeType: 'DATABASE',
+      connection: { required: false },
+      posture: { encryptionAtRest: ['None', 'Unknown'] },
+      containsType: ['PERSONAL_INFO'],
+    };
+    const ja = summarizeAppliesTo(appliesTo, 'ja');
+    expect(ja).toContain('保管時の暗号化=None/Unknown');
+    expect(ja).toContain('個人情報');
+    expect(summarizeAppliesTo(appliesTo, 'en')).toContain('Encryption at rest=None/Unknown');
+  });
+
   // 例 (A)〜(E)
   it('(A) connection 省略時のデフォルト', () => {
     const appliesTo: AppliesTo = { kind: 'node', nodeType: 'AGENT' };

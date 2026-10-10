@@ -76,6 +76,12 @@ export interface NodeWhenDraft {
   identityProviderKind: string[];
   authProviderRole: string[];
   segment: SegmentDraft;
+  /**
+   * 運用状況・子ノード型の軸。エディタ UI は未対応のため、既存ルールを開いて保存しても
+   * 条件が消えないよう**そのまま持ち回る**だけ（編集はできない）。
+   */
+  posture?: NodeWhen['posture'];
+  containsType?: NodeWhen['containsType'];
 }
 
 /** ノードルールの severity / description 段階分岐（`conditions[]` の 1 ケース）。 */
@@ -123,6 +129,12 @@ export interface NodeDraft {
   authProviderRole: string[];
   /** 所属区画。 */
   segment: SegmentDraft;
+  /**
+   * 運用状況・子ノード型の軸。エディタ UI は未対応のため、既存ルールを開いて保存しても
+   * 条件が消えないよう**そのまま持ち回る**だけ（編集はできない）。
+   */
+  posture?: NodeWhen['posture'];
+  containsType?: NodeWhen['containsType'];
   /** severity / description の段階分岐（first-match-wins）。 */
   conditions: NodeConditionCaseDraft[];
 }
@@ -396,6 +408,8 @@ function nodeWhenToDraft(w: NodeWhen): NodeWhenDraft {
     identityProviderKind: w.identityProviderKind ? [...w.identityProviderKind] : [],
     authProviderRole: w.authProviderRole ? [...w.authProviderRole] : [],
     segment: w.segment ? segmentToDraft(w.segment) : emptySegment(),
+    ...(w.posture ? { posture: w.posture } : {}),
+    ...(w.containsType ? { containsType: w.containsType } : {}),
   };
 }
 
@@ -423,6 +437,8 @@ function nodeToDraft(applies: NodeAppliesTo): NodeDraft {
     identityProviderKind: applies.identityProviderKind ? [...applies.identityProviderKind] : [],
     authProviderRole: applies.authProviderRole ? [...applies.authProviderRole] : [],
     segment: applies.segment ? segmentToDraft(applies.segment) : emptySegment(),
+    ...(applies.posture ? { posture: applies.posture } : {}),
+    ...(applies.containsType ? { containsType: applies.containsType } : {}),
     conditions: (applies.conditions ?? []).map(nodeConditionToDraft),
   };
 }
@@ -530,6 +546,8 @@ function buildNodeWhen(w: NodeWhenDraft): Record<string, unknown> {
   if (w.authProviderRole.length > 0) out.authProviderRole = [...w.authProviderRole];
   const seg = buildSegment(w.segment);
   if (seg) out.segment = seg;
+  if (w.posture) out.posture = w.posture;
+  if (w.containsType) out.containsType = [...w.containsType];
   return out;
 }
 
@@ -559,6 +577,8 @@ function buildNodeAppliesTo(node: NodeDraft): Record<string, unknown> {
   if (node.authProviderRole.length > 0) out.authProviderRole = [...node.authProviderRole];
   const seg = buildSegment(node.segment);
   if (seg) out.segment = seg;
+  if (node.posture) out.posture = node.posture;
+  if (node.containsType) out.containsType = [...node.containsType];
   if (node.conditions.length > 0) out.conditions = node.conditions.map(buildNodeConditionCase);
   return out;
 }

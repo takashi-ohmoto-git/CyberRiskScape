@@ -13,6 +13,7 @@ import {
   IdentityTierSchema,
   ManagedStateSchema,
   NetworkTypeSchema,
+  NodePostureSchema,
   SeveritySchema,
   TrustLevelSchema,
   UserTrustAttributeSchema,
@@ -132,6 +133,8 @@ const PersistedNodeSchema = z.object({
   attackSurface: PersistedAttackSurfaceSchema.optional(),
   /** エージェント特有属性（AGENT/TOOL/CONNECTOR/USER 用、後方互換のため optional） */
   agentAttributes: PersistedAgentAttributesSchema.optional(),
+  /** 運用状況（ログ・暗号化・パッチ等。型が宣言したグループのみ入力、後方互換のため optional） */
+  posture: NodePostureSchema.optional(),
   /** 暗号属性（PQC 移行支援、後方互換のため optional） */
   crypto: PersistedNodeCryptoSchema.optional(),
 });

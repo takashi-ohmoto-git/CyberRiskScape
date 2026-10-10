@@ -51,6 +51,8 @@ const jaCore = {
   'appliesToSummary.node.agentAttributes': 'エージェント属性条件: {conditions}',
   'appliesToSummary.node.identityAxes': 'アイデンティティ条件: {conditions}',
   'appliesToSummary.node.segment': '所属区画の条件: {conditions}',
+  'appliesToSummary.node.posture': '運用状況の条件（未入力は対策なしとして扱う）: {conditions}',
+  'appliesToSummary.node.containsType': '子（内包するコンポーネント）が {types} のいずれかであることが条件です。',
   'appliesToSummary.edge.when': 'エッジ条件: {conditions}',
   'appliesToSummary.edge.allOf': 'エッジ条件（すべて満たす）: {groups}',
   'appliesToSummary.edge.anyOf': 'エッジ条件（いずれか満たす）: {groups}',

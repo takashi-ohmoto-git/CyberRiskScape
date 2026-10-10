@@ -42,6 +42,7 @@ components:
     shape: rounded
     color: "bg-violet-600"
     description: "AI ゲートウェイ / LLM プロキシ。プロンプト・応答の検査、レート制限、モデルルーティング、利用ログを担う AI トラフィックの集中制御点。"
+    posture: [log, patch]
 
   - id: GUARDRAIL
     label: "ガードレール"

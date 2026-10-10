@@ -16,6 +16,7 @@ import {
   IdentityTierSchema,
   ManagedStateSchema,
   NetworkTypeSchema,
+  NodePostureSchema,
   TrustLevelSchema,
   UserTrustAttributeSchema,
 } from '../threat-library/schema/threatRule';
@@ -38,6 +39,7 @@ import {
   type LayerData,
   type LayerKey,
   type ManagedState,
+  type PostureEnumKey,
   type SeqCounters,
   type TrustLevel,
   type UserTrustAttribute,
@@ -154,6 +156,8 @@ const AgentAttributesSchema = z
   })
   .strict();
 
+const PostureSchema = NodePostureSchema.strict();
+
 const NodeCryptoSchema = z
   .object({
     termination: z.enum(CRYPTO_TERMINATIONS).optional(),
@@ -185,6 +189,7 @@ const nodeAttrShape = {
   authProviderId: idStr.optional(),
   attackSurface: AttackSurfaceSchema.optional(),
   agentAttributes: AgentAttributesSchema.optional(),
+  posture: PostureSchema.optional(),
   crypto: NodeCryptoSchema.optional(),
 };
 
@@ -202,6 +207,7 @@ const NodeSetSchema = opObject({
   authProviderId: idStr.nullable().optional(),
   attackSurface: AttackSurfaceSchema.nullable().optional(),
   agentAttributes: AgentAttributesSchema.nullable().optional(),
+  posture: PostureSchema.nullable().optional(),
   crypto: NodeCryptoSchema.nullable().optional(),
 });
 
@@ -410,6 +416,15 @@ function validateNodeAttrs(work: Work, node: DiagramNode, keys: readonly string[
   if (has('threatActorType')) must(THREAT_ACTOR_TYPE_APPLICABLE.has(node.type), 'threatActorType');
   if (has('identityProviderKind')) must(IDP_KIND_APPLICABLE.has(node.type), 'identityProviderKind');
   if (has('attackSurface')) must(ATTACK_SURFACE_APPLICABLE.has(node.type), 'attackSurface');
+  if (has('posture') && node.posture) {
+    // 型が宣言したグループのフィールドだけ入力できる（lastReviewedAt / reviewNote は全型共通）。
+    for (const k of Object.keys(node.posture)) {
+      if (k === 'lastReviewedAt' || k === 'reviewNote') continue;
+      if (!componentRegistry.acceptsPostureField(node.type, k as PostureEnumKey)) {
+        fail(`posture.${k} は型 ${node.type} には設定できません`);
+      }
+    }
+  }
   if (has('attackObjectiveId')) {
     must(ATTACK_OBJECTIVE_APPLICABLE.has(node.type), 'attackObjectiveId');
     const target = findNode(work, node.attackObjectiveId as string);

@@ -24,7 +24,13 @@ import { makeComplianceKey } from '../../compliance/loader/loadComplianceMap';
 import type { StandardId } from '../../compliance/schema/complianceItem';
 import { summarizeAppliesTo } from './appliesToSummary';
 import { useRuleLookup } from './useRuleLookup';
-import { useLocale, useT, type Locale } from '../../i18n';
+import { useLocale, useT, type Locale, type TranslationKey } from '../../i18n';
+
+const ASSUMPTION_KEY: Record<DetectionAssumptionFlag, TranslationKey> = {
+  attackSurface: 'threatCard.assumption.attackSurface',
+  agentAttributes: 'threatCard.assumption.agentAttributes',
+  posture: 'threatCard.assumption.posture',
+};
 
 /**
  * `complianceRefs.standard` の ID（例: `nist-ai-rmf`）を表示用の正式名称に解決する。
@@ -144,11 +150,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
             <span
               className="text-xs bg-amber-500/15 text-amber-300 px-2 py-0.5 rounded font-bold inline-flex items-center gap-1 border border-amber-500/30"
               title={threat.assumptionFlags
-                .map((f: DetectionAssumptionFlag) =>
-                  f === 'attackSurface'
-                    ? t('threatCard.assumption.attackSurface')
-                    : t('threatCard.assumption.agentAttributes'),
-                )
+                .map((f: DetectionAssumptionFlag) => t(ASSUMPTION_KEY[f]))
                 .join(' ')}
             >
               <AlertTriangle size={10} /> {t('threatCard.assumption.badge')}
@@ -176,6 +178,11 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
           {threat.assumptionFlags.includes('agentAttributes') && (
             <p className="text-xs text-amber-200/90 leading-relaxed">
               {t('threatCard.assumption.agentAttributes')}
+            </p>
+          )}
+          {threat.assumptionFlags.includes('posture') && (
+            <p className="text-xs text-amber-200/90 leading-relaxed">
+              {t('threatCard.assumption.posture')}
             </p>
           )}
         </div>

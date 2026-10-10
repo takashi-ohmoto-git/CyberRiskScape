@@ -6,10 +6,12 @@ import type {
   DiagramEdge,
   DiagramNode,
   FrameworkView,
+  PostureEnumKey,
   Severity,
   TrustLevel,
 } from '../model/types';
 import type { ThreatRule } from '../../threat-library/schema/threatRule';
+import { componentRegistry } from '../../component-library/defaultRegistry';
 import { renderEdgeTemplate, renderNodeTemplate } from './renderTemplate';
 import { resolveNodeTrust } from './resolveNodeTrust';
 import {
@@ -63,6 +65,7 @@ type ConnectionRequirement = NonNullable<NodeAppliesTo['connection']>;
 type AttackSurfaceMatch = NonNullable<NodeAppliesTo['attackSurface']>;
 type AgentAttributesMatch = NonNullable<NodeAppliesTo['agentAttributes']>;
 type SegmentMatch = NonNullable<NodeAppliesTo['segment']>;
+type PostureMatch = NonNullable<NodeAppliesTo['posture']>;
 
 /**
  * `agentAttributes` 未指定ノードのベースライン値。
@@ -117,6 +120,29 @@ function usedAttackSurfaceBaseline(node: DiagramNode, match: AttackSurfaceMatch)
 }
 
 /**
+ * 運用状況（posture）条件のマッチ判定。各フィールドは配列で OR、フィールド間は AND。
+ *
+ * - ノードの型がそのフィールドのグループを宣言していなければ不成立（入力できない属性で発火させない）。
+ * - ノード側の未設定は `'Unknown'`（対策なし扱い）。
+ */
+function matchPosture(node: DiagramNode, match: PostureMatch): boolean {
+  for (const k of Object.keys(match) as PostureEnumKey[]) {
+    const accepted = match[k] as readonly string[] | undefined;
+    if (accepted === undefined) continue;
+    if (!componentRegistry.acceptsPostureField(node.type, k)) return false;
+    if (!accepted.includes(node.posture?.[k] ?? 'Unknown')) return false;
+  }
+  return true;
+}
+
+/** posture 条件の評価で、ノード側の未入力を「対策なし」として扱ったか（マッチ成立時のみ意味がある）。 */
+function usedPostureBaseline(node: DiagramNode, match: PostureMatch): boolean {
+  return (Object.keys(match) as PostureEnumKey[]).some(
+    (k) => match[k] !== undefined && node.posture?.[k] === undefined,
+  );
+}
+
+/**
  * `agentAttributes` 条件のマッチ判定。
  *
  * - 各条件フィールドは配列で OR、フィールド間は AND。
@@ -162,6 +188,9 @@ function collectNodeAssumptionFlags(
   }
   if (nodeApplies.agentAttributes && usedAgentAttributesBaseline(node, nodeApplies.agentAttributes)) {
     flags.push('agentAttributes');
+  }
+  if (nodeApplies.posture && usedPostureBaseline(node, nodeApplies.posture)) {
+    flags.push('posture');
   }
   return flags.length > 0 ? flags : undefined;
 }
@@ -289,6 +318,7 @@ function matchNodeAxes(
   node: DiagramNode,
   role: AuthProviderRole,
   segment: ResolvedSegment,
+  childTypes: ReadonlySet<string>,
 ): boolean {
   if (axes.attackSurface && !matchAttackSurface(node, axes.attackSurface)) return false;
   if (axes.agentAttributes && !matchAgentAttributes(node, axes.agentAttributes)) return false;
@@ -301,6 +331,9 @@ function matchNodeAxes(
   //（誰からも参照されていなければ `Unused`）。
   if (axes.authProviderRole && !axes.authProviderRole.includes(role)) return false;
   if (axes.segment && !matchSegment(segment, axes.segment)) return false;
+  if (axes.posture && !matchPosture(node, axes.posture)) return false;
+  // 子ノード（parentId がこのノード）の型のいずれかが列挙に含まれること。
+  if (axes.containsType && !axes.containsType.some((t) => childTypes.has(t))) return false;
   return true;
 }
 
@@ -310,9 +343,10 @@ function matchNodeWhen(
   node: DiagramNode,
   role: AuthProviderRole,
   segment: ResolvedSegment,
+  childTypes: ReadonlySet<string>,
 ): boolean {
   if (when.nodeType && !when.nodeType.includes(node.type)) return false;
-  return matchNodeAxes(when, node, role, segment);
+  return matchNodeAxes(when, node, role, segment, childTypes);
 }
 
 /**
@@ -374,6 +408,15 @@ export function detectThreats({
   // 発行元ごとの依存コンポーネント。説明文の `{{dependentCount}}` /
   // `{{dependentNames}}` 展開に使う。境界と同じく図全体から 1 回だけ導出する。
   const authProviderClosure = buildAuthProviderClosure(nodes, edges);
+  // 親ノードごとの子ノード型（`containsType` 軸用）。
+  const childTypesByParent = new Map<string, Set<string>>();
+  for (const n of nodes) {
+    if (!n.parentId) continue;
+    const set = childTypesByParent.get(n.parentId) ?? new Set<string>();
+    set.add(n.type);
+    childTypesByParent.set(n.parentId, set);
+  }
+  const NO_CHILD_TYPES: ReadonlySet<string> = new Set();
 
   for (const rule of rules) {
     if (framework !== 'ALL' && rule.framework !== framework) continue;
@@ -387,13 +430,14 @@ export function detectThreats({
           continue;
         const role = authProviderRoleOf(authProviderClosure, node.id);
         const segment = segmentByNodeId.get(node.id) ?? UNSEGMENTED;
-        if (!matchNodeAxes(nodeApplies, node, role, segment)) continue;
+        const childTypes = childTypesByParent.get(node.id) ?? NO_CHILD_TYPES;
+        if (!matchNodeAxes(nodeApplies, node, role, segment, childTypes)) continue;
 
         let severity: Severity = rule.severity;
         let description: string = rule.description;
         if (nodeConditions) {
           for (const cond of nodeConditions) {
-            if (!matchNodeWhen(cond.when, node, role, segment)) continue;
+            if (!matchNodeWhen(cond.when, node, role, segment, childTypes)) continue;
             if (cond.severity !== undefined) severity = cond.severity;
             if (cond.description !== undefined) description = cond.description;
             break;

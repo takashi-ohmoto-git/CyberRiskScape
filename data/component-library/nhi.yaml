@@ -47,6 +47,7 @@ components:
     color: "bg-fuchsia-600"
     description: "人に紐づかない技術アカウント（ディレクトリやクラウドのサービスアカウント、共有アカウント）。長期のパスワードや鍵で動くことが多い。"
     canContain: [CREDENTIAL]
+    posture: [accountReview]
 
   - id: WORKLOAD_IDENTITY
     label: "ワークロードID"
@@ -84,6 +85,7 @@ components:
     color: "bg-fuchsia-600"
     description: "特権アカウントの資格情報を保管・払い出しし、特権セッションを仲介・記録する基盤。"
     canContain: [CREDENTIAL, LOG]
+    posture: [log, patch, accountReview]
 
   - id: IGA
     label: "IDガバナンス（IGA）"
@@ -93,3 +95,4 @@ components:
     color: "bg-fuchsia-600"
     description: "人と NHI のアカウントを各システムへ配布・変更・削除し、権限を棚卸しする基盤。各システムへ接続するための特権資格情報を持つ。"
     canContain: [CREDENTIAL, LOG]
+    posture: [log, patch, accountReview]

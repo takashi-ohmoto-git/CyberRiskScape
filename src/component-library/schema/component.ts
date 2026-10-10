@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { POSTURE_GROUPS } from '../../core/model/types';
 
 /**
  * コンポーネントライブラリの Zod スキーマ定義。
@@ -70,6 +71,15 @@ export const ComponentDefinitionSchema = z.object({
    * 未指定または空配列なら内包不可（リーフ）。未宣言 ID 参照はローダーで拒否する。
    */
   canContain: z.array(ComponentTypeIdSchema).optional(),
+  /**
+   * 運用状況（Posture）のうち、この型で入力できるグループ。未指定なら入力できる項目は
+   * 点検記録（最終点検日・点検メモ）のみ。
+   * - log：ログの取得・保持期間・確認できる主体 / logRetention：保持期間・確認できる主体のみ
+   *   （取得の有無を既存の attackSurface.hasAccessLog で持つ型。公開サーバー・API ゲートウェイ）
+   * - encryptionAtRest：保管時の暗号化 / patch：パッチの適用状況（SaaS は提供者責任のため付けない）
+   * - accountReview：アカウント棚卸し / dataAsset：保有の必要性・件数規模
+   */
+  posture: z.array(z.enum(POSTURE_GROUPS)).optional(),
 });
 
 /**

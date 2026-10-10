@@ -111,6 +111,27 @@ describe('serializeProject / deserializeProject', () => {
     expect(restored?.layers?.L1.nodes[0].authProviderId).toBe('n3');
   });
 
+  it('node.posture を round-trip で保持する', () => {
+    const posture = {
+      logRetention: 'Under90Days' as const,
+      encryptionAtRest: 'CustomerManagedKey' as const,
+      lastReviewedAt: '2026-10-10',
+      reviewNote: '四半期点検',
+    };
+    const withPosture: LayerData = {
+      ...L1_DATA,
+      nodes: [{ ...L1_DATA.nodes[0], posture }, ...L1_DATA.nodes.slice(1)],
+    };
+    const persisted = serializeProject({
+      ...STATE,
+      layers: { L0: EMPTY_LAYER, L1: withPosture, L2: EMPTY_LAYER, L3: EMPTY_LAYER, PQC: EMPTY_LAYER },
+    });
+    const restored = deserializeProject(persisted);
+    expect(restored?.layers?.L1.nodes[0].posture).toEqual(posture);
+    // posture の無い旧ファイルはそのまま読める
+    expect(restored?.layers?.L1.nodes[1].posture).toBeUndefined();
+  });
+
   // ─── annotations（キャンバス注釈） ──────────
   it('annotations を round-trip で保持する', () => {
     const withAnnotations: LayerData = {

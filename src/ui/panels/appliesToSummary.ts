@@ -63,6 +63,14 @@ const FIELD_LABEL_KEYS: Record<string, TranslationKey> = {
   status: 'appliesToSummary.field.status',
   environment: 'appliesToSummary.field.environment',
   sensitiveData: 'appliesToSummary.field.sensitiveData',
+  logCollection: 'panels.posture.field.logCollection',
+  logRetention: 'panels.posture.field.logRetention',
+  logReviewer: 'panels.posture.field.logReviewer',
+  encryptionAtRest: 'panels.posture.field.encryptionAtRest',
+  patchStatus: 'panels.posture.field.patchStatus',
+  accountReview: 'panels.posture.field.accountReview',
+  dataNecessity: 'panels.posture.field.dataNecessity',
+  recordVolume: 'panels.posture.field.recordVolume',
 };
 
 /** フィールド名を日本語ラベルへ解決する。未収録キーは元のキー名をそのまま返す。 */
@@ -202,6 +210,22 @@ function summarizeNode(appliesTo: Extract<AppliesTo, { kind: 'node' }>, locale: 
     parts.push(
       translate('appliesToSummary.node.segment', locale, {
         conditions: formatArrayMap(appliesTo.segment as unknown as EdgeWhenLike, locale),
+      }),
+    );
+  }
+
+  if (appliesTo.posture) {
+    parts.push(
+      translate('appliesToSummary.node.posture', locale, {
+        conditions: formatArrayMap(appliesTo.posture as unknown as EdgeWhenLike, locale),
+      }),
+    );
+  }
+
+  if (appliesTo.containsType) {
+    parts.push(
+      translate('appliesToSummary.node.containsType', locale, {
+        types: formatTypeList(appliesTo.containsType, locale),
       }),
     );
   }

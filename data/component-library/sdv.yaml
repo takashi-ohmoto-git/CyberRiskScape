@@ -54,6 +54,7 @@ components:
     color: "bg-transparent"
     description: "車載の電子制御ユニット。CAN などの車載ネットワークに接続し、走行・制動・ボディ制御などを担う。ファームウェアの正当性（セキュアブート）と、暗号鍵・証明書をどこに持つかが要点で、内蔵 HSM / SHE はノードの暗号情報で表す。"
     canContain: [CREDENTIAL]
+    posture: [patch]
 
   - id: ZONE_CONTROLLER
     label: "ゾーンコントローラ"
@@ -62,6 +63,7 @@ components:
     shape: rounded
     color: "bg-transparent"
     description: "車両の物理的な区画（ゾーン）ごとにセンサー・アクチュエーター・ECU を束ね、車載Ethernetでセントラルコンピュートへ中継する制御装置。ゾーン内外のネットワーク境界になるため、通信の認証とフィルタリングが要点。"
+    posture: [patch]
 
   - id: CENTRAL_COMPUTE
     label: "セントラルコンピュート（HPC）"
@@ -71,6 +73,7 @@ components:
     color: "bg-transparent"
     description: "複数の機能を集約して動かす車載の高性能コンピュータ（HPC）。ハイパーバイザー上で異なる重要度のソフトウェアが同居し、更新も受けるため、分離の強度とソフトウェアの正当性が要点。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, CREDENTIAL, LOG]
+    posture: [patch]
 
   - id: CENTRAL_GATEWAY
     label: "セントラルゲートウェイ"
@@ -79,6 +82,7 @@ components:
     shape: rounded
     color: "bg-transparent"
     description: "車載ネットワーク間の通信を中継する車両内のゲートウェイ。外部接続（TCU・OBD-II・IVI）側と、走行系ネットワークの間の防壁になるため、ルーティングとフィルタリング、診断要求の認可が要点。"
+    posture: [log, patch]
 
   - id: TCU
     label: "テレマティクスユニット（TCU）"
@@ -88,6 +92,7 @@ components:
     color: "bg-transparent"
     description: "携帯電話網で車両とクラウドをつなぐ通信ユニット。車外から到達できる外部接続面であり、SIM と通信の認証鍵、車両の位置・走行情報を扱う。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, CREDENTIAL, LOG]
+    posture: [log, patch]
 
   - id: IVI
     label: "車載インフォテインメント（IVI）"
@@ -97,6 +102,7 @@ components:
     color: "bg-transparent"
     description: "ナビ・音楽・スマートフォン連携などを提供する車載の情報娯楽システム。Bluetooth・USB・Wi-Fi・アプリなど利用者側の入口が多い外部接続面で、連絡先や位置履歴などの個人情報を保持する。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, CREDENTIAL, LOG]
+    posture: [patch]
 
   - id: IN_VEHICLE_NETWORK
     label: "車載ネットワーク"
@@ -121,6 +127,7 @@ components:
     shape: rounded
     color: "bg-transparent"
     description: "他車両・路側機・歩行者と無線で通信する車載器（V2X OBU）。外部から電波で到達できる接続面で、メッセージ署名用の証明書と秘密鍵を持ち、位置情報を送信する。"
+    posture: [patch]
 
   - id: V2X_RSU
     label: "路側機（RSU）"
@@ -129,6 +136,7 @@ components:
     shape: rounded
     color: "bg-transparent"
     description: "道路沿いに設置され、車両へ信号・交通情報を送り、車両からの情報を受ける路側機（V2X RSU）。屋外に設置され物理的に近づける外部接続面で、メッセージ署名用の証明書と秘密鍵を持つ。"
+    posture: [patch]
 
   - id: DIAGNOSTIC_TOOL
     label: "診断機"
@@ -137,6 +145,7 @@ components:
     shape: rounded
     color: "bg-transparent"
     description: "整備工場・販売店で車両の診断やリプログラミング（ソフトウェア書き換え）に使う診断ツール。車載ネットワークへ高い権限で接続でき、ECU の認可に使う資格情報も扱うため、ツールと利用者の認証が要点。"
+    posture: [patch]
 
   - id: EV_CHARGER
     label: "EV充電器"
@@ -145,6 +154,7 @@ components:
     shape: rounded
     color: "bg-transparent"
     description: "電気自動車を充電する設備。車両とは充電ケーブル経由で ISO 15118 により、充電事業者のバックエンドとは OCPP により通信する。Plug & Charge の証明書と、利用者の認証・課金情報を扱う。"
+    posture: [patch]
 
   - id: OTA_SERVER
     label: "OTA配信サーバー"
@@ -154,6 +164,7 @@ components:
     color: "bg-transparent"
     description: "ソフトウェア更新パッケージに署名し、車両へ無線（OTA）で配信するサーバー。署名鍵が漏れると全車両に不正な更新を配れるため、署名鍵の保護と更新の検証が要点。UN-R156（SUMS）の対象になる。"
     canContain: [SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]
+    posture: [log, patch]
 
   - id: VEHICLE_PKI
     label: "車両PKI"
@@ -163,6 +174,7 @@ components:
     color: "bg-transparent"
     description: "ECU・V2X（SCMS など）・Plug & Charge の証明書を発行・失効する認証基盤。ルート CA と中間 CA の秘密鍵が全車両の信頼の根になるため、鍵の保護と失効管理が要点。"
     canContain: [CREDENTIAL, LOG]
+    posture: [log]
 
   - id: ADAS_SENSOR
     label: "ADASセンサー"
@@ -171,3 +183,4 @@ components:
     shape: rounded
     color: "bg-transparent"
     description: "運転支援・自動運転のためのカメラ・LiDAR・レーダー・GNSS。電波・光・画像を直接受け取る物理的な入力面で、偽の信号を与えて認識を欺く攻撃（スプーフィング・ジャミング）が要点。"
+    posture: [patch]

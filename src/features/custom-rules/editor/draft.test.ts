@@ -9,6 +9,27 @@ import {
 
 /** 代表ルール群（すべて draftToRule が出力する正規化形）。 */
 const fixtures: Record<string, ThreatRule> = {
+  // エディタ UI 未対応の軸（posture / containsType）が、開いて保存しても消えないこと
+  nodePostureAxes: {
+    id: 'node-posture-001',
+    framework: 'STRIDE',
+    category: 'Information Disclosure',
+    severity: 'Medium',
+    description: 'posture axes survive the editor',
+    appliesTo: {
+      kind: 'node',
+      nodeType: 'DATABASE',
+      connection: { required: false },
+      posture: { encryptionAtRest: ['None', 'Unknown'] },
+      containsType: ['PERSONAL_INFO'],
+      conditions: [
+        {
+          when: { posture: { logRetention: ['Under90Days'] }, containsType: ['CONFIDENTIAL_INFO'] },
+          severity: 'High',
+        },
+      ],
+    },
+  },
   nodeSingle: {
     id: 'node-single-001',
     framework: 'STRIDE',

@@ -89,6 +89,8 @@ const enCore: Partial<Record<TranslationKey, string>> = {
   'appliesToSummary.node.agentAttributes': 'Agent attributes: {conditions}',
   'appliesToSummary.node.identityAxes': 'Identity conditions: {conditions}',
   'appliesToSummary.node.segment': 'Segment conditions: {conditions}',
+  'appliesToSummary.node.posture': 'Operational posture conditions (unset counts as no countermeasure): {conditions}',
+  'appliesToSummary.node.containsType': 'The node must contain one of these as a child: {types}.',
   'appliesToSummary.edge.when': 'Edge conditions: {conditions}',
   'appliesToSummary.edge.allOf': 'Edge conditions (all must hold): {groups}',
   'appliesToSummary.edge.anyOf': 'Edge conditions (any may hold): {groups}',

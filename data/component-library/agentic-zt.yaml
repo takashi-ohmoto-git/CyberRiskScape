@@ -37,6 +37,7 @@ components:
     shape: rounded
     color: "bg-violet-600"
     description: "Model Context Protocol サーバ。ツール記述子・スキーマ・メタデータをエージェントに提供する。tool poisoning / rug pull の標的になりやすい。"
+    posture: [log, patch]
 
   - id: MEMORY_STORE
     label: "エージェントメモリ"
@@ -46,6 +47,7 @@ components:
     color: "bg-violet-600"
     description: "エージェントの長期メモリ・要約・統計記憶。memory poisoning や cross-session privilege retention の起点。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, CREDENTIAL, LOG, OTHER_DOCUMENT]
+    posture: [log, encryptionAtRest]
 
   - id: SUB_AGENT
     label: "サブエージェント"

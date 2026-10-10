@@ -56,6 +56,7 @@ components:
     color: "bg-transparent"
     description: "電話交換機・コンタクトセンター基盤（PSTN / SIP、クラウド型コンタクトセンターを含む）。通話の着信・転送・録音を担う。"
     canContain: [VOICE_RECORDING, PERSONAL_INFO, LOG]
+    posture: [log, patch, accountReview]
 
   - id: IVR
     label: "IVR"
@@ -64,6 +65,7 @@ components:
     shape: rounded
     color: "bg-transparent"
     description: "自動音声応答（Interactive Voice Response）。番号入力や音声で通話を振り分け、本人確認や手続きを自動化する。"
+    posture: [log, patch]
 
   - id: HUMAN_OPERATOR
     label: "有人オペレーター"
