@@ -24,7 +24,7 @@ export function RiskTreatmentEditor({ threat }: { threat: ThreatView }) {
   const clearSuppression = useDiagramStore((s) => s.clearSuppression);
 
   const current = threat.suppression;
-  const [status, setStatus] = useState<SuppressionStatus>(current?.status ?? 'reduce');
+  const [status, setStatus] = useState<SuppressionStatus>(current?.status ?? 'accepted');
   const [note, setNote] = useState(current?.note ?? '');
 
   const trimmed = note.trim();
