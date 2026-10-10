@@ -46,7 +46,7 @@ components:
   - id: ROUTER
     label: "ルーター / L3スイッチ"
     category: NETWORK
-    icon: { kind: builtin, name: "router" }
+    icon: { kind: builtin, name: "network" }
     shape: rounded
     color: "bg-transparent"
     description: "ルーター / L3 スイッチ。通常は暗号を透過する。IPsec 有効時は外側に暗号トンネルを付ける。クラウドでは AWS Transit Gateway・NAT ゲートウェイ / Azure Virtual WAN・NAT Gateway / Google Cloud Router・Cloud NAT / OCI DRG・NAT ゲートウェイ等が該当する（いずれも暗号は透過）。"
@@ -70,7 +70,7 @@ components:
   - id: VPN_GATEWAY
     label: "VPNゲートウェイ"
     category: NETWORK
-    icon: { kind: builtin, name: "cable" }
+    icon: { kind: builtin, name: "lock" }
     shape: rounded
     color: "bg-transparent"
     description: "VPN ゲートウェイ。IPsec / SSL-VPN のトンネルを終端する。トンネル内の通信の暗号は変えない（SSL-VPN のリバースプロキシ型は終端する）。クラウドでは AWS Site-to-Site VPN・Client VPN / Azure VPN Gateway / Google Cloud VPN / OCI Site-to-Site VPN 等が該当する。"
@@ -78,7 +78,7 @@ components:
   - id: WIRELESS_AP
     label: "無線アクセスポイント"
     category: NETWORK
-    icon: { kind: builtin, name: "antenna" }
+    icon: { kind: builtin, name: "router" }
     shape: rounded
     color: "bg-transparent"
     description: "無線アクセスポイント。WPA2 / WPA3 で無線区間を暗号化する。EAP-TLS では証明書を使う。"
@@ -166,7 +166,7 @@ components:
   - id: PRIVATE_ENDPOINT
     label: "プライベートエンドポイント"
     category: NETWORK
-    icon: { kind: builtin, name: "plug" }
+    icon: { kind: builtin, name: "link" }
     shape: rounded
     color: "bg-transparent"
     description: "プライベートエンドポイント。クラウドサービスへ閉域で接続する入口で、暗号は透過する（TLS を終端するのは接続先のサービス）。クラウドでは AWS PrivateLink（インターフェイス VPC エンドポイント）/ Azure Private Link（プライベートエンドポイント）/ Google Cloud Private Service Connect / OCI プライベートエンドポイント等が該当する。"
@@ -174,7 +174,7 @@ components:
   - id: SERVICE_MESH
     label: "サービスメッシュ"
     category: NETWORK
-    icon: { kind: builtin, name: "network" }
+    icon: { kind: builtin, name: "waypoints" }
     shape: rounded
     color: "bg-transparent"
     description: "サービスメッシュ。各サービスのサイドカー（またはノードのプロキシ）がサービス間の mTLS を終端・再接続する。アプリとサイドカーの間は平文のことが多い。クラウドでは Amazon VPC Lattice・ECS Service Connect / AKS の Istio アドオン / Google Cloud Service Mesh / OCI Service Mesh 等が該当する。"

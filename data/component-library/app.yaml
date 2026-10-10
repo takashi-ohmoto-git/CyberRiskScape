@@ -80,7 +80,7 @@ components:
   - id: CRM
     label: "CRM"
     category: APP
-    icon: { kind: builtin, name: "users" }
+    icon: { kind: builtin, name: "handshake" }
     shape: rounded
     color: "bg-transparent"
     description: "CRM（顧客管理）アプリ。認可状況・所有状況を属性で設定する。"

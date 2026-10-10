@@ -33,7 +33,7 @@ components:
   - id: MCP_SERVER
     label: "MCPサーバー"
     category: AI
-    icon: { kind: builtin, name: "settings" }
+    icon: { kind: builtin, name: "plug-zap" }
     shape: rounded
     color: "bg-violet-600"
     description: "Model Context Protocol サーバ。ツール記述子・スキーマ・メタデータをエージェントに提供する。tool poisoning / rug pull の標的になりやすい。"
@@ -41,7 +41,7 @@ components:
   - id: MEMORY_STORE
     label: "エージェントメモリ"
     category: AI
-    icon: { kind: builtin, name: "hard-drive" }
+    icon: { kind: builtin, name: "memory-stick" }
     shape: data-store
     color: "bg-violet-600"
     description: "エージェントの長期メモリ・要約・統計記憶。memory poisoning や cross-session privilege retention の起点。"

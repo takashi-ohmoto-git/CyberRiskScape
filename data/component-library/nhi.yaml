@@ -51,7 +51,7 @@ components:
   - id: WORKLOAD_IDENTITY
     label: "ワークロードID"
     category: IDENTITY
-    icon: { kind: builtin, name: "container" }
+    icon: { kind: builtin, name: "badge-check" }
     shape: rounded
     color: "bg-fuchsia-600"
     description: "IAM ロール・マネージド ID・ワークロード ID 連携など、実行基盤の証明をもとに短命の資格情報を受け取るワークロードの ID。"
@@ -60,7 +60,7 @@ components:
   - id: OAUTH_CLIENT
     label: "OAuthクライアント"
     category: IDENTITY
-    icon: { kind: builtin, name: "key-square" }
+    icon: { kind: builtin, name: "ticket" }
     shape: rounded
     color: "bg-fuchsia-600"
     description: "client credentials などで API にアクセスするサービスアプリ・M2M クライアント。クライアントシークレットまたは秘密鍵と、許可されたスコープを持つ。"

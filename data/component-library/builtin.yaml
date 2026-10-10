@@ -68,7 +68,7 @@ components:
   - id: LLM
     label: "LLMモデル"
     category: AI
-    icon: { kind: builtin, name: "cpu" }
+    icon: { kind: builtin, name: "brain" }
     shape: rounded
     color: "bg-violet-600"
     description: "大規模言語モデル（推論API、ホスト型、ローカル型を含む）。"
@@ -85,7 +85,7 @@ components:
   - id: TOOL
     label: "外部ツール / API"
     category: AI
-    icon: { kind: builtin, name: "settings" }
+    icon: { kind: builtin, name: "wrench" }
     shape: rounded
     color: "bg-violet-600"
     description: "エージェントが呼び出す外部ツール／API（function calling 先）。"
@@ -93,7 +93,7 @@ components:
   - id: AGENT
     label: "AIエージェント"
     category: AI
-    icon: { kind: builtin, name: "layers" }
+    icon: { kind: builtin, name: "sparkles" }
     shape: rounded
     color: "bg-violet-600"
     description: "計画・ツール選択・推論を自律的に行う AI エージェント。"
@@ -129,7 +129,7 @@ components:
   - id: IOT
     label: "IoT"
     category: USERS_DEVICES
-    icon: { kind: builtin, name: "wifi" }
+    icon: { kind: builtin, name: "cctv" }
     shape: rounded
     color: "bg-yellow-600"
     description: "IoT 機器・組込デバイス。多くは Unmanaged 扱い。"
@@ -137,7 +137,7 @@ components:
   - id: GATEWAY
     label: "APIゲートウェイ"
     category: NETWORK
-    icon: { kind: builtin, name: "activity" }
+    icon: { kind: builtin, name: "log-in" }
     shape: rounded
     color: "bg-transparent"
     description: "API ゲートウェイ／リバースプロキシ。境界での認可と流入制御を担う。クラウドでは Amazon API Gateway / Azure API Management / Google Cloud API Gateway・Apigee / OCI API Gateway 等が該当する。"
@@ -169,7 +169,7 @@ components:
   - id: DIRECTORY
     label: "ディレクトリ"
     category: IDENTITY
-    icon: { kind: builtin, name: "users" }
+    icon: { kind: builtin, name: "book-user" }
     shape: rounded
     color: "bg-fuchsia-600"
     description: "ディレクトリサービス（Active Directory / LDAP）。利用者・グループ・権限とその資格情報を保持する ID の格納先であり、自身も認証（Kerberos 等）を行う。トークン発行やフェデレーションを担う場合は IdP を使う。"

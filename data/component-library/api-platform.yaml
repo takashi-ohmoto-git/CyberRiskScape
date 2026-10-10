@@ -76,7 +76,7 @@ components:
   - id: SECRETS_VAULT
     label: "シークレット管理"
     category: IDENTITY
-    icon: { kind: builtin, name: "vault" }
+    icon: { kind: builtin, name: "folder-key" }
     shape: rounded
     color: "bg-fuchsia-600"
     description: "API キー・トークン・証明書を保管し、実行時に払い出すシークレット管理（Vault / KMS 等）。"
@@ -86,7 +86,7 @@ components:
   - id: API_DEV_WORKSPACE
     label: "API開発ツール"
     category: APP
-    icon: { kind: builtin, name: "send" }
+    icon: { kind: builtin, name: "square-terminal" }
     shape: rounded
     color: "bg-transparent"
     description: "API 開発・テストツールのワークスペース。リクエストのコレクション・環境変数・モックを保持し、クラウドで共有されることが多い。"

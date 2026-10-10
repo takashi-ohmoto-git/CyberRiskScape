@@ -82,7 +82,7 @@ components:
   - id: VOICEPRINT_AUTH
     label: "声紋認証"
     category: IDENTITY
-    icon: { kind: builtin, name: "fingerprint" }
+    icon: { kind: builtin, name: "audio-waveform" }
     shape: rounded
     color: "bg-fuchsia-600"
     description: "声の特徴で本人確認を行う生体認証。声紋テンプレートを保持し、なりすまし（録音再生・音声合成）が主な脅威。"
@@ -116,7 +116,7 @@ components:
   - id: AVATAR
     label: "アバター"
     category: CONTACT_CENTER
-    icon: { kind: builtin, name: "scan-face" }
+    icon: { kind: builtin, name: "smile" }
     shape: rounded
     color: "bg-transparent"
     description: "アバター・デジタルヒューマン。映像と音声で利用者に応対する。顔・声の取り扱いとなりすましに注意。"
