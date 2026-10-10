@@ -114,7 +114,8 @@ rules:
       # 入力流入が前提条件。inbound 経路があるときのみ発火する。
       connection:
         direction: inbound
-        peerType: [DB, TOOL, EXTERNAL_ENTITY, DATA_STORE, CONNECTOR, MEMORY_STORE]
+        # 業務 DB のレコードやストレージ上のファイルも、第三者が書き込める内容を LLM に運ぶ経路になるため加える。
+        peerType: [DB, TOOL, EXTERNAL_ENTITY, DATA_STORE, CONNECTOR, MEMORY_STORE, DATABASE, STORAGE]
     references:
       - title: "MITRE ATLAS AML.T0051 LLM Prompt Injection"
         url: "https://atlas.mitre.org/techniques/AML.T0051"

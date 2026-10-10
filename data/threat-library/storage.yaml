@@ -1,0 +1,172 @@
+# データの保管先（storage コンポーネントライブラリの 4 型：DATABASE / STORAGE / BACKUP_STORAGE /
+# IMMUTABLE_BACKUP）の固有脅威。ストレージの公開設定の誤り、ランサムウェアによるバックアップの破壊、
+# 復元テストの欠如による復旧不能、イミュータブルバックアップの保持ロックの解除を扱う。
+# バックアップの鍵ラッピングによる HNDL など PQC に直結するものは pqc.yaml に置く。
+#
+# 出典（一般的な基準のみを根拠とする。個別の事故報告は出典・事例に用いない）:
+#   - NIST SP 800-209 "Security Guidelines for Storage Infrastructure"
+#     （ストレージ・バックアップの保護、管理権限の分離、データ保護の検証）。
+#   - NIST SP 800-34 Rev.1 "Contingency Planning Guide for Federal Information Systems"
+#     （バックアップと復旧手順、計画の試験・訓練）。
+#   - NIST IR 8374 "Ransomware Risk Management: A Cybersecurity Framework Profile"
+#     （ランサムウェア対策としてのバックアップの保護と復旧）。
+#   - CISA "#StopRansomware Guide"（オフライン・イミュータブルなバックアップと復元の試験）。
+#   - クラウド事業者の公式ドキュメント（Amazon S3 のパブリックアクセスのブロック、Amazon S3 Object Lock、
+#     AWS Backup Vault Lock、Azure Blob Storage の不変ストレージ、Google Cloud Storage のバケットロック）。
+#   本文は逐語転載せず日本語要約のみ。
+#
+#   SPDX-License-Identifier: Apache-2.0
+#   ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+#   出典の帰属表示は NOTICE を参照。
+#
+# 重複回避方針:
+#   DATABASE は既存のストア向けルールの対象を広げることで足り、本ファイルに専用ルールを置かない:
+#   - 情報漏洩 / 改ざん / 監査追跡不能 → stride-data-store-*-001（canonicalId: data-store-info-disclosure /
+#     data-store-tampering / data-store-repudiation）に DATABASE（改ざん・否認は STORAGE も、情報漏洩は
+#     バックアップ 2 型も）を追加した。
+#   - 長期機密データの HNDL・CBOM 欠如・crypto-agility → pqc.yaml の各ルールに追加した。
+#   - 未管理端末・境界外からの直接到達・VPN の広域到達・外部協働者 → stride-ai.yaml / zero-trust-access.yaml
+#     の各エッジルールの targetType に DATABASE / STORAGE を追加した。
+#   本ファイルが新規に追加するのは、既存に同義のルールが無い 4 脅威:
+#   - STORAGE の公開設定の誤り → 汎用の情報漏洩（data-store-info-disclosure）の特化版。公開設定という
+#     固有の機構と対策（パブリックアクセスのブロック等）を持つため別 canonicalId とし、STORAGE には汎用の
+#     情報漏洩のルールを当てない（同じノードに情報漏洩のカードを 2 枚出さない）。境界外からの直接到達を
+#     図に描いた場合は stride-edge-internet-exposed-sensitive-001（エッジ）が別 subject で出る。
+#   - BACKUP_STORAGE のランサムウェアによる破壊 → 汎用の改ざん（data-store-tampering）とは「本番と同じ
+#     資格情報・ドメイン・ネットワークから到達できる」という固有の原因と、復旧手段が失われる影響を持つため
+#     別 canonicalId。エージェントの復旧手段の欠如（agent-recovery-gap）とは対象が異なる。
+#   - 復元テストの欠如 → 既存に同義のルールは無い。新規。
+#   - IMMUTABLE_BACKUP の保持ロックの解除 → 既存に同義のルールは無い。新規。特権の集中という点で
+#     pam-privileged-concentration と近いが、対象が保持設定という特定の操作で対策も異なるため別 canonicalId。
+#
+#   攻撃面属性（attackSurface）は FRONT_END_SERVER / GATEWAY でしか入力できないため使わない。
+#   公開設定・資格情報の共有・保持モードはいずれも図に現れない設定の性質のため、内在的な脅威
+#   （connection.required: false）として扱う。
+#
+# mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
+# description は Can/Cannot ペアと blast radius を意識して記述する。
+
+schemaVersion: 1
+
+rules:
+  # ── ストレージの公開設定の誤りによるデータ露出 ─────────────────────────
+  - id: storage-public-access-misconfiguration-001
+    canonicalId: storage-public-access-misconfiguration
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "ストレージの公開設定の誤りによるデータ露出"
+    severity: High
+    description: "{{nodeName}} のバケット・コンテナ・ファイル共有で、公開アクセス（匿名の読み取り・一覧取得）を許すポリシーや ACL、期限の長い共有リンク、Everyone への共有権限が誤って設定されている場合、攻撃者はインターネットからの自動スキャンで {{nodeName}} を見つけ、認証なしで中のファイルを一覧・取得できる（Can）。設定は図に現れないため、構成図ではアプリケーションの内側に置いたつもりのストレージでも公開されていることがある。保管時暗号化も、ストレージ側の鍵で透過的に復号される方式であれば公開アクセスに対しては効かない。一方、アカウント・組織の単位でパブリックアクセスのブロックを強制し、共有リンクと匿名アクセスを無効にしていれば、個々のバケットやフォルダの設定を誤っても外部から読み取ることはできない（Cannot）。blast radius は {{nodeName}} に保管された全ファイル（個人情報・機密情報・ソースコード・資格情報を含み得る）。"
+    mitigation: "[Foundation] アカウント・組織の単位でパブリックアクセスのブロック（Amazon S3 Block Public Access、Azure の匿名アクセスの無効化、Google Cloud の公開アクセス防止等）を有効にし、NAS のファイル共有では Everyone・匿名・ゲストのアクセスを無効にする。保管時暗号化を有効にし、資格情報や個人情報をストレージに置く場合は利用者側の鍵（顧客管理鍵）で暗号化する。 [Enterprise] 公開設定・共有リンク・アクセスポリシーの変更を構成監視（CSPM 等）で継続的に検出し、組織のポリシー（SCP・Azure Policy・組織ポリシー）で公開設定そのものを禁止する。公開が必要なコンテンツは専用のストレージに分け、CDN の署名付き URL 経由でのみ配信する。 [Advanced] ストレージへのアクセスをプライベートエンドポイントと VPC 内からに限定し、データの分類に応じて公開可能なストレージを自動で隔離する。"
+    appliesTo:
+      kind: node
+      nodeType: STORAGE
+      # 公開設定は図に現れない設定の性質で、接続関係に依存しない内在リスク（誤設定は描いた経路と無関係に起きる）。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "NIST SP 800-209 - Security Guidelines for Storage Infrastructure"
+        url: "https://csrc.nist.gov/pubs/sp/800/209/final"
+      - title: "Amazon S3 User Guide - Blocking public access to your Amazon S3 storage"
+        url: "https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html"
+
+  # ── ランサムウェアによるバックアップの削除・暗号化 ─────────────────────
+  - id: storage-backup-ransomware-destruction-001
+    canonicalId: backup-ransomware-destruction
+    framework: STRIDE
+    category: "Tampering"
+    name: "ランサムウェアによるバックアップの削除・暗号化"
+    severity: High
+    description: "{{nodeName}} を本番と同じ資格情報・同じ Active Directory ドメインで管理している、または本番と同じネットワークから管理画面・共有フォルダ・バックアップソフトのコンソールに到達できる場合、本番に侵入してドメイン管理者などの権限を得た攻撃者は、本番を暗号化する前に {{nodeName}} の世代を削除・暗号化し、保持期間を短縮して、復旧手段を奪える（Can）。ランサムウェアの攻撃者は復旧を妨げるためにバックアップを先に狙うことが知られており、バックアップが本番と一緒に失われると、身代金の支払い以外に業務を戻す手段が無くなる。一方、バックアップを本番とは別の資格情報・別の管理ドメイン（多要素認証つき）で管理し、本番のネットワークから管理面へ到達できず、さらにオフラインかイミュータブル（WORM / オブジェクトロック）の複製を持っていれば、本番の管理者権限を奪っても全世代を消すことはできない（Cannot）。blast radius は {{nodeName}} が保護する全システムの復旧手段。"
+    mitigation: "[Foundation] バックアップの管理アカウントを本番のドメイン・資格情報から切り離し、多要素認証を必須にする。本番のネットワークからバックアップの管理面・保管先へ到達できないようにする。少なくとも 1 つの複製をオフラインかイミュータブル（WORM / オブジェクトロック）で保管する（3-2-1 の考え方）。 [Enterprise] バックアップの削除・保持期間の変更・暗号化設定の変更に複数人の承認を求め、これらの操作と大量削除を監視して即時に通知する。バックアップは別アカウント・別テナントの保管庫へ複製する。 [Advanced] イミュータブルな複製を本番とは別の組織・別の管理者が管理する隔離環境（クリーンルーム）に置き、復元前にマルウェアの検査を自動で行う。"
+    appliesTo:
+      kind: node
+      nodeType: BACKUP_STORAGE
+      # 資格情報・ドメインの共有と管理面への到達性は図に現れない運用の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-11"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "RC.RP-03"
+    references:
+      - title: "NIST IR 8374 - Ransomware Risk Management: A Cybersecurity Framework Profile"
+        url: "https://csrc.nist.gov/pubs/ir/8374/final"
+      - title: "CISA - #StopRansomware Guide（オフライン・イミュータブルなバックアップ）"
+        url: "https://www.cisa.gov/stopransomware/ransomware-guide"
+      - title: "NIST SP 800-209 - Security Guidelines for Storage Infrastructure（管理権限の分離）"
+        url: "https://csrc.nist.gov/pubs/sp/800/209/final"
+
+  # ── 復元テストの欠如による復旧不能 ───────────────────────────────
+  - id: storage-backup-restore-untested-001
+    canonicalId: backup-restore-untested
+    framework: STRIDE
+    category: "Denial of Service"
+    name: "復元テストの欠如による復旧不能"
+    severity: Medium
+    description: "{{nodeName}} からの復元を定期的に試していない場合、バックアップジョブが成功と表示されていても、対象の漏れ・データの破損・暗号鍵の紛失・復元手順や依存関係（ID 基盤・DNS・ライセンス等）の欠落に、障害やランサムウェアの被害を受けてから気付く。攻撃者が直接起こす脅威ではないが、侵害や障害が起きたときに復旧できない、または目標復旧時間（RTO）を大きく超える（Can）。また、ランサムウェアが潜伏期間中にバックアップへ入り込んでいると、どの世代まで戻ればよいかも分からない。一方、本番相当の環境へ定期的に復元し、所要時間と復元後のデータの整合性を確かめていれば、復旧できないことは事前に判明し、手順と鍵の不備を平時に直せる（Cannot）。blast radius は {{nodeName}} に依存して復旧するすべてのシステム。"
+    mitigation: "[Foundation] 重要システムについて、本番とは別の環境への復元テストを定期的に（少なくとも年 1 回、変更時にも）行い、所要時間を目標復旧時間（RTO）・目標復旧時点（RPO）と比べて記録する。復元に必要な暗号鍵・資格情報・手順書をバックアップとは別の場所に保管する。 [Enterprise] 復元テストを自動化して世代ごとに整合性を検証し、ID 基盤・DNS など依存するシステムを含めた全体の復旧訓練を行う。復元前にマルウェアの検査を行い、汚染されていない世代を特定できるようにする。 [Advanced] 隔離された復旧環境（クリーンルーム）への全面的な復旧を定期的に演習し、結果を事業継続計画と目標値の見直しに反映する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: BACKUP_STORAGE
+        - nodeType: IMMUTABLE_BACKUP
+      # 復元テストの有無は運用の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-11"
+      - standard: nist-csf-2.0
+        ref: "ID.IM-04"
+      - standard: nist-csf-2.0
+        ref: "RC.RP-01"
+    references:
+      - title: "NIST SP 800-34 Rev.1 - Contingency Planning Guide for Federal Information Systems（計画の試験・訓練）"
+        url: "https://csrc.nist.gov/pubs/sp/800/34/r1/upd1/final"
+      - title: "CISA - #StopRansomware Guide（バックアップの復元の試験）"
+        url: "https://www.cisa.gov/stopransomware/ransomware-guide"
+      - title: "NIST IR 8374 - Ransomware Risk Management: A Cybersecurity Framework Profile"
+        url: "https://csrc.nist.gov/pubs/ir/8374/final"
+
+  # ── イミュータブルバックアップの保持ロックの解除・短縮 ──────────────────
+  - id: storage-immutable-retention-lock-bypass-001
+    canonicalId: immutable-retention-lock-bypass
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "管理者権限による保持ロックの解除・短縮"
+    severity: High
+    description: "{{nodeName}} の保持ロックがガバナンスモード（特別な権限を持つ利用者なら解除・短縮できる方式）で設定されている、保持期間の設定や保管庫・バケットの削除を変更できる権限がクラウドの管理者アカウント・ルートアカウント・ストレージ装置の管理者に集中している、または保持期間が切れたあとの世代が自動で消える設定のまま期間が短い場合、その権限を奪った攻撃者は保持ロックを外すか短縮し、期限切れを待って、あるいはその場で世代を削除できる（Can）。オンプレミスの装置では、管理者がシステム時刻を進めて保持期限を早めに到来させる手口も成立し得る。一方、コンプライアンスモード（ルートを含む誰も保持期間中は解除・短縮できない方式。Amazon S3 Object Lock のコンプライアンスモード、AWS Backup Vault Lock のコンプライアンスモード、Azure のロックされた時間ベースの保持ポリシー、Google Cloud Storage のロックされた保持ポリシー等）で設定し、保管庫を別アカウントに置いていれば、本番や管理者アカウントを奪っても保持期間中の世代は消せない（Cannot）。blast radius は {{nodeName}} が最後の砦として守る全システムの復旧手段。"
+    mitigation: "[Foundation] 保持ロックの方式（ガバナンスモードかコンプライアンスモードか、ロック済みか）と保持期間、保持設定を変えられる権限の持ち主を棚卸しする。復旧の最後の砦にする世代はコンプライアンスモード（ロック済み）にし、ガバナンスモードを解除できる権限（解除用の特権）は日常の管理者に与えない。 [Enterprise] イミュータブルの保管庫を本番とは別のアカウント・テナントに置き、保持設定と保管庫の削除を変更できる権限を組織のポリシーで制限する。保持設定の変更・解除の試行・時刻設定の変更を監視して即時に通知する。保持期間はランサムウェアの潜伏期間を見込んで決める。 [Advanced] 保持設定の変更に複数人の承認を必須にし、オンプレミスの装置では時刻源を改ざんできない構成（保護された NTP・装置内の改ざん耐性のある時計）にする。イミュータブルな複製を本番とは別の管理者が管理する隔離環境に置く。"
+    appliesTo:
+      kind: node
+      nodeType: IMMUTABLE_BACKUP
+      # 保持モードと権限の持ち主は設定の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-11"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "Amazon S3 User Guide - Locking objects with Object Lock（ガバナンスモードとコンプライアンスモード）"
+        url: "https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html"
+      - title: "AWS Backup Developer Guide - AWS Backup Vault Lock"
+        url: "https://docs.aws.amazon.com/aws-backup/latest/devguide/vault-lock.html"
+      - title: "Microsoft Learn - Store business-critical blob data with immutable storage"
+        url: "https://learn.microsoft.com/en-us/azure/storage/blobs/immutable-storage-overview"
+      - title: "Google Cloud Storage - Bucket Lock"
+        url: "https://cloud.google.com/storage/docs/bucket-lock"
+      - title: "NIST SP 800-209 - Security Guidelines for Storage Infrastructure"
+        url: "https://csrc.nist.gov/pubs/sp/800/209/final"

@@ -102,6 +102,9 @@ import {
   Equal,
   Square,
   CircleDot,
+  DatabaseZap,
+  DatabaseBackup,
+  BookLock,
   type LucideIcon,
 } from 'lucide-react';
 import { cloneElement, createElement, type ReactElement } from 'react';
@@ -216,6 +219,9 @@ const BUILTIN_ICONS: Record<string, LucideIcon> = {
   equal: Equal,
   square: Square,
   'circle-dot': CircleDot,
+  'database-zap': DatabaseZap,
+  'database-backup': DatabaseBackup,
+  'book-lock': BookLock,
 };
 
 const FALLBACK_ICON: LucideIcon = HelpCircle;

@@ -141,6 +141,8 @@ rules:
     name: "Direct Exposure Across a Trust Boundary"
     description: "{{sourceName}} sits outside the trust boundary (treated as Internet) and can reach {{targetName}} directly. This configuration carries an extremely high risk of becoming the starting point for prompt injection, model extraction, or data exfiltration."
     mitigation: "Place a Gateway/WAF in front of the boundary to block direct external access. Switch to a closed network path (VPC/PrivateLink), or relocate the sensitive component inside the Internal boundary."
+    conditions:
+      - description: "{{sourceName}} sits outside the trust boundary (treated as Internet) and can reach the data store {{targetName}} inside the boundary directly. An attacker can target the sign-in page, management ports, or API of {{targetName}} directly and, through credential brute-forcing or exploitation of known vulnerabilities, read or delete its data in bulk (Can). If access is routed through an application server or gateway and no path from the internet to {{targetName}} itself exists, the attacker must first break through that front tier (Cannot). The blast radius is all data stored in {{targetName}}."
 
   stride-ai-supplier-model-input-log-leak-001:
     category: "Information Disclosure"

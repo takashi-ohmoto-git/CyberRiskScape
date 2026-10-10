@@ -79,7 +79,7 @@ components:
   - id: DB
     label: "ベクターDB / RAG"
     category: AI
-    icon: { kind: builtin, name: "database" }
+    icon: { kind: builtin, name: "database-zap" }
     shape: rounded
     color: "bg-violet-600"
     description: "埋め込みベクトルや RAG インデックスを保持するストア。"

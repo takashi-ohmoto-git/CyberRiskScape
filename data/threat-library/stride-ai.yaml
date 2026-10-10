@@ -176,7 +176,16 @@ rules:
     mitigation: "保管時暗号化、列レベル暗号化、アクセス制御リストの最小化。"
     appliesTo:
       kind: node
-      nodeType: DATA_STORE
+      # storage ライブラリの業務 DB とバックアップ 2 型にも同じ脅威（アクセス制御・保管時暗号化の不備）が
+      # そのまま当てはまるため対象に加える（バックアップは本番と同じデータの複製で、暗号化されずに
+      # 持ち出される経路になりやすい。NIST SP 800-209 もバックアップの暗号化を求める）。
+      # STORAGE は公開設定の誤りを扱う storage-public-access-misconfiguration-001 が保管時暗号化も
+      # 含めて扱うため、ここには加えない（同じノードに情報漏えいのカードを 2 枚出さない）。
+      anyOf:
+        - nodeType: DATA_STORE
+        - nodeType: DATABASE
+        - nodeType: BACKUP_STORAGE
+        - nodeType: IMMUTABLE_BACKUP
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.DS-01"
@@ -193,7 +202,13 @@ rules:
     mitigation: "ハッシュ・MAC による整合性検証、変更履歴の保全。"
     appliesTo:
       kind: node
-      nodeType: DATA_STORE
+      # 業務 DB・ストレージにも同じ脅威（書込権限の過大付与・整合性検証の欠如）が当てはまるため加える。
+      # バックアップ 2 型は加えない。バックアップの破壊・暗号化は storage.yaml のランサムウェアのルール、
+      # イミュータブルバックアップの保持ロック解除は同ファイルの保持ロックのルールが扱う。
+      anyOf:
+        - nodeType: DATA_STORE
+        - nodeType: DATABASE
+        - nodeType: STORAGE
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.DS-01"
@@ -208,7 +223,12 @@ rules:
     mitigation: "WORM ストレージ、改ざん検知ログ、外部システムへのログ転送。"
     appliesTo:
       kind: node
-      nodeType: DATA_STORE
+      # 業務 DB・ストレージのデータ操作にも同じ監査追跡の問いが当てはまるため加える。
+      # バックアップ 2 型の削除・保持設定変更の監査は storage.yaml の各ルールの mitigation で扱う。
+      anyOf:
+        - nodeType: DATA_STORE
+        - nodeType: DATABASE
+        - nodeType: STORAGE
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.PS-04"
@@ -385,7 +405,8 @@ rules:
       when:
         sourceType: [PC, SMARTPHONE, IOT]
         sourceManagedState: [Unmanaged]
-        targetType: [LLM, AGENT, DB, DATA_STORE, GATEWAY]
+        # 業務 DB・ストレージ（storage ライブラリ）も未管理端末から直接触られる機微な保管先のため加える。
+        targetType: [LLM, AGENT, DB, DATA_STORE, GATEWAY, DATABASE, STORAGE]
     complianceRefs:
       - standard: nist-ai-rmf
         ref: "MAP 4.1"
@@ -408,9 +429,16 @@ rules:
     appliesTo:
       kind: edge
       when:
-        targetType: [LLM, AGENT, DB]
+        # 業務 DB・ストレージ（storage ライブラリ）へ境界外から直接到達できる構成も同じ攻撃面の過大さを
+        # 持つため加える。既定の description は AI 前提（プロンプトインジェクション等）のため、
+        # conditions で保管先向けの description に差し替える。
+        targetType: [LLM, AGENT, DB, DATABASE, STORAGE]
         sourceTrust: [Internet]
         targetTrust: [Internal, Partner]
+      conditions:
+        - when:
+            targetType: [DATABASE, STORAGE]
+          description: "{{sourceName}} は信頼境界外（Internet 扱い）にあり、境界内の保管先 {{targetName}} へ直接到達できる構成です。攻撃者は {{targetName}} の認証画面・管理ポート・API を直接狙い、資格情報の総当たりや既知脆弱性の悪用でデータを一括で読み出し・削除できます（Can）。アプリケーションサーバーやゲートウェイを経由させ、{{targetName}} 自体へはインターネットからの経路が存在しない構成であれば、攻撃者はまずその前段を突破しなければなりません（Cannot）。blast radius は {{targetName}} が保管する全データです。"
     complianceRefs:
       - standard: nist-ai-rmf
         ref: "MAP 4.1"

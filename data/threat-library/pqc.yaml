@@ -17,6 +17,7 @@
 #     （対称鍵による鍵ラッピング）。https://csrc.nist.gov/
 #   - NIST FIPS 140-3 "Security Requirements for Cryptographic Modules"。https://csrc.nist.gov/
 #   - IEEE 802.1AE "Media Access Control (MAC) Security"（MACsec による回線の暗号化）。https://standards.ieee.org/
+#   - NIST SP 800-209 "Security Guidelines for Storage Infrastructure"（バックアップの暗号化と鍵管理）。https://csrc.nist.gov/
 #   本文は逐語転載せず日本語要約のみ。クロスマッピングは references にコメント併記する。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -53,6 +54,16 @@
 #     netinfra-dedicated-line-unencrypted-001（canonicalId: plaintext-transmission）が扱う）。
 #     内部値 VPN は専用線と IPsec VPN の両方を含むため、どちらの解釈でも誤りにならない文面にした。
 #
+#   storage コンポーネントライブラリ（DATABASE / STORAGE / BACKUP_STORAGE / IMMUTABLE_BACKUP）に合わせた変更:
+#   - HNDL（ストア宛て経路）の targetType / sourceType に 4 型を追加。CBOM 欠如・crypto-agility には
+#     DATABASE / STORAGE だけを追加（DATA_STORE / DB と同じ「機密データを保持する資産」のため）。
+#   - バックアップの保管時暗号の鍵ラッピングによる HNDL → pqc-backup-key-wrapping-hndl-001（ノード、
+#     バックアップ 2 型）。「今のうちに持ち出して将来復号する」という同じ脅威なので canonicalId:
+#     harvest-now-decrypt-later を共有する（エッジ版とは subject が違うため畳み込まれない）。
+#     HSM の鍵ラッピング（hsm-pqc-key-support-gap）とは対象が鍵の保管装置か、包まれたデータの保管先かで
+#     異なるため別ルールとする。
+#   - バックアップの破壊・保持ロックの解除・復元テストの欠如は PQC ではないため storage.yaml が扱う。
+#
 # framework について:
 #   スキーマの FrameworkSchema は enum ['STRIDE','AI','AgenticAI'] で閉じており、新値 "PQC" の
 #   追加はスキーマ破壊変更となるため行わない（YAML 内表現を優先）。PQC リスクは本質的に
@@ -83,11 +94,14 @@ rules:
     appliesTo:
       kind: edge
       # 長期機密データはストアへ書き込む経路とストアから読み出す経路の両方を流れる
+      # storage ライブラリの 4 型（業務 DB・ストレージ・バックアップ・イミュータブルバックアップ）も
+      # 長期機密データを送受するストアそのものなので加える。特にバックアップへの複製・転送は
+      # 量が多く秘匿期間も長いため、収集の価値が高い。
       anyOf:
         - encryption: [Plain, TLS]
-          targetType: [DATA_STORE, DB]
+          targetType: [DATA_STORE, DB, DATABASE, STORAGE, BACKUP_STORAGE, IMMUTABLE_BACKUP]
         - encryption: [Plain, TLS]
-          sourceType: [DATA_STORE, DB]
+          sourceType: [DATA_STORE, DB, DATABASE, STORAGE, BACKUP_STORAGE, IMMUTABLE_BACKUP]
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.DS-02"
@@ -113,11 +127,16 @@ rules:
     mitigation: "[Foundation] 当該資産で使用する暗号アルゴリズム・鍵長・証明書・暗号ライブラリを台帳化し、量子脆弱な古典暗号（RSA/ECDSA/ECDH）の所在を明示する。 [Enterprise] CBOM を自動生成・継続更新し（依存スキャン・TLS スキャン連携）、CI/CD で量子脆弱アルゴリズムの新規導入を検知・ブロックする。 [Advanced] CBOM を資産インベントリ・PQC 移行ロードマップに統合し、危殆化時に影響資産を即時特定して優先度付き再暗号化を発動できる体制を維持する。"
     appliesTo:
       kind: node
+      # 業務 DB・ストレージ（storage ライブラリ）も機密データを保持する資産で同じ問いが当てはまるため加える。
+      # バックアップ 2 型は加えない。バックアップの暗号の棚卸しは pqc-backup-key-wrapping-hndl-001 の
+      # mitigation で扱う（同じノードに PQC のカードを重ねない）。
       anyOf:
         - nodeType: DATA_STORE
         - nodeType: DB
         - nodeType: GATEWAY
         - nodeType: FRONT_END_SERVER
+        - nodeType: DATABASE
+        - nodeType: STORAGE
       # 暗号インベントリの有無は資産の運用ガバナンスの性質で、接続関係に依存しない内在リスク。
       connection:
         required: false
@@ -182,6 +201,10 @@ rules:
         - nodeType: GATEWAY
         - nodeType: FRONT_END_SERVER
         - nodeType: CONNECTOR
+        # 業務 DB・ストレージ（storage ライブラリ）の保管時暗号にも同じ問いが当てはまるため加える。
+        # バックアップ 2 型は CBOM と同じ理由で加えない。
+        - nodeType: DATABASE
+        - nodeType: STORAGE
       # アルゴリズム差替え可能性は実装設計の性質で、接続関係に依存しない内在リスク。
       connection:
         required: false
@@ -313,3 +336,36 @@ rules:
         url: "https://standards.ieee.org/"
       - title: "NIST SP 800-77 Rev.1 - Guide to IPsec VPNs"
         url: "https://csrc.nist.gov/pubs/sp/800/77/r1/final"
+
+  # ── バックアップの保管時暗号の鍵ラッピングによる HNDL ─────────────────────
+  # 既存 HNDL（経路）と同じ脅威を、長期保管されるバックアップ（ノード）の側から扱う別ルール。
+  - id: pqc-backup-key-wrapping-hndl-001
+    canonicalId: harvest-now-decrypt-later
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "バックアップの鍵ラッピングの量子脆弱性による Harvest Now, Decrypt Later"
+    severity: Medium
+    description: "{{nodeName}} は本番データの複製を年単位で保管する。バックアップのデータ自体は AES 等の共通鍵暗号で暗号化されていても、そのデータ鍵を RSA-OAEP 等の古典的な公開鍵暗号で包んで（鍵ラッピング）バックアップと一緒に保存している場合や、別拠点・クラウドへの複製でデータ鍵を古典暗号で受け渡している場合、攻撃者はバックアップの複製・媒体・転送中の暗号文と包まれた鍵を今のうちに持ち出し、将来の暗号学的に十分な量子計算機（CRQC）で鍵を開いて、保管期間中のすべての世代を復号できる（Can）。バックアップは保持期間が長く、イミュータブルにしたものは期限まで消せないため、CRQC の出現時期を跨いで残りやすい。一方、データ鍵を AES-256 による鍵ラッピング（SP 800-38F）か PQC / ハイブリッドの鍵カプセル化（ML-KEM）で包み、鍵を包む鍵を {{nodeName}} とは別の鍵管理（KMS / HSM）に置いていれば、持ち出された暗号文と包まれた鍵を将来開くことはできない（Cannot）。これは将来時点の復号であり、現在のバックアップの読み出しを直ちに可能にするものではない（現時点のアクセス制御・保管時暗号化の不備は stride-data-store-info-disclosure-001 が扱う）。blast radius は {{nodeName}} に残る全世代のデータのうち、秘匿期間が CRQC の出現時期を超えるもの。"
+    mitigation: "[Foundation] バックアップの暗号方式（データの暗号・データ鍵の包み方・複製時の鍵の受け渡し方式）と、保管するデータの秘匿期間・保持期間を棚卸しし、古典的な公開鍵暗号で鍵を包んでいるバックアップを特定する。 [Enterprise] データ鍵の包み方を AES-256 の鍵ラッピングか PQC / ハイブリッドの鍵カプセル化に切り替え、鍵を包む鍵はバックアップとは別の鍵管理（KMS / HSM）で管理する。別拠点・クラウドへの複製経路は PQC ハイブリッドの鍵交換で暗号化する。 [Advanced] 古典暗号で鍵を包んで保管・複製した世代は収集済みとみなし、秘匿期間の長いものから PQC 対応の鍵で再暗号化する（イミュータブルの世代は保持期限の到来に合わせて新しい鍵の世代へ置き換える）。バックアップの暗号方式を差し替えられる設計に統一する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: BACKUP_STORAGE
+        - nodeType: IMMUTABLE_BACKUP
+      # 鍵の包み方と保持期間はバックアップの設計・運用の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-11"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+    references:
+      - title: "NIST IR 8547 - Transition to Post-Quantum Cryptography Standards"
+        url: "https://csrc.nist.gov/pubs/ir/8547/ipd"
+      - title: "NIST SP 800-38F - Recommendation for Block Cipher Modes of Operation: Methods for Key Wrapping"
+        url: "https://csrc.nist.gov/pubs/sp/800/38/f/final"
+      - title: "NIST SP 800-209 - Security Guidelines for Storage Infrastructure（バックアップの暗号化と鍵管理）"
+        url: "https://csrc.nist.gov/pubs/sp/800/209/final"
+      - title: "NIST FIPS 203 - Module-Lattice-Based Key-Encapsulation Mechanism (ML-KEM)"
+        url: "https://csrc.nist.gov/pubs/fips/203/final"

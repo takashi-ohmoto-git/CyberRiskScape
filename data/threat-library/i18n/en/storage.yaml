@@ -1,0 +1,56 @@
+# English overlay for `data/threat-library/storage.yaml`.
+#
+# The Japanese file is the source of truth: only `name` / `category` / `description` /
+# `mitigation` (plus `conditions[].description` and `references[].title` where present)
+# are translated here, keyed by rule id. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - Keep `{{token}}` placeholders exactly as they appear in the original.
+#   - Keep the `[Foundation]` / `[Enterprise]` / `[Advanced]` markup — the maturity
+#     tiers are re-derived from this text.
+#   - Preserve the Can / Cannot pair and the blast radius statement in `description`.
+#   - `references` is keyed by the index in the original array, and only the entries
+#     that need translating are listed. `url` is never translated.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+rules:
+  storage-public-access-misconfiguration-001:
+    category: "Information Disclosure"
+    name: "Data exposure through storage public-access misconfiguration"
+    description: "When a bucket, container, or file share in {{nodeName}} is mistakenly configured with a policy or ACL that allows public access (anonymous read or listing), a long-lived sharing link, or share permissions granted to Everyone, an attacker can find {{nodeName}} through automated internet scanning and list and download its files without authentication (Can). Because these settings do not appear in the diagram, storage that was meant to sit behind the application can still be public. Encryption at rest does not help against public access if the storage service decrypts transparently with its own keys. On the other hand, if blocking of public access is enforced at the account or organization level and sharing links and anonymous access are disabled, files cannot be read from outside even if an individual bucket or folder is misconfigured (Cannot). The blast radius is every file stored in {{nodeName}} (which may include personal data, confidential information, source code, and credentials)."
+    mitigation: "[Foundation] Enable blocking of public access at the account or organization level (Amazon S3 Block Public Access, disabling anonymous access in Azure, Google Cloud public access prevention, etc.), and disable Everyone, anonymous, and guest access on NAS file shares. Enable encryption at rest, and when storing credentials or personal data, encrypt it with keys you control (customer-managed keys). [Enterprise] Continuously detect changes to public settings, sharing links, and access policies with configuration monitoring (CSPM, etc.), and prohibit public settings outright through organization policy (SCPs, Azure Policy, organization policies). Keep content that must be public in dedicated storage and deliver it only through CDN signed URLs. [Advanced] Restrict storage access to private endpoints and traffic from within the VPC, and automatically isolate storage that can be made public according to data classification."
+
+  storage-backup-ransomware-destruction-001:
+    category: "Tampering"
+    name: "Deletion or encryption of backups by ransomware"
+    description: "When {{nodeName}} is managed with the same credentials or the same Active Directory domain as production, or its management console, shared folders, or backup software console can be reached from the production network, an attacker who has broken into production and obtained privileges such as domain administrator can delete or encrypt the generations in {{nodeName}} and shorten their retention before encrypting production, taking away the means of recovery (Can). Ransomware operators are known to target backups first to prevent recovery, and if backups are lost together with production, there is no way to restore operations other than paying the ransom. On the other hand, if backups are managed with credentials and a management domain separate from production (with multi-factor authentication), the management plane cannot be reached from the production network, and an offline or immutable (WORM / object lock) copy exists, every generation cannot be erased even with production administrator privileges (Cannot). The blast radius is the means of recovery for every system that {{nodeName}} protects."
+    mitigation: "[Foundation] Separate backup administration accounts from the production domain and credentials, and require multi-factor authentication. Make the backup management plane and storage unreachable from the production network. Keep at least one copy offline or immutable (WORM / object lock), following the 3-2-1 approach. [Enterprise] Require approval by multiple people for deleting backups, changing retention periods, or changing encryption settings, and monitor these operations and bulk deletions with immediate alerts. Replicate backups to a vault in a separate account or tenant. [Advanced] Keep immutable copies in an isolated environment (clean room) managed by a different organization and administrators from production, and automatically scan for malware before restoring."
+    references:
+      "1":
+        title: "CISA - #StopRansomware Guide (offline and immutable backups)"
+      "2":
+        title: "NIST SP 800-209 - Security Guidelines for Storage Infrastructure (separation of administrative privileges)"
+
+  storage-backup-restore-untested-001:
+    category: "Denial of Service"
+    name: "Unrecoverable systems due to untested restores"
+    description: "If restores from {{nodeName}} are not tried regularly, missing targets, corrupted data, lost encryption keys, and gaps in restore procedures or dependencies (identity infrastructure, DNS, licenses, etc.) are only discovered after an outage or ransomware incident, even while backup jobs report success. This is not a threat an attacker causes directly, but when a compromise or outage occurs, systems cannot be recovered or recovery far exceeds the recovery time objective (RTO) (Can). And if ransomware has slipped into the backups during its dwell time, it is unclear how far back to roll. On the other hand, if restores to a production-equivalent environment are performed regularly and the time taken and data integrity after restore are checked, an inability to recover is found in advance and gaps in procedures and keys can be fixed in peacetime (Cannot). The blast radius is every system that relies on {{nodeName}} for recovery."
+    mitigation: "[Foundation] For critical systems, regularly test restores to an environment separate from production (at least once a year and whenever changes occur), and record the time taken against the recovery time objective (RTO) and recovery point objective (RPO). Store the encryption keys, credentials, and runbooks needed for restore in a location separate from the backups. [Enterprise] Automate restore testing to verify integrity for each generation, and run end-to-end recovery exercises that include dependent systems such as identity infrastructure and DNS. Scan for malware before restoring so that uncontaminated generations can be identified. [Advanced] Regularly rehearse full recovery into an isolated recovery environment (clean room), and feed the results back into the business continuity plan and the review of recovery objectives."
+    references:
+      "0":
+        title: "NIST SP 800-34 Rev.1 - Contingency Planning Guide for Federal Information Systems (plan testing and exercises)"
+      "1":
+        title: "CISA - #StopRansomware Guide (testing backup restores)"
+
+  storage-immutable-retention-lock-bypass-001:
+    category: "Elevation of Privilege"
+    name: "Removal or shortening of retention locks with administrator privileges"
+    description: "When the retention lock on {{nodeName}} is set in governance mode (a mode in which users with special permissions can remove or shorten it), the permissions to change retention settings or delete the vault or bucket are concentrated in cloud administrator accounts, the root account, or storage appliance administrators, or generations are automatically deleted after a short retention period expires, an attacker who seizes those permissions can remove or shorten the retention lock and delete the generations, either right away or after waiting for them to expire (Can). On on-premises appliances, an administrator moving the system clock forward to make retention expire early may also work. On the other hand, if the lock is set in compliance mode (a mode in which no one, including root, can remove or shorten it during the retention period: compliance mode of Amazon S3 Object Lock, compliance mode of AWS Backup Vault Lock, locked time-based retention policies in Azure, locked retention policies in Google Cloud Storage, etc.) and the vault is kept in a separate account, generations within the retention period cannot be erased even by seizing production or administrator accounts (Cannot). The blast radius is the means of recovery for every system that {{nodeName}} protects as the last line of defense."
+    mitigation: "[Foundation] Inventory the retention lock mode (governance or compliance, and whether it is locked), the retention period, and who holds the permissions to change retention settings. Put the generations that serve as the last line of defense in compliance mode (locked), and do not grant everyday administrators the permission to bypass governance mode. [Enterprise] Keep the immutable vault in an account or tenant separate from production, and restrict the permissions to change retention settings or delete the vault through organization policy. Monitor changes to retention settings, attempts to remove locks, and changes to clock settings, with immediate alerts. Set retention periods with ransomware dwell time in mind. [Advanced] Require approval by multiple people to change retention settings, and on on-premises appliances use a time source that cannot be tampered with (protected NTP, a tamper-resistant clock in the appliance). Keep immutable copies in an isolated environment managed by administrators separate from production."
+    references:
+      "0":
+        title: "Amazon S3 User Guide - Locking objects with Object Lock (governance mode and compliance mode)"

@@ -1,0 +1,69 @@
+# Storage & Databases コンポーネントライブラリ。
+#
+# データの保管先を具体的に描くための 4 型（カテゴリ STORAGE、ラベル Storage & Databases）：
+#   DATABASE         : 業務データベース（RDB / NoSQL）
+#   STORAGE          : NAS / SAN / オブジェクトストレージ
+#   BACKUP_STORAGE   : バックアップの保管先
+#   IMMUTABLE_BACKUP : 書き換え・削除できないバックアップ（WORM / オブジェクトロック）
+#
+# DFD の抽象記号としての「データストア」は Basic Shapes (DFD)、AI の検索用の「ベクターDB / RAG」は
+# AI Components に置く。ここは保管先の種類（DB・ストレージ・バックアップ）を区別したいときに使う。
+# バックアップは長期間保管されるため、ランサムウェアの攻撃対象であると同時に、PQC 移行では
+# 将来の量子計算機による復号（HNDL）と鍵ラッピングの対象になる。
+#
+# builtin ではないため、LeftSidebar のライブラリトグルで無効化できる。
+#
+# ライセンス: Apache-2.0（同梱）
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+library:
+  id: storage
+  title: "Storage & Databases"
+  version: "1.0"
+  license: "Apache-2.0"
+  description: "データベース・ストレージ・バックアップなど、データの保管先の型。"
+
+categories:
+  - id: STORAGE
+    label: "Storage & Databases"
+    order: 42
+
+components:
+  - id: DATABASE
+    label: "データベース"
+    category: STORAGE
+    icon: { kind: builtin, name: "database" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "業務データベース（RDB / NoSQL）。クラウドでは Amazon RDS・Aurora・DynamoDB / Azure SQL Database・Cosmos DB / Google Cloud SQL・Spanner・Firestore / OCI Autonomous Database 等が該当する。"
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, OTHER_DOCUMENT]
+
+  - id: STORAGE
+    label: "ストレージ"
+    category: STORAGE
+    icon: { kind: builtin, name: "hard-drive" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "ファイルやオブジェクトを保管するストレージ（NAS / SAN / オブジェクトストレージ）。クラウドでは Amazon S3・EFS / Azure Blob Storage・Azure Files / Google Cloud Storage・Filestore / OCI Object Storage・File Storage 等が該当する。"
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, API_SPEC, OTHER_DOCUMENT]
+
+  - id: BACKUP_STORAGE
+    label: "バックアップストレージ"
+    category: STORAGE
+    icon: { kind: builtin, name: "database-backup" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "バックアップの保管先（バックアップサーバー・テープ・クラウドのバックアップ）。本番と同じ資格情報やドメインで管理していると、本番と一緒に削除・暗号化される。クラウドでは AWS Backup / Azure Backup / Google Cloud Backup and DR / OCI のバックアップ機能等が該当する。"
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, OTHER_DOCUMENT]
+
+  - id: IMMUTABLE_BACKUP
+    label: "イミュータブルバックアップ"
+    category: STORAGE
+    icon: { kind: builtin, name: "book-lock" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "保持期間中は書き換え・削除できないバックアップ（WORM / オブジェクトロック）。ランサムウェアからの復旧の最後の砦になる。クラウドでは Amazon S3 Object Lock・AWS Backup Vault Lock / Azure の不変ストレージ / Google Cloud Storage の保持ロック / OCI Object Storage の保持ルール等が該当する。"
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, OTHER_DOCUMENT]

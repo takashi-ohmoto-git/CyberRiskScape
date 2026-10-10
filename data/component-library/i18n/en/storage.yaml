@@ -1,0 +1,27 @@
+# English overlay for `data/component-library/storage.yaml`.
+#
+# The Japanese file is the source of truth: only `label` and `description` are
+# translated here, keyed by component type id. Anything omitted falls back to the
+# original text.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+components:
+  DATABASE:
+    label: "Database"
+    description: "A business database (RDB / NoSQL). In the cloud this includes Amazon RDS, Aurora and DynamoDB, Azure SQL Database and Cosmos DB, Google Cloud SQL, Spanner and Firestore, and OCI Autonomous Database."
+
+  STORAGE:
+    label: "Storage"
+    description: "Storage for files or objects (NAS / SAN / object storage). In the cloud this includes Amazon S3 and EFS, Azure Blob Storage and Azure Files, Google Cloud Storage and Filestore, and OCI Object Storage and File Storage."
+
+  BACKUP_STORAGE:
+    label: "Backup storage"
+    description: "Where backups are kept (backup server, tape, cloud backup). If it is managed with the same credentials or domain as production, it is deleted or encrypted along with production. In the cloud this includes AWS Backup, Azure Backup, Google Cloud Backup and DR, and OCI backup features."
+
+  IMMUTABLE_BACKUP:
+    label: "Immutable backup"
+    description: "A backup that cannot be modified or deleted during its retention period (WORM / object lock), the last line of recovery from ransomware. In the cloud this includes Amazon S3 Object Lock and AWS Backup Vault Lock, Azure immutable storage, Google Cloud Storage retention locks, and OCI Object Storage retention rules."

@@ -118,7 +118,8 @@ rules:
       kind: edge
       when:
         network: [VPN]
-        targetType: [DB, DATA_STORE, LLM, AGENT, MCP_SERVER, MEMORY_STORE, SAAS, IAAS, PAAS]
+        # 業務 DB・ストレージ（storage ライブラリ）も VPN 接続後に到達できる機微な保管先のため加える。
+        targetType: [DB, DATA_STORE, LLM, AGENT, MCP_SERVER, MEMORY_STORE, SAAS, IAAS, PAAS, DATABASE, STORAGE]
       conditions:
         - when:
             auth: [MFA]
@@ -453,7 +454,8 @@ rules:
       when:
         # userTrustAttribute を明示宣言した USER ノードでのみ発火（未宣言は不成立）。
         sourceUserTrust: [Guest, Contractor, Partner]
-        targetType: [DB, DATA_STORE, LLM, AGENT, MCP_SERVER, MEMORY_STORE, SAAS, IAAS, PAAS, CRM]
+        # 業務 DB・ストレージ（storage ライブラリ）への外部協働者のアクセスも同じ失効・統制の問いを持つため加える。
+        targetType: [DB, DATA_STORE, LLM, AGENT, MCP_SERVER, MEMORY_STORE, SAAS, IAAS, PAAS, CRM, DATABASE, STORAGE]
       conditions:
         - when:
             sourceUserTrust: [Guest]
