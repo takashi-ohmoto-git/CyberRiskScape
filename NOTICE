@@ -101,7 +101,9 @@ verbatim.
 
 --------------------------------------------------------------------------------
 6. U.S. Cybersecurity and Infrastructure Security Agency (CISA)
-   - Zero Trust Maturity Model v2
+   - Zero Trust Maturity Model v2 — the Identity pillar Authentication stages
+     (Traditional / Initial / Advanced) set the colors of the authentication
+     markers on trust-boundary crossings (src/core/notation/edgeNotation.ts)
    - Implementing Phishing-Resistant MFA
    - Insider Threat Mitigation Guide
    - Known Exploited Vulnerabilities (KEV) Catalog — referenced by

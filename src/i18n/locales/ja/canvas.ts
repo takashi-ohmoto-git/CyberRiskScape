@@ -26,12 +26,12 @@ export const jaCanvas = {
   'canvas.edgeNotation.highRisk': '高リスク経路（未認証 × Internet）',
   'canvas.edgeNotation.crossing': '信頼境界の越境',
   'canvas.edgeNotation.crossingAuthNone': '越境：認証なし',
-  'canvas.edgeNotation.crossingAuthPassword': '越境：パスワード認証',
-  'canvas.edgeNotation.crossingAuthApiKey': '越境：APIキー認証',
-  'canvas.edgeNotation.crossingAuthToken': '越境：トークン認証',
-  'canvas.edgeNotation.crossingAuthPasskey': '越境：パスキー認証',
-  'canvas.edgeNotation.crossingAuthCertificate': '越境：証明書認証',
-  'canvas.edgeNotation.crossingAuthMfa': '越境：多要素認証',
+  'canvas.edgeNotation.crossingAuthPassword': '越境：パスワード認証（ZTMM Traditional）',
+  'canvas.edgeNotation.crossingAuthApiKey': '越境：APIキー認証（ZTMM Traditional）',
+  'canvas.edgeNotation.crossingAuthToken': '越境：トークン認証（ZTMM Initial）',
+  'canvas.edgeNotation.crossingAuthPasskey': '越境：パスキー認証（ZTMM Advanced）',
+  'canvas.edgeNotation.crossingAuthCertificate': '越境：証明書認証（ZTMM Advanced）',
+  'canvas.edgeNotation.crossingAuthMfa': '越境：多要素認証（ZTMM Traditional）',
 
   // ── キャンバス注釈 ──
   'canvas.annotation.defaultLabelText': 'テキストラベル',

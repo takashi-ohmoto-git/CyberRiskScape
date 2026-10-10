@@ -88,17 +88,24 @@ export const CROSSING_MARK = {
 } as const;
 
 /**
- * `auth` → クロッシングマーカーの色（赤＝無認証 / 黄＝パスワード・API キー / 緑＝トークン・MFA・パスキー・証明書 の信号色）。
+ * `auth` → クロッシングマーカーの色。CISA Zero Trust Maturity Model v2（2023）の Identity ピラー
+ * Authentication 機能の段階に合わせた 4 色（ユーザー決定 2026-10-10）。
+ * - 赤：認証なし（モデルの範囲外）
+ * - 黄：Traditional — パスワード・API キー（静的な秘密）と、属性の検証を伴わない MFA
+ * - 黄緑：Initial — トークン（短期の動的な資格情報）
+ * - 緑：Advanced — パスキー（FIDO2）・証明書（PIV と同じ鍵束縛型）のフィッシング耐性のある方式
+ * Optimal（継続的な検証）は認証方式だけでは決まらないため色にしない。
  *
  * 黄は amber ではなく yellow-500 を使う。Partner 境界の枠線（orange-500）と紛れないようにするため。
+ * 青は選択中のエッジに使っているため使わない。
  * 境界の `trustLevel` は矩形の枠線色とラベルが既に示しているので、マーカーは認証の軸だけを担う。
  */
 export const CROSSING_AUTH_COLORS: Record<AuthType, string> = {
   None: '#ef4444',
   Password: '#eab308',
   ApiKey: '#eab308',
-  Token: '#10b981',
-  MFA: '#10b981',
+  Token: '#84cc16',
+  MFA: '#eab308',
   Passkey: '#10b981',
   Certificate: '#10b981',
 };

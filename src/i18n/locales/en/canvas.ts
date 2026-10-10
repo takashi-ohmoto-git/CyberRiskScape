@@ -25,12 +25,12 @@ export const enCanvas: Partial<Record<TranslationKey, string>> = {
   'canvas.edgeNotation.highRisk': 'High-risk path (unauthenticated × Internet)',
   'canvas.edgeNotation.crossing': 'Trust boundary crossing',
   'canvas.edgeNotation.crossingAuthNone': 'Crossing: unauthenticated',
-  'canvas.edgeNotation.crossingAuthPassword': 'Crossing: password',
-  'canvas.edgeNotation.crossingAuthApiKey': 'Crossing: API key',
-  'canvas.edgeNotation.crossingAuthToken': 'Crossing: token',
-  'canvas.edgeNotation.crossingAuthPasskey': 'Crossing: passkey',
-  'canvas.edgeNotation.crossingAuthCertificate': 'Crossing: certificate',
-  'canvas.edgeNotation.crossingAuthMfa': 'Crossing: MFA',
+  'canvas.edgeNotation.crossingAuthPassword': 'Crossing: password (ZTMM Traditional)',
+  'canvas.edgeNotation.crossingAuthApiKey': 'Crossing: API key (ZTMM Traditional)',
+  'canvas.edgeNotation.crossingAuthToken': 'Crossing: token (ZTMM Initial)',
+  'canvas.edgeNotation.crossingAuthPasskey': 'Crossing: passkey (ZTMM Advanced)',
+  'canvas.edgeNotation.crossingAuthCertificate': 'Crossing: certificate (ZTMM Advanced)',
+  'canvas.edgeNotation.crossingAuthMfa': 'Crossing: MFA (ZTMM Traditional)',
 
   // ── Canvas annotations ──
   'canvas.annotation.defaultLabelText': 'Text label',

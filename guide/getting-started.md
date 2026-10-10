@@ -163,7 +163,9 @@ Select a boundary and handles appear at its corners and edge midpoints; drag the
 shape overhangs a little but its center is inside, it counts as being inside.
 
 Connections that cross a boundary get a crossing marker drawn on the line. The color of the marker
-reflects the strength of authentication (none / password / MFA).
+reflects the strength of authentication, following the Authentication stages of the CISA Zero Trust
+Maturity Model v2: red = none, yellow = Traditional (password, API key, MFA), yellow-green = Initial
+(token), green = Advanced (passkey, certificate).
 
 Note that "Blast radius" is **an annotation, not a trust boundary**. Enclosing components in one does
 not affect their trust level or threat detection.
