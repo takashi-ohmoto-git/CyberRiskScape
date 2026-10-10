@@ -53,3 +53,11 @@ behaviors:
     note: "An AI gateway terminates TLS, inspects the content, and reconnects to the model provider. Confirm encryption on the upstream (model API) leg."
   PBX:
     note: "A PBX terminates SIP-TLS / SRTP and reconnects on another leg. Confirm the cipher setup on the trunk side."
+  CENTRAL_GATEWAY:
+    note: "When relaying between in-vehicle networks it forwards messages carrying SecOC authenticators unchanged (no change to the cryptography). Check whether it holds keys to re-apply authenticators when converting between different media (CAN and automotive Ethernet), or terminates TLS for diagnostic traffic (DoIP) at the gateway."
+  ZONE_CONTROLLER:
+    note: "Converts and relays between the CAN / LIN in its zone and the automotive Ethernet backbone. If MACsec is used on the backbone, each link segment is terminated, so confirm whether it is on and whether SecOC authenticators are re-applied (with keys held here) during conversion."
+  TCU:
+    note: "TLS (mutual authentication) between the vehicle and the backend is usually terminated at the TCU; the in-vehicle side is plaintext or SecOC. Some designs tunnel over a private mobile network (APN) or VPN, or carry TLS through to the central compute, so confirm which. Check where the TCU's certificate and keys are stored and which signature scheme is used."
+  EV_CHARGER:
+    note: "The charger terminates both the ISO 15118 TLS with the vehicle and the OCPP TLS with the charge point operator's backend (separate segments). Check the signature scheme of the Plug & Charge certificates and the OCPP security profile."

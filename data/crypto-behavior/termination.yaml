@@ -7,6 +7,7 @@
 #   - NIST SP 800-41 Rev.1（ファイアウォールとポリシーのガイドライン）
 #   - NIST SP 800-57 Part 1 Rev.5（鍵管理）
 #   - 各クラウド事業者の公開ドキュメントに記載の一般的な挙動
+#   - 車載（2026-10-10）：ISO 15118（車両と充電器）・OCPP（充電器とバックエンド）・AUTOSAR SecOC（車載メッセージ認証）の一般的な構成（名称の参照のみ）
 # 既定値は「推定」であり、ノードの crypto.termination（確定）が優先される。
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -101,3 +102,19 @@ behaviors:
     default: terminate
     alternatives: []
     note: "PBX は SIP-TLS / SRTP を終端し、別の区間へ再接続する。トランク側の暗号方式を確認する。"
+  - componentType: CENTRAL_GATEWAY
+    default: passthrough
+    alternatives: [terminate]
+    note: "車載ネットワーク間の中継では、SecOC の認証子が付いたメッセージをそのまま転送する（暗号を変えない）。方式の異なる区間（CAN と車載Ethernet）の変換時に鍵を持って認証子を付け直す構成や、診断通信（DoIP）の TLS をゲートウェイで終端する構成でないか確認する。"
+  - componentType: ZONE_CONTROLLER
+    default: passthrough
+    alternatives: [terminate]
+    note: "ゾーン内の CAN / LIN と幹線の車載Ethernet を変換して中継する。幹線の区間で MACsec を使う場合はリンク区間ごとに終端するので、有効かどうかと、変換時に SecOC の認証子を付け直す（鍵を持つ）構成かを確認する。"
+  - componentType: TCU
+    default: terminate
+    alternatives: [tunnel, passthrough]
+    note: "車両とバックエンドの間の TLS（相互認証）は TCU で終端するのが一般的で、車内側は平文か SecOC になる。携帯網の閉域（APN）や VPN でトンネルを張る構成、セントラルコンピュートまで TLS を通す構成もあるため確認する。TCU の証明書・鍵の格納場所と署名方式を確認する。"
+  - componentType: EV_CHARGER
+    default: terminate
+    alternatives: []
+    note: "車両との ISO 15118 の TLS と、充電事業者のバックエンドとの OCPP の TLS を充電器がそれぞれ終端する（区間が分かれる）。Plug & Charge の証明書の署名方式と、OCPP のセキュリティプロファイルを確認する。"
