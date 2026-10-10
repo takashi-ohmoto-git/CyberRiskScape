@@ -1,9 +1,7 @@
 import type { DiagramEdge, DiagramNode } from '../../core/model/types';
+import { enumeratePaths, MAX_PATH_LENGTH, MAX_PATHS } from '../../core/graph/enumeratePaths';
 
-/** 1 パスあたりの最大ホップ数（経路爆発の抑止）。 */
-export const MAX_PATH_LENGTH = 8;
-/** 列挙するパスの最大本数（経路爆発の抑止）。 */
-export const MAX_PATHS = 50;
+export { MAX_PATH_LENGTH, MAX_PATHS };
 
 /**
  * 無向正規化した論理ホップ。並行エッジ（同一ノード対を結ぶ複数チャネル）は
@@ -64,49 +62,13 @@ export function buildAttackGraph(
     return { nodeIds: [], hops: new Map(), routes: [], channelCombinations: 0, truncated: false };
   }
 
-  // 無向の隣接リスト（dangling エッジは無視）
-  const adj = new Map<string, { nodeId: string; edgeId: string }[]>();
-  const addAdj = (from: string, to: string, edgeId: string) => {
-    if (!nodeIdSet.has(from) || !nodeIdSet.has(to)) return;
-    const arr = adj.get(from) ?? [];
-    arr.push({ nodeId: to, edgeId });
-    adj.set(from, arr);
-  };
-  for (const e of edges) {
-    addAdj(e.source, e.target, e.id);
-    addAdj(e.target, e.source, e.id);
-  }
-
-  // DFS で単純パスを列挙（buildAttackTree.ts と同一ロジック）
-  const paths: { nodeId: string; edgeId: string }[][] = [];
-  let truncated = false;
-  const visited = new Set<string>([attackerId]);
-  const current: { nodeId: string; edgeId: string }[] = [];
-
-  const dfs = (at: string) => {
-    if (at === targetId) {
-      if (paths.length < MAX_PATHS) paths.push([...current]);
-      else truncated = true;
-      return;
-    }
-    if (current.length >= MAX_PATH_LENGTH) {
-      if ((adj.get(at) ?? []).some((n) => !visited.has(n.nodeId))) truncated = true;
-      return;
-    }
-    for (const next of adj.get(at) ?? []) {
-      if (visited.has(next.nodeId)) continue;
-      if (paths.length >= MAX_PATHS) {
-        truncated = true;
-        return;
-      }
-      visited.add(next.nodeId);
-      current.push(next);
-      dfs(next.nodeId);
-      current.pop();
-      visited.delete(next.nodeId);
-    }
-  };
-  dfs(attackerId);
+  // 無向の DFS 単純パス列挙（core/graph/enumeratePaths。buildAttackTree.ts と同一ロジック）
+  const { paths: rawPaths, truncated } = enumeratePaths(nodes, edges, attackerId, targetId, {
+    directed: false,
+  });
+  const paths = rawPaths.map((p) =>
+    p.edgeIds.map((edgeId, i) => ({ nodeId: p.nodeIds[i + 1], edgeId })),
+  );
 
   // 生パスをノード列へ射影し、経路の重複排除とホップ畳み込みを行う
   const hops = new Map<string, LogicalHop>();
