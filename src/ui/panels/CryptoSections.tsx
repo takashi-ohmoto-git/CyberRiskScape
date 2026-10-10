@@ -1,4 +1,5 @@
-import { ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
+import { Route, ShieldCheck, Trash2 } from 'lucide-react';
 import type {
   CryptoAlgorithmUpdatable,
   CryptoKeyStorage,
@@ -10,14 +11,17 @@ import type {
   NodeCrypto,
 } from '../../core/model/types';
 import { CRYPTO_TERMINATIONS } from '../../core/model/types';
-import { useDiagramStore } from '../../core/state/diagramStore';
+import { selectActiveNodes, useDiagramStore } from '../../core/state/diagramStore';
+import { formatElementalId } from '../../core/model/elementalId';
+import { getNodeDisplayName } from '../../core/model/nodeDisplay';
+import { CryptoPathModal } from './CryptoPathModal';
 import { useLocale, useT } from '../../i18n';
 import {
   BUNDLED_ALGORITHM_TABLE,
   getTerminationBehavior,
 } from '../../crypto-behavior/bundled';
 import { classifyAlgorithm } from '../../crypto-behavior/loader';
-import type { AlgorithmClass } from '../../crypto-behavior/schema';
+import { PQC_VERDICT_BADGE, PQC_VERDICT_ICON, PQC_VERDICT_LABEL_KEY } from './pqcVerdictStyle';
 
 /**
  * PQC レイヤーのときだけ、ノード・エッジのパネルに出す暗号属性の入力欄。
@@ -34,12 +38,6 @@ function compact<T extends object>(value: T): T | undefined {
   const entries = Object.entries(value).filter(([, v]) => v !== undefined && v !== '');
   return entries.length === 0 ? undefined : (Object.fromEntries(entries) as T);
 }
-
-const BADGE_CLASS: Record<AlgorithmClass, string> = {
-  pqc: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40',
-  transitional: 'bg-amber-500/15 text-amber-300 border-amber-500/40',
-  vulnerable: 'bg-rose-500/15 text-rose-300 border-rose-500/40',
-};
 
 export function NodeCryptoSection({ node }: { node: DiagramNode }) {
   const t = useT();
@@ -192,6 +190,7 @@ export function EdgeCryptoSection({ edge }: { edge: DiagramEdge }) {
   ) => {
     const value = crypto[key] ?? '';
     const cls = withBadge ? classifyAlgorithm(value, BUNDLED_ALGORITHM_TABLE) : null;
+    const ClsIcon = cls ? PQC_VERDICT_ICON[cls] : null;
     return (
       <div>
         <label htmlFor={id(key)} className={LABEL_CLASS}>
@@ -207,12 +206,13 @@ export function EdgeCryptoSection({ edge }: { edge: DiagramEdge }) {
             placeholder={placeholder}
             className={FIELD_CLASS}
           />
-          {cls && (
+          {cls && ClsIcon && (
             <span
               data-testid={`edge-crypto-badge-${key}`}
-              className={`shrink-0 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-bold ${BADGE_CLASS[cls]}`}
+              className={`shrink-0 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-bold inline-flex items-center gap-1 ${PQC_VERDICT_BADGE[cls]}`}
             >
-              {t(`panels.crypto.class.${cls}`)}
+              <ClsIcon size={12} />
+              {t(PQC_VERDICT_LABEL_KEY[cls])}
             </span>
           )}
         </div>
@@ -237,5 +237,108 @@ export function EdgeCryptoSection({ edge }: { edge: DiagramEdge }) {
         )}
       </div>
     </section>
+  );
+}
+
+/**
+ * PQC レイヤーのノードパネルに出す、暗号経路の分析入口と登録済みフロー一覧。
+ * このノードを送信元として、送信先を選んで CryptoPathModal を開く。
+ */
+export function CryptoPathSection({ node }: { node: DiagramNode }) {
+  const t = useT();
+  const activeLayer = useDiagramStore((s) => s.activeLayer);
+  const nodes = useDiagramStore(selectActiveNodes);
+  const flows = useDiagramStore((s) => s.layers[s.activeLayer].cryptoFlows);
+  const removeFlow = useDiagramStore((s) => s.removeCryptoFlow);
+  const [targetId, setTargetId] = useState('');
+  const [openTargetId, setOpenTargetId] = useState<string | null>(null);
+  if (activeLayer !== 'PQC') return null;
+
+  const candidates = nodes.filter((n) => n.id !== node.id);
+  const nodeName = (id: string) => {
+    const n = nodes.find((x) => x.id === id);
+    if (!n) return id;
+    return `${n.seq !== undefined ? `${formatElementalId('node', n.seq)}: ` : ''}${getNodeDisplayName(n)}`;
+  };
+  const myFlows = (flows ?? []).filter((f) => f.sourceId === node.id);
+
+  return (
+    <div
+      className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700"
+      data-testid="crypto-path-section"
+    >
+      <h3 className="text-xs font-bold text-slate-300 mb-4 flex items-center gap-2">
+        <Route size={14} className="text-blue-500" /> {t('panels.cryptoPath.section')}
+      </h3>
+      <div className="space-y-3">
+        <div>
+          <label htmlFor={`crypto-path-target-${node.id}`} className={LABEL_CLASS}>
+            {t('panels.cryptoPath.target')}
+          </label>
+          <select
+            id={`crypto-path-target-${node.id}`}
+            value={targetId}
+            onChange={(e) => setTargetId(e.target.value)}
+            className={FIELD_CLASS}
+          >
+            <option value="">{t('panels.crypto.unset')}</option>
+            {candidates.map((n) => (
+              <option key={n.id} value={n.id}>
+                {nodeName(n.id)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <button
+          onClick={() => setOpenTargetId(targetId)}
+          disabled={targetId === ''}
+          title={targetId === '' ? t('panels.cryptoPath.analyzeTitleDisabled') : undefined}
+          className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-400 disabled:cursor-not-allowed py-3 rounded-xl font-black text-xs transition-colors flex items-center justify-center gap-2"
+        >
+          <Route size={16} /> {t('panels.cryptoPath.analyze')}
+        </button>
+        <div>
+          <span className={LABEL_CLASS}>{t('panels.cryptoPath.flows')}</span>
+          {myFlows.length === 0 ? (
+            <p className="text-xs text-slate-400">{t('panels.cryptoPath.noFlows')}</p>
+          ) : (
+            <ul className="space-y-1.5" data-testid="crypto-flow-list">
+              {myFlows.map((f) => (
+                <li
+                  key={f.id}
+                  className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5"
+                >
+                  <span className="flex-1 min-w-0 text-xs text-slate-200 truncate" title={f.label}>
+                    {f.label ?? nodeName(f.targetId)}
+                    <span className="text-slate-400"> ({nodeName(f.targetId)})</span>
+                  </span>
+                  <button
+                    onClick={() => setOpenTargetId(f.targetId)}
+                    className="px-2 py-1.5 text-xs font-bold text-sky-300 hover:text-sky-200"
+                  >
+                    {t('panels.cryptoPath.open')}
+                  </button>
+                  <button
+                    onClick={() => removeFlow(f.id)}
+                    className="p-1.5 text-slate-400 hover:text-rose-300"
+                    aria-label={t('panels.cryptoPath.delete')}
+                    title={t('panels.cryptoPath.delete')}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+      {openTargetId !== null && (
+        <CryptoPathModal
+          sourceId={node.id}
+          targetId={openTargetId}
+          onClose={() => setOpenTargetId(null)}
+        />
+      )}
+    </div>
   );
 }

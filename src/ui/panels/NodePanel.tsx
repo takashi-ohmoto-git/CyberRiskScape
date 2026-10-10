@@ -57,7 +57,7 @@ import { selectActiveNodes, useDiagramStore } from '../../core/state/diagramStor
 import { useLocale, useT } from '../../i18n';
 import { ThreatCard } from './ThreatCard';
 import { AttackTreeModal } from './AttackTreeModal';
-import { NodeCryptoSection } from './CryptoSections';
+import { CryptoPathSection, NodeCryptoSection } from './CryptoSections';
 
 type TFunc = ReturnType<typeof useT>;
 
@@ -927,6 +927,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
         </div>
 
         <NodeCryptoSection node={node} />
+        <CryptoPathSection node={node} />
 
         {threats.length > 0 && (
           <div>
