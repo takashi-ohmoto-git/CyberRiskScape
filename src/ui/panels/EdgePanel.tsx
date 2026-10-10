@@ -3,9 +3,13 @@ import {
   ArrowLeftRight,
   ArrowRight,
   ArrowLeft,
+  FileBadge,
+  Fingerprint,
+  KeyRound,
   Link as LinkIcon,
   Lock,
   ShieldCheck,
+  Ticket,
   Unlock,
 } from 'lucide-react';
 import type {
@@ -39,7 +43,11 @@ function getAuthOptions(t: TFunc): OptionDef<AuthType>[] {
   return [
     { val: 'None', label: t('panels.edge.auth.none'), icon: <Unlock size={14} /> },
     { val: 'Password', label: t('panels.edge.auth.password'), icon: <Lock size={14} /> },
+    { val: 'ApiKey', label: t('panels.edge.auth.apiKey'), icon: <KeyRound size={14} /> },
+    { val: 'Token', label: t('panels.edge.auth.token'), icon: <Ticket size={14} /> },
     { val: 'MFA', label: t('panels.edge.auth.mfa'), icon: <ShieldCheck size={14} /> },
+    { val: 'Passkey', label: t('panels.edge.auth.passkey'), icon: <Fingerprint size={14} /> },
+    { val: 'Certificate', label: t('panels.edge.auth.certificate'), icon: <FileBadge size={14} /> },
   ];
 }
 

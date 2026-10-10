@@ -25,7 +25,7 @@ export const ComponentTypeIdSchema = z
 
 export const FrameworkSchema = z.enum(['STRIDE', 'AI', 'AgenticAI']);
 export const SeveritySchema = z.enum(['Low', 'Medium', 'High', 'Critical']);
-export const AuthTypeSchema = z.enum(['None', 'Password', 'MFA']);
+export const AuthTypeSchema = z.enum(['None', 'Password', 'ApiKey', 'Token', 'MFA', 'Passkey', 'Certificate']);
 export const NetworkTypeSchema = z.enum(['Internet', 'VPN', 'VPC']);
 export const EncryptionTypeSchema = z.enum(['Plain', 'TLS', 'E2EE']);
 export const DataFlowSchema = z.enum(['inbound', 'outbound', 'bidirectional']);

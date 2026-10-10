@@ -26,6 +26,10 @@ export const enCanvas: Partial<Record<TranslationKey, string>> = {
   'canvas.edgeNotation.crossing': 'Trust boundary crossing',
   'canvas.edgeNotation.crossingAuthNone': 'Crossing: unauthenticated',
   'canvas.edgeNotation.crossingAuthPassword': 'Crossing: password',
+  'canvas.edgeNotation.crossingAuthApiKey': 'Crossing: API key',
+  'canvas.edgeNotation.crossingAuthToken': 'Crossing: token',
+  'canvas.edgeNotation.crossingAuthPasskey': 'Crossing: passkey',
+  'canvas.edgeNotation.crossingAuthCertificate': 'Crossing: certificate',
   'canvas.edgeNotation.crossingAuthMfa': 'Crossing: MFA',
 
   // ── Canvas annotations ──

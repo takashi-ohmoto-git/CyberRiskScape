@@ -258,7 +258,7 @@ Cursor は既定で、MCP ツールを使う前に承認を求めます。サー
 | `add_node` | `type`, `label`, `ref?`, `boundaryId?`, `parentId?`, `description?` と型ごとの属性 | 座標は指定しない。結果に採番された id が入る |
 | `update_node` | `id`, `set?`, `boundaryId?` | `boundaryId` を指定すると境界の移動（`null` で境界の外へ）。`set` の `null` は属性の削除 |
 | `delete_node` | `id` | そのノードにつながるエッジも消える。ノードを参照する属性・注釈の参照は外れる |
-| `add_edge` | `source`, `target`, `auth`, `network`, `encryption`, `ref?`, `dataFlow?`, `dataFlowName?`, `semantic?`, `authProviderId?` | `auth`：`None` / `Password` / `MFA`。`network`：`Internet` / `VPN` / `VPC`。`encryption`：`Plain` / `TLS` / `E2EE`。`dataFlow` は **source から見た向き**：`outbound`＝source → target（既定）、`inbound`＝target → source、`bidirectional`＝双方向 |
+| `add_edge` | `source`, `target`, `auth`, `network`, `encryption`, `ref?`, `dataFlow?`, `dataFlowName?`, `semantic?`, `authProviderId?` | `auth`：`None` / `Password` / `ApiKey` / `Token` / `MFA` / `Passkey` / `Certificate`。`network`：`Internet` / `VPN` / `VPC`。`encryption`：`Plain` / `TLS` / `E2EE`。`dataFlow` は **source から見た向き**：`outbound`＝source → target（既定）、`inbound`＝target → source、`bidirectional`＝双方向 |
 | `update_edge` | `id`, `set` | `source` / `target` は変更不可（付け替えは削除と追加） |
 | `delete_edge` | `id` | |
 | `add_boundary` | `type`, `ref?`, `trustLevel?`, `around?` と型ごとの属性 | `type`：`RECT` / `RECT_DASHED` / `ROUNDED` / `ROUNDED_DASHED` / `BLAST_RADIUS`。`around`（ノード id の配列）を囲む大きさで作る。省略時は空の境界 |

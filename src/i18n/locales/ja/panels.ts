@@ -91,6 +91,10 @@ export const jaPanels = {
   // ── EdgePanel ──
   'panels.edge.auth.none': 'なし (None)',
   'panels.edge.auth.password': 'ID/パスワード',
+  'panels.edge.auth.apiKey': 'APIキー',
+  'panels.edge.auth.token': 'トークン (OAuth/JWT)',
+  'panels.edge.auth.passkey': 'パスキー (FIDO2)',
+  'panels.edge.auth.certificate': '証明書 (mTLS)',
   'panels.edge.auth.mfa': '多要素認証 (MFA)',
   'panels.edge.network.internet': '公衆網 (Internet)',
   'panels.edge.network.vpn': '専用線 (VPN)',

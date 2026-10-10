@@ -88,7 +88,7 @@ export const CROSSING_MARK = {
 } as const;
 
 /**
- * `auth` → クロッシングマーカーの色（赤＝無認証 / 黄＝パスワード / 緑＝MFA の信号色）。
+ * `auth` → クロッシングマーカーの色（赤＝無認証 / 黄＝パスワード・API キー / 緑＝トークン・MFA・パスキー・証明書 の信号色）。
  *
  * 黄は amber ではなく yellow-500 を使う。Partner 境界の枠線（orange-500）と紛れないようにするため。
  * 境界の `trustLevel` は矩形の枠線色とラベルが既に示しているので、マーカーは認証の軸だけを担う。
@@ -96,12 +96,20 @@ export const CROSSING_MARK = {
 export const CROSSING_AUTH_COLORS: Record<AuthType, string> = {
   None: '#ef4444',
   Password: '#eab308',
+  ApiKey: '#eab308',
+  Token: '#10b981',
   MFA: '#10b981',
+  Passkey: '#10b981',
+  Certificate: '#10b981',
 };
 
 /** クロッシング凡例の `auth` 行。図に実在する `auth` 値の行だけを出す。 */
 export const CROSSING_AUTH_LEGEND: readonly { auth: AuthType; labelKey: TranslationKey }[] = [
   { auth: 'None', labelKey: 'canvas.edgeNotation.crossingAuthNone' },
   { auth: 'Password', labelKey: 'canvas.edgeNotation.crossingAuthPassword' },
+  { auth: 'ApiKey', labelKey: 'canvas.edgeNotation.crossingAuthApiKey' },
+  { auth: 'Token', labelKey: 'canvas.edgeNotation.crossingAuthToken' },
   { auth: 'MFA', labelKey: 'canvas.edgeNotation.crossingAuthMfa' },
+  { auth: 'Passkey', labelKey: 'canvas.edgeNotation.crossingAuthPasskey' },
+  { auth: 'Certificate', labelKey: 'canvas.edgeNotation.crossingAuthCertificate' },
 ];

@@ -113,10 +113,37 @@ describe('kongToLayer', () => {
 
   it('クライアント→ゲートウェイは最も弱い認証と、http を許すルートがあれば平文にする', () => {
     const { layer } = ok(KONG_YAML);
-    // orders は key-auth → Password
-    expect(edge(layer, 'kong-client', 'kong-gw-api')).toMatchObject({ auth: 'Password', encryption: 'TLS', network: 'Internet' });
+    // orders は key-auth → ApiKey
+    expect(edge(layer, 'kong-client', 'kong-gw-api')).toMatchObject({ auth: 'ApiKey', encryption: 'TLS', network: 'Internet' });
     // chat は認証なし・http 許可、multi は openid-connect → 最弱は None・平文
     expect(edge(layer, 'kong-client', 'kong-gw-ai')).toMatchObject({ auth: 'None', encryption: 'Plain' });
+  });
+
+  it('認証プラグインごとに auth を分け、複数あれば最も弱いものを採る', () => {
+    const authOf = (plugins: string[]) => {
+      const yaml = `
+_format_version: "3.0"
+services:
+  - name: s
+    url: https://s.internal
+    routes:
+      - name: r
+        paths: ["/s"]
+    plugins:
+${plugins.map((p) => `      - name: ${p}`).join('\n')}
+`;
+      return edge(ok(yaml).layer, 'kong-client', 'kong-gw-api')?.auth;
+    };
+    expect(authOf(['key-auth'])).toBe('ApiKey');
+    expect(authOf(['hmac-auth'])).toBe('ApiKey');
+    expect(authOf(['basic-auth'])).toBe('Password');
+    expect(authOf(['ldap-auth'])).toBe('Password');
+    expect(authOf(['oauth2'])).toBe('Token');
+    expect(authOf(['jwt'])).toBe('Token');
+    expect(authOf(['openid-connect'])).toBe('Token');
+    expect(authOf(['mtls-auth'])).toBe('Certificate');
+    expect(authOf(['mtls-auth', 'jwt'])).toBe('Token');
+    expect(authOf(['jwt', 'basic-auth'])).toBe('Password');
   });
 
   it('外部プロバイダの LLM は Internet 境界（DMZ ではない）、自組織内（ollama）は Internal 境界に置く', () => {

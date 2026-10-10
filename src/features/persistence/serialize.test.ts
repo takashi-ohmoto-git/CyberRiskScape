@@ -66,6 +66,20 @@ describe('serializeProject / deserializeProject', () => {
     expect(restored?.activeFramework).toBe(STATE.activeFramework);
   });
 
+  it('新しい auth 値（ApiKey / Token / Passkey / Certificate）を round-trip で保持する', () => {
+    const auths = ['ApiKey', 'Token', 'Passkey', 'Certificate'] as const;
+    const withAuths: LayerData = {
+      ...L1_DATA,
+      edges: auths.map((auth, i) => ({ ...L1_DATA.edges[0], id: `e-auth-${i}`, seq: 100 + i, auth })),
+    };
+    const persisted = serializeProject({
+      ...STATE,
+      layers: { L0: EMPTY_LAYER, L1: withAuths, L2: EMPTY_LAYER, L3: EMPTY_LAYER, PQC: EMPTY_LAYER },
+    });
+    const restored = deserializeProject(persisted);
+    expect(restored?.layers?.L1.edges.map((e) => e.auth)).toEqual([...auths]);
+  });
+
   it('edge.authProviderId を round-trip で保持する', () => {
     const withProvider: LayerData = {
       ...L1_DATA,

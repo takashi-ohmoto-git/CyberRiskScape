@@ -448,7 +448,7 @@ export const EMPTY_PROJECT_META: ProjectMeta = {
   securityObjectives: '',
 };
 
-export type AuthType = 'None' | 'Password' | 'MFA';
+export type AuthType = 'None' | 'Password' | 'ApiKey' | 'Token' | 'MFA' | 'Passkey' | 'Certificate';
 
 export type NetworkType = 'Internet' | 'VPN' | 'VPC';
 

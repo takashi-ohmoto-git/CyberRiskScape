@@ -93,10 +93,12 @@ SDV 専用の型は、左サイドバーの **VEHICLE (SDV)** カテゴリに **
 |---|---|---|
 | 車内の CAN（ゾーン内） | `auth: None`、`encryption: Plain` | 送信元の認証が無く平文という、一般的な前提。SecOC（メッセージ認証）を使っている場合は、エッジ属性では表せないため実態に合わせて注記する |
 | 幹線の車載Ethernet・ゲートウェイへの接続 | `encryption: TLS` / `Plain` | 幹線は MACsec 等の保護を想定して `TLS`（暗号化あり）とした。実際の方式に合わせて変える |
-| TCU ⇔ 車両バックエンド、OTA 配信サーバー → TCU | `auth: MFA`、`network: Internet`、`encryption: TLS` | 相互認証の TLS を想定。エッジの認証には「証明書」の選択肢が無いため、`MFA` で代用している |
+| TCU ⇔ 車両バックエンド、OTA 配信サーバー → TCU | `auth: Certificate`、`network: Internet`、`encryption: TLS` | 相互認証の TLS（機器証明書）を想定。実際の方式に合わせて変える（例：`Token`） |
 | 診断機 → OBD-II 診断ポート | `auth: Password`、`encryption: Plain` | 診断セッションの認可（資格情報）はあるが、通信は保護されない想定 |
 | 路側機 ⇔ V2X 車載器 | `auth: None`、`encryption: Plain` | 無線上の署名は別の仕組み（証明書）で担保される。エッジ属性では表せないため仮置き |
-| EV 充電器 ⇔ ゾーンコントローラ（後） | `auth: MFA`、`encryption: TLS` | ISO 15118 の TLS と証明書（Plug & Charge）を想定 |
+| EV 充電器 ⇔ ゾーンコントローラ（後） | `auth: Certificate`、`encryption: TLS` | ISO 15118 の TLS と証明書（Plug & Charge）を想定 |
+| 車両 PKI → V2X 車載器 | `auth: Certificate`、`encryption: TLS` | 証明書の発行要求を、機器の登録用証明書で認証する想定 |
+| EV 充電器 → 充電事業者バックエンド（OCPP） | `auth: Certificate`、`encryption: TLS` | OCPP のセキュリティプロファイルのうち、TLS のクライアント証明書を使うものを想定。TLS 上の Basic 認証を使うプロファイルなら `ApiKey` に変える |
 
 エッジの属性は、実際の設計に合わせて必ず確認してください。
 

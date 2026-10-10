@@ -26,6 +26,14 @@ describe('conjurToLayer', () => {
     expect(batch?.agentAttributes).toBeUndefined();
   });
 
+  it('host → Conjur の線の auth は認証方式で分ける（API キー＝ApiKey、authn-k8s＝Certificate、authn-jwt＝Token）', () => {
+    const { layer } = ok(SAMPLE);
+    const auth = (label: string) => edge(layer, node(layer, label)!.id, 'conjur-vault')?.auth;
+    expect(auth('orders/nightly-batch')).toBe('ApiKey');
+    expect(auth('orders/order-api')).toBe('Certificate');
+    expect(auth('orders/deploy')).toBe('Token');
+  });
+
   it('layer・grant をたどった実効権限で、取得・更新できる変数の件数を線に書く', () => {
     const { layer } = ok(SAMPLE);
     const id = (label: string) => node(layer, label)!.id;

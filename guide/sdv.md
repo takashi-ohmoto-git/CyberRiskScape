@@ -93,10 +93,12 @@ select the JSON, and apply it.
 |---|---|---|
 | In-zone CAN | `auth: None`, `encryption: Plain` | The common assumption: no sender authentication and no encryption. If you use SecOC (message authentication), edge attributes cannot show it, so note it separately |
 | Backbone Ethernet and links to the gateway | `encryption: TLS` / `Plain` | The backbone is assumed protected (for example MACsec) and drawn as `TLS` (encrypted). Change it to the real mechanism |
-| TCU ⇔ vehicle backend, OTA server → TCU | `auth: MFA`, `network: Internet`, `encryption: TLS` | Mutual-authentication TLS is assumed. Edge `auth` has no "certificate" option, so `MFA` stands in |
+| TCU ⇔ vehicle backend, OTA server → TCU | `auth: Certificate`, `network: Internet`, `encryption: TLS` | Mutual-authentication TLS (device certificates) is assumed. Change it to match the real method (for example `Token`) |
 | Diagnostic tool → OBD-II port | `auth: Password`, `encryption: Plain` | A diagnostic session has authorization (credentials), but the link is assumed unprotected |
 | Roadside unit ⇔ V2X on-board unit | `auth: None`, `encryption: Plain` | Signatures over the air are backed by certificates, which edge attributes cannot show, so this is a placeholder |
-| EV charger ⇔ zone controller (rear) | `auth: MFA`, `encryption: TLS` | ISO 15118 TLS and certificates (Plug & Charge) are assumed |
+| EV charger ⇔ zone controller (rear) | `auth: Certificate`, `encryption: TLS` | ISO 15118 TLS and certificates (Plug & Charge) are assumed |
+| Vehicle PKI → V2X on-board unit | `auth: Certificate`, `encryption: TLS` | Certificate enrollment is assumed to authenticate the device with its enrollment certificate |
+| EV charger → charge point operator backend (OCPP) | `auth: Certificate`, `encryption: TLS` | The OCPP security profile with TLS client certificates is assumed. If the charger uses the profile with Basic authentication over TLS, change it to `ApiKey` |
 
 Always check the edge attributes against your real design.
 

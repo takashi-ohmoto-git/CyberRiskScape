@@ -1,5 +1,5 @@
 import { isAlias, isMap, isScalar, isSeq, parseDocument, type Document, type Node } from 'yaml';
-import type { DiagramEdge, DiagramNode, LayerData } from '../../core/model/types';
+import type { AuthType, DiagramEdge, DiagramNode, LayerData } from '../../core/model/types';
 import { getLocale, translate, type TranslationKey } from '../../i18n';
 
 /**
@@ -20,6 +20,16 @@ import { getLocale, translate, type TranslationKey } from '../../i18n';
  */
 
 const WORKLOAD_AUTHN = ['authn-jwt/', 'authn-k8s/', 'authn-iam/', 'authn-azure/', 'authn-gcp/'];
+
+/**
+ * host → Conjur のエッジの auth。API キー＝ApiKey、authn-k8s は証明書の注入＝Certificate、
+ * authn-jwt / iam / azure / gcp は短期トークン＝Token。複数あれば弱い方（Token）。
+ */
+function hostAuth(annotationKeys: string[]): AuthType {
+  const has = (p: string) => annotationKeys.some((k) => k.startsWith(p));
+  if (!WORKLOAD_AUTHN.some(has)) return 'ApiKey';
+  return ['authn-jwt/', 'authn-iam/', 'authn-azure/', 'authn-gcp/'].some(has) ? 'Token' : 'Certificate';
+}
 const RECORD_KINDS = new Set(['host', 'layer', 'variable', 'user', 'group', 'webservice', 'host-factory', 'role', 'resource', 'policy']);
 const LIST_LIMIT = 8;
 
@@ -223,7 +233,7 @@ export function conjurToLayer(text: string): ConjurImportResult {
     description: t('conjur.desc.vault', { n: variables.length }),
   });
 
-  const accessEdge = (source: string, fetch: Set<string>, update: Set<string>) => {
+  const accessEdge = (source: string, fetch: Set<string>, update: Set<string>, auth: AuthType = 'Password') => {
     if (fetch.size === 0 && update.size === 0) return;
     const name = [
       fetch.size ? t('conjur.edge.fetch', { n: fetch.size }) : '',
@@ -235,7 +245,7 @@ export function conjurToLayer(text: string): ConjurImportResult {
       id: `${source}--${vaultId}`,
       source,
       target: vaultId,
-      auth: 'Password',
+      auth,
       network: 'VPC',
       encryption: 'TLS',
       dataFlow: 'bidirectional',
@@ -244,7 +254,7 @@ export function conjurToLayer(text: string): ConjurImportResult {
   };
   for (const h of hosts) {
     const a = access(`host:${h.id}`);
-    accessEdge(hostNode.get(h.id) as string, a.fetch, a.update);
+    accessEdge(hostNode.get(h.id) as string, a.fetch, a.update, hostAuth(h.annotationKeys));
   }
 
   // 人（変数の権限を持つ、または host のロールを付与されたユーザー・グループ）

@@ -90,6 +90,10 @@ export const enPanels: Partial<Record<TranslationKey, string>> = {
   // ── EdgePanel ──
   'panels.edge.auth.none': 'None',
   'panels.edge.auth.password': 'ID/Password',
+  'panels.edge.auth.apiKey': 'API key',
+  'panels.edge.auth.token': 'Token (OAuth/JWT)',
+  'panels.edge.auth.passkey': 'Passkey (FIDO2)',
+  'panels.edge.auth.certificate': 'Certificate (mTLS)',
   'panels.edge.auth.mfa': 'Multi-factor authentication (MFA)',
   'panels.edge.network.internet': 'Public network (Internet)',
   'panels.edge.network.vpn': 'Leased line (VPN)',

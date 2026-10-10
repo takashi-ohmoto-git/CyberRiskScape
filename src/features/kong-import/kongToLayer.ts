@@ -21,8 +21,9 @@ import { getLocale, translate } from '../../i18n';
  *   資格情報（config.auth / keyauth_credentials 等）には触れない。
  * - **脅威の知識は持たない。** プラグインを図の要素（ノード型・エッジの auth / encryption）に
  *   置き換えるだけで、脅威の判定は既存の脅威ルールに任せる。
- * - 認証は控えめに寄せる：認証系プラグインはすべて Password（MFA かは IdP 側の設定で決まり、
- *   この設定からは分からない）。クライアント → ゲートウェイのエッジは 1 本にまとめ、
+ * - 認証はプラグインの種類から控えめに寄せる（AUTH_PLUGIN_TYPE）：API キー/HMAC は ApiKey、
+ *   Basic/LDAP は Password、OAuth2/JWT/OIDC は Token、mTLS は Certificate。MFA かは IdP 側の設定で決まり、
+ *   この設定からは分からないので MFA にはしない。1 サービスに複数の認証プラグインがあれば最も弱いものを採る。クライアント → ゲートウェイのエッジは 1 本にまとめ、
  *   ルートで到達できるサービスのうち最も弱い認証を採る。
  *
  * 出力はテンプレート取り込みと同じ形（`seq` なし）。UI は `importTemplateToActiveLayer`、
@@ -89,6 +90,23 @@ const AUTH_PLUGINS = new Set([
   'mtls-auth',
   'ai-mcp-oauth2',
 ]);
+
+/** 認証プラグイン → エッジの auth。 */
+const AUTH_PLUGIN_TYPE: Record<string, AuthType> = {
+  'key-auth': 'ApiKey',
+  'key-auth-enc': 'ApiKey',
+  'hmac-auth': 'ApiKey',
+  'basic-auth': 'Password',
+  'ldap-auth': 'Password',
+  'ldap-auth-advanced': 'Password',
+  jwt: 'Token',
+  'jwt-signer': 'Token',
+  oauth2: 'Token',
+  'oauth2-introspection': 'Token',
+  'openid-connect': 'Token',
+  'ai-mcp-oauth2': 'Token',
+  'mtls-auth': 'Certificate',
+};
 
 const GUARD_PLUGINS = new Set([
   'ai-prompt-guard',
@@ -175,7 +193,20 @@ function llmTargets(plugin: KongPlugin): { provider: string; model?: string }[] 
   return targets.map((t) => asModel((t as Record<string, unknown> | null)?.model));
 }
 
-const WEAKNESS: Record<AuthType, number> = { None: 0, Password: 1, MFA: 2 };
+const WEAKNESS: Record<AuthType, number> = {
+  None: 0,
+  Password: 1,
+  ApiKey: 1,
+  Token: 2,
+  MFA: 2,
+  Passkey: 3,
+  Certificate: 3,
+};
+
+/** 認証プラグインが無ければ None、あれば最も弱い auth。 */
+function weakestAuth(auths: AuthType[]): AuthType {
+  return auths.reduce((a, b) => (WEAKNESS[b] < WEAKNESS[a] ? b : a), auths[0] ?? 'None');
+}
 
 export function kongToLayer(text: string): KongImportResult {
   const locale = getLocale();
@@ -286,7 +317,7 @@ export function kongToLayer(text: string): KongImportResult {
   gateways.forEach((g, gi) => {
     g.node.y = TOP + gi * ROW;
     const gwPlugins = new Set<string>();
-    let weakest: AuthType = 'MFA';
+    let weakest: AuthType = 'Certificate';
     let plain = false;
     const authLines: string[] = [];
     const routed = g.services.filter((s) => s.routes.length > 0);
@@ -296,7 +327,7 @@ export function kongToLayer(text: string): KongImportResult {
     for (const s of g.services) {
       const ps = pluginsOf(s);
       ps.forEach((p) => gwPlugins.add(p.name));
-      const auth: AuthType = ps.some((p) => AUTH_PLUGINS.has(p.name)) ? 'Password' : 'None';
+      const auth = weakestAuth(ps.filter((p) => AUTH_PLUGINS.has(p.name)).map((p) => AUTH_PLUGIN_TYPE[p.name] ?? 'Password'));
       if (s.routes.length > 0) {
         if (WEAKNESS[auth] < WEAKNESS[weakest]) weakest = auth;
         if (s.routes.some((r) => (r.protocols ?? ['http', 'https']).some((pr) => !TLS_PROTOCOLS.has(pr)))) plain = true;
@@ -324,7 +355,7 @@ export function kongToLayer(text: string): KongImportResult {
           nodes.push(node);
           (selfHosted ? internalIds : externalIds).push(id);
           targetIds.push(id);
-          addEdge(g.node.id, id, 'Password', selfHosted ? 'VPC' : 'Internet', 'TLS', { dataFlow: 'bidirectional' });
+          addEdge(g.node.id, id, selfHosted ? 'Password' : 'ApiKey', selfHosted ? 'VPC' : 'Internet', 'TLS', { dataFlow: 'bidirectional' });
         }
       } else {
         const type = ps.some((p) => p.name === 'ai-mcp-proxy')
