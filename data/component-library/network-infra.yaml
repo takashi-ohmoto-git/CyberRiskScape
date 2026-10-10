@@ -1,0 +1,146 @@
+# Network & Security Infrastructure コンポーネントライブラリ。
+#
+# PQC 移行支援で「経路上で暗号が変わる箇所（終端・復号・トンネル化）」を描くための
+# ネットワーク機器・セキュリティ製品の 14 型：
+#   NETWORK : L2_SWITCH / ROUTER / LOAD_BALANCER / CDN / VPN_GATEWAY / WIRELESS_AP / SBC
+#   PROTECT : FIREWALL / WAF / IDS_IPS / SECURE_WEB_GATEWAY / SASE / EMAIL_GATEWAY
+#   IDENTITY: HSM
+#
+# builtin ではないため、LeftSidebar のライブラリトグルで無効化できる。
+#
+# ライセンス: Apache-2.0（同梱）
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+library:
+  id: network-infra
+  title: "Network & Security Infrastructure"
+  version: "1.0"
+  license: "Apache-2.0"
+  description: "暗号の終端・復号・トンネル化を担うネットワーク機器とセキュリティ製品の型。PQC 移行で暗号が変わる箇所を描くために使う。"
+
+categories:
+  - id: NETWORK
+    label: "Network & Edge"
+    order: 30
+  - id: PROTECT
+    label: "Protect"
+    order: 25
+  - id: IDENTITY
+    label: "Identity & Secrets"
+    order: 32
+
+components:
+  - id: L2_SWITCH
+    label: "L2スイッチ"
+    category: NETWORK
+    icon: { kind: builtin, name: "ethernet-port" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "L2 スイッチ。通常は暗号を透過する（通信の中身を変えない）。MACsec 有効時はリンク区間ごとに暗号化する。"
+
+  - id: ROUTER
+    label: "ルーター / L3スイッチ"
+    category: NETWORK
+    icon: { kind: builtin, name: "router" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "ルーター / L3 スイッチ。通常は暗号を透過する。IPsec 有効時は外側に暗号トンネルを付ける。"
+
+  - id: LOAD_BALANCER
+    label: "ロードバランサー"
+    category: NETWORK
+    icon: { kind: builtin, name: "split" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "ロードバランサー。L7 動作（SSL オフロード）では TLS を終端し、バックエンドへ再暗号化または平文で再接続する。L4 動作では暗号を透過する。"
+
+  - id: CDN
+    label: "CDN"
+    category: NETWORK
+    icon: { kind: builtin, name: "globe" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "CDN。利用者からの TLS をエッジで終端し、オリジンへ別の TLS で再接続する。L7 の DDoS 対策もここで表す。"
+
+  - id: VPN_GATEWAY
+    label: "VPNゲートウェイ"
+    category: NETWORK
+    icon: { kind: builtin, name: "cable" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "VPN ゲートウェイ。IPsec / SSL-VPN のトンネルを終端する。トンネル内の通信の暗号は変えない（SSL-VPN のリバースプロキシ型は終端する）。"
+
+  - id: WIRELESS_AP
+    label: "無線アクセスポイント"
+    category: NETWORK
+    icon: { kind: builtin, name: "antenna" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "無線アクセスポイント。WPA2 / WPA3 で無線区間を暗号化する。EAP-TLS では証明書を使う。"
+
+  - id: SBC
+    label: "SBC"
+    category: NETWORK
+    icon: { kind: builtin, name: "phone-forwarded" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "セッションボーダーコントローラ。SIP-TLS / SRTP を終端し、内側へ別の暗号で再接続する。"
+
+  - id: FIREWALL
+    label: "ファイアウォール"
+    category: PROTECT
+    icon: { kind: builtin, name: "brick-wall" }
+    shape: rounded
+    color: "bg-green-600"
+    description: "ファイアウォール。通常は暗号を透過する。TLS インスペクション（SSL 復号）有効時は復号し、社内 CA で証明書を再署名する。VPN 機能を持つ場合はトンネルを終端する。"
+
+  - id: WAF
+    label: "WAF"
+    category: PROTECT
+    icon: { kind: builtin, name: "scan-search" }
+    shape: rounded
+    color: "bg-green-600"
+    description: "WAF。リバースプロキシ型は TLS を終端する。アウトオブバンド型はサーバーの秘密鍵を取り込んで受動的に復号する（静的 RSA 鍵交換に依存するため TLS 1.3 / PQC で機能しなくなる）。"
+
+  - id: IDS_IPS
+    label: "IDS / IPS"
+    category: PROTECT
+    icon: { kind: builtin, name: "radar" }
+    shape: rounded
+    color: "bg-green-600"
+    description: "IDS / IPS。通常は暗号を透過する。鍵を取り込んで受動復号する構成や、復号装置と組み合わせて中身を検査する構成がある。"
+
+  - id: SECURE_WEB_GATEWAY
+    label: "プロキシ / SWG"
+    category: PROTECT
+    icon: { kind: builtin, name: "scan-eye" }
+    shape: rounded
+    color: "bg-green-600"
+    description: "フォワードプロキシ / SWG。利用者の外向き TLS を復号して検査し、社内 CA で証明書を再署名する。"
+
+  - id: SASE
+    label: "SASE / SSE"
+    category: PROTECT
+    icon: { kind: builtin, name: "globe-lock" }
+    shape: rounded
+    color: "bg-green-600"
+    description: "SASE / SSE。端末から PoP までをトンネルで結び、PoP で TLS を復号・検査してから外部へ再接続する。"
+
+  - id: EMAIL_GATEWAY
+    label: "メールゲートウェイ"
+    category: PROTECT
+    icon: { kind: builtin, name: "mail-check" }
+    shape: rounded
+    color: "bg-green-600"
+    description: "メールゲートウェイ。中継ごとに STARTTLS を終端・再接続する。S/MIME 等のメール本文の暗号は変えない。"
+
+  - id: HSM
+    label: "HSM"
+    category: IDENTITY
+    icon: { kind: builtin, name: "microchip" }
+    shape: rounded
+    color: "bg-fuchsia-600"
+    description: "HSM。暗号鍵を耐タンパ性のある専用装置で保管・演算する。通信経路上の機器ではないが、TLS 終端機器の秘密鍵や鍵ラッピングの鍵を保管するため、PQC の大きな鍵に対応できるかが移行の制約になる。"

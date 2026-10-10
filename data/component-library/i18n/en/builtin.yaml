@@ -64,7 +64,7 @@ components:
 
   GATEWAY:
     label: "API gateway"
-    description: "An API gateway, reverse proxy, or WAF. Handles authorization and ingress control at the boundary."
+    description: "An API gateway or reverse proxy. Handles authorization and ingress control at the boundary."
 
   FRONT_END_SERVER:
     label: "Front-end Server"

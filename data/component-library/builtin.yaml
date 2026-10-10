@@ -140,7 +140,7 @@ components:
     icon: { kind: builtin, name: "activity" }
     shape: rounded
     color: "bg-transparent"
-    description: "API ゲートウェイ／リバースプロキシ／WAF。境界での認可と流入制御を担う。"
+    description: "API ゲートウェイ／リバースプロキシ。境界での認可と流入制御を担う。"
 
   - id: FRONT_END_SERVER
     label: "フロントエンドサーバー"

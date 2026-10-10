@@ -1,0 +1,67 @@
+# English overlay for `data/component-library/network-infra.yaml`.
+#
+# The Japanese file is the source of truth: only `label` and `description` are
+# translated here, keyed by component type id. Anything omitted falls back to the
+# original text.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+components:
+  L2_SWITCH:
+    label: "L2 switch"
+    description: "A layer 2 switch. Normally passes encryption through unchanged; with MACsec enabled it encrypts each link segment."
+
+  ROUTER:
+    label: "Router / L3 switch"
+    description: "A router or layer 3 switch. Normally passes encryption through; with IPsec enabled it wraps traffic in an outer encrypted tunnel."
+
+  LOAD_BALANCER:
+    label: "Load balancer"
+    description: "A load balancer. In L7 mode (SSL offload) it terminates TLS and reconnects to the backend re-encrypted or in plaintext; in L4 mode it passes encryption through."
+
+  CDN:
+    label: "CDN"
+    description: "A CDN. Terminates the user's TLS at the edge and reconnects to the origin over a separate TLS session. Also represents L7 DDoS protection."
+
+  VPN_GATEWAY:
+    label: "VPN gateway"
+    description: "A VPN gateway. Terminates IPsec / SSL-VPN tunnels without changing the encryption of traffic inside the tunnel (reverse-proxy-style SSL-VPN does terminate it)."
+
+  WIRELESS_AP:
+    label: "Wireless access point"
+    description: "A wireless access point. Encrypts the wireless segment with WPA2 / WPA3; EAP-TLS uses certificates."
+
+  SBC:
+    label: "SBC"
+    description: "A session border controller. Terminates SIP-TLS / SRTP and reconnects inward with different encryption."
+
+  FIREWALL:
+    label: "Firewall"
+    description: "A firewall. Normally passes encryption through; with TLS inspection (SSL decryption) it decrypts and re-signs certificates with an internal CA. With VPN features it terminates tunnels."
+
+  WAF:
+    label: "WAF"
+    description: "A WAF. Reverse-proxy mode terminates TLS; out-of-band mode imports the server's private key and decrypts passively (relies on static RSA key exchange, so it stops working with TLS 1.3 / PQC)."
+
+  IDS_IPS:
+    label: "IDS / IPS"
+    description: "An IDS / IPS. Normally passes encryption through; some deployments import keys to decrypt passively or inspect content together with a decryption device."
+
+  SECURE_WEB_GATEWAY:
+    label: "Proxy / SWG"
+    description: "A forward proxy / secure web gateway. Decrypts and inspects users' outbound TLS and re-signs certificates with an internal CA."
+
+  SASE:
+    label: "SASE / SSE"
+    description: "SASE / SSE. Tunnels from the device to a PoP, where TLS is decrypted and inspected before reconnecting externally."
+
+  EMAIL_GATEWAY:
+    label: "Email gateway"
+    description: "An email gateway. Terminates and re-establishes STARTTLS at each relay hop; does not alter message-body encryption such as S/MIME."
+
+  HSM:
+    label: "HSM"
+    description: "A hardware security module. Stores keys and performs cryptographic operations in tamper-resistant hardware. Not on the data path, but it holds private keys of TLS-terminating devices and key-wrapping keys, so support for large PQC keys constrains migration."

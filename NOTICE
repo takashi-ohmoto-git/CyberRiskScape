@@ -84,9 +84,10 @@ verbatim.
 --------------------------------------------------------------------------------
 5. U.S. National Institute of Standards and Technology (NIST)
    - SP 800-46 Rev.2, SP 800-124 Rev.2, SP 800-207, SP 800-63A, SP 800-63B,
-     SP 800-63B-4, SP 800-58
+     SP 800-63B-4, SP 800-58, SP 800-41 Rev.1, SP 800-52 Rev.2,
+     SP 800-57 Part 1 Rev.5, SP 800-77 Rev.1, SP 800-153, SP 800-38F
    - IR 8259 / 8259A, IR 8547
-   - FIPS 203 (ML-KEM), FIPS 204 (ML-DSA), FIPS 205 (SLH-DSA)
+   - FIPS 203 (ML-KEM), FIPS 204 (ML-DSA), FIPS 205 (SLH-DSA), FIPS 140-3
    - AI Risk Management Framework 1.0 (AI 100-1)
    - AI 600-1, Generative Artificial Intelligence Profile
    - Cybersecurity Framework 2.0 (CSWP 29)
@@ -101,6 +102,8 @@ verbatim.
    - Zero Trust Maturity Model v2
    - Implementing Phishing-Resistant MFA
    - Insider Threat Mitigation Guide
+   - Known Exploited Vulnerabilities (KEV) Catalog — referenced by
+     data/threat-library/network-infra.yaml
    - Cybersecurity Advisory AA23-320A, Scattered Spider (with FBI)
    - Shifting the Balance of Cybersecurity Risk: Principles and Approaches for
      Secure by Design Software (October 2023, with NSA, FBI and international
@@ -325,12 +328,25 @@ verbatim.
 --------------------------------------------------------------------------------
 21. IETF — RFC 8252 (OAuth 2.0 for Native Apps), RFC 7636 (Proof Key for Code
     Exchange by OAuth Public Clients), RFC 8725 (JSON Web Token Best Current
-    Practices)
+    Practices), RFC 8461 (SMTP MTA Strict Transport Security), RFC 7672 (SMTP
+    Security via Opportunistic DANE TLS), RFC 8446 (TLS 1.3), RFC 9370
+    (Multiple Key Exchanges in IKEv2)
    https://www.rfc-editor.org/
    Referenced by RFC number and title with a short Japanese summary only; no
    RFC text is reproduced.
 
-   Referenced by: data/threat-library/api-platform.yaml
+   Referenced by: data/threat-library/api-platform.yaml,
+                  data/threat-library/network-infra.yaml,
+                  data/threat-library/pqc.yaml
+
+--------------------------------------------------------------------------------
+22. IEEE — IEEE 802.1X (Port-Based Network Access Control), IEEE 802.1AE
+    (Media Access Control Security)
+   https://standards.ieee.org/
+   © IEEE. Standard numbers and titles are referenced as factual identifiers
+   only; no IEEE text is reproduced.
+
+   Referenced by: data/threat-library/network-infra.yaml
 
 ================================================================================
 Runtime dependencies

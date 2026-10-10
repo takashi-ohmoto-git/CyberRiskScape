@@ -1,0 +1,82 @@
+# English overlay for `data/threat-library/network-infra.yaml`.
+#
+# The Japanese file is the source of truth: only `name` / `category` / `description` /
+# `mitigation` (plus `conditions[].description` and `references[].title` where present)
+# are translated here, keyed by rule id. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - Keep `{{token}}` placeholders exactly as they appear in the original.
+#   - Keep the `[Foundation]` / `[Enterprise]` / `[Advanced]` markup — the maturity
+#     tiers are re-derived from this text.
+#   - Preserve the Can / Cannot pair and the blast radius statement in `description`.
+#   - `references` is keyed by the index in the original array, and only the entries
+#     that need translating are listed. `url` is never translated.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+rules:
+  netinfra-edge-device-exploitation-001:
+    category: "Elevation of Privilege"
+    name: "Exploitation of known vulnerabilities and management interfaces on internet-exposed edge devices"
+    description: "{{targetName}} is an edge device reachable from {{sourceName}}, which sits outside the trust boundary (treated as Internet). Edge devices are permanently exposed so they can accept connections from the internet, and an attacker can take one over by targeting published vulnerabilities (including ones exploitable before authentication), a management interface left open to the internet, or default credentials (Can). A compromised edge device is the legitimate path into the internal network: it can be used to eavesdrop on or tamper with the traffic passing through it, to steal the VPN credentials and certificate private keys it stores, and as a foothold into the internal network. Endpoint detection products often cannot be installed on edge devices, so compromise is hard to notice. On the other hand, if fixes for vulnerabilities known to be exploited (CISA KEV, etc.) are applied within their deadlines, the management interface is reachable only from a management network the internet cannot reach, and no end-of-support devices remain in use, published techniques and intrusion through the management interface do not succeed (Cannot). The blast radius is all traffic passing through {{targetName}} and the entire internal network behind it that trusts {{targetName}}."
+    mitigation: "[Foundation] Record edge devices in the asset inventory and track model, firmware version, and end-of-support date. Prioritize fixes for vulnerabilities known to be exploited (CISA KEV, etc.) and apply them within their deadlines, and replace devices that have reached end of support. Disable the management UI and SSH on internet-facing interfaces so they are reachable only from the management network. Change default credentials. [Enterprise] Use MFA for management authentication, and forward management operations and configuration changes to an external logging platform for monitoring. Prepare a procedure for applying interim measures (disabling features, workarounds) until a fix is released. Periodically verify device configuration and integrity (firmware tampering). [Advanced] Minimize the features exposed (turn off unused VPN portals and management APIs) and replace them with ZTNA or similar, reducing the surface reachable from the internet itself. Assuming compromise, prepare procedures to revoke and reissue the credentials and keys held by edge devices."
+    references:
+      "0":
+        title: "CISA - Known Exploited Vulnerabilities Catalog (prioritized remediation of exploited vulnerabilities)"
+      "1":
+        title: "NIST SP 800-41 Rev.1 - Guidelines on Firewalls and Firewall Policy (management and operation of edge devices)"
+      "2":
+        title: "NIST SP 800-77 Rev.1 - Guide to IPsec VPNs (operating and managing VPN gateways)"
+
+  netinfra-tls-inspection-ca-key-compromise-001:
+    category: "Spoofing"
+    name: "Man-in-the-middle through compromise of the TLS inspection CA key"
+    description: "{{nodeName}} decrypts and inspects users' outbound TLS and re-signs certificates with the organization's CA. Because users' devices are configured to trust this CA, if the CA private key is stolen from {{nodeName}}, an attacker can forge a certificate for any site and perform a man-in-the-middle attack without warnings even on other paths the same devices use (such as Wi-Fi outside the office) (Can). {{nodeName}} itself also becomes an aggregation point handling all traffic in plaintext, so its compromise leaks all inspected traffic (credentials and business data). With a configuration that does not strictly verify upstream server certificates, users cannot notice a fake server. On the other hand, if the CA private key is kept in an HSM so it cannot be extracted, a subordinate CA restricted to inspection (name constraints, short validity) is used, and upstream certificate verification is enabled, the key itself cannot be carried off even if the device is compromised, and the scope and duration of any forgery are limited (Cannot). The blast radius is the TLS traffic of every device that trusts the CA."
+    mitigation: "[Foundation] Use a subordinate CA dedicated to inspection for re-signing, and do not place the organization's root CA key on the inspection device. Enable upstream server certificate verification and block traffic that fails verification. Define destinations that are not decrypted (healthcare, finance, authentication, etc.) and exclude them. [Enterprise] Keep the re-signing CA private key in an HSM (FIPS 140-3 validated) and use it in a non-extractable form. Set name constraints and a short validity period on the subordinate CA and renew it regularly. Monitor management operations on the inspection device through audit logs. [Advanced] Prepare and rehearse a procedure to revoke the CA and replace devices' trust stores quickly. Move to inspection devices that support TLS 1.3 and post-quantum key exchange, so inspection does not force a fallback to older cryptography."
+    conditions:
+      - description: "{{nodeName}} connects devices to a PoP through a tunnel, and at the PoP decrypts and inspects TLS before reconnecting outward. The PoP is operated by the SASE / SSE provider, so the traffic of every site and every device becomes plaintext on the provider's infrastructure. If the re-signing CA private key is stolen on the provider's side, or the provider's operators or management console are abused, an attacker can forge a certificate for any site against devices that trust the CA and read all inspected traffic (Can). On the other hand, if a model is chosen where the re-signing CA key is held in the organization's own HSM or key management (BYOK, etc.), the inspection-only subordinate CA has name constraints and a short validity period, and the provider's management console is protected with MFA and audit logs, the key cannot be carried off even if the provider is compromised, and the scope and duration of any forgery are limited (Cannot). The blast radius is the TLS traffic of every site and device that goes through {{nodeName}}."
+    references:
+      "0":
+        title: "NIST SP 800-52 Rev.2 - Guidelines for the Selection, Configuration, and Use of TLS Implementations (TLS certificate verification)"
+      "1":
+        title: "NIST SP 800-57 Part 1 Rev.5 - Recommendation for Key Management (protection and validity period of CA keys)"
+
+  netinfra-cdn-third-party-tls-termination-001:
+    category: "Information Disclosure"
+    name: "Third-party TLS termination by a CDN and bypass to the origin"
+    description: "{{nodeName}} terminates users' TLS at the edge and reconnects to the origin over a separate TLS session. This means the server certificate's private key (or an equivalent key) is entrusted to the CDN provider, and user traffic becomes plaintext once at the edge. If the CDN provider's infrastructure or management account is compromised, an attacker can impersonate the site with the entrusted key or read traffic passing through the edge (login credentials, personal data) (Can). In addition, if the origin is directly reachable from the internet, an attacker can bypass the CDN and attack the origin directly, so the CDN's WAF and DDoS protection do not apply. With a configuration where the edge-to-origin segment is unencrypted or certificates are not verified, that segment can be eavesdropped on or tampered with. On the other hand, if a model where the CDN provider does not hold the key is used (keyless approaches that keep the key on the server side, or a certificate issued only for the CDN), connections to the origin are limited to traffic from the CDN (mutual TLS, source restriction), and the edge-to-origin segment also uses TLS with certificate verification, abuse of the entrusted key and bypass do not succeed (Cannot). The blast radius is the traffic of all users going through {{nodeName}} and the domains for which the entrusted certificate is valid."
+    mitigation: "[Foundation] Use TLS between the edge and the origin, configured to verify the origin's certificate. Limit connections to the origin to traffic from the CDN. Use MFA on the CDN management account. [Enterprise] Issue a certificate dedicated to the CDN and do not share keys with the origin or other services. Use mutual TLS for connections to the origin, cryptographically rejecting connections from anything other than the CDN. Monitor CDN configuration changes through audit logs. [Advanced] Use a model that does not hand the private key to the CDN provider (keyless approaches, signing in the organization's own HSM). Encrypt sensitive data that must not become plaintext even at the edge at the application layer before sending it."
+    references:
+      "0":
+        title: "NIST SP 800-52 Rev.2 - Guidelines for the Selection, Configuration, and Use of TLS Implementations (TLS termination and certificate verification)"
+      "1":
+        title: "NIST SP 800-57 Part 1 Rev.5 - Recommendation for Key Management (protecting private keys and limiting their sharing)"
+
+  netinfra-smtp-starttls-downgrade-001:
+    category: "Information Disclosure"
+    name: "Mail eavesdropping through STARTTLS downgrade"
+    description: "Mail relayed between {{sourceName}} and {{targetName}} is encrypted with STARTTLS, but STARTTLS is an opportunistic scheme that encrypts only if the peer supports it, and in many cases does not verify certificates. An attacker on the path can strip the STARTTLS offer to force plaintext, or relay with a fake certificate, and read and modify message bodies, attachments, and password-reset links (Can). If the DNS MX record is spoofed, the mail itself can be redirected to the attacker's server. On the other hand, if MTA-STS or DANE is used to declare and enforce that mail to this destination is sent only over TLS with a verified certificate, and failures are monitored with TLS-RPT, downgrades and relaying with a fake certificate stop as delivery failures (Cannot). If the body is encrypted with S/MIME or similar, it cannot be read even if the relay segment is broken. The blast radius is all mail relayed between {{sourceName}} and {{targetName}}."
+    mitigation: "[Foundation] As a receiver, publish an MTA-STS policy; as a sender, deliver according to the peer's MTA-STS policy. Collect TLS failures during delivery with TLS-RPT. [Enterprise] Deploy DNSSEC and publish DANE (TLSA records), and verify certificates when delivering to peers that support DANE. Configure mandatory TLS with important business partners. [Advanced] Encrypt highly sensitive mail bodies with S/MIME or similar, so confidentiality does not depend on the encryption of the relay segment."
+
+  netinfra-l2-spoofing-001:
+    category: "Spoofing"
+    name: "Layer 2 spoofing (ARP spoofing, VLAN hopping, MAC flooding)"
+    description: "An attacker who gets onto the same segment connected to {{nodeName}} (a compromised endpoint, a device plugged into an unused wall jack, etc.) can forge ARP replies to impersonate the gateway or other hosts, flood the MAC address table so traffic is sent to every port, or use trunk auto-negotiation or double tagging to get into another VLAN, and thereby eavesdrop on and tamper with traffic on the segment and move laterally (Can). Layer 2 does not verify the sender, so hosts on a segment implicitly trust each other. On the other hand, if devices connecting to ports are authenticated with 802.1X, DHCP snooping, dynamic ARP inspection, and port security are enabled, and trunk auto-negotiation is turned off, unauthenticated devices cannot connect and spoofed replies are discarded (Cannot). If traffic is encrypted with TLS or MACsec, its contents cannot be read even if it is captured. The blast radius is every host in the VLANs {{nodeName}} serves and their traffic."
+    mitigation: "[Foundation] Disable unused ports and turn off trunk auto-negotiation on access ports. Set the native VLAN to an unused VLAN. Limit the number of MAC addresses per port with port security. [Enterprise] Authenticate devices connecting to ports with 802.1X, and enable DHCP snooping and dynamic ARP inspection. Split important segments by purpose and control traffic between segments with a firewall. [Advanced] Encrypt switch-to-switch and server links with MACsec. Make all application traffic mutually authenticated TLS so nothing depends on trust at layer 2."
+    references:
+      "0":
+        title: "IEEE 802.1X - Port-Based Network Access Control (authenticating devices connected to ports)"
+      "1":
+        title: "IEEE 802.1AE - Media Access Control (MAC) Security (link encryption with MACsec)"
+
+  netinfra-wireless-rogue-ap-001:
+    category: "Spoofing"
+    name: "Rogue access points (Evil Twin) and weak wireless encryption"
+    description: "The radio signal of {{nodeName}} reaches beyond the building, so an attacker can target the wireless segment without physical entry. By setting up a fake access point advertising the same SSID (Evil Twin), the attacker can get devices to connect, relay and eavesdrop on their traffic, or have users enter credentials into a fake login page (Can). With WPA2 pre-shared keys (PSK), the handshake can be recorded and the key brute-forced, and anyone who knows the key can decrypt other people's traffic on the same network. Even with WPA2-Enterprise, if devices do not verify the authentication server's certificate, credentials can be stolen by a fake access point. Access points installed by employees without approval become an entrance inside the boundary. On the other hand, if connections are authenticated with WPA3-Enterprise or EAP-TLS (device certificates), devices are forced to verify the authentication server's certificate and server name, and rogue access points are detected with a wireless IDS, authentication does not succeed against a fake access point and brute-forcing a pre-shared key is meaningless (Cannot). The blast radius is every device connecting to {{nodeName}} and the business network beyond it."
+    mitigation: "[Foundation] Do not use WEP or WPA (TKIP); use WPA2 or later (preferably WPA3). Do not use pre-shared keys on business SSIDs; authenticate users or devices with 802.1X (WPA2/WPA3-Enterprise). Separate guest SSIDs from the business network. [Enterprise] Authenticate with device certificates through EAP-TLS, and enforce verification of the authentication server's certificate and server name in device configuration. Detect rogue access points and spoofing of the same SSID with a wireless IDS / IPS. Enable management frame protection (802.11w). [Advanced] Do not trust the wireless segment; decide access to business applications per request with ZTNA and device posture checks."
+    references:
+      "0":
+        title: "NIST SP 800-153 - Guidelines for Securing Wireless Local Area Networks (WLANs) (detecting rogue access points and configuring wireless)"

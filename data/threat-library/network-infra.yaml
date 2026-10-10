@@ -1,0 +1,211 @@
+# ネットワーク機器・セキュリティ製品（network-infra コンポーネントライブラリの 14 型）の固有脅威。
+# 境界機器の侵入起点化、TLS インスペクション用 CA 鍵、CDN による第三者の TLS 終端、
+# STARTTLS のダウングレード、L2 のなりすまし、不正アクセスポイントを扱う。
+# PQC 移行に直結するもの（受動復号・HSM・VPN トンネルの HNDL）は pqc.yaml に置く。
+#
+# 出典（一般的な基準のみを根拠とする。個別の事故報告は出典・事例に用いない）:
+#   - NIST SP 800-41 Rev.1 "Guidelines on Firewalls and Firewall Policy"。
+#   - NIST SP 800-77 Rev.1 "Guide to IPsec VPNs"。
+#   - NIST SP 800-52 Rev.2 "Guidelines for the Selection, Configuration, and Use of TLS Implementations"。
+#   - NIST SP 800-57 Part 1 Rev.5 "Recommendation for Key Management"。
+#   - NIST SP 800-153 "Guidelines for Securing Wireless Local Area Networks (WLANs)"。
+#   - CISA "Known Exploited Vulnerabilities Catalog"（悪用が確認された脆弱性の一覧）。
+#   - IETF RFC 8461（SMTP MTA Strict Transport Security）/ RFC 7672（SMTP Security via
+#     Opportunistic DANE TLS）。
+#   - IEEE 802.1X（ポートベースのネットワークアクセス制御）/ IEEE 802.1AE（MACsec）。
+#   本文は逐語転載せず日本語要約のみ。
+#
+#   SPDX-License-Identifier: Apache-2.0
+#   ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+#   出典の帰属表示は NOTICE を参照。
+#
+# 重複回避方針:
+#   - 平文の通信そのもの（LB の SSL オフロード後の平文区間等）→ stride-edge-plain-encryption-001
+#     （canonicalId: plaintext-transmission、encryption:[Plain]）でカバー済み。本ファイルは平文区間を
+#     別途検出しない。STARTTLS のルールは「暗号化しているつもりでも経路上で外される」点を扱い別 canonicalId。
+#   - FRONT_END_SERVER / GATEWAY の管理面露出 → stride-web-remote-mgmt-exposed-001、API 管理プレーンの
+#     露出 → api-control-plane-internet-exposure-001（canonicalId: web-remote-management-exposure）。
+#     本ファイルの境界機器ルールは管理面に加え、利用者向けのサービス面（VPN ポータル・SMTP・SIP 等）の
+#     既知脆弱性の悪用までを扱い、パッチ適用・KEV 追跡という別の対策軸を持つため別 canonicalId とする。
+#     攻撃面属性（attackSurface）は FRONT_END_SERVER / GATEWAY でしか入力できないため、露出は
+#     エッジの sourceTrust:[Internet] で表す。
+#   - VPN の広域到達・閉域網の無認証 → zt-vpn-broad-network-access-001 / zt-implicit-trust-network-location-001
+#     （エッジの network 軸）でカバー済み。本ファイルの L2 ルールはスイッチ（ノード）視点で、同一セグメントに
+#     入った攻撃者が L2 の仕組みを悪用する点を扱い、subject も機構も異なる。
+#   - SASE / SSE 事業者への検査データ集中は、TLS インスペクション CA 鍵のルールの SASE 向け description
+#     （conditions）で扱い、独立したルールを作らない。
+#   - FIREWALL の TLS インスペクションは任意機能（既定は透過）のため CA 鍵のルールの対象から外す
+#     （全ファイアウォールでの過検知を避ける）。終端判定の属性（docs 側の設計で予定）が入れば再検討する。
+#   - CDN（第三者が運用するエッジ）は境界機器ルールの対象から外す（パッチ適用の主体が利用者ではない）。
+#     CDN の固有脅威は CDN のルールで扱う。
+#
+# mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
+# description は Can/Cannot ペアと blast radius を意識して記述する。
+
+schemaVersion: 1
+
+rules:
+  # ── 境界機器の既知脆弱性・管理面の悪用（経路依存）────────────────────
+  - id: netinfra-edge-device-exploitation-001
+    canonicalId: network-edge-device-exploitation
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "インターネットに露出した境界機器の既知脆弱性・管理面の悪用"
+    severity: High
+    description: "{{targetName}} は信頼境界の外（Internet 扱い）にある {{sourceName}} から到達できる境界機器である。境界機器はインターネットからの接続を受けるために常時公開されており、攻撃者は公開された脆弱性（認証前に実行できるものを含む）や、インターネット側に開いた管理画面・既定の資格情報を狙って機器を掌握できる（Can）。掌握された境界機器は内部への正規の通り道であり、通過する通信の盗聴・改ざん、保存された VPN 資格情報や証明書の秘密鍵の窃取、内部ネットワークへの足場として悪用される。境界機器にはエンドポイントの検知製品を入れられないことが多く、侵害に気づきにくい。一方、悪用が確認された脆弱性（CISA KEV 等）の修正を期限内に適用し、管理面をインターネットから到達できない管理用ネットワークに限定し、サポートが終了した機器を使わずにいれば、公開済みの手口と管理面からの侵入は成立しない（Cannot）。blast radius は {{targetName}} を通過する全通信と、その背後で {{targetName}} を信頼する内部ネットワーク全体。"
+    mitigation: "[Foundation] 境界機器を資産台帳に載せ、型番・ファームウェア版数・サポート期限を管理する。悪用が確認された脆弱性（CISA KEV 等）の修正は優先して期限内に適用し、サポートが終了した機器は更新する。管理画面・SSH をインターネット側のインターフェースで無効にし、管理用ネットワークからのみ到達できるようにする。既定の資格情報を変更する。 [Enterprise] 管理面の認証に MFA を使い、管理操作と設定変更を外部のログ基盤へ送って監視する。修正が出るまでの暫定対策（機能の無効化・回避策）を適用する手順を用意する。機器の設定と整合性（ファームウェアの改ざん）を定期的に確認する。 [Advanced] 公開する機能を最小にし（使わない VPN ポータルや管理 API を止める）、ZTNA 等に置き換えてインターネットから到達できる面そのものを減らす。侵害を前提に、境界機器が保持する資格情報・鍵の失効と再発行の手順を整える。"
+    appliesTo:
+      kind: edge
+      when:
+        # 境界機器が Internet 側の送信元から接続を受けるときに発火する。
+        # CDN は第三者が運用するエッジのため対象外（netinfra-cdn-third-party-tls-termination-001 が扱う）。
+        targetType: [FIREWALL, VPN_GATEWAY, LOAD_BALANCER, WAF, ROUTER, SBC, EMAIL_GATEWAY]
+        sourceTrust: [Internet]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "ID.RA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-02"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "CISA - Known Exploited Vulnerabilities Catalog（悪用が確認された脆弱性の優先修正）"
+        url: "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+      - title: "NIST SP 800-41 Rev.1 - Guidelines on Firewalls and Firewall Policy（境界機器の管理と運用）"
+        url: "https://csrc.nist.gov/pubs/sp/800/41/r1/final"
+      - title: "NIST SP 800-77 Rev.1 - Guide to IPsec VPNs（VPN ゲートウェイの運用と管理）"
+        url: "https://csrc.nist.gov/pubs/sp/800/77/r1/final"
+
+  # ── TLS インスペクション用 CA 鍵の侵害（内在）──────────────────────────
+  - id: netinfra-tls-inspection-ca-key-compromise-001
+    canonicalId: tls-inspection-ca-key-compromise
+    framework: STRIDE
+    category: "Spoofing"
+    name: "TLS インスペクション用 CA 鍵の侵害による中間者攻撃"
+    severity: High
+    description: "{{nodeName}} は利用者の外向き TLS を復号して検査し、組織の CA で証明書を再署名する。利用者の端末はこの CA を信頼するよう設定されているため、CA の秘密鍵が {{nodeName}} から盗まれると、攻撃者は任意のサイトの証明書を偽造でき、同じ端末が通る別の経路（社外の Wi-Fi 等）でも警告なしに中間者攻撃を行える（Can）。また {{nodeName}} 自体が全通信を平文で扱う集約点になり、侵害されると検査対象の全通信（認証情報・業務データ）が漏れる。上流サーバーの証明書を厳密に検証しない設定では、利用者は偽のサーバーに気づけない。一方、CA の秘密鍵を HSM に置いて取り出せないようにし、用途を検査用に限定した中間 CA（名前制約・短い有効期間）を使い、上流の証明書検証を有効にしていれば、機器が侵害されても鍵そのものは持ち出せず、偽造できる範囲と期間も限られる（Cannot）。blast radius は CA を信頼する全端末の TLS 通信。"
+    mitigation: "[Foundation] 再署名用の CA は検査専用の中間 CA にし、組織のルート CA の鍵を検査装置に置かない。上流サーバーの証明書検証を有効にし、検証に失敗した通信を遮断する。医療・金融・認証など復号しない宛先を決めて除外する。 [Enterprise] 再署名用 CA の秘密鍵を HSM（FIPS 140-3 認証）に置き、取り出せない形で使う。中間 CA に名前制約と短い有効期間を設定し、定期的に更新する。検査装置の管理操作を監査ログで監視する。 [Advanced] CA の失効と端末の信頼ストアの入れ替えを短時間で行える手順を用意し、訓練する。TLS 1.3 と PQC の鍵交換に対応した検査装置へ移行し、検査のために古い暗号へ落とさない。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: SECURE_WEB_GATEWAY
+        - nodeType: SASE
+      # 再署名用 CA を持つこと自体が機器の機能で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+      conditions:
+        - when:
+            nodeType: [SASE]
+          description: "{{nodeName}} は端末から PoP までをトンネルで結び、PoP で TLS を復号・検査してから外部へ再接続する。PoP は SASE / SSE の事業者が運用するため、全拠点・全端末の通信が事業者の設備で平文になる。再署名用 CA の秘密鍵が事業者側で盗まれたり、事業者の運用者や管理コンソールが悪用されたりすると、攻撃者は CA を信頼する端末に対して任意のサイトの証明書を偽造でき、検査対象の全通信を読める（Can）。一方、再署名用 CA の鍵を自組織の HSM や鍵管理で保持する方式（BYOK 等）を選び、検査専用の中間 CA に名前制約と短い有効期間を付け、事業者の管理コンソールを MFA と監査ログで保護していれば、事業者側の侵害でも鍵は持ち出せず、偽造できる範囲と期間も限られる（Cannot）。blast radius は {{nodeName}} を経由する全拠点・全端末の TLS 通信。"
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "NIST SP 800-52 Rev.2 - Guidelines for the Selection, Configuration, and Use of TLS Implementations（TLS の証明書検証）"
+        url: "https://csrc.nist.gov/pubs/sp/800/52/r2/final"
+      - title: "NIST SP 800-57 Part 1 Rev.5 - Recommendation for Key Management（CA 鍵の保護と有効期間）"
+        url: "https://csrc.nist.gov/pubs/sp/800/57/pt1/r5/final"
+
+  # ── CDN による第三者の TLS 終端（内在）─────────────────────────────────
+  - id: netinfra-cdn-third-party-tls-termination-001
+    canonicalId: cdn-third-party-tls-termination
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "CDN による第三者の TLS 終端とオリジンへの迂回"
+    severity: Medium
+    description: "{{nodeName}} は利用者からの TLS をエッジで終端し、オリジンへ別の TLS で再接続する。このためサーバー証明書の秘密鍵（または同等の鍵）を CDN 事業者に預け、利用者の通信はエッジで一度平文になる。CDN 事業者の設備や管理アカウントが侵害されると、攻撃者は預けた鍵でサイトになりすましたり、エッジを通る通信（ログイン情報・個人情報）を読んだりできる（Can）。また、オリジンがインターネットから直接到達できる場合、攻撃者は CDN を迂回してオリジンを直接攻撃でき、CDN 側の WAF・DDoS 対策が効かない。エッジとオリジンの間を暗号化していない、または証明書を検証していない設定では、その区間で盗聴・改ざんされる。一方、CDN 事業者が鍵を保持しない方式（鍵をサーバー側に残すキーレス方式や、CDN 専用の証明書の発行）を使い、オリジンへの接続を CDN からの通信だけに限定し（相互 TLS・送信元の限定）、エッジとオリジンの間も証明書を検証する TLS にしていれば、預けた鍵の悪用と迂回は成立しない（Cannot）。blast radius は {{nodeName}} を経由する全利用者の通信と、預けた証明書が有効なドメイン。"
+    mitigation: "[Foundation] エッジとオリジンの間を TLS にし、オリジン側の証明書を検証する設定にする。オリジンへの接続を CDN からの通信だけに限定する。CDN の管理アカウントに MFA を使う。 [Enterprise] CDN には CDN 専用の証明書を発行し、オリジンや他のサービスと鍵を共有しない。オリジンへの接続に相互 TLS を使い、CDN 以外からの接続を暗号学的に拒否する。CDN の設定変更を監査ログで監視する。 [Advanced] 秘密鍵を CDN 事業者に渡さない方式（キーレス方式・自組織 HSM での署名）を使う。エッジでも平文にしたくない機密データは、アプリ層で暗号化してから送る。"
+    appliesTo:
+      kind: node
+      nodeType: CDN
+      # 鍵の預託とエッジでの平文化は CDN の動作そのもので、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+      - standard: nist-csf-2.0
+        ref: "GV.SC-07"
+    references:
+      - title: "NIST SP 800-52 Rev.2 - Guidelines for the Selection, Configuration, and Use of TLS Implementations（TLS 終端と証明書検証）"
+        url: "https://csrc.nist.gov/pubs/sp/800/52/r2/final"
+      - title: "NIST SP 800-57 Part 1 Rev.5 - Recommendation for Key Management（秘密鍵の保護と共有の制限）"
+        url: "https://csrc.nist.gov/pubs/sp/800/57/pt1/r5/final"
+
+  # ── STARTTLS のダウングレード / ストリッピング（経路依存）──────────────
+  - id: netinfra-smtp-starttls-downgrade-001
+    canonicalId: smtp-starttls-downgrade
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "STARTTLS のダウングレードによるメールの盗聴"
+    severity: Medium
+    description: "{{sourceName}} と {{targetName}} の間のメール中継は STARTTLS で暗号化するが、STARTTLS は相手が対応していれば暗号化する「日和見的な」方式で、多くの場合は証明書も検証しない。経路上の攻撃者は STARTTLS の提示を消して平文に落としたり、偽の証明書で中継したりして、メール本文・添付ファイル・パスワードリセットのリンクを読み、書き換えられる（Can）。DNS の MX レコードを偽装されると、メールそのものを攻撃者のサーバーへ誘導される。一方、MTA-STS や DANE で「この宛先には証明書を検証した TLS でしか送らない」ことを宣言・強制し、TLS-RPT で失敗を監視していれば、ダウングレードや偽の証明書による中継は配送失敗として止まる（Cannot）。S/MIME 等で本文を暗号化していれば、中継区間が破られても本文は読めない。blast radius は {{sourceName}} と {{targetName}} の間で中継される全メール。"
+    mitigation: "[Foundation] 受信側として MTA-STS のポリシーを公開し、送信側として相手の MTA-STS ポリシーに従って配送する。TLS-RPT で配送時の TLS の失敗を収集する。 [Enterprise] DNSSEC を導入して DANE（TLSA レコード）を公開し、相手が DANE に対応していれば証明書を検証して配送する。重要な取引先との間は TLS を必須にする設定にする。 [Advanced] 機密性の高いメールは S/MIME 等で本文を暗号化し、中継区間の暗号に依存しない。"
+    appliesTo:
+      kind: edge
+      # Internet 側とのメール中継（受信・送信の両方向）で発火する。
+      anyOf:
+        - targetType: [EMAIL_GATEWAY]
+          sourceTrust: [Internet]
+        - sourceType: [EMAIL_GATEWAY]
+          targetTrust: [Internet]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+    references:
+      - title: "IETF RFC 8461 - SMTP MTA Strict Transport Security (MTA-STS)"
+        url: "https://www.rfc-editor.org/rfc/rfc8461"
+      - title: "IETF RFC 7672 - SMTP Security via Opportunistic DNS-Based Authentication of Named Entities (DANE) Transport Layer Security (TLS)"
+        url: "https://www.rfc-editor.org/rfc/rfc7672"
+
+  # ── L2 のなりすまし（内在）──────────────────────────────────────────
+  - id: netinfra-l2-spoofing-001
+    canonicalId: l2-spoofing-lateral-movement
+    framework: STRIDE
+    category: "Spoofing"
+    name: "L2 のなりすまし（ARP スプーフィング・VLAN ホッピング・MAC フラッディング）"
+    severity: Medium
+    description: "{{nodeName}} につながる同じセグメントに入った攻撃者（侵害された端末、空いている情報コンセントに接続した機器等）は、ARP の応答を偽ってゲートウェイや他の端末になりすましたり、MAC アドレス表をあふれさせて通信を全ポートに流させたり、トランクの自動交渉や二重タグで別の VLAN に入り込んだりして、同じセグメントの通信を盗聴・改ざんし、横展開できる（Can）。L2 は送信元を検証しないため、セグメント内の端末は互いを暗黙に信頼している。一方、802.1X でポートに接続する機器を認証し、DHCP スヌーピングとダイナミック ARP インスペクション、ポートセキュリティを有効にし、トランクの自動交渉を止めていれば、未認証の機器は接続できず、なりすましの応答は破棄される（Cannot）。通信を TLS や MACsec で暗号化していれば、盗聴できても中身は読めない。blast radius は {{nodeName}} が収容する VLAN の全端末と、その通信。"
+    mitigation: "[Foundation] 未使用のポートを無効にし、端末用ポートのトランクの自動交渉を止める。ネイティブ VLAN を使わない VLAN にする。ポートセキュリティで 1 ポートあたりの MAC アドレス数を制限する。 [Enterprise] 802.1X でポートに接続する機器を認証し、DHCP スヌーピングとダイナミック ARP インスペクションを有効にする。重要なセグメントは用途ごとに分け、セグメント間の通信をファイアウォールで制御する。 [Advanced] スイッチ間・サーバー接続のリンクを MACsec で暗号化する。アプリケーションの通信をすべて相互認証付きの TLS にし、L2 の信頼に依存しない。"
+    appliesTo:
+      kind: node
+      nodeType: L2_SWITCH
+      # L2 の送信元非検証はスイッチの性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-01"
+    references:
+      - title: "IEEE 802.1X - Port-Based Network Access Control（ポートに接続する機器の認証）"
+        url: "https://standards.ieee.org/"
+      - title: "IEEE 802.1AE - Media Access Control (MAC) Security（MACsec によるリンク暗号化）"
+        url: "https://standards.ieee.org/"
+
+  # ── 不正アクセスポイント / Evil Twin・弱い無線暗号（内在）───────────────
+  - id: netinfra-wireless-rogue-ap-001
+    canonicalId: wireless-rogue-ap-weak-encryption
+    framework: STRIDE
+    category: "Spoofing"
+    name: "不正アクセスポイント（Evil Twin）と弱い無線暗号"
+    severity: Medium
+    description: "{{nodeName}} の電波は建物の外まで届くため、攻撃者は物理的に侵入せずに無線区間を狙える。同じ SSID を名乗る偽のアクセスポイント（Evil Twin）を置いて端末を接続させ、通信を中継・盗聴したり、偽のログイン画面で資格情報を入力させたりできる（Can）。WPA2 の事前共有鍵（PSK）では接続時のやりとりを記録して鍵を総当たりでき、鍵を知る者は同じネットワークの他人の通信も復号できる。WPA2-Enterprise でも端末が認証サーバーの証明書を検証していなければ、偽のアクセスポイントで認証情報を盗まれる。社員が無断で設置したアクセスポイントは、境界の内側への入口になる。一方、WPA3-Enterprise または EAP-TLS（端末証明書）で接続を認証し、端末側で認証サーバーの証明書とサーバー名の検証を強制し、無線 IDS で不正なアクセスポイントを検知していれば、偽のアクセスポイントでは認証が成立せず、事前共有鍵の総当たりも意味を持たない（Cannot）。blast radius は {{nodeName}} に接続する全端末と、その先の業務ネットワーク。"
+    mitigation: "[Foundation] WEP・WPA（TKIP）を使わず、WPA2 以上（できれば WPA3）にする。業務用の SSID では事前共有鍵を使わず、802.1X（WPA2/WPA3-Enterprise）で利用者または端末を認証する。来客用の SSID は業務ネットワークと分離する。 [Enterprise] EAP-TLS で端末証明書による認証を行い、端末の設定で認証サーバーの証明書とサーバー名の検証を強制する。無線 IDS / IPS で不正なアクセスポイントと同じ SSID の偽装を検知する。管理フレームの保護（802.11w）を有効にする。 [Advanced] 無線区間を信頼せず、業務アプリケーションへのアクセスを ZTNA と端末の状態の確認で都度判定する。"
+    appliesTo:
+      kind: node
+      nodeType: WIRELESS_AP
+      # 電波の到達と無線の暗号方式はアクセスポイントの性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+    references:
+      - title: "NIST SP 800-153 - Guidelines for Securing Wireless Local Area Networks (WLANs)（不正アクセスポイントの検知と無線の構成）"
+        url: "https://csrc.nist.gov/pubs/sp/800/153/final"
