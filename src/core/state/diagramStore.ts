@@ -481,6 +481,18 @@ interface DiagramState {
    * 現 `idCounters` の続きから `seq` を振る（§2.26 の番号非再利用を維持）。
    */
   importTemplateToActiveLayer: (layer: LayerData) => void;
+  /**
+   * `from` レイヤーを `to` レイヤーへ**下書きとして複製**（丸ごと置換）。seq は維持し、
+   * 内部 ID は新規採番して参照を付け替える（抑制・リスク評価・対策状況は threatId＝
+   * `${ruleId}-${nodeId}` キーでレイヤー非区別のため、ID を共有すると複製先へ漏れる）。
+   * 採番カウンタは種別ごとに max(複製元, 複製先)。手動脅威・抑制・評価は複製しない。
+   * 履歴に積み、アクティブレイヤーを `to` へ切り替える。from === to は何もしない。
+   */
+  copyLayer: (from: LayerKey, to: LayerKey) => void;
+  /** レイヤー複製モーダルの開閉（UI 表示用、永続化しない）。 */
+  isCopyLayerOpen: boolean;
+  openCopyLayer: () => void;
+  closeCopyLayer: () => void;
 
   // ---- actions: elemental id ----
   /**
@@ -628,6 +640,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   isLibraryInspectorOpen: false,
   isTemplateModalOpen: false,
   exportModalMode: null,
+  isCopyLayerOpen: false,
   isProjectFileModalOpen: false,
   isNewProjectConfirmOpen: false,
 
@@ -1024,6 +1037,73 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     });
   },
 
+  copyLayer: (from, to) => {
+    if (from === to) return;
+    get().recordHistory();
+    set((s) => {
+      const src = s.layers[from];
+      // 旧 ID → 新 ID（レイヤー間で ID を共有しない。参照付け替えに使う）。
+      const idMap = new Map<string, string>();
+      for (const n of src.nodes) idMap.set(n.id, nextId('n'));
+      // 参照先が複製元に居れば付け替え、居なければ解除（importTemplate と同じ作法）。
+      const remap = (id: string | undefined): string | undefined =>
+        id ? idMap.get(id) : undefined;
+
+      const nodes = src.nodes.map((n) => {
+        const next: DiagramNode = structuredClone(n);
+        next.id = idMap.get(n.id) as string;
+        for (const k of ['parentId', 'attackObjectiveId', 'authProviderId'] as const) {
+          const mapped = remap(n[k]);
+          if (mapped) next[k] = mapped;
+          else delete next[k];
+        }
+        return next;
+      });
+      const edges = src.edges
+        .filter((e) => idMap.has(e.source) && idMap.has(e.target))
+        .map((e) => {
+          const next: DiagramEdge = structuredClone(e);
+          next.id = nextId('e');
+          next.source = idMap.get(e.source) as string;
+          next.target = idMap.get(e.target) as string;
+          const mapped = remap(e.authProviderId);
+          if (mapped) next.authProviderId = mapped;
+          else delete next.authProviderId;
+          return next;
+        });
+      const boundaries = src.boundaries.map((b) => ({ ...structuredClone(b), id: nextId('b') }));
+      const annotations = src.annotations.map((a) => {
+        const next: DiagramAnnotation = structuredClone(a);
+        next.id = nextId('ann');
+        const mapped = remap(a.targetNodeId);
+        if (mapped) next.targetNodeId = mapped;
+        else delete next.targetNodeId;
+        return next;
+      });
+
+      const cf = s.idCounters[from];
+      const ct = s.idCounters[to];
+      return {
+        layers: { ...s.layers, [to]: { nodes, edges, boundaries, annotations } },
+        idCounters: {
+          ...s.idCounters,
+          [to]: {
+            node: Math.max(cf.node, ct.node),
+            edge: Math.max(cf.edge, ct.edge),
+            boundary: Math.max(cf.boundary, ct.boundary),
+          },
+        },
+        activeLayer: to,
+        selectedNodeIds: [],
+        selectedEdgeId: null,
+        selectedBoundaryIds: [],
+        selectedAnnotationId: null,
+        linkingFromId: null,
+        _commitTag: null,
+      };
+    });
+  },
+
   renumberElementalIds: () =>
     set((s) => {
       const layers = { ...s.layers };
@@ -1135,6 +1215,8 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
   openTemplate: () => set({ isTemplateModalOpen: true }),
   closeTemplate: () => set({ isTemplateModalOpen: false }),
+  openCopyLayer: () => set({ isCopyLayerOpen: true }),
+  closeCopyLayer: () => set({ isCopyLayerOpen: false }),
   openExportModal: (mode) => set({ exportModalMode: mode }),
   closeExportModal: () => set({ exportModalMode: null }),
   openProjectFile: () => set({ isProjectFileModalOpen: true }),

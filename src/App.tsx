@@ -32,6 +32,7 @@ import { TemplateModal } from './ui/panels/TemplateModal';
 import { ProjectFileModal } from './ui/panels/ProjectFileModal';
 import { NewProjectModal } from './ui/panels/NewProjectModal';
 import { ExportLayersModal } from './ui/panels/ExportLayersModal';
+import { CopyLayerModal } from './ui/panels/CopyLayerModal';
 import { LibraryInspectorModal } from './ui/panels/library-inspector/LibraryInspectorModal';
 
 export default function App() {
@@ -124,6 +125,7 @@ export default function App() {
       <ProjectFileModal />
       <NewProjectModal />
       <ExportLayersModal />
+      <CopyLayerModal />
       {isLibraryInspectorOpen && <LibraryInspectorModal onClose={closeLibraryInspector} />}
     </div>
   );

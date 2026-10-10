@@ -1,5 +1,6 @@
 import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import {
+  Copy,
   Download,
   FilePlus,
   FileText,
@@ -68,6 +69,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
   const openProjectEdit = useDiagramStore((s) => s.openProjectEdit);
   const openTemplate = useDiagramStore((s) => s.openTemplate);
   const openExportModal = useDiagramStore((s) => s.openExportModal);
+  const openCopyLayer = useDiagramStore((s) => s.openCopyLayer);
   const openProjectFile = useDiagramStore((s) => s.openProjectFile);
   const openNewProjectConfirm = useDiagramStore((s) => s.openNewProjectConfirm);
   const projectName = useDiagramStore((s) => s.projectMeta.name);
@@ -236,6 +238,13 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                       </Fragment>
                     );
                   })}
+                  <button
+                    onClick={openCopyLayer}
+                    className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
+                  >
+                    <Copy size={12} className="text-emerald-400 shrink-0" />
+                    {t('project.copyLayer.open')}
+                  </button>
                 </div>
               )}
             </div>

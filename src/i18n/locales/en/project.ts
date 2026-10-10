@@ -184,4 +184,14 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'project.exportModal.error': 'Export failed: {message}',
   'project.exportModal.errorReload':
     'Could not load the export feature. The app may have been updated, or the connection was lost. Reload the page and try again (your changes are auto-saved in the browser).',
+  // ── CopyLayerModal (copy a layer as a draft) ──
+  'project.copyLayer.open': 'Copy this layer…',
+  'project.copyLayer.title': 'Copy as draft',
+  'project.copyLayer.source': 'Source',
+  'project.copyLayer.target': 'Target',
+  'project.copyLayer.elementCount': '{count} elements',
+  'project.copyLayer.emptyLayer': 'Empty',
+  'project.copyLayer.overwriteWarning': 'The target contents ({count} elements) will be replaced',
+  'project.copyLayer.note': 'Manual threats, suppressions, risk scores and control statuses are not copied. You can undo the copy.',
+  'project.copyLayer.confirm': 'Copy',
 };

@@ -184,4 +184,14 @@ export const jaProject = {
   'project.exportModal.error': '出力に失敗しました: {message}',
   'project.exportModal.errorReload':
     '出力機能を読み込めませんでした。アプリが更新されたか、接続が切れた可能性があります。ページを再読み込みしてから、もう一度お試しください（未保存の変更はブラウザ内に自動保存されています）。',
+  // ── CopyLayerModal（レイヤーの下書き複製） ──
+  'project.copyLayer.open': 'このレイヤーを複製…',
+  'project.copyLayer.title': '下書きとして複製',
+  'project.copyLayer.source': '複製元',
+  'project.copyLayer.target': '複製先',
+  'project.copyLayer.elementCount': '要素 {count} 件',
+  'project.copyLayer.emptyLayer': '空',
+  'project.copyLayer.overwriteWarning': '複製先の内容（要素 {count} 件）は置き換わります',
+  'project.copyLayer.note': '手動脅威・抑制・リスク評価・対策状況は複製されません。複製後は元に戻す（Undo）で取り消せます。',
+  'project.copyLayer.confirm': '複製する',
 } as const;
