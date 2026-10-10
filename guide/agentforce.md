@@ -320,7 +320,7 @@ Line up the Salesforce DX paths in the `watch-paths` of the GitHub Action from
 [Integrating with AI-Driven Development CI](ci-integration.md).
 
 ```yaml
-- uses: takashi-ohmoto-git/CyberRiskScape@v0.2.0   # pin to a commit SHA in production
+- uses: takashi-ohmoto-git/CyberRiskScape@v0.6.0   # pin to a commit SHA in production
   with:
     model: threat-model/project.json
     fail-on: High

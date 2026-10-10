@@ -329,7 +329,7 @@ PBX → STT → エージェント → TTS の部分を参考にしてくださ�
 Salesforce DX のパスを並べます。
 
 ```yaml
-- uses: takashi-ohmoto-git/CyberRiskScape@v0.2.0   # 本番ではコミット SHA に固定すること
+- uses: takashi-ohmoto-git/CyberRiskScape@v0.6.0   # 本番ではコミット SHA に固定すること
   with:
     model: threat-model/project.json
     fail-on: High

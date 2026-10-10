@@ -24,7 +24,7 @@ jobs:
 
       # Pin to a commit SHA in production (e.g. `@<40-char-sha>  # v0.2.0`) rather than a
       # branch or tag — this action builds and runs arbitrary CLI code from the referenced ref.
-      - uses: takashi-ohmoto-git/CyberRiskScape@v0.2.0
+      - uses: takashi-ohmoto-git/CyberRiskScape@v0.6.0
         with:
           model: threat-model/project.json
           fail-on: High
