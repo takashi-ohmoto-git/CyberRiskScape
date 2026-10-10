@@ -326,10 +326,10 @@ function ItemCard({ r, onSelectNode }: { r: ItemResult; onSelectNode: (id: strin
       {!dim && (
         <div className="flex flex-wrap items-center gap-1.5 text-xs">
           <span className="text-slate-500">{t('checklist.item.nodes')}:</span>
-          {r.nodes.length === 0 ? (
+          {r.checkNodes.length === 0 ? (
             <span className="text-slate-500">{t('checklist.item.noNodes')}</span>
           ) : (
-            r.nodes.map((n) => (
+            r.checkNodes.map((n) => (
               <button
                 key={n.id}
                 onClick={() => onSelectNode(n.id)}
@@ -346,9 +346,32 @@ function ItemCard({ r, onSelectNode }: { r: ItemResult; onSelectNode: (id: strin
                 action: r.counts.action,
                 unfilled: r.counts.unfilled,
                 accepted: r.counts.accepted,
+                implemented: r.counts.implemented,
               })}
             </span>
           )}
+        </div>
+      )}
+      {!dim && r.checkThreats.length > 0 && (
+        <div className="flex flex-col gap-1 text-xs">
+          <span className="text-slate-500">{t('checklist.item.threats')}:</span>
+          <ul className="flex flex-col gap-1 pl-2">
+            {r.checkThreats.map((c, i) => (
+              <li key={i} className="flex flex-wrap items-center gap-1.5">
+                <span className={`px-1.5 rounded-full border ${CHECKLIST_STATUS_BADGE[c.kind]}`}>
+                  {t(CHECKLIST_STATUS_LABEL_KEY[c.kind])}
+                </span>
+                <span className="text-slate-200">{c.name}</span>
+                <button
+                  onClick={() => onSelectNode(c.node.id)}
+                  title={t('checklist.item.selectNode', { label: c.node.label })}
+                  className="text-sky-300 hover:text-sky-200"
+                >
+                  {c.node.label}
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
       <p className="text-xs text-slate-400 leading-relaxed">

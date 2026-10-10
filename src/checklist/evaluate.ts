@@ -20,17 +20,27 @@ export interface RelatedNode {
   label: string;
 }
 
+/** 確認が必要な脅威（要対応か未入力の検出）。 */
+export interface CheckThreat {
+  /** 脅威名（未設定ならカテゴリ）。 */
+  name: string;
+  node: RelatedNode;
+  kind: 'action' | 'unfilled';
+}
+
 export interface ItemResult {
   item: ChecklistItem;
   status: ItemStatus;
   /** 関係ノード（検出の対象。重複なし）。 */
   nodes: RelatedNode[];
-  /** 確認が必要なノード（要対応の検出があるノード。重複なし）。 */
-  actionNodes: RelatedNode[];
+  /** 確認が必要なノード（要対応か未入力の検出があるノード。重複なし）。 */
+  checkNodes: RelatedNode[];
+  /** 確認が必要な脅威（検出順）。 */
+  checkThreats: CheckThreat[];
   /** 図にある `targetTypes` のノード数。 */
   targetNodeCount: number;
-  /** 検出件数の内訳（誤検知は含めない）。 */
-  counts: { action: number; unfilled: number; accepted: number };
+  /** 検出件数の内訳（誤検知・対策不要は含めない）。 */
+  counts: { action: number; unfilled: number; accepted: number; implemented: number };
 }
 
 export interface GroupResult {
@@ -106,17 +116,22 @@ export function evaluateChecklist(input: EvaluateChecklistInput): ChecklistResul
   const evaluateItem = (item: ChecklistItem): ItemResult => {
     const types = new Set(item.targetTypes);
     const targetNodeCount = nodes.filter((n) => types.has(n.type)).length;
-    const counts = { action: 0, unfilled: 0, accepted: 0 };
+    const counts = { action: 0, unfilled: 0, accepted: 0, implemented: 0 };
     const nodeIds: string[] = [];
-    const actionNodeIds: string[] = [];
+    const checkNodeIds: string[] = [];
+    const checkThreats: CheckThreat[] = [];
     for (const t of detected) {
       if (!item.ruleIds.some((r) => matchesRule(t, r))) continue;
       if (t.suppression?.status === 'false-positive') continue; // 誤検知は除外
+      if (t.controlStatus?.status === 'not-applicable') continue; // 対策不要も除外
       if (t.suppression?.status === 'accepted') counts.accepted++;
-      else if (t.assumptionFlags?.some((f) => f === 'attackSurface' || f === 'posture')) counts.unfilled++;
+      else if (t.controlStatus?.status === 'implemented') counts.implemented++;
       else {
-        counts.action++;
-        if (!actionNodeIds.includes(t.nodeId)) actionNodeIds.push(t.nodeId);
+        const kind = t.assumptionFlags?.some((f) => f === 'attackSurface' || f === 'posture') ? 'unfilled' : 'action';
+        counts[kind]++;
+        if (!checkNodeIds.includes(t.nodeId)) checkNodeIds.push(t.nodeId);
+        const n = nodeById.get(t.nodeId);
+        if (n) checkThreats.push({ name: t.name ?? t.category, node: relatedNode(n), kind });
       }
       if (!nodeIds.includes(t.nodeId)) nodeIds.push(t.nodeId);
     }
@@ -127,12 +142,12 @@ export function evaluateChecklist(input: EvaluateChecklistInput): ChecklistResul
       });
     const related = toRelated(nodeIds);
     let status: ItemStatus;
-    if (counts.action + counts.unfilled + counts.accepted === 0 && targetNodeCount === 0) status = 'notApplicable';
+    if (counts.action + counts.unfilled + counts.accepted + counts.implemented === 0 && targetNodeCount === 0) status = 'notApplicable';
     else if (counts.action > 0) status = 'action';
     else if (counts.unfilled > 0) status = 'unfilled';
     else if (counts.accepted > 0) status = 'accepted';
     else status = 'ok';
-    return { item, status, nodes: related, actionNodes: toRelated(actionNodeIds), targetNodeCount, counts };
+    return { item, status, nodes: related, checkNodes: toRelated(checkNodeIds), checkThreats, targetNodeCount, counts };
   };
 
   const groups: GroupResult[] = checklist.groups.map((group) => ({

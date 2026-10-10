@@ -11,6 +11,7 @@ import {
   EMPTY_PROJECT_META,
   type DiagramEdge,
   type DiagramNode,
+  type ControlStatusValue,
   type SuppressionState,
   type ThreatView,
 } from '../core/model/types';
@@ -148,9 +149,11 @@ describe('evaluateChecklist', () => {
     );
     const it1 = item(r, 'ipa-01');
     expect(it1.status).toBe('action');
-    expect(it1.counts).toEqual({ action: 1, unfilled: 1, accepted: 0 });
+    expect(it1.counts).toEqual({ action: 1, unfilled: 1, accepted: 0, implemented: 0 });
     expect(it1.nodes).toEqual([{ id: 'w', label: 'C3 公開 Web' }]);
-    expect(it1.actionNodes).toEqual([{ id: 'w', label: 'C3 公開 Web' }]);
+    expect(it1.checkNodes).toEqual([{ id: 'w', label: 'C3 公開 Web' }]);
+    expect(it1.checkThreats.map((c) => c.kind)).toEqual(['unfilled', 'action']);
+    expect(it1.checkThreats[1].node).toEqual({ id: 'w', label: 'C3 公開 Web' });
   });
 
   it('検出がすべて attackSurface / posture の未入力由来なら「未入力」', () => {
@@ -174,7 +177,8 @@ describe('evaluateChecklist', () => {
     expect(item(evalWith([web], [accepted]), 'ipa-01').status).toBe('accepted');
     const unfilled = threat('webserver-webshell-implant-001', 'w', { assumptionFlags: ['attackSurface'] });
     expect(item(evalWith([web], [accepted, unfilled]), 'ipa-01').status).toBe('unfilled');
-    expect(item(evalWith([web], [accepted, unfilled]), 'ipa-01').actionNodes).toEqual([]);
+    expect(item(evalWith([web], [accepted, unfilled]), 'ipa-01').checkNodes).toEqual([{ id: 'w', label: 'C3 公開 Web' }]);
+    expect(item(evalWith([web], [accepted]), 'ipa-01').checkNodes).toEqual([]);
   });
 
   it('誤検知は除外する（残りが無ければ「問題なし」）。回避・低減・移転は要対応のまま', () => {
@@ -182,6 +186,23 @@ describe('evaluateChecklist', () => {
     expect(item(evalWith([web], [fp]), 'ipa-01').status).toBe('ok');
     const reduce = threat('stride-web-global-ip-exposure-001', 'w', { suppression: supp('reduce') });
     expect(item(evalWith([web], [reduce]), 'ipa-01').status).toBe('action');
+  });
+
+  it('対策実装済みは「対策済み」に数え、確認が必要なノードから外す。対策不要は数えない。要対応・却下は要対応のまま', () => {
+    const cs = (status: ControlStatusValue) => ({ controlStatus: { status, at: 0 } });
+    const done = threat('stride-web-global-ip-exposure-001', 'w', { assumptionFlags: ['attackSurface'], ...cs('implemented') });
+    const it1 = item(evalWith([web], [done]), 'ipa-01');
+    expect(it1.status).toBe('ok');
+    expect(it1.counts).toEqual({ action: 0, unfilled: 0, accepted: 0, implemented: 1 });
+    expect(it1.checkNodes).toEqual([]);
+    expect(it1.nodes).toHaveLength(1);
+    const na = threat('stride-web-global-ip-exposure-001', 'w', cs('not-applicable'));
+    expect(item(evalWith([web], [na]), 'ipa-01').counts.implemented).toBe(0);
+    expect(item(evalWith([web], [na]), 'ipa-01').nodes).toEqual([]);
+    for (const s of ['required', 'rejected'] as const) {
+      const t = threat('stride-web-global-ip-exposure-001', 'w', cs(s));
+      expect(item(evalWith([web], [t]), 'ipa-01').status).toBe('action');
+    }
   });
 
   it('手動脅威と、ruleIds に無いルールの検出は数えない', () => {
@@ -303,9 +324,9 @@ describe('出力', () => {
     expect(ja).toContain('要対応');
     expect(ja).toContain('点検が古い・未記録のノード');
     expect(ja).toContain('C3 公開 | Web,未記録');
-    expect(ja).toContain('状態,対象の型のノード数,関係ノード数,要対応,未入力,リスク受容,関係ノード,確かめ方,確認が必要なノード');
+    expect(ja).toContain('状態,要対応（脅威検出数）,未入力（脅威検出数）,リスク受容（脅威検出数）,対策済み（脅威検出数）,確かめ方,確認が必要なノード,確認が必要な脅威');
     const row = lines.find((l) => l.includes(',ipa-01,'))!;
-    expect(row.endsWith(',C3 公開 | Web')).toBe(true);
+    expect(row).toMatch(/,C3 公開 \| Web,.+（C3 公開 \| Web・要対応）$/);
     expect(ja).not.toContain('webserver-webshell-implant-001');
     const en = toChecklistCsv({ result, project, layer: 'L1', locale: 'en' });
     expect(en).toContain('Group,Item No,Item,Status');

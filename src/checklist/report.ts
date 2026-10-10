@@ -59,14 +59,13 @@ export function toChecklistCsv(ctx: ChecklistReportContext): string {
       tr('checklist.csv.col.no'),
       tr('checklist.csv.col.item'),
       tr('checklist.csv.col.status'),
-      tr('checklist.csv.col.targets'),
-      tr('checklist.csv.col.relatedCount'),
       tr('checklist.csv.col.action'),
       tr('checklist.csv.col.unfilled'),
       tr('checklist.csv.col.accepted'),
-      tr('checklist.csv.col.nodes'),
+      tr('checklist.csv.col.implemented'),
       tr('checklist.csv.col.howTo'),
-      tr('checklist.csv.col.actionNodes'),
+      tr('checklist.csv.col.checkNodes'),
+      tr('checklist.csv.col.checkThreats'),
     ]),
   ];
   for (const g of result.groups) {
@@ -77,14 +76,13 @@ export function toChecklistCsv(ctx: ChecklistReportContext): string {
           r.item.id,
           r.item.title,
           statusLabel(r, locale),
-          String(r.targetNodeCount),
-          String(r.nodes.length),
           String(r.counts.action),
           String(r.counts.unfilled),
           String(r.counts.accepted),
-          r.nodes.map((n) => n.label).join(LIST_SEPARATOR),
+          String(r.counts.implemented),
           r.item.howTo,
-          r.actionNodes.map((n) => n.label).join(LIST_SEPARATOR),
+          r.checkNodes.map((n) => n.label).join(LIST_SEPARATOR),
+          r.checkThreats.map((c) => checkThreatText(c, locale)).join(LIST_SEPARATOR),
         ]),
       );
     }
@@ -93,6 +91,15 @@ export function toChecklistCsv(ctx: ChecklistReportContext): string {
   lines.push(csvRow([tr('checklist.stale.col.node'), tr('checklist.stale.col.state')]));
   for (const s of result.staleNodes) lines.push(csvRow([s.node.label, staleText(s, locale)]));
   return lines.join('\r\n');
+}
+
+/** `脅威名（C3 名前・要対応）`。 */
+function checkThreatText(c: ItemResult['checkThreats'][number], locale: Locale): string {
+  return translate('checklist.checkThreat', locale, {
+    name: c.name,
+    node: c.node.label,
+    status: translate(`checklist.status.${c.kind}` as TranslationKey, locale),
+  });
 }
 
 function staleText(s: ChecklistResult['staleNodes'][number], locale: Locale): string {
@@ -170,7 +177,8 @@ export function toChecklistJson(ctx: ChecklistReportContext): object {
         targetNodeCount: r.targetNodeCount,
         counts: r.counts,
         nodes: r.nodes.map((n) => n.label),
-        actionNodes: r.actionNodes.map((n) => n.label),
+        checkNodes: r.checkNodes.map((n) => n.label),
+        checkThreats: r.checkThreats.map((c) => ({ name: c.name, node: c.node.label, status: c.kind })),
         howTo: r.item.howTo,
         ruleIds: r.item.ruleIds,
       })),

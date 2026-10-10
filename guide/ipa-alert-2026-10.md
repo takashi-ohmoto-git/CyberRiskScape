@@ -323,8 +323,8 @@ The external services the member site uses are the payment provider's API (C3), 
 ## 5. List the state of the 17 items in the alert checklist
 
 The **alert checklist** gathers these checks into a **list of the 17 items**. Open **Alert checklist** from the **Report** menu in the
-left sidebar. Choose the layer, and the status, related nodes, breakdown of findings, and how to check are listed per item. Clicking a
-related node selects it in the diagram.
+left sidebar. Choose the layer, and the status, nodes to check (nodes with action-needed or not-entered detections), breakdown of
+threat detections, threats to check (threat name and node), and how to check are listed per item. Clicking a node to check selects it in the diagram.
 
 ![The alert checklist (before)](../assets/guide/ipa-alert/06-checklist-before-top.en.png)
 
@@ -347,8 +347,8 @@ The summary at the top is **Action needed 13, Not entered 0, Risk accepted 0, No
 
 ![Nodes with an outdated or missing review record (before)](../assets/guide/ipa-alert/06-checklist-before-bottom.en.png)
 
-**CSV export.** **Export CSV** at the top right writes a per-item CSV (status, number of nodes of target types, number of related nodes, counts of action
-needed / not entered / accepted, related nodes, how to check, nodes to check = nodes with action-needed detections). Add owners and due dates in a spreadsheet to make a ledger for
+**CSV export.** **Export CSV** at the top right writes a per-item CSV (status, number of threat detections that need action / are not entered /
+are risk-accepted / have the control implemented, how to check, nodes to check = nodes with action-needed or not-entered detections, threats to check). Add owners and due dates in a spreadsheet to make a ledger for
 operations.
 
 **The same list from the CLI.** Pass the project JSON you saved from the diagram (write it out with **File (save / open)** in the left
