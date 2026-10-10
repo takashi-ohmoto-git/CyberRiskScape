@@ -94,7 +94,7 @@ groups:
       - id: ipa-08
         title: "認証機能（多要素認証・パスワード）の強化"
         howTo: "利用者から SaaS や VPN への線の Authentication を実態どおりに選ぶ。越境マーカーが赤か黄の線を探す。"
-        targetTypes: [SAAS, VPN_GATEWAY, ZTNA_PROXY]
+        targetTypes: [SAAS, IAAS, PAAS, MAIL, CRM, CHAT, OTHER_APP, VPN_GATEWAY, ZTNA_PROXY]
         ruleIds:
           - stride-edge-password-internet-001
           - zt-aitm-session-token-theft-001
@@ -102,13 +102,13 @@ groups:
       - id: ipa-09
         title: "アカウント付与範囲の見直し"
         howTo: "委託先・取引先・ゲストの利用者を User Trust で区別して描き、SaaS やデータへの線を確かめる。"
-        targetTypes: [SAAS, VPN_GATEWAY]
+        targetTypes: [SAAS, IAAS, PAAS, MAIL, CRM, CHAT, OTHER_APP, VPN_GATEWAY]
         ruleIds:
           - zt-external-collaborator-broad-access-001
       - id: ipa-10
         title: "アカウント棚卸しの運用見直し"
         howTo: "線の資格情報の発行元を IdP に指定する。指定が無い線は IdP を経由しないローカルアカウントの候補。棚卸しの運用はノードの運用状況に記録する。"
-        targetTypes: [SAAS, IDENTITY_PROVIDER, IGA, DIRECTORY]
+        targetTypes: [SAAS, IAAS, PAAS, MAIL, CRM, CHAT, OTHER_APP, IDENTITY_PROVIDER, IGA, DIRECTORY]
         ruleIds:
           - identity-local-credential-outside-idp-001
           - iga-certification-gap-001
@@ -116,7 +116,7 @@ groups:
       - id: ipa-11
         title: "API 連携など構成要素単位の管理状況の見直し"
         howTo: "SaaS と自組織のシステムを結ぶ連携（OAuth クライアント・サービスアカウント・RPA ボット）を描き、認証方式を線に入れる。"
-        targetTypes: [SAAS, OAUTH_CLIENT, SERVICE_ACCOUNT, RPA_BOT]
+        targetTypes: [SAAS, IAAS, PAAS, MAIL, CRM, CHAT, OTHER_APP, OAUTH_CLIENT, SERVICE_ACCOUNT, RPA_BOT]
         ruleIds:
           - nhi-long-lived-secret-001
           - nhi-overprivileged-001
@@ -125,7 +125,7 @@ groups:
       - id: ipa-12
         title: "ログの取得内容・保持期間の見直し"
         howTo: "SaaS ごとに、ログを提供者と自組織のどちらで確認できるか、保持期間はどれだけかを運用状況に入力する。"
-        targetTypes: [SAAS, IDENTITY_PROVIDER]
+        targetTypes: [SAAS, IAAS, PAAS, MAIL, CRM, CHAT, OTHER_APP, IDENTITY_PROVIDER]
         ruleIds:
           - identity-idp-authentication-log-gap-001
           - posture-log-not-collected-001
@@ -133,7 +133,7 @@ groups:
       - id: ipa-13
         title: "適用できるセキュリティ対策の検討"
         howTo: "把握していない外部サービスをシャドークラウド・シャドーアプリで描くと統制外の利用として出る。対策の段階は項目 7 と同じ。"
-        targetTypes: [SAAS, SHADOW, SHADOW_APP]
+        targetTypes: [SAAS, IAAS, PAAS, MAIL, CRM, CHAT, OTHER_APP, SHADOW, SHADOW_APP]
         ruleIds:
           - zt-shadow-asset-governance-gap-001
           - zt-shadow-service-sensitive-input-001
