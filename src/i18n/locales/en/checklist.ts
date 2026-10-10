@@ -28,6 +28,11 @@ export const enChecklist: Partial<Record<TranslationKey, string>> = {
   'checklist.item.counts': 'Threat detections: {action} action needed, {unfilled} not entered, {accepted} risk accepted, {implemented} control implemented',
   'checklist.item.selectNode': 'Select {label} on the canvas',
   'checklist.item.threats': 'Threats to check',
+  'checklist.item.openThreat': 'Open the threat card for {name}',
+  'checklist.item.hint.unfilled':
+    "Not entered: fill in the node's Attack Surface Attribute and posture as they really are (the threat disappears if the values are fine).",
+  'checklist.item.hint.action':
+    "Action needed: some threats disappear when you fix the diagram (the configuration or a flow's attributes); others cannot be cleared by the diagram. Click the threat name to open its card; if the configuration cannot change, record the control status as 'Implemented' or set the risk treatment to 'Accepted'.",
   'checklist.checkThreat': '{name} ({node}, {status})',
   'checklist.stale.heading': 'Nodes with outdated or no inspection record',
   'checklist.stale.intro':

@@ -11,6 +11,7 @@ import { getThreatLibrary } from '../../threat-library/loader/bundledLibrary';
 import { getChecklists } from '../../checklist/bundled';
 import { evaluateChecklist, ITEM_STATUSES, type ItemResult } from '../../checklist/evaluate';
 import { toChecklistCsv } from '../../checklist/report';
+import { threatCardDomId } from './threatCardDomId';
 import { useLocale, useT } from '../../i18n';
 import {
   CHECKLIST_STATUS_BADGE,
@@ -99,11 +100,23 @@ export function ChecklistModal() {
 
   if (!isOpen || !checklist) return null;
 
-  const selectNode = (id: string) => {
+  /** ノードを選ぶ。threatId があれば、右パネルに出る該当の脅威カードまでスクロールして目立たせる。 */
+  const selectNode = (id: string, threatId?: string) => {
     const s = useDiagramStore.getState();
     if (s.activeLayer !== layer) s.setActiveLayer(layer);
     useDiagramStore.getState().selectNode(id);
     close();
+    if (!threatId) return;
+    // パネルの描画を待ってからスクロールする。
+    setTimeout(() => {
+      const el = document.getElementById(threatCardDomId(threatId));
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.animate(
+        [{ boxShadow: '0 0 0 3px rgb(56 189 248)' }, { boxShadow: '0 0 0 0 rgb(56 189 248 / 0)' }],
+        { duration: 2000 },
+      );
+    }, 100);
   };
 
   const handleCsv = () => {
@@ -300,7 +313,7 @@ export function ChecklistModal() {
   );
 }
 
-function ItemCard({ r, onSelectNode }: { r: ItemResult; onSelectNode: (id: string) => void }) {
+function ItemCard({ r, onSelectNode }: { r: ItemResult; onSelectNode: (id: string, threatId?: string) => void }) {
   const t = useT();
   const Icon = CHECKLIST_STATUS_ICON[r.status];
   const dim = r.status === 'notApplicable';
@@ -361,7 +374,13 @@ function ItemCard({ r, onSelectNode }: { r: ItemResult; onSelectNode: (id: strin
                 <span className={`px-1.5 rounded-full border ${CHECKLIST_STATUS_BADGE[c.kind]}`}>
                   {t(CHECKLIST_STATUS_LABEL_KEY[c.kind])}
                 </span>
-                <span className="text-slate-200">{c.name}</span>
+                <button
+                  onClick={() => onSelectNode(c.node.id, c.threatId)}
+                  title={t('checklist.item.openThreat', { name: c.name })}
+                  className="text-slate-200 underline decoration-slate-600 underline-offset-2 hover:text-white"
+                >
+                  {c.name}
+                </button>
                 <button
                   onClick={() => onSelectNode(c.node.id)}
                   title={t('checklist.item.selectNode', { label: c.node.label })}
@@ -372,6 +391,13 @@ function ItemCard({ r, onSelectNode }: { r: ItemResult; onSelectNode: (id: strin
               </li>
             ))}
           </ul>
+          {(['unfilled', 'action'] as const)
+            .filter((k) => r.checkThreats.some((c) => c.kind === k))
+            .map((k) => (
+              <p key={k} className="text-slate-400 leading-relaxed">
+                {t(`checklist.item.hint.${k}`)}
+              </p>
+            ))}
         </div>
       )}
       <p className="text-xs text-slate-400 leading-relaxed">

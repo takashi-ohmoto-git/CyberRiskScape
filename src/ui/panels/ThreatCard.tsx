@@ -24,6 +24,7 @@ import { makeComplianceKey } from '../../compliance/loader/loadComplianceMap';
 import type { StandardId } from '../../compliance/schema/complianceItem';
 import { summarizeAppliesTo } from './appliesToSummary';
 import { useRuleLookup } from './useRuleLookup';
+import { threatCardDomId } from './threatCardDomId';
 import { useLocale, useT, type Locale, type TranslationKey } from '../../i18n';
 
 const ASSUMPTION_KEY: Record<DetectionAssumptionFlag, TranslationKey> = {
@@ -92,6 +93,7 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
 
   return (
     <div
+      id={threatCardDomId(threat.id)}
       className={`p-4 rounded-2xl border-l-4 ${containerClass} border-y border-r border-slate-800 transition-all ${
         suppressed ? 'opacity-60' : ''
       }`}

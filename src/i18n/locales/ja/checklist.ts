@@ -31,6 +31,9 @@ export const jaChecklist = {
   'checklist.item.counts': '脅威検出数：要対応 {action} 件・未入力 {unfilled} 件・リスク受容 {accepted} 件・対策済み {implemented} 件',
   'checklist.item.selectNode': '{label} をキャンバスで選択',
   'checklist.item.threats': '確認が必要な脅威',
+  'checklist.item.openThreat': '{name} の脅威カードを開く',
+  'checklist.item.hint.unfilled': '未入力：ノードの Attack Surface Attribute・運用状況を実態どおりに入力すると消えます（入力した値が問題なければ出なくなります）。',
+  'checklist.item.hint.action': '要対応：図（構成・線の属性）を直すと消えるものと、図では消えないものがあります。脅威名を押して脅威カードを開き、構成を直せないものは「対策実装状況」を「実装済み」に記録するか、リスク対応方針を「受容」にしてください。',
   'checklist.checkThreat': '{name}（{node}・{status}）',
   'checklist.stale.heading': '点検が古い・未記録のノード',
   // {days}=日数, {asOf}=基準日

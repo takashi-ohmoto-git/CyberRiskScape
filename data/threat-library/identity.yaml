@@ -313,6 +313,10 @@ rules:
       kind: node
       nodeType: IDENTITY_PROVIDER
       # 認証を依存するサービスが接続されているとき発火（デフォルト接続要件）。
+      # 運用状況でログの取得を宣言した IdP では出さない（未入力はベースラインとして発火し「未入力」扱い）。
+      # 保持期間の短さは posture-log-retention-short-001 が扱う。
+      posture:
+        logCollection: [NotCollected, Unknown]
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.AA-03"

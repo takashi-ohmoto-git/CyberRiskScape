@@ -65,8 +65,8 @@ You can load the following templates as they are (the procedure is the same as i
 
 ![The membership-site diagram (before)](../assets/guide/ipa-alert/01-overview.en.png)
 
-**What the diagram contains:** 13 components, 8 data flows, and 3 trust boundaries. Loading it detects **62 threats** (8 Critical,
-29 High, 25 Medium).
+**What the diagram contains:** 13 components, 8 data flows, and 3 trust boundaries. Loading it detects **61 threats** (8 Critical,
+29 High, 24 Medium).
 
 | Place | What is drawn (type) |
 |---|---|
@@ -210,10 +210,11 @@ countermeasure status in [Analytics](analytics-assessment.md).
   provider only, both)
 - **Threats that appear:** Logs are not collected `posture-log-not-collected-001` (member DB: High; C3 and C7 are blank, Medium), Log
   retention is too short `posture-log-retention-short-001` (C4 and C11: Medium; C3 and C7 are blank, High), Access log retention is too
-  short `posture-log-retention-short-002` (admin console: under 90 days, High; member site: Medium), and Missing recording and
-  preservation of authentication events `identity-idp-authentication-log-gap-001` (IdP: Medium)
+  short `posture-log-retention-short-002` (admin console: under 90 days, High; member site: Medium). Missing recording and
+  preservation of authentication events `identity-idp-authentication-log-gap-001` does not appear, because the IdP's logs are
+  "Collected" (it appears if left blank)
 - **After →** setting each node's logs to "Collected, 1 year or more" removes all of the collection and retention threats (9 in
-  total). The IdP's authentication-event recording (a different angle, asking about forwarding and tamper resistance) remains
+  total)
 
 **#7 Consider additional security measures**
 
@@ -264,9 +265,9 @@ The external services the member site uses are the payment provider's API (C3), 
   review logs"): payment provider API, email delivery, IdP
 - **What to enter:** collection, retention, and who can review. Enter the values you confirmed in the provider's console or contract
 - **Threats that appear:** `posture-log-not-collected-001` and `posture-log-retention-short-001` (C3 is blank; C4 has retention "Under 1
-  year") and `identity-idp-authentication-log-gap-001` (C5)
+  year")
 - **After →** confirm with the provider and enter "Collected, 1 year or more, provider only" for the payment provider API, and "1 year
-  or more, both" for email delivery. One threat remains, on the IdP
+  or more, both" for email delivery. All of them are removed
 
 **#13 Consider applicable security measures**
 
@@ -324,7 +325,8 @@ The external services the member site uses are the payment provider's API (C3), 
 
 The **alert checklist** gathers these checks into a **list of the 17 items**. Open **Alert checklist** from the **Report** menu in the
 left sidebar. Choose the layer, and the status, nodes to check (nodes with action-needed or not-entered detections), breakdown of
-threat detections, threats to check (threat name and node), and how to check are listed per item. Clicking a node to check selects it in the diagram.
+threat detections, threats to check (threat name and node), and how to check are listed per item. Clicking a node to check selects it in the diagram; clicking a threat name moves to its threat card in the right panel.
+Below the list, the way to clear not-entered and action-needed threats is shown. For action-needed threats the diagram cannot clear, record the control status as "Implemented" on the threat card, or set the risk treatment to "Accepted".
 
 ![The alert checklist (before)](../assets/guide/ipa-alert/06-checklist-before-top.en.png)
 
@@ -392,21 +394,21 @@ Update the diagram's attributes as if the alert's measures were taken. Loading t
 
 ![The membership-site diagram (after)](../assets/guide/ipa-alert/07-overview-after.en.png)
 
-**Threats: 62 to 41** (Critical 8 to 6, High 29 to 18, Medium 25 to 17; measured. `diff` reports "0 added, 21 resolved").
+**Threats: 61 to 40** (Critical 8 to 6, High 29 to 18, Medium 24 to 16; measured. `diff` reports "0 added, 21 resolved").
 
 ![The alert checklist (after)](../assets/guide/ipa-alert/08-checklist-after-top.en.png)
 
 | | Before | After |
 |---|---|---|
-| Action needed | 13 | 12 |
+| Action needed | 13 | 10 |
 | Not entered | 0 | 1 (#7: the admin console's DDoS protection and members' devices are blank) |
 | Risk accepted | 0 | 0 |
-| No issue | 4 | 4 |
+| No issue | 4 | 6 (#6 and #12 are added) |
 | Not applicable | 0 | 0 |
-| Findings (action needed + not entered) | #1: 12 to 7, #6: 10 to 1, #12: 8 to 1, #16: 8 to 1, #7: 8 to 2, and so on | |
+| Findings (action needed + not entered) | #1: 12 to 7, #6: 9 to 0, #12: 7 to 0, #16: 8 to 1, #7: 8 to 2, and so on | |
 | Nodes with an outdated or missing review record | 7 (C2, C3, C4, C6, C7, C12, C13) | 1 (C2, the member's smartphone) |
 
-**Not everything is resolved.** 12 items still need action after remediation. What remains: members' ID/password authentication (#2,
+**Not everything is resolved.** 10 items still need action after remediation. What remains: members' ID/password authentication (#2,
 #3, #8, #10), the payment and email providers' API keys (#2, #8), the authorization implementation (#5), being public at all (#1),
 the leakage and the spread into notification mail that come with holding personal data (#14, #15), and the audit trail and
 cryptographic inventory (#16, #17). The way to use this checklist is to **show honestly, as remaining, what the diagram's attributes

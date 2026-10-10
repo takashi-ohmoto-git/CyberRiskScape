@@ -25,7 +25,7 @@ groups:
         howTo: "Set the Authentication of the line from users to the public app as it really is. Lines whose crossing marker is red (none) or yellow (password, API key, MFA) are candidates for review."
       ipa-03:
         title: "Review privileges granted to accounts"
-        howTo: "Set the User Trust of users (employee, contractor, partner, guest) and check their lines to sensitive systems. Specify the IdP as the credential issuer."
+        howTo: "Set the User Trust of users (employee, contractor, partner, guest) and check their lines to sensitive systems. Select each line coming from a user and set the line's 'Credential issuer' to the IdP (the node's 'Identity dependency' does not clear it)."
       ipa-04:
         title: "Review management of API integrations per component"
         howTo: "Draw APIs as Backend API and API Gateway, and check that no line bypasses the gateway. Put the authentication method of each integration on its line."
@@ -49,7 +49,7 @@ groups:
         howTo: "Draw contractors, partners and guests with distinct User Trust, and check their lines to SaaS and data."
       ipa-10:
         title: "Review the account inventory process"
-        howTo: "Set the credential issuer of lines to the IdP. A line without it is a candidate for a local account outside the IdP. Record the review process in the operations posture of the node."
+        howTo: "Select each line coming from a user and set the line's 'Credential issuer' to the IdP (a separate setting from the node's 'Identity dependency'). A line without it is a candidate for a local account outside the IdP. Record the review process in the operations posture of the node."
       ipa-11:
         title: "Review management of API integrations per component"
         howTo: "Draw the integrations between SaaS and your systems (OAuth clients, service accounts, RPA bots) and put the authentication method on their lines."

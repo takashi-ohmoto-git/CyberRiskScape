@@ -44,7 +44,7 @@ groups:
           - zt-aitm-session-token-theft-001
       - id: ipa-03
         title: "アカウントへの権限付与の見直し"
-        howTo: "利用者の User Trust（社員・委託先・取引先・ゲスト）を設定し、機微なシステムへの線を確かめる。認証の発行元を IdP に指定する。"
+        howTo: "利用者の User Trust（社員・委託先・取引先・ゲスト）を設定し、機微なシステムへの線を確かめる。利用者から入る線を選び、線の「資格情報の発行元」に IdP を指定する（ノードの「認証の預け先」では消えない）。"
         targetTypes: [FRONT_END_SERVER, BACKEND_API, GATEWAY, IDENTITY_PROVIDER, DIRECTORY]
         ruleIds:
           - zt-external-collaborator-broad-access-001
@@ -107,7 +107,7 @@ groups:
           - zt-external-collaborator-broad-access-001
       - id: ipa-10
         title: "アカウント棚卸しの運用見直し"
-        howTo: "線の資格情報の発行元を IdP に指定する。指定が無い線は IdP を経由しないローカルアカウントの候補。棚卸しの運用はノードの運用状況に記録する。"
+        howTo: "利用者から入る線を選び、線の「資格情報の発行元」に IdP を指定する（ノードの「認証の預け先」とは別の設定）。指定が無い線は IdP を経由しないローカルアカウントの候補。棚卸しの運用はノードの運用状況に記録する。"
         targetTypes: [SAAS, IAAS, PAAS, MAIL, CRM, CHAT, OTHER_APP, IDENTITY_PROVIDER, IGA, DIRECTORY]
         ruleIds:
           - identity-local-credential-outside-idp-001

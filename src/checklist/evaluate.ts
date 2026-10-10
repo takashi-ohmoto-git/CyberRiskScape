@@ -22,6 +22,8 @@ export interface RelatedNode {
 
 /** 確認が必要な脅威（要対応か未入力の検出）。 */
 export interface CheckThreat {
+  /** `ThreatView.id`（脅威カードの特定に使う）。 */
+  threatId: string;
   /** 脅威名（未設定ならカテゴリ）。 */
   name: string;
   node: RelatedNode;
@@ -131,7 +133,7 @@ export function evaluateChecklist(input: EvaluateChecklistInput): ChecklistResul
         counts[kind]++;
         if (!checkNodeIds.includes(t.nodeId)) checkNodeIds.push(t.nodeId);
         const n = nodeById.get(t.nodeId);
-        if (n) checkThreats.push({ name: t.name ?? t.category, node: relatedNode(n), kind });
+        if (n) checkThreats.push({ threatId: t.id, name: t.name ?? t.category, node: relatedNode(n), kind });
       }
       if (!nodeIds.includes(t.nodeId)) nodeIds.push(t.nodeId);
     }
