@@ -39,6 +39,7 @@ const emptyManualThreats = (): Record<LayerKey, ManualThreat[]> => ({
   L1: [],
   L2: [],
   L3: [],
+  PQC: [],
 });
 
 const MIN_BOUNDARY_W = 80;
@@ -130,6 +131,7 @@ export const INITIAL_LAYERS: Record<LayerKey, LayerData> = {
   L1: INITIAL_L1,
   L2: EMPTY_LAYER,
   L3: EMPTY_LAYER,
+  PQC: EMPTY_LAYER,
 };
 
 export const DEFAULT_ACTIVE_LAYER: LayerKey = 'L1';
@@ -147,6 +149,7 @@ const emptyIdCounters = (): LayerSeqCounters => ({
   L1: emptyCounters(),
   L2: emptyCounters(),
   L3: emptyCounters(),
+  PQC: emptyCounters(),
 });
 
 /** INITIAL_L1 のサンプル要素に割り当て済みの seq に合わせた初期カウンタ。 */
@@ -1141,7 +1144,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
   newProject: () =>
     set({
-      layers: { L0: EMPTY_LAYER, L1: EMPTY_LAYER, L2: EMPTY_LAYER, L3: EMPTY_LAYER },
+      layers: { L0: EMPTY_LAYER, L1: EMPTY_LAYER, L2: EMPTY_LAYER, L3: EMPTY_LAYER, PQC: EMPTY_LAYER },
       activeLayer: DEFAULT_ACTIVE_LAYER,
       idCounters: emptyIdCounters(),
       activeFramework: 'ALL',

@@ -19,6 +19,7 @@ const LAYER_DESCRIPTION_KEYS: Record<LayerKey, TranslationKey> = {
   L1: 'project.sidebar.layerDesc.L1',
   L2: 'project.sidebar.layerDesc.L2',
   L3: 'project.sidebar.layerDesc.L3',
+  PQC: 'project.sidebar.layerDesc.PQC',
 };
 
 /**

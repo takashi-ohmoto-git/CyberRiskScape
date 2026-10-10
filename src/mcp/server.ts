@@ -214,7 +214,7 @@ const DRYRUN_NOTE =
   'dryRun の results[].id は仮の採番です。本番の書き込みでは別の id が採番されるため、後続の操作には使わないでください（同一呼び出し内は ref を使う）。';
 const PATH_NOTE = 'path はサーバーの root からの相対パス（.json のみ）。';
 
-const LayerArg = z.enum(['L0', 'L1', 'L2', 'L3']);
+const LayerArg = z.enum(['L0', 'L1', 'L2', 'L3', 'PQC']);
 const FrameworkArg = z.enum(['STRIDE', 'AI', 'AgenticAI', 'ALL']);
 const SeverityArg = z.enum(['Low', 'Medium', 'High', 'Critical']);
 const PathArg = z.string().min(1).max(MAX_PATH_LENGTH);

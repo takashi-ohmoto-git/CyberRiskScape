@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import {
   Download,
   FilePlus,
@@ -49,6 +49,7 @@ const LAYER_DESCRIPTION_KEYS: Record<LayerKey, TranslationKey> = {
   L1: 'project.sidebar.layerDesc.L1',
   L2: 'project.sidebar.layerDesc.L2',
   L3: 'project.sidebar.layerDesc.L3',
+  PQC: 'project.sidebar.layerDesc.PQC',
 };
 
 interface LeftSidebarProps {
@@ -189,11 +190,15 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
               onClick={openProjectEdit}
             />
 
-            {/* 深度レイヤー — 展開すると L0/L1/L2/L3 切替 */}
+            {/* 深度レイヤー — 展開すると L0/L1/L2/L3 と PQC の切替 */}
             <div>
               <ProjectMenuItem
                 icon={Layers3}
-                label={t('project.sidebar.depthLayer', { layer: activeLayer })}
+                label={
+                  activeLayer === 'PQC'
+                    ? t('project.sidebar.pqcLayer')
+                    : t('project.sidebar.depthLayer', { layer: activeLayer })
+                }
                 onClick={() => toggleSection(LAYER_SUBMENU_KEY)}
                 rightIcon={renderToggleIcon(openSections.has(LAYER_SUBMENU_KEY))}
               />
@@ -205,27 +210,30 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                     const count =
                       layer.nodes.length + layer.edges.length + layer.boundaries.length;
                     return (
-                      <button
-                        key={key}
-                        onClick={() => setActiveLayer(key)}
-                        className={`w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold text-left ${
-                          isActive
-                            ? 'bg-emerald-700/30 border-emerald-600 text-emerald-200'
-                            : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
-                        }`}
-                        title={t(LAYER_DESCRIPTION_KEYS[key])}
-                      >
-                        <span
-                          className={`shrink-0 inline-block w-1.5 h-1.5 rounded-full ${
-                            isActive ? 'bg-emerald-400' : 'bg-slate-600'
+                      <Fragment key={key}>
+                        {/* PQC は深度レイヤーとは別系統なので区切り線を入れる */}
+                        {key === 'PQC' && <div className="border-t border-slate-700 my-1" />}
+                        <button
+                          onClick={() => setActiveLayer(key)}
+                          className={`w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold text-left ${
+                            isActive
+                              ? 'bg-emerald-700/30 border-emerald-600 text-emerald-200'
+                              : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
                           }`}
-                        />
-                        <span className="font-black tracking-wider">{key}</span>
-                        <span className="flex-1 truncate text-slate-500 font-normal">
-                          {t(LAYER_DESCRIPTION_KEYS[key])}
-                        </span>
-                        <span className="text-xs text-slate-500 shrink-0">{count}</span>
-                      </button>
+                          title={t(LAYER_DESCRIPTION_KEYS[key])}
+                        >
+                          <span
+                            className={`shrink-0 inline-block w-1.5 h-1.5 rounded-full ${
+                              isActive ? 'bg-emerald-400' : 'bg-slate-600'
+                            }`}
+                          />
+                          <span className="font-black tracking-wider">{key}</span>
+                          <span className="flex-1 truncate text-slate-500 font-normal">
+                            {t(LAYER_DESCRIPTION_KEYS[key])}
+                          </span>
+                          <span className="text-xs text-slate-500 shrink-0">{count}</span>
+                        </button>
+                      </Fragment>
                     );
                   })}
                 </div>

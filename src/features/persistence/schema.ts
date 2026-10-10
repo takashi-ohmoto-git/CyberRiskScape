@@ -195,9 +195,11 @@ const PersistedLayersSchema = z.object({
   L1: PersistedLayerDataSchema,
   L2: PersistedLayerDataSchema,
   L3: PersistedLayerDataSchema,
+  /** PQC レイヤー。旧データ互換のため optional（読み込み時に空レイヤーで補う）。 */
+  PQC: PersistedLayerDataSchema.optional(),
 });
 
-const LayerKeySchema = z.enum(['L0', 'L1', 'L2', 'L3']);
+const LayerKeySchema = z.enum(['L0', 'L1', 'L2', 'L3', 'PQC']);
 
 /** ElementalID 採番カウンタ（§2.26）。種別ごとの直近割当 seq（0 = 未採番）。 */
 const SeqCountersSchema = z.object({
@@ -211,6 +213,7 @@ const PersistedIdCountersSchema = z.object({
   L1: SeqCountersSchema,
   L2: SeqCountersSchema,
   L3: SeqCountersSchema,
+  PQC: SeqCountersSchema.optional(),
 });
 
 /**
@@ -234,6 +237,7 @@ const PersistedManualThreatsSchema = z.object({
   L1: z.array(PersistedManualThreatSchema),
   L2: z.array(PersistedManualThreatSchema),
   L3: z.array(PersistedManualThreatSchema),
+  PQC: z.array(PersistedManualThreatSchema).optional(),
 });
 
 const SuppressionStatusSchema = z.enum(['avoid', 'reduce', 'transfer', 'accepted', 'false-positive']);
@@ -287,8 +291,8 @@ export const PersistedProjectSchema = z.object({
   edges: z.array(PersistedEdgeSchema).optional(),
   boundaries: z.array(PersistedBoundarySchema).optional(),
   /**
-   * 深度レイヤー L0〜L3（独立した 4 枚のキャンバス）。
-   * schemaVersion は据え置き（旧 nodes/edges/boundaries との optional 共存）。
+   * 深度レイヤー L0〜L3（独立した 4 枚のキャンバス）＋PQC レイヤー（PQC は optional）。
+   * schemaVersion は据え置き（旧 nodes/edges/boundaries との optional 共存、PQC 追加も同方針）。
    */
   layers: PersistedLayersSchema.optional(),
   activeLayer: LayerKeySchema.optional(),

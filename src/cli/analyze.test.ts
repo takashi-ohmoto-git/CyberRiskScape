@@ -2,12 +2,12 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { analyzeProject, evaluateGate } from './analyze';
 import { serializeProject } from '../features/persistence/serialize';
-import { EMPTY_LAYER, type LayerData, type ThreatView } from '../core/model/types';
+import { EMPTY_LAYER, type LayerData, type LayerKey, type ThreatView } from '../core/model/types';
 
 const FIXTURE_PATH = new URL('./__fixtures__/sample-project.json', import.meta.url);
 
 /** L1 だけにノードを置いた最小プロジェクト（LLM → DB）。 */
-function sampleLayers(): Record<'L0' | 'L1' | 'L2' | 'L3', LayerData> {
+function sampleLayers(): Record<LayerKey, LayerData> {
   const l1: LayerData = {
     nodes: [
       { id: 'n1', seq: 1, type: 'LLM', x: 0, y: 0, label: 'GPT' },
@@ -27,7 +27,7 @@ function sampleLayers(): Record<'L0' | 'L1' | 'L2' | 'L3', LayerData> {
     boundaries: [],
     annotations: [],
   };
-  return { L0: EMPTY_LAYER, L1: l1, L2: EMPTY_LAYER, L3: EMPTY_LAYER };
+  return { L0: EMPTY_LAYER, L1: l1, L2: EMPTY_LAYER, L3: EMPTY_LAYER, PQC: EMPTY_LAYER };
 }
 
 function sampleProjectRaw(): unknown {
@@ -43,6 +43,11 @@ describe('analyzeProject', () => {
     const results = analyzeProject(sampleProjectRaw());
     expect(results.map((r) => r.layer)).toEqual(['L1']);
     expect(results[0].threats.length).toBeGreaterThan(0);
+  });
+
+  it('PQC レイヤーを指定できる（旧形式の保存データでは空レイヤー）', () => {
+    const results = analyzeProject(sampleProjectRaw(), { layer: 'PQC' });
+    expect(results.map((r) => r.layer)).toEqual(['PQC']);
   });
 
   it('--layer 相当の指定があればノード数に関わらずそのレイヤーだけを返す', () => {

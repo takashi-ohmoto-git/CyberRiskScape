@@ -85,6 +85,14 @@ describe('MCP サーバー', () => {
     expect(l1.nodes.map((n: any) => n.id)).toEqual(['n-user', 'n-llm', 'n-db']);
   });
 
+  it('get_model は PQC レイヤーを指定でき、旧形式のモデルでは空レイヤーを返す', async () => {
+    const client = await connect();
+    const r = await call(client, 'get_model', { path: 'model.json', layer: 'PQC' });
+    expect(r.isError).toBe(false);
+    expect(r.json.layers.map((l: any) => l.layer)).toEqual(['PQC']);
+    expect(r.json.layers[0].nodes).toEqual([]);
+  });
+
   it('analyze_threats は脅威の要約と revision を返す', async () => {
     const client = await connect();
     const r = await call(client, 'analyze_threats', { path: 'model.json', minSeverity: 'Medium' });

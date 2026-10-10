@@ -4,7 +4,7 @@ import { EMPTY_LAYER, type LayerData, type LayerKey } from '../core/model/types'
 import type { ChangeTrigger } from './schema/trigger';
 
 function layers(l1: LayerData): Record<LayerKey, LayerData> {
-  return { L0: EMPTY_LAYER, L1: l1, L2: EMPTY_LAYER, L3: EMPTY_LAYER };
+  return { L0: EMPTY_LAYER, L1: l1, L2: EMPTY_LAYER, L3: EMPTY_LAYER, PQC: EMPTY_LAYER };
 }
 
 function trigger(id: string, detect: ChangeTrigger['detect']): ChangeTrigger {
@@ -260,12 +260,14 @@ describe('detectTriggers', () => {
       L1: EMPTY_LAYER,
       L2: EMPTY_LAYER,
       L3: EMPTY_LAYER,
+      PQC: EMPTY_LAYER,
     };
     const head = {
       L0: { nodes: [{ id: 'n1', type: 'AGENT', x: 0, y: 0 }], edges: [], boundaries: [], annotations: [] },
       L1: { nodes: [{ id: 'n2', type: 'TOOL', x: 0, y: 0 }], edges: [], boundaries: [], annotations: [] },
       L2: EMPTY_LAYER,
       L3: EMPTY_LAYER,
+      PQC: EMPTY_LAYER,
     };
     const hits = detectTriggers(base, head, [
       trigger('T7', [{ kind: 'node-added', nodeTypes: ['AGENT', 'TOOL'] }]),

@@ -13,10 +13,12 @@ export const jaProject = {
   // ── LeftSidebar ──
   'project.sidebar.untitled': 'プロジェクト未設定',
   'project.sidebar.depthLayer': '深度レイヤー（{layer}）',
+  'project.sidebar.pqcLayer': 'PQC レイヤー',
   'project.sidebar.layerDesc.L0': 'ビジネスロジック中心（ビジネスサイドが記載）',
   'project.sidebar.layerDesc.L1': '詳細設計（セキュリティ担当者、通常はここまで）',
   'project.sidebar.layerDesc.L2': '機密性が高い場合の追加詳細',
   'project.sidebar.layerDesc.L3': '更に厳密な内容',
+  'project.sidebar.layerDesc.PQC': 'PQC 移行支援：暗号の終端点と経路を描く',
   'project.sidebar.reportSummary': '表示中の脅威一覧（{layer} / {framework}・{count} 件）を出力',
   'project.sidebar.exportCsv': 'CSV ダウンロード',
   'project.sidebar.exportJson': 'JSON ダウンロード',

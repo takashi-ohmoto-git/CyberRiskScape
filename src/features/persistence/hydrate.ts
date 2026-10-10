@@ -1,5 +1,5 @@
 import { useDiagramStore } from '../../core/state/diagramStore';
-import { emptyManualThreats, resolveIdCounters, resolveLayers, resolveRiskScores } from './serialize';
+import { resolveIdCounters, resolveLayers, resolveManualThreats, resolveRiskScores } from './serialize';
 import type { PersistedProject } from './schema';
 
 /**
@@ -19,7 +19,7 @@ export function hydrateFromPersisted(loaded: PersistedProject): void {
     activeFramework: loaded.activeFramework,
     disabledLibraryIds: loaded.disabledLibraryIds,
     projectMeta: loaded.projectMeta,
-    manualThreats: loaded.manualThreats ?? emptyManualThreats(),
+    manualThreats: resolveManualThreats(loaded),
     suppressions: loaded.suppressions,
     riskScores: resolveRiskScores(loaded),
     controlStatuses: loaded.controlStatuses,

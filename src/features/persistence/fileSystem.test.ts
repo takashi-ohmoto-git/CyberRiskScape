@@ -37,7 +37,7 @@ const L1_DATA: LayerData = {
 };
 
 const STATE: SerializableState = {
-  layers: { L0: EMPTY_LAYER, L1: L1_DATA, L2: EMPTY_LAYER, L3: EMPTY_LAYER },
+  layers: { L0: EMPTY_LAYER, L1: L1_DATA, L2: EMPTY_LAYER, L3: EMPTY_LAYER, PQC: EMPTY_LAYER },
   activeLayer: 'L1',
   activeFramework: 'AgenticAI',
   projectMeta: {

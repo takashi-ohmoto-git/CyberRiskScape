@@ -273,7 +273,9 @@ export const ATTACK_OBJECTIVE_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set
 ]);
 
 /**
- * 深度レイヤーキー。1 プロジェクトは独立した 4 枚のキャンバスを保持できる。
+ * レイヤーキー。1 プロジェクトは独立した 5 枚のキャンバスを保持できる（深度 4 枚＋PQC）。
+ *
+ * 深度レイヤー（L0〜L3）：
  * - L0：ビジネスロジック中心（ビジネスサイドが記載）
  * - L1：詳細設計（セキュリティ担当者が記載、通常はここまで）
  * - L2：機密性が高い場合の追加詳細
@@ -281,9 +283,21 @@ export const ATTACK_OBJECTIVE_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set
  *
  * レイヤー間に相関関係はなく、各々が独立したダイアグラム。
  */
-export type LayerKey = 'L0' | 'L1' | 'L2' | 'L3';
+export type LayerKey = 'L0' | 'L1' | 'L2' | 'L3' | 'PQC';
 
-export const LAYER_KEYS: readonly LayerKey[] = ['L0', 'L1', 'L2', 'L3'] as const;
+/**
+ * 深度レイヤーだけを列挙したいときのキー（L0〜L3）。
+ *
+ * `PQC` は深度とは独立した 5 枚目のキャンバスで、PQC（耐量子暗号）移行の観点から
+ * 暗号の終端点と経路を描く。L0〜L3 の深度の概念には含まれず、順序（粗い→詳細）も持たない。
+ * 脅威分析は通常のレイヤーと同じく動かす。
+ */
+export type DepthLayerKey = 'L0' | 'L1' | 'L2' | 'L3';
+
+export const DEPTH_LAYER_KEYS: readonly DepthLayerKey[] = ['L0', 'L1', 'L2', 'L3'] as const;
+
+/** 全レイヤー（深度レイヤー＋PQC レイヤー）。 */
+export const LAYER_KEYS: readonly LayerKey[] = ['L0', 'L1', 'L2', 'L3', 'PQC'] as const;
 
 /**
  * ElementalID の対象となる Canvas 要素の種別。

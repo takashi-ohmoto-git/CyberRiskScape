@@ -55,7 +55,7 @@ const USAGE = `使い方:
 
 analyze のオプション:
   --format <json|sarif|md>                     出力形式（既定: json）
-  --layer <L0|L1|L2|L3>                         対象レイヤー（既定: ノードがある全レイヤー）
+  --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある全レイヤー）
   --framework <STRIDE|AI|AgenticAI|ALL>         対象フレームワーク（既定: ALL）
   --fail-on <Critical|High|Medium|Low>          指定した重大度以上の未抑制脅威があれば exit 1
   --locale <ja|en>                              表示言語（既定: ja）
@@ -87,7 +87,7 @@ import-shodan のオプション（Shodan の書き出し（.json.gz または J
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
 export-postman のオプション（検出脅威を確かめる確認リクエストを Postman Collection v2.1 で出力）:
-  --layer <L0|L1|L2|L3>                         対象レイヤー（既定: ノードがある最初のレイヤー）
+  --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある最初のレイヤー）
   --framework <STRIDE|AI|AgenticAI|ALL>         対象フレームワーク（既定: ALL）
   --locale <ja|en>                              表示言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）

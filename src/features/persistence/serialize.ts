@@ -13,7 +13,7 @@ import { EMPTY_LAYER, LAYER_KEYS } from '../../core/model/types';
 
 /** 全レイヤー空の手動脅威 Record を新規生成する（hydrate / 初期化用）。 */
 export function emptyManualThreats(): Record<LayerKey, ManualThreat[]> {
-  return { L0: [], L1: [], L2: [], L3: [] };
+  return { L0: [], L1: [], L2: [], L3: [], PQC: [] };
 }
 import {
   PERSISTED_PROJECT_SCHEMA_VERSION,
@@ -82,6 +82,11 @@ export function serializeProject(state: SerializableState): PersistedProject {
     ...(hasControlStatuses ? { controlStatuses } : {}),
     updatedAt: Date.now(),
   };
+}
+
+/** 永続化レコードの手動脅威を全レイヤー揃った形に補う（旧データには PQC が無い）。 */
+export function resolveManualThreats(loaded: PersistedProject): Record<LayerKey, ManualThreat[]> {
+  return { ...emptyManualThreats(), ...loaded.manualThreats };
 }
 
 /**
@@ -153,6 +158,8 @@ export function resolveLayers(loaded: PersistedProject): {
     const layers = LAYER_KEYS.reduce<Record<LayerKey, LayerData>>(
       (acc, key) => {
         const data = loaded.layers![key];
+        // PQC は旧データに無い（optional）ので空レイヤーのまま据え置く
+        if (!data) return acc;
         acc[key] = {
           nodes: data.nodes,
           edges: data.edges as LayerData['edges'],
@@ -161,7 +168,7 @@ export function resolveLayers(loaded: PersistedProject): {
         };
         return acc;
       },
-      { L0: EMPTY_LAYER, L1: EMPTY_LAYER, L2: EMPTY_LAYER, L3: EMPTY_LAYER },
+      { L0: EMPTY_LAYER, L1: EMPTY_LAYER, L2: EMPTY_LAYER, L3: EMPTY_LAYER, PQC: EMPTY_LAYER },
     );
     return { layers, activeLayer: loaded.activeLayer ?? 'L1' };
   }
@@ -174,7 +181,7 @@ export function resolveLayers(loaded: PersistedProject): {
     annotations: [],
   };
   return {
-    layers: { L0: EMPTY_LAYER, L1: migratedL1, L2: EMPTY_LAYER, L3: EMPTY_LAYER },
+    layers: { L0: EMPTY_LAYER, L1: migratedL1, L2: EMPTY_LAYER, L3: EMPTY_LAYER, PQC: EMPTY_LAYER },
     activeLayer: 'L1',
   };
 }
@@ -230,7 +237,7 @@ function fillSeq<T extends { seq?: number }>(
  */
 export function resolveIdCounters(
   layers: Record<LayerKey, LayerData>,
-  persisted?: LayerSeqCounters,
+  persisted?: Partial<LayerSeqCounters>,
 ): { layers: Record<LayerKey, LayerData>; idCounters: LayerSeqCounters } {
   const nextLayers = {} as Record<LayerKey, LayerData>;
   const idCounters = {} as LayerSeqCounters;

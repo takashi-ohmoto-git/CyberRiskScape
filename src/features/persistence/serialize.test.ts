@@ -3,6 +3,7 @@ import {
   deserializeProject,
   resolveIdCounters,
   resolveLayers,
+  resolveManualThreats,
   resolveRiskScores,
   serializeProject,
   type SerializableState,
@@ -40,7 +41,7 @@ const L1_DATA: LayerData = {
 };
 
 const STATE: SerializableState = {
-  layers: { L0: EMPTY_LAYER, L1: L1_DATA, L2: EMPTY_LAYER, L3: EMPTY_LAYER },
+  layers: { L0: EMPTY_LAYER, L1: L1_DATA, L2: EMPTY_LAYER, L3: EMPTY_LAYER, PQC: EMPTY_LAYER },
   activeLayer: 'L1',
   activeFramework: 'AgenticAI',
 };
@@ -73,7 +74,7 @@ describe('serializeProject / deserializeProject', () => {
     };
     const persisted = serializeProject({
       ...STATE,
-      layers: { L0: EMPTY_LAYER, L1: withProvider, L2: EMPTY_LAYER, L3: EMPTY_LAYER },
+      layers: { L0: EMPTY_LAYER, L1: withProvider, L2: EMPTY_LAYER, L3: EMPTY_LAYER, PQC: EMPTY_LAYER },
     });
     const restored = deserializeProject(persisted);
     expect(restored?.layers?.L1.edges[0].authProviderId).toBe('n3');
@@ -90,7 +91,7 @@ describe('serializeProject / deserializeProject', () => {
     };
     const persisted = serializeProject({
       ...STATE,
-      layers: { L0: EMPTY_LAYER, L1: withProvider, L2: EMPTY_LAYER, L3: EMPTY_LAYER },
+      layers: { L0: EMPTY_LAYER, L1: withProvider, L2: EMPTY_LAYER, L3: EMPTY_LAYER, PQC: EMPTY_LAYER },
     });
     const restored = deserializeProject(persisted);
     expect(restored?.layers?.L1.nodes[0].authProviderId).toBe('n3');
@@ -107,7 +108,7 @@ describe('serializeProject / deserializeProject', () => {
     };
     const persisted = serializeProject({
       ...STATE,
-      layers: { L0: EMPTY_LAYER, L1: withAnnotations, L2: EMPTY_LAYER, L3: EMPTY_LAYER },
+      layers: { L0: EMPTY_LAYER, L1: withAnnotations, L2: EMPTY_LAYER, L3: EMPTY_LAYER, PQC: EMPTY_LAYER },
     });
     const restored = deserializeProject(persisted);
     expect(restored?.layers?.L1.annotations).toEqual(withAnnotations.annotations);
@@ -309,7 +310,7 @@ describe('serializeProject / deserializeProject', () => {
   it('manualThreats: 全レイヤー空のときは省略される（後方互換）', () => {
     const out = serializeProject({
       ...STATE,
-      manualThreats: { L0: [], L1: [], L2: [], L3: [] },
+      manualThreats: { L0: [], L1: [], L2: [], L3: [], PQC: [] },
     });
     expect(out.manualThreats).toBeUndefined();
   });
@@ -325,7 +326,7 @@ describe('serializeProject / deserializeProject', () => {
     };
     const out = serializeProject({
       ...STATE,
-      manualThreats: { L0: [], L1: [mt], L2: [], L3: [] },
+      manualThreats: { L0: [], L1: [mt], L2: [], L3: [], PQC: [] },
     });
     expect(out.manualThreats?.L1).toEqual([mt]);
     const restored = deserializeProject(out);
@@ -343,7 +344,7 @@ describe('serializeProject / deserializeProject', () => {
     };
     const out = serializeProject({
       ...STATE,
-      manualThreats: { L0: [], L1: [mt], L2: [], L3: [] },
+      manualThreats: { L0: [], L1: [mt], L2: [], L3: [], PQC: [] },
     });
     const restored = deserializeProject(out);
     expect(restored?.manualThreats?.L1).toEqual([mt]);
@@ -504,6 +505,7 @@ describe('resolveLayers', () => {
         },
         L2: EMPTY_LAYER,
         L3: EMPTY_LAYER,
+        PQC: EMPTY_LAYER,
       },
       activeLayer: 'L1',
       activeFramework: 'AgenticAI',
@@ -537,6 +539,7 @@ describe('resolveLayers', () => {
         },
         L2: EMPTY_LAYER,
         L3: EMPTY_LAYER,
+        PQC: EMPTY_LAYER,
       },
       activeLayer: 'L1',
       activeFramework: 'AgenticAI',
@@ -562,6 +565,7 @@ describe('seq / idCounters の永続化', () => {
       },
       L2: EMPTY_LAYER,
       L3: EMPTY_LAYER,
+      PQC: EMPTY_LAYER,
     },
     activeLayer: 'L1',
     activeFramework: 'AgenticAI',
@@ -570,6 +574,7 @@ describe('seq / idCounters の永続化', () => {
       L1: { node: 5, edge: 1, boundary: 0 },
       L2: { node: 0, edge: 0, boundary: 0 },
       L3: { node: 0, edge: 0, boundary: 0 },
+      PQC: { node: 0, edge: 0, boundary: 0 },
     },
   };
 
@@ -603,6 +608,7 @@ describe('resolveIdCounters', () => {
     } as LayerData,
     L2: EMPTY_LAYER,
     L3: EMPTY_LAYER,
+    PQC: EMPTY_LAYER,
   };
 
   it('seq 未設定の旧データは要素順で連番を補完しカウンタを揃える', () => {
@@ -620,6 +626,7 @@ describe('resolveIdCounters', () => {
       L1: { node: 9, edge: 4, boundary: 2 },
       L2: { node: 0, edge: 0, boundary: 0 },
       L3: { node: 0, edge: 0, boundary: 0 },
+      PQC: { node: 0, edge: 0, boundary: 0 },
     };
     const withSeq = {
       ...legacyLayers,
@@ -646,5 +653,60 @@ describe('resolveIdCounters', () => {
     };
     const { layers } = resolveIdCounters(allSeq);
     expect(layers.L1).toBe(allSeq.L1);
+  });
+});
+
+describe('PQC レイヤー', () => {
+  it('PQC キーの無い旧形式の layers / idCounters / manualThreats を読むと PQC は空で補われる', () => {
+    const raw = {
+      schemaVersion: PERSISTED_PROJECT_SCHEMA_VERSION,
+      layers: { L0: EMPTY_LAYER, L1: L1_DATA, L2: EMPTY_LAYER, L3: EMPTY_LAYER },
+      activeLayer: 'L1',
+      idCounters: {
+        L0: { node: 0, edge: 0, boundary: 0 },
+        L1: { node: 2, edge: 1, boundary: 0 },
+        L2: { node: 0, edge: 0, boundary: 0 },
+        L3: { node: 0, edge: 0, boundary: 0 },
+      },
+      manualThreats: { L0: [], L1: [], L2: [], L3: [] },
+      activeFramework: 'ALL',
+      updatedAt: Date.now(),
+    };
+    const loaded = deserializeProject(raw);
+    expect(loaded).not.toBeNull();
+    const { layers, activeLayer } = resolveLayers(loaded!);
+    expect(activeLayer).toBe('L1');
+    expect(layers.PQC).toEqual(EMPTY_LAYER);
+    expect(layers.L1.nodes).toEqual(L1_DATA.nodes);
+    expect(resolveManualThreats(loaded!).PQC).toEqual([]);
+    const { idCounters } = resolveIdCounters(layers, loaded!.idCounters);
+    expect(idCounters.PQC).toEqual({ node: 0, edge: 0, boundary: 0 });
+  });
+
+  it('PQC を含むデータは serialize → deserialize で保たれ、activeLayer=PQC も受理される', () => {
+    const pqc: LayerData = {
+      nodes: [{ id: 'p1', seq: 1, type: 'LOAD_BALANCER', x: 1, y: 2, label: 'LB' }],
+      edges: [],
+      boundaries: [],
+      annotations: [],
+    };
+    const rec = serializeProject({
+      ...STATE,
+      layers: { ...STATE.layers, PQC: pqc },
+      activeLayer: 'PQC',
+      idCounters: {
+        L0: { node: 0, edge: 0, boundary: 0 },
+        L1: { node: 0, edge: 0, boundary: 0 },
+        L2: { node: 0, edge: 0, boundary: 0 },
+        L3: { node: 0, edge: 0, boundary: 0 },
+        PQC: { node: 1, edge: 0, boundary: 0 },
+      },
+    });
+    const loaded = deserializeProject(JSON.parse(JSON.stringify(rec)));
+    expect(loaded).not.toBeNull();
+    const resolved = resolveLayers(loaded!);
+    expect(resolved.activeLayer).toBe('PQC');
+    expect(resolved.layers.PQC.nodes).toEqual(pqc.nodes);
+    expect(resolveIdCounters(resolved.layers, loaded!.idCounters).idCounters.PQC.node).toBe(1);
   });
 });

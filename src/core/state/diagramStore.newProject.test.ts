@@ -10,6 +10,7 @@ beforeEach(() => {
       L1: { nodes: [], edges: [], boundaries: [], annotations: [] },
       L2: EMPTY_LAYER,
       L3: EMPTY_LAYER,
+      PQC: EMPTY_LAYER,
     },
     activeLayer: 'L1',
     idCounters: {
@@ -17,6 +18,7 @@ beforeEach(() => {
       L1: { node: 0, edge: 0, boundary: 0 },
       L2: { node: 0, edge: 0, boundary: 0 },
       L3: { node: 0, edge: 0, boundary: 0 },
+      PQC: { node: 0, edge: 0, boundary: 0 },
     },
     projectMeta: EMPTY_PROJECT_META,
     suppressions: {},

@@ -19,6 +19,7 @@ export function layerToProject(layer: LayerData): PersistedProject {
       },
       L2: EMPTY_LAYER,
       L3: EMPTY_LAYER,
+      PQC: EMPTY_LAYER,
     },
     activeLayer: 'L1',
     activeFramework: 'ALL',
@@ -27,6 +28,7 @@ export function layerToProject(layer: LayerData): PersistedProject {
       L1: { node: layer.nodes.length, edge: layer.edges.length, boundary: layer.boundaries.length },
       L2: { node: 0, edge: 0, boundary: 0 },
       L3: { node: 0, edge: 0, boundary: 0 },
+      PQC: { node: 0, edge: 0, boundary: 0 },
     },
   });
 }

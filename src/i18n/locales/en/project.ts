@@ -11,10 +11,12 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   // ── LeftSidebar ──
   'project.sidebar.untitled': 'No project set',
   'project.sidebar.depthLayer': 'Depth layer ({layer})',
+  'project.sidebar.pqcLayer': 'PQC layer',
   'project.sidebar.layerDesc.L0': 'Business-logic focused (filled in by the business side)',
   'project.sidebar.layerDesc.L1': 'Detailed design (security staff, usually as far as needed)',
   'project.sidebar.layerDesc.L2': 'Extra detail for higher-confidentiality cases',
   'project.sidebar.layerDesc.L3': 'Even more rigorous detail',
+  'project.sidebar.layerDesc.PQC': 'PQC migration: map where encryption is terminated along each path',
   'project.sidebar.reportSummary': 'Export the currently displayed threats ({layer} / {framework} · {count} items)',
   'project.sidebar.exportCsv': 'Download CSV',
   'project.sidebar.exportJson': 'Download JSON',

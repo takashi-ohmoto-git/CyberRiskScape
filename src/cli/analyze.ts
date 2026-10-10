@@ -1,6 +1,6 @@
 import {
   deserializeProject,
-  emptyManualThreats,
+  resolveManualThreats,
   resolveIdCounters,
   resolveLayers,
   resolveRiskScores,
@@ -76,7 +76,7 @@ export function resolveProject(raw: unknown): ResolvedProject {
 
   return {
     layers,
-    manualThreatsByLayer: loaded.manualThreats ?? emptyManualThreats(),
+    manualThreatsByLayer: resolveManualThreats(loaded),
     suppressions: loaded.suppressions ?? {},
     riskScores: resolveRiskScores(loaded),
     controlStatuses: loaded.controlStatuses,

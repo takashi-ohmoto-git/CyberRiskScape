@@ -12,7 +12,7 @@ const BASE_FIXTURE_PATH = new URL('./__fixtures__/sample-project.json', import.m
 const CHANGED_FIXTURE_PATH = new URL('./__fixtures__/sample-project-changed.json', import.meta.url);
 
 function layers(l1: LayerData): Record<LayerKey, LayerData> {
-  return { L0: EMPTY_LAYER, L1: l1, L2: EMPTY_LAYER, L3: EMPTY_LAYER };
+  return { L0: EMPTY_LAYER, L1: l1, L2: EMPTY_LAYER, L3: EMPTY_LAYER, PQC: EMPTY_LAYER };
 }
 
 /** LLM → DB の最小プロジェクト（base）。 */
