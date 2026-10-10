@@ -274,7 +274,7 @@ function csvCell(value: string): string {
   return /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
 }
 
-function csvRow(cells: string[]): string {
+export function csvRow(cells: string[]): string {
   return cells.map(csvCell).join(',');
 }
 

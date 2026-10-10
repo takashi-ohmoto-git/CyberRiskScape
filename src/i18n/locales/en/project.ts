@@ -21,6 +21,8 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'project.sidebar.exportCsv': 'Download CSV',
   'project.sidebar.exportJson': 'Download JSON',
   'project.sidebar.exportDcrh': 'DCRH THREAT_MODEL.md (Anthropic-compatible)',
+  'project.sidebar.exportPqc': 'PQC migration report (CSV)',
+  'project.sidebar.exportPqcEmpty': 'Analyze a path with "Crypto path (PQC)" on a node, then register the flow with "Add to report"',
   'project.sidebar.exportPostman': 'Postman Collection (verification requests)',
   'project.sidebar.exportPdf': 'PDF report (choose layers)',
   'project.sidebar.exportPng': 'PNG image (choose layers)',

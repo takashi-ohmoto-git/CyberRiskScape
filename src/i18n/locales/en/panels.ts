@@ -203,7 +203,7 @@ export const enPanels: Partial<Record<TranslationKey, string>> = {
   'panels.crypto.class.transitional': 'Transitional',
   'panels.crypto.class.vulnerable': 'Quantum-vulnerable',
   'panels.crypto.class.plain': 'Plaintext',
-  'panels.crypto.class.unknown': 'Unknown',
+  'panels.crypto.class.unknown': 'Needs review',
   'panels.crypto.confidence.confirmed': 'Confirmed',
   'panels.crypto.confidence.default': 'Default',
   'panels.crypto.confidence.unknown': 'Needs review',

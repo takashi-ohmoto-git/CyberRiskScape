@@ -204,7 +204,7 @@ export const jaPanels = {
   'panels.crypto.class.transitional': '移行中',
   'panels.crypto.class.vulnerable': '量子脆弱',
   'panels.crypto.class.plain': '平文',
-  'panels.crypto.class.unknown': '不明',
+  'panels.crypto.class.unknown': '要確認',
   'panels.crypto.confidence.confirmed': '確定',
   'panels.crypto.confidence.default': '既定',
   'panels.crypto.confidence.unknown': '要確認',

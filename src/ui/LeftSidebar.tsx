@@ -36,6 +36,8 @@ import { buildThreatReport, toCsv, toJson, toDCRHThreatModelMarkdown } from '../
 import { triggerDownload } from '../features/export/download';
 import { toPostmanCollection } from '../features/postman-export/toPostmanCollection';
 import { reportFilename } from '../features/export/exportFiles';
+import { buildPqcReport, toPqcCsv } from '../features/pqc-path/pqcReport';
+import { BUNDLED_ALGORITHM_TABLE, getTerminationBehaviors } from '../crypto-behavior/bundled';
 import { useLocale, useT, type TranslationKey } from '../i18n';
 
 const BOUNDARY_SECTION_KEY = 'BOUNDARIES';
@@ -132,6 +134,27 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
         'text/markdown;charset=utf-8',
       );
     }
+  };
+
+  const pqcFlowCount = useDiagramStore((s) => s.layers.PQC.cryptoFlows?.length ?? 0);
+  const handleExportPqcReport = () => {
+    const s = useDiagramStore.getState();
+    const report = buildPqcReport({
+      nodes: s.layers.PQC.nodes,
+      edges: s.layers.PQC.edges,
+      boundaries: s.layers.PQC.boundaries,
+      cryptoFlows: s.layers.PQC.cryptoFlows ?? [],
+      behaviors: getTerminationBehaviors(locale),
+      algorithms: BUNDLED_ALGORITHM_TABLE,
+      projectMeta: s.projectMeta,
+      locale,
+    });
+    triggerDownload(
+      `${reportFilename(s.projectMeta.systemName, 'PQC').replace(/^threat-report/, 'pqc-migration-report')}.csv`,
+      toPqcCsv(report),
+      'text/csv;charset=utf-8',
+      true,
+    );
   };
 
   const sections = useMemo(
@@ -273,6 +296,17 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                     <Download size={12} className="text-emerald-400 shrink-0" />
                     {t('project.sidebar.exportCsv')}
                   </button>
+                  {activeLayer === 'PQC' && (
+                    <button
+                      onClick={handleExportPqcReport}
+                      disabled={pqcFlowCount === 0}
+                      title={pqcFlowCount === 0 ? t('project.sidebar.exportPqcEmpty') : undefined}
+                      className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-slate-800"
+                    >
+                      <Download size={12} className="text-emerald-400 shrink-0" />
+                      {t('project.sidebar.exportPqc')}
+                    </button>
+                  )}
                   <button
                     onClick={() => handleExportReport('json')}
                     className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
