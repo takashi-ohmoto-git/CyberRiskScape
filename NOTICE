@@ -62,6 +62,13 @@ verbatim.
                   data/threat-library/web-form.yaml,
                   data/threat-library/payment-page.yaml
 
+   CWE (Common Weakness Enumeration)
+   https://cwe.mitre.org/
+   © The MITRE Corporation. CWE IDs and entry names are referenced with
+   attribution; no CWE text is reproduced verbatim.
+
+   Referenced by: data/threat-library/api-platform.yaml
+
 --------------------------------------------------------------------------------
 3. Model Context Protocol — Security Best Practices
    https://modelcontextprotocol.io/
@@ -214,6 +221,14 @@ verbatim.
 
    Referenced by: data/threat-library/operations-posture.yaml
 
+   国立研究開発法人情報通信研究機構（NICT）CYNEX 脅威情報分析チーム LETTICE
+   注意喚起「相次ぐ情報漏洩、その原因の一つは『アプリ解析からのサーバ攻撃』」
+   （2026年10月13日）
+   https://cynex.nict.go.jp/library/261013-01.html
+   出典明記の上での要約参照。
+
+   Referenced by: data/threat-library/api-platform.yaml
+
 --------------------------------------------------------------------------------
 12. LY Corporation — LINE Developers documentation and LY Corporation notices
    https://developers.line.biz/ , https://www.lycorp.co.jp/
@@ -269,7 +284,9 @@ verbatim.
 16. OWASP Foundation — OWASP API Security Top 10 2023, OWASP Top 10 CI/CD
     Security Risks, OWASP Non-Human Identities Top 10 2025, OWASP Cheat Sheet
     Series (Secrets Management, File Upload, Third Party JavaScript
-    Management, JSON Web Token), OWASP Top 10 2021, OWASP
+    Management, JSON Web Token, Server-Side Request Forgery Prevention,
+    Injection Prevention, Query Parameterization, Deserialization,
+    OS Command Injection Defense), OWASP Top 10 2021, OWASP
     Automated Threats to Web Applications, OWASP Mobile Application Security
     Verification Standard (MASVS)
    https://owasp.org/API-Security/ ,

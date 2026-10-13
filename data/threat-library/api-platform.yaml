@@ -26,6 +26,15 @@
 #     API5 Broken Function Level Authorization）、OWASP JSON Web Token Cheat Sheet、
 #     OWASP Automated Threats to Web Applications（OAT-011 Scraping）、OWASP MASVS
 #   - IETF RFC 8252（OAuth 2.0 for Native Apps）、RFC 7636（PKCE）、RFC 8725（JWT BCP）
+#   - OWASP API Security Top 10 2023（API7 Server Side Request Forgery）、OWASP Cheat Sheet Series
+#     （Server-Side Request Forgery Prevention / Injection Prevention / Query Parameterization /
+#     Deserialization / File Upload / OS Command Injection Defense）
+#   - MITRE CWE（CWE-918 / CWE-89 / CWE-943 / CWE-502 / CWE-78 / CWE-434）
+#     https://cwe.mitre.org/
+#   - NICT CYNEX（脅威情報分析チーム LETTICE）注意喚起「相次ぐ情報漏洩、その原因の一つは
+#     『アプリ解析からのサーバ攻撃』」（2026-10-13、A2B 攻撃＝App-to-Backend Attack）
+#     https://cynex.nict.go.jp/library/261013-01.html
+#     （報道発表 https://www.nict.go.jp/press/2026/10/13-1.html）
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -58,6 +67,21 @@
 #     idp-relying-party-validation-gap、IdP からのエッジ）が扱う。api-token-session-validation-gap-001 は
 #     IdP を描かない構成（アプリのサーバーが自前でセッション・JWT を発行・検証する）も含め、
 #     利用者の端末から呼ばれる API 側の検証を扱う。subject が異なるため別 canonicalId とする。
+#   - アプリを解析してバックエンド API を直接狙う攻撃（A2B 攻撃）で狙われる SSRF・SQL / NoSQL
+#     インジェクション・コード実行を、バックエンド側の実装の問いとして 3 ルール（api-backend-ssrf-001 /
+#     api-backend-query-injection-001 / api-backend-remote-code-execution-001）で扱う。IDOR は BOLA
+#     ルール、アプリ埋め込みの秘密情報は api-mobile-embedded-secret-001 でカバー済み。
+#   - SQL / NoSQL インジェクションは、フォームの値が下流で解釈される webform-input-injection-001
+#     （canonicalId: web-form-input-injection、WEB_FORM 型。XSS・メールヘッダーも含む）と近接するが、
+#     subject（WEB_FORM / BACKEND_API）と範囲（API の JSON 本文・NoSQL の演算子）が異なるため
+#     別 canonicalId（api-query-injection）とする。公開サーバーに WAF が無いこと自体は
+#     stride-web-no-waf-001（canonicalId: web-missing-waf）が扱う別の問い（WAF の有無）で、
+#     本ファイルはバックエンドの実装（パラメーター化・型検証）を問う。
+#   - コード実行は、公開 Web サーバーへの Web シェルの設置・常駐を扱う webserver-webshell-implant-001
+#     （canonicalId: web-shell-implant、FRONT_END_SERVER の攻撃面属性で発火）と近接するが、
+#     本ファイルは BACKEND_API の入力処理（デシリアライズ・ファイルの保存先・OS コマンド）を問うため
+#     別 canonicalId（api-server-code-execution）とする。AI エージェントのコード実行
+#     （agent-code-execution-rce）も subject が異なり別。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する。
@@ -374,3 +398,104 @@ rules:
         url: "https://www.rfc-editor.org/rfc/rfc8725"
       - title: "OWASP Cheat Sheet Series - JSON Web Token for Java Cheat Sheet"
         url: "https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html"
+
+  # ── BACKEND_API: サーバー側リクエストフォージェリ（API7 SSRF）──────────
+  - id: api-backend-ssrf-001
+    canonicalId: api-server-side-request-forgery
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "サーバー側リクエストフォージェリ（SSRF）"
+    severity: High
+    description: "{{nodeName}} に、呼び出し元から受け取った URL やホスト名を使ってサーバー自身が通信する機能（URL を指定した画像の取り込み・プレビュー、文書の変換、Webhook の送信先の登録、外部データの取得等）がある。宛先を検証していない場合、攻撃者は宛先に内部ネットワークのアドレス、クラウドのメタデータサービス（169.254.169.254 等）、file:// などのローカルファイルを指定し、{{nodeName}} を踏み台にして、外部からは届かない内部の管理画面・データベース・別のサーバーに到達したり、サーバーに付与されたクラウドの一時的な認証情報を取り出したりできる（Can）。どのパラメーターが URL を受け取るかはアプリを解析すれば分かり、アプリ側で宛先を制限していても、API を直接呼び出せば素通りできる。一方、サーバー側で宛先のスキーム・ホスト・ポートを許可リストで限定し、名前解決後の IP アドレスが内部・リンクローカルでないことを確かめ、リダイレクトを追わず、メタデータサービスをトークン必須の方式に限り、{{nodeName}} からの送信を必要な宛先だけに絞っていれば、宛先を書き換えても内部やメタデータには届かない（Cannot）。blast radius は {{nodeName}} から到達できる内部ネットワークのすべてと、{{nodeName}} に付与されたクラウドの権限が許す範囲。"
+    mitigation: "[Foundation] URL・ホスト名を受け取る機能を洗い出し、不要なものはやめる（URL ではなくファイルそのものを受け取る等）。残す機能では、サーバー側で宛先のスキーム（https のみ等）・ホスト・ポートを許可リストで限定する。名前解決した後の IP アドレスが、プライベート・ループバック・リンクローカル（メタデータサービスを含む）でないことを確かめ、リダイレクトは追わない。 [Enterprise] クラウドのメタデータサービスをトークン必須の方式（AWS の IMDSv2 等）に限定し、API サーバーに付与する権限を最小にする。API サーバーから内部ネットワーク・インターネットへの送信を、ネットワーク側でも必要な宛先だけに制限する。画像処理・文書変換のライブラリで、外部の参照やローカルファイルの読み込みを無効にする。 [Advanced] URL を取得する処理を、内部ネットワークに届かない分離した環境（専用の送信用プロキシ・サンドボックス）に移す。API サーバーからメタデータサービスや想定外の内部宛先への通信を検知・通知する。"
+    appliesTo:
+      kind: node
+      nodeType: BACKEND_API
+      # 呼び出し元からの入力を受けるとき発火する（BOLA ルールと同じ前提）。
+      # 到達先はエッジに描かれていなくても成立する（メタデータサービス等）ため、outbound は条件にしない。
+      connection:
+        direction: inbound
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-06"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "OWASP API Security Top 10 2023 - API7:2023 Server Side Request Forgery"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa7-server-side-request-forgery/"
+      - title: "MITRE CWE-918: Server-Side Request Forgery (SSRF)"
+        url: "https://cwe.mitre.org/data/definitions/918.html"
+      - title: "OWASP Cheat Sheet Series - Server-Side Request Forgery Prevention Cheat Sheet"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html"
+      - title: "NICT CYNEX（LETTICE）注意喚起「相次ぐ情報漏洩、その原因の一つは『アプリ解析からのサーバ攻撃』」（2026-10-13）"
+        url: "https://cynex.nict.go.jp/library/261013-01.html"
+
+  # ── BACKEND_API: SQL / NoSQL インジェクション ─────────────────────
+  - id: api-backend-query-injection-001
+    canonicalId: api-query-injection
+    framework: STRIDE
+    category: "Tampering"
+    name: "API パラメーターによる SQL / NoSQL インジェクション"
+    severity: High
+    description: "{{nodeName}} は、呼び出し元から受け取ったパラメーター（クエリ文字列・JSON の本文）を使ってデータベースを検索・更新する。値を文字列の連結でクエリに埋め込んでいる場合や、JSON 本文のオブジェクトをそのまま検索条件に渡している場合、攻撃者は値の中にクエリの構文（SQL の引用符や UNION 句、NoSQL の $ne・$gt・$where 等の演算子）を入れて、条件を書き換えて他人のデータや全件を取り出したり、ログインの条件を無効にしたり、データを改ざん・削除したりできる（Can）。パラメーターの名前と形はアプリを解析すれば分かり、アプリ側の入力チェックは API を直接呼び出せば素通りできる。WAF は既知の書き方を減らせるが、JSON の構造を使った NoSQL の演算子などは見逃しやすい。一方、すべてのクエリをプレースホルダー（パラメーター化クエリ）やドライバーの安全な API で組み立て、受け取る値の型と形をサーバー側で検証し、オブジェクトや演算子を検索条件に入れさせず、データベースの接続アカウントの権限を必要最小にしていれば、値はデータとしてしか扱われない（Cannot）。blast radius は {{nodeName}} の接続アカウントで読み書きできるデータベースの全データ。"
+    mitigation: "[Foundation] SQL はすべてプレースホルダー（パラメーター化クエリ）で組み立て、文字列の連結でクエリを作らない。NoSQL では、受け取った値を検索条件に入れる前に型を確かめ（文字列が来るはずの項目にオブジェクトや配列を受け付けない）、$ で始まる演算子をリクエストから受け付けない。受け取る項目・型・長さを API ごとにスキーマで検証する。 [Enterprise] データベースの接続アカウントを API ごとに分け、必要な表・操作だけを許可する（管理者権限で接続しない）。データベースのエラー内容を応答に含めない。インジェクションの試行を WAF やアクセスログで監視し、インジェクションの検査（SAST・DAST）を CI で毎回実行する。 [Advanced] 並べ替えの項目やフィルターの式を自由に受け取る機能を、許可リストの選択肢に置き換える。データベース側で想定外のクエリ（全件の取得・管理用の命令）を検知する。"
+    appliesTo:
+      kind: node
+      nodeType: BACKEND_API
+      # 呼び出し元からの入力を受けるとき発火する（BOLA ルールと同じ前提）。
+      connection:
+        direction: inbound
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-06"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+    references:
+      - title: "MITRE CWE-89: Improper Neutralization of Special Elements used in an SQL Command (SQL Injection)"
+        url: "https://cwe.mitre.org/data/definitions/89.html"
+      - title: "MITRE CWE-943: Improper Neutralization of Special Elements in Data Query Logic"
+        url: "https://cwe.mitre.org/data/definitions/943.html"
+      - title: "OWASP Cheat Sheet Series - Injection Prevention Cheat Sheet"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/Injection_Prevention_Cheat_Sheet.html"
+      - title: "OWASP Cheat Sheet Series - Query Parameterization Cheat Sheet"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/Query_Parameterization_Cheat_Sheet.html"
+      - title: "NICT CYNEX（LETTICE）注意喚起「相次ぐ情報漏洩、その原因の一つは『アプリ解析からのサーバ攻撃』」（2026-10-13）"
+        url: "https://cynex.nict.go.jp/library/261013-01.html"
+      # フォームの値が下流で解釈される経路は web-form-input-injection（WEB_FORM）が扱う（別 canonicalId）。
+
+  # ── BACKEND_API: デシリアライズ・ファイル書き込み・OS コマンドによるコード実行 ──
+  - id: api-backend-remote-code-execution-001
+    canonicalId: api-server-code-execution
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "API サーバー上での任意のコード実行（デシリアライズ・ファイル書き込み・OS コマンド）"
+    severity: Critical
+    description: "{{nodeName}} が、呼び出し元から受け取ったデータをプログラムのオブジェクトとして復元する（危険なデシリアライズ）、アップロードされたファイルを利用者の指定した名前・場所に保存する、受け取った値を OS コマンドの引数に渡す、のいずれかを行っている場合、攻撃者は細工したデータ・ファイル名（../ を含むパス等）・コマンドの区切り文字を送り、{{nodeName}} の上で任意のプログラムを実行させたり、設定ファイルやプログラム自体を上書きしたりできる（Can）。運用・保守用の機能（ファイルの読み書き、コマンドの実行、デバッグ用の画面）が利用者向けの API と同じ入口で公開されていれば、それを呼ぶだけで同じことができる。コードを実行されると、{{nodeName}} が持つデータベースの接続情報・API キー・クラウドの権限を使って、つながる全システムへ侵入を広げられる。一方、信頼できないデータをオブジェクトとして復元せず（JSON 等の単純な形式で受け、型を検証する）、アップロードしたファイルをサーバーが決めた名前で実行されない場所に保存し、OS コマンドを呼ばずにライブラリの機能を使い、管理用の機能を公開していなければ、細工したデータを送っても実行には至らない（Cannot）。blast radius は {{nodeName}} の実行権限で触れられる全データと認証情報、そこから到達できる内部ネットワーク。"
+    mitigation: "[Foundation] 信頼できない入力を、言語固有の形式（Java のシリアライズ、PHP の unserialize、Python の pickle 等）でオブジェクトに復元しない。JSON 等の単純な形式で受け取り、型をスキーマで検証する。アップロードしたファイルは、サーバーが生成した名前で、Web から実行されない場所（公開ディレクトリの外・オブジェクトストレージ）に保存し、利用者が指定したパスを使わない。OS コマンドの呼び出しをライブラリの機能に置き換え、やむを得ない場合も引数を許可リストで検証し、シェルを介さずに渡す。運用・デバッグ用の機能を利用者向けの API に公開しない。 [Enterprise] API サーバーを最小権限の実行ユーザーで動かし、プログラムの置き場所を書き込み不可にする。使っているライブラリ・フレームワークの脆弱性（デシリアライズ等）を期限を決めて修正する。API サーバーから起動されるシェルや想定外のプロセスを EDR 等で検知する。 [Advanced] API サーバーを読み取り専用のコンテナイメージで動かし、実行中にファイルを書き換えられない構成にする。API サーバーから内部・外部への通信を必要な宛先だけに制限し、侵害時の持ち出しと横展開を抑える。"
+    appliesTo:
+      kind: node
+      nodeType: BACKEND_API
+      # 呼び出し元からの入力を受けるとき発火する（BOLA ルールと同じ前提）。
+      connection:
+        direction: inbound
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-06"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "MITRE CWE-502: Deserialization of Untrusted Data"
+        url: "https://cwe.mitre.org/data/definitions/502.html"
+      - title: "MITRE CWE-78: Improper Neutralization of Special Elements used in an OS Command (OS Command Injection)"
+        url: "https://cwe.mitre.org/data/definitions/78.html"
+      - title: "MITRE CWE-434: Unrestricted Upload of File with Dangerous Type"
+        url: "https://cwe.mitre.org/data/definitions/434.html"
+      - title: "OWASP Cheat Sheet Series - Deserialization Cheat Sheet"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+      - title: "OWASP Cheat Sheet Series - File Upload Cheat Sheet"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html"
+      - title: "OWASP Cheat Sheet Series - OS Command Injection Defense Cheat Sheet"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html"
+      - title: "NICT CYNEX（LETTICE）注意喚起「相次ぐ情報漏洩、その原因の一つは『アプリ解析からのサーバ攻撃』」（2026-10-13）"
+        url: "https://cynex.nict.go.jp/library/261013-01.html"
+      # 公開 Web サーバーへの Web シェルの設置・常駐は web-shell-implant（FRONT_END_SERVER）が扱う（別 canonicalId）。
