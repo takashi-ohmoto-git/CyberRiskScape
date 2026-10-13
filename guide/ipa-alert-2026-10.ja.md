@@ -59,7 +59,7 @@ CyberRiskScape は**設計（構成図）から脅威を洗い出す**ツール�
 
 ![会員サイトの構成図（対策前）](../assets/guide/ipa-alert/01-overview.png)
 
-**図の中身：** コンポーネント 13・データフロー 8・トラスト境界 3（読み込むと **61 件**の脅威が検出されます。Critical 8・High 29・Medium 24）。
+**図の中身：** コンポーネント 13・データフロー 8・トラスト境界 3（読み込むと **67 件**の脅威が検出されます。Critical 10・High 33・Medium 24）。
 
 | 場所 | 描いたもの（型） |
 |---|---|
@@ -338,7 +338,7 @@ node dist-cli/main.js checklist membership-site.json --id ipa-alert-2026-10 --fa
 
 ![会員サイトの構成図（対策後）](../assets/guide/ipa-alert/07-overview-after.png)
 
-**脅威の件数：61 件 → 40 件**（Critical 8 → 6・High 29 → 18・Medium 24 → 16。実測。`diff` では「追加 0 件・解消 21 件」）。
+**脅威の件数：67 件 → 46 件**（Critical 10 → 8・High 33 → 22・Medium 24 → 16。実測。`diff` では「追加 0 件・解消 21 件」）。
 
 ![注意喚起チェックリスト（対策後）](../assets/guide/ipa-alert/08-checklist-after-top.png)
 

@@ -1,0 +1,252 @@
+{
+  "schemaVersion": 1,
+  "kind": "cyberriskscape-template",
+  "name": "Member app - after (for the NICT A2B attack check)",
+  "layer": {
+    "nodes": [
+      {
+        "id": "na_user",
+        "type": "USER",
+        "x": 60,
+        "y": 70,
+        "label": "User",
+        "userTrustAttribute": "Guest"
+      },
+      {
+        "id": "na_phone",
+        "type": "SMARTPHONE",
+        "x": 0,
+        "y": 0,
+        "label": "User's smartphone (with the member app)",
+        "parentId": "na_user",
+        "managedState": "Unmanaged"
+      },
+      {
+        "id": "na_att",
+        "type": "AGENTIC_ATTACKER",
+        "x": 60,
+        "y": 430,
+        "label": "Attacker (analyzes the app with AI)"
+      },
+      {
+        "id": "na_gw",
+        "type": "GATEWAY",
+        "x": 440,
+        "y": 150,
+        "label": "API gateway",
+        "attackSurface": {
+          "hasGlobalIp": true,
+          "hasSourceIpRestriction": true,
+          "hasRemoteAccessRestriction": true,
+          "hasUserAuthentication": true,
+          "hasAccessLog": true,
+          "hasWafProtection": true,
+          "hasDdosProtection": true
+        },
+        "posture": {
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-14"
+        }
+      },
+      {
+        "id": "na_spec",
+        "type": "API_SPEC",
+        "x": 840,
+        "y": 70,
+        "label": "API list (specification)"
+      },
+      {
+        "id": "na_api",
+        "type": "BACKEND_API",
+        "x": 840,
+        "y": 250,
+        "label": "Member API",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-14"
+        }
+      },
+      {
+        "id": "na_db",
+        "type": "DATABASE",
+        "x": 840,
+        "y": 430,
+        "label": "Member DB",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-14",
+          "encryptionAtRest": "CustomerManagedKey",
+          "accountReview": "Periodic"
+        }
+      },
+      {
+        "id": "na_pii",
+        "type": "PERSONAL_INFO",
+        "x": 0,
+        "y": 0,
+        "label": "Member personal data",
+        "parentId": "na_db",
+        "posture": {
+          "dataNecessity": "Required",
+          "recordVolume": "Under100K"
+        }
+      },
+      {
+        "id": "na_st",
+        "type": "STORAGE",
+        "x": 840,
+        "y": 610,
+        "label": "Image storage (cloud storage)",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-14",
+          "encryptionAtRest": "ProviderManagedKey"
+        }
+      },
+      {
+        "id": "na_biz",
+        "type": "BACKEND_API",
+        "x": 1160,
+        "y": 250,
+        "label": "Internal business system",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-14"
+        }
+      },
+      {
+        "id": "na_meta",
+        "type": "IAAS",
+        "x": 1160,
+        "y": 430,
+        "label": "Cloud platform (metadata service)",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-14",
+          "encryptionAtRest": "ProviderManagedKey",
+          "accountReview": "Periodic"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "ea_01",
+        "source": "na_phone",
+        "target": "na_gw",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "API calls from the app"
+      },
+      {
+        "id": "ea_03",
+        "source": "na_att",
+        "target": "na_gw",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Attack requests built from the analysis"
+      },
+      {
+        "id": "ea_05",
+        "source": "na_gw",
+        "target": "na_api",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Gateway to member API"
+      },
+      {
+        "id": "ea_06",
+        "source": "na_api",
+        "target": "na_db",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Member data search / update"
+      },
+      {
+        "id": "ea_07",
+        "source": "na_api",
+        "target": "na_st",
+        "auth": "ApiKey",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Saving images"
+      },
+      {
+        "id": "ea_08",
+        "source": "na_api",
+        "target": "na_biz",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "URL fetch / image processing"
+      },
+      {
+        "id": "ea_09",
+        "source": "na_api",
+        "target": "na_meta",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Metadata retrieval"
+      }
+    ],
+    "boundaries": [
+      {
+        "id": "ba_net",
+        "type": "RECT",
+        "x": 20,
+        "y": 20,
+        "width": 300,
+        "height": 720,
+        "trustLevel": "Internet"
+      },
+      {
+        "id": "ba_pub",
+        "type": "ROUNDED",
+        "x": 380,
+        "y": 20,
+        "width": 340,
+        "height": 720,
+        "trustLevel": "Internet",
+        "macroTrust": "Public Area"
+      },
+      {
+        "id": "ba_int",
+        "type": "ROUNDED",
+        "x": 780,
+        "y": 20,
+        "width": 600,
+        "height": 720,
+        "trustLevel": "Internal",
+        "macroTrust": "Security Zone"
+      }
+    ]
+  }
+}

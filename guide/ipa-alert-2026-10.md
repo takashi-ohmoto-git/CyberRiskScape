@@ -65,8 +65,8 @@ You can load the following templates as they are (the procedure is the same as i
 
 ![The membership-site diagram (before)](../assets/guide/ipa-alert/01-overview.en.png)
 
-**What the diagram contains:** 13 components, 8 data flows, and 3 trust boundaries. Loading it detects **61 threats** (8 Critical,
-29 High, 24 Medium).
+**What the diagram contains:** 13 components, 8 data flows, and 3 trust boundaries. Loading it detects **67 threats** (10 Critical,
+33 High, 24 Medium).
 
 | Place | What is drawn (type) |
 |---|---|
@@ -394,7 +394,7 @@ Update the diagram's attributes as if the alert's measures were taken. Loading t
 
 ![The membership-site diagram (after)](../assets/guide/ipa-alert/07-overview-after.en.png)
 
-**Threats: 61 to 40** (Critical 8 to 6, High 29 to 18, Medium 24 to 16; measured. `diff` reports "0 added, 21 resolved").
+**Threats: 67 to 46** (Critical 10 to 8, High 33 to 22, Medium 24 to 16; measured. `diff` reports "0 added, 21 resolved").
 
 ![The alert checklist (after)](../assets/guide/ipa-alert/08-checklist-after-top.en.png)
 

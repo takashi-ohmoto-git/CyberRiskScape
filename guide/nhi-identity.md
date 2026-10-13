@@ -74,7 +74,7 @@ For how to load it, see [Creating and Using Templates](templates.md).
 **Contents:** 14 components, 12 data flows and 2 trust boundaries. It includes an operator going through privileged
 access management while also using the same service account directly by hand, CI issuing credentials to a workload
 identity with an OIDC token, an order API calling an external SaaS through an OAuth client, and IGA provisioning
-accounts to each system. Loading it produces **70 threats** at the time of writing.
+accounts to each system. Loading it produces **73 threats** at the time of writing.
 
 ---
 

@@ -3,7 +3,7 @@
 **Open-source visual threat modeling for AI, LLM, agentic systems, and post-quantum cryptography**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-221-orange.svg)](data/threat-library)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-224-orange.svg)](data/threat-library)
 [![Tests](https://img.shields.io/badge/tests-1254%20passing-brightgreen.svg)](#development)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
@@ -23,7 +23,7 @@ how the screen is laid out, and how to work on the canvas, with screenshots.
 For the thinking behind it, see [An Introduction to Secure by Design](guide/secure-by-design.md).
 
 > **Interface language.** English and Japanese are both supported — use the JA / EN switch
-> in the top bar, and your choice is remembered. The interface, all 221 threat rules
+> in the top bar, and your choice is remembered. The interface, all 224 threat rules
 > (name, category, description, mitigations) and every component type label are
 > translated. Help is welcome.
 
@@ -38,7 +38,7 @@ long-term memory** as first-class component types, with a rule set to match.
 
 | Framework | Rules | Covers |
 |---|---:|---|
-| `STRIDE` | 146 | Spoofing, tampering, repudiation, information disclosure, DoS, elevation of privilege |
+| `STRIDE` | 149 | Spoofing, tampering, repudiation, information disclosure, DoS, elevation of privilege |
 | `AI` | 33 | Adversarial ML, model extraction, training data poisoning |
 | `AgenticAI` | 42 | Goal hijacking, tool misuse, privilege carry-over, memory poisoning |
 
@@ -277,7 +277,7 @@ Near-term priorities, in order:
    detection confidence stated explicitly
 
 Done recently: an English UI with a language switcher, plus English translation overlays
-for all 221 threat rules and every component type label, all leaving the existing schemas
+for all 224 threat rules and every component type label, all leaving the existing schemas
 unchanged.
 
 ---
