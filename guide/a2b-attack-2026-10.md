@@ -25,8 +25,11 @@
 
 **Summary of the alert**
 
-A technique has been confirmed in which a publicly distributed Android app is analyzed with AI to extract the API information the app
-uses (destinations, endpoints, parameters, response structure), and that information is used to attack the backend. It has four stages:
+A technique has been confirmed in which a publicly distributed Android app is analyzed to extract the API information the app
+uses (destinations, endpoints, parameters, response structure), and that information is used to attack each backend in a tailored way.
+Figure 1 of the alert shows the flow in four stages. AI appears in stages 1 to 3 of Figure 1, but the body text presents it as a **possibility**
+to watch for: AI makes app analysis and vulnerability discovery more efficient, so attacks like this may reach more systems.
+The body text does not state that AI was used in the confirmed attacks.
 
 1. Obtain the public app and analyze it with AI to get the API information
 2. From the result, identify the backend APIs and endpoints (`/user`, `/profile`, `/order`, `/upload`, and so on)
