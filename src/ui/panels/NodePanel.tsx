@@ -406,6 +406,21 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
           </div>
         </div>
 
+        <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+          <h3 className="text-xs font-bold text-slate-300 mb-4 flex items-center gap-2">
+            <LinkIcon size={14} className="text-blue-500" /> {t('panels.node.createEdgeHeading')}
+          </h3>
+          <button
+            onClick={() => onStartLinking(node.id)}
+            className="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20"
+          >
+            <Plus size={16} /> CREATE LINK
+          </button>
+          <p className="text-xs text-slate-500 mt-3 leading-relaxed">
+            {t('panels.node.createEdgeNote')}
+          </p>
+        </div>
+
         {parentNode && (
           <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
             <h3 className="text-xs font-bold text-slate-300 mb-3 flex items-center gap-2">
@@ -912,21 +927,6 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
               </p>
             </div>
           )}
-        </div>
-
-        <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
-          <h3 className="text-xs font-bold text-slate-300 mb-4 flex items-center gap-2">
-            <LinkIcon size={14} className="text-blue-500" /> {t('panels.node.createEdgeHeading')}
-          </h3>
-          <button
-            onClick={() => onStartLinking(node.id)}
-            className="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20"
-          >
-            <Plus size={16} /> CREATE LINK
-          </button>
-          <p className="text-xs text-slate-500 mt-3 leading-relaxed">
-            {t('panels.node.createEdgeNote')}
-          </p>
         </div>
 
         <NodeCryptoSection node={node} />
