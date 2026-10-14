@@ -111,7 +111,7 @@ const opErrorMap: z.ZodErrorMap = (issue, ctx) => {
 const opObject = <T extends z.ZodRawShape>(shape: T) => z.object(shape, { errorMap: opErrorMap }).strict();
 
 const DATA_FLOW_DESC =
-  'データ通信の向き（source から見た向き）。outbound＝source → target（既定）、inbound＝target → source、bidirectional＝双方向。キャンバスの矢印の向きと、脅威ルールの接続方向（inbound＝対象ノードが target 側）の判定に使われる。';
+  'データ通信の向き（source から見た向き）。outbound＝source → target（既定）、inbound＝target → source、bidirectional＝双方向。キャンバスの矢印の向きと、脅威ルールの接続方向（inbound＝対象ノードがデータを受け取る側、bidirectional は両端とも送受信の両方）の判定に使われる。';
 const SEMANTIC_DESC =
   'エッジの意味（省略時は data_flow）：data_flow／tool_invocation（ツール呼び出し）／delegation（委任）／memory_read／memory_write／rag_retrieval／directory_sync。AI・エージェント系の脅威判定に使われる。';
 const BOUNDARY_ID_DESC =

@@ -985,6 +985,45 @@ describe('detectThreats', () => {
     expect(out[0].nodeId).toBe('u');
   });
 
+  describe('connection.direction は edge.dataFlow の向きで判定する', () => {
+    const pair: DiagramNode[] = [
+      { id: 'a', type: 'TOOL', x: 0, y: 0 },
+      { id: 'b', type: 'TOOL', x: 0, y: 0 },
+    ];
+    const edgeAB = (dataFlow?: DiagramEdge['dataFlow']): DiagramEdge[] => [
+      { id: 'e', source: 'a', target: 'b', auth: 'None', network: 'VPC', encryption: 'TLS', dataFlow },
+    ];
+    const rule = (direction: 'inbound' | 'outbound'): ThreatRule => ({
+      id: `dir-${direction}`,
+      framework: 'STRIDE',
+      category: 'X',
+      severity: 'Medium',
+      description: direction,
+      appliesTo: { kind: 'node', nodeType: 'TOOL', connection: { direction } },
+    });
+    const firedNodes = (dataFlow: DiagramEdge['dataFlow'], direction: 'inbound' | 'outbound') =>
+      detectThreats({ nodes: pair, edges: edgeAB(dataFlow), framework: 'STRIDE', rules: [rule(direction)] })
+        .map((t) => t.nodeId)
+        .sort();
+
+    it('dataFlow 省略・outbound は source が送信、target が受信', () => {
+      for (const df of [undefined, 'outbound'] as const) {
+        expect(firedNodes(df, 'outbound')).toEqual(['a']);
+        expect(firedNodes(df, 'inbound')).toEqual(['b']);
+      }
+    });
+
+    it('dataFlow inbound は向きが逆になり target が送信、source が受信', () => {
+      expect(firedNodes('inbound', 'outbound')).toEqual(['b']);
+      expect(firedNodes('inbound', 'inbound')).toEqual(['a']);
+    });
+
+    it('dataFlow bidirectional は両端が送信・受信の両方を満たす', () => {
+      expect(firedNodes('bidirectional', 'outbound')).toEqual(['a', 'b']);
+      expect(firedNodes('bidirectional', 'inbound')).toEqual(['a', 'b']);
+    });
+  });
+
   it('connection.peerType: 接続先型が一致するエッジがあれば発火する', () => {
     // g（GATEWAY）は u（USER）からの inbound と tool への outbound を持つ。
     // peerType=[USER] で direction=any なら成立。

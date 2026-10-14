@@ -380,8 +380,13 @@ function matchNodeConnection(
     const isSource = edge.source === node.id;
     const isTarget = edge.target === node.id;
     if (!isSource && !isTarget) continue;
-    if (direction === 'inbound' && !isTarget) continue;
-    if (direction === 'outbound' && !isSource) continue;
+    // 向きは描いた順（source/target）ではなく edge.dataFlow で決める。
+    // outbound（既定）＝source が送り target が受ける、inbound＝その逆、bidirectional＝両方。
+    const dataFlow = edge.dataFlow ?? 'outbound';
+    const sends = dataFlow === 'bidirectional' || (dataFlow === 'outbound') === isSource;
+    const receives = dataFlow === 'bidirectional' || (dataFlow === 'outbound') === isTarget;
+    if (direction === 'inbound' && !receives) continue;
+    if (direction === 'outbound' && !sends) continue;
     if (peerType || peerAttackSurface) {
       const peerId = isSource ? edge.target : edge.source;
       const peer = nodeById.get(peerId);

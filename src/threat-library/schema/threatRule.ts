@@ -249,7 +249,9 @@ export const ConnectionDirectionSchema = z.enum(['any', 'inbound', 'outbound']);
  *
  * - `required: false` を指定すると内在的脅威として扱い、接続有無に関係なく発火する。
  *   この場合は `direction` / `peerType` を併記できない（意味的に矛盾）。
- * - `direction: 'inbound'` は対象ノードが `edge.target` のエッジが対象。`'outbound'` は逆。
+ * - `direction: 'inbound'` は対象ノードがデータを受け取るエッジ、`'outbound'` は送り出すエッジが対象。
+ *   向きは `edge.dataFlow` で決まる（既定 outbound＝source→target、inbound＝target→source、
+ *   bidirectional＝両端が送受信の両方を満たす）。
  * - `peerType` は反対側（自分でない側）のノード型が列挙のいずれかと一致するエッジが
  *   少なくとも 1 本ある場合に成立。
  * - `peerAttackSurface` は接続先（ピア）ノードの攻撃面属性を条件にする。`peerType` と
