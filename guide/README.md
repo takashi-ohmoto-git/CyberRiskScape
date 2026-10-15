@@ -2,7 +2,7 @@
 
 **English** | [日本語](README.ja.md)
 
-Documentation for people using CyberRiskScape. For the project overview, the feature list and how
+A list of how to use each feature of CyberRiskScape. For the project overview, its features and how
 to build it, see the [repository README](../README.md).
 
 Nothing here needs to be installed — you can follow along in the

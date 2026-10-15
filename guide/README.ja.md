@@ -2,8 +2,8 @@
 
 [English](README.md) | **日本語**
 
-CyberRiskScape を使う人のためのドキュメントです。
-プロジェクトの概要・機能一覧・ビルド方法は[リポジトリの README](../README.ja.md) を参照してください。
+CyberRiskScape を使う人のための、機能の使い方の一覧です。
+プロジェクトの概要・特徴・ビルド方法は[リポジトリの README](../README.ja.md) を参照してください。
 
 インストールは不要です。[オンラインデモ](https://takashi-ohmoto-git.github.io/CyberRiskScape/)を
 開けば、そのまま手を動かしながら読めます。
