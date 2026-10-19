@@ -16,7 +16,8 @@
 - AI に修正させるときの安全のための設計と、この構成の**限界**
 
 **このページの立場**：ここで説明する流れは、CyberRiskScape の機能ではなく、**利用者のアプリのリポジトリに組む CI** です。
-CyberRiskScape は **Veracode の検査結果を取り込みません**（現時点）。脅威モデルを書き出して AI と CI に渡す側を担います。
+CyberRiskScape は、脅威モデルを書き出して AI と CI に渡す側を担います。Veracode の指摘を CWE の対応表で脅威モデルと突き合わせる
+レポート（CLI の `findings-report`）も出せますが、指摘を図に保存することはしません。
 
 **前提**
 
@@ -36,7 +37,7 @@ CyberRiskScape は **Veracode の検査結果を取り込みません**（現時
       ├─ SAST：Veracode CLI でパッケージ化 → static scan（results.json）
       └─ DAST：Veracode 側で定期実行 → Findings API（scan_type=DYNAMIC）で取得
                          │
- [2] 修正対象を選ぶ  ←── CyberRiskScape：analyze の結果で、脅威モデル上の重要度を加味する
+ [2] 修正対象を選ぶ  ←── CyberRiskScape：findings-report で指摘と脅威モデルを突き合わせる
                          │
  [3] AI で修正       ←── CyberRiskScape：THREAT_MODEL.md を前提知識として渡す
       ├─ Veracode Fix（veracode fix）
@@ -140,15 +141,26 @@ curl -fsS https://tools.veracode.com/veracode-cli/install | sh   # 公式のイ�
 jq '[.findings[] | select(.severity >= 4)] | .[:5]' results.json > targets.json
 ```
 
-**脅威モデルで重みを付ける**：CyberRiskScape の CLI で脅威の一覧を JSON にします。
+**脅威モデルで重みを付ける**：CyberRiskScape の CLI の `findings-report` で、指摘と脅威モデルを突き合わせます。
 
 ```bash
-node crs/dist-cli/main.js analyze threat-model/project.json --format json --out threats.json
+node crs/dist-cli/main.js findings-report threat-model/project.json --veracode results.json --out findings-report.md
 ```
 
-指摘のあるファイルが、図のどのノード（例：インターネットに面したフロントエンドサーバー）に当たるかは、
-**AI に判断させるか、人が対応表を用意します**。CyberRiskScape は CWE と脅威の対応を自動では付けません。
-インターネットから届く経路の上にある指摘や、重大度 Critical・High の脅威に関係する指摘を先に直します。
+入力は Pipeline Scan の `results.json` か、Findings API の応答（`_embedded.findings`）を保存した JSON です（形式は自動で見分けます）。
+指摘の CWE を、対応表（`data/finding-maps/cwe.yaml`）で脅威の種類（canonicalId）に置き換えて突き合わせ、次の 4 つを出します。
+
+| 出力 | 内容 |
+|---|---|
+| 構成図の脅威がコードで確認されたもの | 図で検出した脅威のうち、対応する指摘が出たもの。その脅威を受容・誤検知・対策実装済みと記録していれば併記する |
+| 優先して確認する指摘 | 上の指摘を、図での脅威の重大度 → Veracode の重大度の順に並べた上位 20 件 |
+| 構成図に該当する脅威がない指摘 | 図の見落としの候補（§6） |
+| 対応づけできない指摘 | 対応表に無い CWE（XSS・パストラバーサル・CSRF・暗号強度など、図の脅威として当てはまりにくいもの）。CWE ごとに一覧 |
+
+- SCA の指摘と解決済み（CLOSED）の指摘は、件数だけ出して突き合わせから外します
+- 突き合わせは脅威の**種類**の単位です。指摘のファイルが図のどのノードに当たるかまでは判断しません。それは AI か人が判断します
+- 手動ペンテストの指摘は CWE で突き合わせ、攻撃パターン（CAPEC）は表示だけします
+- `--format json` で機械処理用の JSON も出せます。DAST・手動ペンテストの URL は、クエリ文字列などを除いて出力します
 
 ### 4.5 AI で修正する
 
@@ -193,6 +205,7 @@ CLI で使う場合は次のとおりです。
 targets.json は Veracode が検出した脆弱性です。threat-model/THREAT_MODEL.md は、
 このシステムについて人が作成・確認した脅威モデルです。
 
+- findings-report.md の「優先して確認する指摘」に載っているものから順に扱ってください
 - targets.json の各指摘について、根本原因を直してください。検査ツールの判定だけを避ける修正はしないでください
 - 各修正に、修正前は失敗し修正後に成功する回帰テストを追加してください
 - THREAT_MODEL.md の信頼境界を前提に、どの入力が外部から来るかを判断してください
@@ -262,6 +275,8 @@ Veracode の指摘が、脅威モデルの前提と食い違うことがあり�
 | 対策済みとしていた脅威に当たる指摘が出た | 対策実装状況を見直す（[Analytics](analytics-assessment.ja.md)） |
 | 受け入れたリスクに当たる指摘が出た | 受け入れの前提が変わっていないか確認する |
 
+`findings-report` の「構成図に該当する脅威がない指摘」は、この食い違いの候補の一覧として使えます。
+
 図を更新したら、プロジェクト JSON の PR で [CI の差分ゲート](ci-integration.ja.md) が新しい脅威を判定します。
 `THREAT_MODEL.md` も書き出し直して、次回の AI の修正に反映させます。
 
@@ -306,8 +321,8 @@ jobs:
           ./veracode static scan verascan/<パッケージのファイル名> --results-file results.json || [ $? -eq 3 ]
           jq '[.findings[] | select(.severity >= 4)] | .[:5]' results.json > targets.json
 
-      - name: 脅威モデルの評価
-        run: node crs/dist-cli/main.js analyze threat-model/project.json --format json --out threats.json
+      - name: 脅威モデルとの突き合わせ
+        run: node crs/dist-cli/main.js findings-report threat-model/project.json --veracode results.json --out findings-report.md
 
       - name: AI で修正（Veracode の資格情報はこのステップに渡さない）
         env:
@@ -334,7 +349,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git switch -c "veracode-fix/${{ github.run_id }}"
-          git add -A -- . ':!results.json' ':!after.json' ':!targets.json' ':!threats.json' ':!verascan*' ':!crs' ':!veracode'
+          git add -A -- . ':!results.json' ':!after.json' ':!targets.json' ':!findings-report.md' ':!verascan*' ':!crs' ':!veracode'
           git commit -m "fix(security): Veracode の指摘を修正（AI による修正案）"
           git push -u origin HEAD
           gh pr create --draft --title "Veracode の指摘の修正案" --body "AI による修正案です。レビューしてからマージしてください。"
@@ -362,9 +377,9 @@ CI に組み込んだコーディングエージェント自体の脅威は、Cy
 
 ## 9. この構成の限界
 
-- **CyberRiskScape は Veracode の検査結果を取り込みません。** 指摘と脅威の対応付けは、AI か人が行います
+- **突き合わせは脅威の種類の単位です。** 指摘を図の特定のノードに結びつけること、指摘を図に保存することはしません
 - **依存パッケージの脆弱性（SCA）は、このページの流れの対象外です。** Pipeline Scan は依存パッケージを検査しません
-- **CWE と脅威の対応表はありません。** 脅威ライブラリの一部のルールは参考文献として CWE を挙げていますが、指摘の自動分類には使えません
+- **CWE と脅威の対応表は一部の CWE だけです。** 図の脅威として当てはまりにくい CWE は、意図的に対応表に入れていません
 - **「指摘が消えた」は「直った」ことの証明ではありません。** 回帰テストと人のレビューが前提です
 - **DAST・手動ペンテストの指摘の自動修正は精度が落ちます。** 修正案の作成までを目標にしてください
 - Veracode Fix GitHub Action の対応言語は 8 言語です（§4.5）。対応する CWE の一覧と、ソースコードの扱いは、このページでは扱いません。公式の情報を確認してください

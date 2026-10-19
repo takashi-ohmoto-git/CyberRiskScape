@@ -18,8 +18,9 @@
 - Safety design for letting AI make fixes, and the **limits** of this setup
 
 **Scope of this page**: the flow described here is not a CyberRiskScape feature. It is **CI you build in your own
-application repository**. CyberRiskScape **does not import Veracode scan results** (at present). Its role is to export
-the threat model and hand it to the AI and to CI.
+application repository**. CyberRiskScape's role is to export the threat model and hand it to the AI and to CI. It can also produce a report that
+cross-references Veracode findings with the threat model through a CWE mapping table (the CLI `findings-report`),
+but it does not save findings into the diagram.
 
 **Prerequisites**
 
@@ -39,7 +40,7 @@ the threat model and hand it to the AI and to CI.
       ├─ SAST: package with the Veracode CLI → static scan (results.json)
       └─ DAST: scheduled on the Veracode side → fetch with the Findings API (scan_type=DYNAMIC)
                          │
- [2] Select findings to fix  ←── CyberRiskScape: weigh them by the threat model (analyze output)
+ [2] Select findings to fix  ←── CyberRiskScape: cross-reference with the threat model (findings-report)
                          │
  [3] Fix with AI             ←── CyberRiskScape: pass THREAT_MODEL.md as context
       ├─ Veracode Fix (veracode fix)
@@ -143,15 +144,26 @@ Set a **cap** on the number of findings fixed per run (for example, at most 5 fi
 jq '[.findings[] | select(.severity >= 4)] | .[:5]' results.json > targets.json
 ```
 
-**Weigh them by the threat model**: use the CyberRiskScape CLI to produce the threat list as JSON.
+**Weigh them by the threat model**: use the CyberRiskScape CLI `findings-report` to cross-reference the findings with the threat model.
 
 ```bash
-node crs/dist-cli/main.js analyze threat-model/project.json --format json --out threats.json
+node crs/dist-cli/main.js findings-report threat-model/project.json --veracode results.json --out findings-report.md
 ```
 
-Which node in the diagram a file with findings belongs to (for example, an internet-facing front-end server) is
-**decided by the AI or by a mapping table that a person prepares**. CyberRiskScape does not map CWEs to threats automatically.
-Fix findings on paths reachable from the internet, and findings related to Critical or High threats, first.
+The input is a Pipeline Scan `results.json` or a saved Findings API response (`_embedded.findings`); the format is detected automatically.
+It converts each finding's CWE into a threat type (canonicalId) through the mapping table (`data/finding-maps/cwe.yaml`) and outputs four sections.
+
+| Section | Contents |
+|---|---|
+| Diagram threats confirmed in code | Threats detected in the diagram that have matching findings. If you recorded the threat as accepted, false positive, or implemented, that decision is shown alongside |
+| Findings to check first | The findings above, ordered by the diagram's threat severity, then Veracode severity (top 20) |
+| Findings with no matching diagram threat | Candidates for gaps in the diagram (§6) |
+| Findings that could not be mapped | CWEs not in the mapping table (those that do not fit diagram-level threats well, such as XSS, path traversal, CSRF, and crypto strength), listed per CWE |
+
+- SCA findings and resolved (CLOSED) findings are counted and left out of the cross-reference
+- The cross-reference works at the level of threat **types**. It does not decide which node in the diagram a file belongs to; the AI or a person decides that
+- Manual penetration test findings are matched by CWE; the attack pattern (CAPEC) is shown only
+- `--format json` produces JSON for machine processing. URLs from DAST and manual penetration tests are output without query strings and similar parts
 
 ### 4.5 Fix with AI
 
@@ -196,6 +208,7 @@ Put the instructions in a file (for example `.github/prompts/remediate.md`).
 targets.json lists vulnerabilities detected by Veracode. threat-model/THREAT_MODEL.md is a threat model
 of this system created and reviewed by people.
 
+- Start with the findings listed under "Findings to check first" in findings-report.md
 - For each finding in targets.json, fix the root cause. Do not make changes that only avoid the scanner's detection
 - For each fix, add a regression test that fails before the fix and passes after it
 - Use the trust boundaries in THREAT_MODEL.md to decide which inputs come from outside
@@ -265,6 +278,8 @@ Veracode findings sometimes contradict the assumptions of the threat model.
 | A finding matches a threat recorded as mitigated | Review the mitigation status ([Analytics](analytics-assessment.md)) |
 | A finding matches an accepted risk | Check whether the premise of the acceptance has changed |
 
+The "findings with no matching diagram threat" section of `findings-report` serves as a list of candidates for such mismatches.
+
 After you update the diagram, the [CI diff gate](ci-integration.md) evaluates new threats in the project JSON PR.
 Re-export `THREAT_MODEL.md` as well so the next AI fix reflects it.
 
@@ -309,8 +324,8 @@ jobs:
           ./veracode static scan verascan/<package-file-name> --results-file results.json || [ $? -eq 3 ]
           jq '[.findings[] | select(.severity >= 4)] | .[:5]' results.json > targets.json
 
-      - name: Evaluate the threat model
-        run: node crs/dist-cli/main.js analyze threat-model/project.json --format json --out threats.json
+      - name: Cross-reference with the threat model
+        run: node crs/dist-cli/main.js findings-report threat-model/project.json --veracode results.json --out findings-report.md
 
       - name: Fix with AI (do not pass Veracode credentials to this step)
         env:
@@ -337,7 +352,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git switch -c "veracode-fix/${{ github.run_id }}"
-          git add -A -- . ':!results.json' ':!after.json' ':!targets.json' ':!threats.json' ':!verascan*' ':!crs' ':!veracode'
+          git add -A -- . ':!results.json' ':!after.json' ':!targets.json' ':!findings-report.md' ':!verascan*' ':!crs' ':!veracode'
           git commit -m "fix(security): fix Veracode findings (AI-proposed fix)"
           git push -u origin HEAD
           gh pr create --draft --title "Proposed fixes for Veracode findings" --body "AI-proposed fixes. Review before merging."
@@ -366,9 +381,9 @@ You can diagram and assess the threats of the coding agent built into CI with Cy
 
 ## 9. Limits of this setup
 
-- **CyberRiskScape does not import Veracode scan results.** The AI or a person maps findings to threats
+- **The cross-reference works at the level of threat types.** It does not tie findings to specific nodes in the diagram or save them into the diagram
 - **Dependency vulnerabilities (SCA) are outside the flow on this page.** Pipeline Scan does not scan dependencies
-- **There is no CWE-to-threat mapping table.** Some rules in the threat library cite CWEs as references, but they cannot be used to classify findings automatically
+- **The CWE-to-threat mapping table covers only some CWEs.** CWEs that do not fit diagram-level threats well are intentionally left out
 - **"The finding disappeared" does not prove "it is fixed."** Regression tests and human review are required
 - **Automatic fixes for DAST and manual penetration test findings are less accurate.** Aim to produce proposed fixes
 - The Veracode Fix GitHub Action supports eight languages (§4.5). This page does not cover the list of supported CWEs or how source code is handled. Check the official information

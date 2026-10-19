@@ -49,7 +49,7 @@ Importing configuration files, exporting verification requests, and diff checks 
 | **CyberArk (Idira)** | Conjur policy import, MCP (side by side, through the agent), PAM stencil and threat rules | Draft a diagram of NHIs and secret read paths from the policy; cross-check diagram NHIs against Secrets Manager workloads | [Threat Modeling NHIs and Identity Platforms](nhi-identity.md) |
 | **Shodan** | Export import (`shodan download` .json.gz) | Generate a diagram of exposed services; catch newly opened ports by diffing against the previous import; reduce exposure along CISA's four steps | [Reducing Internet Exposure](exposure-reduction.md) |
 | **Anthropic `defending-code-reference-harness`** | `THREAT_MODEL.md`-compatible export | Use the threat model as input to an AI-driven vulnerability review | [Turning Your Threat Model into a Security Context](security-context.md) |
-| **Veracode** | Example setup (Veracode CLI and Findings API combined with `THREAT_MODEL.md`, `analyze`, and the Postman export) | Build the threat model into a flow that fixes SAST and DAST findings with AI, as context, prioritization, and regression tests; use the Postman export as the DAST scan scope | [Fixing Veracode Findings with AI](veracode-remediation.md) |
+| **Veracode** | Example setup (Veracode CLI and Findings API combined with `THREAT_MODEL.md`, `findings-report`, and the Postman export) | Build the threat model into a flow that fixes SAST and DAST findings with AI, as context, prioritization, and regression tests; use the Postman export as the DAST scan scope | [Fixing Veracode Findings with AI](veracode-remediation.md) |
 
 ---
 
