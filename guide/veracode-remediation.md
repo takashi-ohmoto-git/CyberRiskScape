@@ -164,6 +164,7 @@ It converts each finding's CWE into a threat type (canonicalId) through the mapp
 - The cross-reference works at the level of threat **types**. It does not decide which node in the diagram a file belongs to; the AI or a person decides that
 - Manual penetration test findings are matched by CWE; the attack pattern (CAPEC) is shown only
 - `--format json` produces JSON for machine processing. URLs from DAST and manual penetration tests are output without query strings and similar parts
+- With `--fail-on High` or similar, it exits 1 when findings confirm a diagram threat at or above that severity. To block PRs in CI, see [Integrating with AI-Driven Development CI](ci-integration.md) §4.6
 
 ### 4.5 Fix with AI
 

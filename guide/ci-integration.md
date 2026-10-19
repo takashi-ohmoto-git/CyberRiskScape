@@ -213,6 +213,33 @@ T1–T8 checklist, based on the output of
 `.github/pull_request_template.md` to use it. If you have organization-specific trigger
 definitions, regenerate it with `--triggers <file>`.
 
+### 4.6 Block on threats confirmed by Veracode findings (optional)
+
+The diff gate in §3 looks at threats added by **design changes**. If you use a vulnerability scanner such as Veracode,
+you can also block a PR when **implementation results** confirm a threat in the diagram. With `--fail-on`, `findings-report`
+links Veracode findings to diagram threats through the CWE mapping table and exits 1 if such a threat (excluding those
+suppressed as accepted or false positive) is at or above the given severity.
+
+```yaml
+- name: Veracode SAST (Pipeline Scan)
+  run: ./veracode static scan <package> --results-file results.json || [ $? -eq 3 ]
+  env:
+    VERACODE_API_KEY_ID: ${{ secrets.VERACODE_API_KEY_ID }}
+    VERACODE_API_KEY_SECRET: ${{ secrets.VERACODE_API_KEY_SECRET }}
+
+- name: Cross-reference with the threat model (block if a High+ diagram threat is confirmed in code)
+  run: |
+    node dist-cli/main.js findings-report threat-model/project.json \
+      --veracode results.json --fail-on High --out findings-report.md
+```
+
+- The two checks have different roles. The diff gate asks "did the design add new threats?"; this check asks
+  "do threats the diagram marks as important actually hold in the implementation?" You can run both
+- Findings with no matching diagram threat (candidates for gaps in the diagram) do not block. Keep `findings-report.md`
+  as a PR comment or artifact and have a person review it
+- A Veracode subscription and API credentials are required. The CyberRiskScape CLI itself makes no external connections (it only reads files)
+- For the whole flow, including scheduled scans and AI fixes, see [Fixing Veracode Findings with AI](veracode-remediation.md)
+
 ---
 
 ## 5. Reading the PR comment

@@ -202,6 +202,33 @@ T1〜T8 のチェックリスト付き PR テンプレートです。`.github/pu
 コピーして使えます。組織独自のトリガー定義がある場合は `--triggers <file>` で差し替えて
 再生成してください。
 
+### 4.6 Veracode の指摘で裏付けられた脅威で止める（任意）
+
+§3 の差分ゲートは、**設計の変更**で増えた脅威を見ます。Veracode などの脆弱性診断を使っている場合は、
+**実装の結果**で図の脅威が裏付けられたときにも PR を止められます。`findings-report` に `--fail-on` を付けると、
+Veracode の指摘が CWE の対応表で図の脅威に結びつき、その脅威（受容・誤検知として抑制したものを除く）が
+指定した重大度以上なら exit 1 を返します。
+
+```yaml
+- name: Veracode SAST（Pipeline Scan）
+  run: ./veracode static scan <パッケージ> --results-file results.json || [ $? -eq 3 ]
+  env:
+    VERACODE_API_KEY_ID: ${{ secrets.VERACODE_API_KEY_ID }}
+    VERACODE_API_KEY_SECRET: ${{ secrets.VERACODE_API_KEY_SECRET }}
+
+- name: 脅威モデルとの突き合わせ（図で High 以上の脅威が実装で裏付けられたら止める）
+  run: |
+    node dist-cli/main.js findings-report threat-model/project.json \
+      --veracode results.json --fail-on High --out findings-report.md
+```
+
+- 2 つの判定は役割が違います。差分ゲートは「設計で新しい脅威を作っていないか」、この判定は「図で重要とした脅威が、
+  実装でも成立していないか」を見ます。両方を並べて使えます
+- 図に該当する脅威が無い指摘（描き漏れの候補）では止まりません。`findings-report.md` を PR のコメントや成果物に残し、
+  人が確認してください
+- Veracode の契約と API の資格情報が必要です。CyberRiskScape の CLI 自体は外部と通信しません（読むのはファイルだけです）
+- 流れ全体（スケジュール起動・AI による修正を含む）は [Veracode の指摘を AI で直す](veracode-remediation.ja.md) を参照してください
+
 ---
 
 ## 5. PR コメントの読み方

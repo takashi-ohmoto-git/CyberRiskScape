@@ -161,6 +161,7 @@ node crs/dist-cli/main.js findings-report threat-model/project.json --veracode r
 - 突き合わせは脅威の**種類**の単位です。指摘のファイルが図のどのノードに当たるかまでは判断しません。それは AI か人が判断します
 - 手動ペンテストの指摘は CWE で突き合わせ、攻撃パターン（CAPEC）は表示だけします
 - `--format json` で機械処理用の JSON も出せます。DAST・手動ペンテストの URL は、クエリ文字列などを除いて出力します
+- `--fail-on High` などを付けると、図で指定した重大度以上の脅威が指摘で裏付けられたときに exit 1 を返します。PR の CI で止める使い方は [AI駆動開発のCIに組み込む](ci-integration.ja.md) §4.6 を参照してください
 
 ### 4.5 AI で修正する
 
