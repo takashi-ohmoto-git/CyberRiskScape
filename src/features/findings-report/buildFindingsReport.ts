@@ -1,3 +1,4 @@
+import { SUPPRESSING_STATUSES } from '../../core/model/types';
 import type { ControlStatusValue, LayerKey, Severity, SuppressionStatus } from '../../core/model/types';
 import type { FindingMapping } from './findingMap';
 import { cweToCanonicalIds } from './findingMap';
@@ -195,4 +196,27 @@ export function buildFindingsReport(input: BuildFindingsReportInput): FindingsRe
     unmapped,
     priority,
   };
+}
+
+/**
+ * `--fail-on` のゲート判定。未解決の指摘のうち「構成図の脅威と一致」したものについて、
+ * 一致した脅威のうち未抑制（受容・誤検知でない）のものの最大重大度が failOn 以上なら違反。
+ * 優先リスト（上位 20 件）ではなく、一致した全指摘を対象にする。
+ */
+export function evaluateFindingsGate(input: BuildFindingsReportInput, failOn: Severity): NormalizedFinding[] {
+  const byCanonical = new Map<string, ModelThreat[]>();
+  for (const t of input.threats) {
+    if (t.canonicalId && !(t.riskTreatment && SUPPRESSING_STATUSES.includes(t.riskTreatment))) {
+      pushTo(byCanonical, t.canonicalId, t);
+    }
+  }
+  const offenders: NormalizedFinding[] = [];
+  for (const f of input.findings) {
+    if (f.status !== 'open' || f.cwe === undefined) continue;
+    const ids = cweToCanonicalIds(input.map, f.cwe);
+    if (!ids) continue;
+    const rank = maxModelRank(ids.flatMap((id) => byCanonical.get(id) ?? []));
+    if (rank >= SEVERITY_RANK[failOn]) offenders.push(f);
+  }
+  return offenders.sort(compareFindings);
 }

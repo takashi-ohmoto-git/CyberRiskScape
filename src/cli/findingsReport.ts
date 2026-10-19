@@ -1,5 +1,5 @@
 import type { LayerAnalysisResult } from './analyze';
-import type { DiagramBoundary, DiagramEdge, DiagramNode, ElementRef } from '../core/model/types';
+import type { DiagramBoundary, DiagramEdge, DiagramNode, ElementRef, Severity } from '../core/model/types';
 import { formatElementalId } from '../core/model/elementalId';
 import { effectiveSeverity } from '../core/model/risk';
 import { getLocale, translate } from '../i18n';
@@ -100,7 +100,13 @@ function findingList(g: FindingGroup, out: string[]): void {
   }
 }
 
-export function findingsReportToMarkdown(report: FindingsReport): string {
+/** `--fail-on` のゲート判定結果。未指定のときは渡さない。 */
+export interface FindingsGateResult {
+  failOn: Severity;
+  offenders: NormalizedFinding[];
+}
+
+export function findingsReportToMarkdown(report: FindingsReport, gate?: FindingsGateResult): string {
   const locale = getLocale();
   const t = (key: Parameters<typeof translate>[0], params?: Record<string, string | number>) =>
     translate(key, locale, params);
@@ -155,11 +161,21 @@ export function findingsReportToMarkdown(report: FindingsReport): string {
     findingList(u.findings, out);
   }
 
+  out.push('', t('findingsReport.section.gate'), '');
+  if (!gate) {
+    out.push(t('findingsReport.gate.notConfigured'));
+  } else if (gate.offenders.length === 0) {
+    out.push(t('findingsReport.gate.pass', { failOn: gate.failOn }));
+  } else {
+    out.push(t('findingsReport.gate.fail', { failOn: gate.failOn, count: gate.offenders.length }));
+    for (const f of gate.offenders) out.push(`- ${findingLine(f)}`);
+  }
+
   return out.join('\n');
 }
 
 /** 機械処理用の JSON オブジェクト（キーは英語固定）。 */
-export function findingsReportToJson(report: FindingsReport): Record<string, unknown> {
+export function findingsReportToJson(report: FindingsReport, gate?: FindingsGateResult): Record<string, unknown> {
   const group = (g: FindingGroup) => ({ count: g.count, maxSeverity: g.maxSeverity, findings: g.findings });
   return {
     schemaVersion: 1,
@@ -182,5 +198,8 @@ export function findingsReportToJson(report: FindingsReport): Record<string, unk
       canonicalIds: p.canonicalIds,
       modelSeverity: p.modelSeverity,
     })),
+    gate: gate
+      ? { failOn: gate.failOn, passed: gate.offenders.length === 0, offenders: gate.offenders.map((f) => f.id) }
+      : null,
   };
 }

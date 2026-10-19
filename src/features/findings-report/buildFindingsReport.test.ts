@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildFindingsReport, type ModelThreat } from './buildFindingsReport';
+import { buildFindingsReport, evaluateFindingsGate, type ModelThreat } from './buildFindingsReport';
 import type { FindingMapping } from './findingMap';
 import type { NormalizedFinding } from './parseVeracode';
 
@@ -79,5 +79,39 @@ describe('buildFindingsReport', () => {
       excludedSca: 2,
       excludedClosed: 1,
     });
+  });
+});
+
+describe('evaluateFindingsGate', () => {
+  const excluded = { sca: 0, closed: 0 };
+  const gate = (findings: NormalizedFinding[], threats: ModelThreat[], failOn: ModelThreat['severity']) =>
+    evaluateFindingsGate({ findings, threats, excluded, map }, failOn).map((x) => x.id);
+
+  it('しきい値以上なら違反、未満なら違反なし', () => {
+    const findings = [f('1', 89, 3)];
+    expect(gate(findings, [threat('sqli', 'High')], 'High')).toEqual(['1']);
+    expect(gate(findings, [threat('sqli', 'High')], 'Medium')).toEqual(['1']);
+    expect(gate(findings, [threat('sqli', 'High')], 'Critical')).toEqual([]);
+  });
+
+  it('未解決でない・構成図に脅威が無い・対応づけできない指摘は対象外', () => {
+    const findings = [f('1', 89, 3, { status: 'closed' }), f('2', 918, 3), f('3', 79, 3), f('4', undefined, 3)];
+    expect(gate(findings, [threat('sqli', 'Critical')], 'Low')).toEqual([]);
+  });
+
+  it('受容・誤検知の脅威は無視するが、同じ canonicalId の未抑制の脅威は数える', () => {
+    const findings = [f('1', 89, 3)];
+    const accepted: ModelThreat = { ...threat('sqli', 'Critical'), riskTreatment: 'accepted' };
+    const falsePositive: ModelThreat = { ...threat('sqli', 'Critical'), riskTreatment: 'false-positive' };
+    const reduce: ModelThreat = { ...threat('sqli', 'Critical'), riskTreatment: 'reduce' };
+    expect(gate(findings, [accepted, falsePositive], 'Low')).toEqual([]);
+    expect(gate(findings, [accepted, threat('sqli', 'Medium')], 'High')).toEqual([]);
+    expect(gate(findings, [accepted, threat('sqli', 'Medium')], 'Medium')).toEqual(['1']);
+    expect(gate(findings, [reduce], 'Critical')).toEqual(['1']);
+  });
+
+  it('優先リスト（上位 20 件）を超える指摘も数える', () => {
+    const findings = Array.from({ length: 25 }, (_, i) => f(String(i + 100), 89, 3));
+    expect(gate(findings, [threat('sqli', 'High')], 'High')).toHaveLength(25);
   });
 });

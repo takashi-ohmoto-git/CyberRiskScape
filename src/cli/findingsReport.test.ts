@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { analyzeProject } from './analyze';
 import { collectModelThreats, findingsReportToJson, findingsReportToMarkdown } from './findingsReport';
-import { buildFindingsReport } from '../features/findings-report/buildFindingsReport';
+import { buildFindingsReport, evaluateFindingsGate } from '../features/findings-report/buildFindingsReport';
 import { BUNDLED_FINDING_MAP } from '../features/findings-report/findingMap';
 import { parseVeracodeFindings } from '../features/findings-report/parseVeracode';
 import { setLocale } from '../i18n';
@@ -41,6 +41,7 @@ describe('findings-report（サンプル構成図 × Findings API の例）', ()
       'notInModel',
       'unmapped',
       'priority',
+      'gate',
     ]);
   });
 });
@@ -66,5 +67,38 @@ describe('記録済みの判断の表示', () => {
     });
     setLocale('ja');
     expect(findingsReportToMarkdown(report)).toContain('記録済みの判断: 受容・実装済み');
+  });
+});
+
+describe('ゲート判定の出力', () => {
+  const threats = [
+    { layer: 'L1' as const, canonicalId: 'plaintext-transmission', name: 'E', severity: 'High' as const, asset: 'DF2' },
+  ];
+  const input = {
+    findings: [{ id: '7', scanType: 'STATIC' as const, cwe: 319, severity: 4, title: 'send', status: 'open' as const }],
+    threats,
+    excluded: { sca: 0, closed: 0 },
+    map: BUNDLED_FINDING_MAP,
+  };
+  const report = buildFindingsReport(input);
+
+  it('未設定・PASS・FAIL を md と json に出す', () => {
+    setLocale('ja');
+    expect(findingsReportToMarkdown(report)).toContain('未設定（--fail-on 省略）');
+    expect(findingsReportToJson(report).gate).toBeNull();
+
+    const pass = { failOn: 'Critical' as const, offenders: evaluateFindingsGate(input, 'Critical') };
+    expect(findingsReportToMarkdown(report, pass)).toContain('## ゲート判定\n\nPASS');
+    expect(findingsReportToJson(report, pass).gate).toEqual({ failOn: 'Critical', passed: true, offenders: [] });
+
+    const fail = { failOn: 'High' as const, offenders: evaluateFindingsGate(input, 'High') };
+    const md = findingsReportToMarkdown(report, fail);
+    expect(md).toContain('FAIL（High 以上の未抑制の脅威に当たる指摘が 1 件）');
+    expect(md).toContain('- #7 [STATIC] S4 CWE-319 send');
+    expect(findingsReportToJson(report, fail).gate).toEqual({ failOn: 'High', passed: false, offenders: ['7'] });
+
+    setLocale('en');
+    expect(findingsReportToMarkdown(report, fail)).toContain('FAIL (1 finding(s)');
+    setLocale('ja');
   });
 });

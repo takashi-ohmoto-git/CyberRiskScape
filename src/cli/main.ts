@@ -19,9 +19,14 @@ import {
   type ProjectDiff,
 } from './diff';
 import { triggersToJson, triggersToMarkdown } from './triggers';
-import { collectModelThreats, findingsReportToJson, findingsReportToMarkdown } from './findingsReport';
+import {
+  collectModelThreats,
+  findingsReportToJson,
+  findingsReportToMarkdown,
+  type FindingsGateResult,
+} from './findingsReport';
 import { parseVeracodeFindings } from '../features/findings-report/parseVeracode';
-import { buildFindingsReport } from '../features/findings-report/buildFindingsReport';
+import { buildFindingsReport, evaluateFindingsGate } from '../features/findings-report/buildFindingsReport';
 import { BUNDLED_FINDING_MAP } from '../features/findings-report/findingMap';
 import { buildThreatReport, toDCRHThreatModelMarkdown, toJsonObject } from '../features/export/threatReport';
 import { effectiveSeverity } from '../core/model/risk';
@@ -127,6 +132,7 @@ findings-report のオプション（Veracode の結果ファイルの指摘を�
   --format <md|json>                            出力形式（既定: md）
   --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある全レイヤー）
   --framework <STRIDE|AI|AgenticAI|ALL>         対象フレームワーク（既定: ALL）
+  --fail-on <Critical|High|Medium|Low>          Veracode の指摘で裏付けられた未抑制の脅威が指定重大度以上なら exit 1
   --locale <ja|en>                              表示言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
@@ -579,6 +585,7 @@ ${USAGE}`);
   const format = parseEnum(values.format, FINDINGS_REPORT_FORMATS, 'format') ?? 'md';
   const layer = parseEnum(values.layer, LAYER_KEYS, 'layer');
   const framework = parseEnum(values.framework, FRAMEWORKS, 'framework');
+  const failOn = parseEnum(values['fail-on'], SEVERITIES, 'fail-on');
 
   const parsed = parseVeracodeFindings(readJsonFile(values.veracode));
   if (!parsed.ok) fail(`${parsed.error}（${values.veracode}）`);
@@ -591,14 +598,20 @@ ${USAGE}`);
   }
   if (results.length === 0) fail('ノードのあるレイヤーがありません。');
 
-  const report = buildFindingsReport({
+  const reportInput = {
     findings: parsed.findings,
     threats: collectModelThreats(results),
     excluded: parsed.excluded,
     map: BUNDLED_FINDING_MAP,
-  });
+  };
+  const report = buildFindingsReport(reportInput);
+  const gate: FindingsGateResult | undefined = failOn
+    ? { failOn, offenders: evaluateFindingsGate(reportInput, failOn) }
+    : undefined;
   writeOutput(
-    format === 'json' ? JSON.stringify(findingsReportToJson(report), null, 2) : findingsReportToMarkdown(report),
+    format === 'json'
+      ? JSON.stringify(findingsReportToJson(report, gate), null, 2)
+      : findingsReportToMarkdown(report, gate),
     values.out,
   );
   const s = report.summary;
@@ -613,6 +626,12 @@ ${USAGE}`);
     })}
 `,
   );
+  if (gate && gate.offenders.length > 0) {
+    process.stderr.write(
+      `${translate('findingsReport.gate.stderr', locale, { failOn: gate.failOn, count: gate.offenders.length })}\n`,
+    );
+    process.exitCode = 1;
+  }
 }
 
 /**

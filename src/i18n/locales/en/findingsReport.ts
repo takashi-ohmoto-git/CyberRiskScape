@@ -20,6 +20,13 @@ export const enFindingsReport: Partial<Record<TranslationKey, string>> = {
   'findingsReport.section.unmapped': '## Findings that could not be mapped',
   'findingsReport.section.unmapped.none': 'None.',
 
+  'findingsReport.section.gate': '## Gate result',
+  'findingsReport.gate.pass': 'PASS (no findings backed by an unsuppressed threat at or above {failOn})',
+  'findingsReport.gate.fail': 'FAIL ({count} finding(s) backed by an unsuppressed threat at or above {failOn})',
+  'findingsReport.gate.notConfigured': 'Not configured (--fail-on omitted)',
+  'findingsReport.gate.stderr':
+    '--fail-on {failOn}: {count} finding(s) are backed by an unsuppressed threat at or above the threshold.',
+
   'findingsReport.confirmed.modelThreats': 'Diagram threats:',
   'findingsReport.findingsCount': 'Findings: {count} (max Veracode severity {max})',
   'findingsReport.more': '... and {count} more',

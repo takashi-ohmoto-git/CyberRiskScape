@@ -21,6 +21,13 @@ export const jaFindingsReport = {
   'findingsReport.section.unmapped': '## 対応づけできない指摘',
   'findingsReport.section.unmapped.none': '該当はありません。',
 
+  'findingsReport.section.gate': '## ゲート判定',
+  'findingsReport.gate.pass': 'PASS（{failOn} 以上の未抑制の脅威に当たる指摘はありません）',
+  'findingsReport.gate.fail': 'FAIL（{failOn} 以上の未抑制の脅威に当たる指摘が {count} 件）',
+  'findingsReport.gate.notConfigured': '未設定（--fail-on 省略）',
+  'findingsReport.gate.stderr':
+    '--fail-on {failOn}: 構成図で {failOn} 以上の未抑制の脅威に当たる Veracode の指摘が {count} 件あります。',
+
   'findingsReport.confirmed.modelThreats': '構成図の脅威:',
   'findingsReport.findingsCount': '指摘: {count} 件（Veracode 重大度の最大 {max}）',
   'findingsReport.more': '…ほか {count} 件',
