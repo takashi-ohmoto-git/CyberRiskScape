@@ -34,6 +34,7 @@ import { layerToProject } from '../features/kong-import/toProject';
 import { conjurToLayer } from '../features/conjur-import/conjurToLayer';
 import { shodanToLayer } from '../features/shodan-import/shodanToLayer';
 import { toPostmanCollection } from '../features/postman-export/toPostmanCollection';
+import { VarsFileSchema, applyVariableValues, filterByBaseUrl } from '../features/postman-export/dastOptions';
 import { getChecklists } from '../checklist/bundled';
 import { evaluateChecklist } from '../checklist/evaluate';
 import { toChecklistCsv, toChecklistJson, toChecklistMarkdown } from '../checklist/report';
@@ -112,6 +113,8 @@ export-postman のオプション（検出脅威を確かめる確認リクエ�
   --framework <STRIDE|AI|AgenticAI|ALL>         対象フレームワーク（既定: ALL）
   --locale <ja|en>                              表示言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
+  --vars <file.json>                            変数の値（{"C7_host": "..."} 形式）を埋める。token_ を埋めると出力に認証情報が入る
+  --base-url <url>                              この URL 配下へのリクエストだけ残す（DAST の base URL 用）。未使用の変数も除く
 
 mcp のオプション（stdio の MCP サーバーとして起動。stdout は MCP プロトコル専用）:
   --root <dir>                                  読み書きを許可するディレクトリ（既定: カレントディレクトリ）
@@ -204,6 +207,8 @@ function parseCliArgs() {
       locale: { type: 'string' },
       out: { type: 'string' },
       root: { type: 'string' },
+      vars: { type: 'string' },
+      'base-url': { type: 'string' },
       help: { type: 'boolean' },
     },
   });
@@ -503,10 +508,41 @@ ${USAGE}`);
   const target = results[0];
   if (!target) fail('ノードのあるレイヤーがありません。');
 
-  const { collection, summary } = toPostmanCollection(target.input);
+  const generated = toPostmanCollection(target.input);
+  const summary = generated.summary;
+  let collection = generated.collection;
+  if (values.vars) {
+    const parsed = VarsFileSchema.safeParse(readJsonFile(values.vars));
+    if (!parsed.success) {
+      fail(`--vars は文字列だけを値に持つ JSON オブジェクトにしてください（例: {"C7_host": "api.example.com"}）: ${values.vars}`);
+    }
+    const applied = applyVariableValues(collection, parsed.data);
+    collection = applied.collection;
+    if (applied.unknownKeys.length > 0) {
+      process.stderr.write(`コレクションに無い変数は無視しました: ${applied.unknownKeys.join(', ')}
+`);
+    }
+    if (applied.filledTokenKeys.length > 0) {
+      process.stderr.write(
+        '注意: 出力ファイルに認証情報（token_ 変数）が含まれます。取り扱いに注意し、DAST ツール側で認証を設定することを推奨します。\n',
+      );
+    }
+  }
+  let kept = summary.requests;
+  if (values['base-url']) {
+    const filtered = filterByBaseUrl(collection, values['base-url']);
+    collection = filtered.collection;
+    kept = filtered.kept;
+    if (kept === 0) {
+      process.stderr.write(
+        '警告: --base-url 配下のリクエストが 0 件です。--vars でホスト変数（*_host）を埋めたか、URL を確認してください。\n',
+      );
+    }
+  }
   writeOutput(JSON.stringify(collection, null, 2), values.out);
+  const keptNote = values['base-url'] ? `・base URL 配下のリクエスト ${kept} / ${summary.requests} 件` : '';
   process.stderr.write(
-    `Postman Collection を出力しました（${target.layer}・リクエスト ${summary.requests} 件・対象の脅威 ${summary.coveredThreats} 件・対象外 ${summary.uncoveredThreats} 件）
+    `Postman Collection を出力しました（${target.layer}・リクエスト ${summary.requests} 件${keptNote}・対象の脅威 ${summary.coveredThreats} 件・対象外 ${summary.uncoveredThreats} 件）
 `,
   );
 }
