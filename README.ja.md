@@ -52,6 +52,7 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 | **AI エージェント基盤**（Salesforce Agentforce） | 専用のステンシル・脅威ルール・構成図テンプレートで評価する（[ガイド](guide/agentforce.ja.md)） |
 | **車載・SDV**（コネクテッドカー） | 専用のステンシル（Vehicle (SDV) カテゴリ）・UN R155 Annex 5 を出典とする脅威ルール・ゾーン型アーキテクチャの構成図テンプレートで評価する（[ガイド](guide/sdv.ja.md)） |
 | **AI による脆弱性診断**（Anthropic `defending-code-reference-harness`） | 脅威モデルを `THREAT_MODEL.md` 互換で書き出し、診断の入力にする（[ガイド](guide/security-context.ja.md)） |
+| **脆弱性の修正**（Veracode） | SAST・DAST の指摘を AI で修正する流れに、脅威モデルを前提知識・優先順位・回帰テストとして組み込む構成例（[ガイド](guide/veracode-remediation.ja.md)） |
 
 連携できる製品と方法の一覧は [連携ガイド](guide/integrations.ja.md) を参照してください。
 

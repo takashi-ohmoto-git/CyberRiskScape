@@ -62,6 +62,7 @@ platforms, and AI agent platforms. It makes no outbound calls, so it also works 
 | **AI agent platforms** (Salesforce Agentforce) | Dedicated stencils, threat rules, and a diagram template ([guide](guide/agentforce.md)) |
 | **Automotive** (SDV, connected cars) | Dedicated stencils (Vehicle (SDV) category), threat rules based on UN R155 Annex 5, and a zonal-architecture diagram template ([guide](guide/sdv.md)) |
 | **AI-driven vulnerability review** (Anthropic `defending-code-reference-harness`) | Export the threat model as `THREAT_MODEL.md`-compatible input for the review ([guide](guide/security-context.md)) |
+| **Vulnerability remediation** (Veracode) | An example setup that builds the threat model into a flow fixing SAST and DAST findings with AI, as context, prioritization, and regression tests ([guide](guide/veracode-remediation.md)) |
 
 For the full list of products and how they connect, see [Integrations](guide/integrations.md).
 
