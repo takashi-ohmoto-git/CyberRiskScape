@@ -24,6 +24,7 @@ export const jaProject = {
   'project.sidebar.exportJson': 'JSON ダウンロード',
   'project.sidebar.exportDcrh': 'DCRH THREAT_MODEL.md（Anthropic 公式互換）',
   'project.sidebar.exportPostman': 'Postman Collection（検証用リクエスト）',
+  'project.sidebar.exportTestPlan': 'ペネトレーションテスト計画書（Markdown）',
   'project.sidebar.exportPqc': 'PQC移行支援レポート（CSV）',
   'project.sidebar.exportPqcEmpty': 'ノードの「暗号経路（PQC）」から経路を分析し、「レポートに追加」でフローを登録してください',
   'project.sidebar.exportPdf': 'PDF レポート（レイヤー選択）',

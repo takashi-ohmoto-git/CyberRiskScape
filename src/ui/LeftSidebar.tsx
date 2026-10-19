@@ -36,6 +36,8 @@ import { saveProject } from '../features/persistence/repository';
 import { buildThreatReport, toCsv, toJson, toDCRHThreatModelMarkdown } from '../features/export/threatReport';
 import { triggerDownload } from '../features/export/download';
 import { toPostmanCollection } from '../features/postman-export/toPostmanCollection';
+import { buildTestPlan } from '../features/test-plan/buildTestPlan';
+import { testPlanToMarkdown } from '../features/test-plan/testPlanOutput';
 import { reportFilename } from '../features/export/exportFiles';
 import { buildPqcReport, toPqcCsv } from '../features/pqc-path/pqcReport';
 import { BUNDLED_ALGORITHM_TABLE, getTerminationBehaviors } from '../crypto-behavior/bundled';
@@ -109,7 +111,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
     }
   };
 
-  const handleExportReport = (format: 'csv' | 'json' | 'DCRH-threat-model' | 'postman') => {
+  const handleExportReport = (format: 'csv' | 'json' | 'DCRH-threat-model' | 'postman' | 'test-plan') => {
     const s = useDiagramStore.getState();
     const input = {
       threats,
@@ -128,6 +130,12 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
     } else if (format === 'postman') {
       const { collection } = toPostmanCollection(input);
       triggerDownload(`${base}.postman_collection.json`, JSON.stringify(collection, null, 2), 'application/json');
+    } else if (format === 'test-plan') {
+      triggerDownload(
+        `${base.replace(/^threat-report/, 'test-plan')}.md`,
+        testPlanToMarkdown(buildTestPlan(input, new Date())),
+        'text/markdown;charset=utf-8',
+      );
     } else {
       const date = new Date().toISOString().slice(0, 10);
       triggerDownload(
@@ -329,6 +337,13 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                   >
                     <Download size={12} className="text-emerald-400 shrink-0" />
                     {t('project.sidebar.exportPostman')}
+                  </button>
+                  <button
+                    onClick={() => handleExportReport('test-plan')}
+                    className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
+                  >
+                    <Download size={12} className="text-emerald-400 shrink-0" />
+                    {t('project.sidebar.exportTestPlan')}
                   </button>
                   <button
                     onClick={openChecklist}

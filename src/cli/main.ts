@@ -44,6 +44,8 @@ import { conjurToLayer } from '../features/conjur-import/conjurToLayer';
 import { shodanToLayer } from '../features/shodan-import/shodanToLayer';
 import { toPostmanCollection } from '../features/postman-export/toPostmanCollection';
 import { VarsFileSchema, applyVariableValues, filterByBaseUrl } from '../features/postman-export/dastOptions';
+import { buildTestPlan } from '../features/test-plan/buildTestPlan';
+import { testPlanToJson, testPlanToMarkdown } from '../features/test-plan/testPlanOutput';
 import { getChecklists } from '../checklist/bundled';
 import { evaluateChecklist } from '../checklist/evaluate';
 import { toChecklistCsv, toChecklistJson, toChecklistMarkdown } from '../checklist/report';
@@ -60,6 +62,7 @@ const DIFF_FORMATS = ['md', 'json'] as const;
 const TRIGGERS_FORMATS = ['md', 'json'] as const;
 const CHECKLIST_FORMATS = ['md', 'json', 'csv'] as const;
 const FINDINGS_REPORT_FORMATS = ['md', 'json'] as const;
+const TEST_PLAN_FORMATS = ['md', 'json'] as const;
 
 const FRAMEWORKS: readonly FrameworkView[] = ['STRIDE', 'AI', 'AgenticAI', 'ALL'];
 const SEVERITIES: readonly Severity[] = ['Low', 'Medium', 'High', 'Critical'];
@@ -74,6 +77,7 @@ const USAGE = `使い方:
   import-conjur <policy.yml> [options]
   import-shodan <export.json[.gz]> [options]
   export-postman <project.json> [options]
+  export-test-plan <project.json> [options]
   findings-report <project.json> --veracode <file> [options]
   mcp [options]
 
@@ -126,6 +130,13 @@ export-postman のオプション（検出脅威を確かめる確認リクエ�
   --out <file>                                  出力先ファイル（既定: 標準出力）
   --vars <file.json>                            変数の値（{"C7_host": "..."} 形式）を埋める。token_ を埋めると出力に認証情報が入る
   --base-url <url>                              この URL 配下へのリクエストだけ残す（DAST の base URL 用）。未使用の変数も除く
+
+export-test-plan のオプション（脅威モデルからペネトレーションテスト計画書（ベンダー中立）を出力）:
+  --format <md|json>                            出力形式（既定: md）
+  --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある最初のレイヤー）
+  --framework <STRIDE|AI|AgenticAI|ALL>         対象フレームワーク（既定: ALL）
+  --locale <ja|en>                              表示言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
 
 findings-report のオプション（Veracode の結果ファイルの指摘を、CWE の対応表を介して検出脅威と突き合わせる。ファイル入力のみ）:
   --veracode <file>                             Veracode の結果（必須。Pipeline Scan の results.json または Findings API v2 の応答 JSON）
@@ -569,6 +580,41 @@ ${USAGE}`);
 }
 
 /**
+ * `export-test-plan`：脅威モデルから、ペネトレーションテスト計画書（入口・攻撃シナリオ・重点テスト項目）を
+ * Markdown または JSON で出力する。
+ */
+function runExportTestPlan(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  const format = parseEnum(values.format, TEST_PLAN_FORMATS, 'format') ?? 'md';
+  const layer = parseEnum(values.layer, LAYER_KEYS, 'layer');
+  const framework = parseEnum(values.framework, FRAMEWORKS, 'framework');
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+
+  let results: LayerAnalysisResult[];
+  try {
+    results = analyzeProject(readJsonFile(file), { layer, framework, locale });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  const target = results[0];
+  if (!target) fail('ノードのあるレイヤーがありません。');
+
+  const plan = buildTestPlan(target.input, new Date(), locale);
+  writeOutput(format === 'json' ? testPlanToJson(plan) : testPlanToMarkdown(plan), values.out);
+  const focusThreats = plan.focusGroups.reduce((n, g) => n + g.threats.length, 0);
+  process.stderr.write(
+    `テスト計画書を出力しました（${target.layer}・入口 ${plan.entryPoints.length} 件・攻撃シナリオ ${plan.scenarios.length} 件・重点テスト項目 ${focusThreats} 件・対象外 ${plan.suppressed.length} 件）
+`,
+  );
+}
+
+/**
  * `findings-report`：Veracode の結果ファイル（Pipeline Scan / Findings API v2）の指摘を、
  * CWE の対応表（`data/finding-maps/cwe.yaml`）を介して構成図の検出脅威と突き合わせる。API は呼ばない。
  */
@@ -681,6 +727,8 @@ function main(): void {
     runChecklist(values, positionals);
   } else if (command === 'export-postman') {
     runExportPostman(values, positionals);
+  } else if (command === 'export-test-plan') {
+    runExportTestPlan(values, positionals);
   } else if (command === 'findings-report') {
     runFindingsReport(values, positionals);
   } else if (command === 'import-conjur') {

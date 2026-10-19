@@ -23,6 +23,7 @@ import { jaDiff } from './ja/diff';
 import { jaCliTriggers } from './ja/cliTriggers';
 import { jaFindingsReport } from './ja/findingsReport';
 import { jaChecklist } from './ja/checklist';
+import { jaTestPlan } from './ja/testPlan';
 
 const jaCore = {
   'app.loading': '読み込み中…',
@@ -212,6 +213,7 @@ export const ja = {
   ...jaCliTriggers,
   ...jaFindingsReport,
   ...jaChecklist,
+  ...jaTestPlan,
 } as const;
 
 /** 全翻訳キーの型。en 等の他ロケールはこの部分集合を持つ。 */
