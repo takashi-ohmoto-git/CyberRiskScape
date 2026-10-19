@@ -235,7 +235,9 @@ Paste the AI's list (finding ID, what was fixed, tests added, related threat IDs
 2. **Pass the scan scope from the threat model**: Veracode DAST API scans accept **Postman Collection 2.1** in addition to OpenAPI and HAR.
    The CyberRiskScape [Postman export](postman.md) is also Collection v2.1, so the endpoints where the threat model found threats can become DAST targets as is.
    - A base URL is required at upload, and **only requests that reference that base URL** are scanned
-   - Variables must be in the collection's variable field. The CyberRiskScape export leaves host names and tokens as collection variables, so fill in the values before uploading
+   - Variables must be in the collection's variable field. Adding `--vars` (a JSON of variable values) and `--base-url` to the CLI `export-postman`
+     writes a collection with the values filled in and only the requests for that base URL kept ([Postman guide](postman.md) §5.4).
+     Do not fill in tokens; use the DAST tool's authentication settings
    - DAST uses the exported requests as definitions of endpoints to scan and tests them with its own attacks. The official documentation does not say how collection test scripts are handled. Confirm pass/fail separately with Postman or Newman
    - Each API server counts toward the number of target URLs in your license
 3. **Fetch**: get the findings from the Findings API with `scan_type=DYNAMIC`.

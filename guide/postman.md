@@ -160,6 +160,34 @@ them into the environment file.
   ignoring one canary string does not mean every phrasing is ignored). Use it as evidence when recording control status
 - When the plaintext or management-plane checks **cannot connect**, the test passes and the run also shows a request error
 
+### 5.4 Using it as a DAST scan scope
+
+If you pass the exported collection to a DAST tool that reads Postman Collection 2.1 (for example, Veracode DAST API scans),
+the endpoints where the threat model found threats become DAST targets. DAST tools read the collection's variable field and
+scan only requests that reference the base URL you specify, so use these two CLI options to match.
+
+```bash
+node dist-cli/main.js export-postman model.json \
+  --vars dast-vars.json \
+  --base-url https://api.example.com \
+  --out dast.postman_collection.json
+```
+
+```json
+{ "C2_host": "api.example.com", "C2_path": "/", "C2_chat_path": "/chat" }
+```
+
+- `--vars`: pass variable values as JSON (keys and string values) to fill the collection's variable field. Keys not in the collection are ignored and only their names are shown. Values are never printed
+- `--base-url`: keep only requests whose URL, with variables expanded, starts with this base URL. Variables no longer referenced are removed as well.
+  `https://api.example.com` does not match `https://api.example.com.evil.net` or `https://api.example.com:8444`.
+  If there are several destination servers, run it once per server
+- Plaintext checks sent over `http://` and checks against management ports have a different base URL and are dropped. Check those with Postman or Newman
+- **We recommend not filling in tokens.** Filling a variable that starts with `token_` puts credentials in the output file (the CLI shows a notice).
+  Configure authentication in the DAST tool instead
+- The DAST tool uses the requests as definitions of endpoints to scan and tests them with its own attacks. The pass/fail results of the collection's test scripts are not used
+
+For the flow combined with Veracode, see [Fixing Veracode Findings with AI](veracode-remediation.md) §5.
+
 ---
 
 ## 6. Limitations

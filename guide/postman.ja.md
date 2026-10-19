@@ -157,6 +157,34 @@ npx newman run checks.postman_collection.json -e test-env.json --env-var token_u
   （たとえばカナリア文字列 1 つに従わなくても、別の言い回しでは従いうる）。対策実装状況の記録の根拠として使ってください
 - 平文や管理面の確認で**接続できない**場合は、テストは合格になり、実行結果にはリクエストのエラーも表示されます
 
+### 5.4 DAST の検査範囲として使う
+
+Postman Collection 2.1 を読み込める DAST（例：Veracode DAST の API 検査）に、書き出したコレクションをそのまま渡すと、
+脅威モデルで脅威が見つかったエンドポイントを DAST の検査対象にできます。DAST はコレクションの変数欄を読み、
+指定したベース URL を参照するリクエストだけを検査するため、CLI の次の 2 つのオプションで合わせます。
+
+```bash
+node dist-cli/main.js export-postman model.json \
+  --vars dast-vars.json \
+  --base-url https://api.example.com \
+  --out dast.postman_collection.json
+```
+
+```json
+{ "C2_host": "api.example.com", "C2_path": "/", "C2_chat_path": "/chat" }
+```
+
+- `--vars`：変数の値を JSON（キーと文字列の値）で渡し、コレクションの変数欄に埋めます。コレクションに無いキーは無視し、キー名だけを表示します。値は画面に出しません
+- `--base-url`：変数を展開した URL がこのベース URL で始まるリクエストだけを残します。参照されなくなった変数も除きます。
+  `https://api.example.com` は `https://api.example.com.evil.net` や `https://api.example.com:8444` には一致しません。
+  宛先のサーバーが複数あるときは、サーバーごとに 1 回ずつ実行してください
+- `http://` で送る平文の確認や、管理用ポートへの確認は、ベース URL が異なるため外れます。これらは Postman・Newman で確かめてください
+- **トークンは埋めないことを勧めます。** `token_` で始まる変数を埋めると、出力ファイルに資格情報が入ります（CLI が注意を表示します）。
+  認証は DAST 側の認証設定で行ってください
+- DAST はリクエストを「検査するエンドポイントの定義」として使い、自前の攻撃で検査します。コレクションのテストスクリプトの合否は使われません
+
+Veracode と組み合わせる流れは [Veracode の指摘を AI で直す](veracode-remediation.ja.md) §5 を参照してください。
+
 ---
 
 ## 6. 限界
