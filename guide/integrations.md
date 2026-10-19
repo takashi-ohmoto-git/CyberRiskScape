@@ -61,6 +61,7 @@ Importing configuration files, exporting verification requests, and diff checks 
 | Catch missed threat-model updates in PRs | GitHub Actions |
 | Draw the diagram from existing configuration | Kong AI Gateway, CyberArk (Idira) Conjur, Shodan |
 | Confirm that the threats you flagged are actually closed | Postman |
+| Scope and focus a penetration test | Test plan export ([guide](pentest-plan.md); any provider) |
 | Assess a product-specific setup as is | Salesforce Agentforce |
 | Surface the risks of NHIs such as service accounts and AI agents | Okta, SailPoint, CyberArk (Idira) |
 | Inventory and reduce what is exposed to the internet | Shodan |

@@ -60,6 +60,7 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | 脅威モデルの更新漏れを PR で防ぎたい | GitHub Actions |
 | 既存の設定から構成図を起こしたい | Kong AI Gateway・CyberArk（Idira）Conjur・Shodan |
 | 指摘した脅威が本当に塞がっているか確かめたい | Postman |
+| ペネトレーションテストの範囲と重点を決めたい | テスト計画書の書き出し（[ガイド](pentest-plan.ja.md)。業者を問わない） |
 | 製品固有の構成をそのまま評価したい | Salesforce Agentforce |
 | サービスアカウントや AI エージェントなど NHI のリスクを洗い出したい | Okta・SailPoint・CyberArk（Idira） |
 | インターネットに出ている資産を棚卸しして減らしたい | Shodan |
