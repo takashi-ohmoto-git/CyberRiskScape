@@ -19,6 +19,10 @@ import {
   type ProjectDiff,
 } from './diff';
 import { triggersToJson, triggersToMarkdown } from './triggers';
+import { collectModelThreats, findingsReportToJson, findingsReportToMarkdown } from './findingsReport';
+import { parseVeracodeFindings } from '../features/findings-report/parseVeracode';
+import { buildFindingsReport } from '../features/findings-report/buildFindingsReport';
+import { BUNDLED_FINDING_MAP } from '../features/findings-report/findingMap';
 import { buildThreatReport, toDCRHThreatModelMarkdown, toJsonObject } from '../features/export/threatReport';
 import { effectiveSeverity } from '../core/model/risk';
 import { setLocale, translate, type Locale } from '../i18n';
@@ -50,6 +54,7 @@ const ANALYZE_FORMATS = ['json', 'sarif', 'md'] as const;
 const DIFF_FORMATS = ['md', 'json'] as const;
 const TRIGGERS_FORMATS = ['md', 'json'] as const;
 const CHECKLIST_FORMATS = ['md', 'json', 'csv'] as const;
+const FINDINGS_REPORT_FORMATS = ['md', 'json'] as const;
 
 const FRAMEWORKS: readonly FrameworkView[] = ['STRIDE', 'AI', 'AgenticAI', 'ALL'];
 const SEVERITIES: readonly Severity[] = ['Low', 'Medium', 'High', 'Critical'];
@@ -64,6 +69,7 @@ const USAGE = `使い方:
   import-conjur <policy.yml> [options]
   import-shodan <export.json[.gz]> [options]
   export-postman <project.json> [options]
+  findings-report <project.json> --veracode <file> [options]
   mcp [options]
 
 analyze のオプション:
@@ -115,6 +121,14 @@ export-postman のオプション（検出脅威を確かめる確認リクエ�
   --out <file>                                  出力先ファイル（既定: 標準出力）
   --vars <file.json>                            変数の値（{"C7_host": "..."} 形式）を埋める。token_ を埋めると出力に認証情報が入る
   --base-url <url>                              この URL 配下へのリクエストだけ残す（DAST の base URL 用）。未使用の変数も除く
+
+findings-report のオプション（Veracode の結果ファイルの指摘を、CWE の対応表を介して検出脅威と突き合わせる。ファイル入力のみ）:
+  --veracode <file>                             Veracode の結果（必須。Pipeline Scan の results.json または Findings API v2 の応答 JSON）
+  --format <md|json>                            出力形式（既定: md）
+  --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある全レイヤー）
+  --framework <STRIDE|AI|AgenticAI|ALL>         対象フレームワーク（既定: ALL）
+  --locale <ja|en>                              表示言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
 
 mcp のオプション（stdio の MCP サーバーとして起動。stdout は MCP プロトコル専用）:
   --root <dir>                                  読み書きを許可するディレクトリ（既定: カレントディレクトリ）
@@ -208,6 +222,7 @@ function parseCliArgs() {
       out: { type: 'string' },
       root: { type: 'string' },
       vars: { type: 'string' },
+      veracode: { type: 'string' },
       'base-url': { type: 'string' },
       help: { type: 'boolean' },
     },
@@ -548,6 +563,59 @@ ${USAGE}`);
 }
 
 /**
+ * `findings-report`：Veracode の結果ファイル（Pipeline Scan / Findings API v2）の指摘を、
+ * CWE の対応表（`data/finding-maps/cwe.yaml`）を介して構成図の検出脅威と突き合わせる。API は呼ばない。
+ */
+function runFindingsReport(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+  if (!values.veracode) fail(translate('findingsReport.cli.missingVeracode', locale));
+  const format = parseEnum(values.format, FINDINGS_REPORT_FORMATS, 'format') ?? 'md';
+  const layer = parseEnum(values.layer, LAYER_KEYS, 'layer');
+  const framework = parseEnum(values.framework, FRAMEWORKS, 'framework');
+
+  const parsed = parseVeracodeFindings(readJsonFile(values.veracode));
+  if (!parsed.ok) fail(`${parsed.error}（${values.veracode}）`);
+
+  let results: LayerAnalysisResult[];
+  try {
+    results = analyzeProject(readJsonFile(file), { layer, framework, locale });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  if (results.length === 0) fail('ノードのあるレイヤーがありません。');
+
+  const report = buildFindingsReport({
+    findings: parsed.findings,
+    threats: collectModelThreats(results),
+    excluded: parsed.excluded,
+    map: BUNDLED_FINDING_MAP,
+  });
+  writeOutput(
+    format === 'json' ? JSON.stringify(findingsReportToJson(report), null, 2) : findingsReportToMarkdown(report),
+    values.out,
+  );
+  const s = report.summary;
+  process.stderr.write(
+    `${translate('findingsReport.cli.done', locale, {
+      open: s.openFindings,
+      confirmed: s.confirmedFindings,
+      notInModel: s.notInModelFindings,
+      unmapped: s.unmappedFindings,
+      sca: s.excludedSca,
+      closed: s.excludedClosed,
+    })}
+`,
+  );
+}
+
+/**
  * `mcp`：stdio の MCP サーバーとして起動する。stdout はプロトコル専用のため、
  * ここから先は stdout に何も書かない（ログ・エラーは stderr）。
  */
@@ -594,6 +662,8 @@ function main(): void {
     runChecklist(values, positionals);
   } else if (command === 'export-postman') {
     runExportPostman(values, positionals);
+  } else if (command === 'findings-report') {
+    runFindingsReport(values, positionals);
   } else if (command === 'import-conjur') {
     runImportConjur(values, positionals);
   } else if (command === 'import-shodan') {

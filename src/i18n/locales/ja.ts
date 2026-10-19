@@ -21,6 +21,7 @@ import { jaThreats } from './ja/threats';
 import { jaReport } from './ja/report';
 import { jaDiff } from './ja/diff';
 import { jaCliTriggers } from './ja/cliTriggers';
+import { jaFindingsReport } from './ja/findingsReport';
 import { jaChecklist } from './ja/checklist';
 
 const jaCore = {
@@ -209,6 +210,7 @@ export const ja = {
   ...jaReport,
   ...jaDiff,
   ...jaCliTriggers,
+  ...jaFindingsReport,
   ...jaChecklist,
 } as const;
 

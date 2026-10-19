@@ -1,0 +1,41 @@
+{
+  "scan_status": "SUCCESS",
+  "findings": [
+    {
+      "title": "java.sql.Statement.executeQuery",
+      "issue_id": 1001,
+      "severity": 5,
+      "issue_type": "SQL Injection",
+      "cwe_id": "89",
+      "display_text": "synthetic sample",
+      "files": { "source_file": { "file": "com/example/UserDao.java", "line": 42, "function_name": "find", "qualified_function_name": "UserDao.find" } }
+    },
+    {
+      "title": "java.lang.Runtime.exec",
+      "issue_id": 1002,
+      "severity": 4,
+      "issue_type": "OS Command Injection",
+      "cwe_id": "78",
+      "display_text": "synthetic sample",
+      "files": { "source_file": { "file": "com/example/Runner.java", "line": 10, "function_name": "run", "qualified_function_name": "Runner.run" } }
+    },
+    {
+      "title": "javax.servlet.ServletResponse.getWriter",
+      "issue_id": 1003,
+      "severity": 3,
+      "issue_type": "Cross-Site Scripting",
+      "cwe_id": "80",
+      "display_text": "synthetic sample",
+      "files": { "source_file": { "file": "com/example/Page.java", "line": 7, "function_name": "render", "qualified_function_name": "Page.render" } }
+    },
+    {
+      "title": "Hardcoded password",
+      "issue_id": 1004,
+      "severity": 3,
+      "issue_type": "Use of Hard-coded Password",
+      "cwe_id": "259",
+      "display_text": "synthetic sample",
+      "files": { "source_file": { "file": "com/example/Config.java", "line": 3, "function_name": "init", "qualified_function_name": "Config.init" } }
+    }
+  ]
+}

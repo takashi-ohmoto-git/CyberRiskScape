@@ -1,0 +1,71 @@
+# 静的・動的解析ツール（Veracode）の指摘の CWE → 脅威ライブラリの canonicalId の対応表。
+#
+# 指摘の CWE がここに載っていれば、構成図から検出した脅威（同じ canonicalId）と突き合わせる。
+# 突き合わせの結果は「構成図の脅威が実際のコードで確認された」「構成図に無い脅威の候補」の判断材料になる。
+#
+# 方針:
+#   - CWE 番号だけを置く。CWE の本文は転載しない。`note` は日本語の短い分類名。
+#   - 1 つの CWE は 1 つの mapping にだけ書く（重複は読み込み時にエラー）。
+#     1 つの CWE が複数の canonicalId に対応してよい。
+#   - 構成図の脅威として当てはまりにくい CWE は意図的に載せない。載せない CWE は
+#     レポートの「対応づけできない指摘」に出る（例: 79 XSS・80・22 パストラバーサル・352 CSRF・326/327 暗号強度）。
+#
+# 出典:
+#   - MITRE CWE（Common Weakness Enumeration） https://cwe.mitre.org/
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+mappings:
+  - cwe: [89, 564, 943]
+    canonicalIds: [api-query-injection, web-form-input-injection]
+    note: SQL・NoSQL インジェクション
+
+  - cwe: [77, 78, 94, 95, 502]
+    canonicalIds: [api-server-code-execution]
+    note: コマンド・コード実行・デシリアライズ
+
+  - cwe: [434]
+    canonicalIds: [api-server-code-execution, web-shell-implant]
+    note: ファイルアップロード
+
+  - cwe: [918]
+    canonicalIds: [api-server-side-request-forgery]
+    note: SSRF
+
+  - cwe: [639]
+    canonicalIds: [api-object-level-authorization]
+    note: 他人のオブジェクトへのアクセス
+
+  - cwe: [285, 862, 863]
+    canonicalIds: [api-function-level-authorization, gateway-authorization-gap]
+    note: 認可の欠如・不備
+
+  - cwe: [287, 306]
+    canonicalIds: [web-missing-authentication, unauthenticated-internet-channel]
+    note: 認証の欠如・不備
+
+  - cwe: [345, 347, 384, 613]
+    canonicalIds: [api-token-validation-gap]
+    note: トークン・セッションの検証
+
+  - cwe: [319]
+    canonicalIds: [plaintext-transmission]
+    note: 平文での送信
+
+  - cwe: [311, 312]
+    canonicalIds: [data-at-rest-unencrypted]
+    note: 暗号化の欠如・平文での保管
+
+  - cwe: [259, 321, 798]
+    canonicalIds: [credential-sprawl, api-mobile-embedded-client-secret]
+    note: ハードコードされた資格情報
+
+  - cwe: [200, 209, 359]
+    canonicalIds: [data-store-info-disclosure]
+    note: 情報の露出
+
+  - cwe: [400, 770]
+    canonicalIds: [gateway-resource-exhaustion]
+    note: 資源の枯渇

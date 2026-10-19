@@ -1,0 +1,58 @@
+{
+  "_embedded": {
+    "findings": [
+      {
+        "issue_id": 2001,
+        "scan_type": "STATIC",
+        "description": "synthetic sample",
+        "violates_policy": true,
+        "finding_status": { "status": "OPEN", "new": true },
+        "finding_details": {
+          "cwe": { "id": 89, "name": "Improper Neutralization of Special Elements used in an SQL Command", "href": "https://example.invalid/cwe/89" },
+          "severity": 5,
+          "file_path": "src/dao/UserDao.java",
+          "file_name": "UserDao.java",
+          "file_line_number": 42,
+          "module": "app.jar",
+          "procedure": "find"
+        }
+      },
+      {
+        "issue_id": 2002,
+        "scan_type": "DYNAMIC",
+        "finding_status": { "status": "OPEN" },
+        "finding_details": {
+          "cwe": 918,
+          "severity": 4,
+          "finding_category": { "id": 1, "name": "Server-Side Request Forgery" },
+          "URL": "https://app.example.invalid/fetch",
+          "vulnerable_parameter": "url"
+        }
+      },
+      {
+        "issue_id": 2003,
+        "scan_type": "MANUAL",
+        "finding_status": { "status": "OPEN" },
+        "finding_details": {
+          "cwe": 20,
+          "severity": 2,
+          "capec_id": "CAPEC-1",
+          "input_vector": "search form"
+        }
+      },
+      {
+        "issue_id": 2004,
+        "scan_type": "SCA",
+        "finding_status": { "status": "OPEN" },
+        "finding_details": { "cve": { "name": "CVE-0000-0000" }, "severity": 4 }
+      },
+      {
+        "issue_id": 2005,
+        "scan_type": "STATIC",
+        "finding_status": { "status": "CLOSED" },
+        "finding_details": { "cwe": 78, "severity": 4, "file_path": "src/Runner.java", "file_line_number": 10 }
+      }
+    ]
+  },
+  "page": { "number": 0, "size": 500, "total_elements": 5 }
+}
