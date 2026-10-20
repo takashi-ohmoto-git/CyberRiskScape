@@ -98,7 +98,7 @@ verbatim.
      SP 800-57 Part 1 Rev.5, SP 800-77 Rev.1, SP 800-153, SP 800-38F,
      SP 800-53 Rev.5, SP 800-204A, SP 800-207A, SP 800-208, SP 800-209,
      SP 800-34 Rev.1, SP 800-92, SP 800-92 Rev.1 (Initial Public Draft),
-     SP 800-111, SP 800-40 Rev.4
+     SP 800-111, SP 800-40 Rev.4, SP 800-125, SP 800-125A Rev.1
    - IR 8259 / 8259A, IR 8374, IR 8547
    - FIPS 203 (ML-KEM), FIPS 204 (ML-DSA), FIPS 205 (SLH-DSA), FIPS 140-3
    - AI Risk Management Framework 1.0 (AI 100-1)
@@ -121,6 +121,10 @@ verbatim.
      data/threat-library/network-infra.yaml
    - Cybersecurity Advisory AA23-320A, Scattered Spider (with FBI)
    - #StopRansomware Guide — referenced by data/threat-library/storage.yaml
+     and data/threat-library/network-infra.yaml
+   - Best Practices for Event Logging and Threat Detection (2024, with the
+     Australian Signals Directorate and international partners) — referenced
+     by data/threat-library/network-infra.yaml
    - The KEV Catalog is also referenced by
      data/threat-library/operations-posture.yaml
    - Shifting the Balance of Cybersecurity Risk: Principles and Approaches for
@@ -289,7 +293,7 @@ verbatim.
     Series (Secrets Management, File Upload, Third Party JavaScript
     Management, JSON Web Token, Server-Side Request Forgery Prevention,
     Injection Prevention, Query Parameterization, Deserialization,
-    OS Command Injection Defense), OWASP Top 10 2021, OWASP
+    OS Command Injection Defense, Logging), OWASP Top 10 2021, OWASP
     Automated Threats to Web Applications, OWASP Mobile Application Security
     Verification Standard (MASVS), OWASP Web Security Testing Guide (WSTG) v4.2
    https://owasp.org/API-Security/ ,
@@ -381,7 +385,7 @@ verbatim.
     Infrastructure Certificate and CRL Profile), RFC 6960 (X.509 Internet
     Public Key Infrastructure Online Certificate Status Protocol - OCSP),
     RFC 9112 (HTTP/1.1), RFC 9111 (HTTP Caching), RFC 7239 (Forwarded HTTP
-    Extension)
+    Extension), RFC 7530 (Network File System (NFS) Version 4 Protocol)
    https://www.rfc-editor.org/
    Referenced by RFC number and title with a short Japanese summary only; no
    RFC text is reproduced.
@@ -389,17 +393,20 @@ verbatim.
    Referenced by: data/threat-library/api-platform.yaml,
                   data/threat-library/network-infra.yaml,
                   data/threat-library/pqc.yaml,
+                  data/threat-library/storage.yaml,
                   data/threat-library/zero-trust-access.yaml
 
 --------------------------------------------------------------------------------
 22. IEEE — IEEE 802.1X (Port-Based Network Access Control), IEEE 802.1AE
-    (Media Access Control Security)
+    (Media Access Control Security), IEEE Std 2600 (Hardcopy Device and
+    System Security)
    https://standards.ieee.org/
    © IEEE. Standard numbers and titles are referenced as factual identifiers
    only; no IEEE text is reproduced.
 
    Referenced by: data/threat-library/network-infra.yaml,
-                  data/threat-library/pqc.yaml
+                  data/threat-library/pqc.yaml,
+                  data/threat-library/endpoint.yaml
 
 --------------------------------------------------------------------------------
 23. Cloud provider and service mesh documentation
@@ -415,6 +422,9 @@ verbatim.
      Developer Guide, "AWS Backup Vault Lock"
    - Microsoft — Microsoft Learn, "Store business-critical blob data with
      immutable storage"
+   - Microsoft — Microsoft Learn, "SMB security hardening", "How to detect,
+     enable and disable SMBv1, SMBv2, and SMBv3 in Windows" and "Overview of
+     Server Message Block signing"
    - Google Cloud — Cloud Storage, "Bucket Lock"
    https://docs.aws.amazon.com/ , https://learn.microsoft.com/ ,
    https://cloud.google.com/ , https://istio.io/

@@ -147,7 +147,9 @@ rules:
       when:
         network: [VPN]
         # 業務 DB・ストレージ（storage ライブラリ）も VPN 接続後に到達できる機微な保管先のため加える。
-        targetType: [DB, DATA_STORE, LLM, AGENT, MCP_SERVER, MEMORY_STORE, SAAS, IAAS, PAAS, DATABASE, STORAGE]
+        # ファイルサーバー・仮想化基盤（2026-10-21）も VPN 接続後に到達できると横展開の主要な標的になるため加える。
+        # SIEM は加えない（VPN 経由の線の多くは拠点からのログの送信で、利用者の到達範囲の問いにならない）。
+        targetType: [DB, DATA_STORE, LLM, AGENT, MCP_SERVER, MEMORY_STORE, SAAS, IAAS, PAAS, DATABASE, STORAGE, FILE_SERVER, HYPERVISOR]
       conditions:
         # CISA ZTMM v2 の段階で MFA（Traditional）より強い Token（Initial）・Passkey / Certificate
         # （Advanced）も同じ Low にする（2026-10-10）。本ルールの論点は認証後の到達範囲で、
@@ -647,7 +649,8 @@ rules:
         # userTrustAttribute を明示宣言した USER ノードでのみ発火（未宣言は不成立）。
         sourceUserTrust: [Guest, Contractor, Partner]
         # 業務 DB・ストレージ（storage ライブラリ）への外部協働者のアクセスも同じ失効・統制の問いを持つため加える。
-        targetType: [DB, DATA_STORE, LLM, AGENT, MCP_SERVER, MEMORY_STORE, SAAS, IAAS, PAAS, CRM, DATABASE, STORAGE]
+        # ファイルサーバー・仮想化基盤・SIEM（2026-10-21）も、委託先の運用担当・監視事業者が触ることが多く同じ問いを持つため加える。
+        targetType: [DB, DATA_STORE, LLM, AGENT, MCP_SERVER, MEMORY_STORE, SAAS, IAAS, PAAS, CRM, DATABASE, STORAGE, FILE_SERVER, HYPERVISOR, SIEM]
       conditions:
         - when:
             sourceUserTrust: [Guest]

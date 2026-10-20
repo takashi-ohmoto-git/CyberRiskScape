@@ -1,4 +1,4 @@
-# エンドポイント系ノード型（PC / SMARTPHONE / IOT）の内在脅威、および
+# エンドポイント系ノード型（PC / SMARTPHONE / IOT / MULTIFUNCTION_PRINTER）の内在脅威、および
 # targetManagedState（端末管理状態）を条件にしたエッジルール。
 #
 # 出典:
@@ -11,6 +11,8 @@
 #     Baseline"。
 #   - CIS Critical Security Controls v8（Control 1: Inventory and Control of
 #     Enterprise Assets / Control 4: Secure Configuration）。
+#   - IEEE Std 2600 "Hardcopy Device and System Security" と NIST SP 800-53 Rev.5（IA-5 / MP-6 / AC-6）
+#     （複合機のルール、2026-10-21）。
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -42,6 +44,17 @@
 #       - PC / SMARTPHONE: 端末紛失・盗難時のローカル認証情報露出
 #         （canContain は脅威条件として参照不可のため、ルール条件としては
 #         「ノード型 + managedState」のみを根拠にし、含有データの種類には踏み込まない）
+#
+#   - MULTIFUNCTION_PRINTER（2026-10-21 追加）:
+#     - パッチの未適用は posture-patch-missing-001、インターネットからの到達は netinfra-edge-device-exploitation-001
+#       （targetType に追加し、conditions で複合機向けの description を出す）が扱う。
+#     - IOT 向けの endpoint-iot-default-credentials-unpatchable-001 は対象に入れない。複合機の初期パスワードの問いは
+#       蓄積文書・アドレス帳・送信先の設定という固有の被害と対策（記憶装置の消去・蓄積の制限）を持つため、
+#       複合機専用のルール（mfp-admin-stored-data-exposure）で扱う。
+#     - スキャン送信用に保存した資格情報の窃取（パスバック）→ 新規（mfp-scan-credential-theft）。認証材料の保管・散在
+#       （credential-sprawl、CREDENTIAL ノード）とは subject と機構（接続先の書き換え）が異なる。送信先の線
+#       （共有フォルダ・メール・ディレクトリへの outbound）があるときだけ出す。
+#     - 未管理端末・VPN の広域到達・外部協働者のエッジルールには加えない（印刷の線は機微なシステムへのアクセスではない）。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する。
@@ -130,3 +143,60 @@ rules:
       - title: "NIST SP 800-46 Rev.2 - Guide to Enterprise Telework, Remote Access, and BYOD Security（管理外端末への配信統制）"
         url: "https://csrc.nist.gov/pubs/sp/800/46/r2/final"
       # source 側（未管理端末からのアクセス）は stride-edge-unmanaged-device-sensitive-001 が扱う（別 canonicalId、逆方向の経路）。
+
+  # ── MULTIFUNCTION_PRINTER: 管理画面の初期パスワードと蓄積文書・アドレス帳の漏えい（intrinsic）──
+  - id: endpoint-mfp-admin-stored-data-exposure-001
+    canonicalId: mfp-admin-stored-data-exposure
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "複合機の管理画面の初期パスワードによる蓄積文書・アドレス帳の漏えいと設定の改ざん"
+    severity: High
+    description: "{{nodeName}} の管理画面（Web）や管理用のプロトコル（SNMP 等）が初期のパスワードやコミュニティ名のまま、社内のどこからでも（来客用・無線のネットワークを含む）到達できる場合、社内のネットワークに入った攻撃者や内部の利用者は、管理者としてログインして、内部の記憶装置に蓄積されたスキャン・FAX・印刷の文書と、アドレス帳（社員や取引先のメールアドレス・FAX 番号・共有フォルダのパス）を読み出し、送信先や転送の設定を書き換えて、以後の FAX やスキャンを攻撃者の宛先へ転送させられる（Can）。複合機にはエンドポイントの検知製品を入れられず、管理画面の変更に誰も気づかないことが多い。廃棄やリースの返却のときに記憶装置を消去しないと、蓄積された文書が外部へ持ち出される。一方、管理者パスワードとコミュニティ名を機器ごとの強い値に変え、管理画面への到達を管理用の端末やネットワークに限り、文書の蓄積を必要最小限にして記憶装置の暗号化と廃棄時の消去を行い、設定の変更を記録していれば、ネットワークに入っただけでは管理者になれず、持ち出せる蓄積文書も残らない（Cannot）。インターネットから届く場合は netinfra-edge-device-exploitation-001（エッジ）が別に出る。blast radius は {{nodeName}} に蓄積された文書・アドレス帳と、送信先を書き換えられた後のスキャン・FAX。"
+    mitigation: "[Foundation] 管理者パスワードを初期値から機器ごとの強い値に変え、使わない管理用のプロトコル（SNMP v1/v2c・Telnet・FTP 等）を止める（SNMP を使う場合は SNMPv3 にする）。管理画面に入れる端末・ネットワークを限る。機器内への文書の蓄積を必要なものだけにし、記憶装置の暗号化と自動消去の機能を有効にする。 [Enterprise] 複合機を利用者の端末とは別のセグメントに置き、印刷・スキャンに必要な通信だけを許可する。管理画面の利用を個人のアカウントに分け、設定の変更とログインのログを外部のログ基盤へ送る。廃棄・リース返却のときの記憶装置の消去を手順にし、消去の証明を残す。ファームウェアを定期的に更新する。 [Advanced] 印刷とスキャンに利用者の認証（IC カード等）を求め、利用者が機器の前で認証したときにだけ文書を出力する。複合機の設定を一元管理し、決めた設定からのずれを自動で検出する。"
+    appliesTo:
+      kind: node
+      nodeType: MULTIFUNCTION_PRINTER
+      # 初期パスワード・管理画面への到達範囲・文書の蓄積は図に現れない設定の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "IEEE Std 2600 - IEEE Standard for Information Technology: Hardcopy Device and System Security"
+        url: "https://standards.ieee.org/ieee/2600/4228/"
+      - title: "NIST SP 800-53 Rev.5 - Security and Privacy Controls for Information Systems and Organizations（IA-5 Authenticator Management〔初期の認証情報の変更〕/ MP-6 Media Sanitization）"
+        url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"
+      # IoT 機器一般の初期資格情報・パッチ適用困難性は endpoint-iot-default-credentials-unpatchable-001（IOT）が扱う（別 canonicalId）。
+
+  # ── MULTIFUNCTION_PRINTER: スキャン送信用に保存した資格情報の窃取（経路依存）─────────
+  - id: endpoint-mfp-scan-credential-passback-001
+    canonicalId: mfp-scan-credential-theft
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "スキャン送信用に保存した資格情報の窃取（送信先の書き換えによるパスバック）"
+    severity: High
+    description: "{{nodeName}} は、スキャンした文書を共有フォルダ（SMB）やメール（SMTP）へ送り、宛先をディレクトリ（LDAP）から引くために、それぞれのサーバーへの資格情報（共有フォルダへ書き込むアカウント・メール送信用のアカウント・ディレクトリを読むアカウント）を機器の中に保存している。管理画面に入れた攻撃者は、接続先のサーバーのアドレスを自分の用意したサーバーに書き換えて接続のテストを実行させ、保存された資格情報を平文や解読しやすい形で受け取れる（パスバック）（Can）。これらのアカウントは共有フォルダ全体への書き込み権限やディレクトリ全体を読める権限を持っていることが多く、パスワードも長く変えられていないため、攻撃者はそのまま社内の正規のアカウントとして横展開できる。一方、保存する資格情報を用途ごとの最小の権限の専用アカウントにし、LDAP は LDAPS・SMB は署名・SMTP は TLS と認証付きの送信に限り、接続先の変更に管理者の認証と記録を求め、専用アカウントのログインを複合機からだけに限って監視していれば、資格情報を抜かれても届く範囲はスキャンの保存先に限られ、ほかの場所からの利用は見つかる（Cannot）。blast radius は保存された資格情報のアカウントが届く範囲（共有フォルダ・メール・ディレクトリ）。"
+    mitigation: "[Foundation] 複合機に保存している資格情報を一覧にし、用途ごとの専用アカウント（スキャンの保存先のフォルダだけに書ける・ディレクトリは読み取りだけ）に置き換える。管理者パスワードを変えて、接続先の設定を変えられる人を限る。接続先との通信を暗号化する（LDAPS・SMTP の TLS・SMB の署名）。 [Enterprise] 専用アカウントのパスワードを定期的に変え、ログインできる端末を複合機に限って、ほかの場所からのログインを検知する。接続先の設定変更をログに残して通知する。ディレクトリの参照を、資格情報の要らない仕組み（機器内のアドレス帳の配布・クラウドの宛先検索）に置き換えられないか検討する。 [Advanced] スキャンの保存先を、機器が個別の資格情報を持たない方式（利用者の認証で保存先を決めるスキャンのサービス、証明書による機器の認証）に移す。"
+    appliesTo:
+      kind: node
+      nodeType: MULTIFUNCTION_PRINTER
+      # スキャンの送信先・宛先の参照先（共有フォルダ・メール・ディレクトリ）への送信の線があるときだけ出す。
+      # 線が無い複合機は資格情報を保存する前提が成り立たない（印刷だけの機器）。
+      connection:
+        direction: outbound
+        peerType: [FILE_SERVER, STORAGE, MAIL, EMAIL_GATEWAY, DIRECTORY, IDENTITY_PROVIDER, SAAS]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "IEEE Std 2600 - IEEE Standard for Information Technology: Hardcopy Device and System Security"
+        url: "https://standards.ieee.org/ieee/2600/4228/"
+      - title: "NIST SP 800-53 Rev.5 - Security and Privacy Controls for Information Systems and Organizations（IA-5 Authenticator Management / AC-6 Least Privilege）"
+        url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"

@@ -63,6 +63,9 @@
 #     HSM の鍵ラッピング（hsm-pqc-key-support-gap）とは対象が鍵の保管装置か、包まれたデータの保管先かで
 #     異なるため別ルールとする。
 #   - バックアップの破壊・保持ロックの解除・復元テストの欠如は PQC ではないため storage.yaml が扱う。
+#   - FILE_SERVER（2026-10-21 追加）は STORAGE と同じ機密データの保管先のため、HNDL（ストア宛て経路）・CBOM 欠如・
+#     crypto-agility の対象に STORAGE と並べて加えた。HYPERVISOR・SIEM は管理画面や収集の TLS を終端するが、
+#     踏み台・ZTNA プロキシと同じく CBOM・crypto-agility の対象には入れていない（入れるかは人間判断）。
 #
 # framework について:
 #   スキーマの FrameworkSchema は enum ['STRIDE','AI','AgenticAI'] で閉じており、新値 "PQC" の
@@ -99,9 +102,9 @@ rules:
       # 量が多く秘匿期間も長いため、収集の価値が高い。
       anyOf:
         - encryption: [Plain, TLS]
-          targetType: [DATA_STORE, DB, DATABASE, STORAGE, BACKUP_STORAGE, IMMUTABLE_BACKUP]
+          targetType: [DATA_STORE, DB, DATABASE, STORAGE, FILE_SERVER, BACKUP_STORAGE, IMMUTABLE_BACKUP]
         - encryption: [Plain, TLS]
-          sourceType: [DATA_STORE, DB, DATABASE, STORAGE, BACKUP_STORAGE, IMMUTABLE_BACKUP]
+          sourceType: [DATA_STORE, DB, DATABASE, STORAGE, FILE_SERVER, BACKUP_STORAGE, IMMUTABLE_BACKUP]
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.DS-02"
@@ -144,6 +147,8 @@ rules:
         - nodeType: WAF
         - nodeType: DATABASE
         - nodeType: STORAGE
+        # ファイルサーバー（2026-10-21）も STORAGE と同じ機密データの保管先で、SMB / NFS の暗号と保管時暗号を持つため加える。
+        - nodeType: FILE_SERVER
       # 暗号インベントリの有無は資産の運用ガバナンスの性質で、接続関係に依存しない内在リスク。
       connection:
         required: false
@@ -218,6 +223,8 @@ rules:
         # バックアップ 2 型は CBOM と同じ理由で加えない。
         - nodeType: DATABASE
         - nodeType: STORAGE
+        # ファイルサーバー（2026-10-21）も STORAGE と同じ理由で加える。
+        - nodeType: FILE_SERVER
       # アルゴリズム差替え可能性は実装設計の性質で、接続関係に依存しない内在リスク。
       connection:
         required: false

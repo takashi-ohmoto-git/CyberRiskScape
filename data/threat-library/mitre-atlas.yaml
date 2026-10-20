@@ -115,7 +115,8 @@ rules:
       connection:
         direction: inbound
         # 業務 DB のレコードやストレージ上のファイルも、第三者が書き込める内容を LLM に運ぶ経路になるため加える。
-        peerType: [DB, TOOL, EXTERNAL_ENTITY, DATA_STORE, CONNECTOR, MEMORY_STORE, DATABASE, STORAGE]
+        # 共有フォルダのファイル（FILE_SERVER）と、攻撃者が送った文字列がそのまま残るログ（SIEM）も同じ理由で加える（2026-10-21）。
+        peerType: [DB, TOOL, EXTERNAL_ENTITY, DATA_STORE, CONNECTOR, MEMORY_STORE, DATABASE, STORAGE, FILE_SERVER, SIEM]
     references:
       - title: "MITRE ATLAS AML.T0051 LLM Prompt Injection"
         url: "https://atlas.mitre.org/techniques/AML.T0051"

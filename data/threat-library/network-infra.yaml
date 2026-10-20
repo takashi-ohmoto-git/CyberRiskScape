@@ -1,10 +1,11 @@
-# ネットワーク機器・セキュリティ製品（network-infra コンポーネントライブラリの 18 型）の固有脅威。
+# ネットワーク機器・セキュリティ製品（network-infra コンポーネントライブラリの 21 型）の固有脅威。
 # 境界機器の侵入起点化、TLS インスペクション用 CA 鍵、CDN による第三者の TLS 終端、
 # STARTTLS のダウングレード、L2 のなりすまし、不正アクセスポイントに加え、
 # 踏み台への管理経路の集中、ZTNA プロキシへのアクセス判定の集中と迂回、専用線の平文区間、
 # プライベートエンドポイント経由の持ち出し、サービスメッシュの mTLS 非強制とメッシュ CA の侵害、
 # 前段のプロキシ（リバースプロキシ・ロードバランサー・WAF・CDN・API ゲートウェイ）の要求の解釈のずれ
-# （リクエストスマグリング）・転送ヘッダーの信用・キャッシュの悪用と、リバースプロキシの迂回を扱う。
+# （リクエストスマグリング）・転送ヘッダーの信用・キャッシュの悪用と、リバースプロキシの迂回、
+# 仮想化基盤の管理面の奪取と VM エスケープ、SIEM / ログ基盤のログの改ざん・資格情報の集中・収集の停止を扱う。
 # PQC 移行に直結するもの（受動復号・HSM・VPN トンネルの HNDL）は pqc.yaml に置く。
 #
 # 出典（一般的な基準のみを根拠とする。個別の事故報告は出典・事例に用いない）:
@@ -31,6 +32,12 @@
 #     Injection）と OWASP API Security Top 10 2023（API8 Security Misconfiguration）。
 #   - PortSwigger Web Security Academy（HTTP request smuggling / HTTP Host header attacks /
 #     Web cache poisoning / Web cache deception）。
+#   - NIST SP 800-125 "Guide to Security for Full Virtualization Technologies" /
+#     SP 800-125A Rev.1 "Security Recommendations for Server-based Hypervisor Platforms"（2026-10-21）。
+#   - NIST IR 8374 "Ransomware Risk Management" と CISA "#StopRansomware Guide"（仮想化基盤の一括暗号化）。
+#   - NIST SP 800-92 "Guide to Computer Security Log Management"、NIST SP 800-53 Rev.5（AU-5 / AU-9）、
+#     CISA ほか "Best Practices for Event Logging and Threat Detection"（2024）、OWASP Logging Cheat Sheet
+#     （SIEM / ログ基盤のルール、2026-10-21）。
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -109,6 +116,29 @@
 #     zero-trust-access.yaml の zt-ai-gateway-semantic-cache-cross-user-leak-001、利用者識別の項目の信用は
 #     zt-ai-gateway-caller-identity-trust-001 が扱う（いずれも別 canonicalId）。
 #
+#   HYPERVISOR / SIEM（2026-10-21 追加）について:
+#   - パッチ・ログ・アカウント棚卸しは operations-posture.yaml の posture-* に型を足して扱う（本ファイルでは問わない）。
+#     SIEM のログの保持期間は posture-log-retention-short-003（SIEM 専用、log-retention-insufficient を共有）が扱う。
+#   - インターネットからの到達 → netinfra-edge-device-exploitation-001 の targetType に HYPERVISOR を足し、conditions で
+#     仮想化基盤向けの description を出す（BASTION と同じ扱い）。SIEM は加えない（クラウドの SIEM は事業者が運用し、
+#     インターネットから送り元のログを受けるのは正規の構成のため）。
+#   - 未管理端末からの到達・外部協働者（stride-ai / zero-trust-access のエッジルール）は対象を足して扱う。
+#     VPN の広域到達は HYPERVISOR だけ足す（SIEM への VPN の線の多くは拠点からのログの送信で、到達範囲の問いにならない）。
+#   - 仮想化基盤の管理面の奪取による全 VM の一括暗号化・削除 → 新規（hypervisor-management-takeover）。踏み台・PAM への特権の
+#     集中（pam-privileged-concentration）は「管理経路の集約点」の問いで、こちらは管理面そのものの権限の与え方（AD への依存）と
+#     ハイパーバイザー上での一括操作を扱うため別。バックアップの破壊（backup-ransomware-destruction）とは対象が異なる。
+#   - VM エスケープ → 新規（hypervisor-vm-escape）。パッチの未適用は posture-patch-missing-001 が問うため、本ルールは
+#     信頼の度合いが違う VM の同居と仮想デバイスの削減を扱う。
+#   - SIEM のログの改ざん・削除・保持期間の短縮 → 新規（log-platform-tampering）。汎用の監査追跡不能
+#     （data-store-repudiation、データストアの操作の記録）・IdP の認証ログ（idp-authentication-log-gap）とは、守る対象が
+#     ログ基盤そのもので、隠滅する主体が侵入した攻撃者である点が異なる。SIEM には汎用のデータストアのルールを当てない。
+#   - SIEM への機微ログ・連携用の資格情報の集中 → 新規（siem-data-credential-concentration）。AI ゲートウェイへのプロンプトの
+#     集積（ai-gateway-log-concentration）と構造は近いが、連携用の資格情報と自動対処の権限を持つ点、集まる中身が全システムの
+#     ログである点が異なり、型も違うため別グループにした（統合するかは人間判断）。
+#   - 収集の停止・経路の遮断による検知の無効化 → 新規（log-collection-blinding）。ログを取得していない状態
+#     （posture-log-not-collected-001）とは、取得している前提で攻撃者が止める点が異なる。ログの送り元が図に描かれている
+#     （SIEM が受け取る線がある）ときだけ出す。
+#
 #   専用線 / 閉域接続はノード型を設けず、エッジの network: [VPN]（画面表示「専用線 (VPN)」）で表す
 #   （専用線は機器ではなくリンクのため）:
 #   - network:[VPN] かつ平文の区間 → netinfra-dedicated-line-unencrypted-001。汎用の平文ルール
@@ -143,12 +173,21 @@ rules:
         # BASTION を追加（2026-10）：Internet から到達できる踏み台は管理経路の入口で、自前の踏み台は
         # 修正の適用が利用者の責任になる。マネージド型でも認証の強さと到達範囲は利用者の設定に依存するため
         # CDN と違い除外しない。踏み台向けの description は conditions で出し分ける。
-        targetType: [FIREWALL, VPN_GATEWAY, LOAD_BALANCER, WAF, ROUTER, SBC, EMAIL_GATEWAY, BASTION]
+        # HYPERVISOR・MULTIFUNCTION_PRINTER を追加（2026-10-21）：管理面・印刷用のポートがインターネットから届くと、
+        # 既知の脆弱性と管理面（初期パスワードを含む）の悪用という同じ問いが成立し、修正の適用も利用者の責任になる。
+        # 型ごとの description は conditions で出し分ける。
+        targetType: [FIREWALL, VPN_GATEWAY, LOAD_BALANCER, WAF, ROUTER, SBC, EMAIL_GATEWAY, BASTION, HYPERVISOR, MULTIFUNCTION_PRINTER]
         sourceTrust: [Internet]
       conditions:
         - when:
             targetType: [BASTION]
           description: "{{targetName}} は信頼境界の外（Internet 扱い）にある {{sourceName}} から到達できる踏み台である。踏み台は配下のサーバーへの管理経路の入口のため、攻撃者は公開された SSH / RDP / Web コンソールに対して既知の脆弱性を悪用したり、パスワードの総当たりや流出した資格情報の試行を行ったりして、成功すれば内部のサーバーへ管理者として到達できる（Can）。自前で構築した踏み台サーバーでは、OS とリモート接続ソフトウェアの修正の適用が利用者の責任になる。マネージドの踏み台では修正は事業者が行うが、認証の強さと到達できるサーバーの絞り込みは利用者の設定に依存する。一方、踏み台への接続を IdP の認証（フィッシング耐性のある MFA）や ZTNA の後ろに置いてインターネットから直接到達できないようにするか、受信ポートを持たない接続方式（エージェントからの外向き接続）を使い、自前の踏み台の修正を期限内に適用していれば、公開された面への総当たりや既知の手口は成立しない（Cannot）。blast radius は {{targetName}} から到達できるすべてのサーバーと、その管理者権限。"
+        - when:
+            targetType: [HYPERVISOR]
+          description: "{{targetName}} は信頼境界の外（Internet 扱い）にある {{sourceName}} から到達できる仮想化基盤（ハイパーバイザー・管理サーバー）である。仮想化基盤の管理画面・管理 API・SSH や管理サーバーの Web サービスには、認証前に悪用できるものを含む既知の脆弱性が繰り返し公開されており、攻撃者はインターネットからの自動探索でそれらを見つけ、掌握した管理面から上で動くすべての仮想マシンを停止・暗号化・削除できる（Can）。修正の適用は利用者の責任で、ホストの再起動や仮想マシンの移動を伴うため遅れやすい。一方、管理面をインターネットから到達できない管理用ネットワークに置き、管理者の接続を踏み台や ZTNA の後ろに限り、悪用が確認された脆弱性（CISA KEV 等）の修正を期限内に適用していれば、インターネットからの公開済みの手口は成立しない（Cannot）。blast radius は {{targetName}} の上で動くすべての仮想マシンと、そのデータ・バックアップ。"
+        - when:
+            targetType: [MULTIFUNCTION_PRINTER]
+          description: "{{targetName}} は信頼境界の外（Internet 扱い）にある {{sourceName}} から到達できる複合機・プリンターである。管理画面（Web）・印刷用のポート（IPP・RAW 印刷）・FTP 等がインターネットから届くと、攻撃者は自動探索で見つけ、初期パスワードのままの管理画面へのログインや既知の脆弱性の悪用で、蓄積された文書・アドレス帳・送信先の設定を読み出したり、任意の印刷や設定の書き換えを行ったりできる（Can）。複合機にはエンドポイントの検知製品を入れられず、ファームウェアの更新も後回しにされやすい。一方、複合機をインターネットから到達できない社内のネットワークに置き（外からの印刷は事業者の中継サービス経由にし）、管理者パスワードを変更し、ファームウェアを最新に保っていれば、インターネットからの直接の侵入は成立しない（Cannot）。blast radius は {{targetName}} に蓄積された文書・アドレス帳・保存された送信用の資格情報と、それを足場に届く社内ネットワーク。"
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "ID.RA-01"
@@ -659,3 +698,140 @@ rules:
         url: "https://portswigger.net/web-security/web-cache-poisoning"
       - title: "PortSwigger Web Security Academy - Web cache deception"
         url: "https://portswigger.net/web-security/web-cache-deception"
+
+  # ── 仮想化基盤の管理面の奪取による全仮想マシンの一括暗号化・削除（内在）──────────
+  - id: netinfra-hypervisor-management-takeover-001
+    canonicalId: hypervisor-management-takeover
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "仮想化基盤の管理面の奪取による全仮想マシンの一括暗号化・削除"
+    severity: High
+    description: "{{nodeName}} の管理サーバーやハイパーバイザーの管理画面・管理 API・SSH が業務用のネットワークから到達でき、管理権限を業務の Active Directory のグループで与えている（管理サーバーやホストをドメインに参加させ、特定のグループに管理者権限が付く設定を含む）場合、ドメインの管理者権限や管理者の資格情報を奪った攻撃者は、{{nodeName}} に正規の管理者としてログインし、上で動く仮想マシンを、ゲスト OS のエンドポイントの検知製品を経由せずに停止・暗号化・削除できる（Can）。ハイパーバイザーの上の仮想ディスクをまとめて暗号化されると、ゲストのドメインコントローラー・業務サーバー・同じ基盤に置いたバックアップサーバーが一度に止まる。一方、{{nodeName}} の管理アカウントを業務のドメインから切り離して（または業務の AD のグループに頼らずに）フィッシング耐性のある MFA を必須にし、管理面を管理用ネットワークと踏み台からだけ到達できるようにし、ハイパーバイザーの SSH・シェルを常時は無効にして署名されたコードだけを実行させていれば、業務のドメインを奪っても {{nodeName}} の管理者にはなれず、仮想ディスクの一括暗号化はできない（Cannot）。blast radius は {{nodeName}} の上で動くすべての仮想マシンと、そのデータ・同じ基盤のバックアップ。"
+    mitigation: "[Foundation] 仮想化基盤の管理アカウントを業務のドメインの資格情報から切り離し（ドメインに参加させる場合は、管理者権限を与える AD のグループを専用にし、既定のグループ名に頼らない）、フィッシング耐性のある MFA を必須にする。管理画面・管理 API・SSH を管理用ネットワークに置き、業務用のネットワークから到達できないようにする。ハイパーバイザーの SSH・シェルは作業のときだけ有効にする。 [Enterprise] 管理者の接続を踏み台または特権アクセス管理の経由に限り、管理操作（仮想マシンの削除・データストアの操作・権限の変更）のログを仮想化基盤の外のログ基盤へ送って監視する。ハイパーバイザーで署名されていないコードの実行を禁止する設定を使う。バックアップを同じ仮想化基盤・同じ管理ドメインに置かない。 [Advanced] 管理面を本番とは別の管理ドメイン・別の ID 基盤で運用し、仮想マシンの一括削除やデータストアの変更に複数人の承認を求める。仮想化基盤ごと失われた場合の再構築（ホストの再導入から仮想マシンの復元まで）を演習する。"
+    appliesTo:
+      kind: node
+      nodeType: HYPERVISOR
+      # 管理権限の与え方と管理面への到達性は図に現れない設定の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-11"
+    references:
+      - title: "NIST SP 800-125A Rev.1 - Security Recommendations for Server-based Hypervisor Platforms（管理の権限と管理用ネットワークの分離）"
+        url: "https://csrc.nist.gov/pubs/sp/800/125/a/r1/final"
+      - title: "NIST IR 8374 - Ransomware Risk Management: A Cybersecurity Framework Profile"
+        url: "https://csrc.nist.gov/pubs/ir/8374/final"
+      - title: "CISA - #StopRansomware Guide"
+        url: "https://www.cisa.gov/stopransomware/ransomware-guide"
+
+  # ── VM エスケープによる同居する仮想マシンへの波及（内在）────────────────────────
+  - id: netinfra-hypervisor-vm-escape-001
+    canonicalId: hypervisor-vm-escape
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "仮想マシンからの脱出（VM エスケープ）による同居する仮想マシンへの波及"
+    severity: Medium
+    description: "{{nodeName}} の上で、インターネットに公開するサーバーや外部の利用者が使う仮想マシンと、ドメインコントローラー・機密データを持つサーバーのように信頼の度合いが違う仮想マシンを同じホストで動かしている場合、公開側の仮想マシンを掌握した攻撃者は、仮想デバイス（ネットワーク・USB・グラフィックス・ゲストとホストの通信機能）の処理やハイパーバイザー自体の脆弱性を突いて仮想マシンの外へ抜け出し、ハイパーバイザーの権限で同じホストの他の仮想マシンのメモリ・ディスクを読み書きできる（Can）。仮想マシンの間の分離は図に現れず、構成図では別々のサーバーに見えても、実際には同じハードウェアと同じハイパーバイザーを共有している。一方、信頼の度合いが違う仮想マシンを別のホスト（またはクラスター）に分け、使わない仮想デバイスとゲストとホストの間の共有機能を外していれば、1 台の仮想マシンからの脱出が成功しても機密性の高い仮想マシンには届かず、脱出に使える面そのものが減る（Cannot）。パッチの適用状況は運用状況のカード（既知の脆弱性に対するパッチの未適用）で問う。blast radius は {{nodeName}} の同じホストで動くすべての仮想マシン。"
+    mitigation: "[Foundation] 仮想マシンをインターネット公開・社内業務・管理系（ドメインコントローラー・バックアップ・セキュリティ製品）のように信頼の度合いで分類し、分類が違うものを同じホストに置かない（またはホストのグループで分ける）。仮想マシンから不要な仮想デバイス（USB・シリアル・CD/DVD・3D グラフィックス）と、ゲストとホストの間のファイル共有・クリップボード共有を外す。 [Enterprise] 信頼の度合いごとにクラスターと管理用のネットワークを分け、仮想マシンの移動（ライブマイグレーション）の範囲も同じ分類の中に限る。ハイパーバイザーの重大な脆弱性の情報を追い、修正までの暫定対策（影響する仮想デバイスの無効化）を適用する手順を用意する。 [Advanced] 機密性の高い仮想マシンに、ハイパーバイザーからもメモリを読めない機能（ハードウェアによるメモリの暗号化・機密コンピューティング）を使うか、専用のホストに置く。"
+    appliesTo:
+      kind: node
+      nodeType: HYPERVISOR
+      # 仮想マシンの同居と仮想デバイスの構成は図に現れない設定の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "NIST SP 800-125A Rev.1 - Security Recommendations for Server-based Hypervisor Platforms（仮想マシンの分離と仮想デバイス）"
+        url: "https://csrc.nist.gov/pubs/sp/800/125/a/r1/final"
+      - title: "NIST SP 800-125 - Guide to Security for Full Virtualization Technologies"
+        url: "https://csrc.nist.gov/pubs/sp/800/125/final"
+
+  # ── SIEM / ログ基盤のログの改ざん・削除・保持期間の短縮（内在）─────────────────
+  - id: netinfra-siem-log-tampering-001
+    canonicalId: log-platform-tampering
+    framework: STRIDE
+    category: "Repudiation"
+    name: "ログ基盤のログの改ざん・削除・保持期間の短縮による痕跡の隠滅"
+    severity: High
+    description: "{{nodeName}} の管理者権限や保管先（インデックス・バケット）への書き込み権限を、ログを送る各システムの管理者や、侵入の起点になりやすい業務のドメイン管理者も持っている場合、侵入した攻撃者は自分の操作が記録されたログを {{nodeName}} から削除・改ざんし、保持期間を短くして古いログを消し、検知ルールや通知を止めて、侵入の痕跡を消せる（Can）。送り元から {{nodeName}} までの経路が平文の syslog（UDP）で送り元の認証も無いと、経路上の攻撃者は偽のログを混ぜたり一部を落としたりもできる。一方、{{nodeName}} の管理者を各システムの管理者と分けて少数にし（フィッシング耐性のある MFA）、保管先を書き換え・削除のできない方式（WORM・保持ロック）にし、保持期間と検知ルールの変更を別の経路で通知し、送り元からの経路を TLS と送り元の認証で守っていれば、各システムの管理者権限を奪っても過去のログは消せず、隠滅の試み自体が記録に残る（Cannot）。blast radius は {{nodeName}} が集める全システムのログと、それに頼る侵害の調査・検知。"
+    mitigation: "[Foundation] ログ基盤の管理者を、ログを送る各システムの管理者や業務のドメイン管理者とは別のアカウントにし、フィッシング耐性のある MFA を必須にする。ログの削除・保持期間の変更・検知ルールの無効化をできる権限を少数に限る。送り元からの経路を TLS（syslog over TLS・HTTPS の収集 API）にする。 [Enterprise] 保管したログを書き換え・削除のできない方式（WORM・オブジェクトロックの保持期間）で残し、ログ基盤の設定変更とログの削除の操作を、ログ基盤とは別の場所へ記録して通知する。送り元をクライアント証明書やトークンで認証する。 [Advanced] ログに連続した番号やハッシュの連鎖を付けて改ざんと欠落を検出できるようにし、重要なログはログ基盤とは別の管理者が管理する保管先へも複製する。"
+    appliesTo:
+      kind: node
+      nodeType: SIEM
+      # 管理権限の分け方と保管方式は図に現れない設定の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-04"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "NIST SP 800-92 - Guide to Computer Security Log Management（ログの保護と、ログ管理の権限）"
+        url: "https://csrc.nist.gov/pubs/sp/800/92/final"
+      - title: "NIST SP 800-53 Rev.5 - Security and Privacy Controls for Information Systems and Organizations（AU-9 Protection of Audit Information）"
+        url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"
+      - title: "CISA ほか - Best Practices for Event Logging and Threat Detection（ログの保管と完全性）"
+        url: "https://www.cisa.gov/resources-tools/resources/best-practices-event-logging-and-threat-detection"
+
+  # ── SIEM / ログ基盤への機微ログ・連携用の資格情報の集中（内在）──────────────────
+  # AI ゲートウェイへのプロンプトの集積（ai-gateway-log-concentration）と構造は近いが、型と集まる中身・権限が違うため別グループ。
+  - id: netinfra-siem-sensitive-concentration-001
+    canonicalId: siem-data-credential-concentration
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "ログ基盤への機微ログと連携用の資格情報の集中"
+    severity: High
+    description: "{{nodeName}} には全システムのログ（利用者の操作・個人情報や、誤ってログに出たパスワード・トークンを含み得る）と、ログを取りに行くための連携用の資格情報（クラウドの API キー・ディレクトリの読み取り用アカウント・各 SaaS の連携トークン）が集まり、自動対処の機能を使っていればアカウントの停止や端末の隔離ができる権限も持つ。{{nodeName}} の管理画面や連携の設定を奪った攻撃者は、組織全体の構成と弱点をログから調べ、ログに残ったパスワードやトークンを拾い、連携用の資格情報で各クラウド・SaaS に入り込める（Can）。一方、連携用の資格情報を読み取り専用・最小の範囲にして秘密情報の管理基盤に置き、ログに出る秘密情報を送る前にマスキングし、ログの閲覧を職務ごとに絞り、管理画面にフィッシング耐性のある MFA を使っていれば、{{nodeName}} 1 点の侵害が全システムへの侵入には直結しない（Cannot）。blast radius は {{nodeName}} が集める全システムのログと、連携用の資格情報が届くすべてのクラウド・SaaS。"
+    mitigation: "[Foundation] ログ基盤の連携用の資格情報（API キー・連携アカウント）を一覧にし、読み取り専用・必要な範囲だけに絞る。管理画面にフィッシング耐性のある MFA を必須にする。ログに出るパスワード・トークン・カード番号を、送り元か収集の段階でマスキングする。 [Enterprise] 連携用の資格情報を秘密情報の管理基盤に置いて定期的に更新し、できるものは短命のトークンやワークロードの ID に置き換える。ログの閲覧権限を職務・データの種類ごとに分け、閲覧と検索の操作を記録する。自動対処に使う権限は対処の種類ごとに分け、実行を記録して通知する。 [Advanced] 個人情報などの項目をトークン化して、ログの閲覧と元の値の参照の権限を分ける。ログ基盤の侵害を想定し、連携用の資格情報を一斉に失効・再発行する手順を用意する。"
+    appliesTo:
+      kind: node
+      nodeType: SIEM
+      # ログと資格情報が集まることはログ基盤の役割そのもので、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "NIST SP 800-92 - Guide to Computer Security Log Management（ログの機密性とアクセス制御）"
+        url: "https://csrc.nist.gov/pubs/sp/800/92/final"
+      - title: "OWASP Logging Cheat Sheet（秘密情報・個人情報をログに出さない）"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html"
+
+  # ── ログの送信の停止・経路の遮断による検知の無効化（経路依存）────────────────────
+  - id: netinfra-siem-collection-blinding-001
+    canonicalId: log-collection-blinding
+    framework: STRIDE
+    category: "Repudiation"
+    name: "ログの送信の停止・経路の遮断による検知の無効化"
+    severity: Medium
+    description: "{{nodeName}} は送り元のエージェント・転送サーバー・syslog から届くログで検知している。侵入した攻撃者は、送り元のエージェントを止める・設定を書き換える・送信先を変える、ファイアウォールで {{nodeName}} への通信を塞ぐ、大量の無関係なログで取り込みの上限を使い切らせる、といった方法で、自分の操作のログを {{nodeName}} に届かなくできる（Can）。{{nodeName}} が「ログが来なくなったこと」を検知していないと、検知ルールは何も起きていないものとして沈黙し、送り元が止まったことにも気づかない。一方、送り元ごとに最後にログが届いた時刻と量を監視して、途絶えたときや急に減ったときに通知し、エージェントの停止・設定変更そのものを別の経路（エンドポイントの検知製品・OS のイベント）で検知し、取り込みの上限と優先度を決めていれば、ログの停止は短時間のうちに異常として見つかる（Cannot）。blast radius は {{nodeName}} にログを送るすべてのシステムの検知。"
+    mitigation: "[Foundation] ログを送るシステムの一覧を作り、送り元ごとに最後にログが届いた時刻を監視して、決めた時間を過ぎても届かないときに通知する。送り元のエージェントの停止と設定変更を、管理者権限のない利用者ができないようにする。 [Enterprise] 送り元ごとのログの量の急な減少も通知し、エージェントの停止・ログの消去・監査設定の変更のイベントを検知ルールに入れる。取り込みの上限に達したときの扱い（重要なログを優先する）を決め、上限に近づいたら通知する。送り元とログ基盤の間に、途絶えても一時保管して後から送る仕組み（転送サーバーのバッファ）を置く。 [Advanced] 重要な送り元は 2 つ以上の経路で送り、どちらかが途絶えたら差分を検知する。定期的に試験用のイベントを流して、検知までの流れ全体が動いていることを確かめる。"
+    appliesTo:
+      kind: node
+      nodeType: SIEM
+      # ログの送り元（SIEM が受け取る線）が描かれているときだけ出す。送り元の型は問わない。
+      connection:
+        direction: inbound
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "DE.CM-01"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-04"
+    references:
+      - title: "NIST SP 800-92 - Guide to Computer Security Log Management（ログの取得の停止と欠落への対応）"
+        url: "https://csrc.nist.gov/pubs/sp/800/92/final"
+      - title: "NIST SP 800-53 Rev.5 - Security and Privacy Controls for Information Systems and Organizations（AU-5 Response to Audit Logging Process Failures）"
+        url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"

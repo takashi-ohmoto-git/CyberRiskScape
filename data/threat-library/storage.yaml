@@ -1,6 +1,7 @@
-# データの保管先（storage コンポーネントライブラリの 4 型：DATABASE / STORAGE / BACKUP_STORAGE /
+# データの保管先（storage コンポーネントライブラリの 5 型：DATABASE / STORAGE / FILE_SERVER / BACKUP_STORAGE /
 # IMMUTABLE_BACKUP）の固有脅威。ストレージの公開設定の誤り、ランサムウェアによるバックアップの破壊、
-# 復元テストの欠如による復旧不能、イミュータブルバックアップの保持ロックの解除を扱う。
+# 復元テストの欠如による復旧不能、イミュータブルバックアップの保持ロックの解除と、ファイルサーバーの
+# 共有フォルダの一括暗号化・アクセス権の過大・古い認証とプロトコルを扱う。
 # バックアップの鍵ラッピングによる HNDL など PQC に直結するものは pqc.yaml に置く。
 #
 # 出典（一般的な基準のみを根拠とする。個別の事故報告は出典・事例に用いない）:
@@ -13,6 +14,8 @@
 #   - CISA "#StopRansomware Guide"（オフライン・イミュータブルなバックアップと復元の試験）。
 #   - クラウド事業者の公式ドキュメント（Amazon S3 のパブリックアクセスのブロック、Amazon S3 Object Lock、
 #     AWS Backup Vault Lock、Azure Blob Storage の不変ストレージ、Google Cloud Storage のバケットロック）。
+#   - NIST SP 800-53 Rev.5（AC-3 / AC-6）、Microsoft Learn の SMB のセキュリティの公式ドキュメント
+#     （SMB security hardening・SMBv1 の無効化・SMB の署名）、IETF RFC 7530（NFSv4）。ファイルサーバーのルール（2026-10-21）。
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -39,6 +42,20 @@
 #   - IMMUTABLE_BACKUP の保持ロックの解除 → 既存に同義のルールは無い。新規。特権の集中という点で
 #     pam-privileged-concentration と近いが、対象が保持設定という特定の操作で対策も異なるため別 canonicalId。
 #
+#   FILE_SERVER（2026-10-21 追加。端末から共有フォルダとしてマウントする保管先。NAS・Azure Files 等を STORAGE から移した）:
+#   - 改ざん（data-store-tampering）・情報漏洩（data-store-info-disclosure）の汎用ルールは当てない。書き込み権限の広さと
+#     感染端末からの書き換えは一括暗号化のルール、読み取りの権限の広さはアクセス権の過大のルールが具体的に扱い、
+#     保管時暗号化は posture-encryption-at-rest-missing-001 が問う（同じノードに同じ問いのカードを 2 枚出さない）。
+#     監査追跡不能（data-store-repudiation）・PQC（HNDL・CBOM・crypto-agility）・未管理端末・境界外からの直接到達・
+#     VPN の広域到達・外部協働者・間接プロンプトインジェクションの接続先は STORAGE と同じ理由で対象に加えた。
+#   - 共有フォルダの一括暗号化 → 新規（file-share-mass-encryption）。バックアップの破壊（backup-ransomware-destruction）は
+#     復旧手段を狙う脅威で、こちらは本番の共有フォルダそのものを感染端末から書き換える点が異なる。
+#   - アクセス権の過大 → 新規（file-share-permission-overgrant）。STORAGE の公開設定の誤り（storage-public-access-misconfiguration、
+#     インターネットからの匿名の読み取り）とは、読めるのが社内の全員である点と対策（共有と NTFS のアクセス権の見直し）が
+#     異なる。退職者・異動者のアカウントの残存は posture-account-review-missing-001 が問う。
+#   - 古い認証・プロトコル（SMBv1・NTLM リレー・SMB 署名なし・NFS の AUTH_SYS）→ 既存に同義のルールは無い。新規
+#     （file-share-legacy-protocol）。平文の通信そのものは stride-edge-plain-encryption-001 が扱う。
+#
 #   攻撃面属性（attackSurface）は FRONT_END_SERVER / GATEWAY でしか入力できないため使わない。
 #   公開設定・資格情報の共有・保持モードはいずれも図に現れない設定の性質のため、内在的な脅威
 #   （connection.required: false）として扱う。
@@ -56,10 +73,11 @@ rules:
     category: "Information Disclosure"
     name: "ストレージの公開設定の誤りによるデータ露出"
     severity: High
-    description: "{{nodeName}} のバケット・コンテナ・ファイル共有で、公開アクセス（匿名の読み取り・一覧取得）を許すポリシーや ACL、期限の長い共有リンク、Everyone への共有権限が誤って設定されている場合、攻撃者はインターネットからの自動スキャンで {{nodeName}} を見つけ、認証なしで中のファイルを一覧・取得できる（Can）。設定は図に現れないため、構成図ではアプリケーションの内側に置いたつもりのストレージでも公開されていることがある。保管時暗号化も、ストレージ側の鍵で透過的に復号される方式であれば公開アクセスに対しては効かない。一方、アカウント・組織の単位でパブリックアクセスのブロックを強制し、共有リンクと匿名アクセスを無効にしていれば、個々のバケットやフォルダの設定を誤っても外部から読み取ることはできない（Cannot）。blast radius は {{nodeName}} に保管された全ファイル（個人情報・機密情報・ソースコード・資格情報を含み得る）。"
-    mitigation: "[Foundation] アカウント・組織の単位でパブリックアクセスのブロック（Amazon S3 Block Public Access、Azure の匿名アクセスの無効化、Google Cloud の公開アクセス防止等）を有効にし、NAS のファイル共有では Everyone・匿名・ゲストのアクセスを無効にする。保管時暗号化を有効にし、資格情報や個人情報をストレージに置く場合は利用者側の鍵（顧客管理鍵）で暗号化する。 [Enterprise] 公開設定・共有リンク・アクセスポリシーの変更を構成監視（CSPM 等）で継続的に検出し、組織のポリシー（SCP・Azure Policy・組織ポリシー）で公開設定そのものを禁止する。公開が必要なコンテンツは専用のストレージに分け、CDN の署名付き URL 経由でのみ配信する。 [Advanced] ストレージへのアクセスをプライベートエンドポイントと VPC 内からに限定し、データの分類に応じて公開可能なストレージを自動で隔離する。"
+    description: "{{nodeName}} のバケット・コンテナで、公開アクセス（匿名の読み取り・一覧取得）を許すポリシーや ACL、期限の長い共有リンクが誤って設定されている場合、攻撃者はインターネットからの自動スキャンで {{nodeName}} を見つけ、認証なしで中のファイルを一覧・取得できる（Can）。設定は図に現れないため、構成図ではアプリケーションの内側に置いたつもりのストレージでも公開されていることがある。保管時暗号化も、ストレージ側の鍵で透過的に復号される方式であれば公開アクセスに対しては効かない。一方、アカウント・組織の単位でパブリックアクセスのブロックを強制し、共有リンクと匿名アクセスを無効にしていれば、個々のバケットやフォルダの設定を誤っても外部から読み取ることはできない（Cannot）。blast radius は {{nodeName}} に保管された全ファイル（個人情報・機密情報・ソースコード・資格情報を含み得る）。"
+    mitigation: "[Foundation] アカウント・組織の単位でパブリックアクセスのブロック（Amazon S3 Block Public Access、Azure の匿名アクセスの無効化、Google Cloud の公開アクセス防止等）を有効にする。保管時暗号化を有効にし、資格情報や個人情報をストレージに置く場合は利用者側の鍵（顧客管理鍵）で暗号化する。 [Enterprise] 公開設定・共有リンク・アクセスポリシーの変更を構成監視（CSPM 等）で継続的に検出し、組織のポリシー（SCP・Azure Policy・組織ポリシー）で公開設定そのものを禁止する。公開が必要なコンテンツは専用のストレージに分け、CDN の署名付き URL 経由でのみ配信する。 [Advanced] ストレージへのアクセスをプライベートエンドポイントと VPC 内からに限定し、データの分類に応じて公開可能なストレージを自動で隔離する。"
     appliesTo:
       kind: node
+      # NAS・ファイル共有（Everyone・ゲストのアクセス）は FILE_SERVER に移し、storage-file-share-permission-overgrant-001 が扱う（2026-10-21）。
       nodeType: STORAGE
       # 公開設定は図に現れない設定の性質で、接続関係に依存しない内在リスク（誤設定は描いた経路と無関係に起きる）。
       connection:
@@ -170,3 +188,90 @@ rules:
         url: "https://cloud.google.com/storage/docs/bucket-lock"
       - title: "NIST SP 800-209 - Security Guidelines for Storage Infrastructure"
         url: "https://csrc.nist.gov/pubs/sp/800/209/final"
+
+  # ── 感染した端末からの共有フォルダの一括暗号化（ランサムウェア）─────────────────
+  - id: storage-file-share-ransomware-mass-encryption-001
+    canonicalId: file-share-mass-encryption
+    framework: STRIDE
+    category: "Tampering"
+    name: "感染した端末からの共有フォルダの一括暗号化（ランサムウェア）"
+    severity: High
+    description: "{{nodeName}} の共有フォルダに、多くの利用者や端末が広い範囲で書き込める（部署全体・全社員に変更の権限がある、ドライブとして常時マウントしている）場合、ランサムウェアに感染した 1 台の端末や奪われた 1 つの利用者アカウントから、その利用者が書き込めるすべてのファイルがネットワーク越しに暗号化・削除される（Can）。暗号化はサーバーから見ると正規の利用者による通常のファイルの書き換えに見え、サーバーにエンドポイントの検知製品があっても止まらないことが多い。サーバー上のスナップショット（以前のバージョン）がサーバーの管理者権限で消せる設定だと、ドメインの管理者権限を奪った攻撃者はそれも消して戻せなくする。一方、書き込みの権限を業務に必要なフォルダと利用者に絞り、利用者やサーバーの管理者の権限では消せないスナップショット（ストレージ装置側の不変のスナップショット・別に管理するバックアップ）を短い間隔で取り、短時間の大量の書き換え・拡張子の変更を検知して書き込みを止める仕組みがあれば、被害はその利用者が書き込める範囲に限られ、感染前の状態に戻せる（Cannot）。blast radius は感染した端末の利用者が書き込めるすべての共有フォルダと、消された世代のスナップショット。"
+    mitigation: "[Foundation] 共有フォルダごとに書き込める利用者・グループを確かめ、業務に必要な範囲に絞る（全社員・部署全体への変更の権限をなくす）。サーバーのスナップショット（以前のバージョン）を有効にし、少なくとも 1 つの複製を、利用者やサーバーの管理者の権限では消せない場所（ストレージ装置側の不変のスナップショット・オフラインやイミュータブルなバックアップ）に置く。 [Enterprise] 短時間の大量の書き換え・削除・拡張子の変更をファイルサーバーの監査ログで検知し、該当する利用者・端末の書き込みを自動で止める。スナップショットとバックアップの管理者を業務のドメイン管理者から分ける。共有フォルダを常時ドライブとしてマウントする設定を、必要な利用者に限る。 [Advanced] 重要な共有フォルダは、利用者ごとに必要なときだけ書き込みの権限を与える方式にし、管理状態と検知製品の稼働を確かめた端末からの接続に限る。"
+    appliesTo:
+      kind: node
+      nodeType: FILE_SERVER
+      # 書き込み権限の広さとスナップショットの設定は図に現れない設定の性質で、接続関係に依存しない内在リスク
+      # （ファイルサーバーは端末からマウントして使うことが型の定義そのもので、端末の線の有無で出し分けない）。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-11"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-03"
+    references:
+      - title: "CISA - #StopRansomware Guide（ネットワーク共有の暗号化と、オフライン・イミュータブルなバックアップ）"
+        url: "https://www.cisa.gov/stopransomware/ransomware-guide"
+      - title: "NIST IR 8374 - Ransomware Risk Management: A Cybersecurity Framework Profile"
+        url: "https://csrc.nist.gov/pubs/ir/8374/final"
+      - title: "NIST SP 800-209 - Security Guidelines for Storage Infrastructure（スナップショットとデータ保護）"
+        url: "https://csrc.nist.gov/pubs/sp/800/209/final"
+
+  # ── 共有フォルダのアクセス権の過大（全員への付与・匿名のアクセス）─────────────────
+  - id: storage-file-share-permission-overgrant-001
+    canonicalId: file-share-permission-overgrant
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "共有フォルダのアクセス権の過大（Everyone・全社員への付与・匿名のアクセス）"
+    severity: High
+    description: "{{nodeName}} の共有フォルダで、共有のアクセス権やファイルのアクセス権（NTFS 等）を Everyone・Authenticated Users・Domain Users のような全員を含むグループに与えている、上位のフォルダの広い権限が下位へそのまま引き継がれている、ゲスト・匿名のアクセスを許している、NFS のエクスポートを任意のクライアントに許している、のいずれかの場合、社内のどの利用者のアカウントを奪った攻撃者でも、人事・経営・顧客の情報や、共有フォルダに置かれたパスワードの一覧・資格情報を含む設定ファイルを読み出せる（Can）。共有フォルダは作った人が権限を広めに付けたまま増え続け、どこが誰に開いているかを管理者も把握していないことが多く、攻撃者は侵入後に共有フォルダを自動で巡回して機微なファイルを探す。一方、共有とファイルのアクセス権を業務ごとのグループに限って付け、全員を含むグループ・ゲスト・匿名のアクセスを使わず、権限の設定を定期的に洗い出して広すぎるものを直していれば、1 つのアカウントの侵害で読めるのはその利用者の業務の範囲に限られる（Cannot）。退職者・異動者のアカウントが残る問題は運用状況のカード（アカウント棚卸し）で問う。blast radius は全員に開いた共有フォルダのすべてのファイル。"
+    mitigation: "[Foundation] 共有フォルダごとに共有のアクセス権とファイルのアクセス権を洗い出し、Everyone・Authenticated Users・Domain Users 等の全員を含むグループへの付与をやめて、業務ごとのグループに置き換える。ゲスト・匿名のアクセスを無効にし、NFS のエクスポートは許可するクライアントを限る。共有フォルダにパスワードの一覧や資格情報を含む設定ファイルを置かない。 [Enterprise] アクセス権の設定を定期的に（少なくとも半年に 1 回）自動で洗い出し、全員に開いたフォルダ・個人に直接付けた権限・継承の例外を報告する。フォルダの所有者（業務の責任者）を決め、所有者がアクセス権を承認する。機微な情報のフォルダはアクセスを監査ログに残す。 [Advanced] データの分類にもとづいてアクセス権を自動で付け、機微なファイルの検出（DLP）と組み合わせて、全員に開いた場所に置かれた機微なファイルを見つけて移す。"
+    appliesTo:
+      kind: node
+      nodeType: FILE_SERVER
+      # アクセス権の設定は図に現れない設定の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+    references:
+      - title: "NIST SP 800-209 - Security Guidelines for Storage Infrastructure（ストレージのアクセス制御）"
+        url: "https://csrc.nist.gov/pubs/sp/800/209/final"
+      - title: "NIST SP 800-53 Rev.5 - Security and Privacy Controls for Information Systems and Organizations（AC-3 Access Enforcement / AC-6 Least Privilege）"
+        url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"
+
+  # ── 古い認証・プロトコル（SMBv1・NTLM・SMB 署名なし・NFS の申告 ID）による中継・盗聴 ──
+  - id: storage-file-share-legacy-protocol-001
+    canonicalId: file-share-legacy-protocol
+    framework: STRIDE
+    category: "Spoofing"
+    name: "古い認証・プロトコル（SMBv1・NTLM・SMB 署名なし・NFS の申告 ID）による中継となりすまし"
+    severity: Medium
+    description: "{{nodeName}} が SMBv1 を受け付ける、NTLM による認証を許す、SMB の署名を必須にしていない、NFS でクライアントが申告する利用者 ID（AUTH_SYS）をそのまま信じる、のいずれかの場合、社内のネットワークに入った攻撃者は、他の端末の NTLM 認証を誘い出して {{nodeName}} へ中継し（NTLM リレー）、その利用者になりすまして共有フォルダを読み書きしたり、署名のない通信の中身を書き換えたり、NFS ではクライアント側の設定を変えるだけで他人の ID でファイルにアクセスしたりできる（Can）。SMBv1 には、ネットワーク越しに感染を広げるワームに使われた種類の脆弱性もある。一方、SMBv1 を無効にし、SMB の署名（機密な共有フォルダは暗号化も）を必須にし、NTLM を段階的に止めて Kerberos に寄せ、NFS では Kerberos による認証を使っていれば、中継や申告した ID によるなりすまし・通信の書き換えは成立しない（Cannot）。blast radius は中継された利用者が読み書きできる共有フォルダと、通信の途中のファイル。"
+    mitigation: "[Foundation] SMBv1 を無効にし、SMB の署名をサーバーとクライアントの両方で必須にする。ゲストのアクセス（認証しない SMB の接続）を無効にする。 [Enterprise] NTLM の利用状況を監査して段階的に止め、Kerberos による認証に寄せる。機密な共有フォルダは SMB の暗号化を必須にし、NFS は Kerberos による認証（sec=krb5 / krb5i / krb5p）を使う。 [Advanced] ファイルサーバーへの SMB / NFS の接続を、業務の端末のセグメントと許可したサーバーからに限る（SMB のポートをインターネットや他の拠点へ開かない）。NTLM を全面的に無効にする。"
+    appliesTo:
+      kind: node
+      nodeType: FILE_SERVER
+      # 受け付けるプロトコルと認証方式は図に現れない設定の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+    references:
+      - title: "Microsoft Learn - SMB security hardening（SMB の署名・暗号化、ゲストのアクセスの無効化、NTLM の制限）"
+        url: "https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-security-hardening"
+      - title: "Microsoft Learn - How to detect, enable and disable SMBv1, SMBv2, and SMBv3 in Windows"
+        url: "https://learn.microsoft.com/en-us/windows-server/storage/file-server/troubleshoot/detect-enable-and-disable-smbv1-v2-v3"
+      - title: "Microsoft Learn - Overview of Server Message Block signing"
+        url: "https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/overview-server-message-block-signing"
+      - title: "IETF RFC 7530 - Network File System (NFS) Version 4 Protocol（RPCSEC_GSS と Kerberos による認証）"
+        url: "https://www.rfc-editor.org/rfc/rfc7530"
