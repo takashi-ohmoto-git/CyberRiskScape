@@ -79,7 +79,7 @@
 #     （エッジ視点）→ stride-ai-supplier-model-input-log-leak-001 でカバー済。本ファイル
 #     の AI_GATEWAY ルールは「自組織ゲートウェイへのプロンプト集積」（ノード視点）を
 #     扱い別 subject。
-#   - AI_GATEWAY の追加 2 件（2026-10-21。canonicalId の粒度は仮置き）:
+#   - AI_GATEWAY の追加 2 件（2026-10-21。canonicalId の粒度は 2026-10-21 ユーザー確定）:
 #     - 応答キャッシュ（セマンティック・完全一致）による他の利用者への応答の漏えいと汚染 →
 #       zt-ai-gateway-semantic-cache-cross-user-leak-001（ai-gateway-cache-cross-user-leak）。攻撃面属性
 #       hasResponseCache（未入力はキャッシュ有り）と LLM への outbound で発火。network-infra.yaml の
@@ -551,7 +551,7 @@ rules:
 
   # ── AI_GATEWAY: 応答キャッシュ（セマンティック・完全一致）による他の利用者への応答の漏えい ──
   # HTTP のキャッシュ（web-cache-poisoning）とは一致の判定（埋め込みの類似度）と漏れる中身（LLM の応答）が違うため別の
-  # canonicalId にする。粒度は仮置き（人間判断待ち）。キャッシュの汚染は原因（範囲をまたいだ共有）と対策が同じため同じルールに含める。
+  # canonicalId にする。粒度は 2026-10-21 ユーザー確定。キャッシュの汚染は原因（範囲をまたいだ共有）と対策が同じため同じルールに含める。
   - id: zt-ai-gateway-semantic-cache-cross-user-leak-001
     canonicalId: ai-gateway-cache-cross-user-leak
     framework: AI
@@ -592,7 +592,7 @@ rules:
 
   # ── AI_GATEWAY: 呼び出し元が付ける利用者識別の項目の無条件の信用 ─────────────────
   # forwarded-header-trust（前段のプロキシが利用者の付けた転送ヘッダーを背後へ素通しする）とは、信用する側（AI ゲートウェイ
-  # 自身）と偽る主体（呼び出し元のアプリ・エージェント）が違うため別の canonicalId にする。粒度は仮置き（人間判断待ち）。
+  # 自身）と偽る主体（呼び出し元のアプリ・エージェント）が違うため別の canonicalId にする。粒度は 2026-10-21 ユーザー確定。
   - id: zt-ai-gateway-caller-identity-trust-001
     canonicalId: ai-gateway-caller-identity-trust
     framework: AI
