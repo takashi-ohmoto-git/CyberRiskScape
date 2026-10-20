@@ -94,7 +94,7 @@ The devices that handle encryption along a path are available as types in `LIBRA
 | Firewall | Security Controls | Pass-through |
 | WAF | Security Controls | Terminate |
 | IDS / IPS | Security Controls | Pass-through |
-| Proxy / SWG | Security Controls | Decrypt & inspect |
+| Forward proxy / SWG | Security Controls | Decrypt & inspect |
 | SASE / SSE | Security Controls | Decrypt & inspect |
 | ZTNA / identity-aware proxy | Security Controls | Terminate |
 | Bastion | Servers | Terminate |

@@ -51,7 +51,7 @@ components:
     description: "An IDS / IPS. Normally passes encryption through; some deployments import keys to decrypt passively or inspect content together with a decryption device. In the cloud this includes Google Cloud IDS and the IDPS of Azure Firewall Premium."
 
   SECURE_WEB_GATEWAY:
-    label: "Proxy / SWG"
+    label: "Forward proxy / SWG"
     description: "A forward proxy / secure web gateway. Decrypts and inspects users' outbound TLS and re-signs certificates with an internal CA. In the cloud this includes Google Cloud Secure Web Proxy."
 
   SASE:

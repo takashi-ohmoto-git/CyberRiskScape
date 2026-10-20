@@ -138,7 +138,7 @@ components:
     posture: [log, patch]
 
   - id: SECURE_WEB_GATEWAY
-    label: "プロキシ / SWG"
+    label: "フォワードプロキシ / SWG"
     category: PROTECT
     icon: { kind: builtin, name: "scan-eye" }
     shape: rounded

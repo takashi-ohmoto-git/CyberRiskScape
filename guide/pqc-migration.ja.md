@@ -88,7 +88,7 @@ PQC レイヤーで機器を足した図を、深度レイヤーの脅威分析�
 | ファイアウォール | Security Controls | 透過 |
 | WAF | Security Controls | 終端 |
 | IDS / IPS | Security Controls | 透過 |
-| プロキシ / SWG | Security Controls | 復号検査 |
+| フォワードプロキシ / SWG | Security Controls | 復号検査 |
 | SASE / SSE | Security Controls | 復号検査 |
 | ZTNA / ID 認識プロキシ | Security Controls | 終端 |
 | 踏み台 | Servers | 終端 |
