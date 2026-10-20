@@ -606,9 +606,13 @@ rules:
       nodeType: AI_GATEWAY
       # 項目を付けるのは呼び出し元なので、アプリ・エージェントから要求を受けている（inbound）ときだけ発火する。
       # 人（USER）・端末から直接受ける構成は利用者自身の認証の問題で、エッジの認証方式のルールが扱う。
+      # GATEWAY（利用者を認証して ID をヘッダーで渡す）と CHAT（ボット連携がチャットの利用者を名乗る）も
+      # 利用者の代わりに申告する呼び出し元なので含める（2026-10-21）。GATEWAY → 最終サーバーの転送ヘッダーは
+      # netinfra-reverse-proxy-forwarded-header-trust-001 だが、その peerType に AI_GATEWAY は無く重ならない。
+      # RPA_BOT は自身の資格情報で動くのが普通で、共有アカウントは NHI のルールが扱うため含めない。
       connection:
         direction: inbound
-        peerType: [AGENT, SUB_AGENT, PROCESS, BACKEND_API, OTHER_APP, FRONT_END_SERVER]
+        peerType: [AGENT, SUB_AGENT, PROCESS, BACKEND_API, OTHER_APP, FRONT_END_SERVER, GATEWAY, CHAT]
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.AA-03"
