@@ -119,9 +119,10 @@ import {
   CloudDownload,
   FileBadge,
   Aperture,
-  Boxes,
+  Layers2,
   FolderTree,
   Printer,
+  TextSearch,
   type LucideIcon,
 } from 'lucide-react';
 import { cloneElement, createElement, type ReactElement } from 'react';
@@ -253,9 +254,10 @@ const BUILTIN_ICONS: Record<string, LucideIcon> = {
   'cloud-download': CloudDownload,
   'file-badge': FileBadge,
   'aperture': Aperture,
-  boxes: Boxes,
+  'layers-2': Layers2,
   'folder-tree': FolderTree,
   printer: Printer,
+  'text-search': TextSearch,
 };
 
 const FALLBACK_ICON: LucideIcon = HelpCircle;
