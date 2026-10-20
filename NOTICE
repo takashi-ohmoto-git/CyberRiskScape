@@ -33,7 +33,8 @@ verbatim.
    Referenced by: data/threat-library/owasp-llm-top10.yaml,
                   data/threat-library/owasp-asi-top10.yaml,
                   data/threat-library/maestro.yaml,
-                  data/threat-library/salesforce-agentforce.yaml
+                  data/threat-library/salesforce-agentforce.yaml,
+                  data/threat-library/zero-trust-access.yaml
 
 --------------------------------------------------------------------------------
 2. The MITRE Corporation
@@ -68,7 +69,8 @@ verbatim.
    attribution; no CWE text is reproduced verbatim.
 
    Referenced by: data/threat-library/api-platform.yaml,
-                  data/threat-library/network-infra.yaml
+                  data/threat-library/network-infra.yaml,
+                  data/threat-library/zero-trust-access.yaml
 
 --------------------------------------------------------------------------------
 3. Model Context Protocol — Security Best Practices

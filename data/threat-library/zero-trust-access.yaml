@@ -21,6 +21,8 @@
 #     証明書に束縛したトークン）・RFC 5280（X.509 証明書と CRL）・RFC 6960（OCSP）、
 #     NIST SP 800-63C-4（ベアラー型と鍵所持型のアサーション）・SP 800-57 Part 1 Rev.5
 #     （鍵の保護と有効期間）。エッジの認証方式 Token / Certificate のルール（2026-10-10）。
+#   - OWASP Top 10 for LLM Applications 2025（LLM02 / LLM08 / LLM10）、MITRE CWE-524 / CWE-290 / CWE-639、
+#     NIST AI 600-1（Generative AI Profile）。AI ゲートウェイの応答キャッシュ・利用者識別の項目のルール（2026-10-21）。
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -77,6 +79,20 @@
 #     （エッジ視点）→ stride-ai-supplier-model-input-log-leak-001 でカバー済。本ファイル
 #     の AI_GATEWAY ルールは「自組織ゲートウェイへのプロンプト集積」（ノード視点）を
 #     扱い別 subject。
+#   - AI_GATEWAY の追加 2 件（2026-10-21。canonicalId の粒度は仮置き）:
+#     - 応答キャッシュ（セマンティック・完全一致）による他の利用者への応答の漏えいと汚染 →
+#       zt-ai-gateway-semantic-cache-cross-user-leak-001（ai-gateway-cache-cross-user-leak）。攻撃面属性
+#       hasResponseCache（未入力はキャッシュ有り）と LLM への outbound で発火。network-infra.yaml の
+#       web-cache-poisoning（HTTP のキャッシュキー・リバースプロキシ / API ゲートウェイ / CDN）とは一致の判定
+#       （埋め込みの類似度）と漏れる中身（LLM の応答）が異なり別グループ。LLM 自体の機微情報漏洩
+#       （owasp-llm02-sensitive-info-disclosure-001、LLM ノード）・メモリストアのテナント混入
+#       （memory-store-cross-tenant-bleed-001、MEMORY_STORE）とは subject が異なる。
+#     - 呼び出し元が付ける利用者識別の項目（利用者 ID・チーム ID・メタデータ）の無条件の信用 →
+#       zt-ai-gateway-caller-identity-trust-001（ai-gateway-caller-identity-trust）。アプリ・エージェントからの
+#       inbound で発火。network-infra.yaml の forwarded-header-trust（前段のプロキシが利用者の付けた転送ヘッダーを
+#       背後へ素通しし、背後のアプリが信用する）とは、信用する側と偽る主体が異なり別グループ。呼び出しエッジの
+#       弱い認証（weak-service-auth）・エージェントの識別子の欠如（agent-identity-attribution-gap）とは
+#       「認証済みの呼び出し元が自己申告する利用者」を問う点で異なる。
 #   - 内部者の権限悪用（INSIDER_THREAT 攻撃者型ノード視点）→
 #     zt-insider-legitimate-access-abuse-001 でカバー済。本ファイルの外部協働者ルールは
 #     USER ノードの userTrustAttribute 宣言（Guest/Contractor/Partner）に基づく
@@ -532,6 +548,85 @@ rules:
       - title: "NIST SP 800-207 - Zero Trust Architecture（Policy Enforcement Point の保護）"
         url: "https://csrc.nist.gov/pubs/sp/800/207/final"
       # サプライヤー側のプロンプトログ流出（エッジ視点）は stride-ai-supplier-model-input-log-leak-001 が扱う（別 subject）。
+
+  # ── AI_GATEWAY: 応答キャッシュ（セマンティック・完全一致）による他の利用者への応答の漏えい ──
+  # HTTP のキャッシュ（web-cache-poisoning）とは一致の判定（埋め込みの類似度）と漏れる中身（LLM の応答）が違うため別の
+  # canonicalId にする。粒度は仮置き（人間判断待ち）。キャッシュの汚染は原因（範囲をまたいだ共有）と対策が同じため同じルールに含める。
+  - id: zt-ai-gateway-semantic-cache-cross-user-leak-001
+    canonicalId: ai-gateway-cache-cross-user-leak
+    framework: AI
+    category: "Information Disclosure"
+    name: "AI ゲートウェイの応答キャッシュによる他の利用者への応答の漏えい（セマンティックキャッシュ）"
+    severity: High
+    description: "{{nodeName}} で応答のキャッシュ（意味の近いプロンプトに過去の応答を返すセマンティックキャッシュ、または同じプロンプトに過去の応答を返す完全一致のキャッシュ）を有効にしている場合、キャッシュのキーに利用者・テナント・権限の範囲を含めていないと、利用者 A のプロンプトへの応答（A の個人情報・社内文書の内容・RAG で取得した A だけが見られる情報を含み得る）が、似た質問をした利用者 B にそのまま返る（Can）。セマンティックキャッシュは埋め込みの類似度で一致を判定するため、類似度のしきい値が緩いほど内容の異なる質問にも他人の応答が返りやすく、攻撃者は言い回しを変えながら他人の応答を探れる。また攻撃者は、プロンプトインジェクション等で誘導した誤った応答や悪意のあるリンクを含む応答をキャッシュに保存させ、よくある質問をした他の利用者に配らせることもできる（キャッシュの汚染）。一方、キャッシュのキーに利用者・テナント・権限の範囲を含めて範囲をまたいだ再利用をせず、個人や権限に依存する応答（個人情報・RAG・ツール呼び出しの結果を含む応答）をキャッシュの対象から外し、類似度のしきい値を厳しく保っていれば、他人の応答を受け取ることも、汚染した応答を他人に配ることもできない（Cannot）。攻撃面属性の「応答キャッシュ」を無しと入力した {{nodeName}} にはこのカードは出ない（未入力はキャッシュ有りとみなす）。blast radius はキャッシュを共有する全利用者・全テナントの応答の内容と、汚染された応答を受け取る全利用者。"
+    mitigation: "[Foundation] AI ゲートウェイの応答キャッシュ（セマンティック・完全一致）を使っているかを確認し、使う場合はキャッシュのキーに利用者・テナント・権限の範囲を含め、範囲をまたいで応答を再利用しない。個人情報・RAG・ツール呼び出しの結果を含む応答や、利用者・権限によって答えが変わるアプリの経路はキャッシュの対象から外す。 [Enterprise] セマンティックキャッシュの類似度のしきい値を厳しく設定し、評価用の質問の組で誤った一致（別の質問への応答の返却）の割合を測ってから運用する。キャッシュへ保存する前に応答をガードレール・PII の検査に通し、保存期間（TTL）を短くする。キャッシュの内容を消去・無効化する手順を用意する。 [Advanced] キャッシュから返した応答をログで区別し（一致の種類・類似度・元の応答の利用者の範囲）、範囲をまたいだ一致や特定の応答の大量配信を検知する。キャッシュの設定を変えるたびに、別の利用者からの似た質問による漏えいと汚染の検査を行う。"
+    appliesTo:
+      kind: node
+      nodeType: AI_GATEWAY
+      # キャッシュの有無は攻撃面属性 hasResponseCache（セマンティック・完全一致の両方）で表す。未入力は insecure baseline
+      # ＝キャッシュ有りとして発火する。
+      attackSurface:
+        hasResponseCache: true
+      # キャッシュするのは LLM の応答なので、LLM へ中継している（outbound）ときだけ発火する。
+      connection:
+        direction: outbound
+        peerType: [LLM]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-ai-rmf
+        ref: "MEASURE 2.10"
+    references:
+      - title: "OWASP Top 10 for LLM Applications 2025 - LLM02:2025 Sensitive Information Disclosure"
+        url: "https://genai.owasp.org/llmrisk/llm022025-sensitive-information-disclosure/"
+      - title: "OWASP Top 10 for LLM Applications 2025 - LLM08:2025 Vector and Embedding Weaknesses（利用者をまたいだ文脈の漏えい）"
+        url: "https://genai.owasp.org/llmrisk/llm082025-vector-and-embedding-weaknesses/"
+      - title: "MITRE CWE-524 - Use of Cache Containing Sensitive Information"
+        url: "https://cwe.mitre.org/data/definitions/524.html"
+      - title: "NIST AI 600-1 - Generative Artificial Intelligence Profile（2.4 Data Privacy）"
+        url: "https://doi.org/10.6028/NIST.AI.600-1"
+      # LLM 自体の機微情報漏洩（LLM ノード視点）は owasp-llm02-sensitive-info-disclosure-001、HTTP のキャッシュは
+      # network-infra.yaml の web-cache-poisoning、メモリストアのテナント混入は memory-store-cross-tenant-bleed-001 が扱う（別 subject）。
+
+  # ── AI_GATEWAY: 呼び出し元が付ける利用者識別の項目の無条件の信用 ─────────────────
+  # forwarded-header-trust（前段のプロキシが利用者の付けた転送ヘッダーを背後へ素通しする）とは、信用する側（AI ゲートウェイ
+  # 自身）と偽る主体（呼び出し元のアプリ・エージェント）が違うため別の canonicalId にする。粒度は仮置き（人間判断待ち）。
+  - id: zt-ai-gateway-caller-identity-trust-001
+    canonicalId: ai-gateway-caller-identity-trust
+    framework: AI
+    category: "Spoofing"
+    name: "呼び出し元が付ける利用者識別の項目の信用（予算・レート制限・ガードレールのポリシー・ログ帰属の偽装）"
+    severity: Medium
+    description: "{{nodeName}} は利用者ごとの予算・レート制限・ガードレールのポリシーの選択・利用ログの帰属を、呼び出し元のアプリやエージェントが要求に付ける項目（利用者 ID・チーム ID・メタデータのヘッダーや本文の項目）にもとづいて決めることが多い。{{nodeName}} がこれらを検証せずに信用している場合、呼び出し元を制御できる攻撃者（侵害されたアプリ・エージェント、または利用者の入力をそのまま項目へ渡すアプリを経由した利用者）は、他人の ID を名乗って自分の予算・レート制限を逃れて費用を他人に付け替え、緩いポリシーが割り当てられた利用者やチームになりすましてガードレールを回避し、利用ログの帰属を偽って不正利用の調査を妨げられる（Can）。呼び出し元のアプリを API キー等で認証していても、そのアプリが自己申告する利用者の項目を別に検証しなければ同じことが起きる。一方、{{nodeName}} が利用者・チームを自身で検証した認証情報（利用者ごとに発行したキー、IdP が署名したトークンの主体）から決め、自己申告の項目は呼び出し元の認証済みの ID に許可した範囲（そのアプリに割り当てたチーム・利用者）でだけ受け付けていれば、他人を名乗っても予算・ポリシー・ログの帰属は変わらない（Cannot）。blast radius は {{nodeName}} が利用者ごとに行う全制御（予算・レート制限・ガードレールのポリシー・利用ログ）と、付け替えられた費用・帰属を偽られたログ。"
+    mitigation: "[Foundation] 予算・レート制限・ガードレールのポリシー・利用ログの帰属を、呼び出し元が自己申告する項目（利用者 ID・チーム ID・メタデータ）ではなく、ゲートウェイが検証した認証情報から決める。アプリ・エージェントごとに別のキーを発行し、キーを共有しない。 [Enterprise] 利用者の情報を伝える必要がある場合は IdP が署名したトークン（JWT 等）で渡し、ゲートウェイで署名・発行者・有効期限・対象を検証する。または呼び出し元のキーごとに名乗ってよい利用者・チームの範囲を限定する。ポリシーの既定は最も厳しいものにし、項目が欠けている・範囲外の要求を緩いポリシーで通さない。 [Advanced] エージェントからの呼び出しでは、委任した利用者と呼び出したエージェントの両方の ID をトークンに含め（OAuth のトークン交換等）、ゲートウェイで両方を検証して記録する。同じキーからの利用者 ID の急な切り替わりや、予算・ポリシーの異なる利用者への名乗り替えを検知する。"
+    appliesTo:
+      kind: node
+      nodeType: AI_GATEWAY
+      # 項目を付けるのは呼び出し元なので、アプリ・エージェントから要求を受けている（inbound）ときだけ発火する。
+      # 人（USER）・端末から直接受ける構成は利用者自身の認証の問題で、エッジの認証方式のルールが扱う。
+      connection:
+        direction: inbound
+        peerType: [AGENT, SUB_AGENT, PROCESS, BACKEND_API, OTHER_APP, FRONT_END_SERVER]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-04"
+    references:
+      - title: "MITRE CWE-290 - Authentication Bypass by Spoofing"
+        url: "https://cwe.mitre.org/data/definitions/290.html"
+      - title: "MITRE CWE-639 - Authorization Bypass Through User-Controlled Key"
+        url: "https://cwe.mitre.org/data/definitions/639.html"
+      - title: "OWASP Top 10 for LLM Applications 2025 - LLM10:2025 Unbounded Consumption（送信元ごとのレート制限・利用枠）"
+        url: "https://genai.owasp.org/llmrisk/llm102025-unbounded-consumption/"
+      - title: "NIST SP 800-207 - Zero Trust Architecture（認証済みの主体にもとづくアクセス判断）"
+        url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+      # 呼び出し元のエッジの弱い認証は weak-service-auth 群、エージェント自体の識別子の欠如は
+      # anthropic-zt-agent-identity-attribution-001（agent-identity-attribution-gap）が扱う（別 subject）。
 
   # ── 外部協働者（Guest/Contractor/Partner）の機微システムアクセス ──────
   - id: zt-external-collaborator-broad-access-001

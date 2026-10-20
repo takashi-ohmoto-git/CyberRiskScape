@@ -105,8 +105,9 @@
 #     （既知脆弱性・管理面）とは機構が異なる。アウトオブバンド型の WAF は中継しないため成立しない旨を description に書く。
 #   - LOAD_BALANCER は L7 動作時のみ成立し、L4 動作では成立しない旨を description に書く（動作モードは属性で表せない）。
 #   - AI_GATEWAY は対象外。LLM プロキシは要求を解釈し直して新しい要求を組み立てるため前提が成り立ちにくく、中継先も
-#     LLM 系で peerType が合わない。AI ゲートウェイのセマンティックキャッシュによる他利用者の応答の漏えいは別の脅威で、
-#     未作成（候補）。
+#     LLM 系で peerType が合わない。AI ゲートウェイの応答キャッシュ（セマンティック）による他利用者の応答の漏えいは別の脅威で、
+#     zero-trust-access.yaml の zt-ai-gateway-semantic-cache-cross-user-leak-001、利用者識別の項目の信用は
+#     zt-ai-gateway-caller-identity-trust-001 が扱う（いずれも別 canonicalId）。
 #
 #   専用線 / 閉域接続はノード型を設けず、エッジの network: [VPN]（画面表示「専用線 (VPN)」）で表す
 #   （専用線は機器ではなくリンクのため）:
@@ -600,7 +601,7 @@ rules:
       # 応答キャッシュを任意機能として持つ前段。キャッシュの有無は攻撃面属性 hasResponseCache で表す
       # （2026-10-21〜。未入力は insecure baseline＝キャッシュ有り）。CDN は攻撃面属性を持たず、キャッシュが主機能のため
       # netinfra-cdn-cache-poisoning-001 に分ける（同じ canonicalId）。LOAD_BALANCER / WAF は応答をキャッシュしない。
-      # AI_GATEWAY のセマンティックキャッシュは別の脅威（未作成）。
+      # AI_GATEWAY のセマンティックキャッシュは別の脅威（zt-ai-gateway-semantic-cache-cross-user-leak-001）。
       anyOf:
         - nodeType: REVERSE_PROXY
         - nodeType: GATEWAY
