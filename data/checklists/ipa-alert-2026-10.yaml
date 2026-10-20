@@ -24,13 +24,14 @@ groups:
       - id: ipa-01
         title: "外部公開範囲の見直し"
         howTo: "公開している入口ごとに Attack Surface Attribute を実態どおりに入力し、インターネットから管理画面や API 管理プレーンに線が届いていないか確かめる。パッチの適用状況も運用状況に記録する。"
-        targetTypes: [FRONT_END_SERVER, GATEWAY, BACKEND_API, API_CONTROL_PLANE, VPN_GATEWAY, FIREWALL, LOAD_BALANCER]
+        targetTypes: [FRONT_END_SERVER, GATEWAY, REVERSE_PROXY, BACKEND_API, API_CONTROL_PLANE, VPN_GATEWAY, FIREWALL, LOAD_BALANCER]
         ruleIds:
           - stride-web-global-ip-exposure-001
           - stride-web-no-source-ip-restriction-001
           - stride-web-remote-mgmt-exposed-001
           - api-control-plane-internet-exposure-001
           - netinfra-edge-device-exploitation-001
+          - netinfra-reverse-proxy-origin-direct-access-001
           - webserver-webshell-implant-001
           - posture-patch-missing-001
       - id: ipa-02
@@ -70,7 +71,7 @@ groups:
       - id: ipa-06
         title: "ログの取得内容・保持期間の見直し"
         howTo: "公開の入口の Attack Surface Attribute「アクセスログ」と、ノードの運用状況（ログの取得・保持期間・確認先）を実態どおりに入力する。"
-        targetTypes: [FRONT_END_SERVER, GATEWAY, BACKEND_API, IDENTITY_PROVIDER]
+        targetTypes: [FRONT_END_SERVER, GATEWAY, REVERSE_PROXY, BACKEND_API, IDENTITY_PROVIDER]
         ruleIds:
           - stride-web-no-access-log-001
           - stride-web-blind-perimeter-001
@@ -81,7 +82,7 @@ groups:
       - id: ipa-07
         title: "追加で実施できるセキュリティ対策の検討"
         howTo: "各脅威カードの対策は Foundation / Enterprise / Advanced の段階で書かれている。今の段階の次を候補にする。パッチの適用状況も運用状況に記録する。"
-        targetTypes: [FRONT_END_SERVER, GATEWAY, BACKEND_API, WAF]
+        targetTypes: [FRONT_END_SERVER, GATEWAY, REVERSE_PROXY, BACKEND_API, WAF]
         ruleIds:
           - stride-web-no-waf-001
           - stride-web-no-ddos-protection-001
