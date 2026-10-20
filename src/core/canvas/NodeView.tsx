@@ -25,8 +25,8 @@ interface NodeViewProps {
   childNodes: DiagramNode[];
   isSelected: boolean;
   /**
-   * 選択中の発行元（IdP）に対するこのノードの位置づけ。
-   * `tier1` = `authProviderId` で発行元を宣言している（図に線が無い不可視の依存）、
+   * 選択中の発行元（IdP）または SIEM に対するこのノードの位置づけ。
+   * `tier1` = `authProviderId` で発行元を、または `logSinkId` で送信先の SIEM を宣言している（図に線が無い不可視の依存）、
    * `tier2` = 実エッジで直接つながっている。該当しなければ undefined。
    */
   highlight?: 'tier1' | 'tier2';

@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import type { DiagramNode, ResizeHandle, ThreatView } from '../model/types';
-import { AUTH_PROVIDER_APPLICABLE, isSuppressed } from '../model/types';
+import { AUTH_PROVIDER_APPLICABLE, LOG_SINK_APPLICABLE, isSuppressed } from '../model/types';
 import {
   buildAuthProviderClosure,
   dependentsOf,
   directPeersOf,
 } from '../threat-engine/authProviderClosure';
+import { buildLogSinkClosure, logSourcesOf } from '../threat-engine/logSinkClosure';
 import {
   selectActiveAnnotations,
   selectActiveBoundaries,
@@ -114,16 +115,24 @@ export function Canvas({ threats, children }: CanvasProps) {
     [selectedBoundaryIds],
   );
 
-  // 発行元（IdP）を 1 つだけ選んでいる間、その影響範囲を光らせる。
-  // Tier 1 は図に線が無い不可視の依存、Tier 2 は線で直接つながっている相手。
+  // 発行元（IdP）または SIEM を 1 つだけ選んでいる間、その影響範囲を光らせる。
+  // Tier 1 は図に線が無い不可視の依存（IdP：authProviderId、SIEM：logSinkId でログを送るノード）、
+  // Tier 2 は線で直接つながっている相手。
   // 影響範囲が空なら null＝何も光らせない（選択リングだけが出る）。
   const identityHighlight = useMemo(() => {
     if (selectedNodeIds.length !== 1) return null;
     const providerId = selectedNodeIds[0];
     const provider = nodes.find((n) => n.id === providerId);
-    if (!provider || !AUTH_PROVIDER_APPLICABLE.has(provider.type)) return null;
-    const closure = buildAuthProviderClosure(nodes, edges);
-    const tier1 = new Set(dependentsOf(closure, providerId).map((n) => n.id));
+    if (!provider) return null;
+    let tier1: Set<string>;
+    if (AUTH_PROVIDER_APPLICABLE.has(provider.type)) {
+      const closure = buildAuthProviderClosure(nodes, edges);
+      tier1 = new Set(dependentsOf(closure, providerId).map((n) => n.id));
+    } else if (LOG_SINK_APPLICABLE.has(provider.type)) {
+      tier1 = new Set(logSourcesOf(buildLogSinkClosure(nodes), providerId).map((n) => n.id));
+    } else {
+      return null;
+    }
     const tier2 = new Set(directPeersOf(nodes, edges, providerId, tier1).map((n) => n.id));
     if (tier1.size === 0 && tier2.size === 0) return null;
     return { tier1, tier2 };

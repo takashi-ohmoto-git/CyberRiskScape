@@ -26,6 +26,11 @@ export type TemplateContext =
        * `{{dependentCount}}` / `{{dependentNames}}` の展開に使う。省略時は依存ゼロ扱い。
        */
       dependents?: readonly DiagramNode[];
+      /**
+       * この SIEM へ `logSinkId` でログを送るノード。
+       * `{{logSourceCount}}` / `{{logSourceNames}}` の展開に使う。省略時は 0 件扱い。
+       */
+      logSources?: readonly DiagramNode[];
     }
   | { kind: 'edge'; source: DiagramNode; target: DiagramNode };
 
@@ -47,6 +52,15 @@ function resolveToken(token: string, ctx: TemplateContext): string | undefined {
         return names.length > 0
           ? names.join(translate('threat.template.nameSeparator', getLocale()))
           : translate('threat.template.noDependents', getLocale());
+      }
+      case 'logSourceCount':
+        return String(ctx.logSources?.length ?? 0);
+      case 'logSourceNames': {
+        const names = (ctx.logSources ?? []).map(getNodeDisplayName);
+        // 0 件のときは `dependentNames` と同様、空の列挙ではなく明示的な語を返す。
+        return names.length > 0
+          ? names.join(translate('threat.template.nameSeparator', getLocale()))
+          : translate('threat.template.noLogSources', getLocale());
       }
       default:
         return undefined;
@@ -84,14 +98,15 @@ export function renderEdgeTemplate(
 
 /**
  * node ルール向けの便宜関数。
- * `dependents` は任意。渡さない呼び出しは依存ゼロとして展開される。
+ * `dependents` / `logSources` は任意。渡さない呼び出しは 0 件として展開される。
  */
 export function renderNodeTemplate(
   template: string,
   node: DiagramNode,
   dependents?: readonly DiagramNode[],
+  logSources?: readonly DiagramNode[],
 ): string {
-  return renderTemplate(template, { kind: 'node', node, dependents });
+  return renderTemplate(template, { kind: 'node', node, dependents, logSources });
 }
 
 // edge は将来別のメタに直接触れる可能性に備えて受け取れるよう公開する。

@@ -9,6 +9,7 @@ import {
   AGENCY_APPLICABLE,
   ATTACK_OBJECTIVE_APPLICABLE,
   AUTH_PROVIDER_APPLICABLE,
+  LOG_SINK_APPLICABLE,
   IDENTITY_TIER_APPLICABLE,
   IDP_KIND_APPLICABLE,
   LAYER_KEYS,
@@ -401,6 +402,8 @@ export function listComponentTypes(locale: Locale = 'ja'): Record<string, unknow
     attributes: applicableAttributes(c.id, registry),
     /** エッジの `authProviderId` で資格情報の発行元に指定できるか。 */
     canBeAuthProvider: AUTH_PROVIDER_APPLICABLE.has(c.id),
+    /** ノードの `logSinkId` でログの送信先に指定できるか。 */
+    canBeLogSink: LOG_SINK_APPLICABLE.has(c.id),
   }));
   return { total: types.length, types };
 }

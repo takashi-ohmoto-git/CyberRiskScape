@@ -615,6 +615,23 @@ describe('PersistedProjectSchema', () => {
     expect(r.success).toBe(false);
   });
 
+  // ─── node.logSinkId ──────────
+  it('node.logSinkId: ノード id 文字列を受理する', () => {
+    const r = PersistedProjectSchema.safeParse({
+      ...VALID_PROJECT,
+      nodes: [{ ...VALID_PROJECT.nodes[0], logSinkId: 'n-siem-1' }],
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it('node.logSinkId: 空文字を拒否する（未設定は省略で表す）', () => {
+    const r = PersistedProjectSchema.safeParse({
+      ...VALID_PROJECT,
+      nodes: [{ ...VALID_PROJECT.nodes[0], logSinkId: '' }],
+    });
+    expect(r.success).toBe(false);
+  });
+
   // ─── layer.annotations（キャンバス注釈） ──────────
   it('layer.annotations: label / callout（targetNodeId 有り）を受理する', () => {
     const emptyLayer = { nodes: [], edges: [], boundaries: [] };

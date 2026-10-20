@@ -815,15 +815,22 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
         // 削除対象を除外し、子の parentId は解除してトップレベルに戻す。
         // 削除対象を標的にしていた攻撃者ノードの attackObjectiveId も解除する。
         // 削除対象を認証の預け先にしていたノードの authProviderId も解除する。
+        // 削除対象をログの送信先にしていたノードの logSinkId も解除する。
         nodes: l.nodes
           .filter((n) => n.id !== id)
           .map((n) => {
-            if (n.parentId !== id && n.attackObjectiveId !== id && n.authProviderId !== id)
+            if (
+              n.parentId !== id &&
+              n.attackObjectiveId !== id &&
+              n.authProviderId !== id &&
+              n.logSinkId !== id
+            )
               return n;
             const rest = { ...n };
             if (rest.parentId === id) delete rest.parentId;
             if (rest.attackObjectiveId === id) delete rest.attackObjectiveId;
             if (rest.authProviderId === id) delete rest.authProviderId;
+            if (rest.logSinkId === id) delete rest.logSinkId;
             return rest;
           }),
         // 削除対象を資格情報の発行元にしていたエッジの authProviderId も解除する。
@@ -1021,6 +1028,12 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
           if (mapped) next.authProviderId = mapped;
           else delete next.authProviderId;
         }
+        if (next.logSinkId) {
+          const mapped = idMap.get(next.logSinkId);
+          // 送信先がテンプレート内に居れば付け替え、居なければ解除。
+          if (mapped) next.logSinkId = mapped;
+          else delete next.logSinkId;
+        }
         return next;
       });
 
@@ -1083,7 +1096,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       const nodes = src.nodes.map((n) => {
         const next: DiagramNode = structuredClone(n);
         next.id = idMap.get(n.id) as string;
-        for (const k of ['parentId', 'attackObjectiveId', 'authProviderId'] as const) {
+        for (const k of ['parentId', 'attackObjectiveId', 'authProviderId', 'logSinkId'] as const) {
           const mapped = remap(n[k]);
           if (mapped) next[k] = mapped;
           else delete next[k];

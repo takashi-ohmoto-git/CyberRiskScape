@@ -28,6 +28,7 @@ import {
   type AuthProviderClosure,
   type AuthProviderRole,
 } from './authProviderClosure';
+import { buildLogSinkClosure, isReferencedLogSink, logSourcesOf, type LogSinkClosure } from './logSinkClosure';
 
 /**
  * 脅威検出エンジン。
@@ -364,12 +365,13 @@ function matchNodeConnection(
   nodeById: Map<string, DiagramNode>,
   conn: ConnectionRequirement | undefined,
   closure: AuthProviderClosure,
+  logSinkClosure: LogSinkClosure,
 ): boolean {
   if (conn?.required === false) return true;
   const direction = conn?.direction ?? 'any';
   const peerType = conn?.peerType;
   const peerAttackSurface = conn?.peerAttackSurface;
-  // 資格情報の発行元として参照されているノードは**論理的に接続されている**とみなす。
+  // 資格情報の発行元・ログの送信先として参照されているノードは**論理的に接続されている**とみなす。
   // 全コンポーネントを IdP へ線で繋ぐのは実務上非現実的なため。
   //
   // ただし認めるのは「素の接続要件」のときだけ。`direction` / `peerType` /
@@ -377,6 +379,7 @@ function matchNodeConnection(
   // 参照には向きも相手型も無いため、それらを参照で満たしたことにはしない。
   const isBareRequirement = direction === 'any' && !peerType && !peerAttackSurface;
   if (isBareRequirement && isReferencedProvider(closure, node.id)) return true;
+  if (isBareRequirement && isReferencedLogSink(logSinkClosure, node.id)) return true;
   for (const edge of edges) {
     const isSource = edge.source === node.id;
     const isTarget = edge.target === node.id;
@@ -414,6 +417,8 @@ export function detectThreats({
   // 発行元ごとの依存コンポーネント。説明文の `{{dependentCount}}` /
   // `{{dependentNames}}` 展開に使う。境界と同じく図全体から 1 回だけ導出する。
   const authProviderClosure = buildAuthProviderClosure(nodes, edges);
+  // ログの送信先ごとの送り元。`{{logSourceCount}}` / `{{logSourceNames}}` 展開と論理接続に使う。
+  const logSinkClosure = buildLogSinkClosure(nodes);
   // 親ノードごとの子ノード型（`containsType` 軸用）。
   const childTypesByParent = new Map<string, Set<string>>();
   for (const n of nodes) {
@@ -432,7 +437,7 @@ export function detectThreats({
       const { conditions: nodeConditions } = nodeApplies;
       for (const node of nodes) {
         if (!matchNodeApplies(nodeApplies, node)) continue;
-        if (!matchNodeConnection(node, edges, nodeById, nodeApplies.connection, authProviderClosure))
+        if (!matchNodeConnection(node, edges, nodeById, nodeApplies.connection, authProviderClosure, logSinkClosure))
           continue;
         const role = authProviderRoleOf(authProviderClosure, node.id);
         const segment = segmentByNodeId.get(node.id) ?? UNSEGMENTED;
@@ -464,6 +469,7 @@ export function detectThreats({
             description,
             node,
             dependentsOf(authProviderClosure, node.id),
+            logSourcesOf(logSinkClosure, node.id),
           ),
           mitigation: rule.mitigation,
           mitigationTiers: rule.mitigationTiers,

@@ -266,6 +266,48 @@ describe('正常系：エッジ', () => {
   });
 });
 
+describe('logSinkId（ログの送信先）', () => {
+  const addSiem = { op: 'add_node', type: 'SIEM', label: 'SIEM', ref: 'siem' };
+
+  it('add_node で ref の SIEM を送信先に設定できる', () => {
+    const { project, results } = apply([addSiem, { op: 'add_node', type: 'PC', label: 'PC', logSinkId: '@siem' }]);
+    const n = l1(project).nodes.find((x) => x.id === results[1].id)!;
+    expect(n.logSinkId).toBe(results[0].id);
+  });
+
+  it('update_node で設定でき、null で解除できる', () => {
+    const set = apply([addSiem, { op: 'update_node', id: 'n-db', set: { logSinkId: '@siem' } }]);
+    expect(l1(set.project).nodes.find((n) => n.id === 'n-db')!.logSinkId).toBe(set.results[0].id);
+    const cleared = apply([
+      addSiem,
+      { op: 'update_node', id: 'n-db', set: { logSinkId: '@siem' } },
+      { op: 'update_node', id: 'n-db', set: { logSinkId: null } },
+    ]);
+    expect(l1(cleared.project).nodes.find((n) => n.id === 'n-db')!.logSinkId).toBeUndefined();
+  });
+
+  it('SIEM 以外の型は送信先にできない', () => {
+    expect(
+      reasonOf(() => apply([{ op: 'update_node', id: 'n-db', set: { logSinkId: 'n-llm' } }])).reason,
+    ).toMatch(/送信先/);
+  });
+
+  it('自己参照は拒否する', () => {
+    expect(
+      reasonOf(() => apply([addSiem, { op: 'update_node', id: '@siem', set: { logSinkId: '@siem' } }])).reason,
+    ).toMatch(/自分自身/);
+  });
+
+  it('delete_node で送信先の SIEM を消すと送り元の logSinkId が解除される', () => {
+    const { project } = apply([
+      addSiem,
+      { op: 'update_node', id: 'n-db', set: { logSinkId: '@siem' } },
+      { op: 'delete_node', id: '@siem' },
+    ]);
+    expect(l1(project).nodes.find((n) => n.id === 'n-db')!.logSinkId).toBeUndefined();
+  });
+});
+
 describe('正常系：境界・注釈', () => {
   it('add_boundary（around）：対象ノードを囲む', () => {
     const { project, results } = apply([{ op: 'add_boundary', type: 'RECT', trustLevel: 'Partner', around: ['n-user', 'n-idp'] }]);

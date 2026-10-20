@@ -25,6 +25,7 @@ import {
   AGENCY_APPLICABLE,
   ATTACK_OBJECTIVE_APPLICABLE,
   AUTH_PROVIDER_APPLICABLE,
+  LOG_SINK_APPLICABLE,
   CRYPTO_TERMINATIONS,
   IDENTITY_TIER_APPLICABLE,
   IDP_KIND_APPLICABLE,
@@ -188,6 +189,7 @@ const nodeAttrShape = {
   attackObjectiveId: idStr.optional(),
   identityProviderKind: IdentityProviderKindSchema.optional(),
   authProviderId: idStr.optional(),
+  logSinkId: idStr.optional().describe('ノードのログの送信先の SIEM ノード（図に線を引かずにログの送信を表す。LOG_SINK_APPLICABLE の型のみ。自己参照不可）'),
   attackSurface: AttackSurfaceSchema.optional(),
   agentAttributes: AgentAttributesSchema.optional(),
   posture: PostureSchema.optional(),
@@ -206,6 +208,7 @@ const NodeSetSchema = opObject({
   attackObjectiveId: idStr.nullable().optional(),
   identityProviderKind: IdentityProviderKindSchema.nullable().optional(),
   authProviderId: idStr.nullable().optional(),
+  logSinkId: idStr.nullable().optional().describe('ノードのログの送信先の SIEM ノード（図に線を引かずにログの送信を表す。LOG_SINK_APPLICABLE の型のみ。自己参照不可）。null で解除'),
   attackSurface: AttackSurfaceSchema.nullable().optional(),
   agentAttributes: AgentAttributesSchema.nullable().optional(),
   posture: PostureSchema.nullable().optional(),
@@ -403,6 +406,15 @@ function checkAuthProvider(work: Work, id: string, selfId?: string): void {
   }
 }
 
+/** ログの送信先に指定できるノードか確認する。 */
+function checkLogSink(work: Work, id: string, selfId?: string): void {
+  const sink = findNode(work, id);
+  if (sink.id === selfId) fail('logSinkId に自分自身は指定できません');
+  if (!LOG_SINK_APPLICABLE.has(sink.type)) {
+    fail(`logSinkId のノード ${id}（${sink.type}）はログの送信先になれない型です`);
+  }
+}
+
 /**
  * ノードに設定しようとした属性が、その型で意味を持つか・参照先が妥当かを検証する。
  * `keys` は今回設定した属性（既存の古い値は検証しない）。
@@ -455,6 +467,17 @@ function validateNodeAttrs(work: Work, node: DiagramNode, keys: readonly string[
     );
     checkAuthProvider(work, node.authProviderId as string, node.id);
   }
+  if (has('logSinkId')) {
+    const category = componentRegistry.get(node.type)?.category;
+    must(
+      category !== undefined &&
+        !AUTH_PROVIDER_EXCLUDED_CATEGORIES.has(category) &&
+        node.type !== 'SHADOW' &&
+        node.type !== 'SHADOW_APP',
+      'logSinkId',
+    );
+    checkLogSink(work, node.logSinkId as string, node.id);
+  }
   if (has('agentAttributes') && node.agentAttributes) {
     const a = node.agentAttributes;
     if (a.agency !== undefined && !AGENCY_APPLICABLE.has(node.type)) {
@@ -468,7 +491,7 @@ function validateNodeAttrs(work: Work, node: DiagramNode, keys: readonly string[
 
 /** 参照を持つノード属性の id を ref 解決する。 */
 function resolveNodeRefs(work: Work, attrs: Attrs): void {
-  for (const k of ['attackObjectiveId', 'authProviderId']) {
+  for (const k of ['attackObjectiveId', 'authProviderId', 'logSinkId']) {
     const v = attrs[k];
     if (typeof v === 'string') attrs[k] = resolveId(work, v);
   }
@@ -574,11 +597,18 @@ function applyDeleteNode(work: Work, op: Extract<Operation, { op: 'delete_node' 
   l.nodes = l.nodes
     .filter((n) => n.id !== id)
     .map((n) => {
-      if (n.parentId !== id && n.attackObjectiveId !== id && n.authProviderId !== id) return n;
+      if (
+        n.parentId !== id &&
+        n.attackObjectiveId !== id &&
+        n.authProviderId !== id &&
+        n.logSinkId !== id
+      )
+        return n;
       const rest = { ...n };
       if (rest.parentId === id) delete rest.parentId;
       if (rest.attackObjectiveId === id) delete rest.attackObjectiveId;
       if (rest.authProviderId === id) delete rest.authProviderId;
+      if (rest.logSinkId === id) delete rest.logSinkId;
       return rest;
     });
   l.edges = l.edges

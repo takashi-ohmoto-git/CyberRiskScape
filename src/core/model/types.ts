@@ -316,6 +316,11 @@ export const AUTH_PROVIDER_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set([
 ]);
 
 /**
+ * ノードの `logSinkId` が参照できるノード型（ログの送信先になり得る型）。
+ */
+export const LOG_SINK_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set(['SIEM']);
+
+/**
  * `identityProviderKind` を持てるノード型。
  *
  * `AUTH_PROVIDER_APPLICABLE` と**意図的に別集合**にしている。`DIRECTORY` は型それ自体が
@@ -638,6 +643,13 @@ export interface DiagramNode {
    * エンジンは型で絞らず、宣言されたものを読むだけ。発行元削除時は store 側で解除される。
    */
   authProviderId?: string;
+  /**
+   * このノードが**ログを送る先**の SIEM ノード id。図に線を引かずにログの送信を表す。
+   * 同一レイヤー上の `LOG_SINK_APPLICABLE` なノード id を指す。`authProviderId` と同じく、
+   * 参照先ノード削除時は store 側で解除される。
+   * 入力できる型は UI 側で絞る（データ資産と攻撃者カテゴリを除く）。エンジンは宣言を読むだけ。
+   */
+  logSinkId?: string;
   /** 暗号属性（PQC 移行支援。PQC レイヤーで入力）。 */
   crypto?: NodeCrypto;
 }

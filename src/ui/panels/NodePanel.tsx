@@ -43,6 +43,7 @@ import {
   AGENCY_APPLICABLE,
   ATTACK_OBJECTIVE_APPLICABLE,
   AUTH_PROVIDER_APPLICABLE,
+  LOG_SINK_APPLICABLE,
   IDP_KIND_APPLICABLE,
   IDENTITY_TIER_APPLICABLE,
   isSuppressed,
@@ -300,6 +301,13 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
   // 参照先が削除済み等で候補に無い場合は「未設定」表示にフォールバック。
   const authProviderValue = authProviderCandidates.some((n) => n.id === node.authProviderId)
     ? (node.authProviderId as string)
+    : '';
+  // ログの送信先：入力できる条件は認証の預け先と同じ。候補は同一レイヤー上の自分以外の SIEM。
+  const logSinkCandidates = allNodes.filter(
+    (n) => n.id !== node.id && LOG_SINK_APPLICABLE.has(n.type),
+  );
+  const logSinkValue = logSinkCandidates.some((n) => n.id === node.logSinkId)
+    ? (node.logSinkId as string)
     : '';
   // objective の候補：同一レイヤー上の自分以外の非攻撃者ノード。
   const objectiveCandidates = allNodes.filter(
@@ -698,6 +706,44 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
             )}
             <p className="text-xs text-slate-500 mt-3 leading-relaxed">
               {t('panels.node.authProviderNote')}
+            </p>
+          </div>
+        )}
+
+        {showAuthProvider && (
+          <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+            <h3 className="text-xs font-bold text-slate-300 mb-4 flex items-center gap-2">
+              <ShieldCheck size={14} className="text-blue-500" /> {t('panels.node.logSinkSection')}
+            </h3>
+            <label
+              htmlFor={`node-log-sink-${node.id}`}
+              className="text-xs font-black text-slate-500 uppercase block mb-1.5"
+            >
+              {t('panels.node.logSinkLabel')}
+            </label>
+            <select
+              id={`node-log-sink-${node.id}`}
+              value={logSinkValue}
+              disabled={logSinkCandidates.length === 0}
+              onChange={(e) =>
+                onUpdate(node.id, 'logSinkId', e.target.value === '' ? undefined : e.target.value)
+              }
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-blue-500 disabled:opacity-40"
+            >
+              <option value="">{t('panels.node.logSinkUnset')}</option>
+              {logSinkCandidates.map((n) => (
+                <option key={n.id} value={n.id}>
+                  {getNodeDisplayName(n)}
+                </option>
+              ))}
+            </select>
+            {logSinkCandidates.length === 0 && (
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                {t('panels.node.logSinkEmpty')}
+              </p>
+            )}
+            <p className="text-xs text-slate-500 mt-3 leading-relaxed">
+              {t('panels.node.logSinkNote')}
             </p>
           </div>
         )}

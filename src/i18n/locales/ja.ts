@@ -195,6 +195,7 @@ const jaCore = {
   // 脅威説明文のトークン展開。
   'threat.template.nameSeparator': '、',
   'threat.template.noDependents': 'この図では宣言なし',
+  'threat.template.noLogSources': '図で未指定',
 } as const;
 
 /**

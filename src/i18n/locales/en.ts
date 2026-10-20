@@ -173,6 +173,7 @@ const enCore: Partial<Record<TranslationKey, string>> = {
   // Token expansion in threat descriptions.
   'threat.template.nameSeparator': ', ',
   'threat.template.noDependents': 'none declared in this diagram',
+  'threat.template.noLogSources': 'none specified in the diagram',
 };
 
 /** 領域別モジュールを集約した英語ロケール。 */
