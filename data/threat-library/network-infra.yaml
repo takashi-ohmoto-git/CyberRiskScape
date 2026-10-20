@@ -3,7 +3,8 @@
 # STARTTLS のダウングレード、L2 のなりすまし、不正アクセスポイントに加え、
 # 踏み台への管理経路の集中、ZTNA プロキシへのアクセス判定の集中と迂回、専用線の平文区間、
 # プライベートエンドポイント経由の持ち出し、サービスメッシュの mTLS 非強制とメッシュ CA の侵害、
-# リバースプロキシの要求の解釈のずれ（リクエストスマグリング）・転送ヘッダーの信用・迂回・キャッシュの悪用を扱う。
+# 前段のプロキシ（リバースプロキシ・ロードバランサー・WAF・CDN・API ゲートウェイ）の要求の解釈のずれ
+# （リクエストスマグリング）・転送ヘッダーの信用・キャッシュの悪用と、リバースプロキシの迂回を扱う。
 # PQC 移行に直結するもの（受動復号・HSM・VPN トンネルの HNDL）は pqc.yaml に置く。
 #
 # 出典（一般的な基準のみを根拠とする。個別の事故報告は出典・事例に用いない）:
@@ -89,6 +90,23 @@
 #     （client-endpoint-info-disclosure）とは保存場所と攻撃者が異なり別。
 #   - 背後のサーバーへの直接到達 → api-backend-gateway-bypass-001 と同じ脅威のため canonicalId: api-gateway-bypass を
 #     共有する（subject が異なり別カード）。CDN の迂回は CDN のルールの中で扱っており、独立させない。
+#
+#   前段のプロキシ全般への拡大（2026-10-21）について:
+#   - スマグリング・転送ヘッダーは LOAD_BALANCER / WAF / CDN / GATEWAY にも、キャッシュは CDN にも出す
+#     （id は netinfra-reverse-proxy-* のまま）。直接到達は REVERSE_PROXY のまま。
+#   - 多段構成で段ごとに同じカードを重ねないよう、スマグリング・転送ヘッダーの peerType は最終のサーバー（アプリ・API）
+#     だけにし、背後へ中継する最後の段に 1 枚出す。全段の対策は description / mitigation で述べる。
+#   - GATEWAY → api-backend-gateway-bypass-001 は迂回経路での偽装、本ファイルの転送ヘッダーは正規経路でのヘッダー素通しで
+#     機構が異なる。stride-gateway-elevation-of-privilege-001（認可）・api-token-session-validation-gap-001（トークン検証）
+#     とも対象が異なる。GATEWAY の応答キャッシュは任意機能で既定は無効のため、キャッシュのルールの対象に入れない。
+#   - CDN → netinfra-cdn-third-party-tls-termination-001 は鍵の預託・エッジでの平文化・オリジンの迂回を扱い、
+#     要求の解釈・ヘッダー・キャッシュは扱わないため重ならない。
+#   - WAF → pqc-passive-decryption-static-rsa-001（アウトオブバンド型の受動復号）・netinfra-edge-device-exploitation-001
+#     （既知脆弱性・管理面）とは機構が異なる。アウトオブバンド型の WAF は中継しないため成立しない旨を description に書く。
+#   - LOAD_BALANCER は L7 動作時のみ成立し、L4 動作では成立しない旨を description に書く（動作モードは属性で表せない）。
+#   - AI_GATEWAY は対象外。LLM プロキシは要求を解釈し直して新しい要求を組み立てるため前提が成り立ちにくく、中継先も
+#     LLM 系で peerType が合わない。AI ゲートウェイのセマンティックキャッシュによる他利用者の応答の漏えいは別の脅威で、
+#     未作成（候補）。
 #
 #   専用線 / 閉域接続はノード型を設けず、エッジの network: [VPN]（画面表示「専用線 (VPN)」）で表す
 #   （専用線は機器ではなくリンクのため）:
@@ -448,9 +466,15 @@ rules:
         url: "https://istio.io/latest/docs/concepts/security/"
 
   # ── リバースプロキシ（REVERSE_PROXY、2026-10-20）の固有脅威 ──────────────────
-  # 4 ルールとも「背後のサーバーへ中継している」ことが前提の脅威なので、背後のアプリ・API への
-  # outbound の線がある REVERSE_PROXY でだけ発火する（中継先を描いていない図では出さない）。
-  # 前段のプロキシ全般（CDN・LOAD_BALANCER・WAF・GATEWAY 等）にも共通する脅威だが、今回は REVERSE_PROXY に限る。
+  # 4 ルールとも「背後のサーバーへ中継している」ことが前提の脅威なので、outbound の線（中継先）が
+  # あるときだけ発火する（中継先を描いていない図では出さない）。
+  # 2026-10-21：スマグリング・転送ヘッダー・キャッシュの 3 件を前段のプロキシ全般に広げた（直接到達は REVERSE_PROXY のまま）。
+  # - スマグリング・転送ヘッダー：REVERSE_PROXY / LOAD_BALANCER / WAF / CDN / GATEWAY。peerType は「最終のサーバー」
+  #   （アプリ・API）だけにし、多段構成（CDN → WAF → LB → RP → サーバー）では最後の段に 1 枚だけ出す。
+  #   各段の組み合わせで起きうることは description と mitigation で述べる（段ごとに同じカードを重ねない）。
+  # - キャッシュ：REVERSE_PROXY / CDN。CDN の中継先は別の前段であることが多いため、peerType に前段の型も含める。
+  # - AI_GATEWAY は外した（LLM プロキシは要求を解釈し直して新しい要求を組み立てるため、要求の境界のずれや
+  #   転送ヘッダーが背後へ素通しされる前提が成り立ちにくく、中継先も LLM 系で peerType が合わない）。
 
   # ── HTTP リクエストスマグリング（経路依存）──────────────────────────────
   - id: netinfra-reverse-proxy-request-smuggling-001
@@ -459,15 +483,24 @@ rules:
     category: "Tampering"
     name: "前段と背後の解釈のずれによる HTTP リクエストスマグリング"
     severity: High
-    description: "{{nodeName}} は利用者からの HTTP リクエストを受け、背後のサーバーへ別の接続で中継する。リクエストの終わりをどこと判断するか（Content-Length と Transfer-Encoding の両方がある、値が不正・重複している、HTTP/2 で受けて HTTP/1.1 に変換して中継する等）について {{nodeName}} と背後のサーバーの解釈がずれていると、攻撃者は 1 つのリクエストの中に別のリクエストを紛れ込ませ、{{nodeName}} が見ていない要求として背後のサーバーに届けられる（Can）。紛れ込ませた要求は {{nodeName}} や前段の WAF のパス制限・アクセス制御を通らずに管理用のパスへ届き、背後との接続を共有する他の利用者の要求とつながってその利用者の応答（セッション Cookie を含む）を奪い、キャッシュを汚染することもある。一方、{{nodeName}} が曖昧なリクエスト（Content-Length と Transfer-Encoding の併用、不正な値、改行や制御文字を含むヘッダー）を拒否してから中継し、背後との間も HTTP/2 で通すか利用者をまたいで接続を再利用しない設定にし、{{nodeName}} と背後のサーバーのソフトウェアを最新に保っていれば、要求の境界をずらすことはできない（Cannot）。blast radius は {{nodeName}} を経由する全利用者の要求と応答、および前段で守っているつもりの背後のアプリのパス。"
-    mitigation: "[Foundation] リバースプロキシと背後のサーバーのソフトウェアを最新に保つ（解釈のずれは製品の修正で直されることが多い）。Content-Length と Transfer-Encoding の両方を持つ要求、値が不正な要求、ヘッダーに改行や制御文字を含む要求を拒否する設定にする。 [Enterprise] リバースプロキシから背後のサーバーまでを HTTP/2 で通し、HTTP/2 から HTTP/1.1 への変換（ダウングレード）を避ける。変換が避けられない場合は変換時に要求を検証し、背後との接続を利用者をまたいで再利用しない。構成を変えるたびにリクエストスマグリングの検査（DAST・専用の検査ツール）を行う。 [Advanced] 背後のサーバーでも厳格な HTTP の解釈を強制し、前段と背後で解釈がずれる組み合わせそのものをなくす。"
+    description: "{{nodeName}} は利用者からの HTTP リクエストを受け、背後のサーバーへ別の接続で中継する。リクエストの終わりをどこと判断するか（Content-Length と Transfer-Encoding の両方がある、値が不正・重複している、HTTP/2 で受けて HTTP/1.1 に変換して中継する等）について {{nodeName}} と背後のサーバーの解釈がずれていると、攻撃者は 1 つのリクエストの中に別のリクエストを紛れ込ませ、{{nodeName}} が見ていない要求として背後のサーバーに届けられる（Can）。紛れ込ませた要求は {{nodeName}} や前段の WAF のパス制限・アクセス制御を通らずに管理用のパスへ届き、背後との接続を共有する他の利用者の要求とつながってその利用者の応答（セッション Cookie を含む）を奪い、キャッシュを汚染することもある。前段が多段（CDN → WAF → ロードバランサー → リバースプロキシ等）の構成では、隣り合う各段の組み合わせで同じずれが起きうる（このカードは背後のサーバーへ中継する最後の段に出るが、対策は全段に要る）。一方、{{nodeName}} が曖昧なリクエスト（Content-Length と Transfer-Encoding の併用、不正な値、改行や制御文字を含むヘッダー）を拒否してから中継し、背後との間も HTTP/2 で通すか利用者をまたいで接続を再利用しない設定にし、{{nodeName}} と背後のサーバーのソフトウェアを最新に保っていれば、要求の境界をずらすことはできない（Cannot）。HTTP の要求を解釈せずに TCP のまま中継する構成（L4 で動作するロードバランサー、中継しないアウトオブバンド型の WAF）では成立しない。blast radius は {{nodeName}} を経由する全利用者の要求と応答、および前段で守っているつもりの背後のアプリのパス。"
+    mitigation: "[Foundation] 前段のプロキシ（CDN・WAF・ロードバランサー・リバースプロキシ・API ゲートウェイ）と背後のサーバーのソフトウェアを最新に保つ（解釈のずれは製品の修正で直されることが多い）。前段が多段の場合は全段で、Content-Length と Transfer-Encoding の両方を持つ要求、値が不正な要求、ヘッダーに改行や制御文字を含む要求を拒否する設定にする。 [Enterprise] 前段の各段から背後のサーバーまでを HTTP/2 で通し、HTTP/2 から HTTP/1.1 への変換（ダウングレード）を避ける。変換が避けられない場合は変換時に要求を検証し、背後との接続を利用者をまたいで再利用しない。構成を変えるたびにリクエストスマグリングの検査（DAST・専用の検査ツール）を行う。 [Advanced] 背後のサーバーでも厳格な HTTP の解釈を強制し、前段と背後で解釈がずれる組み合わせそのものをなくす。"
     appliesTo:
       kind: node
-      nodeType: REVERSE_PROXY
+      # 要求を解釈して別の接続で中継する前段のプロキシ全般。LOAD_BALANCER は L7 動作時、WAF はリバースプロキシ型のときに
+      # 成立する（L4・アウトオブバンドでは成立しない旨を description に書く）。AI_GATEWAY は対象外（節の冒頭コメント参照）。
+      anyOf:
+        - nodeType: REVERSE_PROXY
+        - nodeType: LOAD_BALANCER
+        - nodeType: WAF
+        - nodeType: CDN
+        - nodeType: GATEWAY
       # 解釈のずれは前段と背後の組み合わせで起きるため、背後のサーバーへ中継している（outbound）ときだけ発火する。
+      # 中継先は最終のサーバー（アプリ・API）に限り、前段の型を入れない（多段構成で段ごとに同じカードを重ねないため。
+      # 最後の段に 1 枚出し、全段の対策は mitigation で述べる）。GATEWAY は対象側に入れたため peerType から外した。
       connection:
         direction: outbound
-        peerType: [FRONT_END_SERVER, BACKEND_API, GATEWAY, PROCESS, OTHER_APP, WEB_FORM, PAYMENT_PAGE]
+        peerType: [FRONT_END_SERVER, BACKEND_API, PROCESS, OTHER_APP, WEB_FORM, PAYMENT_PAGE]
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.PS-01"
@@ -490,15 +523,23 @@ rules:
     category: "Spoofing"
     name: "転送ヘッダー・利用者ヘッダーの偽装（X-Forwarded-For・Host 等の無条件の信用）"
     severity: High
-    description: "{{nodeName}} は背後のサーバーへ中継するとき、利用者の送信元 IP（X-Forwarded-For・Forwarded）、元のホスト名とプロトコル（X-Forwarded-Host・X-Forwarded-Proto）、前段で認証した利用者（独自の利用者ヘッダー）をヘッダーで伝える。{{nodeName}} が利用者から届いた同名のヘッダーを除去・上書きせずに素通し・追記し、背後のアプリがそれを無条件に信用している場合、攻撃者はヘッダーを自分で付けて送るだけで、送信元 IP による管理画面の制限やレート制限を回避し、別の利用者として扱われ、ログの送信元を偽れる（Can）。Host を信用してリンクを組み立てるアプリでは、パスワード再設定メールのリンクを攻撃者のドメインに向けさせ、再設定用のトークンを盗める。一方、{{nodeName}} が外部から届いた同名のヘッダーを捨てて自身が観測した値で付け直し、背後のアプリが信頼するプロキシのアドレスと段数を決めてその範囲でだけヘッダーを解釈し、リンクの組み立てに設定で固定したホスト名を使っていれば、偽装したヘッダーは効かない（Cannot）。blast radius は送信元 IP・ホスト名・転送された利用者の情報にもとづく背後のアプリのすべての判定（アクセス制限・認可・ログ・生成するリンク）。"
-    mitigation: "[Foundation] リバースプロキシで、利用者から届いた X-Forwarded-For・X-Forwarded-Host・X-Forwarded-Proto・Forwarded と、認証済みの利用者を示すヘッダーを除去し、自身が観測した値で付け直す（追記ではなく上書き）。背後のアプリでは、パスワード再設定などのリンクを Host ヘッダーではなく設定で固定したホスト名から組み立てる。 [Enterprise] 背後のアプリ・フレームワークに信頼するプロキシのアドレスと段数を設定し、それ以外から来た転送ヘッダーは解釈しない。前段で認証した利用者の情報を伝える場合は、ヘッダーの文字列ではなく署名付きのトークン（JWT 等）にし、背後で署名・発行者・有効期限を検証する。 [Advanced] 背後のサーバーへの接続をリバースプロキシからの相互 TLS に限り、プロキシ以外が付けたヘッダーが届く経路そのものをなくす。転送ヘッダーの不審な値（想定外の段数・内部アドレス）を検知してログに残す。"
+    description: "{{nodeName}} は背後のサーバーへ中継するとき、利用者の送信元 IP（X-Forwarded-For・Forwarded）、元のホスト名とプロトコル（X-Forwarded-Host・X-Forwarded-Proto）、前段で認証した利用者（独自の利用者ヘッダー）をヘッダーで伝える。{{nodeName}} が利用者から届いた同名のヘッダーを除去・上書きせずに素通し・追記し、背後のアプリがそれを無条件に信用している場合、攻撃者はヘッダーを自分で付けて送るだけで、送信元 IP による管理画面の制限やレート制限を回避し、別の利用者として扱われ、ログの送信元を偽れる（Can）。Host を信用してリンクを組み立てるアプリでは、パスワード再設定メールのリンクを攻撃者のドメインに向けさせ、再設定用のトークンを盗める。前段が多段の構成では、既存の値に追記する製品（CDN・クラウドのロードバランサーに多い）を挟むと、背後のアプリが X-Forwarded-For の先頭の値を採用している限り、利用者が付けた偽の値がそのまま使われる。一方、利用者に最も近い段が外部から届いた同名のヘッダーを捨てて自身が観測した値で付け直し、背後のアプリが信頼するプロキシのアドレスと段数を決めて末尾からその段数分だけヘッダーを解釈し、リンクの組み立てに設定で固定したホスト名を使っていれば、偽装したヘッダーは効かない（Cannot）。HTTP の要求を解釈せずに TCP のまま中継する構成（L4 で動作するロードバランサー）ではヘッダーを付けないため成立しない（送信元 IP は PROXY プロトコル等で別に伝わる）。blast radius は送信元 IP・ホスト名・転送された利用者の情報にもとづく背後のアプリのすべての判定（アクセス制限・認可・ログ・生成するリンク）。"
+    mitigation: "[Foundation] 利用者に最も近い前段（CDN・WAF・ロードバランサー・リバースプロキシ・API ゲートウェイのうち最も外側の段）で、利用者から届いた X-Forwarded-For・X-Forwarded-Host・X-Forwarded-Proto・Forwarded と、認証済みの利用者を示すヘッダーを除去し、自身が観測した値で付け直す（追記ではなく上書き。上書きできない製品では、背後のアプリが末尾から信頼する段数分だけを使う）。背後のアプリでは、パスワード再設定などのリンクを Host ヘッダーではなく設定で固定したホスト名から組み立てる。 [Enterprise] 背後のアプリ・フレームワークに信頼するプロキシのアドレスと段数を設定し、それ以外から来た転送ヘッダーは解釈しない。前段で認証した利用者の情報を伝える場合は、ヘッダーの文字列ではなく署名付きのトークン（JWT 等）にし、背後で署名・発行者・有効期限を検証する。 [Advanced] 背後のサーバーへの接続を直前の段のプロキシからの相互 TLS に限り、プロキシ以外が付けたヘッダーが届く経路そのものをなくす。転送ヘッダーの不審な値（想定外の段数・内部アドレス）を検知してログに残す。"
     appliesTo:
       kind: node
-      nodeType: REVERSE_PROXY
+      # 転送ヘッダーを付けて中継する前段のプロキシ全般。LOAD_BALANCER は L7 動作時のみ成立する（description に明記）。
+      # AI_GATEWAY は対象外（節の冒頭コメント参照）。
+      anyOf:
+        - nodeType: REVERSE_PROXY
+        - nodeType: LOAD_BALANCER
+        - nodeType: WAF
+        - nodeType: CDN
+        - nodeType: GATEWAY
       # ヘッダーを信用するのは背後のアプリなので、背後のサーバーへ中継している（outbound）ときだけ発火する。
+      # 中継先は最終のサーバー（アプリ・API）に限る（スマグリングのルールと同じ理由。多段構成では最後の段に 1 枚）。
       connection:
         direction: outbound
-        peerType: [FRONT_END_SERVER, BACKEND_API, GATEWAY, PROCESS, OTHER_APP, WEB_FORM, PAYMENT_PAGE]
+        peerType: [FRONT_END_SERVER, BACKEND_API, PROCESS, OTHER_APP, WEB_FORM, PAYMENT_PAGE]
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.AA-05"
@@ -552,16 +593,23 @@ rules:
     category: "Tampering"
     name: "Web キャッシュポイズニングと Web キャッシュデセプション"
     severity: Medium
-    description: "{{nodeName}} で応答のキャッシュを有効にしている場合、キャッシュは要求の一部（ホスト名・パス等のキャッシュキー）だけを見て、同じキーの要求に保存した応答を返す。背後のアプリがキャッシュキーに含まれないヘッダー（X-Forwarded-Host 等）やパラメーターを応答に反映すると、攻撃者は細工した要求で悪意のあるスクリプトや誘導先を含む応答をキャッシュに保存させ、同じページを開いた全利用者に配信できる（キャッシュポイズニング）。また、背後のアプリが /account/profile.css のような存在しないパスにも本来のページを返す場合、攻撃者は利用者にそのリンクを開かせ、静的ファイルとしてキャッシュされた個人ページ（氏名・トークン等）を後から取り出せる（Web キャッシュデセプション）（Can）。一方、キャッシュするのは利用者に依存しない応答だけにし、Cookie や Authorization を伴う応答・個人ページをキャッシュせず、応答に反映するヘッダーを除去するかキャッシュキーに含め、拡張子ではなく背後の Cache-Control にもとづいてキャッシュの可否を決めていれば、他人に配信される応答を作ることも、個人ページを取り出すこともできない（Cannot）。キャッシュを使っていない {{nodeName}} では成立しない。blast radius はキャッシュされた応答を受け取る全利用者と、キャッシュに残った個人ページの持ち主。"
-    mitigation: "[Foundation] リバースプロキシでキャッシュを使っているかを確認し、使う場合は対象を利用者に依存しない静的なコンテンツに限る。Cookie や Authorization を伴う要求への応答と、Set-Cookie を含む応答をキャッシュしない。背後のアプリは個人ページに Cache-Control: no-store（または private）を付ける。 [Enterprise] キャッシュの可否を拡張子やパスの形ではなく背後の Cache-Control にもとづいて決める。応答に影響するヘッダー（X-Forwarded-Host 等）はリバースプロキシで除去するか、キャッシュキーに含める。背後のアプリが存在しないパスや余分な末尾の付いたパスに本来のページを返さないようにする。 [Advanced] キャッシュキーと背後のパスの解釈の差（区切り文字・エンコード・正規化）を検査に含め、キャッシュの設定を変えるたびに Web キャッシュポイズニング・デセプションの検査を行う。"
+    description: "{{nodeName}} で応答のキャッシュを有効にしている場合、キャッシュは要求の一部（ホスト名・パス等のキャッシュキー）だけを見て、同じキーの要求に保存した応答を返す。背後のアプリがキャッシュキーに含まれないヘッダー（X-Forwarded-Host 等）やパラメーターを応答に反映すると、攻撃者は細工した要求で悪意のあるスクリプトや誘導先を含む応答をキャッシュに保存させ、同じページを開いた全利用者に配信できる（キャッシュポイズニング）。また、背後のアプリが /account/profile.css のような存在しないパスにも本来のページを返す場合、攻撃者は利用者にそのリンクを開かせ、静的ファイルとしてキャッシュされた個人ページ（氏名・トークン等）を後から取り出せる（Web キャッシュデセプション）（Can）。一方、キャッシュするのは利用者に依存しない応答だけにし、Cookie や Authorization を伴う応答・個人ページをキャッシュせず、応答に反映するヘッダーを除去するかキャッシュキーに含め、拡張子ではなく背後の Cache-Control にもとづいてキャッシュの可否を決めていれば、他人に配信される応答を作ることも、個人ページを取り出すこともできない（Cannot）。キャッシュを使っていない {{nodeName}} では成立しない（CDN では応答のキャッシュが主機能のため、多くの構成で当てはまる）。blast radius はキャッシュされた応答を受け取る全利用者と、キャッシュに残った個人ページの持ち主。"
+    mitigation: "[Foundation] CDN・リバースプロキシでキャッシュを使っているかを確認し、使う場合は対象を利用者に依存しない静的なコンテンツに限る。Cookie や Authorization を伴う要求への応答と、Set-Cookie を含む応答をキャッシュしない。背後のアプリは個人ページに Cache-Control: no-store（または private）を付ける。 [Enterprise] キャッシュの可否を拡張子やパスの形ではなく背後の Cache-Control にもとづいて決める。応答に影響するヘッダー（X-Forwarded-Host 等）はキャッシュする段で除去するか、キャッシュキーに含める。背後のアプリが存在しないパスや余分な末尾の付いたパスに本来のページを返さないようにする。 [Advanced] キャッシュキーと背後のパスの解釈の差（区切り文字・エンコード・正規化）を検査に含め、キャッシュの設定を変えるたびに Web キャッシュポイズニング・デセプションの検査を行う。"
     appliesTo:
       kind: node
-      nodeType: REVERSE_PROXY
+      # 応答のキャッシュを持つ前段。CDN はキャッシュが主機能。GATEWAY は応答キャッシュが任意機能（主要製品で既定は無効）で
+      # API の応答は利用者ごとに異なりキャッシュしない構成が多く、全 API ゲートウェイでの誤検知になるため入れない。
+      # LOAD_BALANCER / WAF は応答をキャッシュしない。AI_GATEWAY のセマンティックキャッシュは別の脅威（未作成）。
+      anyOf:
+        - nodeType: REVERSE_PROXY
+        - nodeType: CDN
       # 汚染される応答も、個人ページを返してしまうのも背後のアプリなので、背後へ中継している（outbound）ときだけ発火する。
+      # CDN の中継先は WAF・ロードバランサー等の別の前段であることが多いため、peerType に前段の型も含める
+      # （キャッシュは段ごとに別物なので、キャッシュを持つ段ごとに 1 枚出てよい）。
       # キャッシュの有無は属性で表せないため、description で「キャッシュを使っていなければ成立しない」と明示する。
       connection:
         direction: outbound
-        peerType: [FRONT_END_SERVER, BACKEND_API, GATEWAY, PROCESS, OTHER_APP, WEB_FORM, PAYMENT_PAGE]
+        peerType: [FRONT_END_SERVER, BACKEND_API, PROCESS, OTHER_APP, WEB_FORM, PAYMENT_PAGE, GATEWAY, REVERSE_PROXY, LOAD_BALANCER, WAF]
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.PS-01"
