@@ -1,0 +1,53 @@
+# English overlay for `data/crypto-behavior/crypto-libraries.yaml`.
+#
+# The Japanese file is the source of truth: only `label` and `note` are translated here,
+# keyed by library id. Anything omitted falls back to the original text.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+libraries:
+  openssl:
+    note: "3.5.0 (2025-04) added ML-KEM, ML-DSA and SLH-DSA, and X25519MLKEM768 became a default TLS key share. Earlier versions have no PQC support. Check the version and whether the configuration pins the key share."
+  bouncycastle-java:
+    label: Bouncy Castle (Java)
+    note: "1.79 (2024-10) added ML-KEM, ML-DSA and SLH-DSA. Check the version and the algorithms the application actually calls."
+  bouncycastle-dotnet:
+    label: Bouncy Castle (.NET)
+    note: "Check the release notes of each version for PQC support."
+  go-stdlib:
+    label: Go standard library
+    note: "Go 1.24 added crypto/mlkem, and crypto/tls uses X25519MLKEM768 by default when CurvePreferences is unset (disabled with GODEBUG=tlsmlkem=0). Check the version and the configuration."
+  go-x-crypto:
+    note: "Implements SSH and many other algorithms. Check which packages (ssh, nacl, ...) and algorithms are used."
+  python-cryptography:
+    label: cryptography (Python)
+    note: "Uses OpenSSL and others internally. Check the release notes of each version for PQC support."
+  pycryptodome:
+    note: "Implements RSA, ECC and symmetric ciphers. Check where public-key cryptography is used."
+  node-forge:
+    note: "Implements RSA, TLS and X.509 in JavaScript. Check where public-key cryptography is used."
+  rust-tls:
+    label: rustls / ring (Rust)
+    note: "Check the release notes of each version and the configuration for PQC key exchange support."
+  rust-openssl:
+    label: openssl (Rust bindings)
+    note: "Uses the system OpenSSL. Check the OpenSSL version."
+  gnutls:
+    note: "Check the release notes of each version for PQC key exchange support."
+  nss:
+    note: "Check the release notes of each version for PQC key exchange support."
+  mbedtls:
+    note: "Common in embedded devices. Check the release notes of each version for PQC support."
+  wolfssl:
+    note: "Common in embedded devices. Check the release notes of each version for PQC support."
+  libsodium:
+    note: "Mainly implements X25519 and Ed25519 (broken by quantum computers). Check where they are used."
+  jwt:
+    label: JWT libraries
+    note: "Check the token signing algorithm (RS256, ES256 and similar are broken by quantum computers). For shared-key algorithms such as HS256, check the key length."
+  liboqs:
+    label: liboqs (Open Quantum Safe)
+    note: "A research and prototyping library that implements PQC algorithms. Check whether it is fit for production and which algorithms are used."

@@ -1,0 +1,10 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "components": [
+    {
+      "type": "cryptographic-asset", "bom-ref": "alg-ecdsa", "name": "key-signing",
+      "cryptoProperties": { "assetType": "algorithm", "algorithmProperties": { "primitive": "signature", "ellipticCurve": "P-256" } }
+    }
+  ]
+}

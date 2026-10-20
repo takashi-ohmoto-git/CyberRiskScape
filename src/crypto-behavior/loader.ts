@@ -2,10 +2,14 @@ import { parse as parseYaml } from 'yaml';
 import type { ZodType } from 'zod';
 import {
   AlgorithmTableSchema,
+  CryptoLibraryFileSchema,
+  CryptoLibraryOverlayFileSchema,
   TerminationFileSchema,
   TerminationOverlayFileSchema,
   type AlgorithmClass,
   type AlgorithmTable,
+  type CryptoLibrary,
+  type CryptoLibraryOverlay,
   type TerminationBehavior,
   type TerminationOverlay,
 } from './schema';
@@ -92,4 +96,59 @@ export function classifyAlgorithm(name: string, table: AlgorithmTable): Algorith
     if (table.classes[cls].tokens.some((t) => lower.includes(t.toLowerCase()))) return cls;
   }
   return null;
+}
+
+/** 暗号ライブラリ一覧 YAML をパース＋検証する。id の重複は throw。 */
+export function parseCryptoLibraries(yamlText: string, source: string): CryptoLibrary[] {
+  const { libraries } = parseWith(CryptoLibraryFileSchema, yamlText, source);
+  const seen = new Set<string>();
+  for (const l of libraries) {
+    if (seen.has(l.id)) {
+      throw new CryptoBehaviorLoadError(`Duplicate library id "${l.id}" in "${source}"`, source);
+    }
+    seen.add(l.id);
+  }
+  return libraries;
+}
+
+/** 暗号ライブラリの翻訳オーバーレイ YAML をパース＋検証する（id → 訳）。 */
+export function parseCryptoLibraryOverlay(yamlText: string, source: string): CryptoLibraryOverlay {
+  return parseWith(CryptoLibraryOverlayFileSchema, yamlText, source).libraries;
+}
+
+/** 原本へオーバーレイを被せる。訳が無い項目は原文のまま。 */
+export function localizeCryptoLibraries(
+  libraries: readonly CryptoLibrary[],
+  overlay: CryptoLibraryOverlay,
+): CryptoLibrary[] {
+  return libraries.map((l) => {
+    const o = overlay[l.id];
+    return o ? { ...l, label: o.label ?? l.label, note: o.note ?? l.note } : l;
+  });
+}
+
+/** purl の版（@）・修飾子（?）・サブパス（#）を除き、小文字にする。 */
+export function normalizePurl(purl: string): string {
+  return purl.trim().toLowerCase().replace(/[#?].*$/, '').replace(/@.*$/, '');
+}
+
+function globToRegExp(pattern: string): RegExp {
+  const escaped = pattern.split('*').map((p) => p.replace(/[.+?^${}()|[\]\\]/g, '\\$&'));
+  return new RegExp(`^${escaped.join('.*')}$`);
+}
+
+/**
+ * SBOM の部品に当たる暗号ライブラリを返す（先に書いた項目が優先）。
+ * purl があればそれで、無ければ名前（小文字・完全一致）で照合する。
+ */
+export function matchCryptoLibrary(
+  component: { name: string; purl?: string },
+  libraries: readonly CryptoLibrary[],
+): CryptoLibrary | undefined {
+  if (component.purl) {
+    const purl = normalizePurl(component.purl);
+    return libraries.find((l) => (l.purls ?? []).some((p) => globToRegExp(p.toLowerCase()).test(purl)));
+  }
+  const name = component.name.trim().toLowerCase();
+  return libraries.find((l) => (l.names ?? []).includes(name));
 }

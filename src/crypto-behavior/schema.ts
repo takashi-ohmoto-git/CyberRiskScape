@@ -62,3 +62,41 @@ export type TerminationBehavior = z.infer<typeof TerminationBehaviorSchema>;
 export type TerminationOverlay = z.infer<typeof TerminationOverlayFileSchema>['behaviors'];
 export type AlgorithmClass = z.infer<typeof AlgorithmClassSchema>;
 export type AlgorithmTable = z.infer<typeof AlgorithmTableSchema>;
+
+/** 暗号ライブラリ一覧（`crypto-libraries.yaml`）。SBOM の部品を purl / 名前で照合する。 */
+export const LIBRARY_ROLES = ['tls', 'general', 'jwt', 'pqc'] as const;
+
+export const CryptoLibrarySchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    role: z.enum(LIBRARY_ROLES),
+    /** 版・修飾子・サブパスを除いた小文字の purl。`*` は任意の文字列。 */
+    purls: z.array(z.string().min(1)).optional(),
+    /** purl が無い部品を照合する名前（小文字・完全一致）。 */
+    names: z.array(z.string().min(1)).optional(),
+    note: z.string().min(1),
+  })
+  .strict();
+
+export const CryptoLibraryFileSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    libraries: z.array(CryptoLibrarySchema),
+  })
+  .strict();
+
+/** 翻訳オーバーレイ。`label` と `note` のみ、ライブラリ id を鍵にする。 */
+export const CryptoLibraryOverlayFileSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    locale: z.string().min(2),
+    libraries: z.record(
+      z.string(),
+      z.object({ label: z.string().min(1).optional(), note: z.string().min(1).optional() }).strict(),
+    ),
+  })
+  .strict();
+
+export type CryptoLibrary = z.infer<typeof CryptoLibrarySchema>;
+export type CryptoLibraryOverlay = z.infer<typeof CryptoLibraryOverlayFileSchema>['libraries'];

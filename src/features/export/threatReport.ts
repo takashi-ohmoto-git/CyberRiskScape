@@ -411,7 +411,7 @@ export function toJson(report: ThreatReport): string {
 // `Tn` 採番は出力文字列内のローカルラベルに限定する。
 
 /** Markdown 表セルの安全化：`|` をエスケープし、改行を `<br>` に畳む。 */
-function mdCell(value: string): string {
+export function mdCell(value: string): string {
   return value.replace(/\|/g, '\\|').replace(/\r\n|\r|\n/g, '<br>');
 }
 

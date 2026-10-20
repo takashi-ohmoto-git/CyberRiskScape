@@ -1,0 +1,9 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "components": [
+    { "type": "library", "name": "openssl", "version": "3.0.2" },
+    { "type": "library", "name": "stdlib", "version": "go1.24.1", "purl": "pkg:golang/stdlib@go1.24.1" },
+    { "type": "library", "name": "lodash", "version": "4.17.21", "purl": "pkg:npm/lodash@4.17.21" }
+  ]
+}

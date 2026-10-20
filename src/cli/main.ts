@@ -1,5 +1,6 @@
 import { readFileSync, statSync, writeFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
+import { basename } from 'node:path';
 import { parseArgs } from 'node:util';
 import {
   analyzeProject,
@@ -45,6 +46,14 @@ import { shodanToLayer } from '../features/shodan-import/shodanToLayer';
 import { toPostmanCollection } from '../features/postman-export/toPostmanCollection';
 import { VarsFileSchema, applyVariableValues, filterByBaseUrl } from '../features/postman-export/dastOptions';
 import { buildTestPlan } from '../features/test-plan/buildTestPlan';
+import { parseSbomText } from '../features/sbom-crypto/parseCycloneDx';
+import {
+  buildSbomCryptoReport,
+  edgesTouchingNode,
+  nodeElementalId,
+} from '../features/sbom-crypto/buildSbomCryptoReport';
+import { sbomCryptoToJson, sbomCryptoToMarkdown } from '../features/sbom-crypto/sbomCryptoOutput';
+import { BUNDLED_ALGORITHM_TABLE, getCryptoLibraries } from '../crypto-behavior/bundled';
 import { testPlanToJson, testPlanToMarkdown } from '../features/test-plan/testPlanOutput';
 import { getChecklists } from '../checklist/bundled';
 import { evaluateChecklist } from '../checklist/evaluate';
@@ -63,6 +72,7 @@ const TRIGGERS_FORMATS = ['md', 'json'] as const;
 const CHECKLIST_FORMATS = ['md', 'json', 'csv'] as const;
 const FINDINGS_REPORT_FORMATS = ['md', 'json'] as const;
 const TEST_PLAN_FORMATS = ['md', 'json'] as const;
+const SBOM_CRYPTO_FORMATS = ['md', 'json'] as const;
 
 const FRAMEWORKS: readonly FrameworkView[] = ['STRIDE', 'AI', 'AgenticAI', 'ALL'];
 const SEVERITIES: readonly Severity[] = ['Low', 'Medium', 'High', 'Critical'];
@@ -79,6 +89,7 @@ const USAGE = `使い方:
   export-postman <project.json> [options]
   export-test-plan <project.json> [options]
   findings-report <project.json> --veracode <file> [options]
+  pqc-sbom-report <project.json> --sbom <file> --node <C番号> [options]
   mcp [options]
 
 analyze のオプション:
@@ -144,6 +155,14 @@ findings-report のオプション（Veracode の結果ファイルの指摘を�
   --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある全レイヤー）
   --framework <STRIDE|AI|AgenticAI|ALL>         対象フレームワーク（既定: ALL）
   --fail-on <Critical|High|Medium|Low>          Veracode の指摘で裏付けられた未抑制の脅威が指定重大度以上なら exit 1
+  --locale <ja|en>                              表示言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+pqc-sbom-report のオプション（CycloneDX の SBOM／CBOM（JSON）から、指定したノードの暗号を確認するレポートを出す。図は変えない。ファイル入力のみ）:
+  --sbom <file>                                 CycloneDX の JSON（必須。1.6 / 1.7。XML は読めない）
+  --node <C番号>                                対象のノードの ID（必須。例: C3）
+  --format <md|json>                            出力形式（既定: md）
+  --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある PQC レイヤー、無ければノードがある最初のレイヤー）
   --locale <ja|en>                              表示言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
@@ -240,6 +259,8 @@ function parseCliArgs() {
       root: { type: 'string' },
       vars: { type: 'string' },
       veracode: { type: 'string' },
+      sbom: { type: 'string' },
+      node: { type: 'string' },
       'base-url': { type: 'string' },
       help: { type: 'boolean' },
     },
@@ -681,6 +702,82 @@ ${USAGE}`);
 }
 
 /**
+ * `pqc-sbom-report`：CycloneDX の SBOM／CBOM（JSON）から、指定したノードの暗号を確認するレポートを出す。
+ * 図は変更しない。API は呼ばない。
+ */
+function runPqcSbomReport(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+  if (!values.sbom) fail(translate('sbomCrypto.cli.missingSbom', locale));
+  if (!values.node) fail(translate('sbomCrypto.cli.missingNode', locale));
+  const format = parseEnum(values.format, SBOM_CRYPTO_FORMATS, 'format') ?? 'md';
+  const layerOpt = parseEnum(values.layer, LAYER_KEYS, 'layer');
+
+  let sbomText: string;
+  try {
+    sbomText = readFileSync(values.sbom, 'utf-8');
+  } catch (e) {
+    fail(
+      translate('sbomCrypto.cli.readFailed', locale, {
+        file: values.sbom,
+        reason: e instanceof Error ? e.message : String(e),
+      }),
+    );
+  }
+  const libraries = getCryptoLibraries(locale);
+  const parsed = parseSbomText(sbomText, libraries, locale);
+  if (!parsed.ok) fail(`${parsed.error}（${values.sbom}）`);
+
+  let layers: ResolvedProject['layers'];
+  try {
+    layers = resolveProject(readJsonFile(file)).layers;
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  const layer =
+    layerOpt ?? (layers.PQC.nodes.length > 0 ? 'PQC' : LAYER_KEYS.find((k) => layers[k].nodes.length > 0));
+  if (!layer) fail('ノードのあるレイヤーがありません。');
+  const { nodes, edges } = layers[layer];
+  const node = nodes.find((n) => nodeElementalId(n).toLowerCase() === values.node?.toLowerCase());
+  if (!node) {
+    fail(
+      translate('sbomCrypto.cli.nodeNotFound', locale, {
+        node: values.node,
+        layer,
+        ids: nodes.map(nodeElementalId).join(', ') || '-',
+      }),
+    );
+  }
+
+  const report = buildSbomCryptoReport({
+    parsed,
+    node,
+    edges: edgesTouchingNode(node, nodes, edges),
+    algorithms: BUNDLED_ALGORITHM_TABLE,
+    libraries,
+    locale,
+    now: new Date(),
+    sourceName: basename(values.sbom),
+  });
+  writeOutput(format === 'json' ? sbomCryptoToJson(report) : sbomCryptoToMarkdown(report), values.out);
+  process.stderr.write(
+    `${translate('sbomCrypto.cli.done', locale, {
+      layer,
+      node: report.summary.node.id,
+      assets: report.summary.cryptoAssetCount,
+      libraries: report.summary.libraryCount,
+    })}
+`,
+  );
+}
+
+/**
  * `mcp`：stdio の MCP サーバーとして起動する。stdout はプロトコル専用のため、
  * ここから先は stdout に何も書かない（ログ・エラーは stderr）。
  */
@@ -731,6 +828,8 @@ function main(): void {
     runExportTestPlan(values, positionals);
   } else if (command === 'findings-report') {
     runFindingsReport(values, positionals);
+  } else if (command === 'pqc-sbom-report') {
+    runPqcSbomReport(values, positionals);
   } else if (command === 'import-conjur') {
     runImportConjur(values, positionals);
   } else if (command === 'import-shodan') {

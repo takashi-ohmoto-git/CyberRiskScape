@@ -24,6 +24,7 @@ import { jaCliTriggers } from './ja/cliTriggers';
 import { jaFindingsReport } from './ja/findingsReport';
 import { jaChecklist } from './ja/checklist';
 import { jaTestPlan } from './ja/testPlan';
+import { jaSbomCrypto } from './ja/sbomCrypto';
 
 const jaCore = {
   'app.loading': '読み込み中…',
@@ -214,6 +215,7 @@ export const ja = {
   ...jaFindingsReport,
   ...jaChecklist,
   ...jaTestPlan,
+  ...jaSbomCrypto,
 } as const;
 
 /** 全翻訳キーの型。en 等の他ロケールはこの部分集合を持つ。 */

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Route, ShieldCheck, Trash2 } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { FileSearch, Route, ShieldCheck, Trash2 } from 'lucide-react';
 import type {
   CryptoAlgorithmUpdatable,
   CryptoKeyStorage,
@@ -11,16 +11,21 @@ import type {
   NodeCrypto,
 } from '../../core/model/types';
 import { CRYPTO_TERMINATIONS } from '../../core/model/types';
-import { selectActiveNodes, useDiagramStore } from '../../core/state/diagramStore';
+import { selectActiveEdges, selectActiveNodes, useDiagramStore } from '../../core/state/diagramStore';
 import { formatElementalId } from '../../core/model/elementalId';
 import { getNodeDisplayName } from '../../core/model/nodeDisplay';
 import { CryptoPathModal } from './CryptoPathModal';
 import { useLocale, useT } from '../../i18n';
 import {
   BUNDLED_ALGORITHM_TABLE,
+  getCryptoLibraries,
   getTerminationBehavior,
 } from '../../crypto-behavior/bundled';
 import { classifyAlgorithm } from '../../crypto-behavior/loader';
+import { triggerDownload } from '../../features/export/download';
+import { parseSbomText } from '../../features/sbom-crypto/parseCycloneDx';
+import { buildSbomCryptoReport, edgesTouchingNode, nodeElementalId } from '../../features/sbom-crypto/buildSbomCryptoReport';
+import { sbomCryptoToMarkdown } from '../../features/sbom-crypto/sbomCryptoOutput';
 import { PQC_VERDICT_BADGE, PQC_VERDICT_ICON, PQC_VERDICT_LABEL_KEY } from './pqcVerdictStyle';
 
 /**
@@ -167,7 +172,83 @@ export function NodeCryptoSection({ node }: { node: DiagramNode }) {
             ))}
           </select>
         </div>
+        <SbomCryptoButton node={node} />
       </div>
+    </div>
+  );
+}
+
+const SBOM_MAX_BYTES = 20 * 1024 * 1024;
+
+/** CycloneDX の SBOM を選ぶと、このノードの暗号を確認するレポート（Markdown）を書き出す。図は変えない。 */
+function SbomCryptoButton({ node }: { node: DiagramNode }) {
+  const t = useT();
+  const [locale] = useLocale();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const onFile = async (file: File) => {
+    setError(null);
+    if (file.size > SBOM_MAX_BYTES) {
+      setError(t('sbomCrypto.error.tooLarge', { mb: SBOM_MAX_BYTES / 1024 / 1024 }));
+      return;
+    }
+    try {
+      const libraries = getCryptoLibraries(locale);
+      const parsed = parseSbomText(await file.text(), libraries, locale);
+      if (!parsed.ok) {
+        setError(parsed.error);
+        return;
+      }
+      const s = useDiagramStore.getState();
+      const now = new Date();
+      const report = buildSbomCryptoReport({
+        parsed,
+        node,
+        edges: edgesTouchingNode(node, selectActiveNodes(s), selectActiveEdges(s)),
+        algorithms: BUNDLED_ALGORITHM_TABLE,
+        libraries,
+        locale,
+        now,
+        sourceName: file.name,
+      });
+      triggerDownload(
+        `pqc-sbom_${nodeElementalId(node)}_${report.summary.generatedAt}.md`,
+        sbomCryptoToMarkdown(report),
+        'text/markdown;charset=utf-8',
+      );
+    } catch (e) {
+      setError(t('sbomCrypto.ui.error', { reason: e instanceof Error ? e.message : String(e) }));
+    }
+  };
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className="w-full flex items-center justify-center gap-2 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-slate-200 hover:border-blue-500"
+      >
+        <FileSearch size={14} className="text-blue-500" /> {t('sbomCrypto.ui.button')}
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="application/json,.json,.cdx.json"
+        className="hidden"
+        data-testid="sbom-crypto-file"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = '';
+          if (file) void onFile(file);
+        }}
+      />
+      <p className="text-xs text-slate-500 mt-2 leading-relaxed">{t('sbomCrypto.ui.hint')}</p>
+      {error && (
+        <p role="alert" className="text-xs text-rose-300 mt-2 leading-relaxed">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

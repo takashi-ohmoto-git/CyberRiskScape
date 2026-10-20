@@ -439,6 +439,23 @@ verbatim.
 
    Referenced by: data/threat-library/sdv.yaml
 
+--------------------------------------------------------------------------------
+25. Software bill of materials formats and cryptographic library release notes
+   - OWASP CycloneDX specification 1.6 / 1.7 (including CBOM)
+     https://cyclonedx.org/ , https://github.com/CycloneDX/specification
+   - Package URL (purl) specification
+     https://github.com/package-url/purl-spec
+   - OpenSSL 3.5 release notes  https://openssl-library.org/news/openssl-3.5-notes/
+   - Bouncy Castle Java 1.79 announcement  https://www.bouncycastle.org/
+   - Go 1.24 release notes  https://go.dev/doc/go1.24
+   - Open Quantum Safe (liboqs)  https://openquantumsafe.org/
+   © The respective owners. Field names and package identifiers are referenced
+   as factual identifiers to read SBOM files; release facts are summarized in
+   short Japanese notes only. No specification or documentation text is
+   reproduced. Product names are trademarks of their respective owners.
+
+   Referenced by: data/crypto-behavior/crypto-libraries.yaml
+
 ================================================================================
 Runtime dependencies
 ================================================================================

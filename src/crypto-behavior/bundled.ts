@@ -1,10 +1,19 @@
 import {
+  localizeCryptoLibraries,
   localizeTermination,
   parseAlgorithmTable,
+  parseCryptoLibraries,
+  parseCryptoLibraryOverlay,
   parseTerminationFile,
   parseTerminationOverlayFile,
 } from './loader';
-import type { AlgorithmTable, TerminationBehavior, TerminationOverlay } from './schema';
+import type {
+  AlgorithmTable,
+  CryptoLibrary,
+  CryptoLibraryOverlay,
+  TerminationBehavior,
+  TerminationOverlay,
+} from './schema';
 import type { Locale } from '../i18n';
 
 /**
@@ -38,16 +47,24 @@ export const BUNDLED_ALGORITHM_TABLE: AlgorithmTable = parseAlgorithmTable(
   'pqc-algorithms.yaml',
 );
 
+export const BUNDLED_CRYPTO_LIBRARIES: CryptoLibrary[] = parseCryptoLibraries(
+  textOf(yamlModules, '/crypto-libraries.yaml'),
+  'crypto-libraries.yaml',
+);
+
 /** ロケール → 翻訳オーバーレイ（componentType → note）。 */
 export const BUNDLED_TERMINATION_OVERLAYS: Record<string, TerminationOverlay> = {};
+/** ロケール → 暗号ライブラリの翻訳オーバーレイ（id → label / note）。 */
+export const BUNDLED_LIBRARY_OVERLAYS: Record<string, CryptoLibraryOverlay> = {};
 for (const [path, text] of Object.entries(overlayModules)) {
   const segments = path.split('/');
-  if (segments[segments.length - 1] !== 'termination.yaml') continue;
   const locale = segments[segments.length - 2] ?? '';
-  BUNDLED_TERMINATION_OVERLAYS[locale] = parseTerminationOverlayFile(
-    text,
-    `${locale}/termination.yaml`,
-  );
+  const file = segments[segments.length - 1];
+  if (file === 'termination.yaml') {
+    BUNDLED_TERMINATION_OVERLAYS[locale] = parseTerminationOverlayFile(text, `${locale}/${file}`);
+  } else if (file === 'crypto-libraries.yaml') {
+    BUNDLED_LIBRARY_OVERLAYS[locale] = parseCryptoLibraryOverlay(text, `${locale}/${file}`);
+  }
 }
 
 const cache = new Map<string, TerminationBehavior[]>();
@@ -71,4 +88,19 @@ export function getTerminationBehavior(
   locale: Locale,
 ): TerminationBehavior | undefined {
   return getTerminationBehaviors(locale).find((b) => b.componentType === componentType);
+}
+
+const libraryCache = new Map<string, CryptoLibrary[]>();
+
+/** 指定ロケールの暗号ライブラリ一覧。訳が無い項目は原文（日本語）のまま。 */
+export function getCryptoLibraries(locale: Locale): CryptoLibrary[] {
+  if (locale === 'ja') return BUNDLED_CRYPTO_LIBRARIES;
+  const cached = libraryCache.get(locale);
+  if (cached) return cached;
+  const overlay = BUNDLED_LIBRARY_OVERLAYS[locale];
+  const result = overlay
+    ? localizeCryptoLibraries(BUNDLED_CRYPTO_LIBRARIES, overlay)
+    : BUNDLED_CRYPTO_LIBRARIES;
+  libraryCache.set(locale, result);
+  return result;
 }

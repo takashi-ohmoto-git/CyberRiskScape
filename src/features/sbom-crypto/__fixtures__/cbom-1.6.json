@@ -1,0 +1,40 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "components": [
+    { "type": "library", "bom-ref": "pkg-ssl", "name": "libssl3", "version": "3.0.11", "purl": "pkg:deb/debian/libssl3@3.0.11?arch=amd64" },
+    {
+      "type": "application",
+      "name": "app",
+      "components": [
+        { "type": "library", "name": "bcprov-jdk18on", "version": "1.78", "purl": "pkg:maven/org.bouncycastle/bcprov-jdk18on@1.78" },
+        { "type": "library", "name": "lodash", "version": "4.17.21", "purl": "pkg:npm/lodash@4.17.21" }
+      ]
+    },
+    {
+      "type": "cryptographic-asset", "bom-ref": "alg-mlkem", "name": "ML-KEM-768",
+      "cryptoProperties": { "assetType": "algorithm", "algorithmProperties": { "primitive": "kem", "parameterSetIdentifier": "768", "nistQuantumSecurityLevel": 3 } }
+    },
+    {
+      "type": "cryptographic-asset", "bom-ref": "alg-rsa", "name": "RSA-2048",
+      "cryptoProperties": { "assetType": "algorithm", "algorithmProperties": { "primitive": "signature", "parameterSetIdentifier": "2048", "nistQuantumSecurityLevel": 0 } }
+    },
+    {
+      "type": "cryptographic-asset", "bom-ref": "alg-aes", "name": "AES-256-GCM",
+      "cryptoProperties": { "assetType": "algorithm", "algorithmProperties": { "primitive": "ae", "parameterSetIdentifier": "256", "nistQuantumSecurityLevel": 1 } }
+    },
+    {
+      "type": "cryptographic-asset", "bom-ref": "proto-tls", "name": "TLS 1.3",
+      "cryptoProperties": { "assetType": "protocol", "protocolProperties": { "type": "tls", "version": "1.3", "cipherSuites": [ { "name": "X25519MLKEM768" }, { "name": "TLS_AES_256_GCM_SHA384" } ] } }
+    },
+    {
+      "type": "cryptographic-asset", "bom-ref": "cert-1", "name": "server.example.com",
+      "cryptoProperties": { "assetType": "certificate", "certificateProperties": { "subjectName": "CN=server.example.com", "issuerName": "CN=Example CA", "notValidAfter": "2027-01-01T00:00:00Z", "signatureAlgorithmRef": "alg-rsa", "subjectPublicKeyRef": "alg-rsa" } }
+    },
+    {
+      "type": "cryptographic-asset", "bom-ref": "key-1", "name": "signing-key",
+      "cryptoProperties": { "assetType": "related-crypto-material", "relatedCryptoMaterialProperties": { "type": "private-key", "algorithmRef": "alg-rsa", "size": 2048, "value": "SECRET-KEY-MATERIAL" } }
+    }
+  ]
+}

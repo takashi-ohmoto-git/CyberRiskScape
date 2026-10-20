@@ -1,0 +1,180 @@
+# 暗号ライブラリの一覧（PQC 移行支援：SBOM の部品から暗号を実装している部品を見つける）。
+# CycloneDX の SBOM の部品を purl（または名前）で照合し、「この部品が暗号を実装しているので、
+# 使っている方式を確認する」候補として出す。SBOM に含まれる＝その方式を使っている、とは限らない。
+#
+# 方針:
+#   - purl は `pkg:<type>/<namespace>/<name>` を小文字で、版（@ 以降）・修飾子（? 以降）を除いて照合する。
+#     `*` は任意の文字列（0 文字以上）に一致する。purl が無い部品は `names`（小文字・完全一致）で照合する。
+#   - role は用途の目安：tls（TLS などの通信路）／general（汎用の暗号処理）／jwt（トークンの署名）／pqc（PQC 専用）。
+#   - note は PQC への対応状況の要約。公式のリリースノートで確認できた事実だけを書き、版の比較はしない
+#     （SBOM の版の表記はエコシステムごとに異なるため。利用者が note と版を見比べる）。
+#   - 1 つの部品が複数の項目に当たる場合は、先に書いた項目を採用する。
+#
+# 出典（参照のみ。本文は転載しない）:
+#   - Package URL（purl）仕様 https://github.com/package-url/purl-spec
+#   - OpenSSL 3.5 リリースノート https://openssl-library.org/news/openssl-3.5-notes/
+#   - Bouncy Castle Java 1.79 のお知らせ https://www.bouncycastle.org/resources/latest-nist-pqc-standards-and-more-bouncy-castle-java-1-79/
+#   - Go 1.24 リリースノート https://go.dev/doc/go1.24
+#   - Open Quantum Safe（liboqs） https://openquantumsafe.org/
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+libraries:
+  - id: openssl
+    label: OpenSSL
+    role: tls
+    purls:
+      - pkg:generic/openssl
+      - pkg:deb/*/openssl
+      - pkg:deb/*/libssl*
+      - pkg:apk/*/openssl
+      - pkg:apk/*/libssl*
+      - pkg:apk/*/libcrypto*
+      - pkg:rpm/*/openssl
+      - pkg:rpm/*/openssl-libs
+      - pkg:conan/openssl
+    names: [openssl, libssl, libcrypto]
+    note: "3.5.0（2025-04）で ML-KEM・ML-DSA・SLH-DSA に対応し、TLS の既定の鍵共有に X25519MLKEM768 が入った。それより前の版は PQC に対応しない。版と、設定で鍵共有を固定していないかを確認する。"
+
+  - id: bouncycastle-java
+    label: Bouncy Castle（Java）
+    role: general
+    purls:
+      - pkg:maven/org.bouncycastle/*
+    note: "1.79（2024-10）で ML-KEM・ML-DSA・SLH-DSA に対応した。版と、アプリが実際に呼んでいる方式を確認する。"
+
+  - id: bouncycastle-dotnet
+    label: Bouncy Castle（.NET）
+    role: general
+    purls:
+      - pkg:nuget/bouncycastle*
+      - pkg:nuget/portable.bouncycastle
+    note: "PQC への対応状況は版ごとのリリースノートで確認する。"
+
+  - id: go-stdlib
+    label: Go 標準ライブラリ
+    role: tls
+    purls:
+      - pkg:golang/stdlib
+    note: "Go 1.24 で crypto/mlkem が加わり、crypto/tls は CurvePreferences が未設定なら X25519MLKEM768 を既定で使う（GODEBUG=tlsmlkem=0 で無効）。版と設定を確認する。"
+
+  - id: go-x-crypto
+    label: golang.org/x/crypto
+    role: general
+    purls:
+      - pkg:golang/golang.org/x/crypto
+    note: "SSH・各種の暗号方式を実装する。使っているパッケージ（ssh・nacl など）と方式を確認する。"
+
+  - id: python-cryptography
+    label: cryptography（Python）
+    role: general
+    purls:
+      - pkg:pypi/cryptography
+    note: "OpenSSL などを内部で使う。PQC への対応状況は版ごとのリリースノートで確認する。"
+
+  - id: pycryptodome
+    label: PyCryptodome
+    role: general
+    purls:
+      - pkg:pypi/pycryptodome
+      - pkg:pypi/pycryptodomex
+    note: "RSA・ECC・共通鍵暗号を実装する。公開鍵暗号を使っている箇所を確認する。"
+
+  - id: node-forge
+    label: node-forge
+    role: general
+    purls:
+      - pkg:npm/node-forge
+    note: "RSA・TLS・X.509 を JavaScript で実装する。公開鍵暗号を使っている箇所を確認する。"
+
+  - id: rust-tls
+    label: rustls / ring（Rust）
+    role: tls
+    purls:
+      - pkg:cargo/rustls
+      - pkg:cargo/ring
+      - pkg:cargo/aws-lc-rs
+    note: "PQC の鍵共有への対応状況は版ごとのリリースノートと設定で確認する。"
+
+  - id: rust-openssl
+    label: openssl（Rust のバインディング）
+    role: tls
+    purls:
+      - pkg:cargo/openssl
+      - pkg:cargo/openssl-sys
+    note: "システムの OpenSSL を使う。OpenSSL の版を確認する。"
+
+  - id: gnutls
+    label: GnuTLS
+    role: tls
+    purls:
+      - pkg:deb/*/libgnutls*
+      - pkg:rpm/*/gnutls
+      - pkg:apk/*/gnutls
+    names: [gnutls]
+    note: "PQC の鍵共有への対応状況は版ごとのリリースノートで確認する。"
+
+  - id: nss
+    label: NSS
+    role: tls
+    purls:
+      - pkg:deb/*/libnss3
+      - pkg:rpm/*/nss
+      - pkg:apk/*/nss
+    names: [nss]
+    note: "PQC の鍵共有への対応状況は版ごとのリリースノートで確認する。"
+
+  - id: mbedtls
+    label: Mbed TLS
+    role: tls
+    purls:
+      - pkg:deb/*/libmbedtls*
+      - pkg:apk/*/mbedtls
+      - pkg:generic/mbedtls
+    names: [mbedtls]
+    note: "組み込み機器で使われることが多い。PQC への対応状況は版ごとのリリースノートで確認する。"
+
+  - id: wolfssl
+    label: wolfSSL
+    role: tls
+    purls:
+      - pkg:generic/wolfssl
+      - pkg:deb/*/libwolfssl*
+    names: [wolfssl]
+    note: "組み込み機器で使われることが多い。PQC への対応状況は版ごとのリリースノートで確認する。"
+
+  - id: libsodium
+    label: libsodium / NaCl
+    role: general
+    purls:
+      - pkg:deb/*/libsodium*
+      - pkg:apk/*/libsodium
+      - pkg:npm/libsodium*
+      - pkg:npm/tweetnacl
+      - pkg:pypi/pynacl
+    names: [libsodium]
+    note: "X25519・Ed25519（量子計算機で破られる方式）を中心に実装する。使っている箇所を確認する。"
+
+  - id: jwt
+    label: JWT ライブラリ
+    role: jwt
+    purls:
+      - pkg:npm/jsonwebtoken
+      - pkg:npm/jose
+      - pkg:pypi/pyjwt
+      - pkg:pypi/python-jose
+      - pkg:maven/com.nimbusds/nimbus-jose-jwt
+      - pkg:maven/io.jsonwebtoken/jjwt*
+      - pkg:nuget/system.identitymodel.tokens.jwt
+    note: "トークンの署名方式（RS256・ES256 などは量子計算機で破られる）を確認する。HS256 などの共通鍵方式は鍵長を確認する。"
+
+  - id: liboqs
+    label: liboqs（Open Quantum Safe）
+    role: pqc
+    purls:
+      - pkg:generic/liboqs
+      - pkg:github/open-quantum-safe/*
+      - pkg:pypi/liboqs-python
+    names: [liboqs, oqs-provider]
+    note: "PQC の方式を実装する研究・試験向けのライブラリ。本番での利用可否と、使っている方式を確認する。"

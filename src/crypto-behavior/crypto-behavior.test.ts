@@ -1,15 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import {
   BUNDLED_ALGORITHM_TABLE,
+  BUNDLED_CRYPTO_LIBRARIES,
   BUNDLED_TERMINATION_BEHAVIORS,
   BUNDLED_TERMINATION_OVERLAYS,
+  getCryptoLibraries,
   getTerminationBehavior,
   getTerminationBehaviors,
 } from './bundled';
 import {
   CryptoBehaviorLoadError,
   classifyAlgorithm,
+  matchCryptoLibrary,
+  normalizePurl,
   parseAlgorithmTable,
+  parseCryptoLibraries,
   parseTerminationFile,
 } from './loader';
 import { componentRegistry } from '../component-library/defaultRegistry';
@@ -102,5 +107,49 @@ describe('classifyAlgorithm', () => {
     const bad =
       'schemaVersion: 1\npriority: [pqc, pqc, vulnerable]\nclasses:\n  pqc: {tokens: [a]}\n  transitional: {tokens: [b]}\n  vulnerable: {tokens: [c]}\n';
     expect(() => parseAlgorithmTable(bad, 't')).toThrow(CryptoBehaviorLoadError);
+  });
+});
+
+describe('crypto-libraries.yaml', () => {
+  const idOf = (c: { name: string; purl?: string }) =>
+    matchCryptoLibrary(c, BUNDLED_CRYPTO_LIBRARIES)?.id;
+
+  it('同梱ファイルがパースでき、id が一意', () => {
+    expect(BUNDLED_CRYPTO_LIBRARIES.length).toBeGreaterThan(0);
+    const ids = BUNDLED_CRYPTO_LIBRARIES.map((l) => l.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('id の重複は拒否する', () => {
+    const dup =
+      'schemaVersion: 1\nlibraries:\n  - {id: a, label: A, role: tls, note: n}\n  - {id: a, label: B, role: tls, note: n}\n';
+    expect(() => parseCryptoLibraries(dup, 'dup.yaml')).toThrow(CryptoBehaviorLoadError);
+  });
+
+  it('purl の版・修飾子・サブパスを除いて小文字にする', () => {
+    expect(normalizePurl('pkg:Deb/Debian/libssl3@3.0.11?arch=amd64#sub')).toBe('pkg:deb/debian/libssl3');
+  });
+
+  it('purl で照合する', () => {
+    expect(idOf({ name: 'libssl3', purl: 'pkg:deb/debian/libssl3@3.0.11?arch=amd64' })).toBe('openssl');
+    expect(idOf({ name: 'bcprov-jdk18on', purl: 'pkg:maven/org.bouncycastle/bcprov-jdk18on@1.78' })).toBe(
+      'bouncycastle-java',
+    );
+    expect(idOf({ name: 'stdlib', purl: 'pkg:golang/stdlib@go1.24.1' })).toBe('go-stdlib');
+    expect(idOf({ name: 'lodash', purl: 'pkg:npm/lodash' })).toBeUndefined();
+  });
+
+  it('purl が無い部品は名前（小文字・完全一致）で照合する', () => {
+    expect(idOf({ name: 'openssl' })).toBe('openssl');
+    expect(idOf({ name: 'OpenSSL' })).toBe('openssl');
+    expect(idOf({ name: 'openssl-extra' })).toBeUndefined();
+  });
+
+  it('en オーバーレイで label / note が差し替わり、訳が無い項目は原文', () => {
+    const ja = BUNDLED_CRYPTO_LIBRARIES.find((l) => l.id === 'bouncycastle-java');
+    const en = getCryptoLibraries('en').find((l) => l.id === 'bouncycastle-java');
+    expect(en?.label).toBe('Bouncy Castle (Java)');
+    expect(en?.note).not.toBe(ja?.note);
+    expect(getCryptoLibraries('ja')).toBe(BUNDLED_CRYPTO_LIBRARIES);
   });
 });
