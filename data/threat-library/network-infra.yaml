@@ -593,20 +593,54 @@ rules:
     category: "Tampering"
     name: "Web キャッシュポイズニングと Web キャッシュデセプション"
     severity: Medium
-    description: "{{nodeName}} で応答のキャッシュを有効にしている場合、キャッシュは要求の一部（ホスト名・パス等のキャッシュキー）だけを見て、同じキーの要求に保存した応答を返す。背後のアプリがキャッシュキーに含まれないヘッダー（X-Forwarded-Host 等）やパラメーターを応答に反映すると、攻撃者は細工した要求で悪意のあるスクリプトや誘導先を含む応答をキャッシュに保存させ、同じページを開いた全利用者に配信できる（キャッシュポイズニング）。また、背後のアプリが /account/profile.css のような存在しないパスにも本来のページを返す場合、攻撃者は利用者にそのリンクを開かせ、静的ファイルとしてキャッシュされた個人ページ（氏名・トークン等）を後から取り出せる（Web キャッシュデセプション）（Can）。一方、キャッシュするのは利用者に依存しない応答だけにし、Cookie や Authorization を伴う応答・個人ページをキャッシュせず、応答に反映するヘッダーを除去するかキャッシュキーに含め、拡張子ではなく背後の Cache-Control にもとづいてキャッシュの可否を決めていれば、他人に配信される応答を作ることも、個人ページを取り出すこともできない（Cannot）。キャッシュを使っていない {{nodeName}} では成立しない（CDN では応答のキャッシュが主機能のため、多くの構成で当てはまる）。blast radius はキャッシュされた応答を受け取る全利用者と、キャッシュに残った個人ページの持ち主。"
-    mitigation: "[Foundation] CDN・リバースプロキシでキャッシュを使っているかを確認し、使う場合は対象を利用者に依存しない静的なコンテンツに限る。Cookie や Authorization を伴う要求への応答と、Set-Cookie を含む応答をキャッシュしない。背後のアプリは個人ページに Cache-Control: no-store（または private）を付ける。 [Enterprise] キャッシュの可否を拡張子やパスの形ではなく背後の Cache-Control にもとづいて決める。応答に影響するヘッダー（X-Forwarded-Host 等）はキャッシュする段で除去するか、キャッシュキーに含める。背後のアプリが存在しないパスや余分な末尾の付いたパスに本来のページを返さないようにする。 [Advanced] キャッシュキーと背後のパスの解釈の差（区切り文字・エンコード・正規化）を検査に含め、キャッシュの設定を変えるたびに Web キャッシュポイズニング・デセプションの検査を行う。"
+    description: "{{nodeName}} で応答のキャッシュを有効にしている場合、キャッシュは要求の一部（ホスト名・パス等のキャッシュキー）だけを見て、同じキーの要求に保存した応答を返す。背後のアプリがキャッシュキーに含まれないヘッダー（X-Forwarded-Host 等）やパラメーターを応答に反映すると、攻撃者は細工した要求で悪意のあるスクリプトや誘導先を含む応答をキャッシュに保存させ、同じページを開いた全利用者に配信できる（キャッシュポイズニング）。また、背後のアプリが /account/profile.css のような存在しないパスにも本来のページを返す場合、攻撃者は利用者にそのリンクを開かせ、静的ファイルとしてキャッシュされた個人ページ（氏名・トークン等）を後から取り出せる（Web キャッシュデセプション）（Can）。一方、キャッシュするのは利用者に依存しない応答だけにし、Cookie や Authorization を伴う応答・個人ページをキャッシュせず、応答に反映するヘッダーを除去するかキャッシュキーに含め、拡張子ではなく背後の Cache-Control にもとづいてキャッシュの可否を決めていれば、他人に配信される応答を作ることも、個人ページを取り出すこともできない（Cannot）。攻撃面属性の「応答キャッシュ」を無しと入力した {{nodeName}} にはこのカードは出ない（未入力はキャッシュ有りとみなす）。blast radius はキャッシュされた応答を受け取る全利用者と、キャッシュに残った個人ページの持ち主。"
+    mitigation: "[Foundation] リバースプロキシ・API ゲートウェイでキャッシュを使っているかを確認し、使う場合は対象を利用者に依存しない静的なコンテンツに限る。Cookie や Authorization を伴う要求への応答と、Set-Cookie を含む応答をキャッシュしない。背後のアプリは個人ページに Cache-Control: no-store（または private）を付ける。 [Enterprise] キャッシュの可否を拡張子やパスの形ではなく背後の Cache-Control にもとづいて決める。応答に影響するヘッダー（X-Forwarded-Host 等）はキャッシュする段で除去するか、キャッシュキーに含める。背後のアプリが存在しないパスや余分な末尾の付いたパスに本来のページを返さないようにする。 [Advanced] キャッシュキーと背後のパスの解釈の差（区切り文字・エンコード・正規化）を検査に含め、キャッシュの設定を変えるたびに Web キャッシュポイズニング・デセプションの検査を行う。"
     appliesTo:
       kind: node
-      # 応答のキャッシュを持つ前段。CDN はキャッシュが主機能。GATEWAY は応答キャッシュが任意機能（主要製品で既定は無効）で
-      # API の応答は利用者ごとに異なりキャッシュしない構成が多く、全 API ゲートウェイでの誤検知になるため入れない。
-      # LOAD_BALANCER / WAF は応答をキャッシュしない。AI_GATEWAY のセマンティックキャッシュは別の脅威（未作成）。
+      # 応答キャッシュを任意機能として持つ前段。キャッシュの有無は攻撃面属性 hasResponseCache で表す
+      # （2026-10-21〜。未入力は insecure baseline＝キャッシュ有り）。CDN は攻撃面属性を持たず、キャッシュが主機能のため
+      # netinfra-cdn-cache-poisoning-001 に分ける（同じ canonicalId）。LOAD_BALANCER / WAF は応答をキャッシュしない。
+      # AI_GATEWAY のセマンティックキャッシュは別の脅威（未作成）。
       anyOf:
         - nodeType: REVERSE_PROXY
-        - nodeType: CDN
+        - nodeType: GATEWAY
+      attackSurface:
+        hasResponseCache: true
       # 汚染される応答も、個人ページを返してしまうのも背後のアプリなので、背後へ中継している（outbound）ときだけ発火する。
+      connection:
+        direction: outbound
+        peerType: [FRONT_END_SERVER, BACKEND_API, PROCESS, OTHER_APP, WEB_FORM, PAYMENT_PAGE, GATEWAY, REVERSE_PROXY, LOAD_BALANCER, WAF]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+    references:
+      - title: "IETF RFC 9111 - HTTP Caching（キャッシュキーと、保存してよい応答）"
+        url: "https://www.rfc-editor.org/rfc/rfc9111"
+      - title: "MITRE CWE-524 - Use of Cache Containing Sensitive Information"
+        url: "https://cwe.mitre.org/data/definitions/524.html"
+      - title: "PortSwigger Web Security Academy - Web cache poisoning"
+        url: "https://portswigger.net/web-security/web-cache-poisoning"
+      - title: "PortSwigger Web Security Academy - Web cache deception"
+        url: "https://portswigger.net/web-security/web-cache-deception"
+
+  # ── Web キャッシュポイズニング / Web キャッシュデセプション：CDN（経路依存）──────────
+  - id: netinfra-cdn-cache-poisoning-001
+    canonicalId: web-cache-poisoning
+    framework: STRIDE
+    category: "Tampering"
+    name: "Web キャッシュポイズニングと Web キャッシュデセプション"
+    severity: Medium
+    description: "{{nodeName}} で応答のキャッシュを有効にしている場合、キャッシュは要求の一部（ホスト名・パス等のキャッシュキー）だけを見て、同じキーの要求に保存した応答を返す。背後のアプリがキャッシュキーに含まれないヘッダー（X-Forwarded-Host 等）やパラメーターを応答に反映すると、攻撃者は細工した要求で悪意のあるスクリプトや誘導先を含む応答をキャッシュに保存させ、同じページを開いた全利用者に配信できる（キャッシュポイズニング）。また、背後のアプリが /account/profile.css のような存在しないパスにも本来のページを返す場合、攻撃者は利用者にそのリンクを開かせ、静的ファイルとしてキャッシュされた個人ページ（氏名・トークン等）を後から取り出せる（Web キャッシュデセプション）（Can）。一方、キャッシュするのは利用者に依存しない応答だけにし、Cookie や Authorization を伴う応答・個人ページをキャッシュせず、応答に反映するヘッダーを除去するかキャッシュキーに含め、拡張子ではなく背後の Cache-Control にもとづいてキャッシュの可否を決めていれば、他人に配信される応答を作ることも、個人ページを取り出すこともできない（Cannot）。CDN では応答のキャッシュが主機能のため、多くの構成で当てはまる。blast radius はキャッシュされた応答を受け取る全利用者と、キャッシュに残った個人ページの持ち主。"
+    mitigation: "[Foundation] CDN でキャッシュする対象を確認し、使う場合は対象を利用者に依存しない静的なコンテンツに限る。Cookie や Authorization を伴う要求への応答と、Set-Cookie を含む応答をキャッシュしない。背後のアプリは個人ページに Cache-Control: no-store（または private）を付ける。 [Enterprise] キャッシュの可否を拡張子やパスの形ではなく背後の Cache-Control にもとづいて決める。応答に影響するヘッダー（X-Forwarded-Host 等）はキャッシュする段で除去するか、キャッシュキーに含める。背後のアプリが存在しないパスや余分な末尾の付いたパスに本来のページを返さないようにする。 [Advanced] キャッシュキーと背後のパスの解釈の差（区切り文字・エンコード・正規化）を検査に含め、キャッシュの設定を変えるたびに Web キャッシュポイズニング・デセプションの検査を行う。"
+    appliesTo:
+      kind: node
+      # CDN は攻撃面属性を持たず（入力できない）、応答のキャッシュが主機能のため常に対象にする。
+      # リバースプロキシ・API ゲートウェイは netinfra-reverse-proxy-cache-poisoning-001（hasResponseCache で判定）。
+      nodeType: CDN
       # CDN の中継先は WAF・ロードバランサー等の別の前段であることが多いため、peerType に前段の型も含める
       # （キャッシュは段ごとに別物なので、キャッシュを持つ段ごとに 1 枚出てよい）。
-      # キャッシュの有無は属性で表せないため、description で「キャッシュを使っていなければ成立しない」と明示する。
       connection:
         direction: outbound
         peerType: [FRONT_END_SERVER, BACKEND_API, PROCESS, OTHER_APP, WEB_FORM, PAYMENT_PAGE, GATEWAY, REVERSE_PROXY, LOAD_BALANCER, WAF]
