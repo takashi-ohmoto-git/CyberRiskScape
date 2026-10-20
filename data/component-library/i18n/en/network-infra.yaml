@@ -22,6 +22,10 @@ components:
     label: "Load balancer"
     description: "A load balancer. In L7 mode (SSL offload) it terminates TLS and reconnects to the backend re-encrypted or in plaintext; in L4 mode it passes encryption through. In the cloud this includes AWS ALB (terminates) and NLB (terminates only with a TLS listener), Azure Application Gateway (terminates) and Azure Load Balancer (passes through), Google Cloud Load Balancing, and OCI Load Balancer and Network Load Balancer. Gateway Load Balancer (AWS / Azure), which steers traffic to inspection appliances, passes encryption through."
 
+  REVERSE_PROXY:
+    label: "Reverse proxy"
+    description: "A reverse proxy (nginx, HAProxy, Apache httpd mod_proxy, Envoy, etc.). Receives external requests, terminates TLS, and relays them over a separate connection to the web servers or applications behind it based on Host or path. It hosts no application of its own. Use the API gateway when it handles API authentication, authorization, or rate limiting, and the load balancer when spreading load across servers is the main purpose. Use the attackSurface attribute to state how it is exposed and what defenses are in place."
+
   CDN:
     label: "CDN"
     description: "A CDN. Terminates the user's TLS at the edge and reconnects to the origin over a separate TLS session. Also represents L7 DDoS protection. In the cloud this includes Amazon CloudFront, Azure Front Door, and Google Cloud CDN and Media CDN."

@@ -148,7 +148,7 @@ components:
     icon: { kind: builtin, name: "log-in" }
     shape: rounded
     color: "bg-transparent"
-    description: "API ゲートウェイ／リバースプロキシ。境界での認可と流入制御を担う。クラウドでは Amazon API Gateway / Azure API Management / Google Cloud API Gateway・Apigee / OCI API Gateway 等が該当する。"
+    description: "API ゲートウェイ。境界での API の認証・認可、API キー、レート制限などの流入制御を担う。中継だけを行うものはリバースプロキシを使う。クラウドでは Amazon API Gateway / Azure API Management / Google Cloud API Gateway・Apigee / OCI API Gateway 等が該当する。"
     posture: [logRetention, patch]
 
   - id: FRONT_END_SERVER
@@ -157,7 +157,7 @@ components:
     icon: { kind: builtin, name: "server" }
     shape: rounded
     color: "bg-transparent"
-    description: "Web サーバー・リバースプロキシ等の外部公開ポイント。attackSurface 属性で公開条件・防御策の有無を表現する。"
+    description: "Web サーバー等、アプリやコンテンツを自身で提供する外部公開ポイント。中継だけを行うものはリバースプロキシを使う。attackSurface 属性で公開条件・防御策の有無を表現する。"
     posture: [logRetention, patch]
 
   - id: CONNECTOR

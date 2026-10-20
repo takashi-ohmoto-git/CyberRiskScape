@@ -82,6 +82,7 @@ PQC レイヤーで機器を足した図を、深度レイヤーの脅威分析�
 | L2 スイッチ | Network & Edge | 透過 |
 | ルーター / L3 スイッチ | Network & Edge | 透過 |
 | ロードバランサー | Network & Edge | 終端（L4 動作なら透過） |
+| リバースプロキシ | Network & Edge | 終端（TCP / SNI での転送なら透過） |
 | CDN | Network & Edge | 終端 |
 | VPN ゲートウェイ | Network & Edge | トンネル |
 | サービスメッシュ | Network & Edge | 終端 |

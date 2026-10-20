@@ -160,11 +160,12 @@ function getThreatActorTypeOptions(t: TFunc): { val: ThreatActorType; label: str
 
 /**
  * Attack Surface Attribute を表示するコンポーネント型。
- * Web/外部公開ポイント（FRONT_END_SERVER / GATEWAY）のみ対象。
+ * Web/外部公開ポイント（FRONT_END_SERVER / GATEWAY / REVERSE_PROXY）のみ対象。
  */
 const ATTACK_SURFACE_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set([
   'FRONT_END_SERVER',
   'GATEWAY',
+  'REVERSE_PROXY',
 ]);
 
 /**

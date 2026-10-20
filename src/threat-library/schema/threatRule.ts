@@ -264,7 +264,7 @@ const ConnectionRequirementSchema = z
     required: z.boolean().optional(),
     direction: ConnectionDirectionSchema.optional(),
     peerType: z.array(ComponentTypeIdSchema).nonempty().optional(),
-    /** 接続先（ピア）ノードの攻撃面条件。攻撃面は FRONT_END_SERVER / GATEWAY で意味を持つ。 */
+    /** 接続先（ピア）ノードの攻撃面条件。攻撃面は FRONT_END_SERVER / GATEWAY / REVERSE_PROXY で意味を持つ。 */
     peerAttackSurface: AttackSurfaceMatchSchema.optional(),
   })
   .superRefine((c, ctx) => {
@@ -357,7 +357,7 @@ const NodeAppliesToSchema = z.object({
   connection: ConnectionRequirementSchema.optional(),
   /**
    * Attack Surface Attribute による絞り込み（任意）。
-   * FRONT_END_SERVER / GATEWAY 向け。指定された属性の値が一致するノードのみ発火。
+   * FRONT_END_SERVER / GATEWAY / REVERSE_PROXY 向け。指定された属性の値が一致するノードのみ発火。
    */
   attackSurface: AttackSurfaceMatchSchema.optional(),
   /**

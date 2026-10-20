@@ -118,7 +118,7 @@ export type ThreatActorType =
  * 攻撃面の構成情報。すべて optional boolean で、未設定は「insecure baseline」
  * （hasGlobalIp=true, それ以外=false）として扱う。
  *
- * 適用対象：FRONT_END_SERVER / GATEWAY（UI 表示はこの 2 種のみ）。
+ * 適用対象：FRONT_END_SERVER / GATEWAY / REVERSE_PROXY（UI 表示はこの 3 種のみ）。
  * 他のノード型では値があっても脅威エンジンは参照しない。
  */
 export interface AttackSurfaceAttribute {
@@ -584,7 +584,7 @@ export interface DiagramNode {
    */
   userTrustAttribute?: UserTrustAttribute;
   /**
-   * 攻撃面属性（FRONT_END_SERVER / GATEWAY 用）。
+   * 攻撃面属性（FRONT_END_SERVER / GATEWAY / REVERSE_PROXY 用）。
    * 未設定は insecure baseline（hasGlobalIp=true, 他=false）として脅威エンジンが扱う。
    */
   attackSurface?: AttackSurfaceAttribute;

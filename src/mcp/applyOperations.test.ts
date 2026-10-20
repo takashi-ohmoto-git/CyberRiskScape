@@ -150,6 +150,14 @@ describe('正常系：ノード', () => {
     expect(n.managedState).toBe('Unmanaged');
   });
 
+  it('add_node：REVERSE_PROXY は攻撃面（attackSurface）を設定できる', () => {
+    const { project, results } = apply([
+      { op: 'add_node', type: 'REVERSE_PROXY', label: 'RP', attackSurface: { hasGlobalIp: true } },
+    ]);
+    const n = l1(project).nodes.find((x) => x.id === results[0].id)!;
+    expect(n.attackSurface).toEqual({ hasGlobalIp: true });
+  });
+
   it('update_node：許可リストの属性を更新し、null で消せる', () => {
     const { project } = apply([
       { op: 'update_node', id: 'n-db', set: { label: '更新後', description: '説明' } },

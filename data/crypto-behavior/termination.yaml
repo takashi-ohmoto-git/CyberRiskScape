@@ -26,6 +26,10 @@ behaviors:
     default: terminate
     alternatives: [passthrough]
     note: "L7（SSL オフロード）では TLS を終端する。L4 では透過。バックエンドへ再暗号化か平文かを確認する。"
+  - componentType: REVERSE_PROXY
+    default: terminate
+    alternatives: [passthrough]
+    note: "利用者からの TLS を終端し、背後のサーバーへ別の接続で中継する。TCP / SNI での転送（stream 等）では透過。背後の区間が再暗号化か平文かを確認する。"
   - componentType: CDN
     default: terminate
     alternatives: []

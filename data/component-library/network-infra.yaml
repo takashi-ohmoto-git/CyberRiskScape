@@ -1,9 +1,9 @@
 # Network & Security Infrastructure コンポーネントライブラリ。
 #
 # PQC 移行支援で「経路上で暗号が変わる箇所（終端・復号・トンネル化）」を描くための
-# ネットワーク機器・セキュリティ製品の 18 型：
-#   NETWORK        : L2_SWITCH / ROUTER / LOAD_BALANCER / CDN / VPN_GATEWAY / WIRELESS_AP /
-#                    SERVICE_MESH
+# ネットワーク機器・セキュリティ製品の 19 型：
+#   NETWORK        : L2_SWITCH / ROUTER / LOAD_BALANCER / REVERSE_PROXY / CDN / VPN_GATEWAY /
+#                    WIRELESS_AP / SERVICE_MESH
 #   PROTECT        : FIREWALL / WAF / IDS_IPS / SECURE_WEB_GATEWAY / SASE / EMAIL_GATEWAY /
 #                    ZTNA_PROXY（ラベルは Security Controls）
 #   CONTACT_CENTER : SBC
@@ -73,6 +73,15 @@ components:
     color: "bg-transparent"
     description: "ロードバランサー。L7 動作（SSL オフロード）では TLS を終端し、バックエンドへ再暗号化または平文で再接続する。L4 動作では暗号を透過する。クラウドでは AWS ALB（終端）・NLB（TLS リスナー使用時のみ終端）/ Azure Application Gateway（終端）・Azure Load Balancer（透過）/ Google Cloud Load Balancing / OCI Load Balancer・Network Load Balancer 等が該当する。検査装置へ振り分ける Gateway Load Balancer（AWS / Azure）は透過。"
     posture: [log, patch]
+
+  - id: REVERSE_PROXY
+    label: "リバースプロキシ"
+    category: NETWORK
+    icon: { kind: builtin, name: "signpost" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "リバースプロキシ（nginx・HAProxy・Apache httpd の mod_proxy・Envoy 等）。外部からの要求を受けて TLS を終端し、Host やパスに応じて背後の Web サーバー・アプリへ別の接続で中継する。自身はアプリを持たない。API の認証・認可やレート制限を担う場合は APIゲートウェイ、複数台への負荷分散が主目的ならロードバランサーを使う。attackSurface 属性で公開条件・防御策の有無を表現する。"
+    posture: [logRetention, patch]
 
   - id: CDN
     label: "CDN"

@@ -64,11 +64,11 @@ components:
 
   GATEWAY:
     label: "API gateway"
-    description: "An API gateway or reverse proxy. Handles authorization and ingress control at the boundary. In the cloud this includes Amazon API Gateway, Azure API Management, Google Cloud API Gateway and Apigee, and OCI API Gateway."
+    description: "An API gateway. Handles API authentication and authorization, API keys, rate limiting, and other ingress control at the boundary. Use the reverse proxy for components that only relay. In the cloud this includes Amazon API Gateway, Azure API Management, Google Cloud API Gateway and Apigee, and OCI API Gateway."
 
   FRONT_END_SERVER:
     label: "Front-end Server"
-    description: "An internet-facing entry point such as a web server or reverse proxy. Use the attackSurface attribute to state how it is exposed and what defenses are in place."
+    description: "An internet-facing entry point, such as a web server, that serves applications or content itself. Use the reverse proxy for components that only relay. Use the attackSurface attribute to state how it is exposed and what defenses are in place."
 
   CONNECTOR:
     label: "Connector"

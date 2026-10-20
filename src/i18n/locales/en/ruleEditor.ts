@@ -137,7 +137,7 @@ export const enRuleEditor: Partial<Record<TranslationKey, string>> = {
   'ruleEditor.nodeTarget.peerTypeLabel': 'Peer type (optional, OR)',
   'ruleEditor.nodeTarget.peerAttackSurfaceLabel': 'Peer attack surface (optional)',
   'ruleEditor.nodeTarget.attackSurfaceLabel':
-    'This node\'s attack surface (optional; meaningful for FRONT_END_SERVER / GATEWAY etc.)',
+    'This node\'s attack surface (optional; meaningful for FRONT_END_SERVER / GATEWAY / REVERSE_PROXY etc.)',
   'ruleEditor.nodeTarget.agentAttributesLabel':
     'Agent attributes (optional; unset attributes assume worst case)',
   'ruleEditor.nodeTarget.agentAxis.agency': 'agency (autonomy level)',

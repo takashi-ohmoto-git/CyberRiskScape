@@ -345,7 +345,7 @@ const nextId = (prefix: string): string =>
 
 const AUTH_PROVIDER_EXCLUDED_CATEGORIES: ReadonlySet<string> = new Set(['DOCUMENTS', 'ATTACKER']);
 const MANAGED_STATE_APPLICABLE: ReadonlySet<string> = new Set(['PC', 'SMARTPHONE', 'IOT']);
-const ATTACK_SURFACE_APPLICABLE: ReadonlySet<string> = new Set(['FRONT_END_SERVER', 'GATEWAY']);
+const ATTACK_SURFACE_APPLICABLE: ReadonlySet<string> = new Set(['FRONT_END_SERVER', 'GATEWAY', 'REVERSE_PROXY']);
 const USER_TRUST_TO_MANAGED: Record<UserTrustAttribute, ManagedState> = {
   Guest: 'Unmanaged',
   Employee: 'Managed',

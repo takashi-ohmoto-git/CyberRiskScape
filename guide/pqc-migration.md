@@ -88,6 +88,7 @@ The devices that handle encryption along a path are available as types in `LIBRA
 | L2 switch | Network & Edge | Pass-through |
 | Router / L3 switch | Network & Edge | Pass-through |
 | Load balancer | Network & Edge | Terminate (pass-through when run at L4) |
+| Reverse proxy | Network & Edge | Terminate (pass-through when forwarding at TCP / SNI level) |
 | CDN | Network & Edge | Terminate |
 | VPN gateway | Network & Edge | Tunnel |
 | Service mesh | Network & Edge | Terminate |
