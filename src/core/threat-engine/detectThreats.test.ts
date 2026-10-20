@@ -1725,3 +1725,41 @@ describe('detectThreats - subject', () => {
     expect(t?.nodeId).toBe('g'); // 既存 UI 互換：ターゲットノード
   });
 });
+
+// ─── attackSurface.hasResponseCache（baseline = true） ──────────
+describe('detectThreats - attackSurface.hasResponseCache', () => {
+  const cacheRule: ThreatRule = {
+    id: 'response-cache',
+    framework: 'STRIDE',
+    category: 'X',
+    severity: 'High',
+    description: '応答キャッシュを使うノード',
+    appliesTo: {
+      kind: 'node',
+      nodeType: 'REVERSE_PROXY',
+      attackSurface: { hasResponseCache: true },
+      connection: { required: false },
+    },
+  };
+
+  it('未入力ノードは baseline（キャッシュ有り）で発火し、baseline 使用フラグが立つ', () => {
+    const out = detectThreats({
+      nodes: [{ id: 'p', type: 'REVERSE_PROXY', x: 0, y: 0 }],
+      edges: [],
+      framework: 'STRIDE',
+      rules: [cacheRule],
+    });
+    expect(out).toHaveLength(1);
+    expect(out[0].assumptionFlags).toContain('attackSurface');
+  });
+
+  it('hasResponseCache: false を入力したノードでは発火しない', () => {
+    const out = detectThreats({
+      nodes: [{ id: 'p', type: 'REVERSE_PROXY', x: 0, y: 0, attackSurface: { hasResponseCache: false } }],
+      edges: [],
+      framework: 'STRIDE',
+      rules: [cacheRule],
+    });
+    expect(out).toHaveLength(0);
+  });
+});

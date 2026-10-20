@@ -69,6 +69,7 @@ const jaCore = {
   'appliesToSummary.field.hasAccessLog': 'アクセスログ',
   'appliesToSummary.field.hasWafProtection': 'WAF保護',
   'appliesToSummary.field.hasDdosProtection': 'DDoS保護',
+  'appliesToSummary.field.hasResponseCache': '応答キャッシュ',
   'appliesToSummary.field.auth': '認証',
   'appliesToSummary.field.network': 'ネットワーク',
   'appliesToSummary.field.encryption': '暗号化',

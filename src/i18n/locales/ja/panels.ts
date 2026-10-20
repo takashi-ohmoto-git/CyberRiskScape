@@ -60,10 +60,11 @@ export const jaPanels = {
   'panels.node.attackSurface.accessLog': 'アクセスログ',
   'panels.node.attackSurface.wafProtection': 'WAF / WAP による保護',
   'panels.node.attackSurface.ddosProtection': 'DoS / DDoS 保護',
+  'panels.node.attackSurface.responseCache': '応答キャッシュ',
   'panels.node.attackSurface.yes': '有り',
   'panels.node.attackSurface.no': '無し',
   'panels.node.attackSurfaceNote':
-    'Web サーバー等の公開ポイントの攻撃面構成。未設定時は Global IP=有り、その他=無し の insecure baseline として脅威評価される。',
+    'Web サーバー等の公開ポイントの攻撃面構成。未設定時は Global IP・応答キャッシュ=有り、その他=無し の insecure baseline として脅威評価される。',
 
   'panels.posture.title': '運用状況',
   'panels.posture.note': '未入力の項目は、対策なしとして脅威を評価します。',

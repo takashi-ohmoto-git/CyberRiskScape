@@ -14,6 +14,7 @@ const SURFACE_ROWS: { key: keyof AttackSurfaceDraft; labelKey: TranslationKey }[
   { key: 'hasAccessLog', labelKey: 'ruleEditor.attackSurface.field.hasAccessLog' },
   { key: 'hasWafProtection', labelKey: 'ruleEditor.attackSurface.field.hasWafProtection' },
   { key: 'hasDdosProtection', labelKey: 'ruleEditor.attackSurface.field.hasDdosProtection' },
+  { key: 'hasResponseCache', labelKey: 'ruleEditor.attackSurface.field.hasResponseCache' },
 ];
 
 const TRISTATE: { value: boolean | null; labelKey: TranslationKey }[] = [

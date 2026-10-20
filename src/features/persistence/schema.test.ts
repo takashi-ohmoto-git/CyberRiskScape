@@ -687,4 +687,17 @@ describe('PersistedProjectSchema', () => {
     });
     expect(r.success).toBe(false);
   });
+
+  it('attackSurface に hasResponseCache が無い旧データも受理する（後方互換）', () => {
+    const r = PersistedProjectSchema.safeParse({
+      ...VALID_PROJECT,
+      nodes: [{ id: 'n1', type: 'REVERSE_PROXY', x: 0, y: 0, attackSurface: { hasGlobalIp: true } }],
+    });
+    expect(r.success).toBe(true);
+    const r2 = PersistedProjectSchema.safeParse({
+      ...VALID_PROJECT,
+      nodes: [{ id: 'n1', type: 'REVERSE_PROXY', x: 0, y: 0, attackSurface: { hasResponseCache: false } }],
+    });
+    expect(r2.success).toBe(true);
+  });
 });

@@ -207,6 +207,7 @@ const ATTACK_SURFACE_KEYS = [
   'hasAccessLog',
   'hasWafProtection',
   'hasDdosProtection',
+  'hasResponseCache',
 ] as const satisfies readonly (keyof AttackSurfaceDraft)[];
 
 const AGENT_ATTR_KEYS = [
@@ -253,6 +254,7 @@ export function emptyAttackSurface(): AttackSurfaceDraft {
     hasAccessLog: null,
     hasWafProtection: null,
     hasDdosProtection: null,
+    hasResponseCache: null,
   };
 }
 

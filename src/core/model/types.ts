@@ -116,7 +116,7 @@ export type ThreatActorType =
 /**
  * Attack Surface Attribute。Web サーバー等の外部公開ポイントに付与する
  * 攻撃面の構成情報。すべて optional boolean で、未設定は「insecure baseline」
- * （hasGlobalIp=true, それ以外=false）として扱う。
+ * （hasGlobalIp=true, hasResponseCache=true, それ以外=false）として扱う。
  *
  * 適用対象：FRONT_END_SERVER / GATEWAY / REVERSE_PROXY（UI 表示はこの 3 種のみ）。
  * 他のノード型では値があっても脅威エンジンは参照しない。
@@ -136,6 +136,8 @@ export interface AttackSurfaceAttribute {
   hasWafProtection?: boolean;
   /** DoS / DDoS 保護。true = 有り */
   hasDdosProtection?: boolean;
+  /** 応答キャッシュ（CDN・リバースプロキシ等でレスポンスをキャッシュする）。true = 有り */
+  hasResponseCache?: boolean;
 }
 
 export type AttackSurfaceKey = keyof AttackSurfaceAttribute;
@@ -585,7 +587,7 @@ export interface DiagramNode {
   userTrustAttribute?: UserTrustAttribute;
   /**
    * 攻撃面属性（FRONT_END_SERVER / GATEWAY / REVERSE_PROXY 用）。
-   * 未設定は insecure baseline（hasGlobalIp=true, 他=false）として脅威エンジンが扱う。
+   * 未設定は insecure baseline（hasGlobalIp=true, hasResponseCache=true, 他=false）として脅威エンジンが扱う。
    */
   attackSurface?: AttackSurfaceAttribute;
   /**

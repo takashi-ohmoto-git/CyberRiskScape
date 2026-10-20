@@ -180,6 +180,7 @@ const ATTACK_SURFACE_DEFAULTS: Required<AttackSurfaceAttribute> = {
   hasAccessLog: false,
   hasWafProtection: false,
   hasDdosProtection: false,
+  hasResponseCache: true,
 };
 
 function getAttackSurfaceFields(t: TFunc): { key: AttackSurfaceKey; label: string }[] {
@@ -191,6 +192,7 @@ function getAttackSurfaceFields(t: TFunc): { key: AttackSurfaceKey; label: strin
     { key: 'hasAccessLog', label: t('panels.node.attackSurface.accessLog') },
     { key: 'hasWafProtection', label: t('panels.node.attackSurface.wafProtection') },
     { key: 'hasDdosProtection', label: t('panels.node.attackSurface.ddosProtection') },
+    { key: 'hasResponseCache', label: t('panels.node.attackSurface.responseCache') },
   ];
 }
 

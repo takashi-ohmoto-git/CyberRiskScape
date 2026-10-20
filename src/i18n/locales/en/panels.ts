@@ -59,10 +59,11 @@ export const enPanels: Partial<Record<TranslationKey, string>> = {
   'panels.node.attackSurface.accessLog': 'Access log',
   'panels.node.attackSurface.wafProtection': 'WAF / WAP protection',
   'panels.node.attackSurface.ddosProtection': 'DoS / DDoS protection',
+  'panels.node.attackSurface.responseCache': 'Response cache',
   'panels.node.attackSurface.yes': 'Yes',
   'panels.node.attackSurface.no': 'No',
   'panels.node.attackSurfaceNote':
-    'Attack surface configuration for public-facing points such as web servers. When unset, this is evaluated with the insecure baseline (Global IP = yes, others = no).',
+    'Attack surface configuration for public-facing points such as web servers. When unset, this is evaluated with the insecure baseline (Global IP and response cache = yes, others = no).',
 
   'panels.posture.title': 'Operational posture',
   'panels.posture.note': 'Items left blank are evaluated as having no countermeasure.',

@@ -70,6 +70,7 @@ const PersistedAttackSurfaceSchema = z.object({
   hasAccessLog: z.boolean().optional(),
   hasWafProtection: z.boolean().optional(),
   hasDdosProtection: z.boolean().optional(),
+  hasResponseCache: z.boolean().optional(),
 });
 
 /** エージェント特有属性。全フィールド optional、空オブジェクトも許容。 */

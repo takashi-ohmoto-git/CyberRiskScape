@@ -85,6 +85,7 @@ export const enRuleEditor: Partial<Record<TranslationKey, string>> = {
   'ruleEditor.attackSurface.field.hasAccessLog': 'Access log',
   'ruleEditor.attackSurface.field.hasWafProtection': 'WAF',
   'ruleEditor.attackSurface.field.hasDdosProtection': 'DDoS protection',
+  'ruleEditor.attackSurface.field.hasResponseCache': 'Response cache',
   'ruleEditor.attackSurface.tristate.unspecified': 'Any',
   'ruleEditor.attackSurface.tristate.yes': 'Yes',
   'ruleEditor.attackSurface.tristate.no': 'No',
