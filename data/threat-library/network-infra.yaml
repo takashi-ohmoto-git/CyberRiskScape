@@ -2,7 +2,8 @@
 # 境界機器の侵入起点化、TLS インスペクション用 CA 鍵、CDN による第三者の TLS 終端、
 # STARTTLS のダウングレード、L2 のなりすまし、不正アクセスポイントに加え、
 # 踏み台への管理経路の集中、ZTNA プロキシへのアクセス判定の集中と迂回、専用線の平文区間、
-# プライベートエンドポイント経由の持ち出し、サービスメッシュの mTLS 非強制とメッシュ CA の侵害を扱う。
+# プライベートエンドポイント経由の持ち出し、サービスメッシュの mTLS 非強制とメッシュ CA の侵害、
+# リバースプロキシの要求の解釈のずれ（リクエストスマグリング）・転送ヘッダーの信用・迂回・キャッシュの悪用を扱う。
 # PQC 移行に直結するもの（受動復号・HSM・VPN トンネルの HNDL）は pqc.yaml に置く。
 #
 # 出典（一般的な基準のみを根拠とする。個別の事故報告は出典・事例に用いない）:
@@ -23,6 +24,12 @@
 #   - クラウド事業者の公式ドキュメント（AWS PrivateLink のエンドポイントポリシー、Azure Private Link の
 #     DNS 構成、Azure ExpressRoute の MACsec、Google Cloud IAP の署名付きヘッダー、Google Cloud VPC
 #     Service Controls）と Istio のセキュリティの概念の説明。
+#   - IETF RFC 9112（HTTP/1.1）/ RFC 9111（HTTP Caching）/ RFC 7239（Forwarded HTTP Extension）。
+#   - MITRE CWE（CWE-444 / CWE-348 / CWE-288 / CWE-524）。
+#   - OWASP Web Security Testing Guide（WSTG-INPV-15 HTTP Splitting Smuggling / WSTG-INPV-17 Host Header
+#     Injection）と OWASP API Security Top 10 2023（API8 Security Misconfiguration）。
+#   - PortSwigger Web Security Academy（HTTP request smuggling / HTTP Host header attacks /
+#     Web cache poisoning / Web cache deception）。
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -37,8 +44,10 @@
 #     露出 → api-control-plane-internet-exposure-001（canonicalId: web-remote-management-exposure）。
 #     本ファイルの境界機器ルールは管理面に加え、利用者向けのサービス面（VPN ポータル・SMTP・SIP 等）の
 #     既知脆弱性の悪用までを扱い、パッチ適用・KEV 追跡という別の対策軸を持つため別 canonicalId とする。
-#     攻撃面属性（attackSurface）は FRONT_END_SERVER / GATEWAY でしか入力できないため、露出は
-#     エッジの sourceTrust:[Internet] で表す。
+#     攻撃面属性（attackSurface）は FRONT_END_SERVER / GATEWAY / REVERSE_PROXY でしか入力できないため、露出は
+#     エッジの sourceTrust:[Internet] で表す。REVERSE_PROXY は攻撃面属性を持ち、公開・管理面・パッチの問いは
+#     stride-web-* と posture-patch-missing-001 で出るため、境界機器ルールの対象には入れない（同じノードに
+#     既知脆弱性・管理面のカードを重ねない）。
 #   - VPN の広域到達・閉域網の無認証 → zt-vpn-broad-network-access-001 / zt-implicit-trust-network-location-001
 #     （エッジの network 軸）でカバー済み。本ファイルの L2 ルールはスイッチ（ノード）視点で、同一セグメントに
 #     入った攻撃者が L2 の仕組みを悪用する点を扱い、subject も機構も異なる。
@@ -67,6 +76,19 @@
 #   - SERVICE_MESH → mTLS の非強制とメッシュ CA の侵害は機構も対策も異なるため 2 ルールに分ける。
 #     メッシュ CA は TLS インスペクション用 CA（利用者端末が信頼する CA で外部サイトを偽造）とは
 #     信頼する主体と偽造の対象が異なるため別 canonicalId とする。
+#
+#   REVERSE_PROXY（2026-10-20 追加）について:
+#   - 公開・送信元制限・管理面・アクセスログ・WAF・DDoS・平文と未認証の流入・TLS 終端の暗号の棚卸しは、
+#     既存の stride-web-* / stride-gateway-dos-001 / posture-* / pqc-* の対象に REVERSE_PROXY を足して扱う。
+#     利用者認証の有無（stride-web-no-user-auth-001 / stride-web-anonymous-on-public-001）は、リバースプロキシが
+#     認証を背後のアプリに任せることが多く全ノードで誤検知になるため対象に入れない。
+#   - リクエストスマグリング・転送ヘッダーの信用・キャッシュの悪用 → 既存に同義のルールは無い。新規
+#     （canonicalId: http-request-smuggling / forwarded-header-trust / web-cache-poisoning）。転送ヘッダーの偽装は
+#     ZTNA プロキシのルールと api-backend-gateway-bypass-001 が「迂回した経路での偽装」として触れるが、本ファイルの
+#     ルールはプロキシを正しく通った要求のヘッダーを素通しすることを扱い、機構が異なる。ブラウザのキャッシュ
+#     （client-endpoint-info-disclosure）とは保存場所と攻撃者が異なり別。
+#   - 背後のサーバーへの直接到達 → api-backend-gateway-bypass-001 と同じ脅威のため canonicalId: api-gateway-bypass を
+#     共有する（subject が異なり別カード）。CDN の迂回は CDN のルールの中で扱っており、独立させない。
 #
 #   専用線 / 閉域接続はノード型を設けず、エッジの network: [VPN]（画面表示「専用線 (VPN)」）で表す
 #   （専用線は機器ではなくリンクのため）:
@@ -424,3 +446,133 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/57/pt1/r5/final"
       - title: "Istio - Security concepts（ID と証明書の管理）"
         url: "https://istio.io/latest/docs/concepts/security/"
+
+  # ── リバースプロキシ（REVERSE_PROXY、2026-10-20）の固有脅威 ──────────────────
+  # 4 ルールとも「背後のサーバーへ中継している」ことが前提の脅威なので、背後のアプリ・API への
+  # outbound の線がある REVERSE_PROXY でだけ発火する（中継先を描いていない図では出さない）。
+  # 前段のプロキシ全般（CDN・LOAD_BALANCER・WAF・GATEWAY 等）にも共通する脅威だが、今回は REVERSE_PROXY に限る。
+
+  # ── HTTP リクエストスマグリング（経路依存）──────────────────────────────
+  - id: netinfra-reverse-proxy-request-smuggling-001
+    canonicalId: http-request-smuggling
+    framework: STRIDE
+    category: "Tampering"
+    name: "前段と背後の解釈のずれによる HTTP リクエストスマグリング"
+    severity: High
+    description: "{{nodeName}} は利用者からの HTTP リクエストを受け、背後のサーバーへ別の接続で中継する。リクエストの終わりをどこと判断するか（Content-Length と Transfer-Encoding の両方がある、値が不正・重複している、HTTP/2 で受けて HTTP/1.1 に変換して中継する等）について {{nodeName}} と背後のサーバーの解釈がずれていると、攻撃者は 1 つのリクエストの中に別のリクエストを紛れ込ませ、{{nodeName}} が見ていない要求として背後のサーバーに届けられる（Can）。紛れ込ませた要求は {{nodeName}} や前段の WAF のパス制限・アクセス制御を通らずに管理用のパスへ届き、背後との接続を共有する他の利用者の要求とつながってその利用者の応答（セッション Cookie を含む）を奪い、キャッシュを汚染することもある。一方、{{nodeName}} が曖昧なリクエスト（Content-Length と Transfer-Encoding の併用、不正な値、改行や制御文字を含むヘッダー）を拒否してから中継し、背後との間も HTTP/2 で通すか利用者をまたいで接続を再利用しない設定にし、{{nodeName}} と背後のサーバーのソフトウェアを最新に保っていれば、要求の境界をずらすことはできない（Cannot）。blast radius は {{nodeName}} を経由する全利用者の要求と応答、および前段で守っているつもりの背後のアプリのパス。"
+    mitigation: "[Foundation] リバースプロキシと背後のサーバーのソフトウェアを最新に保つ（解釈のずれは製品の修正で直されることが多い）。Content-Length と Transfer-Encoding の両方を持つ要求、値が不正な要求、ヘッダーに改行や制御文字を含む要求を拒否する設定にする。 [Enterprise] リバースプロキシから背後のサーバーまでを HTTP/2 で通し、HTTP/2 から HTTP/1.1 への変換（ダウングレード）を避ける。変換が避けられない場合は変換時に要求を検証し、背後との接続を利用者をまたいで再利用しない。構成を変えるたびにリクエストスマグリングの検査（DAST・専用の検査ツール）を行う。 [Advanced] 背後のサーバーでも厳格な HTTP の解釈を強制し、前段と背後で解釈がずれる組み合わせそのものをなくす。"
+    appliesTo:
+      kind: node
+      nodeType: REVERSE_PROXY
+      # 解釈のずれは前段と背後の組み合わせで起きるため、背後のサーバーへ中継している（outbound）ときだけ発火する。
+      connection:
+        direction: outbound
+        peerType: [FRONT_END_SERVER, BACKEND_API, GATEWAY, PROCESS, OTHER_APP, WEB_FORM, PAYMENT_PAGE]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "IETF RFC 9112 - HTTP/1.1（メッセージ本文の長さの決め方と、リクエストスマグリングの注意）"
+        url: "https://www.rfc-editor.org/rfc/rfc9112"
+      - title: "MITRE CWE-444 - Inconsistent Interpretation of HTTP Requests (HTTP Request/Response Smuggling)"
+        url: "https://cwe.mitre.org/data/definitions/444.html"
+      - title: "OWASP Web Security Testing Guide - Testing for HTTP Splitting Smuggling（WSTG-INPV-15）"
+        url: "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/15-Testing_for_HTTP_Splitting_Smuggling"
+      - title: "PortSwigger Web Security Academy - HTTP request smuggling"
+        url: "https://portswigger.net/web-security/request-smuggling"
+
+  # ── 転送ヘッダー・利用者ヘッダーの無条件の信用（経路依存）─────────────────────
+  - id: netinfra-reverse-proxy-forwarded-header-trust-001
+    canonicalId: forwarded-header-trust
+    framework: STRIDE
+    category: "Spoofing"
+    name: "転送ヘッダー・利用者ヘッダーの偽装（X-Forwarded-For・Host 等の無条件の信用）"
+    severity: High
+    description: "{{nodeName}} は背後のサーバーへ中継するとき、利用者の送信元 IP（X-Forwarded-For・Forwarded）、元のホスト名とプロトコル（X-Forwarded-Host・X-Forwarded-Proto）、前段で認証した利用者（独自の利用者ヘッダー）をヘッダーで伝える。{{nodeName}} が利用者から届いた同名のヘッダーを除去・上書きせずに素通し・追記し、背後のアプリがそれを無条件に信用している場合、攻撃者はヘッダーを自分で付けて送るだけで、送信元 IP による管理画面の制限やレート制限を回避し、別の利用者として扱われ、ログの送信元を偽れる（Can）。Host を信用してリンクを組み立てるアプリでは、パスワード再設定メールのリンクを攻撃者のドメインに向けさせ、再設定用のトークンを盗める。一方、{{nodeName}} が外部から届いた同名のヘッダーを捨てて自身が観測した値で付け直し、背後のアプリが信頼するプロキシのアドレスと段数を決めてその範囲でだけヘッダーを解釈し、リンクの組み立てに設定で固定したホスト名を使っていれば、偽装したヘッダーは効かない（Cannot）。blast radius は送信元 IP・ホスト名・転送された利用者の情報にもとづく背後のアプリのすべての判定（アクセス制限・認可・ログ・生成するリンク）。"
+    mitigation: "[Foundation] リバースプロキシで、利用者から届いた X-Forwarded-For・X-Forwarded-Host・X-Forwarded-Proto・Forwarded と、認証済みの利用者を示すヘッダーを除去し、自身が観測した値で付け直す（追記ではなく上書き）。背後のアプリでは、パスワード再設定などのリンクを Host ヘッダーではなく設定で固定したホスト名から組み立てる。 [Enterprise] 背後のアプリ・フレームワークに信頼するプロキシのアドレスと段数を設定し、それ以外から来た転送ヘッダーは解釈しない。前段で認証した利用者の情報を伝える場合は、ヘッダーの文字列ではなく署名付きのトークン（JWT 等）にし、背後で署名・発行者・有効期限を検証する。 [Advanced] 背後のサーバーへの接続をリバースプロキシからの相互 TLS に限り、プロキシ以外が付けたヘッダーが届く経路そのものをなくす。転送ヘッダーの不審な値（想定外の段数・内部アドレス）を検知してログに残す。"
+    appliesTo:
+      kind: node
+      nodeType: REVERSE_PROXY
+      # ヘッダーを信用するのは背後のアプリなので、背後のサーバーへ中継している（outbound）ときだけ発火する。
+      connection:
+        direction: outbound
+        peerType: [FRONT_END_SERVER, BACKEND_API, GATEWAY, PROCESS, OTHER_APP, WEB_FORM, PAYMENT_PAGE]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "IETF RFC 7239 - Forwarded HTTP Extension（転送ヘッダーと、信頼できないプロキシの値の扱い）"
+        url: "https://www.rfc-editor.org/rfc/rfc7239"
+      - title: "MITRE CWE-348 - Use of Less Trusted Source"
+        url: "https://cwe.mitre.org/data/definitions/348.html"
+      - title: "OWASP Web Security Testing Guide - Testing for Host Header Injection（WSTG-INPV-17）"
+        url: "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/17-Testing_for_Host_Header_Injection"
+      - title: "PortSwigger Web Security Academy - HTTP Host header attacks"
+        url: "https://portswigger.net/web-security/host-header"
+
+  # ── 背後のサーバーへの直接到達（リバースプロキシの迂回、経路依存）──────────────
+  # api-backend-gateway-bypass-001（BACKEND_API 宛てのエッジ）と同じ脅威のため canonicalId: api-gateway-bypass を
+  # 共有する。subject（REVERSE_PROXY ノード / API 宛てのエッジ）が異なるため別カードになる。
+  - id: netinfra-reverse-proxy-origin-direct-access-001
+    canonicalId: api-gateway-bypass
+    framework: STRIDE
+    category: "Spoofing/Tampering"
+    name: "リバースプロキシを迂回した背後のサーバーへの直接到達"
+    severity: Medium
+    description: "{{nodeName}} は背後のサーバーの前に置かれ、TLS の終端・アクセスログ・送信元の制限や、前段の WAF・DDoS 対策を通った要求だけを背後に届ける入口になっている。背後のサーバーが {{nodeName}} 以外からの接続（インターネット・社内ネットワーク・同じクラウドの別のサービス）も受け付ける場合、攻撃者は背後のサーバーのアドレス（DNS の履歴・証明書の公開ログ・スキャンで見つかる）へ直接接続し、{{nodeName}} とその前段の制御をすべて素通りできる（Can）。背後のアプリが {{nodeName}} の付ける転送ヘッダーや利用者の情報を信用している構成では、直接接続でそれらを偽装して送ることもできる。一方、背後のサーバーへの接続を {{nodeName}} からの通信だけに限り（インターネットから到達できないネットワークへの配置・送信元の許可リスト）、{{nodeName}} と背後の間を相互 TLS で認証していれば、直接接続しても要求は受け付けられない（Cannot）。blast radius は背後のサーバーの全機能と、{{nodeName}} とその前段で守っているつもりの全制御。"
+    mitigation: "[Foundation] 背後のサーバーをインターネットから直接到達できないネットワークに置くか、受け付ける送信元をリバースプロキシだけに絞る。背後のサーバーを直接指す公開の DNS レコードや別名を残さない。 [Enterprise] リバースプロキシと背後のサーバーの間を相互 TLS で認証し、リバースプロキシのクライアント証明書を持たない接続を拒否する。リバースプロキシ以外から背後のサーバーへの接続を監視する。 [Advanced] 背後から前段へ外向きに張るトンネルやサービスメッシュの認可で経路を構成し、背後のサーバーに受信ポートを開けず、リバースプロキシの外から届く経路を構造的になくす。"
+    appliesTo:
+      kind: node
+      nodeType: REVERSE_PROXY
+      # 迂回されるのは背後のサーバーなので、背後のサーバーへ中継している（outbound）ときだけ発火する。
+      connection:
+        direction: outbound
+        peerType: [FRONT_END_SERVER, BACKEND_API, GATEWAY, PROCESS, OTHER_APP, WEB_FORM, PAYMENT_PAGE]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "MITRE CWE-288 - Authentication Bypass Using an Alternate Path or Channel"
+        url: "https://cwe.mitre.org/data/definitions/288.html"
+      - title: "OWASP API Security Top 10 2023 - API8:2023 Security Misconfiguration"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/"
+      - title: "NIST SP 800-207 - Zero Trust Architecture（ポリシー強制点の迂回の防止）"
+        url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+
+  # ── Web キャッシュポイズニング / Web キャッシュデセプション（経路依存）──────────
+  - id: netinfra-reverse-proxy-cache-poisoning-001
+    canonicalId: web-cache-poisoning
+    framework: STRIDE
+    category: "Tampering"
+    name: "Web キャッシュポイズニングと Web キャッシュデセプション"
+    severity: Medium
+    description: "{{nodeName}} で応答のキャッシュを有効にしている場合、キャッシュは要求の一部（ホスト名・パス等のキャッシュキー）だけを見て、同じキーの要求に保存した応答を返す。背後のアプリがキャッシュキーに含まれないヘッダー（X-Forwarded-Host 等）やパラメーターを応答に反映すると、攻撃者は細工した要求で悪意のあるスクリプトや誘導先を含む応答をキャッシュに保存させ、同じページを開いた全利用者に配信できる（キャッシュポイズニング）。また、背後のアプリが /account/profile.css のような存在しないパスにも本来のページを返す場合、攻撃者は利用者にそのリンクを開かせ、静的ファイルとしてキャッシュされた個人ページ（氏名・トークン等）を後から取り出せる（Web キャッシュデセプション）（Can）。一方、キャッシュするのは利用者に依存しない応答だけにし、Cookie や Authorization を伴う応答・個人ページをキャッシュせず、応答に反映するヘッダーを除去するかキャッシュキーに含め、拡張子ではなく背後の Cache-Control にもとづいてキャッシュの可否を決めていれば、他人に配信される応答を作ることも、個人ページを取り出すこともできない（Cannot）。キャッシュを使っていない {{nodeName}} では成立しない。blast radius はキャッシュされた応答を受け取る全利用者と、キャッシュに残った個人ページの持ち主。"
+    mitigation: "[Foundation] リバースプロキシでキャッシュを使っているかを確認し、使う場合は対象を利用者に依存しない静的なコンテンツに限る。Cookie や Authorization を伴う要求への応答と、Set-Cookie を含む応答をキャッシュしない。背後のアプリは個人ページに Cache-Control: no-store（または private）を付ける。 [Enterprise] キャッシュの可否を拡張子やパスの形ではなく背後の Cache-Control にもとづいて決める。応答に影響するヘッダー（X-Forwarded-Host 等）はリバースプロキシで除去するか、キャッシュキーに含める。背後のアプリが存在しないパスや余分な末尾の付いたパスに本来のページを返さないようにする。 [Advanced] キャッシュキーと背後のパスの解釈の差（区切り文字・エンコード・正規化）を検査に含め、キャッシュの設定を変えるたびに Web キャッシュポイズニング・デセプションの検査を行う。"
+    appliesTo:
+      kind: node
+      nodeType: REVERSE_PROXY
+      # 汚染される応答も、個人ページを返してしまうのも背後のアプリなので、背後へ中継している（outbound）ときだけ発火する。
+      # キャッシュの有無は属性で表せないため、description で「キャッシュを使っていなければ成立しない」と明示する。
+      connection:
+        direction: outbound
+        peerType: [FRONT_END_SERVER, BACKEND_API, GATEWAY, PROCESS, OTHER_APP, WEB_FORM, PAYMENT_PAGE]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+    references:
+      - title: "IETF RFC 9111 - HTTP Caching（キャッシュキーと、保存してよい応答）"
+        url: "https://www.rfc-editor.org/rfc/rfc9111"
+      - title: "MITRE CWE-524 - Use of Cache Containing Sensitive Information"
+        url: "https://cwe.mitre.org/data/definitions/524.html"
+      - title: "PortSwigger Web Security Academy - Web cache poisoning"
+        url: "https://portswigger.net/web-security/web-cache-poisoning"
+      - title: "PortSwigger Web Security Academy - Web cache deception"
+        url: "https://portswigger.net/web-security/web-cache-deception"

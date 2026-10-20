@@ -340,13 +340,17 @@ rules:
     canonicalId: gateway-resource-exhaustion
     framework: STRIDE
     category: "Denial of Service"
-    name: "ゲートウェイ枯渇"
+    name: "ゲートウェイ・プロキシの枯渇"
     severity: Medium
-    description: "ゲートウェイのレート制限・コネクション上限が緩い場合、ボリューム攻撃や Slowloris 型攻撃で下流サービス全体が停止するリスク。"
+    description: "ゲートウェイ・リバースプロキシのレート制限・コネクション上限が緩い場合、ボリューム攻撃や Slowloris 型攻撃で下流サービス全体が停止するリスク。"
     mitigation: "アダプティブレート制限、コネクション上限、上流 WAF/CDN による緩衝、サーキットブレーカーとオートスケール。"
     appliesTo:
       kind: node
-      nodeType: GATEWAY
+      # REVERSE_PROXY（2026-10-20）も全要求を受けて背後へ中継する集約点で、接続の保持数・タイムアウトの
+      # 設定が同じ問いになるため加える。
+      anyOf:
+        - nodeType: GATEWAY
+        - nodeType: REVERSE_PROXY
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.IR-04"
@@ -490,9 +494,12 @@ rules:
         url: "https://owaspai.org/"
 
   # ── Infrastructure: Front-end Server (Web) ───────────────────
-  # FRONT_END_SERVER / GATEWAY の Attack Surface Attribute と連動した脅威ルール。
+  # FRONT_END_SERVER / GATEWAY / REVERSE_PROXY の Attack Surface Attribute と連動した脅威ルール。
   # OWASP Top 10 for Web Application Security 2021 を出典に、未設定ノードは
   # insecure baseline (hasGlobalIp=true, 他=false) として評価される。
+  # REVERSE_PROXY（2026-10-20 追加）は認証を背後のアプリに任せることが多く、未入力が「認証なし」に
+  # 解釈されると全リバースプロキシに出るため、stride-web-no-user-auth-001 / stride-web-anonymous-on-public-001
+  # の対象には入れない（認証の問いは背後の FRONT_END_SERVER 側に出る）。
   - id: stride-web-global-ip-exposure-001
     canonicalId: web-global-ip-exposure
     framework: STRIDE
@@ -506,6 +513,7 @@ rules:
       anyOf:
         - nodeType: FRONT_END_SERVER
         - nodeType: GATEWAY
+        - nodeType: REVERSE_PROXY
       connection:
         required: false
       attackSurface:
@@ -532,6 +540,7 @@ rules:
       anyOf:
         - nodeType: FRONT_END_SERVER
         - nodeType: GATEWAY
+        - nodeType: REVERSE_PROXY
       connection:
         required: false
       attackSurface:
@@ -556,6 +565,7 @@ rules:
       anyOf:
         - nodeType: FRONT_END_SERVER
         - nodeType: GATEWAY
+        - nodeType: REVERSE_PROXY
       connection:
         required: false
       attackSurface:
@@ -615,6 +625,7 @@ rules:
       anyOf:
         - nodeType: FRONT_END_SERVER
         - nodeType: GATEWAY
+        - nodeType: REVERSE_PROXY
       connection:
         required: false
       attackSurface:
@@ -643,6 +654,7 @@ rules:
       anyOf:
         - nodeType: FRONT_END_SERVER
         - nodeType: GATEWAY
+        - nodeType: REVERSE_PROXY
       connection:
         required: false
       attackSurface:
@@ -672,6 +684,7 @@ rules:
       anyOf:
         - nodeType: FRONT_END_SERVER
         - nodeType: GATEWAY
+        - nodeType: REVERSE_PROXY
       connection:
         required: false
       attackSurface:
@@ -725,6 +738,7 @@ rules:
       anyOf:
         - nodeType: FRONT_END_SERVER
         - nodeType: GATEWAY
+        - nodeType: REVERSE_PROXY
       connection:
         required: false
       attackSurface:
@@ -744,12 +758,14 @@ rules:
     category: "Information Disclosure"
     name: "Front-end への平文流入"
     severity: High
-    description: "{{sourceName}} から {{targetName}}（Front-end Server）への通信が平文で、認証情報・セッショントークン・PII が盗聴・改ざんされるリスクがあります。"
+    description: "{{sourceName}} から {{targetName}}（Front-end Server / リバースプロキシ）への通信が平文で、認証情報・セッショントークン・PII が盗聴・改ざんされるリスクがあります。"
     mitigation: "Front-end は HTTPS / HSTS を強制し、HTTP→HTTPS リダイレクト・HSTS preload を有効化。内部通信も mTLS を推奨。"
     appliesTo:
       kind: edge
       when:
-        targetType: [FRONT_END_SERVER]
+        # REVERSE_PROXY（2026-10-20）は利用者からの接続を受ける入口で、前段に置くと検出が背後の
+        # FRONT_END_SERVER から移るため加える。
+        targetType: [FRONT_END_SERVER, REVERSE_PROXY]
         encryption: [Plain]
     complianceRefs:
       - standard: nist-ai-rmf
@@ -766,12 +782,13 @@ rules:
     category: "Spoofing"
     name: "Front-end への未認証インターネット流入"
     severity: High
-    description: "インターネット経由で {{targetName}}（Front-end Server）に未認証アクセスが流入しており、ブルートフォース・スクレイピング・脆弱性スキャンの対象となります。"
+    description: "インターネット経由で {{targetName}}（Front-end Server / リバースプロキシ）に未認証アクセスが流入しており、ブルートフォース・スクレイピング・脆弱性スキャンの対象となります。"
     mitigation: "認証必須化、レートリミット、Bot 検知。匿名公開を意図する場合も Captcha / WAF / rate-limit を最低限併用する。"
     appliesTo:
       kind: edge
       when:
-        targetType: [FRONT_END_SERVER]
+        # REVERSE_PROXY（2026-10-20）：前段に置くとインターネットからの線は REVERSE_PROXY に入るため加える。
+        targetType: [FRONT_END_SERVER, REVERSE_PROXY]
         network: [Internet]
         auth: [None]
     complianceRefs:

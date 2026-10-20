@@ -40,7 +40,7 @@
 #   - ログの保持期間：ログを取得していないノードに保持期間のカードを重ねない。
 #     - log グループの型 → posture-log-retention-short-001。logCollection が NotCollected のノードは除く
 #       （取得の欠如は posture-log-not-collected-001 が出す）。
-#     - 公開サーバー・API ゲートウェイ → posture-log-retention-short-002。attackSurface.hasAccessLog を
+#     - 公開サーバー・API ゲートウェイ・リバースプロキシ → posture-log-retention-short-002。attackSurface.hasAccessLog を
 #       true と入力したノードだけ（未入力・false は stride-web-no-access-log-001 が出す）。
 #     1 本のルールでは「型ごとに別の除外条件」を書けないため 2 本に分け、同じ canonicalId で束ねた。
 #   - 保管時の暗号化なし ↔ stride-data-store-info-disclosure-001（data-store-info-disclosure。アクセス制御と
@@ -56,8 +56,9 @@
 #     保有の必要性を見ないため併存。
 #
 #   内在的な脅威（運用の状態は図の接続に依存しない）なので、すべて connection.required: false。
-#   attackSurface は公開サーバー・API ゲートウェイ以外では未入力が「Global IP あり」に解釈されるため、
-#   attackSurface を条件にするときは必ず nodeType: [FRONT_END_SERVER, GATEWAY] と組み合わせる。
+#   attackSurface は公開サーバー・API ゲートウェイ・リバースプロキシ以外では未入力が「Global IP あり」に
+#   解釈されるため、attackSurface を条件にするときは必ず nodeType: [FRONT_END_SERVER, GATEWAY, REVERSE_PROXY]
+#   と組み合わせる（REVERSE_PROXY は 2026-10-20 に攻撃面属性を持つ型として追加）。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する。
@@ -247,6 +248,7 @@ rules:
       anyOf:
         - nodeType: FRONT_END_SERVER
         - nodeType: GATEWAY
+        - nodeType: REVERSE_PROXY
       connection:
         required: false
       # アクセスログを取得していない（未入力・false）ノードは stride-web-no-access-log-001 が出すため除く。
@@ -340,6 +342,7 @@ rules:
         - nodeType: IOT
         - nodeType: GATEWAY
         - nodeType: FRONT_END_SERVER
+        - nodeType: REVERSE_PROXY
         - nodeType: DIRECTORY
         - nodeType: IAAS
         - nodeType: L2_SWITCH
@@ -385,7 +388,7 @@ rules:
         # Global IP を持つ公開サーバー・API ゲートウェイは、インターネットからの自動探索の対象になる。
         # attackSurface は他の型では未入力が「Global IP あり」に解釈されるため、型を必ず絞る。
         - when:
-            nodeType: [FRONT_END_SERVER, GATEWAY]
+            nodeType: [FRONT_END_SERVER, GATEWAY, REVERSE_PROXY]
             attackSurface:
               hasGlobalIp: true
           severity: Critical

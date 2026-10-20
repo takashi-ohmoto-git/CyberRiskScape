@@ -67,7 +67,8 @@ verbatim.
    © The MITRE Corporation. CWE IDs and entry names are referenced with
    attribution; no CWE text is reproduced verbatim.
 
-   Referenced by: data/threat-library/api-platform.yaml
+   Referenced by: data/threat-library/api-platform.yaml,
+                  data/threat-library/network-infra.yaml
 
 --------------------------------------------------------------------------------
 3. Model Context Protocol — Security Best Practices
@@ -304,6 +305,7 @@ verbatim.
                   data/component-library/nhi.yaml,
                   data/threat-library/web-form.yaml,
                   data/threat-library/payment-page.yaml,
+                  data/threat-library/network-infra.yaml,
                   data/test-templates/postman.yaml
 
 --------------------------------------------------------------------------------
@@ -375,7 +377,9 @@ verbatim.
     (DPoP)), RFC 8705 (OAuth 2.0 Mutual-TLS Client Authentication and
     Certificate-Bound Access Tokens), RFC 5280 (Internet X.509 Public Key
     Infrastructure Certificate and CRL Profile), RFC 6960 (X.509 Internet
-    Public Key Infrastructure Online Certificate Status Protocol - OCSP)
+    Public Key Infrastructure Online Certificate Status Protocol - OCSP),
+    RFC 9112 (HTTP/1.1), RFC 9111 (HTTP Caching), RFC 7239 (Forwarded HTTP
+    Extension)
    https://www.rfc-editor.org/
    Referenced by RFC number and title with a short Japanese summary only; no
    RFC text is reproduced.
@@ -455,6 +459,16 @@ verbatim.
    reproduced. Product names are trademarks of their respective owners.
 
    Referenced by: data/crypto-behavior/crypto-libraries.yaml
+
+--------------------------------------------------------------------------------
+26. PortSwigger Ltd. — Web Security Academy (HTTP request smuggling, HTTP Host
+    header attacks, Web cache poisoning, Web cache deception)
+   https://portswigger.net/web-security
+   © PortSwigger Ltd. This work is referenced by title and URL with a short
+   Japanese summary of the concepts only; no text is reproduced. See the site
+   for its terms of use.
+
+   Referenced by: data/threat-library/network-infra.yaml
 
 ================================================================================
 Runtime dependencies

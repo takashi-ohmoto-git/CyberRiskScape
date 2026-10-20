@@ -114,8 +114,8 @@ rules:
 
   stride-gateway-dos-001:
     category: "Denial of Service"
-    name: "Gateway Exhaustion"
-    description: "If the gateway's rate limits or connection caps are too loose, volumetric attacks or Slowloris-style attacks can take down the entire downstream service."
+    name: "Gateway / Proxy Exhaustion"
+    description: "If the rate limits or connection caps of the gateway or reverse proxy are too loose, volumetric attacks or Slowloris-style attacks can take down the entire downstream service."
     mitigation: "Adaptive rate limiting, connection caps, buffering via an upstream WAF/CDN, and circuit breakers with auto-scaling."
 
   stride-connector-tampering-001:
@@ -209,11 +209,11 @@ rules:
   stride-web-unprotected-traffic-from-user-001:
     category: "Information Disclosure"
     name: "Plaintext Traffic into the Front-End"
-    description: "Communication from {{sourceName}} to {{targetName}} (a Front-end Server) is in plaintext, risking eavesdropping or tampering of credentials, session tokens, and PII."
+    description: "Communication from {{sourceName}} to {{targetName}} (a Front-end Server / reverse proxy) is in plaintext, risking eavesdropping or tampering of credentials, session tokens, and PII."
     mitigation: "Enforce HTTPS/HSTS on the front-end, enabling HTTP-to-HTTPS redirects and HSTS preload. mTLS is also recommended for internal traffic."
 
   stride-web-unauth-internet-ingress-001:
     category: "Spoofing"
     name: "Unauthenticated Internet Ingress into the Front-End"
-    description: "Unauthenticated access is flowing in over the internet to {{targetName}} (a Front-end Server), making it a target for brute force, scraping, and vulnerability scanning."
+    description: "Unauthenticated access is flowing in over the internet to {{targetName}} (a Front-end Server / reverse proxy), making it a target for brute force, scraping, and vulnerability scanning."
     mitigation: "Require authentication, rate limiting, and bot detection. Even when anonymous public access is intended, combine it with CAPTCHA, a WAF, and rate limiting at minimum."

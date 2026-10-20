@@ -135,6 +135,8 @@ rules:
         - nodeType: DB
         - nodeType: GATEWAY
         - nodeType: FRONT_END_SERVER
+        # リバースプロキシ（2026-10-20）は利用者の TLS を終端し、証明書と暗号の設定を持つため加える。
+        - nodeType: REVERSE_PROXY
         - nodeType: DATABASE
         - nodeType: STORAGE
       # 暗号インベントリの有無は資産の運用ガバナンスの性質で、接続関係に依存しない内在リスク。
@@ -184,7 +186,7 @@ rules:
   # ── Crypto-agility 欠如 ──────────────────────────────────────
   # 暗号アルゴリズムを差し替えられない実装・プロトコル固定化。HNDL/署名偽造の前提を
   # 悪化させる横断的な内在リスク。対象は暗号を担う資産（DATA_STORE/DB/GATEWAY/
-  # FRONT_END_SERVER/CONNECTOR）。
+  # FRONT_END_SERVER/REVERSE_PROXY/CONNECTOR）。
   - id: pqc-crypto-agility-gap-001
     canonicalId: crypto-agility-gap
     framework: STRIDE
@@ -200,6 +202,8 @@ rules:
         - nodeType: DB
         - nodeType: GATEWAY
         - nodeType: FRONT_END_SERVER
+        # リバースプロキシ（2026-10-20）は TLS を終端し、暗号スイート・鍵交換の設定を持つため加える。
+        - nodeType: REVERSE_PROXY
         - nodeType: CONNECTOR
         # 業務 DB・ストレージ（storage ライブラリ）の保管時暗号にも同じ問いが当てはまるため加える。
         # バックアップ 2 型は CBOM と同じ理由で加えない。
