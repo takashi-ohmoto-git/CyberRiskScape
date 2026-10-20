@@ -39,6 +39,10 @@ behaviors:
     note: "Terminates and re-establishes STARTTLS at each hop; S/MIME body encryption is unchanged. Confirm TLS settings toward the next hop."
   BASTION:
     note: "Terminates the administrator's TLS and reconnects to the target over SSH / RDP. Confirm the cipher setup of each leg."
+  HYPERVISOR:
+    note: "The management server (vCenter or similar) and its console terminate the administrator's TLS. Traffic of the virtual machines running on it passes through. Confirm the management API certificates and whether host-to-host migration and storage traffic are encrypted."
+  SIEM:
+    note: "Terminates TLS from log sources (syslog over TLS, HTTPS collection APIs) and from the viewing console. Check whether plaintext syslog (UDP/TCP) is accepted and how each source leg is encrypted."
   ZTNA_PROXY:
     note: "Terminates the user's TLS, authenticates and authorizes, then relays to the internal app over a separate connection. Confirm encryption on the app-side leg."
   PRIVATE_ENDPOINT:

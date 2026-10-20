@@ -78,6 +78,14 @@ components:
     label: "ZTNA / identity-aware proxy"
     description: "A ZTNA / identity-aware proxy. Terminates the user's TLS, authenticates and authorizes, then relays to the internal application over a separate connection. In the cloud this includes AWS Verified Access, Microsoft Entra Private Access and Application Proxy, and Google Cloud Identity-Aware Proxy."
 
+  HYPERVISOR:
+    label: "Virtualization platform"
+    description: "A hypervisor and its management server (VMware ESXi and vCenter, Hyper-V, Proxmox and similar). It manages the virtual machines running on it as a group. It is not a container platform. In the cloud this includes customer-managed virtualization such as VMware Cloud on AWS, Azure VMware Solution, Google Cloud VMware Engine and OCI Cloud VMware Solution."
+
+  SIEM:
+    label: "SIEM / log platform"
+    description: "A system that collects logs from other systems and stores, correlates and detects on them (SIEM, log collection platform, syslog server). To draw the stored logs themselves, put the Log document inside it. In the cloud this includes Microsoft Sentinel, Amazon Security Lake, Google Security Operations and OCI Logging Analytics."
+
   PRIVATE_ENDPOINT:
     label: "Private endpoint"
     description: "A private endpoint. The private entry point to a cloud service; passes encryption through (the destination service terminates TLS). In the cloud this includes AWS PrivateLink (interface VPC endpoints), Azure Private Link (private endpoints), Google Cloud Private Service Connect, and OCI private endpoints."

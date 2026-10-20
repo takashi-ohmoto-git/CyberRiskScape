@@ -16,7 +16,11 @@ components:
 
   STORAGE:
     label: "Storage"
-    description: "Storage for files or objects (NAS / SAN / object storage). In the cloud this includes Amazon S3 and EFS, Azure Blob Storage and Azure Files, Google Cloud Storage and Filestore, and OCI Object Storage and File Storage."
+    description: "Where an application keeps files or objects through an API (SAN / object storage). In the cloud this includes Amazon S3, Azure Blob Storage, Google Cloud Storage and OCI Object Storage. For shares that end-user devices mount as folders (NAS, Windows file servers), use File server."
+
+  FILE_SERVER:
+    label: "File server"
+    description: "Storage that end-user devices mount as a shared folder (SMB / NFS), such as a Windows file server or the shared folders of a NAS. In the cloud this includes Amazon FSx and EFS, Azure Files, Google Cloud Filestore and OCI File Storage. For object storage or a SAN that applications use through an API, use Storage."
 
   BACKUP_STORAGE:
     label: "Backup storage"

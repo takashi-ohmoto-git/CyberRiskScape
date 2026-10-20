@@ -59,6 +59,10 @@ components:
     label: "Smartphone"
     description: "A mobile device. Use managedState to say whether it is MDM-managed or BYOD."
 
+  MULTIFUNCTION_PRINTER:
+    label: "Multifunction printer"
+    description: "A multifunction device or network printer for printing, scanning and fax. It can store documents internally, and may hold mail, shared-folder and LDAP credentials for scan-to-destination."
+
   IOT:
     description: "An IoT or embedded device. Usually treated as unmanaged."
 

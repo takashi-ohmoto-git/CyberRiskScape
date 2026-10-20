@@ -74,6 +74,14 @@ behaviors:
     default: terminate
     alternatives: []
     note: "管理者からの TLS を終端し、対象サーバーへ SSH / RDP で再接続する。区間ごとの暗号方式を確認する。"
+  - componentType: HYPERVISOR
+    default: terminate
+    alternatives: []
+    note: "管理サーバー（vCenter 等）や管理画面が管理者からの TLS を終端する。上で動く仮想マシンの通信は透過する。管理 API の証明書と、ホスト間の移行・ストレージ通信の暗号化の有無を確認する。"
+  - componentType: SIEM
+    default: terminate
+    alternatives: []
+    note: "ログの送り元からの TLS（syslog over TLS・HTTPS の収集 API）と閲覧画面の TLS を終端する。平文の syslog（UDP/TCP）で受けていないか、送り元との区間の暗号を確認する。"
   - componentType: ZTNA_PROXY
     default: terminate
     alternatives: []

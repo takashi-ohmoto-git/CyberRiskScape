@@ -16,6 +16,8 @@ import type { PostureEnumKey } from '../../core/model/types';
 const PARTIAL_TARGET_RULES = new Set([
   // 公開サーバー・API ゲートウェイのアクセスログ（attackSurface.hasAccessLog）の保持期間。他の型は -001 が扱う。
   'posture-log-retention-short-002',
+  // SIEM のログの保持期間（logCollection を持たないため -001 の条件が成立しない）。他の型は -001 / -002 が扱う。
+  'posture-log-retention-short-003',
   // IdP 固有の認証イベントの記録。ログ取得の宣言で出なくなる。他の型は posture-log-not-collected-001 が扱う。
   'identity-idp-authentication-log-gap-001',
 ]);

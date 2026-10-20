@@ -1,8 +1,9 @@
 # Storage & Databases コンポーネントライブラリ。
 #
-# データの保管先を具体的に描くための 4 型（カテゴリ STORAGE、ラベル Storage & Databases）：
+# データの保管先を具体的に描くための 5 型（カテゴリ STORAGE、ラベル Storage & Databases）：
 #   DATABASE         : 業務データベース（RDB / NoSQL）
-#   STORAGE          : NAS / SAN / オブジェクトストレージ
+#   STORAGE          : SAN / オブジェクトストレージ
+#   FILE_SERVER      : 端末から共有フォルダとして使うファイルサーバー・NAS
 #   BACKUP_STORAGE   : バックアップの保管先
 #   IMMUTABLE_BACKUP : 書き換え・削除できないバックアップ（WORM / オブジェクトロック）
 #
@@ -48,9 +49,19 @@ components:
     icon: { kind: builtin, name: "hard-drive" }
     shape: rounded
     color: "bg-transparent"
-    description: "ファイルやオブジェクトを保管するストレージ（NAS / SAN / オブジェクトストレージ）。クラウドでは Amazon S3・EFS / Azure Blob Storage・Azure Files / Google Cloud Storage・Filestore / OCI Object Storage・File Storage 等が該当する。"
+    description: "アプリが API で使うファイルやオブジェクトの保管先（SAN / オブジェクトストレージ）。クラウドでは Amazon S3 / Azure Blob Storage / Google Cloud Storage / OCI Object Storage 等が該当する。端末から共有フォルダとして使うもの（NAS・Windows のファイルサーバー）はファイルサーバーを使う。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, API_SPEC, OTHER_DOCUMENT]
     posture: [log, encryptionAtRest, patch]
+
+  - id: FILE_SERVER
+    label: "ファイルサーバー"
+    category: STORAGE
+    icon: { kind: builtin, name: "folder-tree" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "端末から共有フォルダ（SMB / NFS）としてマウントして使う保管先。Windows ファイルサーバー・NAS の共有フォルダが該当する。クラウドでは Amazon FSx・EFS / Azure Files / Google Cloud Filestore / OCI File Storage 等が該当する。アプリが API で使うオブジェクトストレージや SAN はストレージを使う。"
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, API_SPEC, OTHER_DOCUMENT]
+    posture: [log, encryptionAtRest, patch, accountReview]
 
   - id: BACKUP_STORAGE
     label: "バックアップストレージ"

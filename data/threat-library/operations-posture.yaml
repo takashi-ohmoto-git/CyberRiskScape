@@ -42,7 +42,9 @@
 #       （取得の欠如は posture-log-not-collected-001 が出す）。
 #     - 公開サーバー・API ゲートウェイ・リバースプロキシ → posture-log-retention-short-002。attackSurface.hasAccessLog を
 #       true と入力したノードだけ（未入力・false は stride-web-no-access-log-001 が出す）。
-#     1 本のルールでは「型ごとに別の除外条件」を書けないため 2 本に分け、同じ canonicalId で束ねた。
+#     - SIEM / ログ基盤（2026-10-21）→ posture-log-retention-short-003。logRetention グループだけを宣言し logCollection を
+#       持たないため -001 の条件が成立しない。ログ基盤の保持期間は組織全体で遡れる期間になるため専用の description にした。
+#     1 本のルールでは「型ごとに別の除外条件」を書けないため 3 本に分け、同じ canonicalId で束ねた。
 #   - 保管時の暗号化なし ↔ stride-data-store-info-disclosure-001（data-store-info-disclosure。アクセス制御と
 #     暗号化の一般論）、endpoint-loss-credential-exposure 系（PC・スマートフォンの紛失時の認証情報）、
 #     memory-store-sensitive-data-accumulation-001（記憶への蓄積）。いずれも暗号化の有無の状態は見ないため併存。
@@ -79,6 +81,8 @@ rules:
       kind: node
       anyOf:
         - nodeType: MCP_SERVER
+        - nodeType: HYPERVISOR
+        - nodeType: FILE_SERVER
         - nodeType: MEMORY_STORE
         - nodeType: BACKEND_API
         - nodeType: API_CONTROL_PLANE
@@ -162,6 +166,8 @@ rules:
       kind: node
       anyOf:
         - nodeType: MCP_SERVER
+        - nodeType: HYPERVISOR
+        - nodeType: FILE_SERVER
         - nodeType: MEMORY_STORE
         - nodeType: BACKEND_API
         - nodeType: API_CONTROL_PLANE
@@ -274,6 +280,42 @@ rules:
       - title: "NIST SP 800-92 - Guide to Computer Security Log Management"
         url: "https://csrc.nist.gov/pubs/sp/800/92/final"
 
+  # ── ログの保持期間が短い（SIEM / ログ基盤）──────────────────────────────
+  - id: posture-log-retention-short-003
+    canonicalId: log-retention-insufficient
+    framework: STRIDE
+    category: "Repudiation"
+    name: "ログ基盤の保持期間が短く、侵害の発覚時に遡って調べられない"
+    severity: High
+    description: "{{nodeName}} に集めたログの保持期間が短い場合、侵入から発覚までに時間がかかった侵害では、攻撃者が最初に侵入した時点や、その後に各システムで行った操作のログが {{nodeName}} からすでに消えている（Can）。{{nodeName}} は各システムのログをまとめて長く残すための仕組みで、送り元のシステム側の保持期間はもっと短いことが多いため、{{nodeName}} の保持期間がそのまま組織全体で遡れる期間になる。保管の費用を抑えるために保持期間を短くしたり、検索できる期間だけを保持期間と考えて長期の保管を用意していなかったりすると、侵入の起点・期間・持ち出されたデータの範囲を確定できない。一方、{{nodeName}} のログを少なくとも 1 年以上（すぐに検索できる保管と低コストの長期保管を組み合わせて）保持していれば、発覚が遅れても侵害の全期間を遡って調べられる（Cannot）。blast radius は保持期間を過ぎた期間に、{{nodeName}} にログを送る全システムで起きたすべての操作の追跡可能性。"
+    mitigation: "[Foundation] ログ基盤の保持期間をログの種類ごとに確かめ、少なくとも 1 年以上を目安に設定する。保持期間を過ぎたログが自動で消える設定と、取り込みの量の上限で古いログが押し出される設定が無いかを確かめる。 [Enterprise] すぐに検索できる保管（目安 12 か月）と、低コストの長期保管（目安 18 か月以上）を組み合わせ、重要度の高いログ（認証・特権操作・ネットワークの境界）を長く残す。保持期間の変更を監視する。 [Advanced] 保持期間を規制・契約・インシデント対応の要件から決めて文書化し、長期保管したログを必要なときに検索できる状態へ戻す手順を演習する。"
+    appliesTo:
+      kind: node
+      nodeType: SIEM
+      # SIEM は logRetention グループ（保持期間・確認先）だけを宣言し、logCollection を持たないため
+      # posture-log-retention-short-001 の条件（logCollection）が成立しない。SIEM 専用に分けた。
+      connection:
+        required: false
+      posture:
+        logRetention: [Under90Days, Under1Year, Unknown]
+      conditions:
+        - when:
+            posture:
+              logRetention: [Under1Year]
+          severity: Medium
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-04"
+      - standard: nist-csf-2.0
+        ref: "RS.AN-03"
+    references:
+      - title: "IPA - 不正アクセスによる漏えい等の事案を踏まえ、速やかに実施すべき対策等について（2026-10-09。ログの保有期間と確認できる主体の整理）"
+        url: "https://www.ipa.go.jp/security/security-alert/2026/alert20261009.html"
+      - title: "OMB M-21-31 - Improving the Federal Government's Investigative and Remediation Capabilities Related to Cybersecurity Incidents（ログの保持期間）"
+        url: "https://www.whitehouse.gov/wp-content/uploads/2021/08/M-21-31-Improving-the-Federal-Governments-Investigative-and-Remediation-Capabilities-Related-to-Cybersecurity-Incidents.pdf"
+      - title: "NIST SP 800-92 - Guide to Computer Security Log Management"
+        url: "https://csrc.nist.gov/pubs/sp/800/92/final"
+
   # ── 保管時の暗号化なし ──────────────────────────────────────
   - id: posture-encryption-at-rest-missing-001
     canonicalId: data-at-rest-unencrypted
@@ -287,6 +329,7 @@ rules:
       kind: node
       anyOf:
         - nodeType: MEMORY_STORE
+        - nodeType: FILE_SERVER
         - nodeType: SECRETS_VAULT
         - nodeType: CHAT
         - nodeType: MAIL
@@ -334,6 +377,10 @@ rules:
       kind: node
       anyOf:
         - nodeType: MCP_SERVER
+        - nodeType: MULTIFUNCTION_PRINTER
+        - nodeType: HYPERVISOR
+        - nodeType: SIEM
+        - nodeType: FILE_SERVER
         - nodeType: BACKEND_API
         - nodeType: API_CONTROL_PLANE
         - nodeType: WEB_FORM
@@ -419,6 +466,9 @@ rules:
       # SERVICE_ACCOUNT は nhi-improper-offboarding-001 が同じ問いを常に出すため対象外。
       anyOf:
         - nodeType: API_CONTROL_PLANE
+        - nodeType: HYPERVISOR
+        - nodeType: SIEM
+        - nodeType: FILE_SERVER
         - nodeType: CI_PIPELINE
         - nodeType: SECRETS_VAULT
         - nodeType: API_DEV_WORKSPACE

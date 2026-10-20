@@ -1,14 +1,14 @@
 # Network & Security Infrastructure コンポーネントライブラリ。
 #
 # PQC 移行支援で「経路上で暗号が変わる箇所（終端・復号・トンネル化）」を描くための
-# ネットワーク機器・セキュリティ製品の 19 型：
+# ネットワーク機器・セキュリティ製品の 21 型：
 #   NETWORK        : L2_SWITCH / ROUTER / LOAD_BALANCER / REVERSE_PROXY / CDN / VPN_GATEWAY /
 #                    WIRELESS_AP / SERVICE_MESH
 #   PROTECT        : FIREWALL / WAF / IDS_IPS / SECURE_WEB_GATEWAY / SASE / EMAIL_GATEWAY /
-#                    ZTNA_PROXY（ラベルは Security Controls）
+#                    ZTNA_PROXY / SIEM（ラベルは Security Controls）
 #   CONTACT_CENTER : SBC
 #   CLOUD          : PRIVATE_ENDPOINT
-#   SERVERS        : BASTION
+#   SERVERS        : BASTION / HYPERVISOR
 #   CRYPTO_KEYS    : HSM
 #
 # builtin ではないため、LeftSidebar のライブラリトグルで無効化できる。
@@ -190,6 +190,25 @@ components:
     color: "bg-transparent"
     description: "踏み台。管理者のブラウザ等からの TLS を終端し、対象サーバーへ SSH / RDP で再接続する（区間ごとに暗号方式が変わる）。クラウドでは AWS Systems Manager Session Manager・EC2 Instance Connect Endpoint / Azure Bastion / Google Cloud IAP の TCP 転送 / OCI Bastion 等が該当する。"
     posture: [log, patch]
+
+  - id: HYPERVISOR
+    label: "仮想化基盤"
+    category: SERVERS
+    icon: { kind: builtin, name: "boxes" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "ハイパーバイザーとその管理サーバー（VMware ESXi・vCenter、Hyper-V、Proxmox 等）。上で動く仮想マシンをまとめて管理する。コンテナ基盤ではない。クラウドでは VMware Cloud on AWS / Azure VMware Solution / Google Cloud VMware Engine / OCI Cloud VMware Solution 等の利用者が管理する仮想化基盤が該当する。"
+    posture: [log, patch, accountReview]
+
+  - id: SIEM
+    label: "SIEM / ログ基盤"
+    category: PROTECT
+    icon: { kind: builtin, name: "activity" }
+    shape: rounded
+    color: "bg-green-600"
+    description: "各システムのログを集めて保管・相関分析・検知する仕組み（SIEM、ログ収集基盤、syslog サーバー）。保管するログそのものを描くときは文書の「ログ」を中に置く。クラウドでは Microsoft Sentinel・Amazon Security Lake・Google Security Operations・OCI Logging Analytics 等が該当する。"
+    canContain: [LOG, CREDENTIAL, PERSONAL_INFO, CONFIDENTIAL_INFO, OTHER_DOCUMENT]
+    posture: [logRetention, patch, accountReview]
 
   - id: ZTNA_PROXY
     label: "ZTNA / ID認識プロキシ"

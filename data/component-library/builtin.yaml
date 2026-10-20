@@ -142,6 +142,16 @@ components:
     description: "IoT 機器・組込デバイス。多くは Unmanaged 扱い。"
     posture: [patch]
 
+  - id: MULTIFUNCTION_PRINTER
+    label: "複合機 / プリンター"
+    category: USERS_DEVICES
+    icon: { kind: builtin, name: "printer" }
+    shape: rounded
+    color: "bg-yellow-600"
+    description: "印刷・スキャン・FAX の複合機とネットワークプリンター。文書を内部に蓄積し、スキャン送信用にメール・共有フォルダ・LDAP の資格情報を保存していることがある。"
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, CREDENTIAL, OTHER_DOCUMENT]
+    posture: [patch]
+
   - id: GATEWAY
     label: "APIゲートウェイ"
     category: NETWORK
