@@ -81,7 +81,8 @@ For the full list of products and how they connect, see [Integrations](guide/int
   and trace a route from sender to destination, split into segments at each node that
   terminates or decrypts the encryption. Each segment gets a termination verdict, a likelihood,
   and a PQC verdict (based on the CRYPTREC Cryptographic Algorithm List, Table 2, and NIST FIPS
-  203/204/205), and a simple report (CSV) can be exported ([guide](guide/pqc-migration.md))
+  203/204/205), and a simple report (CSV) can be exported. A CycloneDX SBOM / CBOM can also be read to
+  check a node's cryptographic libraries and the PQC verdicts of its algorithms ([guide](guide/pqc-migration.md))
 - **Layer copy** — copy a depth layer to the PQC layer (or back) as a draft
 - **Operational posture record** — record per node what a diagram cannot show on its own:
   logging (collection, retention, who can review), encryption at rest, patch status, account

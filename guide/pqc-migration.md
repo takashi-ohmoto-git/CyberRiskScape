@@ -4,7 +4,7 @@
 
 > The verdicts on this page are **estimates drawn from your design diagram**. They are not the result of checking
 > device configurations or vendor answers. The report it produces is a simple version and does not replace a proper
-> cryptographic inventory (a register of where your organization uses cryptography); see §7.
+> cryptographic inventory (a register of where your organization uses cryptography); see §8.
 
 Migrating to PQC (Post-Quantum Cryptography) starts with knowing which cryptography is used where.
 In practice, the places that get overlooked are those where **a connection is decrypted partway and re-established with
@@ -335,7 +335,82 @@ Use the CSV as **candidate rows when you build the cryptographic inventory**. Fr
 
 ---
 
-## 7. Limits and cautions
+## 7. Check the cryptography in an SBOM
+
+Path analysis is an estimate from the design diagram. **Which cryptography the software actually contains** can be
+checked from an SBOM (Software Bill of Materials: the list of components in a piece of software). CyberRiskScape reads a
+CycloneDX SBOM for **one node** and writes a report (Markdown) on that node's cryptography. **The diagram is not changed.**
+
+Only **CycloneDX 1.6 / 1.7 JSON** can be read; XML and SPDX cannot. What you learn depends on what the SBOM contains.
+
+| SBOM contents | What you learn |
+|---|---|
+| Components only (the default output of most SBOM tools) | Components that implement cryptography (OpenSSL, Bouncy Castle, JWT libraries and so on), their versions, and a note on PQC support |
+| Cryptographic assets included (CBOM: Cryptography Bill of Materials) | In addition, algorithms, protocols and certificates, each with a **PQC verdict** (the same reference table as §5.3) |
+
+> **Terms**: **CBOM** is the mechanism added in CycloneDX 1.6 for recording algorithms, protocols, certificates and key
+> information in an SBOM. Components whose type is `cryptographic-asset` are CBOM entries.
+
+### 7.1 From the screen
+
+1. On the PQC layer, select the node.
+2. At the bottom of the **Crypto (PQC)** section in the node panel, press **Check cryptography from SBOM** and
+   choose a CycloneDX JSON file.
+3. `pqc-sbom_<component number>_<date>.md` is downloaded.
+
+If the file is not JSON or not CycloneDX, the reason appears under the button. Files over 20 MB cannot be read.
+
+### 7.2 From the CLI
+
+If you build SBOMs in CI, the CLI produces the same report.
+
+```bash
+npm run build:cli
+node dist-cli/main.js pqc-sbom-report project.json --sbom sbom.cdx.json --node C3 --out pqc-sbom.md
+```
+
+- `--node` is the node's component number (such as `C3`), case-insensitive. If it is not found, the valid numbers are listed
+- Without `--layer`, the PQC layer is used if it has nodes; otherwise the first layer with nodes
+- `--format json` writes JSON (`kind: cyberriskscape-sbom-crypto-report`). `--locale en` switches to English
+- It only reads files and does not connect to any external service
+
+You can create an SBOM with, for example, the Veracode CLI:
+`veracode sbom --type directory --source . --format cyclonedx-json --output sbom.cdx.json`
+(the output is CycloneDX 1.6; at the time of writing, the official documentation does not say whether it includes
+cryptographic assets, so expect it to be treated as a components-only SBOM).
+
+### 7.3 Report structure
+
+| Section | Contents |
+|---|---|
+| 1. Summary | SBOM file name and version; numbers of components, cryptographic assets and cryptographic libraries; the target node |
+| 2. Algorithms | Name, primitive (signature, KEM and so on), parameter set, curve, the NIST quantum security level stated in the SBOM, PQC verdict |
+| 3. Protocols | Type such as TLS and its version, cipher suites and their verdicts |
+| 4. Certificates | Subject, issuer, expiry, signature algorithm and its verdict |
+| 5. Cryptographic libraries | Name, version, purl, role and PQC-support note of each matched component |
+| 6. Comparison with the diagram | The **signature algorithm** entered on the node and the **key exchange** entered on each connection to it, side by side with the candidates found in the SBOM |
+| 7. Limits of this check | The same caution as the last item in §7.4 |
+
+Symmetric ciphers and hashes (such as AES-256-GCM) get "Needs review", because the §5.3 reference table covers public-key
+cryptography. TLS 1.3 cipher suite names (such as `TLS_AES_256_GCM_SHA384`) do not contain the key exchange, so they are
+not listed as key-exchange candidates in section 6.
+
+### 7.4 Using the results
+
+- **Use the candidates in section 6 to fill in values on the PQC layer's nodes and edges.** For example, if the
+  diagram's key exchange is empty and the SBOM contains `X25519MLKEM768`, confirm that the real connection uses it,
+  then enter it as the edge's key exchange. Analyzing the path again reflects it in the PQC verdict of §5
+- **Compare the notes in section 5 with the versions.** OpenSSL, for example, added ML-KEM and others in 3.5.0. An
+  earlier version needs an upgrade plan
+- **Being in the SBOM does not mean being used.** A component may be present but never called, or the configuration may
+  pin the algorithms. Make the final check against the configuration and the real connection (handshake)
+
+The list of cryptographic libraries is in `data/crypto-behavior/crypto-libraries.yaml`. You can add missing libraries
+to that YAML.
+
+---
+
+## 8. Limits and cautions
 
 - **It estimates from the design diagram.** It does not read real device configurations. If the diagram differs from
   reality, so will the verdicts
@@ -355,7 +430,7 @@ Use the CSV as **candidate rows when you build the cryptographic inventory**. Fr
 
 ---
 
-## 8. Sources
+## 9. Sources
 
 The reference table behind the PQC verdicts is this project's own arrangement built on the following publicly available
 documents. It is not a reproduction of their text.
@@ -366,6 +441,12 @@ documents. It is not a reproduction of their text.
 4. NIST FIPS 205, Stateless Hash-Based Digital Signature Standard (SLH-DSA) — <https://csrc.nist.gov/pubs/fips/205/final>
 5. NIST SP 800-208, Recommendation for Stateful Hash-Based Signature Schemes (LMS / XMSS) — <https://csrc.nist.gov/pubs/sp/800/208/final>
 6. NIST IR 8547, Transition to Post-Quantum Cryptography Standards — <https://csrc.nist.gov/pubs/ir/8547/ipd>
+
+The SBOM check in §7 reads files according to the following specifications. The notes in the cryptographic library
+list summarize each library's release notes.
+
+7. OWASP CycloneDX specification 1.6 / 1.7 (including CBOM) — <https://cyclonedx.org/specification/overview/>
+8. Package URL (purl) specification — <https://github.com/package-url/purl-spec>
 
 ---
 

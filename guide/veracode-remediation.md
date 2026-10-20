@@ -284,6 +284,10 @@ The "findings with no matching diagram threat" section of `findings-report` serv
 After you update the diagram, the [CI diff gate](ci-integration.md) evaluates new threats in the project JSON PR.
 Re-export `THREAT_MODEL.md` as well so the next AI fix reflects it.
 
+If you are working on PQC migration, pass an SBOM created with `veracode sbom --format cyclonedx-json` to
+`pqc-sbom-report` to see the cryptographic libraries in that application's node and their PQC support
+([Supporting PQC Migration](pqc-migration.md) §7).
+
 ---
 
 ## 7. Example workflow (SAST, GitHub Actions)

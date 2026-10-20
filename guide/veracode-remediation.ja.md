@@ -281,6 +281,9 @@ Veracode の指摘が、脅威モデルの前提と食い違うことがあり�
 図を更新したら、プロジェクト JSON の PR で [CI の差分ゲート](ci-integration.ja.md) が新しい脅威を判定します。
 `THREAT_MODEL.md` も書き出し直して、次回の AI の修正に反映させます。
 
+PQC 移行を進めている場合は、`veracode sbom --format cyclonedx-json` で作った SBOM を `pqc-sbom-report` に渡すと、
+そのアプリのノードに入っている暗号ライブラリと PQC への対応状況を確認できます（[PQC 移行を支援する](pqc-migration.ja.md) §7）。
+
 ---
 
 ## 7. ワークフローの例（SAST、GitHub Actions）
