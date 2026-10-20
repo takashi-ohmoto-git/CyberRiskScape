@@ -346,7 +346,9 @@ const nextId = (prefix: string): string =>
 
 const AUTH_PROVIDER_EXCLUDED_CATEGORIES: ReadonlySet<string> = new Set(['DOCUMENTS', 'ATTACKER']);
 const MANAGED_STATE_APPLICABLE: ReadonlySet<string> = new Set(['PC', 'SMARTPHONE', 'IOT']);
-const ATTACK_SURFACE_APPLICABLE: ReadonlySet<string> = new Set(['FRONT_END_SERVER', 'GATEWAY', 'REVERSE_PROXY']);
+const ATTACK_SURFACE_APPLICABLE: ReadonlySet<string> = new Set(['FRONT_END_SERVER', 'GATEWAY', 'REVERSE_PROXY', 'AI_GATEWAY']);
+/** AI_GATEWAY は応答キャッシュ（hasResponseCache）だけ入力できる。 */
+const AI_GATEWAY_SURFACE_KEYS: ReadonlySet<string> = new Set(['hasResponseCache']);
 const USER_TRUST_TO_MANAGED: Record<UserTrustAttribute, ManagedState> = {
   Guest: 'Unmanaged',
   Employee: 'Managed',
@@ -416,7 +418,15 @@ function validateNodeAttrs(work: Work, node: DiagramNode, keys: readonly string[
   if (has('cloudOwnership')) must(SANCTION_ATTRIBUTE_APPLICABLE.has(node.type), 'cloudOwnership');
   if (has('threatActorType')) must(THREAT_ACTOR_TYPE_APPLICABLE.has(node.type), 'threatActorType');
   if (has('identityProviderKind')) must(IDP_KIND_APPLICABLE.has(node.type), 'identityProviderKind');
-  if (has('attackSurface')) must(ATTACK_SURFACE_APPLICABLE.has(node.type), 'attackSurface');
+  if (has('attackSurface')) {
+    must(ATTACK_SURFACE_APPLICABLE.has(node.type), 'attackSurface');
+    if (node.type === 'AI_GATEWAY') {
+      const extra = Object.keys(node.attackSurface ?? {}).filter((k) => !AI_GATEWAY_SURFACE_KEYS.has(k));
+      if (extra.length > 0) {
+        fail(`型 AI_GATEWAY の attackSurface は hasResponseCache のみ設定できます（不可: ${extra.join(', ')}）`);
+      }
+    }
+  }
   if (has('posture') && node.posture) {
     // 型が宣言したグループのフィールドだけ入力できる（lastReviewedAt / reviewNote は全型共通）。
     for (const k of Object.keys(node.posture)) {

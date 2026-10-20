@@ -65,6 +65,9 @@ export const enPanels: Partial<Record<TranslationKey, string>> = {
   'panels.node.attackSurfaceNote':
     'Attack surface configuration for public-facing points such as web servers. When unset, this is evaluated with the insecure baseline (Global IP and response cache = yes, others = no).',
 
+  'panels.node.attackSurfaceNoteCache':
+    'Whether a response cache (semantic cache or exact-match cache) is used. When unset, it is evaluated as yes.',
+
   'panels.posture.title': 'Operational posture',
   'panels.posture.note': 'Items left blank are evaluated as having no countermeasure.',
   'panels.posture.lastReviewedAt': 'Last reviewed',

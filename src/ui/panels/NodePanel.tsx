@@ -160,13 +160,20 @@ function getThreatActorTypeOptions(t: TFunc): { val: ThreatActorType; label: str
 
 /**
  * Attack Surface Attribute を表示するコンポーネント型。
- * Web/外部公開ポイント（FRONT_END_SERVER / GATEWAY / REVERSE_PROXY）のみ対象。
+ * Web/外部公開ポイント（FRONT_END_SERVER / GATEWAY / REVERSE_PROXY）と、
+ * AI_GATEWAY（応答キャッシュ hasResponseCache のみ）が対象。
  */
 const ATTACK_SURFACE_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set([
   'FRONT_END_SERVER',
   'GATEWAY',
   'REVERSE_PROXY',
+  'AI_GATEWAY',
 ]);
+
+/** 型ごとに入力できる項目を絞る（未掲載の型は全項目）。 */
+const ATTACK_SURFACE_KEYS_BY_TYPE: Partial<Record<ComponentTypeId, readonly AttackSurfaceKey[]>> = {
+  AI_GATEWAY: ['hasResponseCache'],
+};
 
 /**
  * 未設定ノード用のデフォルト値（insecure baseline）。
@@ -253,7 +260,10 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
   const CLOUD_SANCTION_OPTIONS = getCloudSanctionOptions(t);
   const CLOUD_OWNERSHIP_OPTIONS = getCloudOwnershipOptions(t);
   const THREAT_ACTOR_TYPE_OPTIONS = getThreatActorTypeOptions(t);
-  const ATTACK_SURFACE_FIELDS = getAttackSurfaceFields(t);
+  const surfaceKeys = ATTACK_SURFACE_KEYS_BY_TYPE[node.type];
+  const ATTACK_SURFACE_FIELDS = getAttackSurfaceFields(t).filter(
+    (f) => !surfaceKeys || surfaceKeys.includes(f.key),
+  );
   const AGENCY_OPTIONS = getAgencyOptions(t);
   const BLAST_RADIUS_OPTIONS = getBlastRadiusOptions(t);
   const IDENTITY_TIER_OPTIONS = getIdentityTierOptions(t);
@@ -331,7 +341,9 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
   };
 
   const onToggleAttackSurface = (key: AttackSurfaceKey, value: boolean) => {
-    const current: AttackSurfaceAttribute = { ...ATTACK_SURFACE_DEFAULTS, ...node.attackSurface };
+    // 項目が限られる型は、入力できない項目の既定値を保存しない
+    const base = ATTACK_SURFACE_KEYS_BY_TYPE[node.type] ? {} : ATTACK_SURFACE_DEFAULTS;
+    const current: AttackSurfaceAttribute = { ...base, ...node.attackSurface };
     onUpdate(node.id, 'attackSurface', { ...current, [key]: value });
   };
 
@@ -818,7 +830,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
               })}
             </div>
             <p className="text-xs text-slate-500 mt-3 leading-relaxed">
-              {t('panels.node.attackSurfaceNote')}
+              {t(surfaceKeys ? 'panels.node.attackSurfaceNoteCache' : 'panels.node.attackSurfaceNote')}
             </p>
           </div>
         )}

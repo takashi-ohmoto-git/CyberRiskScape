@@ -66,6 +66,9 @@ export const jaPanels = {
   'panels.node.attackSurfaceNote':
     'Web サーバー等の公開ポイントの攻撃面構成。未設定時は Global IP・応答キャッシュ=有り、その他=無し の insecure baseline として脅威評価される。',
 
+  'panels.node.attackSurfaceNoteCache':
+    '応答キャッシュ（セマンティックキャッシュ・完全一致のキャッシュ）を使っているか。未入力は有りとして評価される。',
+
   'panels.posture.title': '運用状況',
   'panels.posture.note': '未入力の項目は、対策なしとして脅威を評価します。',
   'panels.posture.lastReviewedAt': '最終点検日',

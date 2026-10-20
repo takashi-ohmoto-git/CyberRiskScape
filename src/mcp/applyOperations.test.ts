@@ -158,6 +158,17 @@ describe('正常系：ノード', () => {
     expect(n.attackSurface).toEqual({ hasGlobalIp: true });
   });
 
+  it('add_node：AI_GATEWAY は hasResponseCache のみ設定でき、他の攻撃面項目は拒否される', () => {
+    const { project, results } = apply([
+      { op: 'add_node', type: 'AI_GATEWAY', label: 'AIGW', attackSurface: { hasResponseCache: false } },
+    ]);
+    const n = l1(project).nodes.find((x) => x.id === results[0].id)!;
+    expect(n.attackSurface).toEqual({ hasResponseCache: false });
+    expect(() =>
+      apply([{ op: 'add_node', type: 'AI_GATEWAY', label: 'AIGW', attackSurface: { hasGlobalIp: true } }]),
+    ).toThrow(/hasResponseCache/);
+  });
+
   it('update_node：許可リストの属性を更新し、null で消せる', () => {
     const { project } = apply([
       { op: 'update_node', id: 'n-db', set: { label: '更新後', description: '説明' } },

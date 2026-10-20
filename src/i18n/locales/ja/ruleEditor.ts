@@ -138,7 +138,7 @@ export const jaRuleEditor = {
   'ruleEditor.nodeTarget.peerTypeLabel': '接続先（ピア）の型（任意・OR）',
   'ruleEditor.nodeTarget.peerAttackSurfaceLabel': '接続先（ピア）の攻撃面（任意）',
   'ruleEditor.nodeTarget.attackSurfaceLabel':
-    'このノードの攻撃面（任意・FRONT_END_SERVER / GATEWAY / REVERSE_PROXY 等で意味を持つ）',
+    'このノードの攻撃面（任意・FRONT_END_SERVER / GATEWAY / REVERSE_PROXY / AI_GATEWAY（応答キャッシュのみ）等で意味を持つ）',
   'ruleEditor.nodeTarget.agentAttributesLabel':
     'エージェント属性（任意・未指定属性は「最悪を仮定」評価）',
   'ruleEditor.nodeTarget.agentAxis.agency': 'agency（自律度）',
