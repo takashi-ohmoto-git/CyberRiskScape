@@ -1,0 +1,328 @@
+{
+  "schemaVersion": 1,
+  "kind": "cyberriskscape-template",
+  "name": "公開 Web アプリ・API — 対策後（AI エージェントによる自動化された攻撃の確認用）",
+  "layer": {
+    "nodes": [
+      {
+        "id": "nb_cust",
+        "type": "USER",
+        "x": 60,
+        "y": 70,
+        "label": "顧客",
+        "userTrustAttribute": "Guest"
+      },
+      {
+        "id": "nb_emp",
+        "type": "USER",
+        "x": 60,
+        "y": 580,
+        "label": "従業員",
+        "userTrustAttribute": "Employee"
+      },
+      {
+        "id": "nb_phone",
+        "type": "SMARTPHONE",
+        "x": 0,
+        "y": 0,
+        "label": "従業員のスマートフォン（業務アプリ入り）",
+        "parentId": "nb_emp",
+        "managedState": "Managed",
+        "posture": {
+          "encryptionAtRest": "ProviderManagedKey",
+          "patchStatus": "UpToDate"
+        }
+      },
+      {
+        "id": "nb_att",
+        "type": "AGENTIC_ATTACKER",
+        "x": 60,
+        "y": 320,
+        "label": "攻撃者（AI エージェントで攻撃を自動化）"
+      },
+      {
+        "id": "nb_portal",
+        "type": "FRONT_END_SERVER",
+        "x": 440,
+        "y": 110,
+        "label": "顧客向け照会ポータル",
+        "attackSurface": {
+          "hasGlobalIp": true,
+          "hasSourceIpRestriction": true,
+          "hasRemoteAccessRestriction": true,
+          "hasUserAuthentication": true,
+          "hasAccessLog": true,
+          "hasWafProtection": true,
+          "hasDdosProtection": true
+        },
+        "posture": {
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-14"
+        },
+        "logSinkId": "nb_siem"
+      },
+      {
+        "id": "nb_gw",
+        "type": "GATEWAY",
+        "x": 440,
+        "y": 400,
+        "label": "API ゲートウェイ",
+        "attackSurface": {
+          "hasGlobalIp": true,
+          "hasSourceIpRestriction": true,
+          "hasRemoteAccessRestriction": true,
+          "hasUserAuthentication": true,
+          "hasAccessLog": true,
+          "hasWafProtection": true,
+          "hasDdosProtection": true
+        },
+        "posture": {
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-14"
+        },
+        "logSinkId": "nb_siem"
+      },
+      {
+        "id": "nb_ztna",
+        "type": "ZTNA_PROXY",
+        "x": 440,
+        "y": 620,
+        "label": "ゼロトラストアクセス（業務アプリ用）",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-14"
+        },
+        "logSinkId": "nb_siem"
+      },
+      {
+        "id": "nb_qapi",
+        "type": "BACKEND_API",
+        "x": 840,
+        "y": 110,
+        "label": "照会 API",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-14"
+        },
+        "logSinkId": "nb_siem"
+      },
+      {
+        "id": "nb_bapi",
+        "type": "BACKEND_API",
+        "x": 840,
+        "y": 330,
+        "label": "業務 API（業務アプリのバックエンド）",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-14"
+        },
+        "logSinkId": "nb_siem"
+      },
+      {
+        "id": "nb_db",
+        "type": "DATABASE",
+        "x": 1160,
+        "y": 220,
+        "label": "顧客 DB",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "encryptionAtRest": "CustomerManagedKey",
+          "patchStatus": "UpToDate",
+          "accountReview": "Periodic",
+          "lastReviewedAt": "2026-10-14"
+        },
+        "logSinkId": "nb_siem"
+      },
+      {
+        "id": "nb_pii",
+        "type": "PERSONAL_INFO",
+        "x": 0,
+        "y": 0,
+        "label": "顧客の個人情報（氏名・連絡先・与信情報）",
+        "parentId": "nb_db",
+        "posture": {
+          "dataNecessity": "Required",
+          "recordVolume": "Under100K",
+          "lastReviewedAt": "2026-10-14"
+        }
+      },
+      {
+        "id": "nb_siem",
+        "type": "SIEM",
+        "x": 1160,
+        "y": 400,
+        "label": "SIEM（ログ基盤）",
+        "posture": {
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "accountReview": "Periodic",
+          "lastReviewedAt": "2026-10-14"
+        }
+      },
+      {
+        "id": "nb_core",
+        "type": "BACKEND_API",
+        "x": 1000,
+        "y": 620,
+        "label": "基幹系システム",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-14"
+        },
+        "logSinkId": "nb_siem"
+      }
+    ],
+    "edges": [
+      {
+        "id": "eb_01",
+        "source": "nb_cust",
+        "target": "nb_portal",
+        "auth": "MFA",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "ポータルの画面・ログイン"
+      },
+      {
+        "id": "eb_02",
+        "source": "nb_cust",
+        "target": "nb_gw",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "照会 API の呼び出し（ログイン後）"
+      },
+      {
+        "id": "eb_10",
+        "source": "nb_phone",
+        "target": "nb_ztna",
+        "auth": "Certificate",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "業務アプリの接続（端末と利用者を確認）"
+      },
+      {
+        "id": "eb_04",
+        "source": "nb_att",
+        "target": "nb_portal",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "ポータルへの自動化された入力の試行"
+      },
+      {
+        "id": "eb_05",
+        "source": "nb_att",
+        "target": "nb_gw",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "照会 API への自動化された連続照会"
+      },
+      {
+        "id": "eb_06",
+        "source": "nb_gw",
+        "target": "nb_qapi",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "ゲートウェイから照会 API へ"
+      },
+      {
+        "id": "eb_11",
+        "source": "nb_ztna",
+        "target": "nb_bapi",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "確認済みの接続だけを業務 API へ中継"
+      },
+      {
+        "id": "eb_08",
+        "source": "nb_qapi",
+        "target": "nb_db",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "顧客データの検索"
+      },
+      {
+        "id": "eb_09",
+        "source": "nb_bapi",
+        "target": "nb_db",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "顧客データの参照・更新"
+      }
+    ],
+    "boundaries": [
+      {
+        "id": "bb_net",
+        "type": "RECT",
+        "x": 20,
+        "y": 20,
+        "width": 300,
+        "height": 760,
+        "trustLevel": "Internet"
+      },
+      {
+        "id": "bb_pub",
+        "type": "ROUNDED",
+        "x": 380,
+        "y": 20,
+        "width": 340,
+        "height": 760,
+        "trustLevel": "Internet",
+        "macroTrust": "Public Area"
+      },
+      {
+        "id": "bb_int",
+        "type": "ROUNDED",
+        "x": 780,
+        "y": 20,
+        "width": 640,
+        "height": 520,
+        "trustLevel": "Internal",
+        "macroTrust": "Security Zone"
+      },
+      {
+        "id": "bb_core",
+        "type": "ROUNDED",
+        "x": 780,
+        "y": 580,
+        "width": 640,
+        "height": 200,
+        "trustLevel": "Internal",
+        "macroTrust": "Security Zone"
+      }
+    ]
+  }
+}
