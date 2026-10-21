@@ -17,6 +17,8 @@
 #   - ASI04 Supply Chain      → anthropic-zt-tool-poisoning-rug-pull, maestro-partner-supply-chain, owasp-llm03, atlas-t0010 でカバー済
 #   - ASI06 Memory Poisoning  → maestro-agent-memory-poisoning, anthropic-zt-memory-store-tampering / -shared-context-poisoning でカバー済
 #   本ファイルが追加するのは ASI05 / ASI07 / ASI08 / ASI09 / ASI10 の差分のみ。
+#   例外として、ASI02 / ASI03 のうち既存でカバーしていない 3 つの問い（承認ゲートの欠落・ツールによる
+#   対象範囲外への作用・エージェント自身による能力の拡張）を追加する（2026-10-21）。
 #   注: 上記カバー済の各ルールには、references に「ASI0x: …（関連マッピング）」の
 #   クロスマッピング出典を併記済み。UI 上でもどの ASI 項目に対応するか確認できる。
 #
@@ -166,4 +168,94 @@ rules:
         ref: "PR.PS-04"
     references:
       - title: "OWASP Top 10 for Agentic Applications 2026 - ASI10: Rogue Agents"
+        url: "https://genai.owasp.org/"
+
+  # ── ツール実行の承認ゲートの欠落（ASI02 / ASI09 の補完）────────────
+  # zt-guardrail-probabilistic-bypass-001 は「確率的な検知の迂回」を扱う。本ルールは決定論的な承認ゲート
+  # 自体の設計（既定の判定・対象範囲・ルールの改変可能性）が欠けている問いで、対策も別なので別グループにする。
+  # 承認者の過信は owasp-asi09-human-agent-trust-exploitation-001 が扱う。
+  - id: owasp-asi02-tool-approval-gate-gap-001
+    canonicalId: tool-approval-gate-gap
+    framework: AgenticAI
+    category: "Tool Misuse"
+    name: "ツール実行の承認ゲートの欠落（既定許可・対象の限定・ルールの改変）"
+    severity: High
+    description: "{{nodeName}} がエージェントのツール実行を仲介する承認ゲートとして置かれていても、どのルールにも当たらない呼び出しを既定で許可する、審査の対象を一部のツールに限り MCP や後から追加したツールが対象外になる、拒否ルールを利用者やエージェントが無効化・削除できる、のいずれかに当てはまる場合、プロンプトインジェクション等で乗っ取られたエージェントの操作は、ルールの想定外の形や対象外のツールを通るだけで審査を経ずに実行される（Can）。人の承認待ちが大量に発生する構成では、承認者が内容を確かめずに許可する状態にもなりやすい。一方、既定の判定を拒否（deny by default）とし、すべてのツール（MCP・カスタムツールを含む）を審査の対象にして、ルールの変更を人の承認と監査ログ付きに限っていれば、想定外の呼び出しは実行前に止まる（Cannot）。blast radius は承認ゲートを通過したツールが実行環境で持つすべての権限。"
+    mitigation: "[Foundation] 承認ゲートの既定の判定を拒否にし、許可するツールと操作を allowlist で明示する。MCP ツール・カスタムツールを含むすべてのツール呼び出しを審査の対象にする。 [Enterprise] 承認ルールの追加・無効化・削除をエージェントの権限から外し、人の承認と監査ログを必須にする。高影響の操作は操作内容の要約と差分を示して承認させ、承認の件数と所要時間を監視して形骸化を検知する。 [Advanced] 承認ルールをポリシーエンジン（policy as code）で管理し、変更をレビューと署名付きで配布する。承認ゲートの判定ログを改ざんできない場所へ転送し、定期的にゲートを迂回する呼び出しの有無を検証する。"
+    appliesTo:
+      kind: node
+      nodeType: GUARDRAIL
+      # ツール実行を仲介しているとき（ツール側と接続しているとき）だけ発火する。
+      # プロンプトの入出力だけを検査するガードレールには当てはまらない。
+      connection:
+        peerType: [TOOL, MCP_SERVER]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI02: Tool Misuse and Exploitation"
+        url: "https://genai.owasp.org/"
+      - title: "OWASP Agentic AI - Threats and Mitigations (Overwhelming Human in the Loop)"
+        url: "https://genai.owasp.org/"
+
+  # ── エージェントのツールによる対象範囲外への作用（ASI02 の補完）────────
+  # maestro-agent-internet-egress-001（canonicalId: agent-uncontrolled-egress）は AGENT から公衆網への
+  # 接続をデータ流出の経路として扱う。本ルールはツールが第三者のシステムへ「作用する」こと（許可された
+  # 対象の外への能動的な操作）を扱い、問い（対象範囲の強制）と対策が違うため別グループにする。
+  - id: owasp-asi02-tool-action-scope-escape-001
+    canonicalId: agent-action-scope-escape
+    framework: AgenticAI
+    category: "Tool Misuse"
+    name: "エージェントのツールによる対象範囲外への作用"
+    severity: High
+    description: "{{sourceName}} から {{targetName}} への公衆網経由の通信について、ツールが働きかけてよい対象（ドメイン・IP アドレス・テナント）が実行時に強制されていない場合、エージェントが目標の誤解・ハルシネーション・プロンプトインジェクションで対象を取り違えると、ツールは許可されていない第三者のシステムへそのまま操作を行う（Can）。操作の主体は利用者の組織になるため、第三者への損害・契約違反・法的責任を負う。対象の制限がプロンプトの指示だけにある構成では、指示を上書きされれば制限も消える。一方、対象の allowlist をツールの実行環境の外側（送信元のファイアウォール・プロキシ・ネットワークの分離）で強制し、allowlist 外への通信を実行前に遮断していれば、エージェントが対象を取り違えても範囲外へは届かない（Cannot）。blast radius はツールの実行環境から到達できるすべての外部システムと、それに対する組織の責任。"
+    mitigation: "[Foundation] ツールが働きかけてよい対象を allowlist として明示し、実行環境の送信元ファイアウォールまたはプロキシで allowlist 外への通信を遮断する。対象の制限をプロンプトの指示だけに頼らない。 [Enterprise] 対象の allowlist を作業ごとに発行し、作業の終了とともに失効させる。名前解決の結果と実際の接続先を照合し、すべての外部への操作を送信先付きで記録する。 [Advanced] ツールの実行環境を作業ごとに隔離したネットワークで起動し、許可された対象への経路しか存在しない構成にする。allowlist の変更は人の承認と署名を必須にする。"
+    appliesTo:
+      kind: edge
+      when:
+        sourceType: [TOOL]
+        network: [Internet]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+      - standard: nist-csf-2.0
+        ref: "GV.SC-07"
+    references:
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI02: Tool Misuse and Exploitation"
+        url: "https://genai.owasp.org/"
+
+  # ── エージェント自身による能力の拡張（ASI03 の補完）──────────────────
+  # anthropic-zt-config-integrity-001（canonicalId: agent-config-integrity）は第三者による設定の改ざんを扱う。
+  # 本ルールは正規の権限を持つエージェント自身がツール・MCP・スキルを登録・変更して自分の能力を広げる問いで、
+  # 対策（自己変更の権限分離）が違うため別グループにする。自己複製は owasp-asi10-rogue-agent-001 が扱う。
+  # スキーマに「能力の登録先へ書き込む」条件が無いため、自律 × 管理者相当の影響範囲で近似する。
+  - id: owasp-asi03-agent-self-capability-expansion-001
+    canonicalId: agent-self-capability-expansion
+    framework: AgenticAI
+    category: "Privilege Compromise"
+    name: "エージェント自身による能力の拡張（ツール・MCP・スキルの登録）"
+    severity: High
+    description: "{{nodeName}} が自律的に動き、管理者相当の権限でツール・MCP サーバー・スキル・承認ルールなど自分の能力を定める設定を登録・変更できる場合、プロンプトインジェクションや目標の誤解で乗っ取られたエージェントは、新しいツールを登録して審査の対象外の操作を行い、汚染したスキルを残して以後のセッションにも影響を持続させられる（Can）。能力の追加はエージェントの正規の操作として記録されるため、改ざんとして検知されにくい。一方、能力を定める設定の変更権限をエージェントから分離し、追加・変更を人の承認と署名付きの配布に限っていれば、乗っ取られたエージェントも自分の能力を広げられない（Cannot）。blast radius は登録できるツールが持つ権限の上限と、変更された設定を読み込むすべてのエージェントとセッション。"
+    mitigation: "[Foundation] ツール・MCP サーバー・スキル・承認ルールの登録と変更を、作業を行うエージェントの権限から外す。必要な場合は専用のエージェントに分け、すべての変更を人の承認制にする。 [Enterprise] 能力を定める設定をバージョン管理し、変更の差分をレビューしてから配布する。エージェントが読み込む設定の一覧と変更履歴を監査ログに残し、承認されていない追加を検知して無効化する。 [Advanced] 承認済みの設定を署名し、エージェントの起動時と読み込み時に署名を検証する。未署名の能力は読み込まない。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+      connection:
+        required: false
+      agentAttributes:
+        agency: [Autonomous]
+        blastRadius: [Admin]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI03: Identity and Privilege Abuse"
+        url: "https://genai.owasp.org/"
+      - title: "OWASP Agentic AI - Threats and Mitigations (Privilege Compromise)"
         url: "https://genai.owasp.org/"
