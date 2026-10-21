@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 1,
+  "kind": "cyberriskscape-template",
+  "name": "PHP RCE vulnerabilities (2026-10-21 advisory) — not updated",
+  "layer": {
+    "nodes": [
+      {
+        "id": "p_user",
+        "type": "USER",
+        "x": 60,
+        "y": 90,
+        "label": "User",
+        "userTrustAttribute": "Guest"
+      },
+      {
+        "id": "p_att",
+        "type": "THREAT_ACTOR",
+        "x": 60,
+        "y": 430,
+        "label": "Attacker (automated scanning with published exploit code)",
+        "threatActorType": "CyberCriminals",
+        "attackObjectiveId": "p_db"
+      },
+      {
+        "id": "p_web",
+        "type": "FRONT_END_SERVER",
+        "x": 440,
+        "y": 260,
+        "label": "PHP web server (Apache + mod_php)",
+        "attackSurface": {
+          "hasGlobalIp": true,
+          "hasSourceIpRestriction": false,
+          "hasRemoteAccessRestriction": true,
+          "hasUserAuthentication": true,
+          "hasAccessLog": true,
+          "hasWafProtection": true,
+          "hasDdosProtection": true,
+          "hasResponseCache": false
+        },
+        "posture": {
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "Missing",
+          "lastReviewedAt": "2026-10-21",
+          "reviewNote": "PHP 8.3 branch; the 2026-10-21 fix is not applied"
+        },
+        "logSinkId": "p_siem"
+      },
+      {
+        "id": "p_cred",
+        "type": "CREDENTIAL",
+        "x": 0,
+        "y": 0,
+        "label": "DB credentials and API keys (config file)",
+        "parentId": "p_web"
+      },
+      {
+        "id": "p_db",
+        "type": "DATABASE",
+        "x": 840,
+        "y": 120,
+        "label": "Member DB",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "encryptionAtRest": "CustomerManagedKey",
+          "patchStatus": "UpToDate",
+          "accountReview": "Periodic",
+          "lastReviewedAt": "2026-10-21"
+        },
+        "logSinkId": "p_siem"
+      },
+      {
+        "id": "p_pii",
+        "type": "PERSONAL_INFO",
+        "x": 0,
+        "y": 0,
+        "label": "Member personal data",
+        "parentId": "p_db",
+        "posture": {
+          "dataNecessity": "Required",
+          "recordVolume": "Under1M",
+          "lastReviewedAt": "2026-10-21"
+        }
+      },
+      {
+        "id": "p_api",
+        "type": "BACKEND_API",
+        "x": 840,
+        "y": 400,
+        "label": "Internal business API",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-21"
+        },
+        "logSinkId": "p_siem"
+      },
+      {
+        "id": "p_siem",
+        "type": "SIEM",
+        "x": 840,
+        "y": 620,
+        "label": "SIEM (log platform)",
+        "posture": {
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "accountReview": "Periodic",
+          "lastReviewedAt": "2026-10-21"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "pe_01",
+        "source": "p_user",
+        "target": "p_web",
+        "auth": "MFA",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Login and browsing"
+      },
+      {
+        "id": "pe_02",
+        "source": "p_att",
+        "target": "p_web",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Crafted requests (handled before login)"
+      },
+      {
+        "id": "pe_03",
+        "source": "p_web",
+        "target": "p_db",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Member data lookup and update"
+      },
+      {
+        "id": "pe_04",
+        "source": "p_web",
+        "target": "p_api",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Business API calls"
+      }
+    ],
+    "boundaries": [
+      {
+        "id": "pb_net",
+        "type": "RECT",
+        "x": 20,
+        "y": 20,
+        "width": 300,
+        "height": 740,
+        "trustLevel": "Internet"
+      },
+      {
+        "id": "pb_pub",
+        "type": "ROUNDED",
+        "x": 380,
+        "y": 20,
+        "width": 340,
+        "height": 740,
+        "trustLevel": "Internet",
+        "macroTrust": "Public Area"
+      },
+      {
+        "id": "pb_int",
+        "type": "ROUNDED",
+        "x": 780,
+        "y": 20,
+        "width": 340,
+        "height": 740,
+        "trustLevel": "Internal",
+        "macroTrust": "Security Zone"
+      }
+    ]
+  }
+}

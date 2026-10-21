@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 1,
+  "kind": "cyberriskscape-template",
+  "name": "PHP の RCE 脆弱性（2026-10-21 勧告）— 未更新",
+  "layer": {
+    "nodes": [
+      {
+        "id": "p_user",
+        "type": "USER",
+        "x": 60,
+        "y": 90,
+        "label": "利用者",
+        "userTrustAttribute": "Guest"
+      },
+      {
+        "id": "p_att",
+        "type": "THREAT_ACTOR",
+        "x": 60,
+        "y": 430,
+        "label": "攻撃者（公開された攻撃コードで自動探索）",
+        "threatActorType": "CyberCriminals",
+        "attackObjectiveId": "p_db"
+      },
+      {
+        "id": "p_web",
+        "type": "FRONT_END_SERVER",
+        "x": 440,
+        "y": 260,
+        "label": "PHP Web サーバー（Apache + mod_php）",
+        "attackSurface": {
+          "hasGlobalIp": true,
+          "hasSourceIpRestriction": false,
+          "hasRemoteAccessRestriction": true,
+          "hasUserAuthentication": true,
+          "hasAccessLog": true,
+          "hasWafProtection": true,
+          "hasDdosProtection": true,
+          "hasResponseCache": false
+        },
+        "posture": {
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "Missing",
+          "lastReviewedAt": "2026-10-21",
+          "reviewNote": "PHP 8.3 系・2026-10-21 の修正版は未適用"
+        },
+        "logSinkId": "p_siem"
+      },
+      {
+        "id": "p_cred",
+        "type": "CREDENTIAL",
+        "x": 0,
+        "y": 0,
+        "label": "DB 接続情報・API キー（設定ファイル）",
+        "parentId": "p_web"
+      },
+      {
+        "id": "p_db",
+        "type": "DATABASE",
+        "x": 840,
+        "y": 120,
+        "label": "会員 DB",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "encryptionAtRest": "CustomerManagedKey",
+          "patchStatus": "UpToDate",
+          "accountReview": "Periodic",
+          "lastReviewedAt": "2026-10-21"
+        },
+        "logSinkId": "p_siem"
+      },
+      {
+        "id": "p_pii",
+        "type": "PERSONAL_INFO",
+        "x": 0,
+        "y": 0,
+        "label": "会員の個人情報",
+        "parentId": "p_db",
+        "posture": {
+          "dataNecessity": "Required",
+          "recordVolume": "Under1M",
+          "lastReviewedAt": "2026-10-21"
+        }
+      },
+      {
+        "id": "p_api",
+        "type": "BACKEND_API",
+        "x": 840,
+        "y": 400,
+        "label": "社内の業務 API",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "lastReviewedAt": "2026-10-21"
+        },
+        "logSinkId": "p_siem"
+      },
+      {
+        "id": "p_siem",
+        "type": "SIEM",
+        "x": 840,
+        "y": 620,
+        "label": "SIEM（ログ基盤）",
+        "posture": {
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "accountReview": "Periodic",
+          "lastReviewedAt": "2026-10-21"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "pe_01",
+        "source": "p_user",
+        "target": "p_web",
+        "auth": "MFA",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "ログイン・閲覧"
+      },
+      {
+        "id": "pe_02",
+        "source": "p_att",
+        "target": "p_web",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "細工したリクエスト（認証より前に処理）"
+      },
+      {
+        "id": "pe_03",
+        "source": "p_web",
+        "target": "p_db",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "会員データの検索・更新"
+      },
+      {
+        "id": "pe_04",
+        "source": "p_web",
+        "target": "p_api",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "業務 API の呼び出し"
+      }
+    ],
+    "boundaries": [
+      {
+        "id": "pb_net",
+        "type": "RECT",
+        "x": 20,
+        "y": 20,
+        "width": 300,
+        "height": 740,
+        "trustLevel": "Internet"
+      },
+      {
+        "id": "pb_pub",
+        "type": "ROUNDED",
+        "x": 380,
+        "y": 20,
+        "width": 340,
+        "height": 740,
+        "trustLevel": "Internet",
+        "macroTrust": "Public Area"
+      },
+      {
+        "id": "pb_int",
+        "type": "ROUNDED",
+        "x": 780,
+        "y": 20,
+        "width": 340,
+        "height": 740,
+        "trustLevel": "Internal",
+        "macroTrust": "Security Zone"
+      }
+    ]
+  }
+}
