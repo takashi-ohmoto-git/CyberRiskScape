@@ -63,7 +63,8 @@ npm ci && npm run build:cli
 node dist-cli/main.js export-investigation-plan model.json --tool velociraptor --locale en --out plan.md
 ```
 
-With `--tool velociraptor`, each viewpoint also lists Velociraptor artifact names and parameters as hints (the UI export does not include them).
+Add `--tool velociraptor` only if you collect evidence with Velociraptor (§4.2). With it, each viewpoint also lists Velociraptor artifact names and parameters as hints (the UI export does not include them).
+If you use only the bundled triage script (§4.1), export without it, or use the plan exported from the UI.
 You can also use `--layer` and `--format md|json`.
 
 ### 3.4 Reading the plan
@@ -113,6 +114,15 @@ Hints for velociraptor:
 
 ## 4. Collect evidence
 
+There are two ways to collect evidence. **Either one alone is enough to go on to the investigation report in ③.** If you use both, pass them together in ③.
+
+| Method | When it fits |
+|---|---|
+| **4.1 The bundled triage script** | Most cases. If you have copies of the logs (and the web root), you can use it without any additional product |
+| **4.2 Velociraptor** | You already run Velociraptor, or you want to collect the same items from many endpoints |
+
+If you use only 4.1, you do not need `--tool velociraptor` in §3.3.
+
 ### 4.1 Examine copies of logs with the bundled triage script
 
 `tools/triage/crs_triage.py` is an offline tool that reads **copies** of logs (and the web root) and looks for the following. It uses only the Python 3.8+ standard library and does not communicate externally.
@@ -134,6 +144,8 @@ python3 tools/triage/crs_triage.py --patterns patterns.json \
 ```
 
 `report.md` is for people to read; `report.json` is the input to the investigation report in ③.
+**Run it once per host.** If the plan covers several nodes (for example, a web server and a DB server), run it on the log copies from each one with a different `--host`, and write separate JSON files
+(for example, `--host db01 --json report-db01.json`). Nodes whose hosts you did not examine are "not investigated" in ③.
 **Always check `skipped` (what could not be read).** The script does not read systemd journals or binary logs.
 Export them to text first, for example with `journalctl -k -o short-iso > kernel.log`. See [`tools/triage/README.md`](../tools/triage/README.md) for options and limits. The script's report text is in Japanese.
 
@@ -172,10 +184,21 @@ Host names are matched case-insensitively, and the first label of an FQDN also m
 
 ### 5.2 Run it
 
+If you used only the triage script (§4.1):
+
 ```bash
 node dist-cli/main.js investigation-report model.json \
-  --evidence report.json --evidence ./velociraptor \
+  --evidence report.json --evidence report-db01.json \
   --hosts hosts.json --locale en --out investigation-report.md
+```
+
+If you used only Velociraptor (§4.2), pass the folder with the extracted collections. If you used both, pass both.
+
+```bash
+# Velociraptor only
+node dist-cli/main.js investigation-report model.json --evidence ./velociraptor --hosts hosts.json --locale en --out investigation-report.md
+# Both
+node dist-cli/main.js investigation-report model.json --evidence report.json --evidence ./velociraptor --hosts hosts.json --locale en --out investigation-report.md
 ```
 
 You can pass `--evidence` as many times as you need: a triage JSON file, or a folder with extracted Velociraptor collections. Use `--format json` for machine-readable JSON.
@@ -183,6 +206,7 @@ You can pass `--evidence` as many times as you need: a triage JSON file, or a fo
 ### 5.3 Reading the report
 
 This example overlays the triage result from the web server (web01) and a Velociraptor collection from the DB server (db01, process list only) on the membership-site diagram (excerpt).
+It uses both methods to show how each appears. If you pass only the triage result for web01, C3 is still "traces found", and C5, which has no evidence, is "not investigated".
 
 ```markdown
 - Summary: traces found 1 / cannot rule out 1 / not investigated 0 / no traces 0 (evidence 2, hosts not in the diagram 0, unreadable inputs 0)

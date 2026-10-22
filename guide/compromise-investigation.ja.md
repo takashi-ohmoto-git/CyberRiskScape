@@ -63,7 +63,8 @@ npm ci && npm run build:cli
 node dist-cli/main.js export-investigation-plan model.json --tool velociraptor --out plan.md
 ```
 
-`--tool velociraptor` を付けると、各観点に Velociraptor の artifact 名とパラメータの手がかりが加わります（画面からの書き出しには載りません）。
+`--tool velociraptor` は、証拠の収集に Velociraptor を使う場合（§4.2）だけ付けます。付けると、各観点に Velociraptor の artifact 名とパラメータの手がかりが加わります（画面からの書き出しには載りません）。
+同梱のトリアージスクリプト（§4.1）だけを使う場合は、付けずに書き出すか、画面から書き出した計画書で足ります。
 `--layer`・`--locale ja|en`・`--format md|json` も指定できます。
 
 ### 3.4 計画書の読み方
@@ -113,6 +114,15 @@ velociraptor の手がかり:
 
 ## 4. 証拠を集める
 
+証拠を集める方法は 2 つあります。**どちらか一方だけで、③の調査報告まで進めます。** 両方を使う場合は、③でまとめて渡せます。
+
+| 方法 | 向いている場合 |
+|---|---|
+| **4.1 同梱のトリアージスクリプト** | ほとんどの場合はこちら。ログ（と Web ルート）のコピーがあれば、追加の製品なしで使えます |
+| **4.2 Velociraptor** | すでに Velociraptor を運用している、または多数の端末から同じ項目を集めたい場合 |
+
+4.1 だけを使う場合は、§3.3 の `--tool velociraptor` は不要です。
+
 ### 4.1 同梱のトリアージスクリプトで、ログのコピーを調べる
 
 `tools/triage/crs_triage.py` は、ログ（と Web ルート）の**コピー**を読み、次のものを探すオフラインのツールです。Python 3.8 以上の標準ライブラリだけで動き、外部と通信しません。
@@ -134,6 +144,8 @@ python3 tools/triage/crs_triage.py --patterns patterns.json \
 ```
 
 `report.md` は人が読むためのレポート、`report.json` は③の調査報告に渡す入力です。
+**調べるホストごとに実行します。** 計画書の対象ノードが複数あれば（例：Web サーバーと DB サーバー）、それぞれのログのコピーに `--host` を変えて実行し、出力の JSON を分けます
+（例：`--host db01 --json report-db01.json`）。実行しなかったホストのノードは、③で「未調査」になります。
 **`skipped`（読めなかったもの）を必ず確かめてください。** systemd journal やバイナリのログは読みません。
 `journalctl -k -o short-iso > kernel.log` などでテキストに書き出してから渡します。オプションと限界の詳細は [`tools/triage/README.ja.md`](../tools/triage/README.ja.md) にあります。
 
@@ -172,10 +184,21 @@ python3 tools/triage/crs_triage.py --patterns patterns.json \
 
 ### 5.2 実行する
 
+トリアージスクリプト（§4.1）だけを使った場合：
+
 ```bash
 node dist-cli/main.js investigation-report model.json \
-  --evidence report.json --evidence ./velociraptor \
+  --evidence report.json --evidence report-db01.json \
   --hosts hosts.json --out investigation-report.md
+```
+
+Velociraptor（§4.2）だけを使った場合は、収集結果を展開したフォルダーを渡します。両方を使った場合は、両方を並べます。
+
+```bash
+# Velociraptor だけ
+node dist-cli/main.js investigation-report model.json --evidence ./velociraptor --hosts hosts.json --out investigation-report.md
+# 両方
+node dist-cli/main.js investigation-report model.json --evidence report.json --evidence ./velociraptor --hosts hosts.json --out investigation-report.md
 ```
 
 `--evidence` は何度でも指定できます。トリアージの JSON、または Velociraptor の収集結果を展開したフォルダーです。`--format json` で機械処理用の JSON、`--locale en` で英語になります。
@@ -183,6 +206,7 @@ node dist-cli/main.js investigation-report model.json \
 ### 5.3 報告の読み方
 
 会員サイトの図に、Web サーバー（web01）のトリアージ結果と、DB サーバー（db01）の Velociraptor の収集結果（プロセス一覧だけ）を重ねた例です（抜粋）。
+2 つの方法の結果がどう表れるかを示すために両方を使っています。web01 のトリアージ結果だけを渡した場合は、C3 は同じく「痕跡あり」、証拠の無い C5 は「未調査」になります。
 
 ```markdown
 - 概要: 痕跡あり 1 ／ 否定できない 1 ／ 未調査 0 ／ 痕跡なし 0（証拠 2 件・図に無いホスト 0 件・読めなかった入力 0 件）
