@@ -55,6 +55,11 @@ import {
 import { sbomCryptoToJson, sbomCryptoToMarkdown } from '../features/sbom-crypto/sbomCryptoOutput';
 import { BUNDLED_ALGORITHM_TABLE, getCryptoLibraries } from '../crypto-behavior/bundled';
 import { testPlanToJson, testPlanToMarkdown } from '../features/test-plan/testPlanOutput';
+import { buildInvestigationPlan } from '../features/investigation-plan/buildInvestigationPlan';
+import {
+  investigationPlanToJson,
+  investigationPlanToMarkdown,
+} from '../features/investigation-plan/investigationPlanOutput';
 import { getChecklists } from '../checklist/bundled';
 import { evaluateChecklist } from '../checklist/evaluate';
 import { toChecklistCsv, toChecklistJson, toChecklistMarkdown } from '../checklist/report';
@@ -72,6 +77,7 @@ const TRIGGERS_FORMATS = ['md', 'json'] as const;
 const CHECKLIST_FORMATS = ['md', 'json', 'csv'] as const;
 const FINDINGS_REPORT_FORMATS = ['md', 'json'] as const;
 const TEST_PLAN_FORMATS = ['md', 'json'] as const;
+const INVESTIGATION_TOOLS = ['velociraptor'] as const;
 const SBOM_CRYPTO_FORMATS = ['md', 'json'] as const;
 
 const FRAMEWORKS: readonly FrameworkView[] = ['STRIDE', 'AI', 'AgenticAI', 'ALL'];
@@ -88,6 +94,7 @@ const USAGE = `使い方:
   import-shodan <export.json[.gz]> [options]
   export-postman <project.json> [options]
   export-test-plan <project.json> [options]
+  export-investigation-plan <project.json> [options]
   findings-report <project.json> --veracode <file> [options]
   pqc-sbom-report <project.json> --sbom <file> --node <C番号> [options]
   mcp [options]
@@ -146,6 +153,13 @@ export-test-plan のオプション（脅威モデルからペネトレーショ
   --format <md|json>                            出力形式（既定: md）
   --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある最初のレイヤー）
   --framework <STRIDE|AI|AgenticAI|ALL>         対象フレームワーク（既定: ALL）
+  --locale <ja|en>                              表示言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+export-investigation-plan のオプション（侵害の疑いがあるとき、脅威モデルから「どこを・何を調べるか」と「調べられない恐れ」をノードごとにまとめた調査計画（ベンダー中立）を出力。侵害の有無は判定しない）:
+  --format <md|json>                            出力形式（既定: md）
+  --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある最初のレイヤー）
+  --tool <velociraptor>                         指定したツールでの確認の手がかり（アーティファクト名など）も載せる（既定: 載せない）
   --locale <ja|en>                              表示言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
@@ -255,6 +269,7 @@ function parseCliArgs() {
       'as-of': { type: 'string' },
       triggers: { type: 'string' },
       locale: { type: 'string' },
+      tool: { type: 'string' },
       out: { type: 'string' },
       root: { type: 'string' },
       vars: { type: 'string' },
@@ -601,6 +616,41 @@ ${USAGE}`);
 }
 
 /**
+ * `export-investigation-plan`：脅威モデルから、侵害の疑いがあるときの調査計画（対象ノード・調査観点・
+ * 調べられない恐れ）を Markdown または JSON で出力する。
+ */
+function runExportInvestigationPlan(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  const format = parseEnum(values.format, TEST_PLAN_FORMATS, 'format') ?? 'md';
+  const layer = parseEnum(values.layer, LAYER_KEYS, 'layer');
+  const tool = parseEnum(values.tool, INVESTIGATION_TOOLS, 'tool') ?? null;
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+
+  let results: LayerAnalysisResult[];
+  try {
+    results = analyzeProject(readJsonFile(file), { layer, locale });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  const target = results[0];
+  if (!target) fail('ノードのあるレイヤーがありません。');
+
+  const plan = buildInvestigationPlan(target.input, new Date(), locale, tool);
+  writeOutput(format === 'json' ? investigationPlanToJson(plan) : investigationPlanToMarkdown(plan), values.out);
+  const viewpoints = plan.nodes.reduce((n, x) => n + x.viewpoints.length, 0);
+  process.stderr.write(
+    `調査計画を出力しました（${target.layer}・対象ノード ${plan.nodes.length} 件・調査観点 ${viewpoints} 件${plan.pathBased ? '' : '・攻撃経路なし＝全ノード'}）
+`,
+  );
+}
+
+/**
  * `export-test-plan`：脅威モデルから、ペネトレーションテスト計画書（入口・攻撃シナリオ・重点テスト項目）を
  * Markdown または JSON で出力する。
  */
@@ -826,6 +876,8 @@ function main(): void {
     runExportPostman(values, positionals);
   } else if (command === 'export-test-plan') {
     runExportTestPlan(values, positionals);
+  } else if (command === 'export-investigation-plan') {
+    runExportInvestigationPlan(values, positionals);
   } else if (command === 'findings-report') {
     runFindingsReport(values, positionals);
   } else if (command === 'pqc-sbom-report') {

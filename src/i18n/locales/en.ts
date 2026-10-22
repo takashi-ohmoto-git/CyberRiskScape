@@ -12,6 +12,7 @@ import { enCliTriggers } from './en/cliTriggers';
 import { enFindingsReport } from './en/findingsReport';
 import { enChecklist } from './en/checklist';
 import { enTestPlan } from './en/testPlan';
+import { enInvestigation } from './en/investigation';
 import { enSbomCrypto } from './en/sbomCrypto';
 
 
@@ -192,5 +193,6 @@ export const en: Partial<Record<TranslationKey, string>> = {
   ...enFindingsReport,
   ...enChecklist,
   ...enTestPlan,
+  ...enInvestigation,
   ...enSbomCrypto,
 };

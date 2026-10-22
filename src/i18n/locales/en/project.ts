@@ -25,6 +25,7 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'project.sidebar.exportPqcEmpty': 'Analyze a path with "Crypto path (PQC)" on a node, then register the flow with "Add to report"',
   'project.sidebar.exportPostman': 'Postman Collection (verification requests)',
   'project.sidebar.exportTestPlan': 'Penetration test plan (Markdown)',
+  'project.sidebar.exportInvestigationPlan': 'Investigation plan (suspected compromise)',
   'project.sidebar.exportPdf': 'PDF report (choose layers)',
   'project.sidebar.exportPng': 'PNG image (choose layers)',
   'project.sidebar.newProject': 'New project',

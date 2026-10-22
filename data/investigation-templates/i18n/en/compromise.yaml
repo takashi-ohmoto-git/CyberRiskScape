@@ -1,0 +1,56 @@
+# English overlay for `data/investigation-templates/compromise.yaml`.
+#
+# The Japanese file is the source of truth: only `title`, `checks` and `logs` are translated here,
+# keyed by viewpoint id. `checks` and `logs` must have the same number of items as the original.
+# Anything omitted falls back to the original text.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+viewpoints:
+  code-execution:
+    title: "Is there any trace of unexpected code execution?"
+    checks:
+      - "Look for executable files recently added or changed under web roots and application directories."
+      - "Look for shells or commands started from web server or application processes."
+      - "Look in error logs for a surge of memory-limit overruns or abnormal worker exits (OOM, segmentation faults)."
+      - "Look for outbound connections to unexpected destinations."
+    logs:
+      - "Web server access and error logs"
+      - "Application runtime logs (e.g. php-fpm)"
+      - "OS kernel log and journal"
+
+  credential-misuse:
+    title: "Have credentials been misused?"
+    checks:
+      - "Look for unexpected access to or changes of files and key stores that hold credentials."
+      - "Look for unexpected logins or source addresses that used those credentials."
+    logs:
+      - "OS authentication logs"
+      - "DB and API connection logs"
+      - "Audit logs of the secrets vault"
+
+  data-access:
+    title: "Is there any unexpected access to data?"
+    checks:
+      - "In the DB audit log, look for unexpected bulk reads, permission changes and schema changes."
+    logs:
+      - "DB audit log and query log"
+
+  log-gap:
+    title: "Are there periods where logs are missing or erased?"
+    checks:
+      - "Look for periods where logs stop or where forwarding stopped."
+      - "Review the change history of retention, exclusion settings and detection policies."
+    logs:
+      - "Audit logs of the log platform and EDR"
+      - "Log forwarding status of each system"
+
+  fleet-execution:
+    title: "Has anything been run on all endpoints at once from the management server?"
+    checks:
+      - "In the management server audit log, look at the history of fleet-wide collections and command executions, and at the administrator who started them and the source of that administrator's login."
+    logs:
+      - "Audit logs of the EDR / DFIR server"

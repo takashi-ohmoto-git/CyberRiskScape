@@ -1,0 +1,121 @@
+# 検出した脅威 → 侵害の疑いがあるときの調査観点（調査計画）の対応表。
+#
+# 検出した脅威の canonicalId がここに載っていれば、調査計画の「対象ノード」に、その観点
+# （何を確かめるか・どのログを見るか）を添える。同じノードに同じ観点が複数の脅威から当たる場合は、
+# 観点を 1 回だけ載せる。
+#
+# 方針:
+#   - **どこを・何を調べるか**を書く。攻撃手順・エクスプロイトのコードは置かない。
+#   - 調査計画は侵害の有無を判定しない。痕跡が無いことは、侵害が無かったことの証明にならない。
+#   - 被害企業の事例は書かない。一般的な観点だけを書く。
+#   - 本文は日本語の要約。英語は i18n/en/compromise.yaml の翻訳オーバーレイ（title / checks / logs）。
+#   - tools.<ツール名> は、そのツールで同じ確認を行うための任意の手がかり。
+#     `--tool <ツール名>` を指定したときだけ出力に載せる。ツールに依存しない記述は checks / logs に書く。
+#
+# 出典（観点の考え方）:
+#   - NIST SP 800-61 Rev. 3 Incident Response Recommendations and Considerations for Cybersecurity Risk Management
+#     https://csrc.nist.gov/pubs/sp/800/61/r3/final
+#   - NIST SP 800-92 Guide to Computer Security Log Management
+#     https://csrc.nist.gov/pubs/sp/800/92/final
+#   - Velociraptor アーティファクト リファレンス（tools.velociraptor の artifact 名）
+#     https://docs.velociraptor.app/artifact_references/
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+viewpoints:
+  - id: code-execution
+    match:
+      canonicalIds:
+        - web-shell-implant
+        - api-server-code-execution
+        - known-vulnerability-unpatched
+        - network-edge-device-exploitation
+        - agent-code-execution-rce
+    title: "想定外のコード実行の痕跡がないか"
+    checks:
+      - "Web ルートやアプリの配置先で、最近追加・変更された実行可能なファイルがないか調べる。"
+      - "Web サーバーやアプリのプロセスから起動されたシェルやコマンドがないか調べる。"
+      - "エラーログに、メモリ上限の超過やワーカーの異常終了（OOM・セグメンテーション違反）の急増がないか調べる。"
+      - "想定外の宛先への外向き通信がないか調べる。"
+    logs:
+      - "Web サーバーのアクセスログ・エラーログ"
+      - "アプリの実行環境のログ（例: php-fpm）"
+      - "OS のカーネルログ・journal"
+    tools:
+      velociraptor:
+        - artifact: "Linux.Search.FileFinder"
+          parameters:
+            SearchFilesGlob: "/var/www/**"
+        - artifact: "Generic.Detection.Yara.Glob"
+        - artifact: "Linux.Sys.Pslist"
+        - artifact: "Linux.Sys.LogGrep"
+          parameters:
+            TargetGlob: "/var/log/**"
+            GrepRegex: "Allowed memory size of [0-9]+ bytes exhausted|exited on signal (9|11)|SIGSEGV|segfault|zend_mm_heap corrupted|Out of memory: Killed process|oom-kill"
+        - artifact: "Linux.Forensics.Journal"
+        - artifact: "Linux.Network.Netstat"
+
+  - id: credential-misuse
+    match:
+      canonicalIds:
+        - credential-sprawl
+        - nhi-long-lived-secret
+        - local-credential-outside-idp
+        - secrets-vault-concentration
+    title: "認証情報が不正に使われていないか"
+    checks:
+      - "認証情報を含む設定ファイルや鍵の置き場所への、想定外のアクセス・変更がないか調べる。"
+      - "その認証情報を使った、想定外のログインや接続元がないか調べる。"
+    logs:
+      - "OS の認証ログ"
+      - "DB・API の接続ログ"
+      - "秘密情報の保管庫の監査ログ"
+    tools:
+      velociraptor:
+        - artifact: "Linux.Syslog.SSHLogin"
+        - artifact: "Linux.Sys.LogGrep"
+          parameters:
+            TargetGlob: "/var/log/auth.log*"
+            GrepRegex: "Accepted |Failed password|sudo:"
+
+  - id: data-access
+    match:
+      canonicalIds:
+        - data-store-tampering
+        - private-endpoint-data-exfiltration
+    title: "データへの想定外のアクセスがないか"
+    checks:
+      - "DB の監査ログで、想定外の大量の読み出し・権限の変更・スキーマの変更がないか調べる。"
+    logs:
+      - "DB の監査ログ・クエリログ"
+
+  - id: log-gap
+    match:
+      canonicalIds:
+        - log-collection-blinding
+        - log-platform-tampering
+        - log-not-collected
+        - web-missing-access-log
+        - edr-detection-blinding
+    title: "ログが欠けている・消されている区間がないか"
+    checks:
+      - "ログが途切れた期間や、送信が止まった時期がないか調べる。"
+      - "保存期間・除外設定・検知ポリシーの変更履歴を調べる。"
+    logs:
+      - "ログ基盤・EDR の監査ログ"
+      - "各システムのログ転送の状態"
+    tools:
+      velociraptor:
+        - artifact: "Linux.Forensics.Journal"
+
+  - id: fleet-execution
+    match:
+      canonicalIds:
+        - endpoint-fleet-mass-execution
+    title: "管理サーバーから端末へ一斉に実行されていないか"
+    checks:
+      - "管理サーバーの監査ログで、一斉の収集・コマンド実行の起動履歴と、起動した管理者・管理者ログインの接続元を調べる。"
+    logs:
+      - "EDR・DFIR サーバーの監査ログ"

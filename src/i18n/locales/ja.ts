@@ -24,6 +24,7 @@ import { jaCliTriggers } from './ja/cliTriggers';
 import { jaFindingsReport } from './ja/findingsReport';
 import { jaChecklist } from './ja/checklist';
 import { jaTestPlan } from './ja/testPlan';
+import { jaInvestigation } from './ja/investigation';
 import { jaSbomCrypto } from './ja/sbomCrypto';
 
 const jaCore = {
@@ -217,6 +218,7 @@ export const ja = {
   ...jaFindingsReport,
   ...jaChecklist,
   ...jaTestPlan,
+  ...jaInvestigation,
   ...jaSbomCrypto,
 } as const;
 
