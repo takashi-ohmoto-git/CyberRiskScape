@@ -27,7 +27,11 @@ python3 tools/triage/crs_triage.py --patterns patterns.json \
   --logs ./logs_copy --webroot ./www_copy --days 3 --host web01 \
   --output report.md --json report.json
 
-# 3. Hand report.json to `investigation-report` (a CyberRiskScape subcommand planned for a later release)
+# 3. Overlay report.json (and/or a Velociraptor collection) on the threat model
+node dist-cli/main.js investigation-report model.json \
+  --evidence report.json --evidence ./velociraptor_collections \
+  --hosts hosts.json --out investigation-report.md
+#    hosts.json: {"hosts":[{"host":"web01","node":"C3"}]}  (case-insensitive; the FQDN's first label also matches)
 ```
 
 `tools/triage/patterns.example.json` is a convenience copy of what step 1 writes. The CLI is the source of truth

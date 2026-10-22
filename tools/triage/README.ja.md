@@ -28,7 +28,11 @@ python3 tools/triage/crs_triage.py --patterns patterns.json \
   --logs ./logs_copy --webroot ./www_copy --days 3 --host web01 \
   --output report.md --json report.json
 
-# 3. report.json を `investigation-report`（今後追加予定の CyberRiskScape のサブコマンド）に渡す
+# 3. report.json（や Velociraptor の収集結果）を脅威モデルに重ねて報告する
+node dist-cli/main.js investigation-report model.json \
+  --evidence report.json --evidence ./velociraptor_collections \
+  --hosts hosts.json --out investigation-report.md
+#    hosts.json: {"hosts":[{"host":"web01","node":"C3"}]}（大文字小文字は無視。FQDN の先頭ラベルでも一致）
 ```
 
 `tools/triage/patterns.example.json` は、手順 1 の出力の便宜上のコピーです。正本は CLI

@@ -11,6 +11,8 @@
 #   - 本文は日本語の要約。英語は i18n/en/compromise.yaml の翻訳オーバーレイ（title / checks / logs）。
 #   - tools.<ツール名> は、そのツールで同じ確認を行うための任意の手がかり。
 #     `--tool <ツール名>` を指定したときだけ出力に載せる。ツールに依存しない記述は checks / logs に書く。
+#   - tools.velociraptor[].findings: true は、その artifact の結果の行を「痕跡」とみなす印
+#     （`investigation-report` が読む）。付けない artifact は参考情報＝件数だけ載せる。
 #
 # 出典（観点の考え方）:
 #   - NIST SP 800-61 Rev. 3 Incident Response Recommendations and Considerations for Cybersecurity Risk Management
@@ -46,11 +48,14 @@ viewpoints:
     tools:
       velociraptor:
         - artifact: "Linux.Search.FileFinder"
+          findings: true
           parameters:
             SearchFilesGlob: "/var/www/**"
         - artifact: "Generic.Detection.Yara.Glob"
+          findings: true
         - artifact: "Linux.Sys.Pslist"
         - artifact: "Linux.Sys.LogGrep"
+          findings: true
           parameters:
             TargetGlob: "/var/log/**"
             GrepRegex: "Allowed memory size of [0-9]+ bytes exhausted|exited on signal (9|11)|SIGSEGV|segfault|zend_mm_heap corrupted|Out of memory: Killed process|oom-kill"
@@ -96,11 +101,9 @@ viewpoints:
       - "秘密情報の保管庫の監査ログ"
     tools:
       velociraptor:
+        # 通常のログインも当たるため、ログインの記録は参考情報（findings なし）として集める。
+        # Linux.Sys.LogGrep は code-execution の痕跡の検索に使い、結果の行を痕跡とみなす（artifact 名で判定するため、ここでは使わない）。
         - artifact: "Linux.Syslog.SSHLogin"
-        - artifact: "Linux.Sys.LogGrep"
-          parameters:
-            TargetGlob: "/var/log/auth.log*"
-            GrepRegex: "Accepted |Failed password|sudo:"
 
   - id: data-access
     match:

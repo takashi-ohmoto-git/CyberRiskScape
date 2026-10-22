@@ -56,6 +56,12 @@ import { sbomCryptoToJson, sbomCryptoToMarkdown } from '../features/sbom-crypto/
 import { BUNDLED_ALGORITHM_TABLE, getCryptoLibraries } from '../crypto-behavior/bundled';
 import { testPlanToJson, testPlanToMarkdown } from '../features/test-plan/testPlanOutput';
 import { buildInvestigationPlan } from '../features/investigation-plan/buildInvestigationPlan';
+import { buildInvestigationReport, parseHostMap } from '../features/investigation-report/buildInvestigationReport';
+import {
+  investigationReportToJson,
+  investigationReportToMarkdown,
+} from '../features/investigation-report/investigationReportOutput';
+import { readEvidence } from './readEvidence';
 import { buildTriagePatterns } from '../features/investigation-plan/triagePatterns';
 import { getInvestigationViewpoints } from '../features/investigation-plan/viewpoints';
 import {
@@ -99,6 +105,7 @@ const USAGE = `使い方:
   export-test-plan <project.json> [options]
   export-investigation-plan <project.json> [options]
   export-triage-patterns [options]
+  investigation-report <project.json> --evidence <dir|file> --hosts <hosts.json> [options]
   findings-report <project.json> --veracode <file> [options]
   pqc-sbom-report <project.json> --sbom <file> --node <C番号> [options]
   mcp [options]
@@ -168,6 +175,14 @@ export-investigation-plan のオプション（侵害の疑いがあるとき、
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
 export-triage-patterns のオプション（tools/triage/crs_triage.py の --patterns に渡す検索パターンを JSON で書き出す。モデルは不要）:
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+investigation-report のオプション（集めた証拠をノードに重ね、「痕跡あり／痕跡なし（調べた期間つき）／否定できない／未調査」と図に無いホストを報告。侵害の有無は判定しない。JSON だけ読む）:
+  --evidence <dir|file>                         証拠（必須・複数指定可）。トリアージの JSON、または Velociraptor の収集結果を展開したフォルダー（results/ を持つフォルダーを再帰的に探す。zip・CSV は読まない）
+  --hosts <hosts.json>                          ホスト名とノードの対応表（必須。{"hosts":[{"host":"web01","node":"C3"}]}。大文字小文字を無視し、FQDN の先頭ラベルでも照合）
+  --format <md|json>                            出力形式（既定: md）
+  --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある最初のレイヤー）
+  --locale <ja|en>                              表示言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
 findings-report のオプション（Veracode の結果ファイルの指摘を、CWE の対応表を介して検出脅威と突き合わせる。ファイル入力のみ）:
@@ -281,6 +296,8 @@ function parseCliArgs() {
       root: { type: 'string' },
       vars: { type: 'string' },
       veracode: { type: 'string' },
+      evidence: { type: 'string', multiple: true },
+      hosts: { type: 'string' },
       sbom: { type: 'string' },
       node: { type: 'string' },
       'base-url': { type: 'string' },
@@ -658,6 +675,59 @@ ${USAGE}`);
 }
 
 /**
+ * `investigation-report`：集めた証拠（トリアージの JSON・Velociraptor の収集結果）を脅威モデルのノードに重ね、
+ * ノードごとの状態と図に無いホストを報告する。侵害の有無は判定しない。API は呼ばない。
+ */
+function runInvestigationReport(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+  const evidencePaths = values.evidence ?? [];
+  if (evidencePaths.length === 0) fail(translate('investigationReport.cli.missingEvidence', locale));
+  if (!values.hosts) fail(translate('investigationReport.cli.missingHosts', locale));
+  const format = parseEnum(values.format, TEST_PLAN_FORMATS, 'format') ?? 'md';
+  const layer = parseEnum(values.layer, LAYER_KEYS, 'layer');
+
+  const hostMap = parseHostMap(readJsonFile(values.hosts));
+  if (!hostMap.ok) fail(translate('investigationReport.cli.badHosts', locale, { error: hostMap.error }));
+
+  let results: LayerAnalysisResult[];
+  try {
+    results = analyzeProject(readJsonFile(file), { layer, locale });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  const target = results[0];
+  if (!target) fail('ノードのあるレイヤーがありません。');
+
+  const read = readEvidence(evidencePaths, locale);
+  if (read.evidence.length === 0) {
+    for (const r of read.rejected) process.stderr.write(`${r.path}: ${r.reason}
+`);
+    fail(translate('investigationReport.cli.noEvidenceFound', locale));
+  }
+  const report = buildInvestigationReport(target.input, read.evidence, hostMap.hosts, read.rejected, new Date(), locale);
+  writeOutput(format === 'json' ? investigationReportToJson(report) : investigationReportToMarkdown(report), values.out);
+  const s = report.summary;
+  process.stderr.write(
+    `${translate('investigationReport.cli.done', locale, {
+      layer: report.layer,
+      found: s['traces-found'],
+      notNegatable: s['not-negatable'],
+      notInvestigated: s['not-investigated'],
+      noTraces: s['no-traces'],
+      unknown: s.unknownHosts,
+    })}
+`,
+  );
+}
+
+/**
  * `export-triage-patterns`：調査観点の `tools.triage` を、オフラインのログトリアージ
  * （`tools/triage/crs_triage.py --patterns`）に渡す JSON として書き出す。モデルは不要。
  */
@@ -896,6 +966,8 @@ function main(): void {
     runExportTestPlan(values, positionals);
   } else if (command === 'export-investigation-plan') {
     runExportInvestigationPlan(values, positionals);
+  } else if (command === 'investigation-report') {
+    runInvestigationReport(values, positionals);
   } else if (command === 'export-triage-patterns') {
     runExportTriagePatterns(values);
   } else if (command === 'findings-report') {

@@ -10,6 +10,8 @@ import type { Locale } from '../../i18n';
 const ToolStepSchema = z.object({
   artifact: z.string().min(1),
   parameters: z.record(z.string()).optional(),
+  /** true: この artifact の結果の行を「痕跡」とみなす（`investigation-report`）。無ければ参考情報。 */
+  findings: z.boolean().optional(),
 });
 
 /** `tools/triage/crs_triage.py` に渡すパターン（`export-triage-patterns` で JSON に書き出す）。 */

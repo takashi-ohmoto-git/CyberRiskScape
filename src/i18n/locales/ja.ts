@@ -25,6 +25,7 @@ import { jaFindingsReport } from './ja/findingsReport';
 import { jaChecklist } from './ja/checklist';
 import { jaTestPlan } from './ja/testPlan';
 import { jaInvestigation } from './ja/investigation';
+import { jaInvestigationReport } from './ja/investigationReport';
 import { jaSbomCrypto } from './ja/sbomCrypto';
 
 const jaCore = {
@@ -219,6 +220,7 @@ export const ja = {
   ...jaChecklist,
   ...jaTestPlan,
   ...jaInvestigation,
+  ...jaInvestigationReport,
   ...jaSbomCrypto,
 } as const;
 
