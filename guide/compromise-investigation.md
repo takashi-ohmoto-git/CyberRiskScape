@@ -131,6 +131,14 @@ If you use only 4.1, you do not need `--tool velociraptor` in §3.3.
 - `POST` + 5xx in the access log, correlated with nearby crashes and out-of-memory events (per client IP)
 - Executable files recently added or changed under the web root (`.php`, `.phtml`, `.user.ini` and so on)
 
+**Prerequisites** (details under "Prerequisites" in [`tools/triage/README.md`](../tools/triage/README.md))
+
+- **No network or name resolution is needed.** The host name is the string you pass with `--host`, used as is, with no DNS lookup.
+  If omitted, it is the name of the machine running the script, so **when you examine copies on another machine, pass the original host name with `--host`**. This name is matched against the map in §5.1
+- You need permission to read the logs (much of `/var/log` is readable only by root or the adm group). Files that cannot be read are recorded under "unreadable", and the run continues
+- `--days` counts back from **the time you run the script**. If you run it days after taking the copy, add those days
+- **Copying sets ctime to the copy time** (on every OS). In a copied web root every file appears "recent", so copy with mtime preserved (`cp -a`, `tar -p`, `rsync -a`) and read the mtime column in the report. The `recent-file` count in the investigation report grows for the same reason, so judge each row by its `mtime=`
+
 The search strings are not built into the script. You pass a pattern file exported by the CLI.
 
 ```bash

@@ -16,6 +16,26 @@ recently changed files under a web root. Python 3.8+, standard library only, no 
   inputs and writes the report files you name.
 - The detection patterns are not built in. You pass them as a JSON file (`--patterns`), which keeps the tool generic.
 
+## Prerequisites
+
+| Item | Prerequisite |
+|---|---|
+| Runtime | Python 3.8 or later (standard library only; nothing else to install). Runs on Linux, macOS and Windows |
+| Network | Not needed. The tool makes no external connections at all, including name resolution (DNS). You can run it on an isolated analysis machine |
+| Host name | The string you pass with `--host` is written to the results as is. If omitted, it is **the OS host name of the machine running the tool** (no DNS lookup). **When you examine copies on another machine, always pass the original host name with `--host`.** The investigation report (`investigation-report`) matches this name as a string against `host` in the map (`hosts.json`) |
+| Read permission | You need permission to read the logs. Much of `/var/log` is readable only by root or the adm group. Files and directories that cannot be read are recorded in `skipped`, and the run continues |
+| Writes | Only to the `--output` and `--json` destinations. Inputs are only read |
+| Log formats | Text logs and `.gz` are read. Systemd journals, binary files and compression other than `.gz` must be exported to text or extracted first (see "Limits") |
+| Start of `--days` | Counted back from **the time you run the tool**. If you run it days after taking the copy, add those days |
+| Web root timestamps | Recent changes are judged by the newer of a file's mtime and ctime. **Copying sets ctime to the copy time on every OS**, so in a copied web root every file appears "recent". In that case, read the mtime column in the report (copy with `cp -a`, `tar -p` or `rsync -a` to keep mtime). To use ctime as well, run the tool read-only on the original server, or on a disk image mounted read-only |
+| Time zone | Log timestamps are handled as written in the logs. File times (mtime and ctime) are shown in **the time zone of the machine running the tool** |
+
+**There are two ways to run it.**
+
+- **Examine copies on another machine** (recommended): copy the logs (and the web root) from the original server, and run the tool on an analysis machine with `--logs`, `--webroot` and `--host`
+- **Run it directly on the original server**: `--logs` defaults to `/var/log` and `--host` to that server's host name. Reading the logs often needs root, and you will be running a script in the
+  environment under investigation. Do this only if your organization's evidence-handling procedures allow it
+
 ## Usage
 
 ```bash
