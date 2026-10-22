@@ -50,6 +50,7 @@ Importing configuration files, exporting verification requests, and diff checks 
 | **Shodan** | Export import (`shodan download` .json.gz) | Generate a diagram of exposed services; catch newly opened ports by diffing against the previous import; reduce exposure along CISA's four steps | [Reducing Internet Exposure](exposure-reduction.md) |
 | **Anthropic `defending-code-reference-harness`** | `THREAT_MODEL.md`-compatible export | Use the threat model as input to an AI-driven vulnerability review | [Turning Your Threat Model into a Security Context](security-context.md) |
 | **Veracode** | Example setup (Veracode CLI and Findings API combined with `THREAT_MODEL.md`, `findings-report`, and the Postman export) | Build the threat model into a flow that fixes SAST and DAST findings with AI, as context, prioritization, and regression tests; use the Postman export as the DAST scan scope | [Fixing Veracode Findings with AI](veracode-remediation.md) |
+| **Velociraptor** | Importing collections (extracted folders), artifact hints in the investigation plan, and the EDR / DFIR server stencil and threat rules | When you suspect a compromise, decide which artifacts to collect on the nodes along the attack routes, and overlay the collections on the nodes as a report | [Scoping and reporting a suspected-compromise investigation](compromise-investigation.md) |
 
 ---
 
@@ -67,6 +68,7 @@ Importing configuration files, exporting verification requests, and diff checks 
 | Inventory and reduce what is exposed to the internet | Shodan |
 | Put the threat model to work in vulnerability review | Anthropic `defending-code-reference-harness`, Snyk |
 | Build a flow that fixes vulnerability findings with AI | Veracode |
+| Decide where to look and report the results when you suspect a compromise | Velociraptor and the bundled triage script ([guide](compromise-investigation.md)) |
 
 ---
 

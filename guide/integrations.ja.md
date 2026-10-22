@@ -49,6 +49,7 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | **Shodan** | 書き出しの取り込み（`shodan download` の .json.gz） | 外部に露出したサービスの図を自動で作る・前回の取り込みとの差分で新しく開いたポートを検知する・CISA の 4 ステップに沿って露出を減らす | [インターネット露出を減らす](exposure-reduction.ja.md) |
 | **Anthropic `defending-code-reference-harness`** | `THREAT_MODEL.md` 互換の書き出し | 脅威モデルを、AI による脆弱性診断の入力にする | [Security Context に変換する](security-context.ja.md) |
 | **Veracode** | 構成例（Veracode CLI・Findings API と、`THREAT_MODEL.md`・`findings-report`・Postman 書き出しの組み合わせ） | SAST・DAST の指摘を AI で修正する流れに、脅威モデルを前提知識・優先順位・回帰テストとして組み込む・Postman 書き出しを DAST の検査範囲にする | [Veracode の指摘を AI で直す](veracode-remediation.ja.md) |
+| **Velociraptor** | 収集結果（展開したフォルダー）の取り込み・調査計画書への artifact の手がかり・EDR / DFIR サーバーのステンシルと脅威ルール | 侵害が疑われるときに、攻撃経路上のノードで集める artifact を決め、収集結果をノードに重ねて報告する | [侵害の疑いがあるときに、脅威モデルで調べる範囲を決め、結果を報告する](compromise-investigation.ja.md) |
 
 ---
 
@@ -66,6 +67,7 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | インターネットに出ている資産を棚卸しして減らしたい | Shodan |
 | 脅威モデルを脆弱性診断に活かしたい | Anthropic `defending-code-reference-harness`・Snyk |
 | 脆弱性診断の指摘を AI で直す流れを作りたい | Veracode |
+| 侵害が疑われるときに、調べる範囲を決めて結果を報告したい | Velociraptor・同梱のトリアージスクリプト（[ガイド](compromise-investigation.ja.md)） |
 
 ---
 
