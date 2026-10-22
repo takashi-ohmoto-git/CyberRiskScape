@@ -1,0 +1,87 @@
+{
+  "format": "cyberriskscape-triage-patterns",
+  "version": 1,
+  "id": "compromise",
+  "logPatterns": [
+    {
+      "id": "kernel-oom-killed-process",
+      "category": "kernel-oom",
+      "regex": "Out of memory: Killed process",
+      "priority": 10
+    },
+    {
+      "id": "kernel-invoked-oom-killer",
+      "category": "kernel-oom",
+      "regex": "invoked oom-killer",
+      "priority": 11
+    },
+    {
+      "id": "kernel-oom-kill",
+      "category": "kernel-oom",
+      "regex": "oom-kill",
+      "priority": 12
+    },
+    {
+      "id": "crash-segfault",
+      "category": "crash",
+      "regex": "SIGSEGV|Segmentation fault|exit signal Segmentation fault|exited on signal 11",
+      "priority": 20
+    },
+    {
+      "id": "crash-AH00052",
+      "category": "crash",
+      "regex": "AH00052",
+      "priority": 21
+    },
+    {
+      "id": "php-allowed-memory-exhausted",
+      "category": "oom",
+      "regex": "Allowed memory size of \\d+ bytes exhausted",
+      "priority": 30
+    },
+    {
+      "id": "php-unknown-line-0",
+      "category": "oom",
+      "regex": "in Unknown on line 0",
+      "priority": 31
+    },
+    {
+      "id": "out-of-memory",
+      "category": "oom",
+      "regex": "Out of memory",
+      "priority": 32
+    },
+    {
+      "id": "zend-mm-heap-corrupted",
+      "category": "oom",
+      "regex": "zend_mm_heap corrupted",
+      "priority": 33
+    }
+  ],
+  "notes": [
+    "メモリ上限の超過・ワーカーの異常終了は、想定外のコード実行以外の原因でも起きる。ヒットは調査の優先度付けに使い、侵害の有無の判定には使わない。"
+  ],
+  "accessLog": {
+    "method": "POST",
+    "statuses": [
+      500,
+      502,
+      503,
+      504
+    ]
+  },
+  "webroot": {
+    "extensions": [
+      ".php",
+      ".phtml",
+      ".phar",
+      ".php5",
+      ".php7",
+      ".inc"
+    ],
+    "filenames": [
+      ".user.ini",
+      ".htaccess"
+    ]
+  }
+}

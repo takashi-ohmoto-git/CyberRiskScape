@@ -56,6 +56,8 @@ import { sbomCryptoToJson, sbomCryptoToMarkdown } from '../features/sbom-crypto/
 import { BUNDLED_ALGORITHM_TABLE, getCryptoLibraries } from '../crypto-behavior/bundled';
 import { testPlanToJson, testPlanToMarkdown } from '../features/test-plan/testPlanOutput';
 import { buildInvestigationPlan } from '../features/investigation-plan/buildInvestigationPlan';
+import { buildTriagePatterns } from '../features/investigation-plan/triagePatterns';
+import { getInvestigationViewpoints } from '../features/investigation-plan/viewpoints';
 import {
   investigationPlanToJson,
   investigationPlanToMarkdown,
@@ -95,6 +97,7 @@ const USAGE = `使い方:
   export-postman <project.json> [options]
   export-test-plan <project.json> [options]
   export-investigation-plan <project.json> [options]
+  export-triage-patterns [options]
   findings-report <project.json> --veracode <file> [options]
   pqc-sbom-report <project.json> --sbom <file> --node <C番号> [options]
   mcp [options]
@@ -161,6 +164,9 @@ export-investigation-plan のオプション（侵害の疑いがあるとき、
   --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある最初のレイヤー）
   --tool <velociraptor>                         指定したツールでの確認の手がかり（アーティファクト名など）も載せる（既定: 載せない）
   --locale <ja|en>                              表示言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+export-triage-patterns のオプション（tools/triage/crs_triage.py の --patterns に渡す検索パターンを JSON で書き出す。モデルは不要）:
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
 findings-report のオプション（Veracode の結果ファイルの指摘を、CWE の対応表を介して検出脅威と突き合わせる。ファイル入力のみ）:
@@ -651,6 +657,17 @@ ${USAGE}`);
 }
 
 /**
+ * `export-triage-patterns`：調査観点の `tools.triage` を、オフラインのログトリアージ
+ * （`tools/triage/crs_triage.py --patterns`）に渡す JSON として書き出す。モデルは不要。
+ */
+function runExportTriagePatterns(values: CliValues): void {
+  const patterns = buildTriagePatterns(getInvestigationViewpoints('ja'));
+  writeOutput(JSON.stringify(patterns, null, 2), values.out);
+  process.stderr.write(`トリアージのパターンを出力しました（検索パターン ${patterns.logPatterns.length} 件）
+`);
+}
+
+/**
  * `export-test-plan`：脅威モデルから、ペネトレーションテスト計画書（入口・攻撃シナリオ・重点テスト項目）を
  * Markdown または JSON で出力する。
  */
@@ -878,6 +895,8 @@ function main(): void {
     runExportTestPlan(values, positionals);
   } else if (command === 'export-investigation-plan') {
     runExportInvestigationPlan(values, positionals);
+  } else if (command === 'export-triage-patterns') {
+    runExportTriagePatterns(values);
   } else if (command === 'findings-report') {
     runFindingsReport(values, positionals);
   } else if (command === 'pqc-sbom-report') {

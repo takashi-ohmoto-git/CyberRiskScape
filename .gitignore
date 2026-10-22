@@ -21,3 +21,6 @@ docs/
 CLAUDE.md
 .mcp.json
 persona/
+
+# Python のバイトコード（tools/ 配下など）
+__pycache__/

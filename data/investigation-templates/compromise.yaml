@@ -56,6 +56,28 @@ viewpoints:
             GrepRegex: "Allowed memory size of [0-9]+ bytes exhausted|exited on signal (9|11)|SIGSEGV|segfault|zend_mm_heap corrupted|Out of memory: Killed process|oom-kill"
         - artifact: "Linux.Forensics.Journal"
         - artifact: "Linux.Network.Netstat"
+      # triage: tools/triage/crs_triage.py に渡すパターン。`export-triage-patterns` で JSON に書き出す。
+      # regex は大文字小文字を区別しない（Python と JS で共通の構文に限る）。priority は小さいほど先に試し、
+      # 1 行は最初に当たった 1 件にだけ数える。
+      triage:
+        logPatterns:
+          - { id: kernel-oom-killed-process, category: kernel-oom, priority: 10, regex: "Out of memory: Killed process" }
+          - { id: kernel-invoked-oom-killer, category: kernel-oom, priority: 11, regex: "invoked oom-killer" }
+          - { id: kernel-oom-kill, category: kernel-oom, priority: 12, regex: "oom-kill" }
+          - { id: crash-segfault, category: crash, priority: 20, regex: "SIGSEGV|Segmentation fault|exit signal Segmentation fault|exited on signal 11" }
+          - { id: crash-AH00052, category: crash, priority: 21, regex: "AH00052" }
+          - { id: php-allowed-memory-exhausted, category: oom, priority: 30, regex: 'Allowed memory size of \d+ bytes exhausted' }
+          - { id: php-unknown-line-0, category: oom, priority: 31, regex: "in Unknown on line 0" }
+          - { id: out-of-memory, category: oom, priority: 32, regex: "Out of memory" }
+          - { id: zend-mm-heap-corrupted, category: oom, priority: 33, regex: "zend_mm_heap corrupted" }
+        accessLog:
+          method: POST
+          statuses: [500, 502, 503, 504]
+        webroot:
+          extensions: [".php", ".phtml", ".phar", ".php5", ".php7", ".inc"]
+          filenames: [".user.ini", ".htaccess"]
+        notes:
+          - "メモリ上限の超過・ワーカーの異常終了は、想定外のコード実行以外の原因でも起きる。ヒットは調査の優先度付けに使い、侵害の有無の判定には使わない。"
 
   - id: credential-misuse
     match:

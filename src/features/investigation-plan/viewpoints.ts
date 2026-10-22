@@ -12,6 +12,23 @@ const ToolStepSchema = z.object({
   parameters: z.record(z.string()).optional(),
 });
 
+/** `tools/triage/crs_triage.py` に渡すパターン（`export-triage-patterns` で JSON に書き出す）。 */
+const TriageSchema = z.object({
+  logPatterns: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        category: z.string().min(1),
+        regex: z.string().min(1),
+        priority: z.number(),
+      }),
+    )
+    .nonempty(),
+  accessLog: z.object({ method: z.string().min(1), statuses: z.array(z.number().int().min(100).max(599)).nonempty() }).optional(),
+  webroot: z.object({ extensions: z.array(z.string().min(1)), filenames: z.array(z.string().min(1)) }).optional(),
+  notes: z.array(z.string().min(1)).optional(),
+});
+
 const ViewpointSchema = z.object({
   id: z.string().regex(/^[a-z0-9][a-z0-9-]*$/),
   match: z.object({ canonicalIds: z.array(z.string().min(1)).nonempty() }),
@@ -19,7 +36,14 @@ const ViewpointSchema = z.object({
   checks: z.array(z.string().min(1)).nonempty(),
   logs: z.array(z.string().min(1)).nonempty(),
   /** ツール名 → 手がかり。`--tool` で選ばれたときだけ出力に載せる。 */
-  tools: z.record(z.array(ToolStepSchema).nonempty()).optional(),
+  tools: z
+    .object({
+      velociraptor: z.array(ToolStepSchema).nonempty().optional(),
+      /** `--tool` では選ばれない。`export-triage-patterns` だけが読む。 */
+      triage: TriageSchema.optional(),
+    })
+    .strict()
+    .optional(),
 });
 
 const ViewpointFileSchema = z.object({
@@ -40,6 +64,7 @@ const OverlaySchema = z.object({
 });
 
 export type InvestigationViewpoint = z.infer<typeof ViewpointSchema>;
+export type TriageDefinition = z.infer<typeof TriageSchema>;
 export type InvestigationToolStep = z.infer<typeof ToolStepSchema>;
 
 export function loadInvestigationViewpoints(text: string): InvestigationViewpoint[] {
