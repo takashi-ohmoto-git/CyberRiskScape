@@ -44,6 +44,7 @@ import { reportFilename } from '../features/export/exportFiles';
 import { buildPqcReport, toPqcCsv } from '../features/pqc-path/pqcReport';
 import { BUNDLED_ALGORITHM_TABLE, getTerminationBehaviors } from '../crypto-behavior/bundled';
 import { useLocale, useT, type TranslationKey } from '../i18n';
+import { formatLocalDate } from '../core/model/localDate';
 
 const BOUNDARY_SECTION_KEY = 'BOUNDARIES';
 const ANNOTATION_SECTION_KEY = 'ANNOTATIONS';
@@ -145,7 +146,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
         'text/markdown;charset=utf-8',
       );
     } else {
-      const date = new Date().toISOString().slice(0, 10);
+      const date = formatLocalDate(new Date());
       triggerDownload(
         `${base}.md`,
         toDCRHThreatModelMarkdown(input, date),

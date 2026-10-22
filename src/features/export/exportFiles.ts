@@ -1,4 +1,5 @@
 import type { LayerKey } from '../../core/model/types';
+import { formatLocalDate } from '../../core/model/localDate';
 import { useDiagramStore } from '../../core/state/diagramStore';
 import { useCustomRulesStore, selectCustomLibraries } from '../custom-rules/store';
 import { mergeThreatRules } from '../custom-rules/mergeRules';
@@ -11,7 +12,7 @@ import { triggerBlobDownload } from './download';
 /** レポートのファイル名（拡張子なし）。例: `threat-report_CreditScoringAPI_L1_2026-06-03`。 */
 export function reportFilename(systemName: string, layer: string): string {
   const slug = systemName.trim().replace(/[^\w.-]+/g, '_').slice(0, 60);
-  const date = new Date().toISOString().slice(0, 10);
+  const date = formatLocalDate(new Date());
   return ['threat-report', slug, layer, date].filter(Boolean).join('_');
 }
 

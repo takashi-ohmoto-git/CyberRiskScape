@@ -6,6 +6,7 @@ import {
   selectActiveNodes,
   useDiagramStore,
 } from '../../core/state/diagramStore';
+import { formatLocalDate } from '../../core/model/localDate';
 import { getLocale, translate, useT } from '../../i18n';
 import { triggerDownload } from '../../features/export/download';
 import {
@@ -23,7 +24,7 @@ type Tab = 'export' | 'import';
 function templateFilename(name: string, layer: string): string {
   // 英数 . - と、ひらがな / カタカナ（長音符含む）/ 漢字 を残し、他は _ に潰す。
   const slug = name.trim().replace(/[^\w.\-぀-ゟ゠-ヿ一-鿿]+/gu, '_').slice(0, 60);
-  const date = new Date().toISOString().slice(0, 10);
+  const date = formatLocalDate(new Date());
   return ['template', slug, layer, date].filter(Boolean).join('_');
 }
 

@@ -65,6 +65,7 @@ import {
 import { getChecklists } from '../checklist/bundled';
 import { evaluateChecklist } from '../checklist/evaluate';
 import { toChecklistCsv, toChecklistJson, toChecklistMarkdown } from '../checklist/report';
+import { formatLocalDate } from '../core/model/localDate';
 
 /**
  * CyberRiskScape ヘッドレス CLI。
@@ -320,7 +321,7 @@ function runAnalyze(values: CliValues, positionals: string[]): void {
   if (format === 'sarif') {
     output = JSON.stringify(toSarif(results, { artifactUri }), null, 2);
   } else if (format === 'md') {
-    const exportDate = new Date().toISOString().slice(0, 10);
+    const exportDate = formatLocalDate(new Date());
     output = results.map((r) => toDCRHThreatModelMarkdown(r.input, exportDate)).join('\n\n');
   } else {
     output = JSON.stringify(results.map((r) => toJsonObject(buildThreatReport(r.input))), null, 2);
