@@ -82,6 +82,10 @@ behaviors:
     default: terminate
     alternatives: []
     note: "ログの送り元からの TLS（syslog over TLS・HTTPS の収集 API）と閲覧画面の TLS を終端する。平文の syslog（UDP/TCP）で受けていないか、送り元との区間の暗号を確認する。"
+  - componentType: EDR_DFIR_SERVER
+    default: terminate
+    alternatives: []
+    note: "エージェントからの TLS（製品独自の CA で証明書を固定することが多い）と、管理画面・API の TLS を終端する。エージェントとの通信の暗号方式は製品が決めるため、PQC への対応は製品の更新に依存する。独自 CA と API の証明書の有効期限・配布先を確認する。"
   - componentType: ZTNA_PROXY
     default: terminate
     alternatives: []

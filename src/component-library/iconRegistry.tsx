@@ -123,6 +123,7 @@ import {
   FolderTree,
   Printer,
   TextSearch,
+  ShieldAlert,
   type LucideIcon,
 } from 'lucide-react';
 import { cloneElement, createElement, type ReactElement } from 'react';
@@ -258,6 +259,7 @@ const BUILTIN_ICONS: Record<string, LucideIcon> = {
   'folder-tree': FolderTree,
   printer: Printer,
   'text-search': TextSearch,
+  'shield-alert': ShieldAlert,
 };
 
 const FALLBACK_ICON: LucideIcon = HelpCircle;

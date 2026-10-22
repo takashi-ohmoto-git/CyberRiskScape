@@ -1,11 +1,11 @@
 # Network & Security Infrastructure コンポーネントライブラリ。
 #
 # PQC 移行支援で「経路上で暗号が変わる箇所（終端・復号・トンネル化）」を描くための
-# ネットワーク機器・セキュリティ製品の 21 型：
+# ネットワーク機器・セキュリティ製品の 22 型：
 #   NETWORK        : L2_SWITCH / ROUTER / LOAD_BALANCER / REVERSE_PROXY / CDN / VPN_GATEWAY /
 #                    WIRELESS_AP / SERVICE_MESH
 #   PROTECT        : FIREWALL / WAF / IDS_IPS / SECURE_WEB_GATEWAY / SASE / EMAIL_GATEWAY /
-#                    ZTNA_PROXY / SIEM（ラベルは Security Controls）
+#                    ZTNA_PROXY / SIEM / EDR_DFIR_SERVER（ラベルは Security Controls）
 #   CONTACT_CENTER : SBC
 #   CLOUD          : PRIVATE_ENDPOINT
 #   SERVERS        : BASTION / HYPERVISOR
@@ -207,6 +207,16 @@ components:
     shape: rounded
     color: "bg-green-600"
     description: "各システムのログを集めて保管・相関分析・検知する仕組み（SIEM、ログ収集基盤、syslog サーバー）。保管するログそのものを描くときは文書の「ログ」を中に置く。クラウドでは Microsoft Sentinel・Amazon Security Lake・Google Security Operations・OCI Logging Analytics 等が該当する。"
+    canContain: [LOG, CREDENTIAL, PERSONAL_INFO, CONFIDENTIAL_INFO, OTHER_DOCUMENT]
+    posture: [logRetention, patch, accountReview]
+
+  - id: EDR_DFIR_SERVER
+    label: "EDR / DFIRサーバー"
+    category: PROTECT
+    icon: { kind: builtin, name: "shield-alert" }
+    shape: rounded
+    color: "bg-green-600"
+    description: "各端末にエージェントを置き、検知・調査のために端末の情報を集めたり、端末上でコマンドやスクリプトを一斉に実行したりする管理サーバー（EDR の管理コンソール、DFIR の収集・調査基盤）。端末側の EDR の有無は、パソコン・スマートフォンの管理状態（Managed (管理下) / Unmanaged (未管理)）で表す。集めた証拠やテレメトリを描くときは文書の「ログ」などを中に置く。Velociraptor・Microsoft Defender for Endpoint・CrowdStrike Falcon 等の管理側が該当する。MDM・資産管理・パッチ配布のサーバーは含めない。"
     canContain: [LOG, CREDENTIAL, PERSONAL_INFO, CONFIDENTIAL_INFO, OTHER_DOCUMENT]
     posture: [logRetention, patch, accountReview]
 

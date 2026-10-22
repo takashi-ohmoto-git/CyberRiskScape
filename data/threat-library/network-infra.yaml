@@ -5,7 +5,8 @@
 # プライベートエンドポイント経由の持ち出し、サービスメッシュの mTLS 非強制とメッシュ CA の侵害、
 # 前段のプロキシ（リバースプロキシ・ロードバランサー・WAF・CDN・API ゲートウェイ）の要求の解釈のずれ
 # （リクエストスマグリング）・転送ヘッダーの信用・キャッシュの悪用と、リバースプロキシの迂回、
-# 仮想化基盤の管理面の奪取と VM エスケープ、SIEM / ログ基盤のログの改ざん・資格情報の集中・収集の停止を扱う。
+# 仮想化基盤の管理面の奪取と VM エスケープ、SIEM / ログ基盤のログの改ざん・資格情報の集中・収集の停止、
+# EDR / DFIR サーバーの一斉実行・検知の無効化・証拠の集中を扱う。
 # PQC 移行に直結するもの（受動復号・HSM・VPN トンネルの HNDL）は pqc.yaml に置く。
 #
 # 出典（一般的な基準のみを根拠とする。個別の事故報告は出典・事例に用いない）:
@@ -38,6 +39,10 @@
 #   - NIST SP 800-92 "Guide to Computer Security Log Management"、NIST SP 800-53 Rev.5（AU-5 / AU-9）、
 #     CISA ほか "Best Practices for Event Logging and Threat Detection"（2024）、OWASP Logging Cheat Sheet
 #     （SIEM / ログ基盤のルール、2026-10-21）。
+#   - MITRE ATT&CK (Enterprise) T1072 "Software Deployment Tools" / T1562.001 "Impair Defenses: Disable or Modify Tools"
+#     （EDR / DFIR サーバーのルール、2026-10-23。技術 ID のみ出典つきで参照し本文は転載しない）。
+#     https://attack.mitre.org/techniques/T1072/ , https://attack.mitre.org/techniques/T1562/001/
+#   - Velociraptor Security Advisories（v0.77.2 の勧告。製品ベンダー自身の公開情報として references に載せる）。
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -118,7 +123,7 @@
 #
 #   HYPERVISOR / SIEM（2026-10-21 追加）について:
 #   - パッチ・ログ・アカウント棚卸しは operations-posture.yaml の posture-* に型を足して扱う（本ファイルでは問わない）。
-#     SIEM のログの保持期間は posture-log-retention-short-003（SIEM 専用、log-retention-insufficient を共有）が扱う。
+#     SIEM のログの保持期間は posture-log-retention-short-003（SIEM と EDR / DFIR サーバー、log-retention-insufficient を共有）が扱う。
 #   - インターネットからの到達 → netinfra-edge-device-exploitation-001 の targetType に HYPERVISOR を足し、conditions で
 #     仮想化基盤向けの description を出す（BASTION と同じ扱い）。SIEM は加えない（クラウドの SIEM は事業者が運用し、
 #     インターネットから送り元のログを受けるのは正規の構成のため）。
@@ -139,6 +144,20 @@
 #     （posture-log-not-collected-001）とは、取得している前提で攻撃者が止める点が異なる。SIEM はログを受け取るのが役割なので
 #     常に出す（required: false）。送り元は各ノードの「ログの送信先」（logSinkId）から {{logSourceNames}} で列挙する。
 #     利用者・PC から SIEM への閲覧の線では判定しない（2026-10-21 ユーザー判断）。
+#
+#   EDR_DFIR_SERVER（2026-10-23 追加）について:
+#   - パッチ・アカウント棚卸し・ログの保持期間は operations-posture.yaml の posture-* に型を足して扱う（本ファイルでは問わない）。
+#     保持期間は SIEM と同じく posture-log-retention-short-003 が扱う（logRetention グループだけで logCollection を持たない）。
+#   - 管理サーバーの乗っ取りによる全端末での一斉実行 → 新規（endpoint-fleet-mass-execution）。将来 MDM・RMM・資産管理など
+#     「端末へ一斉に配信できる管理サーバー」の型と共有する前提の汎用名。仮想化基盤の管理面の奪取（hypervisor-management-takeover）は
+#     対象が仮想マシン（ホスト側の AD 依存と一括暗号化）、踏み台・PAM の特権の集中（pam-privileged-concentration）は管理経路の
+#     集約点で、こちらは端末のエージェント経由の収集・実行の配信が手口のため別。
+#   - 除外設定・ポリシーの書き換えとエージェントの停止による検知の無効化 → 新規（edr-detection-blinding）。ログの送信の停止・経路の
+#     遮断（log-collection-blinding）は SIEM へ届く経路を断つ手口で、こちらは検知製品の管理側の設定とエージェントそのものを
+#     書き換える手口（対象も SIEM ではなく EDR の管理サーバー）のため別。
+#   - 集めた証拠（メモリの写し・ファイル・認証情報）の集中 → 新規（forensic-evidence-concentration）。SIEM の機微ログと連携用の
+#     資格情報の集中（siem-data-credential-concentration）とは、集まる中身（端末のメモリ・ファイルの実体）と、書き出したファイルや
+#     組織・案件をまたぐ露出という漏えい経路が異なるため別（統合の是非は人間判断）。
 #
 #   専用線 / 閉域接続はノード型を設けず、エッジの network: [VPN]（画面表示「専用線 (VPN)」）で表す
 #   （専用線は機器ではなくリンクのため）:
@@ -837,3 +856,82 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/92/final"
       - title: "NIST SP 800-53 Rev.5 - Security and Privacy Controls for Information Systems and Organizations（AU-5 Response to Audit Logging Process Failures）"
         url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"
+
+  # ── 端末へ一斉に配信できる管理サーバーの乗っ取りによる全端末での一斉実行（内在）────
+  # 将来 MDM・RMM・資産管理など「全端末へ一斉に配信できる管理サーバー」の型と canonicalId を共有する前提の汎用グループ。
+  - id: netinfra-edr-fleet-mass-execution-001
+    canonicalId: endpoint-fleet-mass-execution
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "端末へ一斉に配信できる管理サーバーの乗っ取りによる全端末での収集・コマンド実行"
+    severity: Critical
+    description: "{{nodeName}} は、各端末に置いたエージェントへ、情報の収集やコマンド・スクリプトの実行を一斉に配信できる管理サーバーである。エージェントは多くの場合 SYSTEM / root の権限で動くため、{{nodeName}} の脆弱性の悪用、管理者アカウントの奪取、管理 API の証明書や鍵の窃取、認可の不備（本来は収集だけを許す権限で任意のコマンドを起動できる、別の組織の端末を指定できる）のいずれかで管理面を握った攻撃者は、全端末に対して、ファイルや認証情報の収集、任意のコマンド・スクリプトの実行、マルウェアの配布を、正規の管理操作として一斉に行える（Can）。端末の検知製品や端末のファイアウォールは、管理サーバーからの正規の指示として扱うため止めにくい。一方、管理画面と管理 API をインターネットに出さず、管理者にフィッシング耐性のある MFA を必須にして収集の起動と任意コマンドの実行の権限を分け、管理 API の証明書を最小の権限と短い期限で発行し、一斉実行に承認と監視を入れ、{{nodeName}} を速やかに更新していれば、管理面の 1 つの弱点だけでは全端末での実行には至らない（Cannot）。blast radius はエージェントを置いたすべての端末と、そこから到達できるデータ・資格情報。"
+    mitigation: "[Foundation] 管理画面と管理 API をインターネットに公開せず、管理用ネットワークまたは踏み台・ZTNA の経由に限る。管理者アカウントにフィッシング耐性のある MFA を必須にし、役割を分ける（閲覧のみ・収集の起動・任意コマンドやスクリプトの実行を別の権限にし、最後のものは少数に限る）。この管理サーバーの製品に公開された修正を、悪用が確認された脆弱性から優先して適用する。 [Enterprise] 管理 API の証明書・トークンを最小の権限と短い有効期限で発行し、失効の手順を持つ。全端末や広い範囲への一斉実行・任意コマンドの実行に、別の管理者の承認を求め、実行の記録を 管理サーバーの外のログ基盤へ送って監視する。端末のグループごとに配信できる範囲を分け、重要なサーバーには一斉実行の対象に入れない設定を使う。 [Advanced] 一斉実行を事前に登録した承認済みの手順だけに限る。管理サーバーの侵害を想定し、管理 API の証明書の一斉失効とエージェントの再登録、管理サーバーの再構築を演習する。"
+    appliesTo:
+      kind: node
+      nodeType: EDR_DFIR_SERVER
+      # 管理サーバーとして存在すること自体が前提の内在リスクで、接続関係に依存しない。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-02"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "MITRE ATT&CK T1072 - Software Deployment Tools（管理サーバーからの一斉配信の悪用）"
+        url: "https://attack.mitre.org/techniques/T1072/"
+      - title: "Velociraptor Security Advisories（0.77.2・0.77.3 での修正：権限確認の不備 CVE-2026-64954、組織をまたぐなりすまし CVE-2026-18635・CVE-2026-18972、クライアント監視 artifact 経由の権限昇格 CVE-2026-78413 等）"
+        url: "https://docs.velociraptor.app/announcements/advisories/v0-77-2/"
+
+  # ── 管理サーバーを握った攻撃者による除外設定・ポリシーの書き換えと、エージェントの停止による検知の無効化 ──
+  - id: netinfra-edr-detection-blinding-001
+    canonicalId: edr-detection-blinding
+    framework: STRIDE
+    category: "Tampering"
+    name: "除外設定の追加・検知ポリシーの書き換え・エージェントの停止による全端末の検知の無効化"
+    severity: High
+    description: "{{nodeName}} は全端末のエージェントの検知ポリシー・除外設定・稼働状態を一括で管理している。{{nodeName}} を握った攻撃者（または内部の管理者）は、攻撃に使うフォルダーやプロセスを除外設定に追加し、検知ポリシーを緩める・無効にし、エージェントの停止やアンインストールを全端末へ一斉に配信して、本来の攻撃（暗号化・持ち出し）の前に全端末の検知を目隠しできる（Can）。変更が正規の管理操作として行われるため、端末側の検知製品は異常として扱わず、{{nodeName}} 自体が変更を記録して通知していなければ、気づいたときには攻撃が始まっている。一方、除外設定とポリシーの変更に承認を求め、変更の記録を {{nodeName}} の外のログ基盤で監視し、エージェント側にアンインストールや停止を防ぐ改ざん防止機能を有効にし、エージェントからの送信が途絶えた端末を検知していれば、検知の目隠しは変更の時点または端末の沈黙として見つかる（Cannot）。blast radius はエージェントを置いたすべての端末の検知と、その目隠しの間に行われる攻撃。"
+    mitigation: "[Foundation] 除外設定・検知ポリシーの変更・エージェントの停止やアンインストールの権限を少数の管理者に限り、フィッシング耐性のある MFA を必須にする。エージェントの改ざん防止機能（アンインストールや停止にパスワードや管理サーバーの承認を求める機能）を有効にする。 [Enterprise] 除外設定・ポリシーの変更に別の管理者の承認を求め、変更の記録を SIEM などの 管理サーバーの外のログ基盤へ送り、除外の追加・ポリシーの緩和・一斉の停止指示を検知ルールに入れる。エージェントからの送信が一定時間途絶えた端末、およびエージェントが停止した端末を通知する。 [Advanced] 除外設定を定期的に棚卸しして不要なものを削除し、ポリシーを基準の構成と比べて逸脱を検知する。管理サーバーの侵害を想定し、管理サーバーとは別の経路（OS のイベント・別の検知製品）でも端末の防御の状態を確かめる。"
+    appliesTo:
+      kind: node
+      nodeType: EDR_DFIR_SERVER
+      # 検知ポリシーを一括管理する役割そのものが前提の内在リスクで、接続関係に依存しない。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "DE.CM-01"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "MITRE ATT&CK T1562.001 - Impair Defenses: Disable or Modify Tools（検知ツールの無効化・設定の改変）"
+        url: "https://attack.mitre.org/techniques/T1562/001/"
+
+  # ── 調査・検知のために集めた証拠（メモリの写し・ファイル・認証情報を含むテレメトリ）の集中 ──
+  - id: netinfra-edr-evidence-concentration-001
+    canonicalId: forensic-evidence-concentration
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "調査・検知のために集めた証拠（メモリの写し・ファイル・認証情報）の 1 か所への集中と漏えい"
+    severity: High
+    description: "{{nodeName}} には、調査・検知のために全端末から集めたメモリの写し・ファイル・ブラウザーの情報・認証情報を含むテレメトリが 1 か所にたまる。メモリの写しやファイルには、パスワード・トークン・個人情報・機密文書がそのまま含まれ得る。{{nodeName}} の脆弱性・管理者アカウントの奪取・認可の不備（別の組織や案件の収集結果を読める）、または書き出した（ダウンロードした）ファイルの置き場所の不備を突いた攻撃者は、全端末分の証拠をまとめて持ち出し、含まれる資格情報で他のシステムへ入り込める（Can）。一方、収集の範囲を調査に必要な最小限にし、保管時の暗号化と保存期間を決めて期間を過ぎた証拠を消し、書き出しの権限を限ってパスワードで保護し、組織・案件ごとに保管先とアクセス権を分けていれば、{{nodeName}} 1 点の侵害でも持ち出される証拠は限られ、含まれた資格情報の悪用も限られる（Cannot）。blast radius は {{nodeName}} に保管された全端末分の証拠と、そこに含まれる資格情報が届くすべてのシステム。"
+    mitigation: "[Foundation] 収集する内容（メモリの写し・ファイル・ブラウザーの情報）を調査の目的ごとに必要な範囲に絞り、全端末への常時の網羅的な収集をしない。保管場所を暗号化し、調査の終了後に証拠を消す保存期間を決める。書き出し（ダウンロード）の権限を少数に限り、書き出したファイルはパスワードで保護して決めた場所だけに置く。 [Enterprise] 組織・案件ごとに保管先とアクセス権を分け、証拠の閲覧と書き出しの操作を記録して 管理サーバーの外のログ基盤で監視する。収集した証拠に含まれる資格情報は、調査の後に失効・変更する。管理者にフィッシング耐性のある MFA を必須にする。 [Advanced] 証拠を調査専用の分離した保管先に置いて管理ドメインと切り離し、項目単位の暗号化や秘密情報のマスキングで平文の資格情報が残らないようにする。管理サーバーの侵害を想定し、保管した証拠に含まれる資格情報の一斉失効の手順を用意する。"
+    appliesTo:
+      kind: node
+      nodeType: EDR_DFIR_SERVER
+      # 証拠やテレメトリが集まることは管理サーバーの役割そのもので、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "Velociraptor Security Advisories（組織をまたぐデータの露出 CVE-2026-78412 等）"
+        url: "https://docs.velociraptor.app/announcements/advisories/v0-77-2/"
+      - title: "NIST SP 800-92 - Guide to Computer Security Log Management（収集したデータの機密性とアクセス制御）"
+        url: "https://csrc.nist.gov/pubs/sp/800/92/final"
