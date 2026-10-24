@@ -27,10 +27,15 @@ export const jaProject = {
   'project.sidebar.exportTestPlan': 'ペネトレーションテスト計画書（Markdown）',
   'project.sidebar.exportRoe': '交戦規定（RoE）／スコープ宣言（Markdown）',
   'project.sidebar.exportNavigator': 'ATT&CK Navigator レイヤー（JSON）',
-  'navigator.layerName': 'CyberRiskScape: {system}',
+  'navigator.layerName': '{product}: {system}',
   'navigator.description.main':
     '{system} の脅威モデルから {product} が生成（{date}）。検出脅威の参照にある ATT&CK Enterprise の technique をスコア付けしたもの。CTEM / BAS / SOC ツールでのカバレッジ可視化に取り込めます。',
   'navigator.description.atlas': 'ATLAS（AI 固有）の technique も参照されています: {ids}（ATT&CK Enterprise の行列には出ません）。',
+  'navigator.layerNameScenario': '{product}: {system} — {scenario}',
+  'navigator.description.scenario':
+    '攻撃シナリオ「{scenario}」の上位経路に載るノード・エッジの脅威だけを対象にしています。BAS で模擬する technique の候補として使えます（攻撃手順は含みません）。',
+  'navigator.meta.scenario': 'シナリオ',
+  'navigator.meta.chokepoint': 'チョークポイント',
   'project.sidebar.exportInvestigationPlan': '調査計画書（侵害の疑い）',
   'project.sidebar.exportPqc': 'PQC移行支援レポート（CSV）',
   'project.sidebar.exportPqcEmpty': 'ノードの「暗号経路（PQC）」から経路を分析し、「レポートに追加」でフローを登録してください',

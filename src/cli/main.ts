@@ -32,7 +32,8 @@ import { BUNDLED_FINDING_MAP } from '../features/findings-report/findingMap';
 import { buildThreatReport, toDCRHThreatModelMarkdown, toJsonObject } from '../features/export/threatReport';
 import { effectiveSeverity } from '../core/model/risk';
 import { setLocale, translate, type Locale } from '../i18n';
-import { LAYER_KEYS, type FrameworkView, type Severity } from '../core/model/types';
+import { ATTACK_OBJECTIVE_APPLICABLE, LAYER_KEYS, type FrameworkView, type Severity } from '../core/model/types';
+import { formatElementalId } from '../core/model/elementalId';
 import { getChangeTriggers } from '../change-triggers/loader/bundledChangeTriggers';
 import { loadChangeTriggers } from '../change-triggers/loader/loadChangeTriggers';
 import type { ChangeTrigger } from '../change-triggers/schema/trigger';
@@ -180,6 +181,7 @@ export-roe のオプション（脅威モデルから交戦規定（RoE）／ス
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
 export-attack-navigator のオプション（検出脅威の参照から MITRE ATT&CK Navigator レイヤー（JSON）を出力。CTEM / BAS / SOC での取り込み用。ATLAS は説明文に併記）:
+  --node <C番号>                                攻撃者ノードの ID。指定すると、その攻撃シナリオ（攻撃者 → 標的）の上位経路上の脅威だけで出力（例: C1）
   --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある最初のレイヤー）
   --framework <STRIDE|AI|AgenticAI|ALL>         対象フレームワーク（既定: ALL）
   --locale <ja|en>                              表示言語（既定: ja）
@@ -850,10 +852,23 @@ ${USAGE}`);
   const target = results[0];
   if (!target) fail('ノードのあるレイヤーがありません。');
 
-  const layerDoc = buildNavigatorLayer(target.input, new Date(), locale);
+  let attackerNodeId: string | undefined;
+  if (values.node) {
+    const ref = values.node.toLowerCase();
+    const attacker = target.input.nodes.find(
+      (n) => (n.seq != null ? formatElementalId('node', n.seq) : n.id).toLowerCase() === ref,
+    );
+    if (!attacker) fail(`ノード ${values.node} が見つかりません（${target.layer}）。`);
+    if (!ATTACK_OBJECTIVE_APPLICABLE.has(attacker.type) || !attacker.attackObjectiveId) {
+      fail(`ノード ${values.node} は攻撃目標（OBJECTIVE）を持つ攻撃者ではありません。`);
+    }
+    attackerNodeId = attacker.id;
+  }
+
+  const layerDoc = buildNavigatorLayer(target.input, new Date(), locale, { attackerNodeId });
   writeOutput(navigatorLayerToJson(layerDoc), values.out);
   process.stderr.write(
-    `ATT&CK Navigator レイヤーを出力しました（${target.layer}・technique ${layerDoc.techniques.length} 件・ATLAS ${layerDoc.atlasTechniques.length} 件）
+    `ATT&CK Navigator レイヤーを出力しました（${target.layer}・technique ${layerDoc.techniques.length} 件・ATLAS ${layerDoc.atlasTechniques.length} 件・攻撃シナリオ ${layerDoc.scenarioCount} 件${attackerNodeId ? `のうち ${values.node} のみ` : ''}）
 `,
   );
 }

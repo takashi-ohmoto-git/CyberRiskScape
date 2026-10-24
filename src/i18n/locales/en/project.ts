@@ -27,11 +27,16 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'project.sidebar.exportTestPlan': 'Penetration test plan (Markdown)',
   'project.sidebar.exportRoe': 'Rules of engagement (RoE) / scope declaration (Markdown)',
   'project.sidebar.exportNavigator': 'ATT&CK Navigator layer (JSON)',
-  'navigator.layerName': 'CyberRiskScape: {system}',
+  'navigator.layerName': '{product}: {system}',
   'navigator.description.main':
     'Generated from the threat model of {system} by {product} ({date}). Scores the ATT&CK Enterprise techniques referenced by the detected threats. Import it into CTEM / BAS / SOC tools to visualize coverage.',
   'navigator.description.atlas':
     'ATLAS (AI-specific) techniques are also referenced: {ids} (they do not appear in the ATT&CK Enterprise matrix).',
+  'navigator.layerNameScenario': '{product}: {system} — {scenario}',
+  'navigator.description.scenario':
+    'Limited to threats on the nodes and edges of the top routes of the attack scenario "{scenario}". Use it as candidate techniques to emulate in BAS (no attack procedures included).',
+  'navigator.meta.scenario': 'Scenario',
+  'navigator.meta.chokepoint': 'Choke point',
   'project.sidebar.exportInvestigationPlan': 'Investigation plan (suspected compromise)',
   'project.sidebar.exportPdf': 'PDF report (choose layers)',
   'project.sidebar.exportPng': 'PNG image (choose layers)',
