@@ -13,6 +13,11 @@
 #     Enterprise Assets / Control 4: Secure Configuration）。
 #   - IEEE Std 2600 "Hardcopy Device and System Security" と NIST SP 800-53 Rev.5（IA-5 / MP-6 / AC-6）
 #     （複合機のルール、2026-10-21）。
+#   - MITRE ATT&CK (Enterprise) v20.0（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
+#     出典つきで参照し本文は転載しない）:
+#     T1078.001 "Valid Accounts: Default Accounts"、T1555 "Credentials from Password Stores"、
+#     T1552 "Unsecured Credentials"。
+#     https://attack.mitre.org/techniques/
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -89,6 +94,8 @@ rules:
       - title: "NIST IR 8259 / 8259A - Foundational Cybersecurity Activities for IoT Device Manufacturers / IoT Device Cybersecurity Capability Core Baseline"
         url: "https://csrc.nist.gov/pubs/ir/8259/final"
       # 長寿命デバイスの署名検証・証明書寿命（PQC 移行観点）は pqc-long-lived-device-signature-001 が扱う（別 canonicalId）。
+      - title: "MITRE ATT&CK T1078.001 - Valid Accounts: Default Accounts（出荷時のデフォルト認証情報での認証）"
+        url: "https://attack.mitre.org/techniques/T1078/001/"
 
   # ── PC / SMARTPHONE: 端末紛失・盗難時のローカル認証情報露出（intrinsic）──
   - id: endpoint-device-loss-local-credential-exposure-001
@@ -118,6 +125,8 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/46/r2/final"
       - title: "NIST SP 800-124 Rev.2 - Guidelines for Managing the Security of Mobile Devices in the Enterprise"
         url: "https://csrc.nist.gov/pubs/sp/800/124/r2/final"
+      - title: "MITRE ATT&CK T1555 - Credentials from Password Stores（端末に保存された資格情報の取得）"
+        url: "https://attack.mitre.org/techniques/T1555/"
 
   # ── 未管理端末への一方的な配信・制御（target 側、targetManagedState）──
   - id: agentic-endpoint-command-unmanaged-target-001
@@ -172,6 +181,8 @@ rules:
       - title: "NIST SP 800-53 Rev.5 - Security and Privacy Controls for Information Systems and Organizations（IA-5 Authenticator Management〔初期の認証情報の変更〕/ MP-6 Media Sanitization）"
         url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"
       # IoT 機器一般の初期資格情報・パッチ適用困難性は endpoint-iot-default-credentials-unpatchable-001（IOT）が扱う（別 canonicalId）。
+      - title: "MITRE ATT&CK T1078.001 - Valid Accounts: Default Accounts（管理画面の初期パスワードでのログイン）"
+        url: "https://attack.mitre.org/techniques/T1078/001/"
 
   # ── MULTIFUNCTION_PRINTER: スキャン送信用に保存した資格情報の窃取（経路依存）─────────
   - id: endpoint-mfp-scan-credential-passback-001
@@ -200,3 +211,5 @@ rules:
         url: "https://standards.ieee.org/ieee/2600/4228/"
       - title: "NIST SP 800-53 Rev.5 - Security and Privacy Controls for Information Systems and Organizations（IA-5 Authenticator Management / AC-6 Least Privilege）"
         url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"
+      - title: "MITRE ATT&CK T1552 - Unsecured Credentials（機器に保存された送信用の資格情報の窃取）"
+        url: "https://attack.mitre.org/techniques/T1552/"

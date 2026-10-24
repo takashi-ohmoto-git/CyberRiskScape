@@ -114,6 +114,8 @@ rules:
       - title: "OWASP Top 10 2021 - A03 Injection"
         url: "https://owasp.org/Top10/A03_2021-Injection/"
       - title: "IPA「安全なウェブサイトの作り方」（SQL インジェクション・クロスサイト・スクリプティング・メールヘッダ・インジェクション）"
+      - title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application（フォーム入力値によるインジェクションの悪用）"
+        url: "https://attack.mitre.org/techniques/T1190/"
 
   # ── Bot による大量投稿・自動返信メールの踏み台化（内在）─────────────
   - id: webform-automated-abuse-001

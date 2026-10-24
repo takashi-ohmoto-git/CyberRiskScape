@@ -39,10 +39,21 @@
 #   - NIST SP 800-92 "Guide to Computer Security Log Management"、NIST SP 800-53 Rev.5（AU-5 / AU-9）、
 #     CISA ほか "Best Practices for Event Logging and Threat Detection"（2024）、OWASP Logging Cheat Sheet
 #     （SIEM / ログ基盤のルール、2026-10-21）。
-#   - MITRE ATT&CK (Enterprise) T1072 "Software Deployment Tools" / T1562.001 "Impair Defenses: Disable or Modify Tools"
+#   - MITRE ATT&CK (Enterprise) T1072 "Software Deployment Tools" / T1685 "Disable or Modify Tools"
 #     （EDR / DFIR サーバーのルール、2026-10-23。技術 ID のみ出典つきで参照し本文は転載しない）。
-#     https://attack.mitre.org/techniques/T1072/ , https://attack.mitre.org/techniques/T1562/001/
+#     https://attack.mitre.org/techniques/T1072/ , https://attack.mitre.org/techniques/T1685/
 #   - Velociraptor Security Advisories（v0.77.2 の勧告。製品ベンダー自身の公開情報として references に載せる）。
+#   - MITRE ATT&CK (Enterprise) v20.0（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
+#     出典つきで参照し本文は転載しない）:
+#     T1190 "Exploit Public-Facing Application"、T1552.004 "Unsecured Credentials: Private Keys"、
+#     T1557 "Adversary-in-the-Middle"、T1199 "Trusted Relationship"、
+#     T1557.002 "Adversary-in-the-Middle: ARP Cache Poisoning"、
+#     T1557.004 "Adversary-in-the-Middle: Evil Twin"、T1021 "Remote Services"、
+#     T1133 "External Remote Services"、T1040 "Network Sniffing"、
+#     T1537 "Transfer Data to Cloud Account"、T1649 "Steal or Forge Authentication Certificates"、
+#     T1486 "Data Encrypted for Impact"、T1611 "Escape to Host"、T1070 "Indicator Removal"、
+#     T1552 "Unsecured Credentials"。
+#     https://attack.mitre.org/techniques/
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -222,6 +233,8 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/41/r1/final"
       - title: "NIST SP 800-77 Rev.1 - Guide to IPsec VPNs（VPN ゲートウェイの運用と管理）"
         url: "https://csrc.nist.gov/pubs/sp/800/77/r1/final"
+      - title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application（インターネットに露出した境界機器の脆弱性の悪用）"
+        url: "https://attack.mitre.org/techniques/T1190/"
 
   # ── TLS インスペクション用 CA 鍵の侵害（内在）──────────────────────────
   - id: netinfra-tls-inspection-ca-key-compromise-001
@@ -254,6 +267,10 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/52/r2/final"
       - title: "NIST SP 800-57 Part 1 Rev.5 - Recommendation for Key Management（CA 鍵の保護と有効期間）"
         url: "https://csrc.nist.gov/pubs/sp/800/57/pt1/r5/final"
+      - title: "MITRE ATT&CK T1552.004 - Unsecured Credentials: Private Keys（CA の秘密鍵の窃取）"
+        url: "https://attack.mitre.org/techniques/T1552/004/"
+      - title: "MITRE ATT&CK T1557 - Adversary-in-the-Middle（偽造した証明書による中間者攻撃）"
+        url: "https://attack.mitre.org/techniques/T1557/"
 
   # ── CDN による第三者の TLS 終端（内在）─────────────────────────────────
   - id: netinfra-cdn-third-party-tls-termination-001
@@ -280,6 +297,8 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/52/r2/final"
       - title: "NIST SP 800-57 Part 1 Rev.5 - Recommendation for Key Management（秘密鍵の保護と共有の制限）"
         url: "https://csrc.nist.gov/pubs/sp/800/57/pt1/r5/final"
+      - title: "MITRE ATT&CK T1199 - Trusted Relationship（鍵を預けた CDN 事業者を経由した侵入）"
+        url: "https://attack.mitre.org/techniques/T1199/"
 
   # ── STARTTLS のダウングレード / ストリッピング（経路依存）──────────────
   - id: netinfra-smtp-starttls-downgrade-001
@@ -306,6 +325,8 @@ rules:
         url: "https://www.rfc-editor.org/rfc/rfc8461"
       - title: "IETF RFC 7672 - SMTP Security via Opportunistic DNS-Based Authentication of Named Entities (DANE) Transport Layer Security (TLS)"
         url: "https://www.rfc-editor.org/rfc/rfc7672"
+      - title: "MITRE ATT&CK T1557 - Adversary-in-the-Middle（STARTTLS の除去・偽の証明書による中継）"
+        url: "https://attack.mitre.org/techniques/T1557/"
 
   # ── L2 のなりすまし（内在）──────────────────────────────────────────
   - id: netinfra-l2-spoofing-001
@@ -332,6 +353,8 @@ rules:
         url: "https://standards.ieee.org/"
       - title: "IEEE 802.1AE - Media Access Control (MAC) Security（MACsec によるリンク暗号化）"
         url: "https://standards.ieee.org/"
+      - title: "MITRE ATT&CK T1557.002 - Adversary-in-the-Middle: ARP Cache Poisoning（ARP 応答の偽装によるなりすまし）"
+        url: "https://attack.mitre.org/techniques/T1557/002/"
 
   # ── 不正アクセスポイント / Evil Twin・弱い無線暗号（内在）───────────────
   - id: netinfra-wireless-rogue-ap-001
@@ -356,6 +379,8 @@ rules:
     references:
       - title: "NIST SP 800-153 - Guidelines for Securing Wireless Local Area Networks (WLANs)（不正アクセスポイントの検知と無線の構成）"
         url: "https://csrc.nist.gov/pubs/sp/800/153/final"
+      - title: "MITRE ATT&CK T1557.004 - Adversary-in-the-Middle: Evil Twin（同じ SSID を名乗る偽のアクセスポイント）"
+        url: "https://attack.mitre.org/techniques/T1557/004/"
 
   # ── 踏み台への特権セッション・資格情報の集中（内在）────────────────────
   # PAM の pam-privileged-concentration-001 と同じ脅威。踏み台専用の description を持つ別ルール。
@@ -383,6 +408,8 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/207/final"
       - title: "NIST SP 800-53 Rev.5 - Security and Privacy Controls for Information Systems and Organizations（AC-17 リモートアクセス / AC-6 最小権限）"
         url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"
+      - title: "MITRE ATT&CK T1021 - Remote Services（踏み台を経由した SSH / RDP での横展開）"
+        url: "https://attack.mitre.org/techniques/T1021/"
 
   # ── ZTNA プロキシへのアクセス判定の集中と迂回（内在）────────────────────
   - id: netinfra-ztna-proxy-access-concentration-001
@@ -409,6 +436,8 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/207/final"
       - title: "Google Cloud - Identity-Aware Proxy: Securing your app with signed headers（プロキシが付けた利用者情報の検証）"
         url: "https://cloud.google.com/iap/docs/signed-headers-howto"
+      - title: "MITRE ATT&CK T1133 - External Remote Services（社外からのリモートアクセスの入口の悪用）"
+        url: "https://attack.mitre.org/techniques/T1133/"
 
   # ── 専用線・VPN（network: VPN）の暗号化していない区間（経路依存）──────────
   # 汎用の平文ルール（stride-edge-plain-encryption-001）と同じ脅威。canonicalId を共有し、同じエッジでは
@@ -439,6 +468,8 @@ rules:
         url: "https://standards.ieee.org/"
       - title: "Microsoft Learn - Configure MACsec on ExpressRoute Direct ports（閉域接続での MACsec）"
         url: "https://learn.microsoft.com/azure/expressroute/expressroute-howto-macsec"
+      - title: "MITRE ATT&CK T1040 - Network Sniffing（暗号化していない区間の盗聴）"
+        url: "https://attack.mitre.org/techniques/T1040/"
 
   # ── プライベートエンドポイント経由の持ち出しと公開経路へのフォールバック（内在）──
   - id: netinfra-private-endpoint-exfiltration-001
@@ -468,6 +499,8 @@ rules:
         url: "https://learn.microsoft.com/azure/private-link/private-endpoint-dns"
       - title: "Google Cloud - VPC Service Controls overview（データ境界による持ち出しの防止）"
         url: "https://cloud.google.com/vpc-service-controls/docs/overview"
+      - title: "MITRE ATT&CK T1537 - Transfer Data to Cloud Account（攻撃者が所有するクラウドのアカウントへの持ち出し）"
+        url: "https://attack.mitre.org/techniques/T1537/"
 
   # ── サービスメッシュの mTLS の非強制とサイドカーまでの平文区間（内在）────────
   - id: netinfra-service-mesh-mtls-not-enforced-001
@@ -496,6 +529,8 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/207/a/final"
       - title: "Istio - Security concepts（ピア認証のモードと認可ポリシー）"
         url: "https://istio.io/latest/docs/concepts/security/"
+      - title: "MITRE ATT&CK T1040 - Network Sniffing（平文の区間の盗聴）"
+        url: "https://attack.mitre.org/techniques/T1040/"
 
   # ── メッシュ CA の鍵の侵害によるサービスのなりすまし（内在）─────────────
   - id: netinfra-service-mesh-ca-key-compromise-001
@@ -524,6 +559,8 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/57/pt1/r5/final"
       - title: "Istio - Security concepts（ID と証明書の管理）"
         url: "https://istio.io/latest/docs/concepts/security/"
+      - title: "MITRE ATT&CK T1649 - Steal or Forge Authentication Certificates（メッシュ CA の鍵によるサービス証明書の偽造）"
+        url: "https://attack.mitre.org/techniques/T1649/"
 
   # ── リバースプロキシ（REVERSE_PROXY、2026-10-20）の固有脅威 ──────────────────
   # 4 ルールとも「背後のサーバーへ中継している」ことが前提の脅威なので、outbound の線（中継先）が
@@ -575,6 +612,8 @@ rules:
         url: "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/15-Testing_for_HTTP_Splitting_Smuggling"
       - title: "PortSwigger Web Security Academy - HTTP request smuggling"
         url: "https://portswigger.net/web-security/request-smuggling"
+      - title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application（前段と背後の解釈のずれの悪用）"
+        url: "https://attack.mitre.org/techniques/T1190/"
 
   # ── 転送ヘッダー・利用者ヘッダーの無条件の信用（経路依存）─────────────────────
   - id: netinfra-reverse-proxy-forwarded-header-trust-001
@@ -614,6 +653,8 @@ rules:
         url: "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/17-Testing_for_Host_Header_Injection"
       - title: "PortSwigger Web Security Academy - HTTP Host header attacks"
         url: "https://portswigger.net/web-security/host-header"
+      - title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application（無条件に信用される転送ヘッダーの偽装）"
+        url: "https://attack.mitre.org/techniques/T1190/"
 
   # ── 背後のサーバーへの直接到達（リバースプロキシの迂回、経路依存）──────────────
   # api-backend-gateway-bypass-001（BACKEND_API 宛てのエッジ）と同じ脅威のため canonicalId: api-gateway-bypass を
@@ -748,6 +789,8 @@ rules:
         url: "https://csrc.nist.gov/pubs/ir/8374/final"
       - title: "CISA - #StopRansomware Guide"
         url: "https://www.cisa.gov/stopransomware/ransomware-guide"
+      - title: "MITRE ATT&CK T1486 - Data Encrypted for Impact（全仮想マシンの一括暗号化）"
+        url: "https://attack.mitre.org/techniques/T1486/"
 
   # ── VM エスケープによる同居する仮想マシンへの波及（内在）────────────────────────
   - id: netinfra-hypervisor-vm-escape-001
@@ -774,6 +817,8 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/125/a/r1/final"
       - title: "NIST SP 800-125 - Guide to Security for Full Virtualization Technologies"
         url: "https://csrc.nist.gov/pubs/sp/800/125/final"
+      - title: "MITRE ATT&CK T1611 - Escape to Host（仮想マシンからホストへの脱出）"
+        url: "https://attack.mitre.org/techniques/T1611/"
 
   # ── SIEM / ログ基盤のログの改ざん・削除・保持期間の短縮（内在）─────────────────
   - id: netinfra-siem-log-tampering-001
@@ -802,6 +847,10 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"
       - title: "CISA ほか - Best Practices for Event Logging and Threat Detection（ログの保管と完全性）"
         url: "https://www.cisa.gov/resources-tools/resources/best-practices-event-logging-and-threat-detection"
+      - title: "MITRE ATT&CK T1070 - Indicator Removal（ログの削除・改ざんによる痕跡の隠滅）"
+        url: "https://attack.mitre.org/techniques/T1070/"
+      - title: "MITRE ATT&CK T1685 - Disable or Modify Tools（検知ルール・通知の停止）"
+        url: "https://attack.mitre.org/techniques/T1685/"
 
   # ── SIEM / ログ基盤への機微ログ・連携用の資格情報の集中（内在）──────────────────
   # AI ゲートウェイへのプロンプトの集積（ai-gateway-log-concentration）と構造は近いが、型と集まる中身・権限が違うため別グループ。
@@ -829,6 +878,8 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/92/final"
       - title: "OWASP Logging Cheat Sheet（秘密情報・個人情報をログに出さない）"
         url: "https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html"
+      - title: "MITRE ATT&CK T1552 - Unsecured Credentials（ログや連携設定に含まれる資格情報の窃取）"
+        url: "https://attack.mitre.org/techniques/T1552/"
 
   # ── ログの送信の停止・経路の遮断による検知の無効化 ──────────────────────────
   - id: netinfra-siem-collection-blinding-001
@@ -856,6 +907,8 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/92/final"
       - title: "NIST SP 800-53 Rev.5 - Security and Privacy Controls for Information Systems and Organizations（AU-5 Response to Audit Logging Process Failures）"
         url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"
+      - title: "MITRE ATT&CK T1685 - Disable or Modify Tools（ログの送り元のエージェントの停止・設定の改変）"
+        url: "https://attack.mitre.org/techniques/T1685/"
 
   # ── 端末へ一斉に配信できる管理サーバーの乗っ取りによる全端末での一斉実行（内在）────
   # 将来 MDM・RMM・資産管理など「全端末へ一斉に配信できる管理サーバー」の型と canonicalId を共有する前提の汎用グループ。
@@ -907,8 +960,8 @@ rules:
       - standard: nist-csf-2.0
         ref: "PR.PS-01"
     references:
-      - title: "MITRE ATT&CK T1562.001 - Impair Defenses: Disable or Modify Tools（検知ツールの無効化・設定の改変）"
-        url: "https://attack.mitre.org/techniques/T1562/001/"
+      - title: "MITRE ATT&CK T1685 - Disable or Modify Tools（検知ツールの無効化・設定の改変）"
+        url: "https://attack.mitre.org/techniques/T1685/"
 
   # ── 調査・検知のために集めた証拠（メモリの写し・ファイル・認証情報を含むテレメトリ）の集中 ──
   - id: netinfra-edr-evidence-concentration-001
@@ -935,3 +988,5 @@ rules:
         url: "https://docs.velociraptor.app/announcements/advisories/v0-77-2/"
       - title: "NIST SP 800-92 - Guide to Computer Security Log Management（収集したデータの機密性とアクセス制御）"
         url: "https://csrc.nist.gov/pubs/sp/800/92/final"
+      - title: "MITRE ATT&CK T1552 - Unsecured Credentials（集めた証拠に含まれる資格情報の窃取）"
+        url: "https://attack.mitre.org/techniques/T1552/"

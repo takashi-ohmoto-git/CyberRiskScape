@@ -24,12 +24,18 @@ rules:
     name: "Default credentials and unpatchable firmware on IoT devices"
     description: "IoT and embedded devices such as {{nodeName}} are often run with factory default credentials left unchanged, or have no firmware update mechanism at all, leaving known vulnerabilities in place for years (Can). An attacker who authenticates with default credentials or exploits a published CVE gains a botnet foothold and a starting point for lateral movement into the internal network. If, on the other hand, the device forces a unique password at first boot and ships with signed over-the-air firmware updates, compromise through factory settings does not succeed (Cannot). The blast radius is the entire network segment the device sits on, since the compromised device becomes a pivot."
     mitigation: "[Foundation] Force factory default credentials to be replaced with a unique password during first-time setup, and keep the device off external networks until that happens. Maintain a device inventory and check it against published CVEs on a regular schedule. [Enterprise] Ship signed over-the-air firmware updates and define an SLA for applying them after a critical CVE is disclosed. Isolate devices on a dedicated VLAN and use micro segmentation to limit how far they can reach internally. [Advanced] Authenticate devices with hardware-attested identity (TPM or secure element) under zero trust, and quarantine a device from the network automatically when its traffic pattern deviates."
+    references:
+      "1":
+        title: "MITRE ATT&CK T1078.001 - Valid Accounts: Default Accounts (authentication with factory-default credentials)"
 
   endpoint-device-loss-local-credential-exposure-001:
     category: "Information Disclosure"
     name: "Local credential exposure from a lost or stolen device"
     description: "If a PC or mobile device such as {{nodeName}} is lost or stolen, whoever physically holds it can abuse the session tokens cached on it, the stored credentials, and any local application left signed in (Can). Once the lock screen is bypassed, the cloud services and internal systems that device is already authenticated to are reachable as-is. If full-disk encryption (FileVault, BitLocker, or equivalent) and strong lock-screen authentication are enforced, and remote wipe clears the device promptly once the loss is reported, physical possession alone is not enough to steal credentials or impersonate the user (Cannot). The blast radius is every account whose session or credentials were cached on that device."
     mitigation: "[Foundation] Require full-disk encryption (FileVault, BitLocker, or equivalent) and a screen lock (PIN or biometric), and bar devices without them from business use. [Enterprise] Enable remote lock and remote wipe through MDM, and define and rehearse the process from loss report to wipe. Shorten session token lifetimes so they can be revoked when a device goes missing. [Advanced] Bind credentials to a hardware security module (TPM or Secure Enclave) so they cannot be decrypted off the device, and apply access control dynamically from a continuous device posture score."
+    references:
+      "2":
+        title: "MITRE ATT&CK T1555 - Credentials from Password Stores (obtaining credentials saved on the device)"
 
   agentic-endpoint-command-unmanaged-target-001:
     category: "Tampering"
@@ -48,6 +54,8 @@ rules:
     references:
       "1":
         title: "NIST SP 800-53 Rev.5 - Security and Privacy Controls for Information Systems and Organizations (IA-5 Authenticator Management [changing default authenticators] / MP-6 Media Sanitization)"
+      "2":
+        title: "MITRE ATT&CK T1078.001 - Valid Accounts: Default Accounts (logging in to the management interface with the initial password)"
 
   endpoint-mfp-scan-credential-passback-001:
     category: "Information Disclosure"
@@ -57,3 +65,5 @@ rules:
     references:
       "1":
         title: "NIST SP 800-53 Rev.5 - Security and Privacy Controls for Information Systems and Organizations (IA-5 Authenticator Management / AC-6 Least Privilege)"
+      "2":
+        title: "MITRE ATT&CK T1552 - Unsecured Credentials (theft of the sending credentials stored on the device)"

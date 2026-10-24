@@ -16,6 +16,12 @@
 #     AWS Backup Vault Lock、Azure Blob Storage の不変ストレージ、Google Cloud Storage のバケットロック）。
 #   - NIST SP 800-53 Rev.5（AC-3 / AC-6）、Microsoft Learn の SMB のセキュリティの公式ドキュメント
 #     （SMB security hardening・SMBv1 の無効化・SMB の署名）、IETF RFC 7530（NFSv4）。ファイルサーバーのルール（2026-10-21）。
+#   - MITRE ATT&CK (Enterprise) v20.0（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
+#     出典つきで参照し本文は転載しない）:
+#     T1530 "Data from Cloud Storage"、T1490 "Inhibit System Recovery"、
+#     T1486 "Data Encrypted for Impact"、T1039 "Data from Network Shared Drive"、
+#     T1557.001 "Adversary-in-the-Middle: Name Resolution Poisoning and SMB Relay"。
+#     https://attack.mitre.org/techniques/
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -94,6 +100,8 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/209/final"
       - title: "Amazon S3 User Guide - Blocking public access to your Amazon S3 storage"
         url: "https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html"
+      - title: "MITRE ATT&CK T1530 - Data from Cloud Storage（公開設定のバケットからのデータ取得）"
+        url: "https://attack.mitre.org/techniques/T1530/"
 
   # ── ランサムウェアによるバックアップの削除・暗号化 ─────────────────────
   - id: storage-backup-ransomware-destruction-001
@@ -124,6 +132,8 @@ rules:
         url: "https://www.cisa.gov/stopransomware/ransomware-guide"
       - title: "NIST SP 800-209 - Security Guidelines for Storage Infrastructure（管理権限の分離）"
         url: "https://csrc.nist.gov/pubs/sp/800/209/final"
+      - title: "MITRE ATT&CK T1490 - Inhibit System Recovery（バックアップの削除・暗号化による復旧の妨害）"
+        url: "https://attack.mitre.org/techniques/T1490/"
 
   # ── 復元テストの欠如による復旧不能 ───────────────────────────────
   - id: storage-backup-restore-untested-001
@@ -188,6 +198,8 @@ rules:
         url: "https://cloud.google.com/storage/docs/bucket-lock"
       - title: "NIST SP 800-209 - Security Guidelines for Storage Infrastructure"
         url: "https://csrc.nist.gov/pubs/sp/800/209/final"
+      - title: "MITRE ATT&CK T1490 - Inhibit System Recovery（保持ロックの解除・短縮による復旧の妨害）"
+        url: "https://attack.mitre.org/techniques/T1490/"
 
   # ── 感染した端末からの共有フォルダの一括暗号化（ランサムウェア）─────────────────
   - id: storage-file-share-ransomware-mass-encryption-001
@@ -219,6 +231,8 @@ rules:
         url: "https://csrc.nist.gov/pubs/ir/8374/final"
       - title: "NIST SP 800-209 - Security Guidelines for Storage Infrastructure（スナップショットとデータ保護）"
         url: "https://csrc.nist.gov/pubs/sp/800/209/final"
+      - title: "MITRE ATT&CK T1486 - Data Encrypted for Impact（共有フォルダの一括暗号化）"
+        url: "https://attack.mitre.org/techniques/T1486/"
 
   # ── 共有フォルダのアクセス権の過大（全員への付与・匿名のアクセス）─────────────────
   - id: storage-file-share-permission-overgrant-001
@@ -245,6 +259,8 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/209/final"
       - title: "NIST SP 800-53 Rev.5 - Security and Privacy Controls for Information Systems and Organizations（AC-3 Access Enforcement / AC-6 Least Privilege）"
         url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"
+      - title: "MITRE ATT&CK T1039 - Data from Network Shared Drive（広く読める共有フォルダからのデータ取得）"
+        url: "https://attack.mitre.org/techniques/T1039/"
 
   # ── 古い認証・プロトコル（SMBv1・NTLM・SMB 署名なし・NFS の申告 ID）による中継・盗聴 ──
   - id: storage-file-share-legacy-protocol-001
@@ -275,3 +291,5 @@ rules:
         url: "https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/overview-server-message-block-signing"
       - title: "IETF RFC 7530 - Network File System (NFS) Version 4 Protocol（RPCSEC_GSS と Kerberos による認証）"
         url: "https://www.rfc-editor.org/rfc/rfc7530"
+      - title: "MITRE ATT&CK T1557.001 - Adversary-in-the-Middle: Name Resolution Poisoning and SMB Relay（NTLM 認証の誘い出しと中継）"
+        url: "https://attack.mitre.org/techniques/T1557/001/"

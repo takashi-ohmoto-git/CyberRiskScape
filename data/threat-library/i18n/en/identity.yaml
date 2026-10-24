@@ -71,6 +71,8 @@ rules:
         title: "NIST SP 800-63B - Digital Identity Guidelines (requirements for recording authentication events)"
       "1":
         title: "CISA - Zero Trust Maturity Model v2 (Visibility and Analytics: aggregating authentication telemetry)"
+      "2":
+        title: "MITRE ATT&CK T1070 - Indicator Removal (erasing traces of authentication)"
 
   identity-hybrid-idp-onprem-cloud-coupling-001:
     category: "Elevation of Privilege"
@@ -106,6 +108,8 @@ rules:
         title: "NIST SP 800-63A - Digital Identity Guidelines: Enrollment and Identity Proofing (the identity assurance level (IAL) framework)"
       "1":
         title: "CISA - Zero Trust Maturity Model v2 (Identity pillar: governing authentication and identity stores)"
+      "2":
+        title: "MITRE ATT&CK T1078.004 - Valid Accounts: Cloud Accounts (signing in with a hijacked social account)"
 
   identity-directory-kerberos-offline-cracking-001:
     category: "Information Disclosure"

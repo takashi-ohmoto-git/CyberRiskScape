@@ -62,7 +62,9 @@ verbatim.
                   data/threat-library/zero-trust-access.yaml,
                   data/threat-library/web-form.yaml,
                   data/threat-library/payment-page.yaml,
-                  data/threat-library/network-infra.yaml
+                  data/threat-library/network-infra.yaml,
+                  data/threat-library/endpoint.yaml,
+                  data/threat-library/storage.yaml
 
    CWE (Common Weakness Enumeration)
    https://cwe.mitre.org/

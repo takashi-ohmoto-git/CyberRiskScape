@@ -30,6 +30,8 @@ rules:
         title: "NIST SP 800-41 Rev.1 - Guidelines on Firewalls and Firewall Policy (management and operation of edge devices)"
       "2":
         title: "NIST SP 800-77 Rev.1 - Guide to IPsec VPNs (operating and managing VPN gateways)"
+      "3":
+        title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application (exploiting vulnerabilities in internet-facing perimeter devices)"
     conditions:
       - description: "{{targetName}} is a bastion reachable from {{sourceName}}, which sits outside the trust boundary (treated as Internet). Because a bastion is the entrance to the management path for the servers behind it, an attacker can exploit known vulnerabilities in the exposed SSH / RDP / web console, or brute-force passwords and try leaked credentials, and if successful reach internal servers as an administrator (Can). On a self-built bastion server, applying fixes to the OS and remote-access software is the user's responsibility. On a managed bastion the provider applies fixes, but the strength of authentication and the narrowing of reachable servers depend on the user's configuration. On the other hand, if connections to the bastion are placed behind IdP authentication (phishing-resistant MFA) or ZTNA so it is not directly reachable from the internet, or a connection method with no inbound ports (outbound connections from an agent) is used, and fixes for a self-built bastion are applied within their deadlines, brute-forcing the exposed surface and known techniques do not succeed (Cannot). The blast radius is every server reachable from {{targetName}} and its administrator privileges."
       - description: "{{targetName}} is a virtualization platform (hypervisors and management server) reachable from {{sourceName}}, which sits outside the trust boundary (treated as Internet). Known vulnerabilities, including some exploitable before authentication, are repeatedly published for virtualization management interfaces, management APIs, SSH, and the web services of management servers, and an attacker can find them through automated internet scanning and, from the captured management plane, stop, encrypt, or delete every virtual machine running on it (Can). Applying fixes is the user's responsibility and tends to be delayed because it involves host reboots or moving virtual machines. On the other hand, if the management plane is placed on a management network not reachable from the internet, administrators' connections are limited to those behind a bastion or ZTNA, and fixes for vulnerabilities known to be exploited (CISA KEV, etc.) are applied within their deadlines, published techniques from the internet do not succeed (Cannot). The blast radius is every virtual machine running on {{targetName}}, and their data and backups."
@@ -47,6 +49,10 @@ rules:
         title: "NIST SP 800-52 Rev.2 - Guidelines for the Selection, Configuration, and Use of TLS Implementations (TLS certificate verification)"
       "1":
         title: "NIST SP 800-57 Part 1 Rev.5 - Recommendation for Key Management (protection and validity period of CA keys)"
+      "2":
+        title: "MITRE ATT&CK T1552.004 - Unsecured Credentials: Private Keys (theft of the CA private key)"
+      "3":
+        title: "MITRE ATT&CK T1557 - Adversary-in-the-Middle (adversary-in-the-middle with forged certificates)"
 
   netinfra-cdn-third-party-tls-termination-001:
     category: "Information Disclosure"
@@ -58,12 +64,17 @@ rules:
         title: "NIST SP 800-52 Rev.2 - Guidelines for the Selection, Configuration, and Use of TLS Implementations (TLS termination and certificate verification)"
       "1":
         title: "NIST SP 800-57 Part 1 Rev.5 - Recommendation for Key Management (protecting private keys and limiting their sharing)"
+      "2":
+        title: "MITRE ATT&CK T1199 - Trusted Relationship (access through the CDN provider entrusted with the keys)"
 
   netinfra-smtp-starttls-downgrade-001:
     category: "Information Disclosure"
     name: "Mail eavesdropping through STARTTLS downgrade"
     description: "Mail relayed between {{sourceName}} and {{targetName}} is encrypted with STARTTLS, but STARTTLS is an opportunistic scheme that encrypts only if the peer supports it, and in many cases does not verify certificates. An attacker on the path can strip the STARTTLS offer to force plaintext, or relay with a fake certificate, and read and modify message bodies, attachments, and password-reset links (Can). If the DNS MX record is spoofed, the mail itself can be redirected to the attacker's server. On the other hand, if MTA-STS or DANE is used to declare and enforce that mail to this destination is sent only over TLS with a verified certificate, and failures are monitored with TLS-RPT, downgrades and relaying with a fake certificate stop as delivery failures (Cannot). If the body is encrypted with S/MIME or similar, it cannot be read even if the relay segment is broken. The blast radius is all mail relayed between {{sourceName}} and {{targetName}}."
     mitigation: "[Foundation] As a receiver, publish an MTA-STS policy; as a sender, deliver according to the peer's MTA-STS policy. Collect TLS failures during delivery with TLS-RPT. [Enterprise] Deploy DNSSEC and publish DANE (TLSA records), and verify certificates when delivering to peers that support DANE. Configure mandatory TLS with important business partners. [Advanced] Encrypt highly sensitive mail bodies with S/MIME or similar, so confidentiality does not depend on the encryption of the relay segment."
+    references:
+      "2":
+        title: "MITRE ATT&CK T1557 - Adversary-in-the-Middle (stripping STARTTLS or relaying with a fake certificate)"
 
   netinfra-l2-spoofing-001:
     category: "Spoofing"
@@ -75,6 +86,8 @@ rules:
         title: "IEEE 802.1X - Port-Based Network Access Control (authenticating devices connected to ports)"
       "1":
         title: "IEEE 802.1AE - Media Access Control (MAC) Security (link encryption with MACsec)"
+      "2":
+        title: "MITRE ATT&CK T1557.002 - Adversary-in-the-Middle: ARP Cache Poisoning (impersonation by spoofed ARP replies)"
 
   netinfra-wireless-rogue-ap-001:
     category: "Spoofing"
@@ -84,6 +97,8 @@ rules:
     references:
       "0":
         title: "NIST SP 800-153 - Guidelines for Securing Wireless Local Area Networks (WLANs) (detecting rogue access points and configuring wireless)"
+      "1":
+        title: "MITRE ATT&CK T1557.004 - Adversary-in-the-Middle: Evil Twin (a rogue access point claiming the same SSID)"
 
   netinfra-bastion-privileged-path-concentration-001:
     category: "Elevation of Privilege"
@@ -95,6 +110,8 @@ rules:
         title: "NIST SP 800-207 - Zero Trust Architecture (policy enforcement points and least-privilege grants per request)"
       "1":
         title: "NIST SP 800-53 Rev.5 - Security and Privacy Controls for Information Systems and Organizations (AC-17 Remote Access / AC-6 Least Privilege)"
+      "2":
+        title: "MITRE ATT&CK T1021 - Remote Services (lateral movement over SSH / RDP through the bastion)"
 
   netinfra-ztna-proxy-access-concentration-001:
     category: "Elevation of Privilege"
@@ -106,6 +123,8 @@ rules:
         title: "NIST SP 800-207 - Zero Trust Architecture (policy decision / enforcement points and preventing their bypass)"
       "1":
         title: "Google Cloud - Identity-Aware Proxy: Securing your app with signed headers (verifying user information added by the proxy)"
+      "2":
+        title: "MITRE ATT&CK T1133 - External Remote Services (abuse of the entry point for remote access from outside)"
 
   netinfra-dedicated-line-unencrypted-001:
     category: "Information Disclosure"
@@ -121,6 +140,8 @@ rules:
         title: "IEEE 802.1AE - Media Access Control (MAC) Security (link encryption with MACsec)"
       "3":
         title: "Microsoft Learn - Configure MACsec on ExpressRoute Direct ports (MACsec on private connections)"
+      "4":
+        title: "MITRE ATT&CK T1040 - Network Sniffing (sniffing the unencrypted segment)"
 
   netinfra-private-endpoint-exfiltration-001:
     category: "Information Disclosure"
@@ -134,6 +155,8 @@ rules:
         title: "Microsoft Learn - Azure Private Endpoint DNS configuration (name resolution for private endpoints)"
       "2":
         title: "Google Cloud - VPC Service Controls overview (preventing exfiltration with a data perimeter)"
+      "3":
+        title: "MITRE ATT&CK T1537 - Transfer Data to Cloud Account (exfiltration to a cloud account the attacker owns)"
 
   netinfra-service-mesh-mtls-not-enforced-001:
     category: "Spoofing"
@@ -147,6 +170,8 @@ rules:
         title: "NIST SP 800-207A - A Zero Trust Architecture Model for Access Control in Cloud-Native Applications in Multi-Location Environments (access control based on service identity)"
       "2":
         title: "Istio - Security concepts (peer authentication modes and authorization policies)"
+      "3":
+        title: "MITRE ATT&CK T1040 - Network Sniffing (sniffing the plaintext segment)"
 
   netinfra-service-mesh-ca-key-compromise-001:
     category: "Spoofing"
@@ -160,6 +185,8 @@ rules:
         title: "NIST SP 800-57 Part 1 Rev.5 - Recommendation for Key Management (protection and validity period of CA keys)"
       "2":
         title: "Istio - Security concepts (identity and certificate management)"
+      "3":
+        title: "MITRE ATT&CK T1649 - Steal or Forge Authentication Certificates (forging service certificates with the mesh CA key)"
 
   netinfra-reverse-proxy-request-smuggling-001:
     category: "Tampering"
@@ -169,6 +196,8 @@ rules:
     references:
       "0":
         title: "IETF RFC 9112 - HTTP/1.1 (determining message body length, and request smuggling considerations)"
+      "4":
+        title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application (exploiting parsing discrepancies between the front end and the back end)"
 
   netinfra-reverse-proxy-forwarded-header-trust-001:
     category: "Spoofing"
@@ -178,6 +207,8 @@ rules:
     references:
       "0":
         title: "IETF RFC 7239 - Forwarded HTTP Extension (forwarding headers and handling values from untrusted proxies)"
+      "4":
+        title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application (spoofing forwarded headers that are trusted unconditionally)"
 
   netinfra-reverse-proxy-origin-direct-access-001:
     category: "Spoofing/Tampering"
@@ -214,6 +245,8 @@ rules:
     references:
       "0":
         title: "NIST SP 800-125A Rev.1 - Security Recommendations for Server-based Hypervisor Platforms (administrative rights and separation of the management network)"
+      "3":
+        title: "MITRE ATT&CK T1486 - Data Encrypted for Impact (mass encryption of every virtual machine)"
 
   netinfra-hypervisor-vm-escape-001:
     category: "Elevation of Privilege"
@@ -223,6 +256,8 @@ rules:
     references:
       "0":
         title: "NIST SP 800-125A Rev.1 - Security Recommendations for Server-based Hypervisor Platforms (virtual machine isolation and virtual devices)"
+      "2":
+        title: "MITRE ATT&CK T1611 - Escape to Host (escaping from a virtual machine to the host)"
 
   netinfra-siem-log-tampering-001:
     category: "Repudiation"
@@ -234,6 +269,10 @@ rules:
         title: "NIST SP 800-92 - Guide to Computer Security Log Management (protecting logs and log management privileges)"
       "2":
         title: "CISA and partners - Best Practices for Event Logging and Threat Detection (log storage and integrity)"
+      "3":
+        title: "MITRE ATT&CK T1070 - Indicator Removal (covering tracks by deleting or altering logs)"
+      "4":
+        title: "MITRE ATT&CK T1685 - Disable or Modify Tools (stopping detection rules and notifications)"
 
   netinfra-siem-sensitive-concentration-001:
     category: "Information Disclosure"
@@ -245,6 +284,8 @@ rules:
         title: "NIST SP 800-92 - Guide to Computer Security Log Management (log confidentiality and access control)"
       "1":
         title: "OWASP Logging Cheat Sheet (keeping secrets and personal data out of logs)"
+      "2":
+        title: "MITRE ATT&CK T1552 - Unsecured Credentials (theft of credentials contained in logs and integration settings)"
 
   netinfra-siem-collection-blinding-001:
     category: "Repudiation"
@@ -254,6 +295,8 @@ rules:
     references:
       "0":
         title: "NIST SP 800-92 - Guide to Computer Security Log Management (handling stopped log collection and gaps)"
+      "2":
+        title: "MITRE ATT&CK T1685 - Disable or Modify Tools (stopping or reconfiguring the agents that send logs)"
 
   netinfra-edr-fleet-mass-execution-001:
     category: "Elevation of Privilege"
@@ -273,7 +316,7 @@ rules:
     mitigation: "[Foundation] Limit permissions to change exclusions and detection policy and to stop or uninstall agents to a few administrators, and require phishing-resistant MFA. Enable the agents' tamper protection (requiring a password or approval from the management server to uninstall or stop). [Enterprise] Require approval by another administrator for changes to exclusions and policy, send change records to a log platform outside the management server such as a SIEM, and put adding exclusions, loosening policy, and mass stop instructions into detection rules. Notify about endpoints whose agents have not reported for a set time and endpoints where the agent has stopped. [Advanced] Review exclusions periodically and remove unneeded ones, and compare policy against a baseline configuration to detect deviations. Assuming the management server is compromised, also check the endpoints' protection state through a path other than the management server (operating system events, another detection product)."
     references:
       "0":
-        title: "MITRE ATT&CK T1562.001 - Impair Defenses: Disable or Modify Tools (disabling or altering detection tools)"
+        title: "MITRE ATT&CK T1685 - Disable or Modify Tools (disabling or altering detection tools)"
 
   netinfra-edr-evidence-concentration-001:
     category: "Information Disclosure"
@@ -285,3 +328,5 @@ rules:
         title: "Velociraptor Security Advisories (cross-organization data exposure CVE-2026-78412, and others)"
       "1":
         title: "NIST SP 800-92 - Guide to Computer Security Log Management (confidentiality and access control of collected data)"
+      "2":
+        title: "MITRE ATT&CK T1552 - Unsecured Credentials (theft of credentials contained in the collected evidence)"

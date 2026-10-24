@@ -23,6 +23,9 @@ rules:
     name: "Data exposure through storage public-access misconfiguration"
     description: "When a bucket or container in {{nodeName}} is mistakenly configured with a policy or ACL that allows public access (anonymous read or listing) or a long-lived sharing link, an attacker can find {{nodeName}} through automated internet scanning and list and download its files without authentication (Can). Because these settings do not appear in the diagram, storage that was meant to sit behind the application can still be public. Encryption at rest does not help against public access if the storage service decrypts transparently with its own keys. On the other hand, if blocking of public access is enforced at the account or organization level and sharing links and anonymous access are disabled, files cannot be read from outside even if an individual bucket or folder is misconfigured (Cannot). The blast radius is every file stored in {{nodeName}} (which may include personal data, confidential information, source code, and credentials)."
     mitigation: "[Foundation] Enable blocking of public access at the account or organization level (Amazon S3 Block Public Access, disabling anonymous access in Azure, Google Cloud public access prevention, etc.). Enable encryption at rest, and when storing credentials or personal data, encrypt it with keys you control (customer-managed keys). [Enterprise] Continuously detect changes to public settings, sharing links, and access policies with configuration monitoring (CSPM, etc.), and prohibit public settings outright through organization policy (SCPs, Azure Policy, organization policies). Keep content that must be public in dedicated storage and deliver it only through CDN signed URLs. [Advanced] Restrict storage access to private endpoints and traffic from within the VPC, and automatically isolate storage that can be made public according to data classification."
+    references:
+      "2":
+        title: "MITRE ATT&CK T1530 - Data from Cloud Storage (retrieving data from publicly accessible buckets)"
 
   storage-backup-ransomware-destruction-001:
     category: "Tampering"
@@ -34,6 +37,8 @@ rules:
         title: "CISA - #StopRansomware Guide (offline and immutable backups)"
       "2":
         title: "NIST SP 800-209 - Security Guidelines for Storage Infrastructure (separation of administrative privileges)"
+      "3":
+        title: "MITRE ATT&CK T1490 - Inhibit System Recovery (preventing recovery by deleting or encrypting backups)"
 
   storage-backup-restore-untested-001:
     category: "Denial of Service"
@@ -54,6 +59,8 @@ rules:
     references:
       "0":
         title: "Amazon S3 User Guide - Locking objects with Object Lock (governance mode and compliance mode)"
+      "5":
+        title: "MITRE ATT&CK T1490 - Inhibit System Recovery (preventing recovery by lifting or shortening the retention lock)"
 
   storage-file-share-ransomware-mass-encryption-001:
     category: "Tampering"
@@ -65,6 +72,8 @@ rules:
         title: "CISA - #StopRansomware Guide (encryption of network shares, and offline and immutable backups)"
       "2":
         title: "NIST SP 800-209 - Security Guidelines for Storage Infrastructure (snapshots and data protection)"
+      "3":
+        title: "MITRE ATT&CK T1486 - Data Encrypted for Impact (mass encryption of shared folders)"
 
   storage-file-share-permission-overgrant-001:
     category: "Information Disclosure"
@@ -74,6 +83,8 @@ rules:
     references:
       "0":
         title: "NIST SP 800-209 - Security Guidelines for Storage Infrastructure (storage access control)"
+      "2":
+        title: "MITRE ATT&CK T1039 - Data from Network Shared Drive (collecting data from widely readable shared folders)"
 
   storage-file-share-legacy-protocol-001:
     category: "Spoofing"
@@ -85,3 +96,5 @@ rules:
         title: "Microsoft Learn - SMB security hardening (SMB signing and encryption, disabling guest access, restricting NTLM)"
       "3":
         title: "IETF RFC 7530 - Network File System (NFS) Version 4 Protocol (RPCSEC_GSS and Kerberos authentication)"
+      "4":
+        title: "MITRE ATT&CK T1557.001 - Adversary-in-the-Middle: Name Resolution Poisoning and SMB Relay (luring and relaying NTLM authentication)"

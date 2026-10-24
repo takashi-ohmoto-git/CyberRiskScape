@@ -70,6 +70,10 @@
 #     https://pages.nist.gov/800-63-3/sp800-63a.html
 #   - CISA, "Zero Trust Maturity Model v2"（Identity ピラー・可視性とアナリティクス）。
 #     https://www.cisa.gov/zero-trust-maturity-model
+#   - MITRE ATT&CK (Enterprise) v20.0（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
+#     出典つきで参照し本文は転載しない）:
+#     T1070 "Indicator Removal"。
+#     https://attack.mitre.org/techniques/
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -331,6 +335,8 @@ rules:
         url: "https://www.cisa.gov/zero-trust-maturity-model"
       # DATA_STORE / EXTERNAL_ENTITY の否認は stride-data-store-repudiation-001 /
       # stride-external-entity-repudiation-001 が扱う（ノード型が異なる別 subject）。
+      - title: "MITRE ATT&CK T1070 - Indicator Removal（認証の痕跡の消去）"
+        url: "https://attack.mitre.org/techniques/T1070/"
 
   # ── IDENTITY_PROVIDER(Hybrid): オンプレ ⇄ クラウドの信頼結合（intrinsic）────
   - id: identity-hybrid-idp-onprem-cloud-coupling-001
@@ -441,6 +447,8 @@ rules:
         url: "https://www.cisa.gov/zero-trust-maturity-model"
       # USER ノード視点のアカウント乗っ取り一般は stride-user-spoofing-001、
       # IdP 発行トークンの受け側検証不備は zt-idp-token-validation-gap-001 が扱う。
+      - title: "MITRE ATT&CK T1078.004 - Valid Accounts: Cloud Accounts（乗っ取ったソーシャルアカウントでのログイン）"
+        url: "https://attack.mitre.org/techniques/T1078/004/"
 
   # ── DIRECTORY: 発行チケットのオフライン解析（Kerberoasting / AS-REP）──────
   - id: identity-directory-kerberos-offline-cracking-001

@@ -39,6 +39,8 @@ rules:
     references:
       "1":
         title: "IPA「安全なウェブサイトの作り方」 (IPA, How to Secure Your Web Site: SQL injection, cross-site scripting, mail header injection)"
+      "2":
+        title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application (exploiting injection through form input values)"
 
   webform-automated-abuse-001:
     name: "Bot flooding and abuse of auto-reply mail as a relay"
