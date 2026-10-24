@@ -62,7 +62,7 @@ Use the choke points from attack path analysis (the element where one control co
 2. **Cut the footholds (put nothing in responses)** — Trim response fields to the minimum, return no verbose errors, leave no secrets in artifacts. If a full-text search finds nothing, no next move is born.
 3. **Collapse the chaining nodes (stop lateral movement)** — Replace concentrated secret stores and long-lived static credentials with short-lived, purpose-bound, sender-constrained ones. Even if stepped on, if it reaches no other component, the branch stops at one hop.
 
-Each time you secure one choke point, re-read the route table with "remaining routes only" and check **where the attacker turns next**, one move ahead. An autonomous tool re-explores tirelessly after you close something.
+Each time you secure one choke point, re-read the route table with "Residual routes only" and check **where the attacker turns next**, one move ahead. An autonomous tool re-explores tirelessly after you close something.
 
 ---
 
@@ -74,7 +74,39 @@ For each hop, judge whether the control behind its evidence (the firing threat) 
 
 ---
 
-## 6. Assumptions and limits
+## 6. Confirm with BAS that the cut routes are also closed on the live system
+
+Cutting a route on the diagram does not tell you whether it is closed on the live system. Export the attack path's techniques as a **MITRE ATT&CK Navigator layer (JSON)**
+and hand it, as candidates for "what to emulate", to BAS (breach and attack simulation), CTEM, or SOC tools that can import Navigator layers.
+
+### 6.1 From the UI
+
+Open **Report** in the left sidebar and click **"ATT&CK Navigator layer (JSON)"**. The techniques for the whole diagram are exported.
+Techniques on the top routes of an attack scenario carry "Scenario" metadata, and techniques from threats on a choke point carry "Choke point" metadata.
+
+### 6.2 From the CLI (limit to one scenario)
+
+```bash
+npm ci && npm run build:cli
+node dist-cli/main.js export-attack-navigator model.json --node C2 --out scenario-c2.json
+```
+
+Pass to `--node` the ID of an attacker node that has an OBJECTIVE set. Only threats on the nodes and edges of that scenario's top routes are included.
+Without it, you get the same whole-diagram layer as the UI. Either the UI or the CLI is enough.
+
+### 6.3 Example workflow
+
+1. Put a control on a choke point (§4)
+2. Hand that scenario's layer to BAS, emulate the techniques, and confirm they are detected and blocked
+3. Record the result in "Control implementation status" on the threat panel, and re-check where the attacker turns next with "Residual routes only" in [Attack Path Analysis](attack-paths.md)
+
+**Limits:** Techniques are taken from the ATT&CK IDs written in the threat rules' sources (references). Rules without an ATT&CK ID in their sources are not included.
+AI-specific threats often carry ATLAS IDs, which do not appear in Navigator's Enterprise matrix, so they are listed in the layer description. Coverage is not guaranteed.
+What is exported is a list of candidate techniques to emulate; it contains no attack procedures.
+
+---
+
+## 7. Assumptions and limits
 
 - **The verdict is based on the diagram.** Public assets and routes you did not draw are not evaluated. The quality of the diagram is the quality of the analysis.
 - **It does not tell you whether a vulnerability exists.** A rule shows that "this question applies to this route," not that a live vulnerability is present (no substitute for scanning or penetration testing).

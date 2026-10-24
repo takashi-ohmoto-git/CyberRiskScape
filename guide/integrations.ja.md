@@ -42,6 +42,7 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | **GitHub Actions** | CLI・GitHub Action | 構成図の差分から新しい脅威を検出して PR を止める・実行トリガーで見直しを求める | [AI駆動開発のCIに組み込む](ci-integration.ja.md) |
 | **Kong AI Gateway** | 設定ファイルの取り込み（decK の kong.yaml） | 設定から構成図を自動生成する・設定の変更で出る新しい脅威を PR で見張る | [Kong AI Gateway を脅威モデリングする](kong-ai-gateway.ja.md) |
 | **Postman**（Postman CLI・Newman） | 検証用リクエストの書き出し（Collection v2.1） | 検出した脅威が実装でも成立するかを確かめ、CI で回帰テストにする | [脅威を Postman で確かめる](postman.ja.md) |
+| **MITRE ATT&CK Navigator**（レイヤーを取り込める BAS・CTEM・SOC のツール） | Navigator レイヤーの書き出し（JSON） | 攻撃シナリオの経路で模擬する technique を渡し、図で切った経路が実機でも塞がっているかを確かめる | [攻撃経路のどこを切るか](agentic-attacker-paths.ja.md)（§6） |
 | **Salesforce Agentforce** | 専用のステンシル・脅威ルール・テンプレート | Service agent の構成を評価する・エージェント定義の変更を PR で見張る | [Salesforce Agentforce を脅威モデリングする](agentforce.ja.md) |
 | **Okta** | MCP（エージェント経由で併用）・専用のステンシルと脅威ルール | 図の NHI と実在するサービスアプリを突き合わせる・認証方式で ID の強度を確かめる・使われていない NHI を探す | [NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md) |
 | **SailPoint** | MCP（エージェント経由で併用）・IGA のステンシルと脅威ルール | 過剰な権限の代わりに、申請できる最小のアクセスを探す | [NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md) |
@@ -62,6 +63,8 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | 既存の設定から構成図を起こしたい | Kong AI Gateway・CyberArk（Idira）Conjur・Shodan |
 | 指摘した脅威が本当に塞がっているか確かめたい | Postman |
 | ペネトレーションテストの範囲と重点を決めたい | テスト計画書の書き出し（[ガイド](pentest-plan.ja.md)。業者を問わない） |
+| 図で切った攻撃経路を、BAS で模擬して確かめたい | ATT&CK Navigator レイヤーの書き出し（[ガイド](agentic-attacker-paths.ja.md) §6） |
+| AI ペンテストツールを自社で運用する前に、診断してよい範囲を宣言したい | 交戦規定（RoE）／スコープ宣言の書き出し（[ガイド](agentic-pentest-operation.ja.md) §5） |
 | 製品固有の構成をそのまま評価したい | Salesforce Agentforce |
 | サービスアカウントや AI エージェントなど NHI のリスクを洗い出したい | Okta・SailPoint・CyberArk（Idira） |
 | インターネットに出ている資産を棚卸しして減らしたい | Shodan |

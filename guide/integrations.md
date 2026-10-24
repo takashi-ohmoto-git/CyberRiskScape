@@ -43,6 +43,7 @@ Importing configuration files, exporting verification requests, and diff checks 
 | **GitHub Actions** | CLI, GitHub Action | Detect new threats from diagram diffs and block the PR; ask for reviews with execution triggers | [Integrating with AI-Driven Development CI](ci-integration.md) |
 | **Kong AI Gateway** | Configuration import (decK kong.yaml) | Generate the diagram from configuration; watch for new threats from configuration changes in PRs | [Threat Modeling Kong AI Gateway](kong-ai-gateway.md) |
 | **Postman** (Postman CLI, Newman) | Export of verification requests (Collection v2.1) | Check whether detected threats hold in the implementation and keep the checks as CI regression tests | [Verifying Threats with Postman](postman.md) |
+| **MITRE ATT&CK Navigator** (BAS, CTEM, and SOC tools that import layers) | Export of a Navigator layer (JSON) | Hand over the techniques to emulate on an attack scenario's routes, and confirm the routes cut on the diagram are also closed on the live system | [Where to cut the attack path](agentic-attacker-paths.md) (§6) |
 | **Salesforce Agentforce** | Dedicated stencils, threat rules, and template | Assess a Service agent setup; watch agent-definition changes in PRs | [Threat Modeling Salesforce Agentforce](agentforce.md) |
 | **Okta** | MCP (side by side, through the agent), dedicated stencils and threat rules | Cross-check diagram NHIs against existing service apps; confirm identity strength from the authentication method; find unused NHIs | [Threat Modeling NHIs and Identity Platforms](nhi-identity.md) |
 | **SailPoint** | MCP (side by side, through the agent), IGA stencil and threat rules | Find the least access that can be requested instead of excessive permissions | [Threat Modeling NHIs and Identity Platforms](nhi-identity.md) |
@@ -63,6 +64,8 @@ Importing configuration files, exporting verification requests, and diff checks 
 | Draw the diagram from existing configuration | Kong AI Gateway, CyberArk (Idira) Conjur, Shodan |
 | Confirm that the threats you flagged are actually closed | Postman |
 | Scope and focus a penetration test | Test plan export ([guide](pentest-plan.md); any provider) |
+| Emulate the attack routes cut on the diagram with BAS | ATT&CK Navigator layer export ([guide](agentic-attacker-paths.md) §6) |
+| Declare the permitted scope before running an AI pentesting tool yourself | Rules of engagement (RoE) / scope declaration export ([guide](agentic-pentest-operation.md) §5) |
 | Assess a product-specific setup as is | Salesforce Agentforce |
 | Surface the risks of NHIs such as service accounts and AI agents | Okta, SailPoint, CyberArk (Idira) |
 | Inventory and reduce what is exposed to the internet | Shodan |
