@@ -528,6 +528,9 @@ rules:
   # の対象には入れない（認証の問いは背後の FRONT_END_SERVER 側に出る）。
   # BACKEND_API（2026-10-24 追加）はゲートウェイを置かずに直接公開する構成を表すため、全 9 本の対象に入れる。
   # ゲートウェイ迂回の api-backend-gateway-bypass-001（エッジ）とは問う角度が違うため併存させる。
+  # MCP_SERVER・API_CONTROL_PLANE（2026-10-25 追加）は入力できる項目だけを問うルールに入れる（WAF・DDoS は両方とも対象外、
+  # 管理面リモートアクセスは API_CONTROL_PLANE のみ）。API_CONTROL_PLANE の管理面露出はエッジ視点の
+  # api-control-plane-internet-exposure-001 と同じ canonicalId のため、提示層で 1 枚にまとまる。
   - id: stride-web-global-ip-exposure-001
     canonicalId: web-global-ip-exposure
     framework: STRIDE
@@ -543,6 +546,8 @@ rules:
         - nodeType: GATEWAY
         - nodeType: REVERSE_PROXY
         - nodeType: BACKEND_API
+        - nodeType: MCP_SERVER
+        - nodeType: API_CONTROL_PLANE
       connection:
         required: false
       attackSurface:
@@ -571,6 +576,8 @@ rules:
         - nodeType: GATEWAY
         - nodeType: REVERSE_PROXY
         - nodeType: BACKEND_API
+        - nodeType: MCP_SERVER
+        - nodeType: API_CONTROL_PLANE
       connection:
         required: false
       attackSurface:
@@ -597,6 +604,7 @@ rules:
         - nodeType: GATEWAY
         - nodeType: REVERSE_PROXY
         - nodeType: BACKEND_API
+        - nodeType: API_CONTROL_PLANE
       connection:
         required: false
       attackSurface:
@@ -629,6 +637,8 @@ rules:
         - nodeType: FRONT_END_SERVER
         - nodeType: GATEWAY
         - nodeType: BACKEND_API
+        - nodeType: MCP_SERVER
+        - nodeType: API_CONTROL_PLANE
       connection:
         required: false
       attackSurface:
@@ -659,6 +669,8 @@ rules:
         - nodeType: GATEWAY
         - nodeType: REVERSE_PROXY
         - nodeType: BACKEND_API
+        - nodeType: MCP_SERVER
+        - nodeType: API_CONTROL_PLANE
       connection:
         required: false
       attackSurface:
@@ -745,6 +757,8 @@ rules:
         - nodeType: FRONT_END_SERVER
         - nodeType: GATEWAY
         - nodeType: BACKEND_API
+        - nodeType: MCP_SERVER
+        - nodeType: API_CONTROL_PLANE
       connection:
         required: false
       attackSurface:
@@ -776,6 +790,8 @@ rules:
         - nodeType: GATEWAY
         - nodeType: REVERSE_PROXY
         - nodeType: BACKEND_API
+        - nodeType: MCP_SERVER
+        - nodeType: API_CONTROL_PLANE
       connection:
         required: false
       attackSurface:

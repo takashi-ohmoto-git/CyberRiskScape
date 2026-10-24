@@ -118,8 +118,7 @@ export type ThreatActorType =
  * 攻撃面の構成情報。すべて optional boolean で、未設定は「insecure baseline」
  * （hasGlobalIp=true, hasResponseCache=true, それ以外=false）として扱う。
  *
- * 適用対象：FRONT_END_SERVER / GATEWAY / REVERSE_PROXY ＋ BACKEND_API（応答キャッシュ以外）
- * ＋ AI_GATEWAY（応答キャッシュのみ）（UI 表示はこの 5 種のみ）。
+ * 適用対象は `ATTACK_SURFACE_APPLICABLE`、型ごとの入力項目は `ATTACK_SURFACE_KEYS_BY_TYPE`。
  * 他のノード型では値があっても脅威エンジンは参照しない。
  */
 export interface AttackSurfaceAttribute {
@@ -144,11 +143,50 @@ export interface AttackSurfaceAttribute {
 export type AttackSurfaceKey = keyof AttackSurfaceAttribute;
 
 /**
+ * 攻撃面属性を入力できるコンポーネント型（入力画面・MCP・侵入口探索が共通で使う）。
+ * Web/外部公開ポイント（FRONT_END_SERVER / GATEWAY / REVERSE_PROXY）と、項目を絞った型（下の表）。
+ */
+export const ATTACK_SURFACE_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set([
+  'FRONT_END_SERVER',
+  'GATEWAY',
+  'REVERSE_PROXY',
+  'BACKEND_API',
+  'MCP_SERVER',
+  'API_CONTROL_PLANE',
+  'AI_GATEWAY',
+]);
+
+/** 型ごとに入力できる項目を絞る（未掲載の型は全項目）。入力できない項目は脅威・侵入口の判定にも使わない。 */
+export const ATTACK_SURFACE_KEYS_BY_TYPE: Partial<Record<ComponentTypeId, readonly AttackSurfaceKey[]>> = {
+  AI_GATEWAY: ['hasResponseCache'],
+  // 応答キャッシュは前段（リバースプロキシ・CDN 等）の性質なので除く
+  BACKEND_API: [
+    'hasGlobalIp',
+    'hasSourceIpRestriction',
+    'hasRemoteAccessRestriction',
+    'hasUserAuthentication',
+    'hasAccessLog',
+    'hasWafProtection',
+    'hasDdosProtection',
+  ],
+  // リモート MCP サーバーの公開条件。WAF・DDoS は HTTP の前段の性質なので除く
+  MCP_SERVER: ['hasGlobalIp', 'hasSourceIpRestriction', 'hasUserAuthentication', 'hasAccessLog'],
+  // 管理用 API・管理画面の公開条件
+  API_CONTROL_PLANE: [
+    'hasGlobalIp',
+    'hasSourceIpRestriction',
+    'hasRemoteAccessRestriction',
+    'hasUserAuthentication',
+    'hasAccessLog',
+  ],
+};
+
+/**
  * 運用状況（Posture）属性の列挙値。一次ソース（保存スキーマ・MCP・ルールスキーマはここから作る）。
  * 未設定は脅威エンジンで `'Unknown'`（対策なし扱い）として評価する。
  */
 export const POSTURE_FIELD_VALUES = {
-  /** ログの取得（公開サーバー・API ゲートウェイ・バックエンド API は attackSurface.hasAccessLog を使う） */
+  /** ログの取得（攻撃面属性を持つ型は attackSurface.hasAccessLog を使う） */
   logCollection: ['Collected', 'NotCollected'],
   /** ログの保持期間 */
   logRetention: ['Under90Days', 'Under1Year', 'OneYearOrMore'],
@@ -592,7 +630,7 @@ export interface DiagramNode {
    */
   userTrustAttribute?: UserTrustAttribute;
   /**
-   * 攻撃面属性（FRONT_END_SERVER / GATEWAY / REVERSE_PROXY / BACKEND_API 用、AI_GATEWAY は hasResponseCache のみ）。
+   * 攻撃面属性（対象型は `ATTACK_SURFACE_APPLICABLE`、型ごとの項目は `ATTACK_SURFACE_KEYS_BY_TYPE`）。
    * 未設定は insecure baseline（hasGlobalIp=true, hasResponseCache=true, 他=false）として脅威エンジンが扱う。
    */
   attackSurface?: AttackSurfaceAttribute;

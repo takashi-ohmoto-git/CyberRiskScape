@@ -36,8 +36,8 @@ components:
     icon: { kind: builtin, name: "plug-zap" }
     shape: rounded
     color: "bg-violet-600"
-    description: "Model Context Protocol サーバ。ツール記述子・スキーマ・メタデータをエージェントに提供する。tool poisoning / rug pull の標的になりやすい。"
-    posture: [log, patch]
+    description: "Model Context Protocol サーバ。ツール記述子・スキーマ・メタデータをエージェントに提供する。tool poisoning / rug pull の標的になりやすい。リモート MCP サーバーとして公開しているかは attackSurface 属性で表現する（手元で動かすものは Global IP なしと入力する）。"
+    posture: [logRetention, patch]
 
   - id: MEMORY_STORE
     label: "エージェントメモリ"

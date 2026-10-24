@@ -61,9 +61,9 @@ components:
     icon: { kind: builtin, name: "sliders-horizontal" }
     shape: rounded
     color: "bg-transparent"
-    description: "API ゲートウェイの Admin API・管理コンソール・構成の配布元。ルーティングと認証設定を書き換えられる管理面。"
+    description: "API ゲートウェイの Admin API・管理コンソール・構成の配布元。ルーティングと認証設定を書き換えられる管理面。管理用 API・管理画面の公開条件は attackSurface 属性で表現する。"
     canContain: [CREDENTIAL, LOG, API_SPEC]
-    posture: [log, patch, accountReview]
+    posture: [logRetention, patch, accountReview]
 
   - id: CI_PIPELINE
     label: "CI/CDパイプライン"

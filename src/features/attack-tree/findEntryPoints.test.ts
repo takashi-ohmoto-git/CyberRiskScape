@@ -40,6 +40,24 @@ describe('findEntryPoints', () => {
     expect(ids(r)).not.toContain('closed');
   });
 
+  it('MCP サーバー・API 管理プレーンも候補にし、入力できない項目は弱点に数えない', () => {
+    const r = findEntryPoints([attacker, node('mcp', 'MCP_SERVER'), node('cp', 'API_CONTROL_PLANE')], [], [], [], 'atk');
+    const mcp = r.find((c) => c.nodeId === 'mcp')!;
+    expect(mcp).toMatchObject({ reasons: ['publicSurface'], assumed: true });
+    expect(mcp.weaknesses).toEqual(['noUserAuth', 'noSourceIpRestriction']);
+    const cp = r.find((c) => c.nodeId === 'cp')!;
+    expect(cp.weaknesses).toEqual(['noUserAuth', 'noSourceIpRestriction', 'noRemoteAccessRestriction']);
+    // 入力できる項目をすべて埋めれば仮定の印は消える
+    const [filled] = findEntryPoints(
+      [attacker, node('mcp', 'MCP_SERVER', { attackSurface: { hasGlobalIp: true, hasUserAuthentication: true, hasSourceIpRestriction: true } })],
+      [],
+      [],
+      [],
+      'atk',
+    );
+    expect(filled).toMatchObject({ weaknesses: [], assumed: false });
+  });
+
   it('Global IP なしと明示した公開サーバー型は候補にしない。防御策を入力すれば弱点と仮定の印が消える', () => {
     const r = findEntryPoints(
       [

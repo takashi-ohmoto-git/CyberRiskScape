@@ -24,6 +24,8 @@ import { componentRegistry } from '../component-library/defaultRegistry';
 import {
   AGENCY_APPLICABLE,
   ATTACK_OBJECTIVE_APPLICABLE,
+  ATTACK_SURFACE_APPLICABLE,
+  ATTACK_SURFACE_KEYS_BY_TYPE,
   AUTH_PROVIDER_APPLICABLE,
   LOG_SINK_APPLICABLE,
   CRYPTO_TERMINATIONS,
@@ -349,9 +351,6 @@ const nextId = (prefix: string): string =>
 
 const AUTH_PROVIDER_EXCLUDED_CATEGORIES: ReadonlySet<string> = new Set(['DOCUMENTS', 'ATTACKER']);
 const MANAGED_STATE_APPLICABLE: ReadonlySet<string> = new Set(['PC', 'SMARTPHONE', 'IOT']);
-const ATTACK_SURFACE_APPLICABLE: ReadonlySet<string> = new Set(['FRONT_END_SERVER', 'GATEWAY', 'REVERSE_PROXY', 'BACKEND_API', 'AI_GATEWAY']);
-/** AI_GATEWAY は応答キャッシュ（hasResponseCache）だけ入力できる。 */
-const AI_GATEWAY_SURFACE_KEYS: ReadonlySet<string> = new Set(['hasResponseCache']);
 const USER_TRUST_TO_MANAGED: Record<UserTrustAttribute, ManagedState> = {
   Guest: 'Unmanaged',
   Employee: 'Managed',
@@ -432,14 +431,10 @@ function validateNodeAttrs(work: Work, node: DiagramNode, keys: readonly string[
   if (has('identityProviderKind')) must(IDP_KIND_APPLICABLE.has(node.type), 'identityProviderKind');
   if (has('attackSurface')) {
     must(ATTACK_SURFACE_APPLICABLE.has(node.type), 'attackSurface');
-    if (node.type === 'AI_GATEWAY') {
-      const extra = Object.keys(node.attackSurface ?? {}).filter((k) => !AI_GATEWAY_SURFACE_KEYS.has(k));
-      if (extra.length > 0) {
-        fail(`型 AI_GATEWAY の attackSurface は hasResponseCache のみ設定できます（不可: ${extra.join(', ')}）`);
-      }
-    }
-    if (node.type === 'BACKEND_API' && node.attackSurface?.hasResponseCache !== undefined) {
-      fail('型 BACKEND_API の attackSurface に hasResponseCache は設定できません');
+    const allowed: readonly string[] | undefined = ATTACK_SURFACE_KEYS_BY_TYPE[node.type];
+    const extra = allowed ? Object.keys(node.attackSurface ?? {}).filter((k) => !allowed.includes(k)) : [];
+    if (allowed && extra.length > 0) {
+      fail(`型 ${node.type} の attackSurface は ${allowed.join(', ')} のみ設定できます（不可: ${extra.join(', ')}）`);
     }
   }
   if (has('posture') && node.posture) {

@@ -22,7 +22,7 @@ locale: en
 components:
   MCP_SERVER:
     label: "MCP server"
-    description: "A Model Context Protocol server. Supplies tool descriptors, schemas, and metadata to the agent, which makes it a ready target for tool poisoning and rug pulls."
+    description: "A Model Context Protocol server. Supplies tool descriptors, schemas, and metadata to the agent, which makes it a ready target for tool poisoning and rug pulls. Use the attackSurface attribute to state whether it is published as a remote MCP server (set no global IP for one that runs locally)."
 
   MEMORY_STORE:
     label: "Agent memory"

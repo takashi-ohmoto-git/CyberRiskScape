@@ -73,8 +73,9 @@
 #     発火しうるが、それぞれ「アプリを介さない直接呼び出し」「取得量の制限・検知」という別の問いで、
 #     BOLA と組み合わさって大量漏えいに至る経路の構成要素として別カードにする。
 #   - 管理面のインターネット露出は stride-web-remote-mgmt-exposed-001
-#     （canonicalId: web-remote-management-exposure、FRONT_END_SERVER / GATEWAY の攻撃面属性）と
-#     同じ脅威。API_CONTROL_PLANE は攻撃面属性を持たないため、エッジ視点のルールを同じ canonicalId で置く。
+#     （canonicalId: web-remote-management-exposure、攻撃面属性）と同じ脅威。API_CONTROL_PLANE は 2026-10-25 に
+#     攻撃面属性を持つ型になり stride-web-remote-mgmt-exposed-001 の対象にも入ったが、Internet から線を引いた図でも
+#     出るよう、エッジ視点のルールを同じ canonicalId で残す（提示層で 1 枚にまとまる）。
 #   - 認証材料そのものの静的保管・散在は zt-credential-sprawl-static-secret-001
 #     （canonicalId: credential-sprawl、CREDENTIAL 型）が扱う。本ファイルは「認証材料を集約する
 #     基盤（SECRETS_VAULT）」と「クラウドで共有される開発ツール（API_DEV_WORKSPACE）」「CI」という
@@ -221,7 +222,7 @@ rules:
     references:
       - title: "OWASP API Security Top 10 2023 - API8:2023 Security Misconfiguration"
         url: "https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/"
-      # FRONT_END_SERVER / GATEWAY の管理面露出は stride-web-remote-mgmt-exposed-001 が扱う（同じ canonicalId）。
+      # 攻撃面属性による管理面露出は stride-web-remote-mgmt-exposed-001 が扱う（同じ canonicalId）。
       - title: "MITRE ATT&CK T1110 - Brute Force（管理用 API への認証の総当たり）"
         url: "https://attack.mitre.org/techniques/T1110/"
       - title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application（既定の設定・既知の脆弱性の悪用）"

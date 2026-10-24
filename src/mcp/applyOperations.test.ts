@@ -180,6 +180,12 @@ describe('正常系：ノード', () => {
     ).toThrow(/hasResponseCache/);
   });
 
+  it('add_node：MCP_SERVER は WAF の項目を拒否する（入力できる項目は型ごとに決まる）', () => {
+    expect(() =>
+      apply([{ op: 'add_node', type: 'MCP_SERVER', label: 'MCP', attackSurface: { hasWafProtection: true } }]),
+    ).toThrow(/hasWafProtection/);
+  });
+
   it('update_node：許可リストの属性を更新し、null で消せる', () => {
     const { project } = apply([
       { op: 'update_node', id: 'n-db', set: { label: '更新後', description: '説明' } },

@@ -42,6 +42,8 @@ import type {
 import {
   AGENCY_APPLICABLE,
   ATTACK_OBJECTIVE_APPLICABLE,
+  ATTACK_SURFACE_APPLICABLE,
+  ATTACK_SURFACE_KEYS_BY_TYPE,
   AUTH_PROVIDER_APPLICABLE,
   LOG_SINK_APPLICABLE,
   IDP_KIND_APPLICABLE,
@@ -161,34 +163,6 @@ function getThreatActorTypeOptions(t: TFunc): { val: ThreatActorType; label: str
     { val: 'ScriptKiddies', label: t('panels.node.actorType.scriptKiddies') },
   ];
 }
-
-/**
- * Attack Surface Attribute を表示するコンポーネント型。
- * Web/外部公開ポイント（FRONT_END_SERVER / GATEWAY / REVERSE_PROXY）、
- * BACKEND_API（応答キャッシュ以外）と、AI_GATEWAY（応答キャッシュ hasResponseCache のみ）が対象。
- */
-const ATTACK_SURFACE_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set([
-  'FRONT_END_SERVER',
-  'GATEWAY',
-  'REVERSE_PROXY',
-  'BACKEND_API',
-  'AI_GATEWAY',
-]);
-
-/** 型ごとに入力できる項目を絞る（未掲載の型は全項目）。 */
-const ATTACK_SURFACE_KEYS_BY_TYPE: Partial<Record<ComponentTypeId, readonly AttackSurfaceKey[]>> = {
-  AI_GATEWAY: ['hasResponseCache'],
-  // 応答キャッシュは前段（リバースプロキシ・CDN 等）の性質なので除く
-  BACKEND_API: [
-    'hasGlobalIp',
-    'hasSourceIpRestriction',
-    'hasRemoteAccessRestriction',
-    'hasUserAuthentication',
-    'hasAccessLog',
-    'hasWafProtection',
-    'hasDdosProtection',
-  ],
-};
 
 /**
  * 未設定ノード用のデフォルト値（insecure baseline）。
@@ -896,7 +870,11 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
               })}
             </div>
             <p className="text-xs text-slate-500 mt-3 leading-relaxed">
-              {t(surfaceKeys ? 'panels.node.attackSurfaceNoteCache' : 'panels.node.attackSurfaceNote')}
+              {t(
+                surfaceKeys?.length === 1 && surfaceKeys[0] === 'hasResponseCache'
+                  ? 'panels.node.attackSurfaceNoteCache'
+                  : 'panels.node.attackSurfaceNote',
+              )}
             </p>
           </div>
         )}

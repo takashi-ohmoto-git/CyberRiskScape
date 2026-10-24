@@ -14,7 +14,7 @@ import type { PostureEnumKey } from '../../core/model/types';
 
 /** 一部の型だけを意図して対象にするルール（全型の網羅は検査しない）。 */
 const PARTIAL_TARGET_RULES = new Set([
-  // 公開サーバー・API ゲートウェイ・バックエンド API のアクセスログ（attackSurface.hasAccessLog）の保持期間。他の型は -001 が扱う。
+  // 攻撃面属性を持つ型のアクセスログ（attackSurface.hasAccessLog）の保持期間。他の型は -001 が扱う。
   'posture-log-retention-short-002',
   // SIEM のログの保持期間（logCollection を持たないため -001 の条件が成立しない）。他の型は -001 / -002 が扱う。
   'posture-log-retention-short-003',

@@ -144,7 +144,7 @@ describe('buildInvestigationPlan', () => {
     expect(noLog.nodes.find((n) => n.id === 'C5')!.limitations.map((l) => l.code)).toEqual(['logNotModelable']); // IOT
 
     const unset = handInput();
-    unset.nodes[2] = node('api', 3, 'API_CONTROL_PLANE'); // log グループあり
+    unset.nodes[2] = node('api', 3, 'CI_PIPELINE'); // log グループあり
     expect(
       buildInvestigationPlan(unset, NOW, 'ja')
         .nodes.find((n) => n.id === 'C3')!
@@ -152,7 +152,7 @@ describe('buildInvestigationPlan', () => {
     ).toEqual(['logCollectionUnset', 'logRetentionUnset']);
 
     const bad = handInput();
-    bad.nodes[2] = node('api', 3, 'API_CONTROL_PLANE', { posture: { logCollection: 'NotCollected', logRetention: 'Under90Days' } });
+    bad.nodes[2] = node('api', 3, 'CI_PIPELINE', { posture: { logCollection: 'NotCollected', logRetention: 'Under90Days' } });
     expect(
       buildInvestigationPlan(bad, NOW, 'ja')
         .nodes.find((n) => n.id === 'C3')!

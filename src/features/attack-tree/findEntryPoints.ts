@@ -6,7 +6,13 @@ import type {
   Severity,
   ThreatView,
 } from '../../core/model/types';
-import { ATTACK_OBJECTIVE_APPLICABLE, isSuppressed } from '../../core/model/types';
+import {
+  ATTACK_OBJECTIVE_APPLICABLE,
+  ATTACK_SURFACE_APPLICABLE,
+  ATTACK_SURFACE_KEYS_BY_TYPE,
+  isSuppressed,
+  type AttackSurfaceKey,
+} from '../../core/model/types';
 import { resolveNodeBoundaries } from '../../core/canvas/boundaryCrossing';
 
 /**
@@ -16,13 +22,12 @@ import { resolveNodeBoundaries } from '../../core/canvas/boundaryCrossing';
  */
 export const ENTRY_SEARCH_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set(['AGENTIC_ATTACKER']);
 
-/** 攻撃面属性（Global IP 等）で公開条件を表す型。NodePanel の攻撃面属性の表示対象と同じ（応答キャッシュのみの AI_GATEWAY を除く）。 */
-const PUBLIC_SURFACE_TYPES: ReadonlySet<ComponentTypeId> = new Set([
-  'FRONT_END_SERVER',
-  'GATEWAY',
-  'REVERSE_PROXY',
-  'BACKEND_API',
-]);
+/** 型 type で攻撃面属性の項目 key を入力できるか（入力できない項目は弱点にも仮定にも数えない）。 */
+function acceptsSurfaceKey(type: ComponentTypeId, key: AttackSurfaceKey): boolean {
+  if (!ATTACK_SURFACE_APPLICABLE.has(type)) return false;
+  const keys = ATTACK_SURFACE_KEYS_BY_TYPE[type];
+  return !keys || keys.includes(key);
+}
 
 /** 入口の候補にしない型（攻撃する側・利用者の端末・図の外の主体）。 */
 const NON_ENTRY_TYPES: ReadonlySet<ComponentTypeId> = new Set([
@@ -79,7 +84,7 @@ function receives(edge: DiagramEdge, nodeId: string): boolean {
  *
  * 外から見える資産を探索の起点にする、というエージェント型の攻撃ツールの性質に合わせ、
  * 次のいずれかに当たるトップレベルのノードを候補にする（内包されたデータ資産は親で数える）。
- * - 公開サーバー型（FRONT_END_SERVER / GATEWAY / REVERSE_PROXY / BACKEND_API）で Global IP あり
+ * - 攻撃面属性で Global IP を入力できる型（公開サーバー・バックエンド API・MCP サーバー等）で Global IP あり
  * - インターネット経由のエッジで外から受ける
  * - 宣言されたインターネット境界の中にある（どの境界にも属さない＝未宣言は対象外）
  * - 攻撃者から線が引かれている
@@ -110,18 +115,20 @@ export function findEntryPoints(
     const weaknesses: EntryWeakness[] = [];
     let assumed = false;
 
-    if (PUBLIC_SURFACE_TYPES.has(n.type)) {
+    if (acceptsSurfaceKey(n.type, 'hasGlobalIp')) {
       const surface = n.attackSurface ?? {};
       if (surface.hasGlobalIp !== false) {
         reasons.push('publicSurface');
         if (surface.hasGlobalIp === undefined) assumed = true;
-        const weak: [boolean | undefined, EntryWeakness][] = [
-          [surface.hasUserAuthentication, 'noUserAuth'],
-          [surface.hasSourceIpRestriction, 'noSourceIpRestriction'],
-          [surface.hasRemoteAccessRestriction, 'noRemoteAccessRestriction'],
-          [surface.hasWafProtection, 'noWaf'],
+        const weak: [AttackSurfaceKey, EntryWeakness][] = [
+          ['hasUserAuthentication', 'noUserAuth'],
+          ['hasSourceIpRestriction', 'noSourceIpRestriction'],
+          ['hasRemoteAccessRestriction', 'noRemoteAccessRestriction'],
+          ['hasWafProtection', 'noWaf'],
         ];
-        for (const [value, weakness] of weak) {
+        for (const [key, weakness] of weak) {
+          if (!acceptsSurfaceKey(n.type, key)) continue;
+          const value = surface[key];
           if (value === true) continue;
           weaknesses.push(weakness);
           if (value === undefined) assumed = true;

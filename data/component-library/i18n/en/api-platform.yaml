@@ -16,7 +16,7 @@ components:
 
   API_CONTROL_PLANE:
     label: "API control plane"
-    description: "The gateway's Admin API, management console, and configuration source. A management plane that can rewrite routing and authentication settings."
+    description: "The gateway's Admin API, management console, and configuration source. A management plane that can rewrite routing and authentication settings. Use the attackSurface attribute to state how the management API and console are exposed."
 
   CI_PIPELINE:
     label: "CI/CD pipeline"
