@@ -36,6 +36,17 @@
 
 この 4 つは、攻撃を**速く・多く**するだけでなく、**探索木の広げ方**を変えます。防御側の攻撃経路図は、この探索木の鏡像です。
 
+AI システムへの攻撃手法をまとめた [MITRE ATLAS](https://atlas.mitre.org/)（2026.09 版）は、自律型の攻撃エージェントの振る舞いを technique として定義しています。4 つの性質との対応は次のとおりです。
+
+| 性質 | 対応する ATLAS の technique |
+|---|---|
+| 自律・並列・粘り強い | [AML.T0124 Autonomous Attack Orchestration](https://atlas.mitre.org/techniques/AML.T0124)（複数のエージェントによる攻撃の自律的な統制） |
+| 発見を足がかりに探索木を広げる | [AML.T0117 Autonomous Attack-Path Adaptation](https://atlas.mitre.org/techniques/AML.T0117)（攻撃経路の自律的な組み立てと修正） |
+| 外から見える資産を起点にする | [AML.T0116 Autonomous Reconnaissance](https://atlas.mitre.org/techniques/AML.T0116)（自律的な偵察） |
+| 応答を休まず読み込む | 専用の technique はありません。近いのは [AML.T0126 Automated Collection](https://atlas.mitre.org/techniques/AML.T0126)（自動化された収集） |
+
+上の 3 つ（T0124・T0117・T0116）は、攻撃者カード `zt-agentic-attacker-ai-accelerated-001` の出典に入っています（§3・§6）。
+
 ---
 
 ## 3. 能力を攻撃経路の図の上で追う
@@ -50,7 +61,7 @@
 - **連鎖の枝（発見からの横展開）** — 取得した資格情報・秘密情報が、別のコンポーネントへの次のホップを開くか。秘密情報が一箇所に集約されていれば、そこが踏まれると枝が一気に広がります。
   - `api-secrets-vault-concentration-001`・`nhi-long-lived-secret-001`・`zt-credential-sprawl-static-secret-001`
 
-攻撃者カード `zt-agentic-attacker-ai-accelerated-001` を置くと、この「自律・加速する攻撃者」を前提にした対策の読み替えが出ます。
+攻撃者を 「**AIエージェント攻撃者**」のコンポーネントで置くと、攻撃者カード `zt-agentic-attacker-ai-accelerated-001` が出て、この「自律・加速する攻撃者」を前提にした対策の読み替えが示されます。
 
 ---
 
@@ -102,6 +113,7 @@ node dist-cli/main.js export-attack-navigator model.json --node C2 --out scenari
 
 **限界：** technique は、脅威ルールの出典（references）に書かれた ATT&CK の ID から取り出しています。出典に ATT&CK の ID が無いルールは載りません。
 AI 固有の脅威は ATLAS の ID になることが多く、Navigator の Enterprise 行列には出ないため、レイヤーの説明文に併記しています。網羅性は保証しません。
+§2 の ATLAS の 3 つ（T0124・T0117・T0116）は攻撃者カードに由来するため、図全体のレイヤーの説明文には出ますが、`--node` で絞ったレイヤーには出ません（絞り込みの対象は経路上のノード・エッジの脅威です）。
 書き出すのは模擬する technique の候補で、攻撃の手順は含みません。
 
 ---

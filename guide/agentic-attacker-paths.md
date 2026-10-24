@@ -36,6 +36,17 @@ When an attacker uses this class of tool, the defender designs assuming all four
 
 These four do more than make attacks **faster and more numerous** — they change **how the exploration tree widens**. Your attack path diagram is the mirror image of that tree.
 
+[MITRE ATLAS](https://atlas.mitre.org/) (release 2026.09), the knowledge base of attack techniques against AI systems, defines the behavior of autonomous attack agents as techniques. They map to the four properties as follows.
+
+| Property | Corresponding ATLAS technique |
+|---|---|
+| Autonomous, parallel, persistent | [AML.T0124 Autonomous Attack Orchestration](https://atlas.mitre.org/techniques/AML.T0124) |
+| Widens an exploration tree from each finding | [AML.T0117 Autonomous Attack-Path Adaptation](https://atlas.mitre.org/techniques/AML.T0117) |
+| Starts from externally visible assets | [AML.T0116 Autonomous Reconnaissance](https://atlas.mitre.org/techniques/AML.T0116) |
+| Mines responses tirelessly | No dedicated technique. The closest is [AML.T0126 Automated Collection](https://atlas.mitre.org/techniques/AML.T0126) |
+
+The first three (T0124, T0117, T0116) are cited as sources of the attacker card `zt-agentic-attacker-ai-accelerated-001` (§3, §6).
+
 ---
 
 ## 3. Follow the capabilities on the attack path diagram
@@ -50,7 +61,7 @@ Once [attack path analysis](attack-paths.md) has enumerated routes from the atta
 - **Chained branches (lateral movement from a finding)** — Does a captured credential or secret open the next hop to another component? If secrets are concentrated in one place, stepping on it widens the branches all at once.
   - `api-secrets-vault-concentration-001`, `nhi-long-lived-secret-001`, `zt-credential-sprawl-static-secret-001`
 
-Placing the attacker card `zt-agentic-attacker-ai-accelerated-001` surfaces the control re-readings that assume this "autonomous, accelerating" attacker.
+Placing the attacker as an **"Agentic Attacker"** component brings up the attacker card `zt-agentic-attacker-ai-accelerated-001`, which surfaces the control re-readings that assume this "autonomous, accelerating" attacker.
 
 ---
 
@@ -102,6 +113,7 @@ Without it, you get the same whole-diagram layer as the UI. Either the UI or the
 
 **Limits:** Techniques are taken from the ATT&CK IDs written in the threat rules' sources (references). Rules without an ATT&CK ID in their sources are not included.
 AI-specific threats often carry ATLAS IDs, which do not appear in Navigator's Enterprise matrix, so they are listed in the layer description. Coverage is not guaranteed.
+The three ATLAS techniques in §2 (T0124, T0117, T0116) come from the attacker card, so they appear in the description of the whole-diagram layer but not in a layer narrowed with `--node` (narrowing keeps only the threats on the route's nodes and edges).
 What is exported is a list of candidate techniques to emulate; it contains no attack procedures.
 
 ---
