@@ -22,6 +22,8 @@ rules:
     references:
       "0":
         title: "OWASP Non-Human Identities Top 10 2025 - NHI1:2025 Improper Offboarding"
+      "1":
+        title: "MITRE ATT&CK T1078 - Valid Accounts (abuse of the credentials of abandoned NHIs)"
 
   nhi-overprivileged-001:
     name: "Overprivileged NHI"
@@ -30,6 +32,8 @@ rules:
     references:
       "0":
         title: "OWASP Non-Human Identities Top 10 2025 - NHI5:2025 Overprivileged NHI"
+      "1":
+        title: "MITRE ATT&CK T1078 - Valid Accounts (abuse of the credentials of an over-privileged NHI)"
 
   nhi-long-lived-secret-001:
     name: "Long-lived static secrets on an NHI"
@@ -38,6 +42,8 @@ rules:
     references:
       "0":
         title: "OWASP Non-Human Identities Top 10 2025 - NHI7:2025 Long-Lived Secrets"
+      "1":
+        title: "MITRE ATT&CK T1552.001 - Unsecured Credentials: Credentials In Files (obtaining secrets leaked from code, configuration, or logs)"
 
   nhi-environment-isolation-001:
     name: "Insufficient environment isolation for NHIs (shared between development and production)"
@@ -46,6 +52,8 @@ rules:
     references:
       "0":
         title: "OWASP Non-Human Identities Top 10 2025 - NHI8:2025 Environment Isolation"
+      "1":
+        title: "MITRE ATT&CK T1552.001 - Unsecured Credentials: Credentials In Files (obtaining credentials leaked from development environments)"
 
   nhi-reuse-001:
     name: "NHI reuse (shared across multiple workloads)"
@@ -54,6 +62,8 @@ rules:
     references:
       "0":
         title: "OWASP Non-Human Identities Top 10 2025 - NHI9:2025 NHI Reuse"
+      "1":
+        title: "MITRE ATT&CK T1078 - Valid Accounts (abuse of the credentials of a shared NHI)"
 
   nhi-human-use-001:
     name: "Human use of an NHI"
@@ -62,6 +72,8 @@ rules:
     references:
       "0":
         title: "OWASP Non-Human Identities Top 10 2025 - NHI10:2025 Human Use of NHI"
+      "1":
+        title: "MITRE ATT&CK T1078 - Valid Accounts (bypassing controls with NHI credentials used by people)"
 
   nhi-workload-federation-trust-001:
     name: "Workload identity federation trust conditions are too broad"
@@ -72,6 +84,8 @@ rules:
         title: "OWASP Non-Human Identities Top 10 2025 - NHI4:2025 Insecure Authentication (related mapping)"
       "1":
         title: "NIST SP 800-207 - Zero Trust Architecture (short-lived credentials and per-request verification)"
+      "2":
+        title: "MITRE ATT&CK T1078.004 - Valid Accounts: Cloud Accounts (obtaining cloud credentials by exploiting overly broad trust conditions)"
 
   pam-privileged-concentration-001:
     name: "Concentration of privilege in privileged access management"
@@ -80,6 +94,8 @@ rules:
     references:
       "0":
         title: "NIST SP 800-207 - Zero Trust Architecture (minimizing privilege and continuous verification)"
+      "1":
+        title: "MITRE ATT&CK T1555 - Credentials from Password Stores (checking out or stealing stored privileged credentials)"
 
   pam-bypass-path-001:
     name: "Privileged paths that bypass privileged access management"
@@ -88,6 +104,8 @@ rules:
     references:
       "0":
         title: "NIST SP 800-207 - Zero Trust Architecture (preventing bypass of policy enforcement points)"
+      "1":
+        title: "MITRE ATT&CK T1078.003 - Valid Accounts: Local Accounts (direct sign-in with local administrator or emergency accounts)"
 
   iga-connector-privilege-001:
     name: "Identity governance connector privileges reaching every system"
@@ -96,6 +114,10 @@ rules:
     references:
       "0":
         title: "OWASP Non-Human Identities Top 10 2025 - NHI5:2025 Overprivileged NHI (related mapping)"
+      "1":
+        title: "MITRE ATT&CK T1136 - Create Account (creating accounts in any system)"
+      "2":
+        title: "MITRE ATT&CK T1098 - Account Manipulation (granting privileges to accounts)"
 
   iga-certification-gap-001:
     name: "Rubber-stamp access reviews and NHIs outside governance"
@@ -104,3 +126,5 @@ rules:
     references:
       "0":
         title: "OWASP Non-Human Identities Top 10 2025 - NHI1:2025 Improper Offboarding (related mapping)"
+      "1":
+        title: "MITRE ATT&CK T1078 - Valid Accounts (abuse of unneeded accounts left after reviews)"

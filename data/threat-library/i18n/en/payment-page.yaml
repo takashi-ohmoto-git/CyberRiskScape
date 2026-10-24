@@ -26,6 +26,10 @@ rules:
     references:
       "0":
         title: "PCI DSS v4.0 (Requirement 6.4.3 payment page script management, 11.6.1 payment page tamper detection)"
+      "2":
+        title: "MITRE ATT&CK T1195.002 - Supply Chain Compromise: Compromise Software Supply Chain (compromise of the developer of an extension app or external script)"
+      "3":
+        title: "MITRE ATT&CK T1056.003 - Input Capture: Web Portal Capture (capturing card data on the payment page)"
 
   payment-page-integrity-gap-001:
     name: "No tamper detection or script management on the payment page"
@@ -36,6 +40,8 @@ rules:
         title: "PCI DSS v4.0 (Requirement 6.4.3 payment page script management, 11.6.1 payment page tamper detection)"
       "1":
         title: "クレジット取引セキュリティ対策協議会「クレジットカード・セキュリティガイドライン」 (Japan Credit Transaction Security Council, Credit Card Security Guidelines: card data non-retention and vulnerability measures for e-commerce merchants)"
+      "2":
+        title: "MITRE ATT&CK T1056.003 - Input Capture: Web Portal Capture (capturing input values on a tampered payment page)"
 
   third-party-extension-supply-chain-001:
     name: "Excessive permissions and supply chain compromise of third-party scripts and apps"

@@ -17,6 +17,13 @@
 #      NHI8 Environment Isolation / NHI9 NHI Reuse / NHI10 Human Use of NHI）
 #   - NIST SP 800-207 Zero Trust Architecture（短命の資格情報・継続的な検証）
 #     https://csrc.nist.gov/pubs/sp/800/207/final
+#   - MITRE ATT&CK (Enterprise) v20.0（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
+#     出典つきで参照し本文は転載しない）:
+#     T1078 "Valid Accounts"、T1552.001 "Unsecured Credentials: Credentials In Files"、
+#     T1078.004 "Valid Accounts: Cloud Accounts"、T1555 "Credentials from Password Stores"、
+#     T1078.003 "Valid Accounts: Local Accounts"、T1136 "Create Account"、
+#     T1098 "Account Manipulation"。
+#     https://attack.mitre.org/techniques/
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -68,6 +75,8 @@ rules:
     references:
       - title: "OWASP Non-Human Identities Top 10 2025 - NHI1:2025 Improper Offboarding"
         url: "https://owasp.org/www-project-non-human-identities-top-10/"
+      - title: "MITRE ATT&CK T1078 - Valid Accounts（放置された NHI の資格情報の悪用）"
+        url: "https://attack.mitre.org/techniques/T1078/"
 
   # ── NHI5: 過剰な権限 ───────────────────────────────────────
   - id: nhi-overprivileged-001
@@ -94,6 +103,8 @@ rules:
     references:
       - title: "OWASP Non-Human Identities Top 10 2025 - NHI5:2025 Overprivileged NHI"
         url: "https://owasp.org/www-project-non-human-identities-top-10/"
+      - title: "MITRE ATT&CK T1078 - Valid Accounts（過剰な権限を持つ NHI の資格情報の悪用）"
+        url: "https://attack.mitre.org/techniques/T1078/"
 
   # ── NHI7: 長期の静的シークレット ──────────────────────────────
   - id: nhi-long-lived-secret-001
@@ -125,6 +136,8 @@ rules:
       - title: "OWASP Non-Human Identities Top 10 2025 - NHI7:2025 Long-Lived Secrets"
         url: "https://owasp.org/www-project-non-human-identities-top-10/"
       # 資格情報そのものの保管・散在（CREDENTIAL ノード視点）は credential-sprawl が扱う（別 canonicalId）。
+      - title: "MITRE ATT&CK T1552.001 - Unsecured Credentials: Credentials In Files（コード・設定・ログから漏れたシークレットの取得）"
+        url: "https://attack.mitre.org/techniques/T1552/001/"
 
   # ── NHI8: 環境の分離 ───────────────────────────────────────
   - id: nhi-environment-isolation-001
@@ -152,6 +165,8 @@ rules:
     references:
       - title: "OWASP Non-Human Identities Top 10 2025 - NHI8:2025 Environment Isolation"
         url: "https://owasp.org/www-project-non-human-identities-top-10/"
+      - title: "MITRE ATT&CK T1552.001 - Unsecured Credentials: Credentials In Files（開発環境から漏れた資格情報の取得）"
+        url: "https://attack.mitre.org/techniques/T1552/001/"
 
   # ── NHI9: 使い回し ───────────────────────────────────────
   - id: nhi-reuse-001
@@ -180,6 +195,8 @@ rules:
     references:
       - title: "OWASP Non-Human Identities Top 10 2025 - NHI9:2025 NHI Reuse"
         url: "https://owasp.org/www-project-non-human-identities-top-10/"
+      - title: "MITRE ATT&CK T1078 - Valid Accounts（共用された NHI の資格情報の悪用）"
+        url: "https://attack.mitre.org/techniques/T1078/"
 
   # ── NHI10: 人による NHI の利用 ─────────────────────────────────
   - id: nhi-human-use-001
@@ -209,6 +226,8 @@ rules:
     references:
       - title: "OWASP Non-Human Identities Top 10 2025 - NHI10:2025 Human Use of NHI"
         url: "https://owasp.org/www-project-non-human-identities-top-10/"
+      - title: "MITRE ATT&CK T1078 - Valid Accounts（人が使う NHI の資格情報による統制の迂回）"
+        url: "https://attack.mitre.org/techniques/T1078/"
 
   # ── WORKLOAD_IDENTITY: 連携の信頼設定の過剰な許可 ──────────────────
   - id: nhi-workload-federation-trust-001
@@ -233,6 +252,8 @@ rules:
         url: "https://owasp.org/www-project-non-human-identities-top-10/"
       - title: "NIST SP 800-207 - Zero Trust Architecture（短命の資格情報と、リクエストごとの検証）"
         url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+      - title: "MITRE ATT&CK T1078.004 - Valid Accounts: Cloud Accounts（信頼条件の広さを突いたクラウドの資格情報の取得）"
+        url: "https://attack.mitre.org/techniques/T1078/004/"
 
   # ── PAM: 特権の集約点としてのリスク ──────────────────────────────
   - id: pam-privileged-concentration-001
@@ -256,6 +277,8 @@ rules:
       - title: "NIST SP 800-207 - Zero Trust Architecture（特権の最小化と継続的な検証）"
         url: "https://csrc.nist.gov/pubs/sp/800/207/final"
       # 一般のシークレット管理への権限集中は secrets-vault-concentration が扱う（別 canonicalId）。
+      - title: "MITRE ATT&CK T1555 - Credentials from Password Stores（保管された特権資格情報の払い出し・窃取）"
+        url: "https://attack.mitre.org/techniques/T1555/"
 
   # ── PAM: PAM を経由しない特権経路の残存 ────────────────────────────
   - id: pam-bypass-path-001
@@ -277,6 +300,8 @@ rules:
     references:
       - title: "NIST SP 800-207 - Zero Trust Architecture（ポリシー強制点の迂回の防止）"
         url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+      - title: "MITRE ATT&CK T1078.003 - Valid Accounts: Local Accounts（ローカルの管理者・緊急用アカウントでの直接ログイン）"
+        url: "https://attack.mitre.org/techniques/T1078/003/"
 
   # ── IGA: プロビジョニング用の特権の集中 ───────────────────────────
   - id: iga-connector-privilege-001
@@ -301,6 +326,10 @@ rules:
     references:
       - title: "OWASP Non-Human Identities Top 10 2025 - NHI5:2025 Overprivileged NHI（関連マッピング）"
         url: "https://owasp.org/www-project-non-human-identities-top-10/"
+      - title: "MITRE ATT&CK T1136 - Create Account（任意のシステムへのアカウントの作成）"
+        url: "https://attack.mitre.org/techniques/T1136/"
+      - title: "MITRE ATT&CK T1098 - Account Manipulation（アカウントへの権限の付与）"
+        url: "https://attack.mitre.org/techniques/T1098/"
 
   # ── IGA: 棚卸しの形骸化と NHI の管理対象外 ─────────────────────────
   - id: iga-certification-gap-001
@@ -324,3 +353,5 @@ rules:
     references:
       - title: "OWASP Non-Human Identities Top 10 2025 - NHI1:2025 Improper Offboarding（関連マッピング）"
         url: "https://owasp.org/www-project-non-human-identities-top-10/"
+      - title: "MITRE ATT&CK T1078 - Valid Accounts（棚卸しで残った不要なアカウントの悪用）"
+        url: "https://attack.mitre.org/techniques/T1078/"

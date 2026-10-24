@@ -8,6 +8,11 @@
 #   - クレジット取引セキュリティ対策協議会「クレジットカード・セキュリティガイドライン」。
 #   - OWASP Cheat Sheet Series（Third Party JavaScript Management）。
 #   - MITRE ATT&CK（T1195 Supply Chain Compromise）。
+#   - MITRE ATT&CK (Enterprise) v20.0（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
+#     出典つきで参照し本文は転載しない）:
+#     T1195.002 "Supply Chain Compromise: Compromise Software Supply Chain"、
+#     T1056.003 "Input Capture: Web Portal Capture"。
+#     https://attack.mitre.org/techniques/
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -53,6 +58,10 @@ rules:
         url: "https://www.pcisecuritystandards.org/document_library/"
       - title: "OWASP Cheat Sheet Series - Third Party JavaScript Management Cheat Sheet"
         url: "https://cheatsheetseries.owasp.org/cheatsheets/Third_Party_Javascript_Management_Cheat_Sheet.html"
+      - title: "MITRE ATT&CK T1195.002 - Supply Chain Compromise: Compromise Software Supply Chain（拡張アプリ・外部スクリプトの開発元の侵害）"
+        url: "https://attack.mitre.org/techniques/T1195/002/"
+      - title: "MITRE ATT&CK T1056.003 - Input Capture: Web Portal Capture（決済画面でのカード情報の窃取）"
+        url: "https://attack.mitre.org/techniques/T1056/003/"
 
   # ── 決済ページの改ざん検知・スクリプト管理の欠如（内在）────────────
   - id: payment-page-integrity-gap-001
@@ -77,6 +86,8 @@ rules:
       - title: "PCI DSS v4.0（要件 6.4.3 決済ページのスクリプト管理、11.6.1 決済ページの改ざん検知）"
         url: "https://www.pcisecuritystandards.org/document_library/"
       - title: "クレジット取引セキュリティ対策協議会「クレジットカード・セキュリティガイドライン」（EC 加盟店のカード情報の非保持化と脆弱性対策）"
+      - title: "MITRE ATT&CK T1056.003 - Input Capture: Web Portal Capture（改ざんした決済ページでの入力値の窃取）"
+        url: "https://attack.mitre.org/techniques/T1056/003/"
 
   # ── 外部スクリプト・拡張アプリの過剰権限とサプライチェーン侵害（内在）──
   - id: third-party-extension-supply-chain-001

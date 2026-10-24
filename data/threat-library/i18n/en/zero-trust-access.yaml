@@ -29,6 +29,8 @@ rules:
         title: "NIST SP 800-207 - Zero Trust Architecture (removing implicit trust; per-resource authentication and authorization)"
       "1":
         title: "CISA - Zero Trust Maturity Model v2 (Networks pillar)"
+      "2":
+        title: "MITRE ATT&CK T1133 - External Remote Services (getting inside the perimeter with VPN credentials)"
 
   zt-vpn-broad-network-access-001:
     category: "Elevation of Privilege"
@@ -42,6 +44,10 @@ rules:
         title: "NIST SP 800-207 - Zero Trust Architecture (migrating away from perimeter-based remote access)"
       "1":
         title: "CISA - Zero Trust Maturity Model v2 (Networks: network segmentation)"
+      "2":
+        title: "MITRE ATT&CK T1133 - External Remote Services (connecting with a compromised VPN account)"
+      "3":
+        title: "MITRE ATT&CK T1021 - Remote Services (lateral movement across the broad reach after the VPN connection)"
 
   zt-aitm-session-token-theft-001:
     category: "Spoofing"
@@ -51,6 +57,10 @@ rules:
     references:
       "0":
         title: "NIST SP 800-63B - Digital Identity Guidelines (verifier impersonation resistance)"
+      "2":
+        title: "MITRE ATT&CK T1557 - Adversary-in-the-Middle (relaying authentication through a phishing proxy)"
+      "3":
+        title: "MITRE ATT&CK T1539 - Steal Web Session Cookie (stealing the session cookie after authentication)"
 
   zt-bearer-token-replay-001:
     category: "Spoofing"
@@ -68,6 +78,10 @@ rules:
         title: "NIST SP 800-63C-4 - Digital Identity Guidelines: Federation and Assertions (bearer vs. holder-of-key assertions)"
       "4":
         title: "CISA - Zero Trust Maturity Model v2 (Identity pillar, Authentication: Initial)"
+      "5":
+        title: "MITRE ATT&CK T1528 - Steal Application Access Token (stealing access tokens)"
+      "6":
+        title: "MITRE ATT&CK T1550.001 - Use Alternate Authentication Material: Application Access Token (reusing stolen tokens)"
 
   zt-client-certificate-lifecycle-001:
     category: "Spoofing/Denial of Service"
@@ -85,6 +99,8 @@ rules:
         title: "NIST SP 800-57 Part 1 Rev.5 - Recommendation for Key Management (protection of private keys and key lifetimes)"
       "4":
         title: "CISA - Zero Trust Maturity Model v2 (Identity pillar, Authentication: Advanced)"
+      "5":
+        title: "MITRE ATT&CK T1649 - Steal or Forge Authentication Certificates (stealing client certificates and their private keys)"
 
   zt-shadow-asset-governance-gap-001:
     category: "Shadow IT"
@@ -112,12 +128,17 @@ rules:
     references:
       "1":
         title: "NIST SP 800-207 - Zero Trust Architecture (least privilege; per-session authorization)"
+      "2":
+        title: "MITRE ATT&CK T1078 - Valid Accounts (abuse of legitimate accounts by insiders)"
 
   zt-agentic-attacker-ai-accelerated-001:
     category: "Adversary"
     name: "AI-accelerated attackers defeating friction-only defenses"
     description: "{{nodeName}} represents an attacker who uses AI agents, or an autonomous agent that is itself the attacking party. AI-accelerated attacks drive the per-attempt cost of reconnaissance, phishing-content generation, vulnerability probing, and lateral-movement attempts to near zero, so defenses built around a human attacker, ones that rely on friction, such as rate limiting, complex procedures, or obfuscation, only buy time rather than stop the attack (Can). Attacks run 24/365 in parallel, and per-target customization is automated too. If, instead, controls that make the attack impossible are in place, hardware-bound credentials, cryptographic identity, or a network path that simply does not exist, more attempts cannot break through (Cannot). The blast radius is every path in the model that depends on friction-only defense."
     mitigation: "[Foundation] Inventory your defenses through the lens of Impossible vs Tedious, and plan to replace controls that merely add friction (SMS MFA, non-standard ports, complicated procedures) with structural ones. [Enterprise] Close the primary paths of automated attack (credential theft, lateral movement) structurally with phishing-resistant authentication, short-lived credentials, and micro-segmentation. Automate detection and response to match machine-speed attacks. [Advanced] Neutralize entire attack chains that depend on theft or impersonation through hardware-bound identity and continuous verification."
+    references:
+      "1":
+        title: "MITRE ATT&CK T1588.007 - Obtain Capabilities: Artificial Intelligence (use of AI for the attack)"
 
   zt-credential-sprawl-static-secret-001:
     category: "Information Disclosure"
@@ -129,6 +150,8 @@ rules:
         title: "OWASP Secrets Management Cheat Sheet (centralized management and dynamic secrets)"
       "1":
         title: "NIST SP 800-207 - Zero Trust Architecture (per-session, short-lived credentials)"
+      "2":
+        title: "MITRE ATT&CK T1552.001 - Unsecured Credentials: Credentials In Files (obtaining credentials left in files and configuration)"
 
   zt-idp-signing-key-compromise-001:
     category: "Spoofing"
@@ -149,6 +172,8 @@ rules:
         title: "NIST SP 800-207 - Zero Trust Architecture (availability of the policy decision point and single points of failure)"
       "1":
         title: "CISA - Zero Trust Maturity Model v2 (Identity pillar)"
+      "2":
+        title: "MITRE ATT&CK T1484 - Domain or Tenant Policy Modification (tampering with the IdP's policy settings)"
 
   zt-idp-single-point-of-failure-001:
     category: "Denial of Service"
@@ -160,6 +185,8 @@ rules:
         title: "NIST SP 800-207 - Zero Trust Architecture (availability of the policy decision point)"
       "1":
         title: "CISA - Zero Trust Maturity Model v2 (Identity pillar)"
+      "2":
+        title: "MITRE ATT&CK T1484 - Domain or Tenant Policy Modification (tampering with the IdP's policy settings)"
 
   zt-idp-token-validation-gap-001:
     category: "Spoofing"
@@ -171,6 +198,10 @@ rules:
         title: "NIST SP 800-63B - Digital Identity Guidelines (assertion validation requirements)"
       "1":
         title: "OWASP - Token validation best practices for OAuth 2.0 / JWT (Cheat Sheet Series)"
+      "2":
+        title: "MITRE ATT&CK T1550.001 - Use Alternate Authentication Material: Application Access Token (reusing a token issued for another service)"
+      "3":
+        title: "MITRE ATT&CK T1606 - Forge Web Credentials (forging tokens by exploiting lax signature verification)"
 
   zt-guardrail-probabilistic-bypass-001:
     category: "Defense Evasion"
@@ -222,3 +253,5 @@ rules:
         title: "NIST SP 800-207 - Zero Trust Architecture (access decisions based on subject attributes)"
       "1":
         title: "CISA - Zero Trust Maturity Model v2 (Identity pillar: access lifecycle management)"
+      "2":
+        title: "MITRE ATT&CK T1199 - Trusted Relationship (access through leftover contractor or partner accounts)"

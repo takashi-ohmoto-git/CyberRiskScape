@@ -17,6 +17,11 @@
 #     CISA Known Exploited Vulnerabilities Catalog（パッチの計画的な適用、悪用が確認された脆弱性の優先）。
 #   - 個人情報の保護に関する法律 第 22 条（利用する必要がなくなった個人データの遅滞なき消去の努力義務）と
 #     個人情報保護委員会「個人情報の保護に関する法律についてのガイドライン（通則編）」3-4-1。
+#   - MITRE ATT&CK (Enterprise) v20.0（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
+#     出典つきで参照し本文は転載しない）:
+#     T1210 "Exploitation of Remote Services"、T1068 "Exploitation for Privilege Escalation"、
+#     T1078 "Valid Accounts"。
+#     https://attack.mitre.org/techniques/
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -455,6 +460,10 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/40/r4/final"
       - title: "CISA - Known Exploited Vulnerabilities Catalog（悪用が確認された脆弱性の優先修正）"
         url: "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+      - title: "MITRE ATT&CK T1210 - Exploitation of Remote Services（未適用の脆弱性を突いたリモートからの悪用）"
+        url: "https://attack.mitre.org/techniques/T1210/"
+      - title: "MITRE ATT&CK T1068 - Exploitation for Privilege Escalation（未適用の脆弱性を突いた権限昇格）"
+        url: "https://attack.mitre.org/techniques/T1068/"
 
   # ── アカウント棚卸しの運用がない・不定期 ─────────────────────────
   - id: posture-account-review-missing-001
@@ -505,6 +514,8 @@ rules:
     references:
       - title: "IPA - 不正アクセスによる漏えい等の事案を踏まえ、速やかに実施すべき対策等について（2026-10-09。アカウント棚卸の運用見直し）"
         url: "https://www.ipa.go.jp/security/security-alert/2026/alert20261009.html"
+      - title: "MITRE ATT&CK T1078 - Valid Accounts（棚卸しされず残ったアカウントへのログイン）"
+        url: "https://attack.mitre.org/techniques/T1078/"
 
   # ── 不要・要検討のデータの保有 ──────────────────────────────────
   - id: posture-data-minimization-001

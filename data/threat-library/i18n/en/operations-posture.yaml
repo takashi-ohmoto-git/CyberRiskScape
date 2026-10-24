@@ -81,6 +81,10 @@ rules:
         title: "IPA - Countermeasures to take promptly in light of data breaches caused by unauthorized access (2026-10-09; check for unapplied vulnerability patches)"
       "2":
         title: "CISA - Known Exploited Vulnerabilities Catalog (prioritized remediation of vulnerabilities known to be exploited)"
+      "3":
+        title: "MITRE ATT&CK T1210 - Exploitation of Remote Services (remote exploitation of unpatched vulnerabilities)"
+      "4":
+        title: "MITRE ATT&CK T1068 - Exploitation for Privilege Escalation (privilege escalation through unpatched vulnerabilities)"
 
   posture-account-review-missing-001:
     category: "Spoofing"
@@ -90,6 +94,8 @@ rules:
     references:
       "0":
         title: "IPA - Countermeasures to take promptly in light of data breaches caused by unauthorized access (2026-10-09; review how account reviews are operated)"
+      "1":
+        title: "MITRE ATT&CK T1078 - Valid Accounts (signing in to accounts left unreviewed)"
 
   posture-data-minimization-001:
     category: "Information Disclosure"

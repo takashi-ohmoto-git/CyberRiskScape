@@ -23,6 +23,17 @@
 #     （鍵の保護と有効期間）。エッジの認証方式 Token / Certificate のルール（2026-10-10）。
 #   - OWASP Top 10 for LLM Applications 2025（LLM02 / LLM08 / LLM10）、MITRE CWE-524 / CWE-290 / CWE-639、
 #     NIST AI 600-1（Generative AI Profile）。AI ゲートウェイの応答キャッシュ・利用者識別の項目のルール（2026-10-21）。
+#   - MITRE ATT&CK (Enterprise) v20.0（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
+#     出典つきで参照し本文は転載しない）:
+#     T1133 "External Remote Services"、T1021 "Remote Services"、T1557 "Adversary-in-the-Middle"、
+#     T1539 "Steal Web Session Cookie"、T1528 "Steal Application Access Token"、
+#     T1550.001 "Use Alternate Authentication Material: Application Access Token"、
+#     T1649 "Steal or Forge Authentication Certificates"、T1078 "Valid Accounts"、
+#     T1588.007 "Obtain Capabilities: Artificial Intelligence"、
+#     T1552.001 "Unsecured Credentials: Credentials In Files"、
+#     T1484 "Domain or Tenant Policy Modification"、T1606 "Forge Web Credentials"、
+#     T1199 "Trusted Relationship"。
+#     https://attack.mitre.org/techniques/
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -132,6 +143,8 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/207/final"
       - title: "CISA - Zero Trust Maturity Model v2（Networks ピラー）"
         url: "https://www.cisa.gov/zero-trust-maturity-model"
+      - title: "MITRE ATT&CK T1133 - External Remote Services（VPN の資格情報で境界内に入る）"
+        url: "https://attack.mitre.org/techniques/T1133/"
 
   # ── VPN の広域ネットワークアクセス（境界型リモートアクセス）──────────
   - id: zt-vpn-broad-network-access-001
@@ -169,6 +182,10 @@ rules:
       - title: "CISA - Zero Trust Maturity Model v2（Networks: ネットワークセグメンテーション）"
         url: "https://www.cisa.gov/zero-trust-maturity-model"
       # 閉域網内の無認証（暗黙信頼）は zt-implicit-trust-network-location-001 が扱う（別観点・併発あり得る）。
+      - title: "MITRE ATT&CK T1133 - External Remote Services（侵害した VPN アカウントでの接続）"
+        url: "https://attack.mitre.org/techniques/T1133/"
+      - title: "MITRE ATT&CK T1021 - Remote Services（VPN 接続後の広い到達範囲での横展開）"
+        url: "https://attack.mitre.org/techniques/T1021/"
 
   # ── AiTM フィッシングによるセッショントークン窃取（MFA 迂回）─────────
   - id: zt-aitm-session-token-theft-001
@@ -199,6 +216,10 @@ rules:
         url: "https://pages.nist.gov/800-63-3/sp800-63b.html"
       - title: "CISA - Implementing Phishing-Resistant MFA"
         url: "https://www.cisa.gov/sites/default/files/publications/fact-sheet-implementing-phishing-resistant-mfa-508c.pdf"
+      - title: "MITRE ATT&CK T1557 - Adversary-in-the-Middle（フィッシングプロキシによる認証の中継）"
+        url: "https://attack.mitre.org/techniques/T1557/"
+      - title: "MITRE ATT&CK T1539 - Steal Web Session Cookie（認証後のセッション cookie の窃取）"
+        url: "https://attack.mitre.org/techniques/T1539/"
 
   # ── 送信者制約のないベアラートークンの窃取・再利用（Token × 公衆網）───────────
   # canonicalId bearer-token-replay は AiTM（人のログインの中継）と対策が別のため独立。severity High はユーザー決定（2026-10-10）。
@@ -237,6 +258,10 @@ rules:
         url: "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-63C-4.pdf"
       - title: "CISA - Zero Trust Maturity Model v2（Identity ピラー Authentication: Initial）"
         url: "https://www.cisa.gov/zero-trust-maturity-model"
+      - title: "MITRE ATT&CK T1528 - Steal Application Access Token（アクセストークンの窃取）"
+        url: "https://attack.mitre.org/techniques/T1528/"
+      - title: "MITRE ATT&CK T1550.001 - Use Alternate Authentication Material: Application Access Token（窃取したトークンの再利用）"
+        url: "https://attack.mitre.org/techniques/T1550/001/"
 
   # ── クライアント証明書の秘密鍵の保護・失効確認・期限切れ（Certificate × 公衆網）──
   # canonicalId client-certificate-lifecycle-gap は独立。severity Medium はユーザー決定（2026-10-10。期限切れによる停止・失効確認の欠如を重く見る）。
@@ -274,6 +299,8 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/57/pt1/r5/final"
       - title: "CISA - Zero Trust Maturity Model v2（Identity ピラー Authentication: Advanced）"
         url: "https://www.cisa.gov/zero-trust-maturity-model"
+      - title: "MITRE ATT&CK T1649 - Steal or Forge Authentication Certificates（クライアント証明書と秘密鍵の窃取）"
+        url: "https://attack.mitre.org/techniques/T1649/"
 
   # ── シャドー IT / シャドー AI：統制外資産のガバナンスギャップ（intrinsic）──
   - id: zt-shadow-asset-governance-gap-001
@@ -357,6 +384,8 @@ rules:
         url: "https://www.cisa.gov/resources-tools/resources/insider-threat-mitigation-guide"
       - title: "NIST SP 800-207 - Zero Trust Architecture（最小権限・per-session 認可）"
         url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+      - title: "MITRE ATT&CK T1078 - Valid Accounts（内部者による正規アカウントの悪用）"
+        url: "https://attack.mitre.org/techniques/T1078/"
 
   # ── AI 加速攻撃者：friction-only 防御の無効化（intrinsic）───────────
   - id: zt-agentic-attacker-ai-accelerated-001
@@ -379,6 +408,8 @@ rules:
         ref: "ID.RA-03"
     references:
       - title: "Anthropic - Zero Trust for AI Agents (AI-accelerated attacks / Impossible vs Tedious)"
+      - title: "MITRE ATT&CK T1588.007 - Obtain Capabilities: Artificial Intelligence（攻撃への AI の利用）"
+        url: "https://attack.mitre.org/techniques/T1588/007/"
 
   # ── 認証材料（CREDENTIAL）の静的保管・スプロール（intrinsic）─────────
   - id: zt-credential-sprawl-static-secret-001
@@ -405,6 +436,8 @@ rules:
       - title: "NIST SP 800-207 - Zero Trust Architecture（per-session・短命資格情報）"
         url: "https://csrc.nist.gov/pubs/sp/800/207/final"
       # エッジ上の静的 API キー利用（呼び出し時の弱い認証）は weak-service-auth 群が扱う（別 subject）。
+      - title: "MITRE ATT&CK T1552.001 - Unsecured Credentials: Credentials In Files（ファイル・設定に置かれた認証材料の取得）"
+        url: "https://attack.mitre.org/techniques/T1552/001/"
 
   # ── IdP 署名鍵侵害によるトークン偽造（Golden SAML 型）─────────────
   - id: zt-idp-signing-key-compromise-001
@@ -453,6 +486,8 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/207/final"
       - title: "CISA - Zero Trust Maturity Model v2（Identity ピラー）"
         url: "https://www.cisa.gov/zero-trust-maturity-model"
+      - title: "MITRE ATT&CK T1484 - Domain or Tenant Policy Modification（IdP のポリシー設定の改ざん）"
+        url: "https://attack.mitre.org/techniques/T1484/"
 
   # ── 認証の単独依存（単一発行元に全依存）─────────────────────────
   #   zt-idp-single-point-of-failure-001 と**同じ canonicalId** を共有する。
@@ -487,6 +522,8 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/207/final"
       - title: "CISA - Zero Trust Maturity Model v2（Identity ピラー）"
         url: "https://www.cisa.gov/zero-trust-maturity-model"
+      - title: "MITRE ATT&CK T1484 - Domain or Tenant Policy Modification（IdP のポリシー設定の改ざん）"
+        url: "https://attack.mitre.org/techniques/T1484/"
 
   # ── IdP 発行トークンの受け側（relying party）検証不備 ─────────────
   - id: zt-idp-token-validation-gap-001
@@ -511,6 +548,10 @@ rules:
         url: "https://pages.nist.gov/800-63-3/sp800-63b.html"
       - title: "OWASP - OAuth 2.0 / JWT のトークン検証ベストプラクティス（Cheat Sheet Series）"
         url: "https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html"
+      - title: "MITRE ATT&CK T1550.001 - Use Alternate Authentication Material: Application Access Token（別サービス向けに発行されたトークンの流用）"
+        url: "https://attack.mitre.org/techniques/T1550/001/"
+      - title: "MITRE ATT&CK T1606 - Forge Web Credentials（署名の検証の緩さを突いたトークンの偽造）"
+        url: "https://attack.mitre.org/techniques/T1606/"
 
   # ── GUARDRAIL: ガードレール単体依存（確率的防御の限界）─────────────
   - id: zt-guardrail-probabilistic-bypass-001
@@ -667,3 +708,5 @@ rules:
       - title: "CISA - Zero Trust Maturity Model v2（Identity ピラー: アクセスライフサイクル管理）"
         url: "https://www.cisa.gov/zero-trust-maturity-model"
       # 内部者（正規権限者）の悪用は zt-insider-legitimate-access-abuse-001（INSIDER_THREAT ノード視点）が扱う（別 subject）。
+      - title: "MITRE ATT&CK T1199 - Trusted Relationship（委託先・パートナーの残ったアカウントを経由した侵入）"
+        url: "https://attack.mitre.org/techniques/T1199/"
