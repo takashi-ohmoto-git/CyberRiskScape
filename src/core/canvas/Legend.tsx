@@ -14,7 +14,7 @@ import {
   presentComponentTypes,
   presentEdgeNotations,
 } from '../notation/legend';
-import { CROSSING_AUTH_COLORS, CROSSING_AUTH_LEGEND, ENTRY_PROBE } from '../notation/edgeNotation';
+import { CROSSING_AUTH_COLORS, CROSSING_AUTH_LEGEND, ENTRY_PROBE, ENTRY_TARGET } from '../notation/edgeNotation';
 import { presentCrossingAuths } from './boundaryCrossing';
 import { useLocale, useT } from '../../i18n';
 
@@ -53,7 +53,13 @@ export function Legend() {
   const crossingAuths = presentCrossingAuths(nodes, edges, boundaries);
   const crossingRows = CROSSING_AUTH_LEGEND.filter((row) => crossingAuths.has(row.auth));
   // 侵入候補の線は、Search Attack Graph を表示している間だけ凡例化する。
-  const showEntryProbe = entrySearchAttackerId != null && nodes.some((n) => n.id === entrySearchAttackerId);
+  const entrySearchAttacker =
+    entrySearchAttackerId != null ? nodes.find((n) => n.id === entrySearchAttackerId) : undefined;
+  const showEntryProbe = entrySearchAttacker != null;
+  // 標的の線は、侵入候補を表示中かつ objective が実在するノードを指すときだけ凡例化する。
+  const showEntryTarget =
+    entrySearchAttacker?.attackObjectiveId != null &&
+    nodes.some((n) => n.id === entrySearchAttacker.attackObjectiveId);
 
   // 何も配置されていなければ凡例自体を出さない（空のパネルでキャンバスを汚さない）。
   if (components.length === 0 && edgeNotations.length === 0 && boundaryTypes.length === 0) {
@@ -141,6 +147,20 @@ export function Legend() {
                   {t('canvas.edgeNotation.entryProbe')}
                 </span>
               </div>
+              {showEntryTarget && (
+                <div className="flex items-center gap-2">
+                  {/* 描画と同じ「長めの破線＋二重環の標的マーク」の縮小版。 */}
+                  <svg width="28" height="14" className="shrink-0" aria-hidden>
+                    <line x1="2" y1="7" x2="17" y2="7" stroke={ENTRY_TARGET.stroke} strokeWidth="2" strokeDasharray="5,3" />
+                    <circle cx="22" cy="7" r="4.5" fill="none" stroke={ENTRY_TARGET.stroke} strokeWidth="1.5" />
+                    <circle cx="22" cy="7" r="2.3" fill="none" stroke={ENTRY_TARGET.stroke} strokeWidth="1.5" />
+                    <circle cx="22" cy="7" r="1" fill={ENTRY_TARGET.stroke} />
+                  </svg>
+                  <span className="text-xs truncate" title={t('canvas.edgeNotation.entryTarget')}>
+                    {t('canvas.edgeNotation.entryTarget')}
+                  </span>
+                </div>
+              )}
             </section>
           )}
 

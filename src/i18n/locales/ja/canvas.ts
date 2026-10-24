@@ -25,6 +25,8 @@ export const jaCanvas = {
   'canvas.edgeNotation.encrypted': '暗号化あり（TLS / E2EE）',
   'canvas.edgeNotation.highRisk': '高リスク経路（未認証 × Internet）',
   'canvas.edgeNotation.entryProbe': '侵入候補（AI エージェント攻撃者）',
+  'canvas.edgeNotation.entryTarget': '攻撃目標（標的）',
+  'canvas.edgeNotation.entryTargetMark': '標的',
   'canvas.edgeNotation.crossing': '信頼境界の越境',
   'canvas.edgeNotation.crossingAuthNone': '越境：認証なし',
   'canvas.edgeNotation.crossingAuthPassword': '越境：パスワード認証（ZTMM Traditional）',
