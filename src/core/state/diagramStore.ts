@@ -416,6 +416,8 @@ interface DiagramState {
   linkingFromId: string | null;
   /** 侵入ポイントの分析（Search Attack Graph）を表示中の攻撃者ノード。transient・非永続・履歴対象外。 */
   entrySearchAttackerId: string | null;
+  /** 推奨標的（優先して守る標的と経路）を表示中の攻撃者ノード。transient・非永続・履歴対象外。 */
+  recommendTargetsAttackerId: string | null;
 
   // ---- viewport（ズーム/パン。transient・非永続・履歴対象外） ----
   /** ビューポート変換（倍率・パン）。 */
@@ -525,6 +527,7 @@ interface DiagramState {
   // ---- actions: linking ----
   setLinkingFromId: (id: string | null) => void;
   setEntrySearchAttackerId: (id: string | null) => void;
+  setRecommendTargetsAttackerId: (id: string | null) => void;
 
   // ---- actions: component library ----
   toggleLibrary: (libraryId: string) => void;
@@ -676,6 +679,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   marquee: null,
   linkingFromId: null,
   entrySearchAttackerId: null,
+  recommendTargetsAttackerId: null,
 
   viewport: IDENTITY_VIEWPORT,
   canvasSize: { width: 0, height: 0 },
@@ -998,6 +1002,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       selectedAnnotationId: null,
       linkingFromId: null,
       entrySearchAttackerId: null,
+      recommendTargetsAttackerId: null,
       _commitTag: null,
     }),
 
@@ -1161,6 +1166,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
         selectedAnnotationId: null,
         linkingFromId: null,
         entrySearchAttackerId: null,
+        recommendTargetsAttackerId: null,
         _commitTag: null,
       };
     });
@@ -1250,6 +1256,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
   setLinkingFromId: (id) => set({ linkingFromId: id }),
   setEntrySearchAttackerId: (id) => set({ entrySearchAttackerId: id }),
+  setRecommendTargetsAttackerId: (id) => set({ recommendTargetsAttackerId: id }),
 
   toggleLibrary: (libraryId) =>
     set((s) => {
@@ -1308,6 +1315,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       selectedAnnotationId: null,
       linkingFromId: null,
       entrySearchAttackerId: null,
+      recommendTargetsAttackerId: null,
       viewport: IDENTITY_VIEWPORT,
       // 旧プロジェクトの状態へ Undo で戻れると採番カウンタと矛盾するため履歴をクリア
       past: [],
