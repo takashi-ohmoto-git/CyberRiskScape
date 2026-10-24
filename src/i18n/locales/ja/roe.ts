@@ -27,15 +27,15 @@ export const jaRoe = {
     '**この図に描かれていない対象は、すべてスコープ外です。** 明示的に許可した対象だけを診断してください。',
 
   'roe.zone.internal': '社内',
-  'roe.zone.partner': 'パートナー',
-  'roe.zone.internet': '公衆網',
+  'roe.zone.partner': '取引先',
+  'roe.zone.internet': 'インターネット',
   'roe.zone.undeclared': 'ゾーン未宣言',
 
   'roe.inScope.undeclared': '⚠ 信頼境界に入れていません。自社資産か（第三者でないか）確認してください。',
 
-  'roe.reason.thirdParty': '第三者が所有するサービス',
-  'roe.reason.partnerZone': 'パートナー境界の対象',
-  'roe.reason.internetZone': '公衆網側・外部の対象',
+  'roe.reason.thirdParty': '所有状況が「他社」のサービス',
+  'roe.reason.partnerZone': '取引先（Partner）の信頼境界にある対象',
+  'roe.reason.internetZone': 'インターネット（Internet）の信頼境界にある対象',
 
   'roe.addressHint': 'アドレスの手がかり: {hint}（要確認）',
   'roe.addressNone': 'アドレスの手がかりなし（手動で確認）',

@@ -33,9 +33,9 @@ export const enRoe: Partial<Record<TranslationKey, string>> = {
 
   'roe.inScope.undeclared': '⚠ Not placed in a trust boundary. Confirm it is an owned asset (not a third party).',
 
-  'roe.reason.thirdParty': 'service owned by a third party',
-  'roe.reason.partnerZone': 'target in the partner boundary',
-  'roe.reason.internetZone': 'target on the public network / external',
+  'roe.reason.thirdParty': 'service whose ownership is "Third-party"',
+  'roe.reason.partnerZone': 'target in a Partner trust boundary',
+  'roe.reason.internetZone': 'target in an Internet trust boundary',
 
   'roe.addressHint': 'address hint: {hint} (confirm)',
   'roe.addressNone': 'no address hint (confirm manually)',
