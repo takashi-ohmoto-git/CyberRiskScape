@@ -1,8 +1,8 @@
 # Network & Security Infrastructure コンポーネントライブラリ。
 #
 # PQC 移行支援で「経路上で暗号が変わる箇所（終端・復号・トンネル化）」を描くための
-# ネットワーク機器・セキュリティ製品の 22 型：
-#   NETWORK        : L2_SWITCH / ROUTER / LOAD_BALANCER / REVERSE_PROXY / CDN / VPN_GATEWAY /
+# ネットワーク機器・セキュリティ製品の 23 型：
+#   NETWORK        : L2_SWITCH / ROUTER / LOAD_BALANCER / REVERSE_PROXY / CDN / DNS_ZONE / VPN_GATEWAY /
 #                    WIRELESS_AP / SERVICE_MESH
 #   PROTECT        : FIREWALL / WAF / IDS_IPS / SECURE_WEB_GATEWAY / SASE / EMAIL_GATEWAY /
 #                    ZTNA_PROXY / SIEM / EDR_DFIR_SERVER（ラベルは Security Controls）
@@ -91,6 +91,15 @@ components:
     color: "bg-transparent"
     description: "CDN。利用者からの TLS をエッジで終端し、オリジンへ別の TLS で再接続する。L7 の DDoS 対策もここで表す。クラウドでは Amazon CloudFront / Azure Front Door / Google Cloud CDN・Media CDN 等が該当する。"
     posture: [log, accountReview]
+
+  - id: DNS_ZONE
+    label: "DNS（権威DNS・ゾーン）"
+    category: NETWORK
+    icon: { kind: builtin, name: "book-a" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "DNS（権威 DNS・ゾーン）。自組織のドメインのレコード（A・CNAME・NS・MX 等）を保持し、名前を IP アドレスや外部サービス（クラウドのストレージ・PaaS・CDN・SaaS）のホスト名へ対応づける。Route 53・Azure DNS・Cloud DNS・OCI DNS 等のマネージド DNS やゾーンを持つ DNS サーバーが該当する。利用者の端末が引く再帰リゾルバーではなく、ドメインの持ち主が管理するゾーンを表す。ゾーンが外部の資源を指し続けていないかは「DNS レコードの参照先の棚卸し」で表現する。"
+    posture: [dnsRecordReview]
 
   - id: VPN_GATEWAY
     label: "VPNゲートウェイ"

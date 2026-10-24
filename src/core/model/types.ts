@@ -198,6 +198,8 @@ export const POSTURE_FIELD_VALUES = {
   patchStatus: ['UpToDate', 'Missing'],
   /** アカウント棚卸しの運用 */
   accountReview: ['Periodic', 'Irregular', 'None'],
+  /** DNS レコードの参照先（外部サービス・クラウド資源）の棚卸し */
+  dnsRecordReview: ['Periodic', 'Irregular', 'None'],
   /** データ資産の保有の必要性 */
   dataNecessity: ['Required', 'UnderReview', 'NotRequired'],
   /** データ資産の件数規模 */
@@ -217,6 +219,7 @@ export const POSTURE_GROUPS = [
   'encryptionAtRest',
   'patch',
   'accountReview',
+  'dnsRecordReview',
   'dataAsset',
 ] as const;
 export type PostureGroup = (typeof POSTURE_GROUPS)[number];
@@ -228,6 +231,7 @@ export const POSTURE_GROUP_FIELDS: Readonly<Record<PostureGroup, readonly Postur
   encryptionAtRest: ['encryptionAtRest'],
   patch: ['patchStatus'],
   accountReview: ['accountReview'],
+  dnsRecordReview: ['dnsRecordReview'],
   dataAsset: ['dataNecessity', 'recordVolume'],
 };
 
@@ -239,6 +243,7 @@ export interface NodePosture {
   encryptionAtRest?: (typeof POSTURE_FIELD_VALUES.encryptionAtRest)[number];
   patchStatus?: (typeof POSTURE_FIELD_VALUES.patchStatus)[number];
   accountReview?: (typeof POSTURE_FIELD_VALUES.accountReview)[number];
+  dnsRecordReview?: (typeof POSTURE_FIELD_VALUES.dnsRecordReview)[number];
   dataNecessity?: (typeof POSTURE_FIELD_VALUES.dataNecessity)[number];
   recordVolume?: (typeof POSTURE_FIELD_VALUES.recordVolume)[number];
   /** 最終点検日（YYYY-MM-DD）。記録用で脅威の判定には使わない。全型で入力可。 */

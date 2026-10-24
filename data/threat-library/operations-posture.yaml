@@ -1,5 +1,5 @@
 # 運用状況（ノードの posture 属性）にもとづく脅威。ログの取得と保持期間、保管時の暗号化、
-# 既知の脆弱性に対するパッチの適用、アカウントの棚卸し、データ資産の保有の必要性を扱う。
+# 既知の脆弱性に対するパッチの適用、アカウントの棚卸し、DNS レコードの参照先の棚卸し、データ資産の保有の必要性を扱う。
 # いずれも構成図の形ではなく「その構成要素をどう運用しているか」の状態で決まる脅威で、
 # 利用者がノードの「運用状況」に入力した値（未入力は対策なしとして扱う）で発火する。
 #
@@ -20,8 +20,11 @@
 #   - MITRE ATT&CK (Enterprise) v20.0（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
 #     出典つきで参照し本文は転載しない）:
 #     T1210 "Exploitation of Remote Services"、T1068 "Exploitation for Privilege Escalation"、
-#     T1078 "Valid Accounts"。
+#     T1078 "Valid Accounts"、T1584.001 "Compromise Infrastructure: Domains"。
 #     https://attack.mitre.org/techniques/
+#   - OWASP Web Security Testing Guide "Test for Subdomain Takeover"（WSTG-CONF-10）と
+#     NIST SP 800-81 Rev.3 "Secure Domain Name System (DNS) Deployment Guide"（2026-10-25 追加。DNS レコードの参照先の
+#     棚卸しと、放置されたレコードを使った乗っ取り）。
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -62,6 +65,8 @@
 #   - アカウント棚卸しの欠如 ↔ iga-certification-gap-001（iga-certification-gap）は棚卸しの「形骸化」で、
 #     棚卸しの「欠如・不定期」とは別。SERVICE_ACCOUNT は nhi-improper-offboarding-001（所有者不在・不要な
 #     NHI の残存）が同じ問いを常に出すため対象から外した（同じノードに同義のカードを 2 枚出さない）。
+#   - DNS レコードの参照先の棚卸しの欠如（subdomain-takeover）：既存に同じ問いのルールは無い（2026-10-25 時点）。
+#     DNS_ZONE だけが対象で、dnsRecordReview グループは DNS_ZONE だけが宣言する。
 #   - 不要なデータの保有 ↔ voice-biometric-recording-exposure-001（通話録音の漏えい・目的外利用）は
 #     保有の必要性を見ないため併存。
 #
@@ -517,6 +522,33 @@ rules:
         url: "https://www.ipa.go.jp/security/security-alert/2026/alert20261009.html"
       - title: "MITRE ATT&CK T1078 - Valid Accounts（棚卸しされず残ったアカウントへのログイン）"
         url: "https://attack.mitre.org/techniques/T1078/"
+
+  # ── DNS レコードの参照先の棚卸しがない・不定期 ───────────────────
+  - id: posture-dns-dangling-record-001
+    canonicalId: subdomain-takeover
+    framework: STRIDE
+    category: "Spoofing"
+    name: "DNS レコードの参照先の棚卸しがない・不定期（廃止した外部資源を指すレコードが残り、サブドメインを乗っ取られる）"
+    severity: High
+    description: "{{nodeName}} のレコード（CNAME・NS・A 等）が指す先を定期的に棚卸ししていない場合、廃止したクラウドのストレージ・PaaS のアプリ・CDN の設定・SaaS のテナントを指すレコードが、削除されないまま残る（Can）。攻撃者は同じ名前の資源を同じサービス上に新しく作って、そのサブドメインの参照先を自分のものにできる。乗っ取られたサブドメインは正規のドメインとして振る舞うため、攻撃者はそこからフィッシングやマルウェアの配布を行い、親ドメインを範囲とする Cookie を読み取り、サブドメインを許可リストに入れている CSP・CORS・OAuth のリダイレクト先の制限を通り抜け、MX などが残っていればそのドメイン宛てのメールも受け取れる。NS が指す先を乗っ取られると、ゾーン全体の応答を支配される。一方、{{nodeName}} のレコードと実在する資源を定期的に突き合わせ、資源の廃止と連動してレコードを削除していれば、攻撃者が横取りできる参照先は残らない（Cannot）。blast radius は乗っ取られたサブドメインで動く内容と、親ドメインを信頼するすべての仕組み（Cookie・許可リスト・メール）。"
+    mitigation: "[Foundation] レコードの一覧を出し、指す先（外部サービスのホスト名・IP）が今も自組織の管理下で存在するかを確かめる。クラウド資源を廃止する手順に DNS レコードの削除を先に行う順序で組み込み、少なくとも四半期に 1 回棚卸しする。 [Enterprise] DNS のゾーンの内容と、各クラウドの資源の一覧をコードで突き合わせて、参照先のない CNAME・NS を自動で検出する。ゾーンの変更を IaC に寄せ、レコードの追加・削除をレビューの対象にする。親ドメインを範囲とする Cookie を避け、サブドメインごとに分ける。 [Advanced] 提供者が持つ、ドメインの所有確認を済ませないと資源を作れない機能・再取得を防ぐ機能（ドメイン検証済みの紐づけ等）を使う。外部から見えるサブドメインを継続的に監視する ASM ツールで、参照先の乗っ取りやすさを常時確認する。"
+    appliesTo:
+      kind: node
+      nodeType: DNS_ZONE
+      connection:
+        required: false
+      posture:
+        dnsRecordReview: [None, Irregular, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "ID.AM-08"
+    references:
+      - title: "OWASP Web Security Testing Guide - Test for Subdomain Takeover（WSTG-CONF-10）"
+        url: "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/10-Test_for_Subdomain_Takeover"
+      - title: "NIST SP 800-81 Rev.3 - Secure Domain Name System (DNS) Deployment Guide（DNS の運用とレコードの管理）"
+        url: "https://csrc.nist.gov/pubs/sp/800/81/r3/final"
+      - title: "MITRE ATT&CK T1584.001 - Compromise Infrastructure: Domains（放置されたレコードを使ったサブドメインの乗っ取り）"
+        url: "https://attack.mitre.org/techniques/T1584/001/"
 
   # ── 不要・要検討のデータの保有 ──────────────────────────────────
   - id: posture-data-minimization-001

@@ -97,6 +97,19 @@ rules:
       "1":
         title: "MITRE ATT&CK T1078 - Valid Accounts (signing in to accounts left unreviewed)"
 
+  posture-dns-dangling-record-001:
+    category: "Spoofing"
+    name: "No or irregular review of DNS record targets (records pointing at decommissioned external resources remain, allowing subdomain takeover)"
+    description: "If the targets of the records (CNAME, NS, A, etc.) of {{nodeName}} are not reviewed regularly, records that point to decommissioned cloud storage, PaaS apps, CDN configurations, or SaaS tenants remain without being deleted (Can). An attacker can create a new resource with the same name on the same service and take over the target of that subdomain. A taken-over subdomain behaves as part of the legitimate domain, so the attacker can use it for phishing and malware delivery, read cookies scoped to the parent domain, pass CSP, CORS, and OAuth redirect restrictions that allowlist the subdomain, and receive email addressed to that domain if MX records remain. If an NS target is taken over, the responses for the whole zone come under the attacker's control. On the other hand, if the records of {{nodeName}} are regularly matched against the resources that actually exist and records are deleted in step with decommissioning, no target remains for an attacker to claim (Cannot). The blast radius is whatever runs on the taken-over subdomain and every mechanism that trusts the parent domain (cookies, allowlists, email)."
+    mitigation: "[Foundation] List the records and check that each target (external service hostname or IP) still exists and is under your control. Build DNS record deletion into the decommissioning procedure for cloud resources, with the record removed first, and review at least quarterly. [Enterprise] Match the contents of the DNS zone against the resource inventory of each cloud as code, and detect CNAME and NS records with no target automatically. Move zone changes into IaC and put record additions and deletions under review. Avoid cookies scoped to the parent domain and separate them per subdomain. [Advanced] Use the provider features that require domain ownership verification before a resource can be created, or that prevent re-claiming (domain-verified bindings, etc.). Use an ASM tool that continuously watches externally visible subdomains to keep checking whether their targets can be taken over."
+    references:
+      "0":
+        title: "OWASP Web Security Testing Guide - Test for Subdomain Takeover (WSTG-CONF-10)"
+      "1":
+        title: "NIST SP 800-81 Rev.3 - Secure Domain Name System (DNS) Deployment Guide (DNS operation and record management)"
+      "2":
+        title: "MITRE ATT&CK T1584.001 - Compromise Infrastructure: Domains (subdomain takeover via dangling records)"
+
   posture-data-minimization-001:
     category: "Information Disclosure"
     name: "Unneeded or unreviewed data is kept (making the damage of a leak unnecessarily large)"

@@ -49,6 +49,8 @@ behaviors:
     note: "Terminates the user's TLS, authenticates and authorizes, then relays to the internal app over a separate connection. Confirm encryption on the app-side leg."
   PRIVATE_ENDPOINT:
     note: "A private entrance to a cloud service; passes encryption through. The destination service is what terminates TLS."
+  DNS_ZONE:
+    note: "Only returns name-resolution answers and does not terminate the encryption of traffic. If it accepts queries over DoT / DoH, check the encryption at that listener separately."
   SERVICE_MESH:
     note: "Sidecars (or node proxies) terminate and re-establish service-to-service mTLS. Check whether the app-to-sidecar leg is plaintext."
   GATEWAY:

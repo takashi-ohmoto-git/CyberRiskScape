@@ -136,6 +136,7 @@ export const NodePostureSchema = z.object({
   encryptionAtRest: z.enum(POSTURE_FIELD_VALUES.encryptionAtRest).optional(),
   patchStatus: z.enum(POSTURE_FIELD_VALUES.patchStatus).optional(),
   accountReview: z.enum(POSTURE_FIELD_VALUES.accountReview).optional(),
+  dnsRecordReview: z.enum(POSTURE_FIELD_VALUES.dnsRecordReview).optional(),
   dataNecessity: z.enum(POSTURE_FIELD_VALUES.dataNecessity).optional(),
   recordVolume: z.enum(POSTURE_FIELD_VALUES.recordVolume).optional(),
   lastReviewedAt: PostureDateSchema.optional(),
@@ -163,6 +164,7 @@ export const PostureMatchSchema = z
     encryptionAtRest: postureValues(POSTURE_FIELD_VALUES.encryptionAtRest),
     patchStatus: postureValues(POSTURE_FIELD_VALUES.patchStatus),
     accountReview: postureValues(POSTURE_FIELD_VALUES.accountReview),
+    dnsRecordReview: postureValues(POSTURE_FIELD_VALUES.dnsRecordReview),
     dataNecessity: postureValues(POSTURE_FIELD_VALUES.dataNecessity),
     recordVolume: postureValues(POSTURE_FIELD_VALUES.recordVolume),
   })

@@ -2,6 +2,7 @@ import {
   Activity,
   AppWindow,
   AudioLines,
+  BookA,
   Bot,
   Box,
   Building2,
@@ -260,6 +261,7 @@ const BUILTIN_ICONS: Record<string, LucideIcon> = {
   printer: Printer,
   'text-search': TextSearch,
   'shield-alert': ShieldAlert,
+  'book-a': BookA,
 };
 
 const FALLBACK_ICON: LucideIcon = HelpCircle;

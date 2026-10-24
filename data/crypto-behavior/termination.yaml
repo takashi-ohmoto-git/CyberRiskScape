@@ -94,6 +94,10 @@ behaviors:
     default: passthrough
     alternatives: []
     note: "クラウドサービスへの閉域の入口で、暗号は透過する。TLS を終端するのは接続先のサービス側。"
+  - componentType: DNS_ZONE
+    default: passthrough
+    alternatives: []
+    note: "名前解決の応答を返すだけで、通信の暗号は終端しない。DoT / DoH で問い合わせを受ける場合の暗号は、受け口の実装で別に確認する。"
   - componentType: SERVICE_MESH
     default: terminate
     alternatives: []

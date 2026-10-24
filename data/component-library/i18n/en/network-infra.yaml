@@ -30,6 +30,10 @@ components:
     label: "CDN"
     description: "A CDN. Terminates the user's TLS at the edge and reconnects to the origin over a separate TLS session. Also represents L7 DDoS protection. In the cloud this includes Amazon CloudFront, Azure Front Door, and Google Cloud CDN and Media CDN."
 
+  DNS_ZONE:
+    label: "DNS (authoritative DNS / zone)"
+    description: "DNS (authoritative DNS / zone). Holds the records (A, CNAME, NS, MX, etc.) of your own domain and maps names to IP addresses or to hostnames of external services (cloud storage, PaaS, CDN, SaaS). Covers managed DNS such as Route 53, Azure DNS, Cloud DNS, and OCI DNS, and DNS servers that host the zone. It represents the zone the domain owner manages, not the recursive resolver that end-user devices query. Whether the zone still points at external resources that no longer exist is stated with the 'DNS record target review' posture."
+
   VPN_GATEWAY:
     label: "VPN gateway"
     description: "A VPN gateway. Terminates IPsec / SSL-VPN tunnels without changing the encryption of traffic inside the tunnel (reverse-proxy-style SSL-VPN does terminate it). In the cloud this includes AWS Site-to-Site VPN and Client VPN, Azure VPN Gateway, Google Cloud VPN, and OCI Site-to-Site VPN."

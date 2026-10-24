@@ -70,6 +70,7 @@ const FIELD_LABEL_KEYS: Record<string, TranslationKey> = {
   encryptionAtRest: 'panels.posture.field.encryptionAtRest',
   patchStatus: 'panels.posture.field.patchStatus',
   accountReview: 'panels.posture.field.accountReview',
+  dnsRecordReview: 'panels.posture.field.dnsRecordReview',
   dataNecessity: 'panels.posture.field.dataNecessity',
   recordVolume: 'panels.posture.field.recordVolume',
 };
