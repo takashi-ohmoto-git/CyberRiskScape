@@ -33,8 +33,11 @@ import { buildHopEvidence, edgeElementKey, nodeElementKey, NEUTRAL_EVIDENCE } fr
  * または ATT&CK/ATLAS 以外を参照している場合は拾えない。カバレッジの網羅は保証しない。
  */
 
-/** ATT&CK Enterprise technique ID（例: T1078 / T1078.004）。 */
-const ATTACK_RE = /\bT\d{4}(?:\.\d{3})?\b/g;
+/**
+ * ATT&CK Enterprise technique ID（例: T1078 / T1078.004）。URL ではサブ technique が
+ * `T1078/004` と書かれるため `/` も受け、`.` に正規化する（親の T1078 と誤認しないため）。
+ */
+const ATTACK_RE = /\bT\d{4}(?:[./]\d{3})?\b/g;
 /** ATLAS technique ID（例: AML.T0051 / AML.T0052.001）。 */
 const ATLAS_RE = /\bAML\.T\d{4}(?:\.\d{3})?\b/g;
 
@@ -210,7 +213,7 @@ export function buildNavigatorLayer(
     for (const id of extract(ATLAS_RE, text)) atlas.add(id);
     // ATLAS を先に取り除く（AML.T0051 の "T0051" を ATT&CK と誤認しないため）
     const attackText = text.replace(ATLAS_RE, ' ');
-    for (const id of extract(ATTACK_RE, attackText)) {
+    for (const id of new Set(extract(ATTACK_RE, attackText).map((x) => x.replace('/', '.')))) {
       const cur = attack.get(id) ?? { sev, names: new Set(), scenarios: new Set(), chokes: new Set() };
       if (SEV_RANK[sev] > SEV_RANK[cur.sev]) cur.sev = sev;
       cur.names.add(name);

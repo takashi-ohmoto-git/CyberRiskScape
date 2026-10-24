@@ -68,6 +68,22 @@ describe('buildNavigatorLayer', () => {
     expect(tech?.comment).toContain('high one');
   });
 
+  it('URL のサブ technique 表記（T1505/003）を親の T1505 と誤認しない', () => {
+    const layer = buildNavigatorLayer(
+      base([
+        threat({
+          references: [
+            { title: 'MITRE ATT&CK T1505.003 Server Software Component: Web Shell', url: 'https://attack.mitre.org/techniques/T1505/003/' },
+            { title: 'ATT&CK のページ', url: 'https://attack.mitre.org/techniques/T1078/004/' },
+          ],
+        }),
+      ]),
+      NOW,
+      'ja',
+    );
+    expect(layer.techniques.map((x) => x.techniqueID).sort()).toEqual(['T1078.004', 'T1505.003']);
+  });
+
   it('抑制した脅威と references 無しは拾わない', () => {
     const layer = buildNavigatorLayer(
       base([
