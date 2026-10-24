@@ -61,7 +61,7 @@ AI システムへの攻撃手法をまとめた [MITRE ATLAS](https://atlas.mit
 - **連鎖の枝（発見からの横展開）** — 取得した資格情報・秘密情報が、別のコンポーネントへの次のホップを開くか。秘密情報が一箇所に集約されていれば、そこが踏まれると枝が一気に広がります。
   - `api-secrets-vault-concentration-001`・`nhi-long-lived-secret-001`・`zt-credential-sprawl-static-secret-001`
 
-攻撃者を 「**AIエージェント攻撃者**」のコンポーネントで置くと、攻撃者カード `zt-agentic-attacker-ai-accelerated-001` が出て、この「自律・加速する攻撃者」を前提にした対策の読み替えが示されます。
+攻撃者を「**AIエージェント攻撃者**」のコンポーネントで置くと、攻撃者カード `zt-agentic-attacker-ai-accelerated-001` が出て、この「自律・加速する攻撃者」を前提にした対策の読み替えが示されます。
 
 ---
 
