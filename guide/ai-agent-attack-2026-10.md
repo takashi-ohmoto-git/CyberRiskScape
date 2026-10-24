@@ -290,6 +290,11 @@ General AI agent threats, such as prompt injection, also fire on the added `AI a
 **To record the report's recommendation (isolate pentesting tools from production and put no production credentials on them) on the diagram:** draw the tool in a trust boundary separate from production (a test environment), and draw no lines to the production DB, SIEM, or management interfaces.
 **Whether production credentials are actually absent cannot be known from the diagram.** Check it through the runtime configuration and secret management.
 
+Defending the platform itself when you run this class of tool legitimately — treating the loss of concentrated findings, traffic recordings, and keys as the worst case — is covered in detail in
+[Running an Agentic Penetration-Testing Tool Yourself](agentic-pentest-operation.md).
+Conversely, for where to cut the attack path assuming an attacker **abuses** this class of tool, see
+[Deciding Where to Cut the Attack Path When an Attacker Abuses an Agentic Penetration-Testing Tool](agentic-attacker-paths.md).
+
 ---
 
 ## 8. Limits (what cannot be confirmed)
