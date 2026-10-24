@@ -150,6 +150,8 @@ const jaCore = {
   'attackTree.legend.partial': '一部対策',
   'attackTree.legend.noEvidence': '既知の脅威なし',
   'attackTree.residualToggle': '残存経路のみ（対策済ホップを遮断）',
+  'attackTree.includeEntries': '侵入候補（{count} 件）を経路に含める — 攻撃者からの線を描かなくても、外から見える入口を起点に経路を出します',
+  'attackTree.legend.entryEdge': '侵入候補（仮想の線）',
   'attackTree.noPath.title': '攻撃者と標的を結ぶ経路が見つかりません。',
   'attackTree.noPath.body':
     '攻撃経路分析はキャンバス上のエッジ（接続線）を辿って構築されます。攻撃者の侵入点となるコンポーネントへエッジを作成してください。',
@@ -170,6 +172,7 @@ const jaCore = {
   'attackTree.detail.travelDirection': '最脆弱経路上の通過方向: {from} → {to}',
   'attackTree.detail.noThreats': 'この要素で検出された脅威はありません',
   'attackTree.detail.chosenChannel': '採用チャネル',
+  'attackTree.detail.entryEdge': '侵入候補（仮想の線・保存されません）',
   'attackTree.detail.close': '選択解除',
   'attackTree.detail.formula':
     '難易度 = 4 − max(リスク評価の Exploitability)。脅威あり・リスク評価未評価は severity 転用の暫定難易度（Critical/High→1、Medium→2、Low→3）。脅威なしは中立 2。一部対策 +1 / 対策済 +8（残存経路モードでは遮断）。',

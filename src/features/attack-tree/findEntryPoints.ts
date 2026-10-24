@@ -161,3 +161,28 @@ export function findEntryPoints(
   );
   return candidates.map((c, i) => ({ ...c, rank: i + 1 }));
 }
+
+/** 侵入候補の仮想の線の id 接頭辞。図のエッジ id とは衝突しない。 */
+const ENTRY_EDGE_PREFIX = 'entry:';
+
+export function isEntryEdgeId(edgeId: string): boolean {
+  return edgeId.startsWith(ENTRY_EDGE_PREFIX);
+}
+
+/**
+ * 侵入候補を、攻撃者 → 入口の仮想の線（攻撃経路分析の入力用）にする。保存はしない。
+ * 攻撃者から線が引かれている入口は、図の線をそのまま使うので作らない。
+ * 線そのものに脅威は無いため、経路のコストでは中立の重みになり、入口のノードの脅威で重みが付く。
+ */
+export function buildEntryEdges(attackerId: string, candidates: readonly EntryCandidate[]): DiagramEdge[] {
+  return candidates
+    .filter((c) => !c.reasons.includes('attackerEdge'))
+    .map((c) => ({
+      id: `${ENTRY_EDGE_PREFIX}${c.nodeId}`,
+      source: attackerId,
+      target: c.nodeId,
+      auth: 'None',
+      network: 'Internet',
+      encryption: 'Plain',
+    }));
+}

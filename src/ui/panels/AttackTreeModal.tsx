@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Check, ChevronDown, ChevronRight, Crosshair, GitBranch, Lock, ShieldHalf, X } from 'lucide-react';
 import {
+  selectActiveBoundaries,
   selectActiveEdges,
   selectActiveNodes,
   useDiagramStore,
@@ -27,6 +28,13 @@ import {
   type AnalyzeGraphResult,
   type ChokePoint,
 } from '../../features/attack-tree/analyzeAttackGraph';
+import {
+  buildEntryEdges,
+  ENTRY_SEARCH_APPLICABLE,
+  findEntryPoints,
+  isEntryEdgeId,
+} from '../../features/attack-tree/findEntryPoints';
+import { ENTRY_PROBE } from '../../core/notation/edgeNotation';
 import { SEVERITY_BADGE_SOLID } from '../../core/model/severityColors';
 import { CONTROL_STATUS_BADGE, CONTROL_STATUS_LABEL_KEY } from './controlStatusStyle';
 import { useLocale, useT } from '../../i18n';
@@ -477,7 +485,11 @@ function RouteTable({
 export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeModalProps) {
   const nodes = useDiagramStore(selectActiveNodes);
   const edges = useDiagramStore(selectActiveEdges);
+  const boundaries = useDiagramStore(selectActiveBoundaries);
   const [residualOnly, setResidualOnly] = useState(false);
+  // AI エージェント攻撃者では、侵入候補（仮想の線）を既定で経路に含める。
+  const entrySearchable = ENTRY_SEARCH_APPLICABLE.has(attacker.type);
+  const [includeEntries, setIncludeEntries] = useState(true);
   const [selection, setSelection] = useState<Selection>(null);
   const [hoveredRouteIndex, setHoveredRouteIndex] = useState<number | null>(null);
   const t = useT();
@@ -497,9 +509,22 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
     setSelection(null);
   }, [attacker.id, targetId]);
 
+  const entryEdges = useMemo(
+    () =>
+      entrySearchable
+        ? buildEntryEdges(attacker.id, findEntryPoints(nodes, edges, boundaries, allThreats, attacker.id))
+        : [],
+    [entrySearchable, nodes, edges, boundaries, allThreats, attacker.id],
+  );
+  const useEntries = includeEntries && entryEdges.length > 0;
+  const analysisEdges = useMemo(
+    () => (useEntries ? [...edges, ...entryEdges] : edges),
+    [useEntries, edges, entryEdges],
+  );
+
   const graph = useMemo(
-    () => buildAttackGraph(nodes, edges, attacker.id, targetId),
-    [nodes, edges, attacker.id, targetId],
+    () => buildAttackGraph(nodes, analysisEdges, attacker.id, targetId),
+    [nodes, analysisEdges, attacker.id, targetId],
   );
 
   const evidenceMap = useMemo(() => buildHopEvidence(allThreats), [allThreats]);
@@ -514,7 +539,7 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
   );
 
   const nodeById = useMemo(() => new Map(nodes.map((n) => [n.id, n] as const)), [nodes]);
-  const edgeById = useMemo(() => new Map(edges.map((e) => [e.id, e] as const)), [edges]);
+  const edgeById = useMemo(() => new Map(analysisEdges.map((e) => [e.id, e] as const)), [analysisEdges]);
 
   const layout = useMemo(
     () => buildLayout(graph, attacker.id, targetId),
@@ -605,6 +630,18 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
           </span>
         </div>
 
+        {entrySearchable && entryEdges.length > 0 && (
+          <label className="flex items-center gap-1.5 text-xs font-bold text-fuchsia-200 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={includeEntries}
+              onChange={(e) => setIncludeEntries(e.target.checked)}
+              className="accent-fuchsia-500"
+            />
+            {t('attackTree.includeEntries', { count: entryEdges.length })}
+          </label>
+        )}
+
         {/* 凡例 + トグル */}
         {hasPath && (
           <div className="flex items-center gap-4 text-xs font-bold text-slate-400 flex-wrap">
@@ -620,6 +657,14 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
             <span className="flex items-center gap-1">
               <span className="w-3 h-0.5 bg-slate-500 opacity-50" /> {t('attackTree.legend.noEvidence')}
             </span>
+            {useEntries && (
+              <span className="flex items-center gap-1">
+                <svg width="14" height="4" aria-hidden>
+                  <line x1="1" y1="2" x2="13" y2="2" stroke={ENTRY_PROBE.stroke} strokeWidth="2.5" strokeDasharray="0.1 4" strokeLinecap="round" />
+                </svg>
+                {t('attackTree.legend.entryEdge')}
+              </span>
+            )}
             <label className="ml-auto flex items-center gap-1.5 cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -674,6 +719,7 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
                     const blocked = residualOnly && !feasibleHopKeys.has(hop.key);
                     const hasEvidence = hop.edgeIds.some((id) => getEvidence(edgeElementKey(id)).threats.length > 0);
                     const selected = selection?.kind === 'hop' && selection.hopKey === hop.key;
+                    const virtual = hop.edgeIds.every(isEntryEdgeId);
 
                     let stroke = '#334155';
                     let strokeWidth = 1.5;
@@ -692,6 +738,10 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
                       strokeWidth = 2.5;
                       dash = '6 4';
                       animate = true;
+                    } else if (virtual) {
+                      stroke = ENTRY_PROBE.stroke;
+                      strokeWidth = 2.5;
+                      dash = '0.1 6';
                     } else if (!hasEvidence) {
                       stroke = '#64748b';
                     }
@@ -715,8 +765,9 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
                           d={d}
                           stroke={stroke}
                           strokeWidth={strokeWidth}
-                          strokeOpacity={!hasEvidence && !blocked && !onWeakestRoute && !hovered && !selected ? 0.5 : 1}
+                          strokeOpacity={!virtual && !hasEvidence && !blocked && !onWeakestRoute && !hovered && !selected ? 0.5 : 1}
                           strokeDasharray={dash}
+                          strokeLinecap={virtual ? 'round' : undefined}
                           style={animate ? { animation: 'atkdash 30s linear infinite' } : undefined}
                         />
                         {(() => {
@@ -942,6 +993,7 @@ function DetailPanel({
             <div key={edgeId} className="border-t border-white/5 pt-2 first:border-t-0 first:pt-0">
               <div className="flex items-center gap-1.5 text-xs font-black text-slate-400 mb-1">
                 {edge?.seq !== undefined && <span>{formatElementalId('edge', edge.seq)}</span>}
+                {isEntryEdgeId(edgeId) && <span className="text-fuchsia-300">{t('attackTree.detail.entryEdge')}</span>}
                 {edge?.dataFlowName && <span className="text-slate-500">{edge.dataFlowName}</span>}
                 {chosen && (
                   <span className="flex items-center gap-0.5 text-sky-300">

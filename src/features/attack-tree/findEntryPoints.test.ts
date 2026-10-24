@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findEntryPoints } from './findEntryPoints';
+import { buildEntryEdges, findEntryPoints, isEntryEdgeId } from './findEntryPoints';
 import type { DiagramBoundary, DiagramEdge, DiagramNode, ThreatView } from '../../core/model/types';
 
 function node(id: string, type: string, extra: Partial<DiagramNode> = {}): DiagramNode {
@@ -128,5 +128,24 @@ describe('findEntryPoints', () => {
   it('攻撃者が AI エージェント攻撃者でなければ空', () => {
     expect(findEntryPoints([node('t', 'THREAT_ACTOR'), node('web', 'FRONT_END_SERVER')], [], [], [], 't')).toEqual([]);
     expect(findEntryPoints([node('web', 'FRONT_END_SERVER')], [], [], [], 'missing')).toEqual([]);
+  });
+});
+
+describe('buildEntryEdges', () => {
+  it('攻撃者から線の無い入口だけを仮想の線にし、攻撃経路分析で標的まで辿れるようにする', async () => {
+    const { buildAttackGraph } = await import('./buildAttackGraph');
+    const nodes = [attacker, node('web', 'FRONT_END_SERVER'), node('gw', 'GATEWAY'), node('db', 'DB')];
+    const edges = [edge('e1', 'atk', 'gw'), edge('e2', 'web', 'db'), edge('e3', 'gw', 'db')];
+    const entryEdges = buildEntryEdges('atk', findEntryPoints(nodes, edges, [], [], 'atk'));
+
+    // gw は攻撃者からの線があるので作らない
+    expect(entryEdges.map((e) => [e.id, e.source, e.target])).toEqual([['entry:web', 'atk', 'web']]);
+    expect(isEntryEdgeId(entryEdges[0].id)).toBe(true);
+    expect(isEntryEdgeId('e1')).toBe(false);
+
+    const before = buildAttackGraph(nodes, edges, 'atk', 'db');
+    const after = buildAttackGraph(nodes, [...edges, ...entryEdges], 'atk', 'db');
+    expect(before.routes.map((r) => r.nodeIds.join('>'))).toEqual(['atk>gw>db']);
+    expect(after.routes.map((r) => r.nodeIds.join('>')).sort()).toEqual(['atk>gw>db', 'atk>web>db']);
   });
 });

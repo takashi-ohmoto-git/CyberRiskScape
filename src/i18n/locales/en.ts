@@ -39,6 +39,8 @@ const enCore: Partial<Record<TranslationKey, string>> = {
   'attackTree.legend.partial': 'Partially mitigated',
   'attackTree.legend.noEvidence': 'No known threats',
   'attackTree.residualToggle': 'Residual routes only (block covered hops)',
+  'attackTree.includeEntries': 'Include entry candidates ({count}) in routes — routes start from entries visible from outside, even without lines from the attacker',
+  'attackTree.legend.entryEdge': 'Entry candidate (virtual line)',
   'attackTree.noPath.title': 'No route connects the attacker and the target.',
   'attackTree.noPath.body':
     'Attack path analysis is built by following edges (connections) on the canvas. Create an edge to the component that serves as the attacker entry point.',
@@ -59,6 +61,7 @@ const enCore: Partial<Record<TranslationKey, string>> = {
   'attackTree.detail.travelDirection': 'Travel on weakest route: {from} → {to}',
   'attackTree.detail.noThreats': 'No threats detected on this element',
   'attackTree.detail.chosenChannel': 'Chosen channel',
+  'attackTree.detail.entryEdge': 'Entry candidate (virtual line, not saved)',
   'attackTree.detail.close': 'Clear selection',
   'attackTree.detail.formula':
     'Difficulty = 4 − max(risk-scored Exploitability). With threats but no risk score, severity-based provisional difficulty (Critical/High→1, Medium→2, Low→3). No threats → neutral 2. Partial +1 / full +8 (blocked in residual-route mode).',
