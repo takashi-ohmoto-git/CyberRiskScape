@@ -35,6 +35,10 @@
 #     『アプリ解析からのサーバ攻撃』」（2026-10-13、A2B 攻撃＝App-to-Backend Attack）
 #     https://cynex.nict.go.jp/library/261013-01.html
 #     （報道発表 https://www.nict.go.jp/press/2026/10/13-1.html）
+#   - OWASP API Security Top 10 2023（API8 Security Misconfiguration のエラー処理）、MITRE CWE-209
+#     （Generation of Error Message Containing Sensitive Information）、OWASP Error Handling Cheat Sheet
+#   - NIST SP 800-204「Security Strategies for Microservices-based Application Systems」
+#     https://csrc.nist.gov/pubs/sp/800/204/final （サーキットブレーカー・負荷分散・スロットリング）
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -66,7 +70,8 @@
 #   - IdP が発行したトークンの受け側検証は zt-idp-token-validation-gap-001（canonicalId:
 #     idp-relying-party-validation-gap、IdP からのエッジ）が扱う。api-token-session-validation-gap-001 は
 #     IdP を描かない構成（アプリのサーバーが自前でセッション・JWT を発行・検証する）も含め、
-#     利用者の端末から呼ばれる API 側の検証を扱う。subject が異なるため別 canonicalId とする。
+#     利用者の端末や、利用者の操作を代行する SaaS・業務アプリから呼ばれる API 側の検証を扱う。
+#     subject が異なるため別 canonicalId とする。
 #   - アプリを解析してバックエンド API を直接狙う攻撃（A2B 攻撃）で狙われる SSRF・SQL / NoSQL
 #     インジェクション・コード実行を、バックエンド側の実装の問いとして 3 ルール（api-backend-ssrf-001 /
 #     api-backend-query-injection-001 / api-backend-remote-code-execution-001）で扱う。IDOR は BOLA
@@ -82,6 +87,17 @@
 #     本ファイルは BACKEND_API の入力処理（デシリアライズ・ファイルの保存先・OS コマンド）を問うため
 #     別 canonicalId（api-server-code-execution）とする。AI エージェントのコード実行
 #     （agent-code-execution-rce）も subject が異なり別。
+#   - エラー応答による内部情報の露出（api-error-response-disclosure-001、canonicalId:
+#     api-error-information-disclosure）は既存に該当ルールが無い。API 仕様書からの偵察
+#     （api-improper-inventory）とは情報源（仕様書／実行時のエラー応答）が異なり別。インジェクションの
+#     ルールが mitigation で触れる「データベースのエラーを返さない」は対策の一部で、問いは別。
+#     外部の呼び出し元に応答を返す出口（BACKEND_API / GATEWAY）でだけ発火させ、ゲートウェイの背後の
+#     内部 API には出さない。FRONT_END_SERVER（Web サーバーのエラーページ）は本ファイルの対象外とした。
+#   - 多層 API での下流障害の連鎖（api-downstream-cascading-failure-001、canonicalId:
+#     api-downstream-cascading-failure）は、入口での量の制限（gateway-resource-exhaustion、
+#     GATEWAY / REVERSE_PROXY）とは別の問い（下流を呼ぶ側のタイムアウト・サーキットブレーカー・
+#     隔離）。同じ問いを GATEWAY に重ねないため対象は BACKEND_API だけにする。AI エージェント間の
+#     誤った判断の波及（cascading-failures、ASI08）とも機構と subject が異なり別。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する。
@@ -322,17 +338,18 @@ rules:
     category: "Information Disclosure"
     name: "API を使った個人情報の大量取得の制限・検知の欠如"
     severity: High
-    description: "{{nodeName}} は利用者の端末から呼び出され、会員情報や注文情報などの個人情報を返す。1 つのアカウント・トークン・送信元から取得できる件数や頻度に上限が無く、取得量の異常を監視していない場合、攻撃者は認可不備・漏えいしたトークン・大量に用意したアカウントのいずれかを足がかりに、スクリプトで呼び出しを繰り返し、数日のうちに数十万〜数百万件の個人情報を集められる（Can）。一件ずつの応答は正常な形をしているため、マルウェアや侵入の痕跡が無く、エラー監視やサーバーの負荷監視では気づけない。一方、利用者・トークン・送信元ごとに取得件数と頻度の上限を設け、通常の利用ではありえない件数や、多数の異なる利用者のデータへのアクセスを検知して自動で遮断していれば、足がかりを得られても取得できるのは一部にとどまり、短時間で止められる（Cannot）。blast radius は検知・遮断までの間に取得された全件で、上限が無ければ {{nodeName}} が扱う全利用者の個人情報。"
-    mitigation: "[Foundation] 個人情報を返す API ごとに、利用者・トークン・送信元 IP 単位の呼び出し回数の上限を設ける。1 回の応答で返す件数と項目を必要最小限にする（一覧にページングの上限を設ける）。アクセスログに呼び出し元の利用者と取得したレコードの所有者を残す。 [Enterprise] 1 つのアカウント・トークン・送信元が多数の異なる利用者のデータを取得するパターンを検知し、自動で遮断・通知する。Bot 管理や送信元の評価で、アプリ以外からの機械的な呼び出しを抑える。個人情報を返す API の利用量を日次で監視する。 [Advanced] 取得量の異常を検知したときに、トークンの失効・アカウント停止・API の一時停止まで自動で実行する手順を整える。レコードの ID を推測できない値にし、列挙そのものを難しくする。"
+    description: "{{nodeName}} は利用者の端末や、利用者の操作を代行する SaaS・業務アプリケーション（CRM 等）から呼び出され、会員情報や注文情報などの個人情報を返す。1 つのアカウント・トークン・送信元から取得できる件数や頻度に上限が無く、取得量の異常を監視していない場合、攻撃者は認可不備・漏えいしたトークン・大量に用意したアカウント・乗っ取った SaaS の利用者アカウントのいずれかを足がかりに、スクリプトで呼び出しを繰り返し、数日のうちに数十万〜数百万件の個人情報を集められる（Can）。一件ずつの応答は正常な形をしているため、マルウェアや侵入の痕跡が無く、エラー監視やサーバーの負荷監視では気づけない。一方、利用者・トークン・送信元ごとに取得件数と頻度の上限を設け、通常の利用ではありえない件数や、多数の異なる利用者のデータへのアクセスを検知して自動で遮断していれば、足がかりを得られても取得できるのは一部にとどまり、短時間で止められる（Cannot）。blast radius は検知・遮断までの間に取得された全件で、上限が無ければ {{nodeName}} が扱う全利用者の個人情報。"
+    mitigation: "[Foundation] 個人情報を返す API ごとに、利用者・トークン・送信元 IP 単位の呼び出し回数の上限を設ける。1 回の応答で返す件数と項目を必要最小限にする（一覧にページングの上限を設ける）。アクセスログに呼び出し元の利用者と取得したレコードの所有者を残す。 [Enterprise] 1 つのアカウント・トークン・送信元が多数の異なる利用者のデータを取得するパターンを検知し、自動で遮断・通知する。Bot 管理や送信元の評価で、アプリ以外からの機械的な呼び出しを抑える。個人情報を返す API の利用量を日次で監視する。SaaS がサービス用の資格情報でまとめて呼び出す構成では、送信元 IP とトークンが全利用者で共通になるため、操作を代行している利用者の ID を受け取り、利用者単位で上限と検知を掛ける。 [Advanced] 取得量の異常を検知したときに、トークンの失効・アカウント停止・API の一時停止まで自動で実行する手順を整える。レコードの ID を推測できない値にし、列挙そのものを難しくする。"
     appliesTo:
       kind: node
       anyOf:
         - nodeType: BACKEND_API
         - nodeType: GATEWAY
-      # 利用者の端末・利用者から呼び出される経路があるときのみ発火する。
+      # 利用者の端末・利用者、または利用者の操作を代行する SaaS・業務アプリ（CRM / SAAS / OTHER_APP）から
+      # 呼び出される経路があるときのみ発火する。
       connection:
         direction: inbound
-        peerType: [SMARTPHONE, PC, USER, EXTERNAL_ENTITY]
+        peerType: [SMARTPHONE, PC, USER, EXTERNAL_ENTITY, CRM, SAAS, OTHER_APP]
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "DE.CM-01"
@@ -375,17 +392,18 @@ rules:
     category: "Spoofing"
     name: "API でのトークン・セッションの検証不備"
     severity: High
-    description: "{{nodeName}} は、利用者の端末から送られるセッショントークンや JWT で呼び出し元の利用者を確かめている。署名を検証せずにトークンの中の会員 ID を信用している、有効期限やログアウト・失効を確認していない、トークンの用途（表示用・特定機能用）や権限の範囲（スコープ）を見ていない、のいずれかがあると、攻撃者はトークンの中身を書き換えて他の会員になりすましたり、期限切れや盗んだトークンを使い続けたり、権限の弱いトークンで個人情報を返す API まで呼び出したりできる（Can）。署名アルゴリズムの指定（alg）を受け取ったトークン任せにしていると、署名なしや別の鍵による偽造トークンも受理してしまう。一方、すべてのリクエストでサーバー側の鍵による署名・発行元・宛先（audience）・有効期限・失効を検証し、受け付けるアルゴリズムを固定し、API ごとに必要なスコープを確かめていれば、書き換えたトークンも期限切れのトークンも権限の足りないトークンも拒否される（Cannot）。blast radius はなりすませる全利用者のデータと、そのトークンで呼べる全機能。"
+    description: "{{nodeName}} は、利用者の端末や、利用者の操作を代行する SaaS・業務アプリケーションから送られるセッショントークンや JWT で呼び出し元の利用者を確かめている。署名を検証せずにトークンの中の会員 ID を信用している、有効期限やログアウト・失効を確認していない、トークンの用途（表示用・特定機能用）や権限の範囲（スコープ）を見ていない、のいずれかがあると、攻撃者はトークンの中身を書き換えて他の会員になりすましたり、期限切れや盗んだトークンを使い続けたり、権限の弱いトークンで個人情報を返す API まで呼び出したりできる（Can）。署名アルゴリズムの指定（alg）を受け取ったトークン任せにしていると、署名なしや別の鍵による偽造トークンも受理してしまう。一方、すべてのリクエストでサーバー側の鍵による署名・発行元・宛先（audience）・有効期限・失効を検証し、受け付けるアルゴリズムを固定し、API ごとに必要なスコープを確かめていれば、書き換えたトークンも期限切れのトークンも権限の足りないトークンも拒否される（Cannot）。blast radius はなりすませる全利用者のデータと、そのトークンで呼べる全機能。"
     mitigation: "[Foundation] すべてのリクエストで、トークンの署名・発行元・宛先（audience）・有効期限を検証する。受け付ける署名アルゴリズムをサーバー側で固定し、署名なしのトークンを拒否する。会員 ID は、リクエストのパラメーターや署名を検証していないトークンの値ではなく、署名を検証したトークンの主体（sub）だけから得る。 [Enterprise] API ごとに必要なスコープ・用途を定め、それを満たさないトークンを拒否する（表示用のトークンで個人情報 API を呼ばせない）。アクセストークンの有効期限を短くし、ログアウト・パスワード変更・不正検知時に失効させる仕組みを持つ。トークン検証を共通のライブラリやゲートウェイに集約する。 [Advanced] トークンを端末やクライアントに紐づけ（DPoP・mTLS 等による送信者制約）、盗まれたトークンを別の端末から使えないようにする。検証失敗や失効済みトークンの利用を監視する。"
     appliesTo:
       kind: node
       anyOf:
         - nodeType: BACKEND_API
         - nodeType: GATEWAY
-      # 利用者の端末・利用者からトークン付きで呼び出される経路があるときのみ発火する。
+      # 利用者の端末・利用者、または利用者の操作を代行する SaaS・業務アプリ（CRM / SAAS / OTHER_APP）から
+      # トークン付きで呼び出される経路があるときのみ発火する。
       connection:
         direction: inbound
-        peerType: [SMARTPHONE, PC, USER, EXTERNAL_ENTITY]
+        peerType: [SMARTPHONE, PC, USER, EXTERNAL_ENTITY, CRM, SAAS, OTHER_APP]
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.AA-03"
@@ -499,3 +517,62 @@ rules:
       - title: "NICT CYNEX（LETTICE）注意喚起「相次ぐ情報漏洩、その原因の一つは『アプリ解析からのサーバ攻撃』」（2026-10-13）"
         url: "https://cynex.nict.go.jp/library/261013-01.html"
       # 公開 Web サーバーへの Web シェルの設置・常駐は web-shell-implant（FRONT_END_SERVER）が扱う（別 canonicalId）。
+
+  # ── BACKEND_API / GATEWAY: エラー応答による内部情報の露出（API8 / CWE-209）──
+  - id: api-error-response-disclosure-001
+    canonicalId: api-error-information-disclosure
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "エラー応答による内部情報の露出"
+    severity: Medium
+    description: "{{nodeName}} は外部の呼び出し元（利用者の端末や、利用者の操作を代行する SaaS・業務アプリケーション）に応答を返す。処理に失敗したときに、例外のメッセージやスタックトレース、下流から返ったエラー本文をそのまま返している場合、攻撃者は不正な値をわざと送ったり、下流が止まっている時間帯を狙ったりするだけで、内部のホスト名・URL、使っているミドルウェア・フレームワークとその版、API の層の構成（どの内部 API を経由しているか）、データベースのテーブル名や問い合わせの一部を集められる（Can）。集めた情報は、既知の脆弱性の特定、ゲートウェイを経由しない内部 API の推測、インジェクションの組み立てに使われる。エラーの応答は正常系の試験では目に入りにくく、下流の障害時にだけ現れるため見落とされやすい。一方、呼び出し元には汎用的なエラーコードと追跡用の ID（相関 ID）だけを返し、詳細は内部のログにだけ記録し、外部との境界で下流のエラー本文を置き換えていれば、エラーを起こさせても内部の構成は分からない（Cannot）。blast radius は応答から推測できる {{nodeName}} の背後の構成全体で、これ自体はデータを漏らさないが、他の攻撃の下調べを大きく省かせる。"
+    mitigation: "[Foundation] 呼び出し元へのエラー応答は、汎用的なメッセージ・エラーコード・相関 ID に限り、例外のメッセージ・スタックトレース・内部のホスト名や URL・ミドルウェアの名前と版を含めない。本番環境でデバッグ用の詳細なエラー表示を無効にする。応答ヘッダーからサーバー・フレームワークの名前と版を除く。 [Enterprise] 外部との境界（API ゲートウェイ等）に共通のエラー処理を設け、下流から返ったエラー本文を標準の形式（RFC 9457 Problem Details 等）に置き換える。詳細は相関 ID で引ける内部のログにだけ残し、ログを見られる人を運用者に限る。下流の停止・タイムアウト・不正な入力を起こす試験で、エラー応答に内部の情報が出ないことを確かめる。 [Advanced] 外部へのエラー応答を監視し、内部のホスト名やスタックトレースの形をした文字列を検知して通知する。同じ呼び出し元が短時間に多数のエラーを起こすパターン（偵察）を検知する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: BACKEND_API
+        - nodeType: GATEWAY
+      # 外部の呼び出し元（利用者の端末・利用者、または利用者の操作を代行する SaaS・業務アプリ）に
+      # 応答を返す経路があるときのみ発火する。ゲートウェイの背後の内部 API には出さない。
+      connection:
+        direction: inbound
+        peerType: [SMARTPHONE, PC, USER, EXTERNAL_ENTITY, CRM, SAAS, OTHER_APP]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "OWASP API Security Top 10 2023 - API8:2023 Security Misconfiguration（エラー応答にスタックトレース等を含める）"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/"
+      - title: "MITRE CWE-209: Generation of Error Message Containing Sensitive Information"
+        url: "https://cwe.mitre.org/data/definitions/209.html"
+      - title: "OWASP Cheat Sheet Series - Error Handling Cheat Sheet"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html"
+
+  # ── BACKEND_API: 多層 API での下流障害の連鎖（タイムアウト・サーキットブレーカー・隔離の欠如）──
+  - id: api-downstream-cascading-failure-001
+    canonicalId: api-downstream-cascading-failure
+    framework: STRIDE
+    category: "Denial of Service"
+    name: "多層 API での下流障害の連鎖（タイムアウト・サーキットブレーカー・隔離の欠如）"
+    severity: Medium
+    description: "{{nodeName}} は処理の途中で下流の API・データベース・外部サービスを同期的に呼び出し、その応答を待ってから呼び出し元に返す。下流の呼び出しにタイムアウトが無い（または上流より長い）、失敗し続ける下流への呼び出しを止める仕組み（サーキットブレーカー）が無い、下流ごとに接続・スレッドの枠を分けていない、再試行に回数の上限と間隔が無い、のいずれかがあると、下流の 1 つが止まったり遅くなったりしただけで {{nodeName}} の接続とスレッドが応答待ちで埋まり、その下流と関係の無い機能まで止まり、さらに {{nodeName}} を呼ぶ上流の層へと順に停止が広がる（Can）。攻撃者は、重い処理（文書の生成・大量の検索等）を起こす要求を繰り返して下流を意図的に遅くし、入口のレート制限の範囲内の量で全体を止めることもできる。一方、下流の呼び出しごとに上流より短いタイムアウトを設け、失敗が続く下流への呼び出しをサーキットブレーカーで即座に打ち切り、下流ごとに接続・スレッドの枠を分け（バルクヘッド）、重い処理を非同期の受付に分けていれば、1 つの下流が止まってもその機能だけが速やかにエラーを返し、他の機能と上流の層は動き続ける（Cannot）。blast radius は {{nodeName}} と、それを同期的に呼ぶ上流のすべての層と利用者。"
+    mitigation: "[Foundation] 下流の呼び出しすべてにタイムアウトを設け、下流の層ほど短くなるように揃える（上流が先にタイムアウトして下流の処理だけが残る状態を避ける）。再試行には回数の上限と、間隔を徐々に広げる待ち時間を設け、繰り返しても安全な操作に限る。下流が止まっているときは速やかに汎用のエラーを返す。 [Enterprise] 失敗が続く下流への呼び出しを打ち切るサーキットブレーカーを下流ごとに設ける。接続プール・スレッドを下流ごとに分け（バルクヘッド）、1 つの下流の遅延が他の機能に広がらないようにする。文書の生成など重い処理は受付と処理を分けた非同期の方式（キュー等）にし、利用者ごと・機能ごとの同時実行数に上限を設ける。 [Advanced] 下流ごとの応答時間・エラー率・サーキットブレーカーの状態を監視し、相関 ID で層をまたいで追跡する。下流を意図的に止める・遅くする試験（障害注入）で、停止が広がらないことを定期的に確かめる。"
+    appliesTo:
+      kind: node
+      nodeType: BACKEND_API
+      # 下流（他の API・データベース・SaaS・業務アプリ）を呼び出す経路があるときのみ発火する。
+      # 入口での量の制限は gateway-resource-exhaustion（GATEWAY / REVERSE_PROXY）が扱うため GATEWAY は含めない。
+      connection:
+        direction: outbound
+        peerType: [BACKEND_API, DATABASE, DATA_STORE, SAAS, CRM, OTHER_APP]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-03"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-04"
+    references:
+      - title: "NIST SP 800-204 - Security Strategies for Microservices-based Application Systems（サーキットブレーカー・負荷分散・スロットリング）"
+        url: "https://csrc.nist.gov/pubs/sp/800/204/final"
+      - title: "OWASP API Security Top 10 2023 - API4:2023 Unrestricted Resource Consumption（実行のタイムアウト等）"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/"
+      # 入口での量の制限は gateway-resource-exhaustion、AI エージェント間の波及は cascading-failures が扱う（別 canonicalId）。

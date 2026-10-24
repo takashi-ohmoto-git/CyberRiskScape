@@ -108,7 +108,7 @@ verbatim.
    - SP 800-46 Rev.2, SP 800-124 Rev.2, SP 800-207, SP 800-63A, SP 800-63B,
      SP 800-63B-4, SP 800-63C-4, SP 800-58, SP 800-41 Rev.1, SP 800-52 Rev.2,
      SP 800-57 Part 1 Rev.5, SP 800-77 Rev.1, SP 800-153, SP 800-38F,
-     SP 800-53 Rev.5, SP 800-204A, SP 800-207A, SP 800-208, SP 800-209,
+     SP 800-53 Rev.5, SP 800-204, SP 800-204A, SP 800-207A, SP 800-208, SP 800-209,
      SP 800-34 Rev.1, SP 800-61 Rev.3, SP 800-92, SP 800-92 Rev.1 (Initial Public Draft),
      SP 800-111, SP 800-40 Rev.4, SP 800-125, SP 800-125A Rev.1
    - IR 8259 / 8259A, IR 8374, IR 8547
@@ -305,7 +305,7 @@ verbatim.
     Series (Secrets Management, File Upload, Third Party JavaScript
     Management, JSON Web Token, Server-Side Request Forgery Prevention,
     Injection Prevention, Query Parameterization, Deserialization,
-    OS Command Injection Defense, Logging), OWASP Top 10 2021, OWASP
+    OS Command Injection Defense, Logging, Error Handling), OWASP Top 10 2021, OWASP
     Automated Threats to Web Applications, OWASP Mobile Application Security
     Verification Standard (MASVS), OWASP Web Security Testing Guide (WSTG) v4.2
    https://owasp.org/API-Security/ ,
@@ -397,7 +397,8 @@ verbatim.
     Infrastructure Certificate and CRL Profile), RFC 6960 (X.509 Internet
     Public Key Infrastructure Online Certificate Status Protocol - OCSP),
     RFC 9112 (HTTP/1.1), RFC 9111 (HTTP Caching), RFC 7239 (Forwarded HTTP
-    Extension), RFC 7530 (Network File System (NFS) Version 4 Protocol)
+    Extension), RFC 7530 (Network File System (NFS) Version 4 Protocol), RFC 9457 (Problem
+    Details for HTTP APIs)
    https://www.rfc-editor.org/
    Referenced by RFC number and title with a short Japanese summary only; no
    RFC text is reproduced.
