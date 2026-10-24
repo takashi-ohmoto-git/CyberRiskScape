@@ -24,6 +24,11 @@ rules:
     name: "Runaway Autonomous Action"
     description: "Risk that prompt injection or similar attacks cause the agent to take unintended actions."
     mitigation: "Make prompt boundaries explicit, require human approval for dangerous actions, and introduce guardrails (allow-lists)."
+    references:
+      "1":
+        title: "MITRE ATLAS AML.T0051 LLM Prompt Injection (replacing instructions through prompt injection)"
+      "2":
+        title: "MITRE ATLAS AML.T0053 AI Agent Tool Invocation (invoking tools through a hijacked agent)"
 
   maestro-tool-edge-001:
     category: "Tool"
@@ -32,12 +37,18 @@ rules:
     mitigation: "Require strong authentication such as MFA before the tool call, and minimize the execution scope."
     conditions:
       - description: "The call to {{targetName}} is authenticated with MFA, a token, a passkey, or a certificate."
+    references:
+      "1":
+        title: "MITRE ATLAS AML.T0053 AI Agent Tool Invocation (invoking weakly protected tools)"
 
   maestro-agent-memory-poisoning-001:
     category: "Memory"
     name: "Long-Term Memory Poisoning"
     description: "Risk that malicious content is written into the agent's long-term memory, summaries, or vector memory, continuing to induce misjudgment, impersonation, and information disclosure across subsequent sessions."
     mitigation: "Evaluate the trust level of memory-write sources, prohibit memory for sensitive categories, take generational snapshots with diff auditing, and expire memory originating from external input."
+    references:
+      "1":
+        title: "MITRE ATLAS AML.T0080.000 AI Agent Context Poisoning: Memory (writing malicious content into long-term memory)"
 
   maestro-agent-goal-misalignment-001:
     category: "Reasoning"
@@ -59,6 +70,10 @@ rules:
     references:
       "1":
         title: "OWASP Top 10 for Agentic Applications 2026 - ASI02: Tool Misuse and Exploitation (related mapping)"
+      "2":
+        title: "MITRE ATLAS AML.T0051.001 LLM Prompt Injection: Indirect (instructions embedded in tool responses)"
+      "3":
+        title: "MITRE ATLAS AML.T0110.002 AI Agent Tool Poisoning: Runtime Response (steering decisions through malicious tool responses)"
 
   maestro-agent-internet-egress-001:
     category: "Agent"
@@ -68,12 +83,19 @@ rules:
     references:
       "0":
         title: "OWASP AI Exchange - Agentic AI (egress control and allow-listing)"
+      "1":
+        title: "MITRE ATLAS AML.T0086 Exfiltration via AI Agent Tool Invocation (exfiltration through the agent's tools)"
 
   maestro-lethal-trifecta-001:
     category: "Agent"
     name: "Lethal Trifecta"
     description: "{{nodeName}} is configured with the risk that the Lethal Trifecta (ingestion of attacker-controlled data x access to sensitive data x the ability to exfiltrate externally) holds simultaneously. Confirm across the entire diagram that at least one of the three elements is broken."
     mitigation: "Break at least one of the three elements: (1) isolate external input with an untrusted label and detect/neutralize embedded instructions, (2) restrict sensitive data access to least privilege with human approval, (3) allow-list egress and block unapproved domains."
+    references:
+      "2":
+        title: "MITRE ATLAS AML.T0051.001 LLM Prompt Injection: Indirect (ingesting attacker-controlled data)"
+      "3":
+        title: "MITRE ATLAS AML.T0086 Exfiltration via AI Agent Tool Invocation (exfiltration using the external send capability)"
 
   maestro-agent-untrusted-ingress-001:
     category: "Agent"
@@ -83,12 +105,17 @@ rules:
     references:
       "1":
         title: "OWASP Top 10 for Agentic Applications 2026 - ASI01: Agent Goal Hijack (related mapping)"
+      "2":
+        title: "MITRE ATLAS AML.T0051.001 LLM Prompt Injection: Indirect (instructions embedded in input from outside the trust boundary)"
 
   maestro-partner-supply-chain-tool-001:
     category: "Supply Chain"
     name: "Poisoning via a Partner Tool"
     description: "The call from {{sourceName}} to {{targetName}} (within the Partner boundary) risks becoming a propagation path for supply-chain compromise (tampered dependencies, third-party account takeover)."
     mitigation: "Verify the partner's SBOM, SLA, and audit trail, and call with a least-privilege scoped token. Treat responses as untrusted, and require schema validation and integrity verification."
+    references:
+      "1":
+        title: "MITRE ATLAS AML.T0010.005 AI Supply Chain Compromise: AI Agent Tool (compromise of tools provided by a partner)"
 
   maestro-agent-untrusted-response-001:
     category: "Agent"

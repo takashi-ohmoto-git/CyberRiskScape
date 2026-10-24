@@ -29,6 +29,8 @@ rules:
     references:
       "1":
         title: "OWASP Top 10 for Agentic Applications 2026 - ASI01: Agent Goal Hijack (related mapping)"
+      "2":
+        title: "MITRE ATLAS AML.T0051.000 LLM Prompt Injection: Direct (embedding instructions directly in user input)"
 
   owasp-llm01-indirect-business-record-001:
     category: "Prompt Injection"
@@ -46,6 +48,9 @@ rules:
     name: "Sensitive information disclosure"
     description: "The LLM leaks sensitive information contained in the system prompt, training data, or another tenant's history — such as PII, credentials, or intellectual property — in its responses."
     mitigation: "Filter input and output (PII/secret detection), minimize and anonymize training data, isolate tenants, and audit responses containing sensitive information in real time."
+    references:
+      "1":
+        title: "MITRE ATLAS AML.T0057 LLM Data Leakage (prompts that draw out sensitive information)"
 
   owasp-llm03-supply-chain-001:
     category: "Supply Chain"
@@ -55,18 +60,28 @@ rules:
     references:
       "1":
         title: "OWASP Top 10 for Agentic Applications 2026 - ASI04: Agentic Supply Chain Vulnerabilities (related mapping)"
+      "2":
+        title: "MITRE ATLAS AML.T0010 AI Supply Chain Compromise (compromise of the supply chain of models, data, and libraries)"
 
   owasp-llm04-data-model-poisoning-001:
     category: "Tampering"
     name: "Training/RAG data poisoning"
     description: "Poison mixed into pre-training, fine-tuning, continual-learning, or RAG index data causes misclassification, backdoored responses, or amplified bias when a specific trigger fires."
     mitigation: "Record data source provenance, run differential inspection and outlier detection, periodically run poisoning tests, and require manual approval before retraining on data that crosses a trust boundary."
+    references:
+      "1":
+        title: "MITRE ATLAS AML.T0020 Training Data Poisoning (poisoning training data)"
+      "2":
+        title: "MITRE ATLAS AML.T0070 RAG Poisoning (poisoning the RAG index)"
 
   owasp-llm05-improper-output-handling-001:
     category: "Tampering"
     name: "Improper output handling"
     description: "Passing LLM output unsanitized to a downstream system — SQL, a shell, HTML, code execution, or email sending — leads directly to SQLi, XSS, SSRF, or RCE."
     mitigation: "Always treat LLM output as untrusted, applying context-specific escaping, schema validation, and allow-list parsing. Run any generated code or commands only inside a sandbox."
+    references:
+      "1":
+        title: "MITRE ATLAS AML.T0077 LLM Response Rendering (exfiltration through rendered responses)"
 
   owasp-llm06-excessive-agency-001:
     category: "Agent"
@@ -76,18 +91,26 @@ rules:
     references:
       "1":
         title: "OWASP Top 10 for Agentic Applications 2026 - ASI02: Tool Misuse and Exploitation (related mapping)"
+      "2":
+        title: "MITRE ATLAS AML.T0053 AI Agent Tool Invocation (invoking tools with excessive privileges)"
 
   owasp-llm07-system-prompt-leakage-001:
     category: "Information Disclosure"
     name: "System prompt leakage"
     description: "Business rules, API keys, internal identifiers, or guardrail conditions embedded in the system prompt leak through the response and give an attacker a foothold."
     mitigation: "Never place secrets in the system prompt (keep keys in an external KMS), detect system prompt recitation, and apply output filters to sensitive tokens."
+    references:
+      "1":
+        title: "MITRE ATLAS AML.T0056 Extract LLM System Prompt (extracting the system prompt)"
 
   owasp-llm08-vector-embedding-weaknesses-001:
     category: "Information Disclosure"
     name: "Vector and embedding weaknesses"
     description: "Vector DB search results lack access control, letting documents from another tenant or privilege level mix into the RAG context, or the original text is reconstructed from embeddings (embedding inversion)."
     mitigation: "Apply row-level or attribute-based ACLs at the RAG retrieval stage, isolate indexes per tenant, anonymize embeddings, and audit search logs."
+    references:
+      "1":
+        title: "MITRE ATLAS AML.T0085.000 Data from AI Services: RAG Databases (collection from RAG databases without access control)"
 
   owasp-llm09-misinformation-001:
     category: "Repudiation"
@@ -100,3 +123,8 @@ rules:
     name: "Unbounded consumption"
     description: "A high volume of large, long, or recursive requests to the LLM exhausts inference cost, GPU time, and context budget, causing service outages or a cost blowup."
     mitigation: "Rate-limit token volume per user or key, cap maximum input length and maximum tool call count, alert on cost, and detect circular calls."
+    references:
+      "1":
+        title: "MITRE ATLAS AML.T0034 Cost Harvesting (running up inference costs)"
+      "2":
+        title: "MITRE ATLAS AML.T0029 Denial of AI Service (denial of service through large volumes of requests)"

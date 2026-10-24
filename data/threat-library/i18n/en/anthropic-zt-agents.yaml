@@ -38,6 +38,9 @@ rules:
     name: "Static API keys"
     description: "Calls from {{sourceName}} to {{targetName}} are made without authentication or with long-lived shared credentials. For an attacker equipped with model-assisted code analysis, a static API key is a first target, and it fails to meet even the minimum Foundation-tier bar."
     mitigation: "[Foundation] Issue minute-scale short-lived tokens via OAuth 2.0 or equivalent with automatic refresh. Prohibit embedding credentials in code or configuration files. [Enterprise] Use mTLS with certificate pinning and certificate transparency monitoring. [Advanced] Root credentials in hardware-attested storage that cannot be exported from a compromised host."
+    references:
+      "1":
+        title: "MITRE ATLAS AML.T0055 Unsecured Credentials (obtaining static API keys)"
 
   anthropic-zt-confused-deputy-001:
     category: "Identity"
@@ -47,6 +50,8 @@ rules:
     references:
       "1":
         title: "OWASP Top 10 for Agentic Applications 2026 - ASI03: Identity and Privilege Abuse (related mapping)"
+      "2":
+        title: "MITRE ATLAS AML.T0053 AI Agent Tool Invocation (invoking tools with the delegating agent's privileges)"
 
   anthropic-zt-memory-privilege-retention-001:
     category: "Memory"
@@ -56,6 +61,8 @@ rules:
     references:
       "1":
         title: "OWASP Top 10 for Agentic Applications 2026 - ASI03: Identity and Privilege Abuse (related mapping)"
+      "2":
+        title: "MITRE ATLAS AML.T0057 LLM Data Leakage (drawing out cached credentials through prompts)"
 
   anthropic-zt-tool-poisoning-rug-pull-001:
     category: "Supply Chain"
@@ -65,6 +72,10 @@ rules:
     references:
       "1":
         title: "OWASP Top 10 for Agentic Applications 2026 - ASI04: Agentic Supply Chain Vulnerabilities (related mapping)"
+      "2":
+        title: "MITRE ATLAS AML.T0110 AI Agent Tool Poisoning (tampering with tool descriptors and metadata)"
+      "3":
+        title: "MITRE ATLAS AML.T0109 AI Supply Chain Rug Pull (replacing a legitimate tool with a malicious version)"
 
   anthropic-zt-tool-chaining-001:
     category: "Tool"
@@ -74,18 +85,28 @@ rules:
     references:
       "1":
         title: "OWASP Top 10 for Agentic Applications 2026 - ASI02: Tool Misuse and Exploitation (related mapping)"
+      "2":
+        title: "MITRE ATLAS AML.T0086 Exfiltration via AI Agent Tool Invocation (exfiltration by combining legitimate tools)"
 
   anthropic-zt-untrusted-input-sandbox-001:
     category: "Isolation"
     name: "Missing sandbox for untrusted input"
     description: "When {{nodeName}} processes untrusted input such as web content, documents, or fetched results without running inside a sandbox, a successful indirect prompt injection puts the host OS, file system, and network at the attacker's disposal. Sandboxing is not aspirational for an agent that handles untrusted input — it is mandatory."
     mitigation: "[Foundation] Run in a container with network and mount restrictions. [Enterprise] Use a container runtime with syscall filtering such as gVisor, with restricted mount volumes and network access. [Advanced] Isolate at the hardware level with AMD SEV, Intel TDX, or a microVM, and attest the integrity of the execution environment."
+    references:
+      "1":
+        title: "MITRE ATLAS AML.T0051.001 LLM Prompt Injection: Indirect (instructions embedded in untrusted input)"
+      "2":
+        title: "MITRE ATLAS AML.T0105 Escape to Host (reaching the host from an execution environment without a sandbox)"
 
   anthropic-zt-config-integrity-001:
     category: "Tampering"
     name: "Agent configuration integrity"
     description: "If the configuration files of {{nodeName}} — prompts, allow-lists, tool settings — are tampered with, an attacker can expand privileges, disable security controls, or substitute instructions without changing a single line of code. Configuration must be treated as an attack surface with the same rigor as code."
     mitigation: "[Foundation] Store configuration in version control and require review. [Enterprise] Cryptographically sign approved configuration and verify the signature at deploy time; reject deployment on a missing or invalid signature. [Advanced] Deploy the agent as an immutable image, verify integrity via attestation, and update only by replacement, never in-place modification."
+    references:
+      "1":
+        title: "MITRE ATLAS AML.T0081 Modify AI Agent Configuration (tampering with the agent configuration)"
 
   anthropic-zt-memory-store-tampering-001:
     category: "Tampering"
@@ -95,6 +116,8 @@ rules:
     references:
       "1":
         title: "OWASP Top 10 for Agentic Applications 2026 - ASI06: Memory & Context Poisoning (related mapping)"
+      "2":
+        title: "MITRE ATLAS AML.T0080.000 AI Agent Context Poisoning: Memory (persisting poisoned data in the memory store)"
 
   anthropic-zt-delegation-integrity-001:
     category: "Identity"
@@ -110,6 +133,8 @@ rules:
     references:
       "1":
         title: "OWASP Top 10 for Agentic Applications 2026 - ASI06: Memory & Context Poisoning (related mapping)"
+      "2":
+        title: "MITRE ATLAS AML.T0080 AI Agent Context Poisoning (injecting poisoned data into shared context)"
 
   anthropic-zt-agent-observability-gap-001:
     category: "Observability"

@@ -30,6 +30,8 @@ rules:
         title: "Salesforce Help - Configure Prompt Injection Detection (Beta, disabled by default, English only; based on an excerpt of the official documentation at the time of writing — check the official documentation for current status)"
       "2":
         title: "OWASP LLM01:2025 Prompt Injection (limits of filtering)"
+      "3":
+        title: "MITRE ATLAS AML.T0051 LLM Prompt Injection (instructions written in a language that detection does not cover)"
 
   sf-agentforce-output-url-exfiltration-001:
     category: "Information Disclosure"
@@ -41,6 +43,8 @@ rules:
         title: "Noma Labs - ForcedLeak (discoverer's report; data sent out through an expired domain left on the Trusted URL allow list)"
       "1":
         title: "OWASP LLM05:2025 Improper Output Handling (related mapping)"
+      "2":
+        title: "MITRE ATLAS AML.T0077 LLM Response Rendering (exfiltration through images and links embedded in responses)"
 
   sf-agentforce-runtime-privilege-001:
     category: "Elevation of Privilege"
@@ -58,3 +62,5 @@ rules:
         title: "Salesforce Help - Agentforce shared responsibility (least privilege and human confirmation in custom actions are the customer's responsibility)"
       "4":
         title: "OWASP LLM06:2025 Excessive Agency (related mapping)"
+      "5":
+        title: "MITRE ATLAS AML.T0053 AI Agent Tool Invocation (executing actions with the agent's privileges)"

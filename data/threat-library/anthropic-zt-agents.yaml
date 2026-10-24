@@ -7,6 +7,16 @@
 # mitigation のテキストには 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）
 # をインライン markup で示す（スキーマ拡張は次フェーズ）。
 #
+# MITRE ATLAS 2026.09（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
+#   出典つきで参照し本文は転載しない）:
+#   AML.T0051.001 "LLM Prompt Injection: Indirect"、AML.T0053 "AI Agent Tool Invocation"、
+#   AML.T0055 "Unsecured Credentials"、AML.T0057 "LLM Data Leakage"、
+#   AML.T0080 "AI Agent Context Poisoning"、AML.T0080.000 "AI Agent Context Poisoning: Memory"、
+#   AML.T0081 "Modify AI Agent Configuration"、AML.T0086 "Exfiltration via AI Agent Tool Invocation"、
+#   AML.T0105 "Escape to Host"、AML.T0109 "AI Supply Chain Rug Pull"、
+#   AML.T0110 "AI Agent Tool Poisoning"。
+#   https://atlas.mitre.org/techniques/
+#
 # SPDX-License-Identifier: Apache-2.0
 # ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
 # 出典の帰属表示は NOTICE を参照。
@@ -74,6 +84,8 @@ rules:
         ref: "PR.AA-05"
     references:
       - title: "Anthropic - Zero Trust for AI Agents (Service authentication)"
+      - title: "MITRE ATLAS AML.T0055 Unsecured Credentials（静的 API キーの取得）"
+        url: "https://atlas.mitre.org/techniques/AML.T0055"
 
   # ── Privilege: Confused Deputy / Unscoped privilege inheritance ──
   - id: anthropic-zt-confused-deputy-001
@@ -109,6 +121,8 @@ rules:
       # OWASP ASI Top 10 の ASI03 Identity & Privilege Abuse に対応（クロスマッピング）。
       - title: "OWASP Top 10 for Agentic Applications 2026 - ASI03: Identity and Privilege Abuse（関連マッピング）"
         url: "https://genai.owasp.org/"
+      - title: "MITRE ATLAS AML.T0053 AI Agent Tool Invocation（委譲元の権限でのツールの呼び出し）"
+        url: "https://atlas.mitre.org/techniques/AML.T0053"
 
   # ── Memory: Cross-session credential cache leakage ───────────────
   - id: anthropic-zt-memory-privilege-retention-001
@@ -137,6 +151,8 @@ rules:
       # OWASP ASI Top 10 の ASI03 Identity & Privilege Abuse に対応（クロスマッピング）。
       - title: "OWASP Top 10 for Agentic Applications 2026 - ASI03: Identity and Privilege Abuse（関連マッピング）"
         url: "https://genai.owasp.org/"
+      - title: "MITRE ATLAS AML.T0057 LLM Data Leakage（キャッシュされた資格情報をプロンプトで引き出す）"
+        url: "https://atlas.mitre.org/techniques/AML.T0057"
 
   # ── Tool Supply Chain: Tool poisoning / Rug pull ─────────────────
   - id: anthropic-zt-tool-poisoning-rug-pull-001
@@ -164,6 +180,10 @@ rules:
       # OWASP ASI Top 10 の ASI04 Agentic Supply Chain Vulnerabilities に対応（クロスマッピング）。
       - title: "OWASP Top 10 for Agentic Applications 2026 - ASI04: Agentic Supply Chain Vulnerabilities（関連マッピング）"
         url: "https://genai.owasp.org/"
+      - title: "MITRE ATLAS AML.T0110 AI Agent Tool Poisoning（ツール記述子・メタデータの改ざん）"
+        url: "https://atlas.mitre.org/techniques/AML.T0110"
+      - title: "MITRE ATLAS AML.T0109 AI Supply Chain Rug Pull（正規ツールの悪性版への差し替え）"
+        url: "https://atlas.mitre.org/techniques/AML.T0109"
 
   # ── Tool Chaining: 正規ツールの組合せ悪用 ───────────────────────
   - id: anthropic-zt-tool-chaining-001
@@ -195,6 +215,8 @@ rules:
       # OWASP ASI Top 10 の ASI02 Tool Misuse and Exploitation に対応（クロスマッピング）。
       - title: "OWASP Top 10 for Agentic Applications 2026 - ASI02: Tool Misuse and Exploitation（関連マッピング）"
         url: "https://genai.owasp.org/"
+      - title: "MITRE ATLAS AML.T0086 Exfiltration via AI Agent Tool Invocation（正規ツールの組み合わせによる外部送信）"
+        url: "https://atlas.mitre.org/techniques/AML.T0086"
 
   # ── Sandbox: 信頼外入力を扱うエージェントの隔離欠如 ──────────────
   - id: anthropic-zt-untrusted-input-sandbox-001
@@ -222,6 +244,10 @@ rules:
         ref: "PR.PS-01"
     references:
       - title: "Anthropic - Zero Trust for AI Agents (Resource boundaries / Sandboxed execution)"
+      - title: "MITRE ATLAS AML.T0051.001 LLM Prompt Injection: Indirect（信頼外入力に埋め込まれた指示）"
+        url: "https://atlas.mitre.org/techniques/AML.T0051.001"
+      - title: "MITRE ATLAS AML.T0105 Escape to Host（サンドボックスの無い実行環境からホストへの到達）"
+        url: "https://atlas.mitre.org/techniques/AML.T0105"
 
   # ── Configuration: 設定ファイルの完全性 ─────────────────────────
   - id: anthropic-zt-config-integrity-001
@@ -247,6 +273,8 @@ rules:
         ref: "PR.PS-02"
     references:
       - title: "Anthropic - Zero Trust for AI Agents (Configuration integrity)"
+      - title: "MITRE ATLAS AML.T0081 Modify AI Agent Configuration（エージェント設定の改ざん）"
+        url: "https://atlas.mitre.org/techniques/AML.T0081"
 
   # ── Memory Store: 長期メモリ自体の完全性────
   - id: anthropic-zt-memory-store-tampering-001
@@ -273,6 +301,8 @@ rules:
       # OWASP ASI Top 10 の ASI06 Memory & Context Poisoning に対応（クロスマッピング）。
       - title: "OWASP Top 10 for Agentic Applications 2026 - ASI06: Memory & Context Poisoning（関連マッピング）"
         url: "https://genai.owasp.org/"
+      - title: "MITRE ATLAS AML.T0080.000 AI Agent Context Poisoning: Memory（メモリストアへの汚染データの永続化）"
+        url: "https://atlas.mitre.org/techniques/AML.T0080.000"
 
   # ── Delegation: エージェント間委譲の整合性────
   - id: anthropic-zt-delegation-integrity-001
@@ -322,6 +352,8 @@ rules:
       # OWASP ASI Top 10 の ASI06 Memory & Context Poisoning に対応（クロスマッピング）。
       - title: "OWASP Top 10 for Agentic Applications 2026 - ASI06: Memory & Context Poisoning（関連マッピング）"
         url: "https://genai.owasp.org/"
+      - title: "MITRE ATLAS AML.T0080 AI Agent Context Poisoning（共有コンテキストへの汚染データの注入）"
+        url: "https://atlas.mitre.org/techniques/AML.T0080"
 
   # ── Observability: エージェント行動ログ・追跡可能性の欠如 ──────────
   # Part III「Observability and auditing」の対策不在を脅威として表現。

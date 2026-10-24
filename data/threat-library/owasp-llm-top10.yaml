@@ -1,5 +1,14 @@
 # OWASP Top 10 for Large Language Model Applications (2025) ベースの脅威ルール。
 # 出典: https://genai.owasp.org/llm-top-10/
+# MITRE ATLAS 2026.09（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
+#   出典つきで参照し本文は転載しない）:
+#   AML.T0010 "AI Supply Chain Compromise"、AML.T0020 "Training Data Poisoning"、
+#   AML.T0029 "Denial of AI Service"、AML.T0034 "Cost Harvesting"、AML.T0051 "LLM Prompt Injection"、
+#   AML.T0051.000 "LLM Prompt Injection: Direct"、AML.T0053 "AI Agent Tool Invocation"、
+#   AML.T0056 "Extract LLM System Prompt"、AML.T0057 "LLM Data Leakage"、AML.T0070 "RAG Poisoning"、
+#   AML.T0077 "LLM Response Rendering"、AML.T0085.000 "Data from AI Services: RAG Databases"。
+#   https://atlas.mitre.org/techniques/
+#
 # SPDX-License-Identifier: Apache-2.0
 # ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
 # 出典の帰属表示は NOTICE を参照。
@@ -49,6 +58,8 @@ rules:
       # OWASP ASI Top 10 の ASI01 Agent Goal Hijack に対応（クロスマッピング）。
       - title: "OWASP Top 10 for Agentic Applications 2026 - ASI01: Agent Goal Hijack（関連マッピング）"
         url: "https://genai.owasp.org/"
+      - title: "MITRE ATLAS AML.T0051.000 LLM Prompt Injection: Direct（ユーザー入力への指示の直接の埋め込み）"
+        url: "https://atlas.mitre.org/techniques/AML.T0051.000"
 
   # ── LLM01:2025 Prompt Injection（間接・業務アプリのデータ経由）──────
   - id: owasp-llm01-indirect-business-record-001
@@ -102,6 +113,8 @@ rules:
     references:
       - title: "OWASP LLM02:2025 Sensitive Information Disclosure"
         url: "https://genai.owasp.org/llmrisk/llm02-sensitive-information-disclosure/"
+      - title: "MITRE ATLAS AML.T0057 LLM Data Leakage（機微情報を引き出すプロンプト）"
+        url: "https://atlas.mitre.org/techniques/AML.T0057"
 
   # ── LLM03:2025 Supply Chain ─────────────────────────────────
   - id: owasp-llm03-supply-chain-001
@@ -124,6 +137,8 @@ rules:
       # OWASP ASI Top 10 の ASI04 Agentic Supply Chain Vulnerabilities に対応（クロスマッピング）。
       - title: "OWASP Top 10 for Agentic Applications 2026 - ASI04: Agentic Supply Chain Vulnerabilities（関連マッピング）"
         url: "https://genai.owasp.org/"
+      - title: "MITRE ATLAS AML.T0010 AI Supply Chain Compromise（モデル・データ・ライブラリの供給網の侵害）"
+        url: "https://atlas.mitre.org/techniques/AML.T0010"
 
   # ── LLM04:2025 Data and Model Poisoning ─────────────────────
   - id: owasp-llm04-data-model-poisoning-001
@@ -143,6 +158,10 @@ rules:
     references:
       - title: "OWASP LLM04:2025 Data and Model Poisoning"
         url: "https://genai.owasp.org/llmrisk/llm04-data-and-model-poisoning/"
+      - title: "MITRE ATLAS AML.T0020 Training Data Poisoning（学習データへの毒の混入）"
+        url: "https://atlas.mitre.org/techniques/AML.T0020"
+      - title: "MITRE ATLAS AML.T0070 RAG Poisoning（RAG インデックスへの毒の混入）"
+        url: "https://atlas.mitre.org/techniques/AML.T0070"
 
   # ── LLM05:2025 Improper Output Handling ─────────────────────
   - id: owasp-llm05-improper-output-handling-001
@@ -159,6 +178,8 @@ rules:
     references:
       - title: "OWASP LLM05:2025 Improper Output Handling"
         url: "https://genai.owasp.org/llmrisk/llm05-improper-output-handling/"
+      - title: "MITRE ATLAS AML.T0077 LLM Response Rendering（描画される応答を使った外部送信）"
+        url: "https://atlas.mitre.org/techniques/AML.T0077"
 
   # ── LLM06:2025 Excessive Agency ─────────────────────────────
   - id: owasp-llm06-excessive-agency-001
@@ -188,6 +209,8 @@ rules:
       # OWASP ASI Top 10 の ASI02 Tool Misuse and Exploitation に対応（クロスマッピング）。
       - title: "OWASP Top 10 for Agentic Applications 2026 - ASI02: Tool Misuse and Exploitation（関連マッピング）"
         url: "https://genai.owasp.org/"
+      - title: "MITRE ATLAS AML.T0053 AI Agent Tool Invocation（過剰な権限を持つツールの呼び出し）"
+        url: "https://atlas.mitre.org/techniques/AML.T0053"
 
   # ── LLM07:2025 System Prompt Leakage ────────────────────────
   - id: owasp-llm07-system-prompt-leakage-001
@@ -204,6 +227,8 @@ rules:
     references:
       - title: "OWASP LLM07:2025 System Prompt Leakage"
         url: "https://genai.owasp.org/llmrisk/llm07-system-prompt-leakage/"
+      - title: "MITRE ATLAS AML.T0056 Extract LLM System Prompt（システムプロンプトの抽出）"
+        url: "https://atlas.mitre.org/techniques/AML.T0056"
 
   # ── LLM08:2025 Vector and Embedding Weaknesses ──────────────
   - id: owasp-llm08-vector-embedding-weaknesses-001
@@ -220,6 +245,8 @@ rules:
     references:
       - title: "OWASP LLM08:2025 Vector and Embedding Weaknesses"
         url: "https://genai.owasp.org/llmrisk/llm08-vector-and-embedding-weaknesses/"
+      - title: "MITRE ATLAS AML.T0085.000 Data from AI Services: RAG Databases（アクセス制御の無い RAG データベースからの取得）"
+        url: "https://atlas.mitre.org/techniques/AML.T0085.000"
 
   # ── LLM09:2025 Misinformation ───────────────────────────────
   - id: owasp-llm09-misinformation-001
@@ -252,3 +279,7 @@ rules:
     references:
       - title: "OWASP LLM10:2025 Unbounded Consumption"
         url: "https://genai.owasp.org/llmrisk/llm10-unbounded-consumption/"
+      - title: "MITRE ATLAS AML.T0034 Cost Harvesting（推論コストの浪費）"
+        url: "https://atlas.mitre.org/techniques/AML.T0034"
+      - title: "MITRE ATLAS AML.T0029 Denial of AI Service（大量のリクエストによるサービス停止）"
+        url: "https://atlas.mitre.org/techniques/AML.T0029"

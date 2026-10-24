@@ -2,6 +2,15 @@
 # 出典: OWASP Top 10 for Agentic Applications 2026 (ASI Top 10) / OWASP AI Exchange /
 #       OWASP Top 10 for LLM Applications / Simon Willison (Lethal Trifecta)。
 #       本文は逐語転載せず日本語要約のみ。
+# MITRE ATLAS 2026.09（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
+#   出典つきで参照し本文は転載しない）:
+#   AML.T0010.005 "AI Supply Chain Compromise: AI Agent Tool"、AML.T0051 "LLM Prompt Injection"、
+#   AML.T0051.001 "LLM Prompt Injection: Indirect"、AML.T0053 "AI Agent Tool Invocation"、
+#   AML.T0080.000 "AI Agent Context Poisoning: Memory"、
+#   AML.T0086 "Exfiltration via AI Agent Tool Invocation"、
+#   AML.T0110.002 "AI Agent Tool Poisoning: Runtime Response"。
+#   https://atlas.mitre.org/techniques/
+#
 # SPDX-License-Identifier: Apache-2.0
 # ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
 # 出典の帰属表示は NOTICE を参照。
@@ -33,6 +42,10 @@ rules:
         ref: "DE.CM-09"
     references:
       - title: "OWASP LLM Top 10 - LLM06 Excessive Agency"
+      - title: "MITRE ATLAS AML.T0051 LLM Prompt Injection（プロンプトインジェクションによる指示のすり替え）"
+        url: "https://atlas.mitre.org/techniques/AML.T0051"
+      - title: "MITRE ATLAS AML.T0053 AI Agent Tool Invocation（乗っ取ったエージェントによるツールの呼び出し）"
+        url: "https://atlas.mitre.org/techniques/AML.T0053"
 
   - id: maestro-tool-edge-001
     canonicalId: weak-service-auth
@@ -65,6 +78,8 @@ rules:
     references:
       - title: "OWASP Top 10 for Agentic Applications 2026 - ASI02: Tool Misuse"
         url: "https://genai.owasp.org/"
+      - title: "MITRE ATLAS AML.T0053 AI Agent Tool Invocation（保護の弱いツールの呼び出し）"
+        url: "https://atlas.mitre.org/techniques/AML.T0053"
 
   # ── Agent: 内部状態の汚染 / 目標逸脱 ─────────────────────────
   - id: maestro-agent-memory-poisoning-001
@@ -89,6 +104,8 @@ rules:
     references:
       - title: "OWASP Top 10 for Agentic Applications 2026 - ASI06: Memory & Context Poisoning"
         url: "https://genai.owasp.org/"
+      - title: "MITRE ATLAS AML.T0080.000 AI Agent Context Poisoning: Memory（長期メモリへの悪意ある記述の書き込み）"
+        url: "https://atlas.mitre.org/techniques/AML.T0080.000"
 
   - id: maestro-agent-goal-misalignment-001
     canonicalId: goal-misalignment
@@ -161,6 +178,10 @@ rules:
       # OWASP ASI Top 10 の ASI02 Tool Misuse and Exploitation に対応（クロスマッピング）。
       - title: "OWASP Top 10 for Agentic Applications 2026 - ASI02: Tool Misuse and Exploitation（関連マッピング）"
         url: "https://genai.owasp.org/"
+      - title: "MITRE ATLAS AML.T0051.001 LLM Prompt Injection: Indirect（ツールの応答に埋め込まれた指示）"
+        url: "https://atlas.mitre.org/techniques/AML.T0051.001"
+      - title: "MITRE ATLAS AML.T0110.002 AI Agent Tool Poisoning: Runtime Response（悪性ツールの応答による判断の誘導）"
+        url: "https://atlas.mitre.org/techniques/AML.T0110.002"
 
   # ── Edge: エージェントが Internet 越しに発火 ────────────────
   - id: maestro-agent-internet-egress-001
@@ -184,6 +205,8 @@ rules:
     references:
       - title: "OWASP AI Exchange - Agentic AI（egress 統制・許可リスト化）"
         url: "https://owaspai.org/"
+      - title: "MITRE ATLAS AML.T0086 Exfiltration via AI Agent Tool Invocation（エージェントのツールを使った外部送信）"
+        url: "https://atlas.mitre.org/techniques/AML.T0086"
 
   # ── OWASP AI Exchange 決定木の未充足ギャップ（W6）──────────
   # Lethal Trifecta は単一 edge では表現不能なグラフ横断条件のため、
@@ -221,6 +244,10 @@ rules:
         url: "https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/"
       - title: "OWASP AI Exchange - Agentic AI: Lethal Trifecta"
         url: "https://owaspai.org/"
+      - title: "MITRE ATLAS AML.T0051.001 LLM Prompt Injection: Indirect（攻撃者が制御するデータの取り込み）"
+        url: "https://atlas.mitre.org/techniques/AML.T0051.001"
+      - title: "MITRE ATLAS AML.T0086 Exfiltration via AI Agent Tool Invocation（外部送信能力を使った持ち出し）"
+        url: "https://atlas.mitre.org/techniques/AML.T0086"
 
   # Internal 以外の境界に置かれた AGENT への入力経路（ingress 側）。
   # network: [Internet] OR auth: [None] のいずれかを満たす edge を anyOf で捕捉。
@@ -250,6 +277,8 @@ rules:
       # OWASP ASI Top 10 の ASI01 Agent Goal Hijack に対応（クロスマッピング）。
       - title: "OWASP Top 10 for Agentic Applications 2026 - ASI01: Agent Goal Hijack（関連マッピング）"
         url: "https://genai.owasp.org/"
+      - title: "MITRE ATLAS AML.T0051.001 LLM Prompt Injection: Indirect（信頼境界外の入力に埋め込まれた指示）"
+        url: "https://atlas.mitre.org/techniques/AML.T0051.001"
 
   # Partner 境界（取引先）に置かれた TOOL / CONNECTOR への呼び出しは、
   # 取引先側の改ざん・侵害（サプライチェーン経由）が自プロセスに波及するリスクを伴う。
@@ -276,6 +305,8 @@ rules:
     references:
       - title: "OWASP Top 10 for Agentic Applications 2026 - ASI04: Supply Chain"
         url: "https://genai.owasp.org/"
+      - title: "MITRE ATLAS AML.T0010.005 AI Supply Chain Compromise: AI Agent Tool（取引先が提供するツールの侵害）"
+        url: "https://atlas.mitre.org/techniques/AML.T0010.005"
 
   # AGENT 応答が認証・暗号化ともに欠落した状態で送出される（allOf で組合せ可読化）。
   - id: maestro-agent-untrusted-response-001

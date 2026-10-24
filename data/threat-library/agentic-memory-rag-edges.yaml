@@ -14,6 +14,10 @@
 #     （Memory and context poisoning / Multi-agent delegation の章）。
 #   - MITRE ATLAS AML.T0051 (LLM Prompt Injection - indirect)。
 #     https://atlas.mitre.org/techniques/AML.T0051
+#   - MITRE ATLAS 2026.09（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
+#     出典つきで参照し本文は転載しない）:
+#     AML.T0080.000 "AI Agent Context Poisoning: Memory"。
+#     https://atlas.mitre.org/techniques/
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -84,6 +88,8 @@ rules:
       - title: "Anthropic - Zero Trust for AI Agents (Memory and context poisoning)"
       # AGENT 側の汚染結果は maestro-agent-memory-poisoning-001 が扱う（別 canonicalId、
       # 本ルールは memory_write 経路の条件側を扱う）。
+      - title: "MITRE ATLAS AML.T0080.000 AI Agent Context Poisoning: Memory（信頼できない入力の長期記憶への書き込み）"
+        url: "https://atlas.mitre.org/techniques/AML.T0080.000"
 
   # ── memory_read 経路: 汚染済み記憶の無検証コンテキスト取り込み ──────
   - id: agentic-memory-read-unverified-ingestion-001
@@ -109,6 +115,8 @@ rules:
       - title: "Anthropic - Zero Trust for AI Agents (Memory and context poisoning)"
       # MEMORY_STORE 自体の完全性検証欠如（intrinsic）は anthropic-zt-memory-store-tampering-001
       # が扱う（別 canonicalId、本ルールは読出し経路側の条件を扱う）。
+      - title: "MITRE ATLAS AML.T0080.000 AI Agent Context Poisoning: Memory（汚染された記憶の読み出し時の取り込み）"
+        url: "https://atlas.mitre.org/techniques/AML.T0080.000"
 
   # ── rag_retrieval 経路: 取得文書の来歴・署名検証欠如 ─────────────
   - id: agentic-rag-retrieval-provenance-gap-001

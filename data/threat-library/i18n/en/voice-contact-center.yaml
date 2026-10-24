@@ -42,6 +42,8 @@ rules:
         title: "個人情報保護委員会 - 「個人情報の保護に関する法律についてのガイドライン」に関する Q&A 1-11 (Personal Information Protection Commission of Japan, Q&A 1-11: voiceprints are individual identification codes)"
       "1":
         title: "NIST AI 600-1 - Generative AI Profile (unauthorized imitation of voice and likeness)"
+      "2":
+        title: "MITRE ATLAS AML.T0088 Generate Deepfakes (generating voice clones from exfiltrated recordings)"
 
   voice-synthetic-media-impersonation-001:
     category: "Spoofing"
@@ -62,6 +64,8 @@ rules:
     references:
       "0":
         title: "CISA / FBI Cybersecurity Advisory AA23-320A - Scattered Spider"
+      "3":
+        title: "MITRE ATLAS AML.T0073 Impersonation (requests made while posing as an employee, customer, or manager)"
 
   voice-sts-guardrail-gap-001:
     category: "Defense Evasion"
@@ -77,6 +81,10 @@ rules:
         title: "arXiv 2504.01094 - Spoken jailbreaks against speech language models (research paper)"
       "3":
         title: "EMNLP 2025 - Transfer of text safety alignment to speech (research paper)"
+      "4":
+        title: "MITRE ATLAS AML.T0054 LLM Jailbreak (jailbreaks through speaking style or language switching)"
+      "5":
+        title: "MITRE ATLAS AML.T0129 Triggers in Multimodal Inputs (elements of speech that do not appear in text inspection)"
 
   voice-stt-adversarial-audio-001:
     category: "Tampering"

@@ -2,6 +2,13 @@
 # 出典:
 #   - STRIDE (Microsoft, 2002)
 #   - STRIDE-AI 拡張（学術文献および MITRE ATLAS から派生）
+# MITRE ATLAS 2026.09（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
+#   出典つきで参照し本文は転載しない）:
+#   AML.T0015 "Evade AI Model"、AML.T0020 "Training Data Poisoning"、
+#   AML.T0024.002 "Exfiltration via AI Inference API: Extract AI Model"、
+#   AML.T0043 "Craft Adversarial Data"、AML.T0070 "RAG Poisoning"。
+#   https://atlas.mitre.org/techniques/
+#
 # SPDX-License-Identifier: Apache-2.0
 # ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
 # 出典の帰属表示は NOTICE を参照。
@@ -32,6 +39,10 @@ rules:
         ref: "DE.CM-09"
     references:
       - title: "MITRE ATLAS - Adversarial ML Evasion"
+      - title: "MITRE ATLAS AML.T0015 Evade AI Model（誤分類・有害な出力を誘発する回避）"
+        url: "https://atlas.mitre.org/techniques/AML.T0015"
+      - title: "MITRE ATLAS AML.T0043 Craft Adversarial Data（摂動を加えた敵対的な入力の作成）"
+        url: "https://atlas.mitre.org/techniques/AML.T0043"
 
   - id: stride-ai-llm-model-extraction-001
     canonicalId: model-theft
@@ -55,6 +66,8 @@ rules:
         ref: "DE.CM-09"
     references:
       - title: "MITRE ATLAS - Model Extraction"
+      - title: "MITRE ATLAS AML.T0024.002 Exfiltration via AI Inference API: Extract AI Model（大量のクエリによるモデルの抽出）"
+        url: "https://atlas.mitre.org/techniques/AML.T0024.002"
 
   # ── AI: DB / RAG ──────────────────────────────────────────
   - id: stride-ai-db-data-poisoning-001
@@ -81,6 +94,11 @@ rules:
         ref: "PR.DS-01"
       - standard: nist-csf-2.0
         ref: "ID.RA-09"
+    references:
+      - title: "MITRE ATLAS AML.T0020 Training Data Poisoning（学習データへの毒の混入）"
+        url: "https://atlas.mitre.org/techniques/AML.T0020"
+      - title: "MITRE ATLAS AML.T0070 RAG Poisoning（RAG 用データへの毒の混入）"
+        url: "https://atlas.mitre.org/techniques/AML.T0070"
 
   # ── Classic DFD: External Entity ──────────────────────────
   - id: stride-external-entity-spoofing-001

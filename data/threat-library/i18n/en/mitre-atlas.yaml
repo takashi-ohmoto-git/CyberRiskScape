@@ -97,3 +97,6 @@ rules:
     name: "Command and control via LLM"
     description: "Through a trigger planted in advance, an attacker uses the agent as a C2 node, continuously performing reconnaissance, lateral movement, and data collection against internal systems."
     mitigation: "Allow-list the agent's long-term memory and external communication destinations, audit persistent context that spans sessions, and detect anomalies in tool call history."
+    references:
+      "0":
+        title: "MITRE ATLAS AML.T0108 AI Agent (using the agent as C2)"

@@ -1,5 +1,16 @@
 # MITRE ATLAS (Adversarial Threat Landscape for AI Systems) ベースの脅威ルール。
 # 出典: https://atlas.mitre.org/
+# 技術 ID と正式名は MITRE ATLAS 2026.09 に合わせる（2026-10-24 に照合。技術 ID と正式名のみ
+#   出典つきで参照し本文は転載しない）:
+#   AML.T0005 "Create Proxy AI Model"、AML.T0010.003 "AI Supply Chain Compromise: Model"、
+#   AML.T0024.000 "Exfiltration via AI Inference API: Infer Training Data Membership"、
+#   AML.T0024.001 "Exfiltration via AI Inference API: Invert AI Model"、
+#   AML.T0029 "Denial of AI Service"、AML.T0040 "AI Model Inference API Access"、
+#   AML.T0044 "Full AI Model Access"、AML.T0048 "External Harms"、AML.T0051 "LLM Prompt Injection"、
+#   AML.T0054 "LLM Jailbreak"、AML.T0108 "AI Agent"、
+#   AML.T0115.000 "Publish Poisoned AI Artifacts: Datasets"。
+#   https://atlas.mitre.org/techniques/
+#
 # SPDX-License-Identifier: Apache-2.0
 # ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
 # 出典の帰属表示は NOTICE を参照。
@@ -25,7 +36,7 @@ rules:
       kind: node
       nodeType: LLM
     references:
-      - title: "MITRE ATLAS AML.T0040 ML Model Inference API Access"
+      - title: "MITRE ATLAS AML.T0040 AI Model Inference API Access"
         url: "https://atlas.mitre.org/techniques/AML.T0040"
 
   - id: atlas-aml-t0044-full-model-access-001
@@ -44,7 +55,7 @@ rules:
       connection:
         required: false
     references:
-      - title: "MITRE ATLAS AML.T0044 Full ML Model Access"
+      - title: "MITRE ATLAS AML.T0044 Full AI Model Access"
         url: "https://atlas.mitre.org/techniques/AML.T0044"
 
   # ── Inference attacks ──────────────────────────────────────
@@ -60,8 +71,10 @@ rules:
       kind: node
       nodeType: LLM
     references:
-      - title: "MITRE ATLAS AML.T0024.001 Infer Training Data Membership"
-        url: "https://atlas.mitre.org/techniques/AML.T0024.001"
+      # 2026-10-24: 参照が隣の AML.T0024.001（Invert AI Model）を指していたため正しい .000 に直した。
+      # ルール id の t0024-001 は抑制状態のキーなので据え置く。
+      - title: "MITRE ATLAS AML.T0024.000 Exfiltration via AI Inference API: Infer Training Data Membership"
+        url: "https://atlas.mitre.org/techniques/AML.T0024.000"
 
   - id: atlas-aml-t0024-002-model-inversion-001
     canonicalId: model-inversion
@@ -75,8 +88,10 @@ rules:
       kind: node
       nodeType: LLM
     references:
-      - title: "MITRE ATLAS AML.T0024.002 Invert ML Model"
-        url: "https://atlas.mitre.org/techniques/AML.T0024.002"
+      # 2026-10-24: 参照が隣の AML.T0024.002（Extract AI Model）を指していたため正しい .001 に直した。
+      # ルール id の t0024-002 は抑制状態のキーなので据え置く。
+      - title: "MITRE ATLAS AML.T0024.001 Exfiltration via AI Inference API: Invert AI Model"
+        url: "https://atlas.mitre.org/techniques/AML.T0024.001"
 
   # ── ML Attack Staging ─────────────────────────────────────
   - id: atlas-aml-t0005-create-proxy-model-001
@@ -91,7 +106,7 @@ rules:
       kind: node
       nodeType: LLM
     references:
-      - title: "MITRE ATLAS AML.T0005 Create Proxy ML Model"
+      - title: "MITRE ATLAS AML.T0005 Create Proxy AI Model"
         url: "https://atlas.mitre.org/techniques/AML.T0005"
 
   # ── LLM-specific techniques ─────────────────────────────────
@@ -154,7 +169,7 @@ rules:
       kind: node
       nodeType: LLM
     references:
-      - title: "MITRE ATLAS AML.T0029 Denial of ML Service"
+      - title: "MITRE ATLAS AML.T0029 Denial of AI Service"
         url: "https://atlas.mitre.org/techniques/AML.T0029"
 
   # ── Supply chain / Initial Access ──────────────────────────
@@ -173,8 +188,9 @@ rules:
       connection:
         required: false
     references:
-      - title: "MITRE ATLAS AML.T0019 Publish Poisoned Datasets"
-        url: "https://atlas.mitre.org/techniques/AML.T0019"
+      # 2026-10-24: AML.T0019 は ATLAS 2026.09 に無く、汚染データセットの公開は AML.T0115.000 にある。
+      - title: "MITRE ATLAS AML.T0115.000 Publish Poisoned AI Artifacts: Datasets"
+        url: "https://atlas.mitre.org/techniques/AML.T0115.000"
 
   - id: atlas-aml-t0010-003-ml-supply-chain-model-001
     canonicalId: supply-chain-model
@@ -229,5 +245,7 @@ rules:
         - nodeType: AGENT
         - nodeType: SUB_AGENT
     references:
-      - title: "MITRE ATLAS AML.T0050 Command and Control"
-        url: "https://atlas.mitre.org/techniques/AML.T0050"
+      # 2026-10-24: AML.T0050 は Command and Scripting Interpreter で、エージェントの C2 化は AML.T0108 にある。
+      # ルール id の t0050 は抑制状態のキーなので据え置く。
+      - title: "MITRE ATLAS AML.T0108 AI Agent（エージェントを C2 として使う）"
+        url: "https://atlas.mitre.org/techniques/AML.T0108"

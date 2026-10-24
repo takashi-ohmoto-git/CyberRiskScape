@@ -48,7 +48,14 @@ verbatim.
    Referenced by: data/threat-library/mitre-atlas.yaml,
                   data/threat-library/agentic-memory-rag-edges.yaml,
                   data/threat-library/voice-contact-center.yaml,
-                  data/threat-library/owasp-llm-top10.yaml
+                  data/threat-library/owasp-llm-top10.yaml,
+                  data/threat-library/agentic-zt-components.yaml,
+                  data/threat-library/anthropic-zt-agents.yaml,
+                  data/threat-library/maestro.yaml,
+                  data/threat-library/owasp-asi-top10.yaml,
+                  data/threat-library/salesforce-agentforce.yaml,
+                  data/threat-library/stride-ai.yaml,
+                  data/threat-library/zero-trust-access.yaml
 
    MITRE ATT&CK (Enterprise)
    https://attack.mitre.org/

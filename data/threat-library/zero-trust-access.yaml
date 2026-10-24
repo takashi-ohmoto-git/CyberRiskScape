@@ -34,6 +34,13 @@
 #     T1484 "Domain or Tenant Policy Modification"、T1606 "Forge Web Credentials"、
 #     T1199 "Trusted Relationship"。
 #     https://attack.mitre.org/techniques/
+#   - MITRE ATLAS 2026.09（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
+#     出典つきで参照し本文は転載しない）:
+#     AML.T0034 "Cost Harvesting"、AML.T0054 "LLM Jailbreak"、AML.T0057 "LLM Data Leakage"、
+#     AML.T0068 "LLM Prompt Obfuscation"、AML.T0085 "Data from AI Services"、
+#     AML.T0116 "Autonomous Reconnaissance"、AML.T0117 "Autonomous Attack-Path Adaptation"、
+#     AML.T0124 "Autonomous Attack Orchestration"。
+#     https://atlas.mitre.org/techniques/
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -410,6 +417,12 @@ rules:
       - title: "Anthropic - Zero Trust for AI Agents (AI-accelerated attacks / Impossible vs Tedious)"
       - title: "MITRE ATT&CK T1588.007 - Obtain Capabilities: Artificial Intelligence（攻撃への AI の利用）"
         url: "https://attack.mitre.org/techniques/T1588/007/"
+      - title: "MITRE ATLAS AML.T0116 Autonomous Reconnaissance（AI エージェントによる自律的な偵察）"
+        url: "https://atlas.mitre.org/techniques/AML.T0116"
+      - title: "MITRE ATLAS AML.T0117 Autonomous Attack-Path Adaptation（攻撃経路の自律的な組み立てと修正）"
+        url: "https://atlas.mitre.org/techniques/AML.T0117"
+      - title: "MITRE ATLAS AML.T0124 Autonomous Attack Orchestration（複数のエージェントによる攻撃の自律的な統制）"
+        url: "https://atlas.mitre.org/techniques/AML.T0124"
 
   # ── 認証材料（CREDENTIAL）の静的保管・スプロール（intrinsic）─────────
   - id: zt-credential-sprawl-static-secret-001
@@ -570,6 +583,10 @@ rules:
       - title: "OWASP Top 10 for LLM Applications - LLM01: Prompt Injection（フィルタの限界）"
         url: "https://genai.owasp.org/llm-top-10/"
       # ジェイルブレイク自体（LLM ノード視点）は atlas-aml-t0054-llm-jailbreak-001 が扱う（別 subject）。
+      - title: "MITRE ATLAS AML.T0054 LLM Jailbreak（新規のジェイルブレイク手法）"
+        url: "https://atlas.mitre.org/techniques/AML.T0054"
+      - title: "MITRE ATLAS AML.T0068 LLM Prompt Obfuscation（難読化による検知の迂回）"
+        url: "https://atlas.mitre.org/techniques/AML.T0068"
 
   # ── AI_GATEWAY: プロンプト・応答ログの集中点リスク ─────────────────
   - id: zt-ai-gateway-log-concentration-001
@@ -591,6 +608,8 @@ rules:
       - title: "NIST SP 800-207 - Zero Trust Architecture（Policy Enforcement Point の保護）"
         url: "https://csrc.nist.gov/pubs/sp/800/207/final"
       # サプライヤー側のプロンプトログ流出（エッジ視点）は stride-ai-supplier-model-input-log-leak-001 が扱う（別 subject）。
+      - title: "MITRE ATLAS AML.T0085 Data from AI Services（AI ゲートウェイに集積したプロンプト・応答の取得）"
+        url: "https://atlas.mitre.org/techniques/AML.T0085"
 
   # ── AI_GATEWAY: 応答キャッシュ（セマンティック・完全一致）による他の利用者への応答の漏えい ──
   # HTTP のキャッシュ（web-cache-poisoning）とは一致の判定（埋め込みの類似度）と漏れる中身（LLM の応答）が違うため別の
@@ -632,6 +651,8 @@ rules:
         url: "https://doi.org/10.6028/NIST.AI.600-1"
       # LLM 自体の機微情報漏洩（LLM ノード視点）は owasp-llm02-sensitive-info-disclosure-001、HTTP のキャッシュは
       # network-infra.yaml の web-cache-poisoning、メモリストアのテナント混入は memory-store-cross-tenant-bleed-001 が扱う（別 subject）。
+      - title: "MITRE ATLAS AML.T0057 LLM Data Leakage（似た質問による他の利用者の応答の取得）"
+        url: "https://atlas.mitre.org/techniques/AML.T0057"
 
   # ── AI_GATEWAY: 呼び出し元が付ける利用者識別の項目の無条件の信用 ─────────────────
   # forwarded-header-trust（前段のプロキシが利用者の付けた転送ヘッダーを背後へ素通しする）とは、信用する側（AI ゲートウェイ
@@ -674,6 +695,8 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/207/final"
       # 呼び出し元のエッジの弱い認証は weak-service-auth 群、エージェント自体の識別子の欠如は
       # anthropic-zt-agent-identity-attribution-001（agent-identity-attribution-gap）が扱う（別 subject）。
+      - title: "MITRE ATLAS AML.T0034 Cost Harvesting（他人の ID を名乗った費用の付け替え）"
+        url: "https://atlas.mitre.org/techniques/AML.T0034"
 
   # ── 外部協働者（Guest/Contractor/Partner）の機微システムアクセス ──────
   - id: zt-external-collaborator-broad-access-001

@@ -28,6 +28,11 @@
 #     https://help.salesforce.com/s/articleView?id=005315874&language=en_US&type=1
 #   - Noma Labs - ForcedLeak（発見者の報告）
 #     https://noma.security/noma-labs/forcedleak
+#   - MITRE ATLAS 2026.09（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
+#     出典つきで参照し本文は転載しない）:
+#     AML.T0051 "LLM Prompt Injection"、AML.T0053 "AI Agent Tool Invocation"、
+#     AML.T0077 "LLM Response Rendering"。
+#     https://atlas.mitre.org/techniques/
 #   本文は逐語転載せず日本語要約のみ。Salesforce の運用メモ（forcedotcom/sf-skills）は
 #   公式ドキュメントではないため根拠にしない。第三者の二次報道のみの事例は扱わない。
 #
@@ -92,6 +97,8 @@ rules:
         url: "https://developer.salesforce.com/docs/einstein/genai/guide/trust.html"
       - title: "OWASP LLM01:2025 Prompt Injection（フィルタの限界）"
         url: "https://genai.owasp.org/llmrisk/llm01-prompt-injection/"
+      - title: "MITRE ATLAS AML.T0051 LLM Prompt Injection（検知の対象外の言語で書いた指示）"
+        url: "https://atlas.mitre.org/techniques/AML.T0051"
 
   # ── AGENT（Trust Layer と接続）: 出力の描画先を経由する外部送信と Trusted URL の棚卸し ──
   - id: sf-agentforce-output-url-exfiltration-001
@@ -122,6 +129,8 @@ rules:
         url: "https://genai.owasp.org/llmrisk/llm05-improper-output-handling/"
       # 応答を操作する入口（CRM のレコード経由の間接プロンプトインジェクション）は
       # owasp-llm01-indirect-business-record-001 が扱う（別 canonicalId）。
+      - title: "MITRE ATLAS AML.T0077 LLM Response Rendering（応答に埋め込んだ画像・リンクによる外部送信）"
+        url: "https://atlas.mitre.org/techniques/AML.T0077"
 
   # ── AGENT（Trust Layer と接続）: 実行ユーザーとアクションの実行コンテキストによる権限の過大 ──
   - id: sf-agentforce-runtime-privilege-001
@@ -163,3 +172,5 @@ rules:
         url: "https://help.salesforce.com/s/articleView?id=005315874&language=en_US&type=1"
       - title: "OWASP LLM06:2025 Excessive Agency（関連マッピング）"
         url: "https://genai.owasp.org/llmrisk/llm06-excessive-agency/"
+      - title: "MITRE ATLAS AML.T0053 AI Agent Tool Invocation（エージェントの権限でのアクションの実行）"
+        url: "https://atlas.mitre.org/techniques/AML.T0053"

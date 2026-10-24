@@ -21,18 +21,31 @@ rules:
     name: "Evasion Attack"
     description: "The risk that an attacker adds small, carefully crafted perturbations to input in order to deliberately trigger misclassification or harmful output."
     mitigation: "Normalize and sanitize input, detect adversarial examples, and deploy inference guardrails."
+    references:
+      "1":
+        title: "MITRE ATLAS AML.T0015 Evade AI Model (evasion that triggers misclassification or harmful output)"
+      "2":
+        title: "MITRE ATLAS AML.T0043 Craft Adversarial Data (crafting perturbed adversarial input)"
 
   stride-ai-llm-model-extraction-001:
     category: "Information Disclosure"
     name: "Model Extraction"
     description: "The risk that an attacker steals model weights or proprietary algorithms by issuing a large volume of queries."
     mitigation: "Rate limiting, query anomaly detection, and per-API-key usage monitoring."
+    references:
+      "1":
+        title: "MITRE ATLAS AML.T0024.002 Exfiltration via AI Inference API: Extract AI Model (extracting the model through large numbers of queries)"
 
   stride-ai-db-data-poisoning-001:
     category: "Tampering"
     name: "Data Poisoning"
     description: "The risk that an attacker poisons training data or RAG source data so that the system makes incorrect decisions under specific conditions."
     mitigation: "Verify the integrity of the data ingestion pipeline, operate with signed datasets, and maintain provenance traceability."
+    references:
+      "0":
+        title: "MITRE ATLAS AML.T0020 Training Data Poisoning (poisoning training data)"
+      "1":
+        title: "MITRE ATLAS AML.T0070 RAG Poisoning (poisoning data used for RAG)"
 
   stride-external-entity-spoofing-001:
     category: "Spoofing"

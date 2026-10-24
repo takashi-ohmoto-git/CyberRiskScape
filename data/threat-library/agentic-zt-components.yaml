@@ -12,6 +12,14 @@
 #     tool descriptor poisoning / line jumping、confused deputy、token passthrough 等。
 #   - Anthropic, "Zero Trust for AI Agents", 2026-05-18。MCP サーバ・長期メモリの
 #     ゼロトラスト観点。
+#   - MITRE ATLAS 2026.09（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
+#     出典つきで参照し本文は転載しない）:
+#     AML.T0057 "LLM Data Leakage"、AML.T0074 "Masquerading"、AML.T0085 "Data from AI Services"、
+#     AML.T0091.000 "Use Alternate Authentication Material: Application Access Token"、
+#     AML.T0098 "AI Agent Tool Credential Harvesting"、
+#     AML.T0110.000 "AI Agent Tool Poisoning: Definition and Instructions"、
+#     AML.T0115.002 "Publish Poisoned AI Artifacts: AI Agent Tools"。
+#     https://atlas.mitre.org/techniques/
 #   本文は逐語転載せず日本語要約のみ。クロスマッピングは references にコメント併記する。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -81,6 +89,8 @@ rules:
         url: "https://modelcontextprotocol.io/"
       # TOOL ノード視点の改ざん（rug pull）は anthropic-zt-tool-poisoning-rug-pull-001 が扱う（別 canonicalId）。
       - title: "Anthropic - Zero Trust for AI Agents (Tool poisoning)（関連マッピング）"
+      - title: "MITRE ATLAS AML.T0110.000 AI Agent Tool Poisoning: Definition and Instructions（ツール記述子への隠し指示の埋め込み）"
+        url: "https://atlas.mitre.org/techniques/AML.T0110.000"
 
   # ── MCP サーバなりすまし / タイポスクワッティング ──────────────────
   # 要点: ディスカバリ・レジストリ・パッケージ名の偽装で、正規 MCP サーバになりすました
@@ -110,6 +120,10 @@ rules:
       - title: "Model Context Protocol - Security Best Practices（server identity / discovery spoofing）"
         url: "https://modelcontextprotocol.io/"
       # モデル成果物の供給網（supply-chain-model）とは subject が異なるため別 canonicalId。
+      - title: "MITRE ATLAS AML.T0115.002 Publish Poisoned AI Artifacts: AI Agent Tools（レジストリへの悪性 MCP サーバの公開）"
+        url: "https://atlas.mitre.org/techniques/AML.T0115.002"
+      - title: "MITRE ATLAS AML.T0074 Masquerading（正規サーバに似せた名前による偽装）"
+        url: "https://atlas.mitre.org/techniques/AML.T0074"
 
   # ── MCP の OAuth トークン窃取 / Confused Deputy ───────────────────
   # 要点: MCP サーバが下流 API への OAuth トークン（複数ユーザ・複数下流分）を保持・中継する
@@ -141,6 +155,10 @@ rules:
       # AGENT 視点の委譲時権限継承は anthropic-zt-confused-deputy-001 が扱う（別 canonicalId）。
       # edge 視点の静的キー/弱認証は anthropic-zt-static-api-key-001（weak-service-auth）が扱う。
       - title: "Anthropic - Zero Trust for AI Agents (Service authentication / Identity and privilege abuse)（関連マッピング）"
+      - title: "MITRE ATLAS AML.T0098 AI Agent Tool Credential Harvesting（MCP サーバが保持するトークンの収集）"
+        url: "https://atlas.mitre.org/techniques/AML.T0098"
+      - title: "MITRE ATLAS AML.T0091.000 Use Alternate Authentication Material: Application Access Token（窃取したトークンでの下流 API への横展開）"
+        url: "https://atlas.mitre.org/techniques/AML.T0091.000"
 
   # ════════════════════════════════════════════════════════════════
   # (c) MEMORY_STORE 固有の脅威（semantic edge ルールは対象外）
@@ -172,6 +190,8 @@ rules:
       - title: "Anthropic - Zero Trust for AI Agents (Memory and context poisoning / tenant isolation)"
       # AGENT のメモリキャッシュ経由の権限残留は anthropic-zt-memory-privilege-retention-001 が扱う。
       # ストア自体の完全性（汚染データ永続化）は anthropic-zt-memory-store-tampering-001 が扱う。
+      - title: "MITRE ATLAS AML.T0057 LLM Data Leakage（他テナントの記憶を引き出すプロンプト）"
+        url: "https://atlas.mitre.org/techniques/AML.T0057"
 
   # ── 長期記憶への PII / 認証情報の無秩序な蓄積 ─────────────────────
   # 要点: 機微カテゴリ（PERSONAL_INFO / CREDENTIAL 等）を選別・最小化せず長期記憶に
@@ -200,3 +220,5 @@ rules:
       # OWASP LLM02 Sensitive Information Disclosure に対応（クロスマッピング、LLM ノード視点は owasp-llm02 が扱う）。
       - title: "OWASP LLM02:2025 Sensitive Information Disclosure（関連マッピング）"
         url: "https://genai.owasp.org/llmrisk/llm02-sensitive-information-disclosure/"
+      - title: "MITRE ATLAS AML.T0085 Data from AI Services（記憶に蓄積された機微データの一括取得）"
+        url: "https://atlas.mitre.org/techniques/AML.T0085"

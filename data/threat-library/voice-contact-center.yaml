@@ -25,6 +25,10 @@
 #     安全性アライメント転移（arXiv 2504.01094）。
 #   - 実装ドキュメント：LiteLLM Realtime Guardrails、OpenAI Agents SDK Realtime guide
 #     （テキスト前提のガードレールの限界と出力検査のタイミング）。
+#   - MITRE ATLAS 2026.09（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
+#     出典つきで参照し本文は転載しない）:
+#     AML.T0054 "LLM Jailbreak"、AML.T0073 "Impersonation"、AML.T0129 "Triggers in Multimodal Inputs"。
+#     https://atlas.mitre.org/techniques/
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -121,6 +125,8 @@ rules:
         url: "https://www.ppc.go.jp/all_faq_index/faq1-q1-11/"
       - title: "NIST AI 600-1 - Generative AI Profile（声・肖像の無許可模倣）"
         url: "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf"
+      - title: "MITRE ATLAS AML.T0088 Generate Deepfakes（持ち出した録音からの音声クローンの生成）"
+        url: "https://atlas.mitre.org/techniques/AML.T0088"
 
   # ── TTS / AVATAR: 合成音声・映像によるなりすましへの悪用（intrinsic）────
   - id: voice-synthetic-media-impersonation-001
@@ -187,6 +193,8 @@ rules:
         url: "https://www.fincen.gov/system/files/shared/FinCEN-Alert-DeepFakes-Alert508FINAL.pdf"
       - title: "FBI IC3 PSA I-051525 - Senior US Officials Impersonated in Malicious Messaging Campaign"
         url: "https://www.ic3.gov/PSA/2025/PSA250515"
+      - title: "MITRE ATLAS AML.T0073 Impersonation（従業員・顧客・上司を名乗った依頼）"
+        url: "https://atlas.mitre.org/techniques/AML.T0073"
 
   # ── STS: テキスト前提のガードレールが音声を検査できない ────────────
   - id: voice-sts-guardrail-gap-001
@@ -216,6 +224,10 @@ rules:
       - title: "EMNLP 2025 - テキストの安全性アライメントの音声への転移（研究論文）"
         url: "https://aclanthology.org/2025.emnlp-main.734.pdf"
       # ガードレール単体依存の一般論（GUARDRAIL ノード視点）は zt-guardrail-* が扱う（別 subject）。
+      - title: "MITRE ATLAS AML.T0054 LLM Jailbreak（話し方・言語の切り替えによるジェイルブレイク）"
+        url: "https://atlas.mitre.org/techniques/AML.T0054"
+      - title: "MITRE ATLAS AML.T0129 Triggers in Multimodal Inputs（テキストの検査に現れない音声の要素）"
+        url: "https://atlas.mitre.org/techniques/AML.T0129"
 
   # ── STT: 敵対的音声による誤認識（intrinsic）────────────────────
   - id: voice-stt-adversarial-audio-001

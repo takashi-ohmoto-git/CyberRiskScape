@@ -5,6 +5,13 @@
 # 出典のライセンス: OWASP GenAI Security Project の成果物は CC BY-SA 4.0。
 #   本ファイルはカテゴリ名・ID を参照し概念を日本語要約したものであり、
 #   本文の逐語転載・翻案は行っていない。
+# MITRE ATLAS 2026.09（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
+#   出典つきで参照し本文は転載しない）:
+#   AML.T0050 "Command and Scripting Interpreter"、AML.T0053 "AI Agent Tool Invocation"、
+#   AML.T0067 "LLM Trusted Output Components Manipulation"、
+#   AML.T0081 "Modify AI Agent Configuration"、AML.T0105 "Escape to Host"。
+#   https://atlas.mitre.org/techniques/
+#
 # SPDX-License-Identifier: Apache-2.0
 # ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
 # 出典の帰属表示は NOTICE を参照。
@@ -56,6 +63,10 @@ rules:
     references:
       - title: "OWASP Top 10 for Agentic Applications 2026 - ASI05: Unexpected Code Execution (RCE)"
         url: "https://genai.owasp.org/"
+      - title: "MITRE ATLAS AML.T0050 Command and Scripting Interpreter（エージェントが生成したコマンド・コードの実行）"
+        url: "https://atlas.mitre.org/techniques/AML.T0050"
+      - title: "MITRE ATLAS AML.T0105 Escape to Host（サンドボックスからホストへの脱出）"
+        url: "https://atlas.mitre.org/techniques/AML.T0105"
 
   # ── ASI07: Insecure Inter-Agent Communication ───────────────
   # anthropic-zt-delegation-integrity は委譲経路の認証/暗号化欠如を扱うが、
@@ -138,6 +149,8 @@ rules:
     references:
       - title: "OWASP Top 10 for Agentic Applications 2026 - ASI09: Human-Agent Trust Exploitation"
         url: "https://genai.owasp.org/"
+      - title: "MITRE ATLAS AML.T0067 LLM Trusted Output Components Manipulation（利用者に信頼させる応答の操作）"
+        url: "https://atlas.mitre.org/techniques/AML.T0067"
 
   # ── ASI10: Rogue Agents ─────────────────────────────────────
   # ドリフト開始後のふるまい整合性・自己複製・報酬ハックに着目。
@@ -199,6 +212,8 @@ rules:
         url: "https://genai.owasp.org/"
       - title: "OWASP Agentic AI - Threats and Mitigations (Overwhelming Human in the Loop)"
         url: "https://genai.owasp.org/"
+      - title: "MITRE ATLAS AML.T0053 AI Agent Tool Invocation（審査を経ないツールの呼び出し）"
+        url: "https://atlas.mitre.org/techniques/AML.T0053"
 
   # ── エージェントのツールによる対象範囲外への作用（ASI02 の補完）────────
   # maestro-agent-internet-egress-001（canonicalId: agent-uncontrolled-egress）は AGENT から公衆網への
@@ -225,6 +240,8 @@ rules:
     references:
       - title: "OWASP Top 10 for Agentic Applications 2026 - ASI02: Tool Misuse and Exploitation"
         url: "https://genai.owasp.org/"
+      - title: "MITRE ATLAS AML.T0053 AI Agent Tool Invocation（対象範囲外へのツールの呼び出し）"
+        url: "https://atlas.mitre.org/techniques/AML.T0053"
 
   # ── エージェント自身による能力の拡張（ASI03 の補完）──────────────────
   # anthropic-zt-config-integrity-001（canonicalId: agent-config-integrity）は第三者による設定の改ざんを扱う。
@@ -259,3 +276,5 @@ rules:
         url: "https://genai.owasp.org/"
       - title: "OWASP Agentic AI - Threats and Mitigations (Privilege Compromise)"
         url: "https://genai.owasp.org/"
+      - title: "MITRE ATLAS AML.T0081 Modify AI Agent Configuration（能力を定める設定の登録・変更）"
+        url: "https://atlas.mitre.org/techniques/AML.T0081"

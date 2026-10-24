@@ -34,6 +34,8 @@ rules:
         title: "Model Context Protocol - Security Best Practices (tool descriptor / prompt injection via tool definitions)"
       "1":
         title: "Anthropic - Zero Trust for AI Agents (Tool poisoning) (related mapping)"
+      "2":
+        title: "MITRE ATLAS AML.T0110.000 AI Agent Tool Poisoning: Definition and Instructions (embedding hidden instructions in tool descriptors)"
 
   mcp-server-impersonation-typosquatting-001:
     category: "Supply Chain"
@@ -43,6 +45,10 @@ rules:
     references:
       "0":
         title: "Model Context Protocol - Security Best Practices (server identity / discovery spoofing)"
+      "1":
+        title: "MITRE ATLAS AML.T0115.002 Publish Poisoned AI Artifacts: AI Agent Tools (publishing a malicious MCP server to a registry)"
+      "2":
+        title: "MITRE ATLAS AML.T0074 Masquerading (masquerading under a name that resembles a legitimate server)"
 
   mcp-oauth-token-confused-deputy-001:
     category: "Identity"
@@ -54,12 +60,19 @@ rules:
         title: "Model Context Protocol - Security Best Practices (token passthrough / confused deputy)"
       "1":
         title: "Anthropic - Zero Trust for AI Agents (Service authentication / Identity and privilege abuse) (related mapping)"
+      "2":
+        title: "MITRE ATLAS AML.T0098 AI Agent Tool Credential Harvesting (harvesting tokens held by the MCP server)"
+      "3":
+        title: "MITRE ATLAS AML.T0091.000 Use Alternate Authentication Material: Application Access Token (moving laterally to downstream APIs with stolen tokens)"
 
   memory-store-cross-tenant-bleed-001:
     category: "Information Disclosure"
     name: "Cross-tenant / cross-session memory bleed and retention"
     description: "If {{nodeName}} stores an agent's long-term memory, summaries, and search index without a tenant, session, or user-level separation key, content written in one tenant's session can be surfaced in another tenant's or session's search or summary, letting sensitive data, conversation content, and intermediate results bleed across and linger (Can). An attacker can deliberately induce cross-tenant leakage with a prompt that draws out another tenant's memory. If, on the other hand, memory records are physically or logically separated by tenant/session ID and reads enforce an ACL matched against the caller's scope, records outside that scope never appear in search results and bleed does not occur (Cannot). The blast radius is the retained memory content of every tenant and every session sharing that store."
     mitigation: "[Foundation] Require a tenant/session/user ID on every memory record and restrict reads and search to the caller's scope, with sharing disabled by default. Discard volatile memory when a session ends. [Enterprise] Separate indexes/namespaces per tenant and enforce an attribute-based ACL at read time. Operate a retention period (TTL) and verified soft-deletion as a control against lingering data. [Advanced] Separate per-record encryption keys by tenant key (enabling crypto-shredding), and detect and alert on attempted cross-scope access."
+    references:
+      "1":
+        title: "MITRE ATLAS AML.T0057 LLM Data Leakage (prompts that draw out another tenant's memory)"
 
   memory-store-sensitive-data-accumulation-001:
     category: "Information Disclosure"
@@ -69,3 +82,5 @@ rules:
     references:
       "1":
         title: "OWASP LLM02:2025 Sensitive Information Disclosure (related mapping)"
+      "2":
+        title: "MITRE ATLAS AML.T0085 Data from AI Services (bulk collection of sensitive data accumulated in memory)"

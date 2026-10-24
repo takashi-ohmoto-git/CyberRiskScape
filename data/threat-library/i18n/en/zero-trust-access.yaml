@@ -139,6 +139,12 @@ rules:
     references:
       "1":
         title: "MITRE ATT&CK T1588.007 - Obtain Capabilities: Artificial Intelligence (use of AI for the attack)"
+      "2":
+        title: "MITRE ATLAS AML.T0116 Autonomous Reconnaissance (autonomous reconnaissance by AI agents)"
+      "3":
+        title: "MITRE ATLAS AML.T0117 Autonomous Attack-Path Adaptation (autonomously building and revising the attack path)"
+      "4":
+        title: "MITRE ATLAS AML.T0124 Autonomous Attack Orchestration (autonomous orchestration of attacks across multiple agents)"
 
   zt-credential-sprawl-static-secret-001:
     category: "Information Disclosure"
@@ -211,6 +217,10 @@ rules:
     references:
       "0":
         title: "OWASP Top 10 for LLM Applications - LLM01: Prompt Injection (the limits of filtering)"
+      "1":
+        title: "MITRE ATLAS AML.T0054 LLM Jailbreak (novel jailbreak techniques)"
+      "2":
+        title: "MITRE ATLAS AML.T0068 LLM Prompt Obfuscation (bypassing detection through obfuscation)"
 
   zt-ai-gateway-log-concentration-001:
     category: "Information Disclosure"
@@ -220,6 +230,8 @@ rules:
     references:
       "0":
         title: "NIST SP 800-207 - Zero Trust Architecture (protecting the Policy Enforcement Point)"
+      "1":
+        title: "MITRE ATLAS AML.T0085 Data from AI Services (collecting prompts and responses accumulated in the AI gateway)"
 
   zt-ai-gateway-semantic-cache-cross-user-leak-001:
     category: "Information Disclosure"
@@ -229,6 +241,8 @@ rules:
     references:
       "1":
         title: "OWASP Top 10 for LLM Applications 2025 - LLM08:2025 Vector and Embedding Weaknesses (context leakage across users)"
+      "4":
+        title: "MITRE ATLAS AML.T0057 LLM Data Leakage (obtaining another user's response through a similar question)"
 
   zt-ai-gateway-caller-identity-trust-001:
     category: "Spoofing"
@@ -240,6 +254,8 @@ rules:
         title: "OWASP Top 10 for LLM Applications 2025 - LLM10:2025 Unbounded Consumption (per-source rate limiting and quotas)"
       "3":
         title: "NIST SP 800-207 - Zero Trust Architecture (access decisions based on the authenticated subject)"
+      "4":
+        title: "MITRE ATLAS AML.T0034 Cost Harvesting (shifting costs onto others by claiming their IDs)"
 
   zt-external-collaborator-broad-access-001:
     category: "Elevation of Privilege"

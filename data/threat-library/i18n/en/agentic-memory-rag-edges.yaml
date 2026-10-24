@@ -24,12 +24,18 @@ rules:
     name: "Persistence of Untrusted Input into Long-Term Memory"
     description: "When there is an edge explicitly marked as memory_write from {{sourceName}} to {{targetName}}, and {{sourceName}} itself accepts inbound input (potentially untrusted) from a USER, EXTERNAL_ENTITY, TOOL, or similar, an attacker can inject malicious instructions or data into that input path and have the agent persist it into long-term memory as something it has \"learned\" (Can). The persisted poisoned data is then reused as context across all subsequent sessions, continuously inducing misjudgment, impersonation, and instruction overwrites. On the other hand, if source-trust evaluation (trusted/untrusted tagging) and content sanitization are performed before writing, persistence does not succeed even when the input path is untrusted (Cannot). The blast radius is the future responses of every session and every user that reference that MEMORY_STORE."
     mitigation: "[Foundation] Require a source-attribute tag (trusted/untrusted) on all content written via a memory_write path, and do not persist untrusted writes until they have been sanitized by summarization and instruction stripping. [Enterprise] Screen content with a classifier before writing, and route it to a quarantine queue for human review when instruction patterns or sensitive categories are detected. [Advanced] Record a provenance chain (which input edge it originated from) on every write, so a contamination source can be identified later and only records from that source can be bulk-rolled-back."
+    references:
+      "1":
+        title: "MITRE ATLAS AML.T0080.000 AI Agent Context Poisoning: Memory (writing untrusted input into long-term memory)"
 
   agentic-memory-read-unverified-ingestion-001:
     category: "Tampering"
     name: "Unverified Ingestion of Poisoned Memory into Context"
     description: "When there is an edge explicitly marked as memory_read from {{sourceName}} to {{targetName}}, {{targetName}} ingests memory records written in past sessions directly into the current context without integrity verification (Can). If a record whose contamination went undetected at write time (for example, when memory_write-side controls only partially worked) also goes unverified at read time, the contamination surfaces only after a delay and the originating write session becomes hard to trace. On the other hand, if per-record integrity hashes and signatures are verified at read time, with records that fail verification excluded or flagged before use, a miss at write time is double-checked at read time (Cannot). The blast radius is the response quality and decision-making of every agent session that reads that memory."
     mitigation: "[Foundation] Check each record's source-attribute tag (trusted/untrusted) at memory_read time, and explicitly distinguish untrusted records before including them in context (do not interpret them as raw instructions). [Enterprise] Re-verify per-record integrity hashes at read time, excluding tampered or verification-failed records and raising an alert. [Advanced] Continuously apply anomaly detection (statistical deviation, known contamination patterns) to read results as well, and on detection quarantine the record back to its write source."
+    references:
+      "1":
+        title: "MITRE ATLAS AML.T0080.000 AI Agent Context Poisoning: Memory (ingesting poisoned memory when it is read back)"
 
   agentic-rag-retrieval-provenance-gap-001:
     category: "Tampering"
