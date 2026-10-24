@@ -160,6 +160,11 @@ export const jaProject = {
     'Shodan の書き出し（`shodan download` / `host --save` の .json.gz、または JSON）から、外部に露出したサービスの図を作ることもできます。バナー本文や HTTP の内容は図に載せません。',
   'project.templateModal.selectShodan': 'Shodan の書き出しを選択',
   'project.templateModal.shodanStats': 'サービス {services} / ホスト {hosts} / CVE {cves} / 読み飛ばし {skipped} / 上限超過 {truncated}',
+  'project.templateModal.scopesentryIntro':
+    'ScopeSentry の書き出し（Export の JSON）から、外部に露出したサービスの図を作ることもできます。許可された範囲のスキャン結果だけを使ってください。ページ本文・ヘッダ・バナー・リクエスト／レスポンスは読み込みません。',
+  'project.templateModal.selectScopesentry': 'ScopeSentry の書き出しを選択',
+  'project.templateModal.scopesentryStats':
+    'サービス {services} / ホスト {hosts} / 脆弱性 {vulns}（紐付かず {unmatchedVulns}） / 乗っ取り報告 {takeovers} / 読み飛ばし {skipped} / 上限超過 {truncated}',
   // ── Shodan 書き出し取り込み ──
   'shodan.templateName': 'Shodan で観測した外部露出',
   'shodan.error.noBanners': 'Shodan のバナー（ip_str と port を持つ JSON）が見つかりません。`shodan download` などの書き出しを選択してください。',
@@ -172,6 +177,22 @@ export const jaProject = {
   'shodan.desc.cves': 'Shodan が報告した CVE（未検証）: {ids}',
   'shodan.desc.more': '他 {n} 件',
   'shodan.desc.ics': 'OT/ICS 機器（CyberRiskScape のステンシルは OT/ICS に未対応のため IoT として描いています）',
+  // ── ScopeSentry 書き出し取り込み ──
+  'scopesentry.templateName': 'ScopeSentry で観測した外部露出',
+  'scopesentry.error.noRecords': 'ScopeSentry のレコード（asset・vulnerability・SubdomainTakerResult の書き出し JSON）が見つかりません。画面の Export で JSON を選択してください。',
+  'scopesentry.node.actor': 'インターネット上の攻撃者',
+  'scopesentry.node.dnsZone': 'DNS（{domain}）',
+  'scopesentry.desc.ip': 'IP: {ip}',
+  'scopesentry.desc.port': 'ポート: {port}/{transport}',
+  'scopesentry.desc.product': '製品: {product}',
+  'scopesentry.desc.tags': 'タグ: {tags}',
+  'scopesentry.desc.observed': '観測日: {date}',
+  'scopesentry.desc.tech': '検出された技術: {names}',
+  'scopesentry.desc.cdn': 'CDN: {name}',
+  'scopesentry.desc.cves': 'ScopeSentry が報告した脆弱性（未検証）: {ids}',
+  'scopesentry.desc.more': '他 {n} 件',
+  'scopesentry.desc.ics': 'OT/ICS 機器（本ツールのステンシルは OT/ICS に未対応のため IoT として描いています）',
+  'scopesentry.desc.takeover': '乗っ取り可能と報告（未検証）: {hosts}',
   // ── Kong（decK）取り込み ──
   'kong.templateName': 'Kong Gateway（decK から生成）',
   'kong.error.parse': 'YAML / JSON として読み込めません: {message}',

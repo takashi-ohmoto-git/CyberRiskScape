@@ -44,6 +44,8 @@ import { kongToLayer } from '../features/kong-import/kongToLayer';
 import { layerToProject } from '../features/kong-import/toProject';
 import { conjurToLayer } from '../features/conjur-import/conjurToLayer';
 import { shodanToLayer } from '../features/shodan-import/shodanToLayer';
+import { scopesentryRecordsToLayer, scopesentryToLayer, type ScopesentryImportResult } from '../features/scopesentry-import/scopesentryToLayer';
+import { apiKeyFromEnv, fetchViaMcp, MAX_RECORDS } from '../features/scopesentry-import/fetchViaMcp';
 import { toPostmanCollection } from '../features/postman-export/toPostmanCollection';
 import { VarsFileSchema, applyVariableValues, filterByBaseUrl } from '../features/postman-export/dastOptions';
 import { buildTestPlan } from '../features/test-plan/buildTestPlan';
@@ -105,6 +107,8 @@ const USAGE = `使い方:
   import-kong <kong.yaml> [options]
   import-conjur <policy.yml> [options]
   import-shodan <export.json[.gz]> [options]
+  import-scopesentry <export.json> [options]
+  import-scopesentry --api <base-url> [options]
   export-postman <project.json> [options]
   export-test-plan <project.json> [options]
   export-roe <project.json> [options]
@@ -155,6 +159,14 @@ import-conjur のオプション（Conjur / Secrets Manager のポリシーか�
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
 import-shodan のオプション（Shodan の書き出し（.json.gz または JSON）から外部露出サービスの図を L1 に作り、プロジェクト JSON を出力）:
+  --locale <ja|en>                              ノード名の言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+import-scopesentry のオプション（ScopeSentry の書き出し JSON、または MCP 経由の取得から外部露出サービスの図を L1 に作り、プロジェクト JSON を出力）:
+  --api <base-url>                              ファイルの代わりに <base-url>/mcp から取得する（読み取り専用の list_assets のみ呼ぶ）。
+                                                API キーは環境変数 SCOPESENTRY_API_KEY で渡す（保存・出力しない）。許可された範囲にだけ使うこと
+  --project <ObjectID>                          --api のとき、このプロジェクトの資産だけ取得する
+  --search <expr>                               --api のとき、ScopeSentry の検索式で絞り込む
   --locale <ja|en>                              ノード名の言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
@@ -321,6 +333,9 @@ function parseCliArgs() {
       sbom: { type: 'string' },
       node: { type: 'string' },
       'base-url': { type: 'string' },
+      api: { type: 'string' },
+      project: { type: 'string' },
+      search: { type: 'string' },
       help: { type: 'boolean' },
     },
   });
@@ -590,6 +605,58 @@ ${USAGE}`);
   const s = result.summary;
   process.stderr.write(
     `Shodan の書き出しを取り込みました（サービス ${s.services} / ホスト ${s.hosts} / CVE ${s.cves} / 読み飛ばし ${s.skipped} / 上限超過 ${s.truncated}）
+`,
+  );
+}
+
+/**
+ * `import-scopesentry`：ScopeSentry の書き出し JSON、または `--api` で MCP（読み取り専用の list_assets のみ）から取得した
+ * レコードから、外部露出サービスの構成図を作り、プロジェクト JSON を出力する。本文・リクエスト等は読まない（`scopesentryToLayer` 参照）。
+ */
+async function runImportScopesentry(values: CliValues, positionals: string[]): Promise<void> {
+  const file = positionals[1];
+  if (!file && !values.api) {
+    fail(`入力ファイルまたは --api を指定してください。
+
+${USAGE}`);
+  }
+  if (file && values.api) fail('入力ファイルと --api は同時に指定できません。');
+  if (!values.api && (values.project || values.search)) fail('--project / --search は --api と一緒に指定してください。');
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+
+  let result: ScopesentryImportResult;
+  if (values.api) {
+    let key: string;
+    try {
+      key = apiKeyFromEnv(process.env);
+    } catch (e) {
+      fail(e instanceof Error ? e.message : String(e));
+    }
+    try {
+      const { records, capped } = await fetchViaMcp(values.api, key, { project: values.project, search: values.search });
+      if (capped) process.stderr.write(`取得件数が上限（${MAX_RECORDS} 件）に達したため打ち切りました。--project / --search で絞り込んでください。
+`);
+      result = scopesentryRecordsToLayer(records);
+    } catch (e) {
+      // キーをエラー文言に含めない（SDK のエラーはヘッダを含まないが、念のため置換する）。
+      fail(`ScopeSentry から取得できません: ${(e instanceof Error ? e.message : String(e)).split(key).join('***')}`);
+    }
+  } else {
+    let text: string;
+    try {
+      text = readFileSync(file as string, 'utf-8');
+    } catch (e) {
+      fail(`ファイルを読み込めません: ${file}（${e instanceof Error ? e.message : String(e)}）`);
+    }
+    result = scopesentryToLayer(text);
+  }
+  if (!result.ok) fail(result.error);
+
+  writeOutput(JSON.stringify(layerToProject(result.layer), null, 2), values.out);
+  const s = result.summary;
+  process.stderr.write(
+    `ScopeSentry のデータを取り込みました（サービス ${s.services} / ホスト ${s.hosts} / 脆弱性 ${s.vulns}（紐付かず ${s.unmatchedVulns}） / 乗っ取り報告 ${s.takeovers} / 読み飛ばし ${s.skipped} / 上限超過 ${s.truncated}）
 `,
   );
 }
@@ -1082,6 +1149,10 @@ function main(): void {
     runImportConjur(values, positionals);
   } else if (command === 'import-shodan') {
     runImportShodan(values, positionals);
+  } else if (command === 'import-scopesentry') {
+    runImportScopesentry(values, positionals).catch((e: unknown) => {
+      fail(`ScopeSentry の取り込みに失敗しました: ${e instanceof Error ? e.message : String(e)}`);
+    });
   } else if (command === 'import-kong') {
     runImportKong(values, positionals);
   } else if (command === 'mcp') {

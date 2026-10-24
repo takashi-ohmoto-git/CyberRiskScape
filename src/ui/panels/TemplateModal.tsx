@@ -17,6 +17,7 @@ import {
 import { kongToLayer, type KongImportSummary } from '../../features/kong-import/kongToLayer';
 import { conjurToLayer, type ConjurImportSummary } from '../../features/conjur-import/conjurToLayer';
 import { shodanToLayer, type ShodanImportSummary } from '../../features/shodan-import/shodanToLayer';
+import { scopesentryToLayer, type ScopesentryImportSummary } from '../../features/scopesentry-import/scopesentryToLayer';
 
 type Tab = 'export' | 'import';
 
@@ -54,12 +55,14 @@ export function TemplateModal() {
   const [kongSummary, setKongSummary] = useState<KongImportSummary | null>(null);
   const [conjurSummary, setConjurSummary] = useState<ConjurImportSummary | null>(null);
   const [shodanSummary, setShodanSummary] = useState<ShodanImportSummary | null>(null);
+  const [scopesentrySummary, setScopesentrySummary] = useState<ScopesentryImportSummary | null>(null);
   /** 既存要素ありの置換に対するインライン確認待ち（ブラウザダイアログを使わない方針）。 */
   const [confirming, setConfirming] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const kongInputRef = useRef<HTMLInputElement>(null);
   const conjurInputRef = useRef<HTMLInputElement>(null);
   const shodanInputRef = useRef<HTMLInputElement>(null);
+  const scopesentryInputRef = useRef<HTMLInputElement>(null);
 
   const activeCount = nodes.length + edges.length + boundaries.length;
 
@@ -77,6 +80,7 @@ export function TemplateModal() {
     setKongSummary(null);
     setConjurSummary(null);
     setShodanSummary(null);
+    setScopesentrySummary(null);
     setConfirming(false);
   }, [isOpen, projectName, activeLayer]);
 
@@ -107,6 +111,7 @@ export function TemplateModal() {
     setKongSummary(null);
     setConjurSummary(null);
     setShodanSummary(null);
+    setScopesentrySummary(null);
     setConfirming(false);
   };
 
@@ -116,6 +121,7 @@ export function TemplateModal() {
     setKongSummary(result.ok ? result.summary : null);
     setConjurSummary(null);
     setShodanSummary(null);
+    setScopesentrySummary(null);
     setImportedFileName(file.name);
     setConfirming(false);
   };
@@ -126,6 +132,7 @@ export function TemplateModal() {
     setConjurSummary(result.ok ? result.summary : null);
     setKongSummary(null);
     setShodanSummary(null);
+    setScopesentrySummary(null);
     setImportedFileName(file.name);
     setConfirming(false);
   };
@@ -141,6 +148,18 @@ export function TemplateModal() {
     const result = shodanToLayer(text);
     setParsed(result);
     setShodanSummary(result.ok ? result.summary : null);
+    setScopesentrySummary(null);
+    setKongSummary(null);
+    setConjurSummary(null);
+    setImportedFileName(file.name);
+    setConfirming(false);
+  };
+
+  const handleScopesentryFile = async (file: File) => {
+    const result = scopesentryToLayer(await file.text());
+    setParsed(result);
+    setScopesentrySummary(result.ok ? result.summary : null);
+    setShodanSummary(null);
     setKongSummary(null);
     setConjurSummary(null);
     setImportedFileName(file.name);
@@ -330,6 +349,28 @@ export function TemplateModal() {
               {t('project.templateModal.selectShodan')}
             </button>
 
+            <p className="text-xs text-slate-400 leading-relaxed">
+              {t('project.templateModal.scopesentryIntro')}
+            </p>
+            <input
+              ref={scopesentryInputRef}
+              type="file"
+              accept=".json,.jsonl,.ndjson,application/json"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleScopesentryFile(file);
+                e.target.value = '';
+              }}
+            />
+            <button
+              onClick={() => scopesentryInputRef.current?.click()}
+              className="flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-wider bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg transition-colors"
+            >
+              <Upload size={14} />
+              {t('project.templateModal.selectScopesentry')}
+            </button>
+
             {importedFileName && parsed && (
               <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-3 text-xs">
                 <p className="text-slate-500 mb-1 truncate">{importedFileName}</p>
@@ -355,6 +396,11 @@ export function TemplateModal() {
                     {shodanSummary && (
                       <span className="block text-slate-400 mt-1">
                         {t('project.templateModal.shodanStats', { ...shodanSummary })}
+                      </span>
+                    )}
+                    {scopesentrySummary && (
+                      <span className="block text-slate-400 mt-1">
+                        {t('project.templateModal.scopesentryStats', { ...scopesentrySummary })}
                       </span>
                     )}
                   </p>
