@@ -23,6 +23,7 @@ export const enCanvas: Partial<Record<TranslationKey, string>> = {
   'canvas.edgeNotation.plain': 'Plaintext (unencrypted)',
   'canvas.edgeNotation.encrypted': 'Encrypted (TLS / E2EE)',
   'canvas.edgeNotation.highRisk': 'High-risk path (unauthenticated × Internet)',
+  'canvas.edgeNotation.entryProbe': 'Entry candidate (agentic attacker)',
   'canvas.edgeNotation.crossing': 'Trust boundary crossing',
   'canvas.edgeNotation.crossingAuthNone': 'Crossing: unauthenticated',
   'canvas.edgeNotation.crossingAuthPassword': 'Crossing: password (ZTMM Traditional)',

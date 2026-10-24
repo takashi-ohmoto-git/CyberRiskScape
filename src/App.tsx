@@ -35,6 +35,7 @@ import { NewProjectModal } from './ui/panels/NewProjectModal';
 import { ExportLayersModal } from './ui/panels/ExportLayersModal';
 import { CopyLayerModal } from './ui/panels/CopyLayerModal';
 import { LibraryInspectorModal } from './ui/panels/library-inspector/LibraryInspectorModal';
+import { EntryProbeLayer } from './features/attack-tree/EntryProbeLayer';
 
 export default function App() {
   const t = useT();
@@ -109,7 +110,7 @@ export default function App() {
     <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans select-none">
       {!isFocusMode && <LeftSidebar threats={threats} />}
 
-      <Canvas threats={threats}>
+      <Canvas threats={threats} worldOverlay={<EntryProbeLayer threats={threats} />}>
         <TopControls />
         <Legend />
         {linkingFromId && <LinkingIndicator />}

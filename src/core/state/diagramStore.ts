@@ -414,6 +414,8 @@ interface DiagramState {
   /** 範囲選択（マーキー）中の矩形。 */
   marquee: MarqueeState | null;
   linkingFromId: string | null;
+  /** 侵入ポイントの分析（Search Attack Graph）を表示中の攻撃者ノード。transient・非永続・履歴対象外。 */
+  entrySearchAttackerId: string | null;
 
   // ---- viewport（ズーム/パン。transient・非永続・履歴対象外） ----
   /** ビューポート変換（倍率・パン）。 */
@@ -522,6 +524,7 @@ interface DiagramState {
 
   // ---- actions: linking ----
   setLinkingFromId: (id: string | null) => void;
+  setEntrySearchAttackerId: (id: string | null) => void;
 
   // ---- actions: component library ----
   toggleLibrary: (libraryId: string) => void;
@@ -672,6 +675,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   draggingGroup: null,
   marquee: null,
   linkingFromId: null,
+  entrySearchAttackerId: null,
 
   viewport: IDENTITY_VIEWPORT,
   canvasSize: { width: 0, height: 0 },
@@ -993,6 +997,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       selectedBoundaryIds: [],
       selectedAnnotationId: null,
       linkingFromId: null,
+      entrySearchAttackerId: null,
       _commitTag: null,
     }),
 
@@ -1155,6 +1160,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
         selectedBoundaryIds: [],
         selectedAnnotationId: null,
         linkingFromId: null,
+        entrySearchAttackerId: null,
         _commitTag: null,
       };
     });
@@ -1243,6 +1249,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     }),
 
   setLinkingFromId: (id) => set({ linkingFromId: id }),
+  setEntrySearchAttackerId: (id) => set({ entrySearchAttackerId: id }),
 
   toggleLibrary: (libraryId) =>
     set((s) => {
@@ -1300,6 +1307,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       selectedBoundaryIds: [],
       selectedAnnotationId: null,
       linkingFromId: null,
+      entrySearchAttackerId: null,
       viewport: IDENTITY_VIEWPORT,
       // 旧プロジェクトの状態へ Undo で戻れると採番カウンタと矛盾するため履歴をクリア
       past: [],

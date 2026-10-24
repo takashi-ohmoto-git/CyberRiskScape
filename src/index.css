@@ -6,3 +6,19 @@ html, body, #root {
   height: 100%;
   margin: 0;
 }
+
+/* 侵入候補の線（Search Attack Graph）：点が攻撃者から入口へ流れる。動きを減らす設定では止める。
+   移動量は ENTRY_PROBE.dash の 1 周期（0.1 + 7）。 */
+@keyframes entry-probe-flow {
+  to {
+    stroke-dashoffset: -7.1;
+  }
+}
+.entry-probe-flow {
+  animation: entry-probe-flow 0.8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .entry-probe-flow {
+    animation: none;
+  }
+}

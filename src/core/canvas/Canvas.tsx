@@ -22,9 +22,11 @@ import { AnnotationView, AnnotationLeaderLines } from './AnnotationView';
 interface CanvasProps {
   threats: ThreatView[];
   children?: ReactNode;
+  /** ワールド座標で線の上・ノードの下に重ねる描画（機能側の仮想の線など）。core は features を import しないため外から渡す。 */
+  worldOverlay?: ReactNode;
 }
 
-export function Canvas({ threats, children }: CanvasProps) {
+export function Canvas({ threats, children, worldOverlay }: CanvasProps) {
   const nodes = useDiagramStore(selectActiveNodes);
   const edges = useDiagramStore(selectActiveEdges);
   const boundaries = useDiagramStore(selectActiveBoundaries);
@@ -255,6 +257,8 @@ export function Canvas({ threats, children }: CanvasProps) {
           selectedEdgeId={selectedEdgeId}
           onSelectEdge={selectEdge}
         />
+
+        {worldOverlay}
 
         {/* callout の引き出し線。境界/エッジより後、ノード/注釈ボックスより前。 */}
         <AnnotationLeaderLines annotations={annotations} nodes={nodes} />

@@ -58,6 +58,8 @@ import { selectActiveNodes, useDiagramStore } from '../../core/state/diagramStor
 import { useLocale, useT } from '../../i18n';
 import { ThreatCard } from './ThreatCard';
 import { AttackTreeModal } from './AttackTreeModal';
+import { EntrySearchSection } from './EntrySearchSection';
+import { ENTRY_SEARCH_APPLICABLE } from '../../features/attack-tree/findEntryPoints';
 import { CryptoPathSection, NodeCryptoSection } from './CryptoSections';
 import { PostureSection } from './PostureSection';
 
@@ -828,6 +830,9 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
               >
                 <GitBranch size={16} /> {t('panels.node.attackTreeButton')}
               </button>
+              {ENTRY_SEARCH_APPLICABLE.has(node.type) && (
+                <EntrySearchSection attacker={node} threats={allThreats} />
+              )}
             </div>
             <p className="text-xs text-slate-500 mt-3 leading-relaxed">
               {t('panels.node.attackerNote')}

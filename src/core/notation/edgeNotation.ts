@@ -78,6 +78,21 @@ export const EDGE_NOTATION_LEGEND: readonly EdgeNotationLegendEntry[] = [
 ];
 
 /**
+ * 侵入候補の線（Search Attack Graph の仮想の線。エッジとして保存しない）。
+ * 既存の記法と紛れないよう、色・線種・形をすべて変える（ユーザー決定 2026-10-24）。
+ * - 色：マゼンタ系（fuchsia-500）。赤＝高リスク経路、青＝選択中と分ける
+ * - 線種：丸い点の並び（`strokeLinecap: round` で点になる）。破線＝平文と分ける。兄弟エッジがあっても常に直線
+ * - 形：矢印の代わりに入口の側へ照準マーク
+ */
+export const ENTRY_PROBE = {
+  stroke: '#d946ef',
+  dash: '0.1,7',
+  strokeWidth: 3,
+  /** 照準マークの外円の半径。 */
+  reticleRadius: 9,
+} as const;
+
+/**
  * 信頼境界クロッシングマーカーの寸法。
  * 境界の矩形と経路の交点に、経路へ直交する**単線を 1 本**だけ引く。
  */

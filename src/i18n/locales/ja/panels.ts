@@ -53,6 +53,22 @@ export const jaPanels = {
   'panels.node.attackerNote':
     '攻撃者の区分と objective（標的とするコンポーネント）。標的に指定したノードが 削除されると objective は自動解除される。攻撃経路分析はエッジを辿って 攻撃者から標的までの到達経路を表示する。',
 
+  'panels.node.entrySearchButton': 'Search Attack Graph（侵入ポイントを探す）',
+  'panels.node.entrySearchHide': '侵入候補の表示をやめる',
+  'panels.node.entrySearchTitle': '外から見える資産を起点に、AI エージェント攻撃者が入れそうなノードを図に重ねて示します（線は保存されません）',
+  'panels.node.entrySearchHeading': '侵入候補（入りやすい順）',
+  'panels.node.entrySearchEmpty': '侵入候補はありません。公開サーバー・インターネット経由の線・インターネット境界のいずれかが図にあると候補が出ます。',
+  'panels.node.entrySearchAssumed': '* は未入力の属性を悪い値と仮定した判定を含みます。属性を入力すると消えます。',
+  'panels.node.entryReason.publicSurface': 'Global IP のある公開サーバー',
+  'panels.node.entryReason.internetEdge': 'インターネット経由で受ける線',
+  'panels.node.entryReason.internetZone': 'インターネット境界の中',
+  'panels.node.entryReason.attackerEdge': '攻撃者からの線',
+  'panels.node.entryWeakness.noUserAuth': 'ユーザー認証なし',
+  'panels.node.entryWeakness.noSourceIpRestriction': '送信元 IP アクセス制限なし',
+  'panels.node.entryWeakness.noRemoteAccessRestriction': 'リモートアクセス制限なし',
+  'panels.node.entryWeakness.noWaf': 'WAF / WAP による保護なし',
+  'panels.node.entryWeakness.unauthenticatedEdge': '認証なしの線',
+
   'panels.node.attackSurface.globalIp': 'Global IP の割り当て',
   'panels.node.attackSurface.sourceIpRestriction': '送信元 IP アクセス制限',
   'panels.node.attackSurface.remoteAccessRestriction': 'リモートアクセス制限',

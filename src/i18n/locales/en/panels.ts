@@ -52,6 +52,22 @@ export const enPanels: Partial<Record<TranslationKey, string>> = {
   'panels.node.attackerNote':
     "The threat actor category and objective (the target component). If the node set as the target is deleted, the objective is cleared automatically. Attack path analysis follows edges to show routes from the attacker to the target.",
 
+  'panels.node.entrySearchButton': 'Search Attack Graph',
+  'panels.node.entrySearchHide': 'Hide entry candidates',
+  'panels.node.entrySearchTitle': 'Overlay the nodes an agentic attacker could enter, starting from assets visible from outside (the lines are not saved)',
+  'panels.node.entrySearchHeading': 'Entry candidates (easiest first)',
+  'panels.node.entrySearchEmpty': 'No entry candidates. Candidates appear when the diagram has a public server, a line over the Internet, or an Internet boundary.',
+  'panels.node.entrySearchAssumed': '* means the result assumes unset attributes are the worst value. Set the attributes to clear it.',
+  'panels.node.entryReason.publicSurface': 'Public server with a global IP',
+  'panels.node.entryReason.internetEdge': 'Receives a line over the Internet',
+  'panels.node.entryReason.internetZone': 'Inside an Internet boundary',
+  'panels.node.entryReason.attackerEdge': 'Line from the attacker',
+  'panels.node.entryWeakness.noUserAuth': 'No user authentication',
+  'panels.node.entryWeakness.noSourceIpRestriction': 'No source IP access restriction',
+  'panels.node.entryWeakness.noRemoteAccessRestriction': 'No remote access restriction',
+  'panels.node.entryWeakness.noWaf': 'No WAF / WAP protection',
+  'panels.node.entryWeakness.unauthenticatedEdge': 'Unauthenticated line',
+
   'panels.node.attackSurface.globalIp': 'Global IP assigned',
   'panels.node.attackSurface.sourceIpRestriction': 'Source IP access restriction',
   'panels.node.attackSurface.remoteAccessRestriction': 'Remote access restriction',

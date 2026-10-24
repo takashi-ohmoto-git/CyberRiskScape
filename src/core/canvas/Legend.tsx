@@ -14,7 +14,7 @@ import {
   presentComponentTypes,
   presentEdgeNotations,
 } from '../notation/legend';
-import { CROSSING_AUTH_COLORS, CROSSING_AUTH_LEGEND } from '../notation/edgeNotation';
+import { CROSSING_AUTH_COLORS, CROSSING_AUTH_LEGEND, ENTRY_PROBE } from '../notation/edgeNotation';
 import { presentCrossingAuths } from './boundaryCrossing';
 import { useLocale, useT } from '../../i18n';
 
@@ -32,6 +32,7 @@ export function Legend() {
   const nodes = useDiagramStore(selectActiveNodes);
   const edges = useDiagramStore(selectActiveEdges);
   const boundaries = useDiagramStore(selectActiveBoundaries);
+  const entrySearchAttackerId = useDiagramStore((s) => s.entrySearchAttackerId);
   const [collapsed, setCollapsed] = useState(false);
 
   // 描画前に「使われている記号」を集計。カテゴリ順→ラベル順でコンポーネントを安定整列する。
@@ -51,6 +52,8 @@ export function Legend() {
   // 越境マーカーは図に越境が実在するときだけ凡例化する（使っている記号だけを出す方針）。
   const crossingAuths = presentCrossingAuths(nodes, edges, boundaries);
   const crossingRows = CROSSING_AUTH_LEGEND.filter((row) => crossingAuths.has(row.auth));
+  // 侵入候補の線は、Search Attack Graph を表示している間だけ凡例化する。
+  const showEntryProbe = entrySearchAttackerId != null && nodes.some((n) => n.id === entrySearchAttackerId);
 
   // 何も配置されていなければ凡例自体を出さない（空のパネルでキャンバスを汚さない）。
   if (components.length === 0 && edgeNotations.length === 0 && boundaryTypes.length === 0) {
@@ -113,6 +116,31 @@ export function Legend() {
                   </span>
                 </div>
               ))}
+            </section>
+          )}
+
+          {showEntryProbe && (
+            <section className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                {/* 描画と同じ「丸い点の並び＋入口側の照準」の縮小版。 */}
+                <svg width="28" height="14" className="shrink-0" aria-hidden>
+                  <line
+                    x1="2"
+                    y1="7"
+                    x2="18"
+                    y2="7"
+                    stroke={ENTRY_PROBE.stroke}
+                    strokeWidth="2.5"
+                    strokeDasharray="0.1,5"
+                    strokeLinecap="round"
+                  />
+                  <circle cx="23" cy="7" r="4" fill="none" stroke={ENTRY_PROBE.stroke} strokeWidth="1.5" />
+                  <circle cx="23" cy="7" r="1.2" fill={ENTRY_PROBE.stroke} />
+                </svg>
+                <span className="text-xs truncate" title={t('canvas.edgeNotation.entryProbe')}>
+                  {t('canvas.edgeNotation.entryProbe')}
+                </span>
+              </div>
             </section>
           )}
 
