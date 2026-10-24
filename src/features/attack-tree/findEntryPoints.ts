@@ -21,6 +21,7 @@ const PUBLIC_SURFACE_TYPES: ReadonlySet<ComponentTypeId> = new Set([
   'FRONT_END_SERVER',
   'GATEWAY',
   'REVERSE_PROXY',
+  'BACKEND_API',
 ]);
 
 /** 入口の候補にしない型（攻撃する側・利用者の端末・図の外の主体）。 */
@@ -78,7 +79,7 @@ function receives(edge: DiagramEdge, nodeId: string): boolean {
  *
  * 外から見える資産を探索の起点にする、というエージェント型の攻撃ツールの性質に合わせ、
  * 次のいずれかに当たるトップレベルのノードを候補にする（内包されたデータ資産は親で数える）。
- * - 公開サーバー型（FRONT_END_SERVER / GATEWAY / REVERSE_PROXY）で Global IP あり
+ * - 公開サーバー型（FRONT_END_SERVER / GATEWAY / REVERSE_PROXY / BACKEND_API）で Global IP あり
  * - インターネット経由のエッジで外から受ける
  * - 宣言されたインターネット境界の中にある（どの境界にも属さない＝未宣言は対象外）
  * - 攻撃者から線が引かれている

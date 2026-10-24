@@ -12,7 +12,7 @@ locale: en
 components:
   BACKEND_API:
     label: "Backend API"
-    description: "A backend API or microservice behind the gateway. It makes the final authorization decision on business data."
+    description: "A backend API or microservice behind the gateway. It makes the final authorization decision on business data. Use the attackSurface attribute to state how it is exposed and what defenses are in place, including when it is published directly without a gateway."
 
   API_CONTROL_PLANE:
     label: "API control plane"

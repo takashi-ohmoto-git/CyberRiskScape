@@ -118,7 +118,8 @@ export type ThreatActorType =
  * 攻撃面の構成情報。すべて optional boolean で、未設定は「insecure baseline」
  * （hasGlobalIp=true, hasResponseCache=true, それ以外=false）として扱う。
  *
- * 適用対象：FRONT_END_SERVER / GATEWAY / REVERSE_PROXY ＋ AI_GATEWAY（応答キャッシュのみ）（UI 表示はこの 4 種のみ）。
+ * 適用対象：FRONT_END_SERVER / GATEWAY / REVERSE_PROXY ＋ BACKEND_API（応答キャッシュ以外）
+ * ＋ AI_GATEWAY（応答キャッシュのみ）（UI 表示はこの 5 種のみ）。
  * 他のノード型では値があっても脅威エンジンは参照しない。
  */
 export interface AttackSurfaceAttribute {
@@ -147,7 +148,7 @@ export type AttackSurfaceKey = keyof AttackSurfaceAttribute;
  * 未設定は脅威エンジンで `'Unknown'`（対策なし扱い）として評価する。
  */
 export const POSTURE_FIELD_VALUES = {
-  /** ログの取得（公開サーバー・API ゲートウェイは attackSurface.hasAccessLog を使う） */
+  /** ログの取得（公開サーバー・API ゲートウェイ・バックエンド API は attackSurface.hasAccessLog を使う） */
   logCollection: ['Collected', 'NotCollected'],
   /** ログの保持期間 */
   logRetention: ['Under90Days', 'Under1Year', 'OneYearOrMore'],
@@ -591,7 +592,7 @@ export interface DiagramNode {
    */
   userTrustAttribute?: UserTrustAttribute;
   /**
-   * 攻撃面属性（FRONT_END_SERVER / GATEWAY / REVERSE_PROXY 用、AI_GATEWAY は hasResponseCache のみ）。
+   * 攻撃面属性（FRONT_END_SERVER / GATEWAY / REVERSE_PROXY / BACKEND_API 用、AI_GATEWAY は hasResponseCache のみ）。
    * 未設定は insecure baseline（hasGlobalIp=true, hasResponseCache=true, 他=false）として脅威エンジンが扱う。
    */
   attackSurface?: AttackSurfaceAttribute;

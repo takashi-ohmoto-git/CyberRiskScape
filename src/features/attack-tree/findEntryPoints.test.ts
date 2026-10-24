@@ -28,6 +28,18 @@ describe('findEntryPoints', () => {
     expect(web.weaknesses).toEqual(['noUserAuth', 'noSourceIpRestriction', 'noRemoteAccessRestriction', 'noWaf']);
   });
 
+  it('BACKEND_API も公開サーバー型として扱う（Global IP なしを入力すれば候補にしない）', () => {
+    const r = findEntryPoints(
+      [attacker, node('api', 'BACKEND_API'), node('closed', 'BACKEND_API', { attackSurface: { hasGlobalIp: false } })],
+      [],
+      [],
+      [],
+      'atk',
+    );
+    expect(r[0]).toMatchObject({ nodeId: 'api', reasons: ['publicSurface'], assumed: true });
+    expect(ids(r)).not.toContain('closed');
+  });
+
   it('Global IP なしと明示した公開サーバー型は候補にしない。防御策を入力すれば弱点と仮定の印が消える', () => {
     const r = findEntryPoints(
       [

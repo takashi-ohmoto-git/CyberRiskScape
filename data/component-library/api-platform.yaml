@@ -51,9 +51,9 @@ components:
     icon: { kind: builtin, name: "server-cog" }
     shape: rounded
     color: "bg-transparent"
-    description: "ゲートウェイの背後にあるバックエンド API・マイクロサービス。業務データへの認可を最終的に担う。"
+    description: "ゲートウェイの背後にあるバックエンド API・マイクロサービス。業務データへの認可を最終的に担う。ゲートウェイを置かずに直接公開している場合も含め、attackSurface 属性で公開条件・防御策の有無を表現する。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, CREDENTIAL, LOG, OTHER_DOCUMENT]
-    posture: [log, patch]
+    posture: [logRetention, patch]
 
   - id: API_CONTROL_PLANE
     label: "API管理プレーン"

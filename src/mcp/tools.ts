@@ -376,7 +376,7 @@ function applicableAttributes(id: string, registry: ReturnType<typeof getCompone
   const attrs = ['label', 'description', 'agentAttributes.blastRadius'];
   if (id === 'USER') attrs.push('userTrustAttribute');
   if (id === 'PC' || id === 'SMARTPHONE' || id === 'IOT') attrs.push('managedState');
-  if (id === 'FRONT_END_SERVER' || id === 'GATEWAY' || id === 'REVERSE_PROXY' || id === 'AI_GATEWAY') attrs.push('attackSurface');
+  if (id === 'FRONT_END_SERVER' || id === 'GATEWAY' || id === 'REVERSE_PROXY' || id === 'BACKEND_API' || id === 'AI_GATEWAY') attrs.push('attackSurface');
   if (SANCTION_ATTRIBUTE_APPLICABLE.has(id)) attrs.push('cloudSanction', 'cloudOwnership');
   if (AGENCY_APPLICABLE.has(id)) attrs.push('agentAttributes.agency');
   if (IDENTITY_TIER_APPLICABLE.has(id)) attrs.push('agentAttributes.identityTier');

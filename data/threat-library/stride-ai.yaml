@@ -526,6 +526,8 @@ rules:
   # REVERSE_PROXY（2026-10-20 追加）は認証を背後のアプリに任せることが多く、未入力が「認証なし」に
   # 解釈されると全リバースプロキシに出るため、stride-web-no-user-auth-001 / stride-web-anonymous-on-public-001
   # の対象には入れない（認証の問いは背後の FRONT_END_SERVER 側に出る）。
+  # BACKEND_API（2026-10-24 追加）はゲートウェイを置かずに直接公開する構成を表すため、全 9 本の対象に入れる。
+  # ゲートウェイ迂回の api-backend-gateway-bypass-001（エッジ）とは問う角度が違うため併存させる。
   - id: stride-web-global-ip-exposure-001
     canonicalId: web-global-ip-exposure
     framework: STRIDE
@@ -540,6 +542,7 @@ rules:
         - nodeType: FRONT_END_SERVER
         - nodeType: GATEWAY
         - nodeType: REVERSE_PROXY
+        - nodeType: BACKEND_API
       connection:
         required: false
       attackSurface:
@@ -567,6 +570,7 @@ rules:
         - nodeType: FRONT_END_SERVER
         - nodeType: GATEWAY
         - nodeType: REVERSE_PROXY
+        - nodeType: BACKEND_API
       connection:
         required: false
       attackSurface:
@@ -592,6 +596,7 @@ rules:
         - nodeType: FRONT_END_SERVER
         - nodeType: GATEWAY
         - nodeType: REVERSE_PROXY
+        - nodeType: BACKEND_API
       connection:
         required: false
       attackSurface:
@@ -623,6 +628,7 @@ rules:
       anyOf:
         - nodeType: FRONT_END_SERVER
         - nodeType: GATEWAY
+        - nodeType: BACKEND_API
       connection:
         required: false
       attackSurface:
@@ -652,6 +658,7 @@ rules:
         - nodeType: FRONT_END_SERVER
         - nodeType: GATEWAY
         - nodeType: REVERSE_PROXY
+        - nodeType: BACKEND_API
       connection:
         required: false
       attackSurface:
@@ -681,6 +688,7 @@ rules:
         - nodeType: FRONT_END_SERVER
         - nodeType: GATEWAY
         - nodeType: REVERSE_PROXY
+        - nodeType: BACKEND_API
       connection:
         required: false
       attackSurface:
@@ -711,6 +719,7 @@ rules:
         - nodeType: FRONT_END_SERVER
         - nodeType: GATEWAY
         - nodeType: REVERSE_PROXY
+        - nodeType: BACKEND_API
       connection:
         required: false
       attackSurface:
@@ -735,6 +744,7 @@ rules:
       anyOf:
         - nodeType: FRONT_END_SERVER
         - nodeType: GATEWAY
+        - nodeType: BACKEND_API
       connection:
         required: false
       attackSurface:
@@ -765,6 +775,7 @@ rules:
         - nodeType: FRONT_END_SERVER
         - nodeType: GATEWAY
         - nodeType: REVERSE_PROXY
+        - nodeType: BACKEND_API
       connection:
         required: false
       attackSurface:

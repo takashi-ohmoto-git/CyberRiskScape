@@ -132,7 +132,7 @@ const PersistedNodeSchema = z.object({
   authProviderId: z.string().min(1).optional(),
   /** ログの送信先の SIEM ノード id。optional のため schemaVersion 据え置き。 */
   logSinkId: z.string().min(1).optional(),
-  /** 攻撃面属性（FRONT_END_SERVER / GATEWAY / REVERSE_PROXY 用、AI_GATEWAY は hasResponseCache のみ、後方互換のため optional） */
+  /** 攻撃面属性（FRONT_END_SERVER / GATEWAY / REVERSE_PROXY / BACKEND_API 用、AI_GATEWAY は hasResponseCache のみ、後方互換のため optional） */
   attackSurface: PersistedAttackSurfaceSchema.optional(),
   /** エージェント特有属性（AGENT/TOOL/CONNECTOR/USER 用、後方互換のため optional） */
   agentAttributes: PersistedAgentAttributesSchema.optional(),

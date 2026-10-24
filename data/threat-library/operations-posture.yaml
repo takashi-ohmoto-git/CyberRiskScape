@@ -40,12 +40,13 @@
 #   - ログの取得なし ↔ stride-data-store-repudiation-001（data-store-repudiation。WORM・改ざん検知を含む
 #     監査追跡の一般論）、identity-idp-authentication-log-gap-001（idp-authentication-log-gap。IdP の
 #     証跡の外部転送・改ざん耐性）。どちらも「取得しているか」の状態は見ないため併存させる。
-#   - 公開サーバー・API ゲートウェイのログの取得なし → stride-web-no-access-log-001（attackSurface.hasAccessLog）
-#     でカバー済み。この 2 型は log グループを持たないため posture-log-not-collected-001 の対象に入らない。
+#   - 公開サーバー・API ゲートウェイ・バックエンド API のログの取得なし → stride-web-no-access-log-001（attackSurface.hasAccessLog）
+#     でカバー済み。これらの型は log グループを持たないため posture-log-not-collected-001 の対象に入らない
+#     （BACKEND_API は 2026-10-24 に攻撃面属性を持つ型へ移し、log グループから外した）。
 #   - ログの保持期間：ログを取得していないノードに保持期間のカードを重ねない。
 #     - log グループの型 → posture-log-retention-short-001。logCollection が NotCollected のノードは除く
 #       （取得の欠如は posture-log-not-collected-001 が出す）。
-#     - 公開サーバー・API ゲートウェイ・リバースプロキシ → posture-log-retention-short-002。attackSurface.hasAccessLog を
+#     - 公開サーバー・API ゲートウェイ・リバースプロキシ・バックエンド API → posture-log-retention-short-002。attackSurface.hasAccessLog を
 #       true と入力したノードだけ（未入力・false は stride-web-no-access-log-001 が出す）。
 #     - SIEM / ログ基盤（2026-10-21）・EDR / DFIR サーバー（2026-10-23）→ posture-log-retention-short-003。logRetention グループだけを
 #       宣言し logCollection を持たないため -001 の条件が成立しない。ログ基盤の保持期間は組織全体で遡れる期間になるため専用の
@@ -64,9 +65,9 @@
 #     保有の必要性を見ないため併存。
 #
 #   内在的な脅威（運用の状態は図の接続に依存しない）なので、すべて connection.required: false。
-#   attackSurface は公開サーバー・API ゲートウェイ・リバースプロキシ以外では未入力が「Global IP あり」に
-#   解釈されるため、attackSurface を条件にするときは必ず nodeType: [FRONT_END_SERVER, GATEWAY, REVERSE_PROXY]
-#   と組み合わせる（REVERSE_PROXY は 2026-10-20 に攻撃面属性を持つ型として追加）。
+#   attackSurface は公開サーバー・API ゲートウェイ・リバースプロキシ・バックエンド API 以外では未入力が「Global IP あり」に
+#   解釈されるため、attackSurface を条件にするときは必ず nodeType: [FRONT_END_SERVER, GATEWAY, REVERSE_PROXY, BACKEND_API]
+#   と組み合わせる（REVERSE_PROXY は 2026-10-20、BACKEND_API は 2026-10-24 に攻撃面属性を持つ型として追加）。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する。
@@ -90,7 +91,6 @@ rules:
         - nodeType: HYPERVISOR
         - nodeType: FILE_SERVER
         - nodeType: MEMORY_STORE
-        - nodeType: BACKEND_API
         - nodeType: API_CONTROL_PLANE
         - nodeType: CI_PIPELINE
         - nodeType: SECRETS_VAULT
@@ -175,7 +175,6 @@ rules:
         - nodeType: HYPERVISOR
         - nodeType: FILE_SERVER
         - nodeType: MEMORY_STORE
-        - nodeType: BACKEND_API
         - nodeType: API_CONTROL_PLANE
         - nodeType: CI_PIPELINE
         - nodeType: SECRETS_VAULT
@@ -246,7 +245,7 @@ rules:
       - title: "NIST SP 800-92 - Guide to Computer Security Log Management"
         url: "https://csrc.nist.gov/pubs/sp/800/92/final"
 
-  # ── ログの保持期間が短い（公開サーバー・API ゲートウェイ）─────────────────
+  # ── ログの保持期間が短い（公開サーバー・API ゲートウェイ・バックエンド API）─────
   - id: posture-log-retention-short-002
     canonicalId: log-retention-insufficient
     framework: STRIDE
@@ -261,6 +260,7 @@ rules:
         - nodeType: FRONT_END_SERVER
         - nodeType: GATEWAY
         - nodeType: REVERSE_PROXY
+        - nodeType: BACKEND_API
       connection:
         required: false
       # アクセスログを取得していない（未入力・false）ノードは stride-web-no-access-log-001 が出すため除く。
@@ -441,10 +441,10 @@ rules:
       posture:
         patchStatus: [Missing, Unknown]
       conditions:
-        # Global IP を持つ公開サーバー・API ゲートウェイは、インターネットからの自動探索の対象になる。
+        # Global IP を持つ公開サーバー・API ゲートウェイ・バックエンド API は、インターネットからの自動探索の対象になる。
         # attackSurface は他の型では未入力が「Global IP あり」に解釈されるため、型を必ず絞る。
         - when:
-            nodeType: [FRONT_END_SERVER, GATEWAY, REVERSE_PROXY]
+            nodeType: [FRONT_END_SERVER, GATEWAY, REVERSE_PROXY, BACKEND_API]
             attackSurface:
               hasGlobalIp: true
           severity: Critical

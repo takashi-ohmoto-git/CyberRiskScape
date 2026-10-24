@@ -349,7 +349,7 @@ const nextId = (prefix: string): string =>
 
 const AUTH_PROVIDER_EXCLUDED_CATEGORIES: ReadonlySet<string> = new Set(['DOCUMENTS', 'ATTACKER']);
 const MANAGED_STATE_APPLICABLE: ReadonlySet<string> = new Set(['PC', 'SMARTPHONE', 'IOT']);
-const ATTACK_SURFACE_APPLICABLE: ReadonlySet<string> = new Set(['FRONT_END_SERVER', 'GATEWAY', 'REVERSE_PROXY', 'AI_GATEWAY']);
+const ATTACK_SURFACE_APPLICABLE: ReadonlySet<string> = new Set(['FRONT_END_SERVER', 'GATEWAY', 'REVERSE_PROXY', 'BACKEND_API', 'AI_GATEWAY']);
 /** AI_GATEWAY は応答キャッシュ（hasResponseCache）だけ入力できる。 */
 const AI_GATEWAY_SURFACE_KEYS: ReadonlySet<string> = new Set(['hasResponseCache']);
 const USER_TRUST_TO_MANAGED: Record<UserTrustAttribute, ManagedState> = {
@@ -437,6 +437,9 @@ function validateNodeAttrs(work: Work, node: DiagramNode, keys: readonly string[
       if (extra.length > 0) {
         fail(`型 AI_GATEWAY の attackSurface は hasResponseCache のみ設定できます（不可: ${extra.join(', ')}）`);
       }
+    }
+    if (node.type === 'BACKEND_API' && node.attackSurface?.hasResponseCache !== undefined) {
+      fail('型 BACKEND_API の attackSurface に hasResponseCache は設定できません');
     }
   }
   if (has('posture') && node.posture) {

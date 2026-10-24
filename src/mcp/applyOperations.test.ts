@@ -169,6 +169,17 @@ describe('正常系：ノード', () => {
     ).toThrow(/hasResponseCache/);
   });
 
+  it('add_node：BACKEND_API は攻撃面属性を設定でき、hasResponseCache は拒否される', () => {
+    const { project, results } = apply([
+      { op: 'add_node', type: 'BACKEND_API', label: 'API', attackSurface: { hasGlobalIp: false } },
+    ]);
+    const n = l1(project).nodes.find((x) => x.id === results[0].id)!;
+    expect(n.attackSurface).toEqual({ hasGlobalIp: false });
+    expect(() =>
+      apply([{ op: 'add_node', type: 'BACKEND_API', label: 'API', attackSurface: { hasResponseCache: true } }]),
+    ).toThrow(/hasResponseCache/);
+  });
+
   it('update_node：許可リストの属性を更新し、null で消せる', () => {
     const { project } = apply([
       { op: 'update_node', id: 'n-db', set: { label: '更新後', description: '説明' } },
