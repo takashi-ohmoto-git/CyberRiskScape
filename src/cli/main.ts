@@ -55,6 +55,8 @@ import {
 import { sbomCryptoToJson, sbomCryptoToMarkdown } from '../features/sbom-crypto/sbomCryptoOutput';
 import { BUNDLED_ALGORITHM_TABLE, getCryptoLibraries } from '../crypto-behavior/bundled';
 import { testPlanToJson, testPlanToMarkdown } from '../features/test-plan/testPlanOutput';
+import { buildRoe } from '../features/roe-export/buildRoe';
+import { roeToJson, roeToMarkdown } from '../features/roe-export/roeOutput';
 import { buildInvestigationPlan } from '../features/investigation-plan/buildInvestigationPlan';
 import { buildInvestigationReport, parseHostMap } from '../features/investigation-report/buildInvestigationReport';
 import {
@@ -103,6 +105,7 @@ const USAGE = `使い方:
   import-shodan <export.json[.gz]> [options]
   export-postman <project.json> [options]
   export-test-plan <project.json> [options]
+  export-roe <project.json> [options]
   export-investigation-plan <project.json> [options]
   export-triage-patterns [options]
   investigation-report <project.json> --evidence <dir|file> --hosts <hosts.json> [options]
@@ -161,6 +164,13 @@ export-postman のオプション（検出脅威を確かめる確認リクエ�
   --base-url <url>                              この URL 配下へのリクエストだけ残す（DAST の base URL 用）。未使用の変数も除く
 
 export-test-plan のオプション（脅威モデルからペネトレーションテスト計画書（ベンダー中立）を出力）:
+  --format <md|json>                            出力形式（既定: md）
+  --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある最初のレイヤー）
+  --framework <STRIDE|AI|AgenticAI|ALL>         対象フレームワーク（既定: ALL）
+  --locale <ja|en>                              表示言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+export-roe のオプション（脅威モデルから交戦規定（RoE）／スコープ宣言（ベンダー中立）を出力。エージェント型ペンテストツールを自社運用する際の許可対象・スコープ外・承認方針）:
   --format <md|json>                            出力形式（既定: md）
   --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある最初のレイヤー）
   --framework <STRIDE|AI|AgenticAI|ALL>         対象フレームワーク（既定: ALL）
@@ -774,6 +784,40 @@ ${USAGE}`);
 }
 
 /**
+ * `export-roe`：脅威モデルから、交戦規定（RoE）／スコープ宣言（許可対象・スコープ外・承認方針）を
+ * Markdown または JSON で出力する。エージェント型ペンテストツールの自社運用向け（ベンダー中立）。
+ */
+function runExportRoe(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  const format = parseEnum(values.format, TEST_PLAN_FORMATS, 'format') ?? 'md';
+  const layer = parseEnum(values.layer, LAYER_KEYS, 'layer');
+  const framework = parseEnum(values.framework, FRAMEWORKS, 'framework');
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+
+  let results: LayerAnalysisResult[];
+  try {
+    results = analyzeProject(readJsonFile(file), { layer, framework, locale });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  const target = results[0];
+  if (!target) fail('ノードのあるレイヤーがありません。');
+
+  const doc = buildRoe(target.input, new Date(), locale);
+  writeOutput(format === 'json' ? roeToJson(doc) : roeToMarkdown(doc), values.out);
+  process.stderr.write(
+    `交戦規定（RoE）／スコープ宣言を出力しました（${target.layer}・許可対象 ${doc.inScope.length} 件・スコープ外 ${doc.outOfScope.length} 件）
+`,
+  );
+}
+
+/**
  * `findings-report`：Veracode の結果ファイル（Pipeline Scan / Findings API v2）の指摘を、
  * CWE の対応表（`data/finding-maps/cwe.yaml`）を介して構成図の検出脅威と突き合わせる。API は呼ばない。
  */
@@ -964,6 +1008,8 @@ function main(): void {
     runExportPostman(values, positionals);
   } else if (command === 'export-test-plan') {
     runExportTestPlan(values, positionals);
+  } else if (command === 'export-roe') {
+    runExportRoe(values, positionals);
   } else if (command === 'export-investigation-plan') {
     runExportInvestigationPlan(values, positionals);
   } else if (command === 'investigation-report') {
