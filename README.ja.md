@@ -3,8 +3,8 @@
 **AI・LLM・エージェントシステム・PQC に対応した、OSS のビジュアル脅威モデリングツール**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-224-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-1254%20passing-brightgreen.svg)](#開発)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-250-orange.svg)](data/threat-library)
+[![Tests](https://img.shields.io/badge/tests-1419%20passing-brightgreen.svg)](#開発)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 [English](README.md) | **日本語**
@@ -168,7 +168,7 @@ npm run test:watch   # テスト watch モード
 npx tsc --noEmit     # 型チェック（strict）
 ```
 
-変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,254 件の
+変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,419 件の
 テストが通ります。
 
 ---

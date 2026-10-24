@@ -3,8 +3,8 @@
 **Open-source visual threat modeling for AI, LLM, agentic systems, and post-quantum cryptography**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-224-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-1254%20passing-brightgreen.svg)](#development)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-250-orange.svg)](data/threat-library)
+[![Tests](https://img.shields.io/badge/tests-1419%20passing-brightgreen.svg)](#development)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 **English** | [日本語](README.ja.md)
@@ -24,7 +24,7 @@ For the thinking behind it, see [An Introduction to Secure by Design](guide/secu
 For the feature list, see [here](guide/README.md).
 
 > **Interface language.** English and Japanese are both supported — use the JA / EN switch
-> in the top bar, and your choice is remembered. The interface, all 224 threat rules
+> in the top bar, and your choice is remembered. The interface, all 250 threat rules
 > (name, category, description, mitigations) and every component type label are
 > translated. Help is welcome.
 
@@ -181,7 +181,7 @@ npm run test:watch   # watch mode
 npx tsc --noEmit     # type check (strict)
 ```
 
-The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,254 tests
+The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,419 tests
 currently pass.
 
 ---
@@ -282,7 +282,7 @@ Near-term priorities, in order:
    detection confidence stated explicitly
 
 Done recently: an English UI with a language switcher, plus English translation overlays
-for all 224 threat rules and every component type label, all leaving the existing schemas
+for all 250 threat rules and every component type label, all leaving the existing schemas
 unchanged.
 
 ---
