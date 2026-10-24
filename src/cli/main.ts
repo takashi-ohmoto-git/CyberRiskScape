@@ -57,6 +57,7 @@ import { BUNDLED_ALGORITHM_TABLE, getCryptoLibraries } from '../crypto-behavior/
 import { testPlanToJson, testPlanToMarkdown } from '../features/test-plan/testPlanOutput';
 import { buildRoe } from '../features/roe-export/buildRoe';
 import { roeToJson, roeToMarkdown } from '../features/roe-export/roeOutput';
+import { buildNavigatorLayer, navigatorLayerToJson } from '../features/attack-navigator/buildNavigatorLayer';
 import { buildInvestigationPlan } from '../features/investigation-plan/buildInvestigationPlan';
 import { buildInvestigationReport, parseHostMap } from '../features/investigation-report/buildInvestigationReport';
 import {
@@ -106,6 +107,7 @@ const USAGE = `使い方:
   export-postman <project.json> [options]
   export-test-plan <project.json> [options]
   export-roe <project.json> [options]
+  export-attack-navigator <project.json> [options]
   export-investigation-plan <project.json> [options]
   export-triage-patterns [options]
   investigation-report <project.json> --evidence <dir|file> --hosts <hosts.json> [options]
@@ -172,6 +174,12 @@ export-test-plan のオプション（脅威モデルからペネトレーショ
 
 export-roe のオプション（脅威モデルから交戦規定（RoE）／スコープ宣言（ベンダー中立）を出力。エージェント型ペンテストツールを自社運用する際の許可対象・スコープ外・承認方針）:
   --format <md|json>                            出力形式（既定: md）
+  --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある最初のレイヤー）
+  --framework <STRIDE|AI|AgenticAI|ALL>         対象フレームワーク（既定: ALL）
+  --locale <ja|en>                              表示言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+export-attack-navigator のオプション（検出脅威の参照から MITRE ATT&CK Navigator レイヤー（JSON）を出力。CTEM / BAS / SOC での取り込み用。ATLAS は説明文に併記）:
   --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある最初のレイヤー）
   --framework <STRIDE|AI|AgenticAI|ALL>         対象フレームワーク（既定: ALL）
   --locale <ja|en>                              表示言語（既定: ja）
@@ -818,6 +826,39 @@ ${USAGE}`);
 }
 
 /**
+ * `export-attack-navigator`：検出脅威の references から ATT&CK Enterprise の technique を集め、
+ * MITRE ATT&CK Navigator レイヤー（JSON）として出力する。CTEM / BAS / SOC での取り込み用（ベンダー中立）。
+ */
+function runExportNavigator(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  const layer = parseEnum(values.layer, LAYER_KEYS, 'layer');
+  const framework = parseEnum(values.framework, FRAMEWORKS, 'framework');
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+
+  let results: LayerAnalysisResult[];
+  try {
+    results = analyzeProject(readJsonFile(file), { layer, framework, locale });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  const target = results[0];
+  if (!target) fail('ノードのあるレイヤーがありません。');
+
+  const layerDoc = buildNavigatorLayer(target.input, new Date(), locale);
+  writeOutput(navigatorLayerToJson(layerDoc), values.out);
+  process.stderr.write(
+    `ATT&CK Navigator レイヤーを出力しました（${target.layer}・technique ${layerDoc.techniques.length} 件・ATLAS ${layerDoc.atlasTechniques.length} 件）
+`,
+  );
+}
+
+/**
  * `findings-report`：Veracode の結果ファイル（Pipeline Scan / Findings API v2）の指摘を、
  * CWE の対応表（`data/finding-maps/cwe.yaml`）を介して構成図の検出脅威と突き合わせる。API は呼ばない。
  */
@@ -1010,6 +1051,8 @@ function main(): void {
     runExportTestPlan(values, positionals);
   } else if (command === 'export-roe') {
     runExportRoe(values, positionals);
+  } else if (command === 'export-attack-navigator') {
+    runExportNavigator(values, positionals);
   } else if (command === 'export-investigation-plan') {
     runExportInvestigationPlan(values, positionals);
   } else if (command === 'investigation-report') {

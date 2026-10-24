@@ -26,6 +26,12 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'project.sidebar.exportPostman': 'Postman Collection (verification requests)',
   'project.sidebar.exportTestPlan': 'Penetration test plan (Markdown)',
   'project.sidebar.exportRoe': 'Rules of engagement (RoE) / scope declaration (Markdown)',
+  'project.sidebar.exportNavigator': 'ATT&CK Navigator layer (JSON)',
+  'navigator.layerName': 'CyberRiskScape: {system}',
+  'navigator.description.main':
+    'Generated from the threat model of {system} by {product} ({date}). Scores the ATT&CK Enterprise techniques referenced by the detected threats. Import it into CTEM / BAS / SOC tools to visualize coverage.',
+  'navigator.description.atlas':
+    'ATLAS (AI-specific) techniques are also referenced: {ids} (they do not appear in the ATT&CK Enterprise matrix).',
   'project.sidebar.exportInvestigationPlan': 'Investigation plan (suspected compromise)',
   'project.sidebar.exportPdf': 'PDF report (choose layers)',
   'project.sidebar.exportPng': 'PNG image (choose layers)',

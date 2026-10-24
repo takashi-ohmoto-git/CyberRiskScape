@@ -40,6 +40,7 @@ import { buildTestPlan } from '../features/test-plan/buildTestPlan';
 import { testPlanToMarkdown } from '../features/test-plan/testPlanOutput';
 import { buildRoe } from '../features/roe-export/buildRoe';
 import { roeToMarkdown } from '../features/roe-export/roeOutput';
+import { buildNavigatorLayer, navigatorLayerToJson } from '../features/attack-navigator/buildNavigatorLayer';
 import { buildInvestigationPlan } from '../features/investigation-plan/buildInvestigationPlan';
 import { investigationPlanToMarkdown } from '../features/investigation-plan/investigationPlanOutput';
 import { reportFilename } from '../features/export/exportFiles';
@@ -116,7 +117,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
     }
   };
 
-  const handleExportReport = (format: 'csv' | 'json' | 'DCRH-threat-model' | 'postman' | 'test-plan' | 'investigation-plan' | 'roe') => {
+  const handleExportReport = (format: 'csv' | 'json' | 'DCRH-threat-model' | 'postman' | 'test-plan' | 'investigation-plan' | 'roe' | 'attack-navigator') => {
     const s = useDiagramStore.getState();
     const input = {
       threats,
@@ -152,6 +153,12 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
         `${base.replace(/^threat-report/, 'roe')}.md`,
         roeToMarkdown(buildRoe(input, new Date())),
         'text/markdown;charset=utf-8',
+      );
+    } else if (format === 'attack-navigator') {
+      triggerDownload(
+        `${base.replace(/^threat-report/, 'attack-navigator')}.json`,
+        navigatorLayerToJson(buildNavigatorLayer(input, new Date())),
+        'application/json',
       );
     } else {
       const date = formatLocalDate(new Date());
@@ -375,6 +382,13 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                   >
                     <Download size={12} className="text-emerald-400 shrink-0" />
                     {t('project.sidebar.exportRoe')}
+                  </button>
+                  <button
+                    onClick={() => handleExportReport('attack-navigator')}
+                    className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
+                  >
+                    <Download size={12} className="text-emerald-400 shrink-0" />
+                    {t('project.sidebar.exportNavigator')}
                   </button>
                   <button
                     onClick={openChecklist}
