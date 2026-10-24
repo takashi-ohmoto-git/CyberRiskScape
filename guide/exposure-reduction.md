@@ -192,6 +192,8 @@ It produces a diagram of 7 services (6 hosts) and **104** threats at the time of
 The imported diagram is input for the step 2 decisions. Shodan cannot tell you where an asset is supposed to sit (DMZ or internal)
 or whether it is a vendor path, so finish the diagram by adding to it, as in the §3 templates.
 
+Results from ScopeSentry, a self-hosted open-source ASM (assets, vulnerabilities, subdomain takeover), can be imported in the same way. See [Turning ScopeSentry Results into a Diagram](scopesentry.md).
+
 ---
 
 ## 5. Step 2 — Decide whether the exposure is needed

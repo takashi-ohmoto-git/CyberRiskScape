@@ -1,0 +1,216 @@
+{
+  "schemaVersion": 1,
+  "layers": {
+    "L0": {
+      "nodes": [],
+      "edges": [],
+      "boundaries": [],
+      "annotations": []
+    },
+    "L1": {
+      "nodes": [
+        {
+          "id": "scopesentry-actor",
+          "type": "THREAT_ACTOR",
+          "x": 60,
+          "y": 390,
+          "label": "Attacker on the internet",
+          "threatActorType": "CyberCriminals",
+          "seq": 1
+        },
+        {
+          "id": "scopesentry-198_51_100_20-11434-tcp",
+          "type": "LLM",
+          "x": 400,
+          "y": 120,
+          "label": "llm.example.net:11434 Ollama",
+          "description": "IP: 198.51.100.20 ／ Port: 11434/tcp ／ Product: Ollama ／ Observed: 2026-10-20 ／ Detected technologies: Ollama",
+          "seq": 2
+        },
+        {
+          "id": "scopesentry-203_0_113_10-443-tcp",
+          "type": "FRONT_END_SERVER",
+          "x": 400,
+          "y": 300,
+          "label": "www.example.com:443 nginx",
+          "description": "IP: 203.0.113.10 ／ Port: 443/tcp ／ Product: nginx ／ Observed: 2026-10-20 ／ Detected technologies: Nginx:1.24.0, jQuery ／ Vulnerabilities reported by ScopeSentry (unverified): CVE-2099-0001 (high)",
+          "attackSurface": {
+            "hasGlobalIp": true
+          },
+          "seq": 3
+        },
+        {
+          "id": "scopesentry-203_0_113_10-8443-tcp",
+          "type": "FRONT_END_SERVER",
+          "x": 400,
+          "y": 480,
+          "label": "admin.example.com:8443 Grafana",
+          "description": "IP: 203.0.113.10 ／ Port: 8443/tcp ／ Product: Grafana ／ Observed: 2026-10-20 ／ Detected technologies: Grafana ／ Vulnerabilities reported by ScopeSentry (unverified): example-default-login (critical)",
+          "attackSurface": {
+            "hasGlobalIp": true
+          },
+          "seq": 4
+        },
+        {
+          "id": "scopesentry-203_0_113_11-22-tcp",
+          "type": "GATEWAY",
+          "x": 400,
+          "y": 660,
+          "label": "203.0.113.11:22",
+          "description": "IP: 203.0.113.11 ／ Port: 22/tcp ／ Observed: 2026-10-20",
+          "attackSurface": {
+            "hasGlobalIp": true
+          },
+          "seq": 5
+        },
+        {
+          "id": "scopesentry-203_0_113_12-6379-tcp",
+          "type": "DATA_STORE",
+          "x": 660,
+          "y": 210,
+          "label": "203.0.113.12:6379",
+          "description": "IP: 203.0.113.12 ／ Port: 6379/tcp ／ Observed: 2026-10-20",
+          "seq": 6
+        },
+        {
+          "id": "scopesentry-dns-example_com",
+          "type": "DNS_ZONE",
+          "label": "DNS (example.com)",
+          "description": "Reported as takeover-able (unverified): blog.example.com → blog.example-hosting.test / ExampleHosting",
+          "x": 660,
+          "y": 390,
+          "seq": 7
+        }
+      ],
+      "edges": [
+        {
+          "id": "scopesentry-e-198_51_100_20-11434-tcp",
+          "source": "scopesentry-actor",
+          "target": "scopesentry-198_51_100_20-11434-tcp",
+          "network": "Internet",
+          "encryption": "Plain",
+          "auth": "Password",
+          "dataFlow": "bidirectional",
+          "dataFlowName": "Ollama 11434/tcp",
+          "seq": 1
+        },
+        {
+          "id": "scopesentry-e-203_0_113_10-443-tcp",
+          "source": "scopesentry-actor",
+          "target": "scopesentry-203_0_113_10-443-tcp",
+          "network": "Internet",
+          "encryption": "TLS",
+          "auth": "Password",
+          "dataFlow": "bidirectional",
+          "dataFlowName": "nginx 443/tcp",
+          "seq": 2
+        },
+        {
+          "id": "scopesentry-e-203_0_113_10-8443-tcp",
+          "source": "scopesentry-actor",
+          "target": "scopesentry-203_0_113_10-8443-tcp",
+          "network": "Internet",
+          "encryption": "TLS",
+          "auth": "Password",
+          "dataFlow": "bidirectional",
+          "dataFlowName": "Grafana 8443/tcp",
+          "seq": 3
+        },
+        {
+          "id": "scopesentry-e-203_0_113_11-22-tcp",
+          "source": "scopesentry-actor",
+          "target": "scopesentry-203_0_113_11-22-tcp",
+          "network": "Internet",
+          "encryption": "Plain",
+          "auth": "Password",
+          "dataFlow": "bidirectional",
+          "dataFlowName": "SSH 22/tcp",
+          "seq": 4
+        },
+        {
+          "id": "scopesentry-e-203_0_113_12-6379-tcp",
+          "source": "scopesentry-actor",
+          "target": "scopesentry-203_0_113_12-6379-tcp",
+          "network": "Internet",
+          "encryption": "Plain",
+          "auth": "Password",
+          "dataFlow": "bidirectional",
+          "dataFlowName": "redis 6379/tcp",
+          "seq": 5
+        }
+      ],
+      "boundaries": [
+        {
+          "id": "scopesentry-b-internet",
+          "type": "RECT",
+          "x": 20,
+          "y": 320,
+          "width": 208,
+          "height": 206,
+          "trustLevel": "Internet",
+          "seq": 1
+        },
+        {
+          "id": "scopesentry-b-exposed",
+          "type": "ROUNDED",
+          "x": 360,
+          "y": 50,
+          "width": 468,
+          "height": 746,
+          "trustLevel": "Internet",
+          "macroTrust": "Public Area",
+          "seq": 2
+        }
+      ],
+      "annotations": []
+    },
+    "L2": {
+      "nodes": [],
+      "edges": [],
+      "boundaries": [],
+      "annotations": []
+    },
+    "L3": {
+      "nodes": [],
+      "edges": [],
+      "boundaries": [],
+      "annotations": []
+    },
+    "PQC": {
+      "nodes": [],
+      "edges": [],
+      "boundaries": [],
+      "annotations": []
+    }
+  },
+  "activeLayer": "L1",
+  "idCounters": {
+    "L0": {
+      "node": 0,
+      "edge": 0,
+      "boundary": 0
+    },
+    "L1": {
+      "node": 7,
+      "edge": 5,
+      "boundary": 2
+    },
+    "L2": {
+      "node": 0,
+      "edge": 0,
+      "boundary": 0
+    },
+    "L3": {
+      "node": 0,
+      "edge": 0,
+      "boundary": 0
+    },
+    "PQC": {
+      "node": 0,
+      "edge": 0,
+      "boundary": 0
+    }
+  },
+  "activeFramework": "ALL",
+  "updatedAt": 1792858522904
+}

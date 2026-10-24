@@ -47,6 +47,7 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | **Okta** | MCP（エージェント経由で併用）・専用のステンシルと脅威ルール | 図の NHI と実在するサービスアプリを突き合わせる・認証方式で ID の強度を確かめる・使われていない NHI を探す | [NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md) |
 | **SailPoint** | MCP（エージェント経由で併用）・IGA のステンシルと脅威ルール | 過剰な権限の代わりに、申請できる最小のアクセスを探す | [NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md) |
 | **CyberArk（Idira）** | Conjur ポリシーの取り込み・MCP（エージェント経由で併用）・PAM のステンシルと脅威ルール | ポリシーから NHI とシークレットの読み取り経路の図を作る・図の NHI と Secrets Manager のワークロードを突き合わせる | [NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md) |
+| **ScopeSentry** | 書き出しの取り込み（Export の JSON）・API の取り込み（MCP・読み取りのみ） | 自前の ASM の資産・脆弱性・乗っ取り報告から露出の図を自動で作る・サブドメイン乗っ取りを評価する・定期の取り込みの差分で新しい露出を検知する | [ScopeSentry の観測結果を構成図にする](scopesentry.ja.md) |
 | **Shodan** | 書き出しの取り込み（`shodan download` の .json.gz） | 外部に露出したサービスの図を自動で作る・前回の取り込みとの差分で新しく開いたポートを検知する・CISA の 4 ステップに沿って露出を減らす | [インターネット露出を減らす](exposure-reduction.ja.md) |
 | **Anthropic `defending-code-reference-harness`** | `THREAT_MODEL.md` 互換の書き出し | 脅威モデルを、AI による脆弱性診断の入力にする | [Security Context に変換する](security-context.ja.md) |
 | **Veracode** | 構成例（Veracode CLI・Findings API と、`THREAT_MODEL.md`・`findings-report`・Postman 書き出しの組み合わせ） | SAST・DAST の指摘を AI で修正する流れに、脅威モデルを前提知識・優先順位・回帰テストとして組み込む・Postman 書き出しを DAST の検査範囲にする | [Veracode の指摘を AI で直す](veracode-remediation.ja.md) |
@@ -60,7 +61,7 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 |---|---|
 | AI エージェントに脅威モデリングを手伝わせたい | MCP（Claude Code・GitHub Copilot・Cursor） |
 | 脅威モデルの更新漏れを PR で防ぎたい | GitHub Actions |
-| 既存の設定から構成図を起こしたい | Kong AI Gateway・CyberArk（Idira）Conjur・Shodan |
+| 既存の設定から構成図を起こしたい | Kong AI Gateway・CyberArk（Idira）Conjur・Shodan・ScopeSentry |
 | 指摘した脅威が本当に塞がっているか確かめたい | Postman |
 | ペネトレーションテストの範囲と重点を決めたい | テスト計画書の書き出し（[ガイド](pentest-plan.ja.md)。業者を問わない） |
 | 図で切った攻撃経路を、BAS で模擬して確かめたい | ATT&CK Navigator レイヤーの書き出し（[ガイド](agentic-attacker-paths.ja.md) §6） |

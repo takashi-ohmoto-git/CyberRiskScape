@@ -48,6 +48,7 @@ Importing configuration files, exporting verification requests, and diff checks 
 | **Okta** | MCP (side by side, through the agent), dedicated stencils and threat rules | Cross-check diagram NHIs against existing service apps; confirm identity strength from the authentication method; find unused NHIs | [Threat Modeling NHIs and Identity Platforms](nhi-identity.md) |
 | **SailPoint** | MCP (side by side, through the agent), IGA stencil and threat rules | Find the least access that can be requested instead of excessive permissions | [Threat Modeling NHIs and Identity Platforms](nhi-identity.md) |
 | **CyberArk (Idira)** | Conjur policy import, MCP (side by side, through the agent), PAM stencil and threat rules | Draft a diagram of NHIs and secret read paths from the policy; cross-check diagram NHIs against Secrets Manager workloads | [Threat Modeling NHIs and Identity Platforms](nhi-identity.md) |
+| **ScopeSentry** | Export import (Export JSON), API import (MCP, read-only) | Generate an exposure diagram from your own ASM assets, vulnerabilities, and takeover reports; assess subdomain takeover; catch new exposure by diffing periodic imports | [Turning ScopeSentry Results into a Diagram](scopesentry.md) |
 | **Shodan** | Export import (`shodan download` .json.gz) | Generate a diagram of exposed services; catch newly opened ports by diffing against the previous import; reduce exposure along CISA's four steps | [Reducing Internet Exposure](exposure-reduction.md) |
 | **Anthropic `defending-code-reference-harness`** | `THREAT_MODEL.md`-compatible export | Use the threat model as input to an AI-driven vulnerability review | [Turning Your Threat Model into a Security Context](security-context.md) |
 | **Veracode** | Example setup (Veracode CLI and Findings API combined with `THREAT_MODEL.md`, `findings-report`, and the Postman export) | Build the threat model into a flow that fixes SAST and DAST findings with AI, as context, prioritization, and regression tests; use the Postman export as the DAST scan scope | [Fixing Veracode Findings with AI](veracode-remediation.md) |
@@ -61,7 +62,7 @@ Importing configuration files, exporting verification requests, and diff checks 
 |---|---|
 | Have an AI agent help with threat modeling | MCP (Claude Code, GitHub Copilot, Cursor) |
 | Catch missed threat-model updates in PRs | GitHub Actions |
-| Draw the diagram from existing configuration | Kong AI Gateway, CyberArk (Idira) Conjur, Shodan |
+| Draw the diagram from existing configuration | Kong AI Gateway, CyberArk (Idira) Conjur, Shodan, ScopeSentry |
 | Confirm that the threats you flagged are actually closed | Postman |
 | Scope and focus a penetration test | Test plan export ([guide](pentest-plan.md); any provider) |
 | Emulate the attack routes cut on the diagram with BAS | ATT&CK Navigator layer export ([guide](agentic-attacker-paths.md) §6) |

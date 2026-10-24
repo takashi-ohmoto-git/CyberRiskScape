@@ -3,8 +3,8 @@
 **AI・LLM・エージェントシステム・PQC に対応した、OSS のビジュアル脅威モデリングツール**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-250-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-1419%20passing-brightgreen.svg)](#開発)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-251-orange.svg)](data/threat-library)
+[![Tests](https://img.shields.io/badge/tests-1466%20passing-brightgreen.svg)](#開発)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 [English](README.md) | **日本語**
@@ -50,6 +50,7 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 | **ペネトレーションテスト**（社内・外部のテスト業者） | 入口・攻撃経路・重点テスト項目と確認観点をまとめた、業者に依存しないテスト計画書を書き出す（[ガイド](guide/pentest-plan.ja.md)） |
 | **侵害の調査**（Velociraptor・同梱のトリアージスクリプト） | 侵害が疑われるときに、脅威モデルから調査計画書を書き出し、集めた証拠を図のノードに重ねて「痕跡あり・否定できない・未調査・痕跡なし」を報告する。侵害の有無は判定しない（[ガイド](guide/compromise-investigation.ja.md)） |
 | **ID 基盤・NHI**（Okta・SailPoint・CyberArk（Idira）・Microsoft Entra ID・Active Directory / LDAP） | IdP・ディレクトリ・NHI・PAM・IGA をモデル化して評価し、Conjur のポリシーから図を自動生成、各社の MCP サーバーと組み合わせて実際の ID の状態と突き合わせる（[ガイド](guide/nhi-identity.ja.md)） |
+| **ASM・サブドメイン乗っ取り**（ScopeSentry） | ScopeSentry の書き出しまたは API（MCP）から露出サービスと DNS ゾーンの図を自動生成し、サブドメイン乗っ取りを評価、定期の取り込みの差分で新しい露出を検知する（[ガイド](guide/scopesentry.ja.md)） |
 | **ASM・外部露出**（Shodan） | `shodan download` の書き出しから露出サービスの図を自動生成し、CISA の 4 ステップに沿って評価・削減、前回との差分で新しい露出を検知する（[ガイド](guide/exposure-reduction.ja.md)） |
 | **AI エージェント基盤**（Salesforce Agentforce） | 専用のステンシル・脅威ルール・構成図テンプレートで評価する（[ガイド](guide/agentforce.ja.md)） |
 | **車載・SDV**（コネクテッドカー） | 専用のステンシル（Vehicle (SDV) カテゴリ）・UN R155 Annex 5 を出典とする脅威ルール・ゾーン型アーキテクチャの構成図テンプレートで評価する（[ガイド](guide/sdv.ja.md)） |
@@ -60,7 +61,7 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 
 ### 主な機能
 
-- **ビジュアル DFD エディタ** — 103 種のコンポーネント型（13 ライブラリ・16 カテゴリ）、
+- **ビジュアル DFD エディタ** — 110 種のコンポーネント型（13 ライブラリ・16 カテゴリ）、
   トラスト境界、データフローの暗号化区分・認証状態の表現。ネットワーク・セキュリティ機器
   （クラウドの同等サービスの例つき）、Storage & Databases、DFD 標準記法（Yourdon 法）で
   表示する Basic Shapes (DFD) を収録
@@ -168,7 +169,7 @@ npm run test:watch   # テスト watch モード
 npx tsc --noEmit     # 型チェック（strict）
 ```
 
-変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,419 件の
+変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,466 件の
 テストが通ります。
 
 ---

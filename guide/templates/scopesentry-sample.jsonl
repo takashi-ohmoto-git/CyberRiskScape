@@ -1,0 +1,8 @@
+{"host":"www.example.com","ip":"203.0.113.10","port":"443","service":"https","type":"http","url":"https://www.example.com/","technologies":["Nginx:1.24.0","jQuery"],"webServer":"nginx","cdnname":"","tls":true,"rootDomain":"example.com","time":"2026-10-20 10:00:00"}
+{"host":"admin.example.com","ip":"203.0.113.10","port":"8443","service":"https","type":"http","url":"https://admin.example.com:8443/login","technologies":["Grafana"],"webServer":"","cdnname":"","tls":true,"rootDomain":"example.com","time":"2026-10-20 10:05:00"}
+{"host":"203.0.113.11","ip":"203.0.113.11","port":"22","service":"ssh","type":"other","url":"","technologies":[],"webServer":"","cdnname":"","tls":false,"rootDomain":"example.com","time":"2026-10-20 10:10:00"}
+{"host":"203.0.113.12","ip":"203.0.113.12","port":"6379","service":"redis","type":"other","url":"","technologies":[],"webServer":"","cdnname":"","tls":false,"rootDomain":"example.com","time":"2026-10-20 10:15:00"}
+{"host":"llm.example.net","ip":"198.51.100.20","port":"11434","service":"http","type":"http","url":"http://llm.example.net:11434/","technologies":["Ollama"],"webServer":"","cdnname":"","tls":false,"rootDomain":"example.net","time":"2026-10-20 10:20:00"}
+{"url":"https://www.example.com/","vulnid":"CVE-2099-0001","vulname":"Example web server flaw","level":"high","time":"2026-10-20 11:00:00"}
+{"url":"https://admin.example.com:8443/login","vulnid":"example-default-login","vulname":"Default login page","level":"critical","time":"2026-10-20 11:05:00"}
+{"input":"blog.example.com","value":"ExampleHosting","cname":"blog.example-hosting.test","rootDomain":"example.com","time":"2026-10-20 12:00:00"}
