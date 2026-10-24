@@ -73,7 +73,8 @@ verbatim.
                   data/threat-library/endpoint.yaml,
                   data/threat-library/storage.yaml,
                   data/threat-library/nhi.yaml,
-                  data/threat-library/operations-posture.yaml
+                  data/threat-library/operations-posture.yaml,
+                  data/threat-library/api-platform.yaml
 
    CWE (Common Weakness Enumeration)
    https://cwe.mitre.org/

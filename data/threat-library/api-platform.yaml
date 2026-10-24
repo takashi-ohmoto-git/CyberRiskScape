@@ -39,6 +39,19 @@
 #     （Generation of Error Message Containing Sensitive Information）、OWASP Error Handling Cheat Sheet
 #   - NIST SP 800-204「Security Strategies for Microservices-based Application Systems」
 #     https://csrc.nist.gov/pubs/sp/800/204/final （サーキットブレーカー・負荷分散・スロットリング）
+#   - MITRE ATT&CK (Enterprise) v20.0（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
+#     出典つきで参照し本文は転載しない）:
+#     T1190 "Exploit Public-Facing Application"、T1078 "Valid Accounts"、
+#     T1556 "Modify Authentication Process"、T1110 "Brute Force"、
+#     T1555.006 "Credentials from Password Stores: Cloud Secrets Management Stores"、
+#     T1593 "Search Open Websites/Domains"、T1552.001 "Unsecured Credentials: Credentials In Files"、
+#     T1677 "Poisoned Pipeline Execution"、T1595.003 "Active Scanning: Wordlist Scanning"、
+#     T1119 "Automated Collection"、
+#     T1550.001 "Use Alternate Authentication Material: Application Access Token"、
+#     T1606 "Forge Web Credentials"、T1552.005 "Unsecured Credentials: Cloud Instance Metadata API"、
+#     T1505.003 "Server Software Component: Web Shell"、T1059 "Command and Scripting Interpreter"、
+#     T1592.002 "Gather Victim Host Information: Software"。
+#     https://attack.mitre.org/techniques/
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -131,6 +144,8 @@ rules:
       - title: "OWASP API Security Top 10 2023 - API3:2023 Broken Object Property Level Authorization"
         url: "https://owasp.org/API-Security/editions/2023/en/0xa3-broken-object-property-level-authorization/"
       # ゲートウェイ層の認可（スコープ・機能単位）は gateway-authorization-gap が扱う（別 canonicalId）。
+      - title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application（公開 API の認可不備の悪用）"
+        url: "https://attack.mitre.org/techniques/T1190/"
 
   # ── BACKEND_API: ゲートウェイを経由しない直接アクセス ──────────────
   - id: api-backend-gateway-bypass-001
@@ -179,6 +194,10 @@ rules:
     references:
       - title: "OWASP API Security Top 10 2023 - API8:2023 Security Misconfiguration"
         url: "https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/"
+      - title: "MITRE ATT&CK T1078 - Valid Accounts（入手した管理用の資格情報での変更）"
+        url: "https://attack.mitre.org/techniques/T1078/"
+      - title: "MITRE ATT&CK T1556 - Modify Authentication Process（認証プラグインの除去）"
+        url: "https://attack.mitre.org/techniques/T1556/"
 
   # ── API_CONTROL_PLANE: 管理面のインターネット露出（エッジ視点）──────────
   - id: api-control-plane-internet-exposure-001
@@ -203,6 +222,10 @@ rules:
       - title: "OWASP API Security Top 10 2023 - API8:2023 Security Misconfiguration"
         url: "https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/"
       # FRONT_END_SERVER / GATEWAY の管理面露出は stride-web-remote-mgmt-exposed-001 が扱う（同じ canonicalId）。
+      - title: "MITRE ATT&CK T1110 - Brute Force（管理用 API への認証の総当たり）"
+        url: "https://attack.mitre.org/techniques/T1110/"
+      - title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application（既定の設定・既知の脆弱性の悪用）"
+        url: "https://attack.mitre.org/techniques/T1190/"
 
   # ── SECRETS_VAULT: 認証材料の集約点としてのリスク ──────────────────
   - id: api-secrets-vault-concentration-001
@@ -226,6 +249,8 @@ rules:
       - title: "OWASP Secrets Management Cheat Sheet（最小権限・動的シークレット・監査）"
         url: "https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html"
       # 置き場所を問わない認証材料の散在は credential-sprawl が扱う（別 canonicalId）。
+      - title: "MITRE ATT&CK T1555.006 - Credentials from Password Stores: Cloud Secrets Management Stores（シークレット管理からの認証材料の一括取得）"
+        url: "https://attack.mitre.org/techniques/T1555/006/"
 
   # ── API_DEV_WORKSPACE: 共有ワークスペースからの認証材料の露出 ──────────
   - id: api-dev-workspace-secret-exposure-001
@@ -251,6 +276,10 @@ rules:
       - title: "OWASP Secrets Management Cheat Sheet（シークレットの検出と共有の禁止）"
         url: "https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html"
       # 認証材料の置き場所を問わない一般論は credential-sprawl が扱う（別 canonicalId）。
+      - title: "MITRE ATT&CK T1593 - Search Open Websites/Domains（公開されたワークスペースの検索）"
+        url: "https://attack.mitre.org/techniques/T1593/"
+      - title: "MITRE ATT&CK T1552.001 - Unsecured Credentials: Credentials In Files（コレクション・環境変数に残った認証材料の取得）"
+        url: "https://attack.mitre.org/techniques/T1552/001/"
 
   # ── CI_PIPELINE: 汚染されたパイプラインの実行と認証材料の窃取 ──────────
   - id: api-ci-pipeline-poisoned-execution-001
@@ -275,6 +304,8 @@ rules:
     references:
       - title: "OWASP Top 10 CI/CD Security Risks - CICD-SEC-4 Poisoned Pipeline Execution / CICD-SEC-6 Insufficient Credential Hygiene"
         url: "https://owasp.org/www-project-top-10-ci-cd-security-risks/"
+      - title: "MITRE ATT&CK T1677 - Poisoned Pipeline Execution（ビルド定義・テストスクリプトの書き換えによる実行）"
+        url: "https://attack.mitre.org/techniques/T1677/"
 
   # ── API_SPEC: API の棚卸しと仕様の乖離 ──────────────────────────
   - id: api-spec-improper-inventory-001
@@ -299,6 +330,8 @@ rules:
     references:
       - title: "OWASP API Security Top 10 2023 - API9:2023 Improper Inventory Management"
         url: "https://owasp.org/API-Security/editions/2023/en/0xa9-improper-inventory-management/"
+      - title: "MITRE ATT&CK T1595.003 - Active Scanning: Wordlist Scanning（古い版・未登録のエンドポイントの推測）"
+        url: "https://attack.mitre.org/techniques/T1595/003/"
 
   # ── BACKEND_API / GATEWAY: モバイルアプリに埋め込んだ秘密情報への依存（経路依存）──
   - id: api-mobile-embedded-secret-001
@@ -330,6 +363,8 @@ rules:
         url: "https://www.rfc-editor.org/rfc/rfc7636"
       - title: "OWASP Mobile Application Security Verification Standard（MASVS）"
         url: "https://mas.owasp.org/MASVS/"
+      - title: "MITRE ATT&CK T1552.001 - Unsecured Credentials: Credentials In Files（アプリの解析による埋め込みの秘密情報の取り出し）"
+        url: "https://attack.mitre.org/techniques/T1552/001/"
 
   # ── BACKEND_API / GATEWAY: 個人情報の大量取得の制限・検知の欠如（経路依存）──
   - id: api-bulk-data-harvesting-001
@@ -362,6 +397,8 @@ rules:
         url: "https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/"
       - title: "OWASP Automated Threats to Web Applications（OAT-011 Scraping）"
         url: "https://owasp.org/www-project-automated-threats-to-web-applications/"
+      - title: "MITRE ATT&CK T1119 - Automated Collection（スクリプトによる個人情報の繰り返しの取得）"
+        url: "https://attack.mitre.org/techniques/T1119/"
 
   # ── BACKEND_API: 機能単位の認可不備（API5 BFLA）──────────────────
   - id: api-backend-function-level-authorization-001
@@ -384,6 +421,8 @@ rules:
     references:
       - title: "OWASP API Security Top 10 2023 - API5:2023 Broken Function Level Authorization"
         url: "https://owasp.org/API-Security/editions/2023/en/0xa5-broken-function-level-authorization/"
+      - title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application（管理者用の機能の認可不備の悪用）"
+        url: "https://attack.mitre.org/techniques/T1190/"
 
   # ── BACKEND_API / GATEWAY: トークン・セッションの検証不備（API2）──────
   - id: api-token-session-validation-gap-001
@@ -416,6 +455,10 @@ rules:
         url: "https://www.rfc-editor.org/rfc/rfc8725"
       - title: "OWASP Cheat Sheet Series - JSON Web Token for Java Cheat Sheet"
         url: "https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html"
+      - title: "MITRE ATT&CK T1550.001 - Use Alternate Authentication Material: Application Access Token（期限切れ・失効済みのトークンの再利用）"
+        url: "https://attack.mitre.org/techniques/T1550/001/"
+      - title: "MITRE ATT&CK T1606 - Forge Web Credentials（署名を検証しないトークンの書き換え）"
+        url: "https://attack.mitre.org/techniques/T1606/"
 
   # ── BACKEND_API: サーバー側リクエストフォージェリ（API7 SSRF）──────────
   - id: api-backend-ssrf-001
@@ -447,6 +490,10 @@ rules:
         url: "https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html"
       - title: "NICT CYNEX（LETTICE）注意喚起「相次ぐ情報漏洩、その原因の一つは『アプリ解析からのサーバ攻撃』」（2026-10-13）"
         url: "https://cynex.nict.go.jp/library/261013-01.html"
+      - title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application（宛先を検証しない機能の悪用）"
+        url: "https://attack.mitre.org/techniques/T1190/"
+      - title: "MITRE ATT&CK T1552.005 - Unsecured Credentials: Cloud Instance Metadata API（メタデータサービスからの認証情報の取得）"
+        url: "https://attack.mitre.org/techniques/T1552/005/"
 
   # ── BACKEND_API: SQL / NoSQL インジェクション ─────────────────────
   - id: api-backend-query-injection-001
@@ -480,6 +527,8 @@ rules:
       - title: "NICT CYNEX（LETTICE）注意喚起「相次ぐ情報漏洩、その原因の一つは『アプリ解析からのサーバ攻撃』」（2026-10-13）"
         url: "https://cynex.nict.go.jp/library/261013-01.html"
       # フォームの値が下流で解釈される経路は web-form-input-injection（WEB_FORM）が扱う（別 canonicalId）。
+      - title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application（クエリへの構文の注入）"
+        url: "https://attack.mitre.org/techniques/T1190/"
 
   # ── BACKEND_API: デシリアライズ・ファイル書き込み・OS コマンドによるコード実行 ──
   - id: api-backend-remote-code-execution-001
@@ -517,6 +566,12 @@ rules:
       - title: "NICT CYNEX（LETTICE）注意喚起「相次ぐ情報漏洩、その原因の一つは『アプリ解析からのサーバ攻撃』」（2026-10-13）"
         url: "https://cynex.nict.go.jp/library/261013-01.html"
       # 公開 Web サーバーへの Web シェルの設置・常駐は web-shell-implant（FRONT_END_SERVER）が扱う（別 canonicalId）。
+      - title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application（デシリアライズ・ファイル書き込み・OS コマンドの悪用）"
+        url: "https://attack.mitre.org/techniques/T1190/"
+      - title: "MITRE ATT&CK T1505.003 - Server Software Component: Web Shell（書き込んだファイルによる Web シェルの設置）"
+        url: "https://attack.mitre.org/techniques/T1505/003/"
+      - title: "MITRE ATT&CK T1059 - Command and Scripting Interpreter（OS コマンドの実行）"
+        url: "https://attack.mitre.org/techniques/T1059/"
 
   # ── BACKEND_API / GATEWAY: エラー応答による内部情報の露出（API8 / CWE-209）──
   - id: api-error-response-disclosure-001
@@ -547,6 +602,8 @@ rules:
         url: "https://cwe.mitre.org/data/definitions/209.html"
       - title: "OWASP Cheat Sheet Series - Error Handling Cheat Sheet"
         url: "https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html"
+      - title: "MITRE ATT&CK T1592.002 - Gather Victim Host Information: Software（エラー応答からのミドルウェア・版の把握）"
+        url: "https://attack.mitre.org/techniques/T1592/002/"
 
   # ── BACKEND_API: 多層 API での下流障害の連鎖（タイムアウト・サーキットブレーカー・隔離の欠如）──
   - id: api-downstream-cascading-failure-001

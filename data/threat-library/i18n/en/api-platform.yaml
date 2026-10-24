@@ -22,6 +22,9 @@ rules:
     name: "Broken object and property level authorization (BOLA / BOPLA)"
     description: "If {{nodeName}} does not check whether the record IDs and fields in a request belong to the calling user, a legitimately signed-in user can read or change other people's records just by rewriting an ID (Can). Returning fields the client does not need, or applying every field received in an update, also lets the caller read fields they have no right to see and overwrite fields such as roles or prices. An API gateway can validate tokens and scopes, but it does not know who owns a record, so this check can only be made in the backend. If, on the other hand, every data operation checks the caller's relationship to the record and the fields returned and accepted are limited by allow lists, rewriting an ID does not reach anyone else's data (Cannot). The blast radius is every record {{nodeName}} handles (every user's records if IDs are sequential or guessable)."
     mitigation: "[Foundation] In every API that handles records by ID, check the relationship between the caller (the token subject) and the record. Define, per API, an allow list of fields returned in responses and fields accepted in updates, and do not return or apply anything else. [Enterprise] Centralize authorization decisions in a shared library or policy engine instead of leaving them to each implementation. Include test cases that request other users' IDs in API tests and run them in CI every time. Use IDs that are hard to guess (random values). [Advanced] Log authorization decisions and detect a single user trying many other users' IDs. Generate authorization tests from the API specification and continuously check the gap between specification and implementation."
+    references:
+      "2":
+        title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application (exploiting missing authorization in a public API)"
 
   api-backend-gateway-bypass-001:
     name: "Direct access to a backend API without going through the gateway"
@@ -32,11 +35,21 @@ rules:
     name: "Configuration tampering in the API control plane"
     description: "{{nodeName}} distributes routing, authentication, rate limiting, and plugin settings to the gateway. An attacker who obtains credentials for the admin API or management console can remove an authentication plugin, point a route at their own server, or stop log output, and apply that change to every API under management at once (Can). Because the change is distributed as legitimate configuration, the gateway does not treat it as abnormal. If, on the other hand, the admin API is separated from the gateway's traffic path and reachable only from administrators' devices, configuration is version-controlled as code, and only reviewed changes are applied from CI, obtaining credentials is not enough to rewrite the configuration unnoticed (Cannot). The blast radius is every API {{nodeName}} manages and all of their users."
     mitigation: "[Foundation] Place the admin API and management console on a path separate from the user-facing gateway (a management network, VPN, or similar), and require authentication with MFA. Give each administrator an individual account and separate permissions by role. [Enterprise] Manage configuration as declarative files under version control and apply only reviewed changes from CI (prohibit manual changes). Regularly detect differences between the running configuration and the repository. Record configuration changes in audit logs and forward them to the SIEM. [Advanced] Require an approval flow (such as two-person approval) for management operations. Automatically flag high-impact changes such as removing an authentication plugin or pointing a route outside the organization."
+    references:
+      "1":
+        title: "MITRE ATT&CK T1078 - Valid Accounts (changes made with obtained management credentials)"
+      "2":
+        title: "MITRE ATT&CK T1556 - Modify Authentication Process (removing the authentication plugin)"
 
   api-control-plane-internet-exposure-001:
     name: "Remote access to the management plane (API control plane)"
     description: "{{targetName}} (the API control plane) is reachable from {{sourceName}}, which is outside the trust boundary (treated as Internet). When the admin API is exposed to the internet, attackers can go after administrative access by brute-forcing authentication or targeting default settings and known vulnerabilities (Can). With administrative access, they can rewrite authentication and routing for every API under management. If, on the other hand, the management plane is limited to a management network, VPN, or IAP and cannot be reached from the internet side, this entry point does not exist (Cannot). The blast radius is every API {{targetName}} manages."
     mitigation: "[Foundation] Do not expose the admin API or management console to the internet. Place it behind a management network, VPN, or IAP (Identity-Aware Proxy), and limit sources to administrators' devices. [Enterprise] Use MFA and short-lived tokens to authenticate to the management plane, and disable default administrator accounts. Record access to the management plane in audit logs and detect repeated failures. [Advanced] Decide each access to the management plane based on device posture and user attributes (zero trust access)."
+    references:
+      "1":
+        title: "MITRE ATT&CK T1110 - Brute Force (brute-forcing authentication to the management API)"
+      "2":
+        title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application (exploiting default settings and known vulnerabilities)"
 
   api-secrets-vault-concentration-001:
     name: "Concentration of privilege in the secrets manager"
@@ -45,6 +58,8 @@ rules:
     references:
       "0":
         title: "OWASP Secrets Management Cheat Sheet (least privilege, dynamic secrets, auditing)"
+      "1":
+        title: "MITRE ATT&CK T1555.006 - Credentials from Password Stores: Cloud Secrets Management Stores (bulk retrieval of credentials from secrets management)"
 
   api-dev-workspace-secret-exposure-001:
     name: "Credentials exposed from a shared API dev tool workspace"
@@ -53,16 +68,26 @@ rules:
     references:
       "0":
         title: "OWASP Secrets Management Cheat Sheet (detecting secrets and prohibiting sharing)"
+      "1":
+        title: "MITRE ATT&CK T1593 - Search Open Websites/Domains (searching for public workspaces)"
+      "2":
+        title: "MITRE ATT&CK T1552.001 - Unsecured Credentials: Credentials In Files (obtaining credentials left in collections and environment variables)"
 
   api-ci-pipeline-poisoned-execution-001:
     name: "Poisoned CI/CD pipeline and credential theft"
     description: "{{nodeName}} runs build definitions and test scripts from the repository while holding credentials for deployment and API calls. An attacker who can write to a pull request or branch (an outside contributor, a hijacked developer account, and similar) can rewrite those build definitions or test scripts so that code runs with {{nodeName}}'s privileges, stealing credentials or changing the production environment (Can). In setups that run API tests in CI, production API keys are often passed to the pipeline. If, on the other hand, unreviewed code runs only in environments without credentials, credentials are issued short-lived only to the jobs that need them, and production deployment is limited to protected branches with approval, rewriting the build definition does not reach any credentials (Cannot). The blast radius is the credentials passed to {{nodeName}} and the entire deployment target environment."
     mitigation: "[Foundation] Run unreviewed code, such as pull requests from outside contributors, in environments that receive no credentials. Run production-related jobs only from protected branches, and require review for changes to build definitions. Make sure credentials are not printed in pipeline logs. [Enterprise] Do not store long-lived credentials in CI; issue short-lived credentials per job with OIDC or similar. Pass each job only the credentials it needs, and require approval for production deployments. [Advanced] Make build environments disposable for every run, and restrict outbound traffic with an allow list. Sign build artifacts and verify the signatures at deployment."
+    references:
+      "1":
+        title: "MITRE ATT&CK T1677 - Poisoned Pipeline Execution (execution through modified build definitions or test scripts)"
 
   api-spec-improper-inventory-001:
     name: "Improper API inventory (old versions and unregistered APIs left running)"
     description: "If {{nodeName}} does not match the APIs actually exposed, old-version endpoints, test endpoints, and APIs that were supposed to be retired keep running without appearing in the specification. These often lack the authorization and input checks added in newer versions, so an attacker can reach a weak implementation just by guessing an old version's URL (Can). When the specification is published, information about internal APIs and authentication methods also becomes reconnaissance material for attackers. If, on the other hand, running APIs are inventoried against the specification, APIs not in the specification are blocked at the gateway, and retired versions are shut down on a set deadline, unmanaged APIs cannot be reached from outside (Cannot). The blast radius is every API missing from the inventory."
     mitigation: "[Foundation] Build a list of running APIs (host, version, environment) and link each to its specification and owner. Shut down retired versions and test endpoints. Remove internal APIs from published specifications. [Enterprise] Manage the specification in the same repository as the gateway configuration, and do not expose routes that are not in the specification. Detect calls to APIs not in the specification from gateway access logs. [Advanced] Check the difference between specification and implementation in CI, and make any drift a release blocker."
+    references:
+      "1":
+        title: "MITRE ATT&CK T1595.003 - Active Scanning: Wordlist Scanning (guessing old or unregistered endpoints)"
 
   api-mobile-embedded-secret-001:
     name: "Verifying the caller with a secret embedded in the mobile app"
@@ -71,6 +96,8 @@ rules:
     references:
       "0":
         title: "IETF RFC 8252 - OAuth 2.0 for Native Apps (native apps are public clients)"
+      "3":
+        title: "MITRE ATT&CK T1552.001 - Unsecured Credentials: Credentials In Files (extracting embedded secrets by analyzing the app)"
 
   api-bulk-data-harvesting-001:
     name: "No limits or detection for bulk harvesting of personal data through the API"
@@ -79,16 +106,26 @@ rules:
     references:
       "2":
         title: "OWASP Automated Threats to Web Applications (OAT-011 Scraping)"
+      "3":
+        title: "MITRE ATT&CK T1119 - Automated Collection (repeated scripted retrieval of personal data)"
 
   api-backend-function-level-authorization-001:
     name: "Broken function level authorization (BFLA)"
     description: "{{nodeName}} serves APIs for administrators, internal operations or system integration through the same entry point as the APIs for ordinary users. If each API does not check whether the caller's token type and role allow this function, an attacker legitimately signed in as an ordinary user only has to try URLs and methods guessed from the app's traffic (changing GET to PUT or DELETE, /users/me to /admin/users, and so on) to call administrative functions such as listing, searching or bulk-exporting other members, or changing permissions (Can). The absence of admin buttons in the app's screens is no defense. If, on the other hand, every API checks the caller's role against the functions it may use, denies by default, and admin and internal APIs are separated from user-facing ones onto a different entry point and a different token issuer, a user's token cannot reach administrative functions (Cannot). The blast radius is every administrative function callable with a user's token, and all user data those functions handle."
     mitigation: "[Foundation] In every API, check the caller's role (ordinary user, administrator, internal system) against whether it may use that API's function. Deny by default and state the permitted roles per API. Decide per method (GET, PUT, DELETE and so on) as well. [Enterprise] Serve admin and internal APIs from a host and network path separate from user-facing ones, so user tokens cannot reach them. Run test cases that call admin APIs with a user token in CI every time. [Advanced] Centralize authorization decisions in a policy engine, and continuously check for drift between the role definitions in the API specification and the implementation. Detect and alert on admin API calls made with user tokens."
+    references:
+      "1":
+        title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application (exploiting missing authorization on administrator functions)"
 
   api-token-session-validation-gap-001:
     name: "Token and session validation flaws in the API"
     description: "{{nodeName}} identifies the calling user by the session token or JWT sent from the user's device, or from a SaaS or business application acting on the user's behalf. If it trusts the member ID inside the token without verifying the signature, does not check expiry, logout or revocation, or ignores the token's purpose (display only, a specific function) or its scope, an attacker can rewrite the token's contents to impersonate another member, keep using expired or stolen tokens, or call APIs that return personal data with a weakly privileged token (Can). If the signing algorithm (alg) is left to whatever the token says, unsigned tokens or tokens forged with another key are accepted as well. If, on the other hand, every request has the signature checked with the server's key along with issuer, audience, expiry and revocation, the accepted algorithms are fixed, and each API checks for the scope it requires, rewritten, expired and under-privileged tokens are all rejected (Cannot). The blast radius is the data of every user who can be impersonated, and every function callable with that token."
     mitigation: "[Foundation] On every request, verify the token's signature, issuer, audience and expiry. Fix the accepted signing algorithms on the server side and reject unsigned tokens. Take the member ID only from the subject (sub) of a token whose signature has been verified, never from request parameters or an unverified token. [Enterprise] Define the scope and purpose each API requires, and reject tokens that do not meet them (do not let display-only tokens call personal-data APIs). Keep access token lifetimes short, and have a way to revoke them on logout, password change or fraud detection. Centralize token validation in a shared library or the gateway. [Advanced] Bind tokens to the device or client (sender-constrained tokens with DPoP, mTLS and the like) so stolen tokens cannot be used from another device. Monitor validation failures and use of revoked tokens."
+    references:
+      "3":
+        title: "MITRE ATT&CK T1550.001 - Use Alternate Authentication Material: Application Access Token (reusing expired or revoked tokens)"
+      "4":
+        title: "MITRE ATT&CK T1606 - Forge Web Credentials (modifying tokens whose signatures are not verified)"
 
   api-backend-ssrf-001:
     name: "Server-side request forgery (SSRF)"
@@ -97,6 +134,10 @@ rules:
     references:
       "3":
         title: "NICT CYNEX (LETTICE) alert: \"One cause of the recurring data leaks: server attacks based on app analysis\" (2026-10-13)"
+      "4":
+        title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application (exploiting a function that does not validate destinations)"
+      "5":
+        title: "MITRE ATT&CK T1552.005 - Unsecured Credentials: Cloud Instance Metadata API (obtaining credentials from the metadata service)"
 
   api-backend-query-injection-001:
     name: "SQL / NoSQL injection through API parameters"
@@ -105,6 +146,8 @@ rules:
     references:
       "4":
         title: "NICT CYNEX (LETTICE) alert: \"One cause of the recurring data leaks: server attacks based on app analysis\" (2026-10-13)"
+      "5":
+        title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application (injecting syntax into queries)"
 
   api-backend-remote-code-execution-001:
     name: "Arbitrary code execution on the API server (deserialization, file writes, OS commands)"
@@ -113,6 +156,12 @@ rules:
     references:
       "6":
         title: "NICT CYNEX (LETTICE) alert: \"One cause of the recurring data leaks: server attacks based on app analysis\" (2026-10-13)"
+      "7":
+        title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application (exploiting deserialization, file writes, or OS commands)"
+      "8":
+        title: "MITRE ATT&CK T1505.003 - Server Software Component: Web Shell (planting a web shell through a written file)"
+      "9":
+        title: "MITRE ATT&CK T1059 - Command and Scripting Interpreter (executing OS commands)"
 
   api-error-response-disclosure-001:
     name: "Internal information exposed through error responses"
@@ -121,6 +170,8 @@ rules:
     references:
       "0":
         title: "OWASP API Security Top 10 2023 - API8:2023 Security Misconfiguration (error responses that include stack traces and the like)"
+      "3":
+        title: "MITRE ATT&CK T1592.002 - Gather Victim Host Information: Software (learning middleware and versions from error responses)"
 
   api-downstream-cascading-failure-001:
     name: "Cascading downstream failures in layered APIs (missing timeouts, circuit breakers and isolation)"
