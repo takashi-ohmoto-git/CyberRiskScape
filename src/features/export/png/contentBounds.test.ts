@@ -46,6 +46,12 @@ describe('computeContentBounds', () => {
     expect(b!.minX).toBe(0);
   });
 
+  it('リサイズ済みの注釈は指定の幅・高さ（最小高さ）を使う', () => {
+    const resized = { ...annotation(10, 20, 'callout'), width: 400, height: 150 };
+    const b = computeContentBounds({ nodes: [], boundaries: [], annotations: [resized] });
+    expect(b).toEqual({ minX: 10, minY: 20, maxX: 410, maxY: 170 });
+  });
+
   it('注釈のみでも bbox が出る', () => {
     expect(
       computeContentBounds({ nodes: [], boundaries: [], annotations: [annotation(5, 6, 'text')] }),

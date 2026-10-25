@@ -20,7 +20,8 @@ interface HandleConfig {
   position: string;
 }
 
-const HANDLES: HandleConfig[] = [
+/** 8 方向ハンドルの配置。注釈（AnnotationView）のリサイズでも共用する。 */
+export const HANDLES: HandleConfig[] = [
   { handle: 'nw', cursor: 'cursor-nwse-resize', position: '-top-1.5 -left-1.5' },
   { handle: 'n', cursor: 'cursor-ns-resize', position: '-top-1.5 left-1/2 -translate-x-1/2' },
   { handle: 'ne', cursor: 'cursor-nesw-resize', position: '-top-1.5 -right-1.5' },

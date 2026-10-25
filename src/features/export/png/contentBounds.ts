@@ -17,12 +17,20 @@ const CALLOUT_WIDTH = 224;
  */
 function estimateAnnotationSize(a: LayerData['annotations'][number]): { w: number; h: number } {
   const lines = a.text.split('\n');
+  // リサイズ済みなら幅は指定値で、高さは「指定値（最小高さ）と本文の見積もりの大きい方」。
+  const countRows = (charsPerRow: number): number =>
+    lines.reduce((sum, l) => sum + Math.max(1, Math.ceil(l.length / charsPerRow)), 0);
   if (a.kind === 'callout') {
-    // text-xs(12px, 行高 16) の太字。全角混在を見込み 1 行 ≒ 16 文字で折り返す。
-    const rows = lines.reduce((sum, l) => sum + Math.max(1, Math.ceil(l.length / 16)), 0);
-    return { w: CALLOUT_WIDTH, h: rows * 16 + 20 };
+    // text-xs(12px, 行高 16) の太字。全角混在を見込み 1 行 ≒ 16 文字（幅 224 時）で折り返す。
+    const w = a.width ?? CALLOUT_WIDTH;
+    const rows = countRows(Math.max(1, Math.floor((w * 16) / CALLOUT_WIDTH)));
+    return { w, h: Math.max(a.height ?? 0, rows * 16 + 20) };
   }
   // text-sm(14px, 行高 20) の極太。全角を見込み 1 文字 ≒ 15px。
+  if (a.width != null) {
+    const rows = countRows(Math.max(1, Math.floor((a.width - 8) / 15)));
+    return { w: a.width, h: Math.max(a.height ?? 0, rows * 20) };
+  }
   const maxLen = lines.reduce((m, l) => Math.max(m, l.length), 1);
   return { w: maxLen * 15 + 8, h: lines.length * 20 };
 }

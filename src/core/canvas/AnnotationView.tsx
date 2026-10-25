@@ -1,9 +1,10 @@
 import type { MouseEvent } from 'react';
 import { Trash2 } from 'lucide-react';
-import type { DiagramAnnotation, DiagramNode } from '../model/types';
+import type { DiagramAnnotation, DiagramNode, ResizeHandle } from '../model/types';
 import { getEdgeAnchorAt, getEdgeEndpointGeometry } from './nodeGeometry';
+import { HANDLES } from './BoundaryView';
 
-/** callout の固定幅（`w-56` と一致）。リサイズは v1 スコープ外。 */
+/** callout の既定幅（`w-56` と一致）。リサイズ済みなら `annotation.width` が優先。 */
 const CALLOUT_WIDTH = 224;
 /**
  * 引き出し線のアンカー計算に使う仮の高さ。callout の実高さは本文に応じた自動サイズで
@@ -17,12 +18,27 @@ interface AnnotationViewProps {
   annotation: DiagramAnnotation;
   isSelected: boolean;
   onMouseDown: (e: MouseEvent, id: string) => void;
+  /** 未指定（PNG 書き出し等）ならリサイズハンドルを出さない。 */
+  onResizeStart?: (
+    e: MouseEvent,
+    id: string,
+    handle: ResizeHandle,
+    size: { width: number; height: number },
+  ) => void;
   onDelete: (id: string) => void;
 }
 
 /** 注釈 1 件分の描画（テキストラベル or 吹き出しボックス）。 */
-export function AnnotationView({ annotation, isSelected, onMouseDown, onDelete }: AnnotationViewProps) {
+export function AnnotationView({
+  annotation,
+  isSelected,
+  onMouseDown,
+  onResizeStart,
+  onDelete,
+}: AnnotationViewProps) {
   const isCallout = annotation.kind === 'callout';
+  // 高さは最小高さとして効かせる（本文が収まらなければ伸びる＝文字を隠さない）。
+  const minHeight = annotation.height;
 
   return (
     <div
@@ -33,28 +49,53 @@ export function AnnotationView({ annotation, isSelected, onMouseDown, onDelete }
       style={{
         left: annotation.x,
         top: annotation.y,
-        width: isCallout ? CALLOUT_WIDTH : undefined,
+        width: annotation.width ?? (isCallout ? CALLOUT_WIDTH : undefined),
         touchAction: 'none',
       }}
     >
       {isCallout ? (
-        <div className="bg-slate-900/85 backdrop-blur-[1px] border border-amber-500/50 rounded-xl px-3 py-2 text-amber-100 text-xs font-bold whitespace-pre-wrap shadow-xl">
+        <div
+          className="bg-slate-900/85 backdrop-blur-[1px] border border-amber-500/50 rounded-xl px-3 py-2 text-amber-100 text-xs font-bold whitespace-pre-wrap break-words shadow-xl"
+          style={{ minHeight }}
+        >
           {annotation.text}
         </div>
       ) : (
-        <div className="text-sm font-black text-slate-100 whitespace-pre-wrap px-1 drop-shadow">
+        <div
+          className="text-sm font-black text-slate-100 whitespace-pre-wrap break-words px-1 drop-shadow"
+          style={{ minHeight }}
+        >
           {annotation.text}
         </div>
       )}
+      {/* 右上のリサイズハンドルと重ならないよう、枠の外側へ逃がす。 */}
       <button
         onClick={(e) => {
           e.stopPropagation();
           onDelete(annotation.id);
         }}
-        className="absolute -top-2 -right-2 bg-slate-800 hover:bg-rose-600 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all border border-slate-700 pointer-events-auto"
+        className="absolute -top-2 -right-9 bg-slate-800 hover:bg-rose-600 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all border border-slate-700 pointer-events-auto"
       >
         <Trash2 size={12} />
       </button>
+      {isSelected &&
+        onResizeStart &&
+        HANDLES.map((h) => (
+          <div
+            key={h.handle}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              // offsetWidth/Height は CSS transform（ズーム）の影響を受けない＝ワールド座標の寸法。
+              const box = e.currentTarget.parentElement;
+              if (!box) return;
+              onResizeStart(e, annotation.id, h.handle, {
+                width: box.offsetWidth,
+                height: box.offsetHeight,
+              });
+            }}
+            className={`absolute ${h.position} ${h.cursor} w-3 h-3 bg-white border-2 border-blue-500 rounded-sm shadow z-10`}
+          />
+        ))}
     </div>
   );
 }
@@ -81,7 +122,10 @@ export function AnnotationLeaderLines({ annotations, nodes }: AnnotationLeaderLi
       {callouts.map((a) => {
         const target = nodes.find((n) => n.id === a.targetNodeId);
         if (!target) return null;
-        const boxCenter = { x: a.x + CALLOUT_WIDTH / 2, y: a.y + CALLOUT_ANCHOR_HEIGHT / 2 };
+        const boxCenter = {
+          x: a.x + (a.width ?? CALLOUT_WIDTH) / 2,
+          y: a.y + (a.height ?? CALLOUT_ANCHOR_HEIGHT) / 2,
+        };
         const { center: nodeCenter, dims: nodeDims } = getEdgeEndpointGeometry(target, nodes);
         const anchor = getEdgeAnchorAt(nodeCenter, nodeDims, boxCenter.x, boxCenter.y);
         return (

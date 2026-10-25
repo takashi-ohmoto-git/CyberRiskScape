@@ -477,6 +477,13 @@ export interface DiagramAnnotation {
   y: number;
   /** プレーンテキスト（改行可）。 */
   text: string;
+  /**
+   * 利用者がリサイズした幅・高さ（ワールド座標）。未設定なら従来どおりの自動サイズ
+   * （callout は固定幅、label は本文なり）。幅は折り返し幅、高さは最小高さとして効き、
+   * 文字サイズは変えない（PowerPoint のテキストボックスと同じ）。
+   */
+  width?: number;
+  height?: number;
   /** callout のみ。リンク先ノード ID（同一レイヤー）。 */
   targetNodeId?: string;
 }

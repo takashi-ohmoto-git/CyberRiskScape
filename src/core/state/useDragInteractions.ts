@@ -15,7 +15,9 @@ export function useDragInteractions(): void {
   const isDraggingNode = useDiagramStore((s) => s.draggingNode !== null);
   const isDraggingBoundary = useDiagramStore((s) => s.draggingBoundary !== null);
   const isDraggingAnnotation = useDiagramStore((s) => s.draggingAnnotation !== null);
-  const isResizing = useDiagramStore((s) => s.resizingBoundary !== null);
+  const isResizing = useDiagramStore(
+    (s) => s.resizingBoundary !== null || s.resizingAnnotation !== null,
+  );
   const isDraggingGroup = useDiagramStore((s) => s.draggingGroup !== null);
   const isMarquee = useDiagramStore((s) => s.marquee !== null);
   const isPanning = useDiagramStore((s) => s.panning !== null);
@@ -64,6 +66,12 @@ export function useDragInteractions(): void {
         s.applyBoundaryResizeDelta(
           (e.clientX - s.resizingBoundary.startX) / scale,
           (e.clientY - s.resizingBoundary.startY) / scale,
+        );
+      }
+      if (s.resizingAnnotation) {
+        s.applyAnnotationResizeDelta(
+          (e.clientX - s.resizingAnnotation.startX) / scale,
+          (e.clientY - s.resizingAnnotation.startY) / scale,
         );
       }
       if (s.draggingGroup) {

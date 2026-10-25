@@ -45,6 +45,9 @@ const emptyManualThreats = (): Record<LayerKey, ManualThreat[]> => ({
 
 const MIN_BOUNDARY_W = 80;
 const MIN_BOUNDARY_H = 60;
+/** 注釈リサイズ時の最小サイズ（1 行の吹き出しが収まる程度）。 */
+const MIN_ANNOTATION_W = 40;
+const MIN_ANNOTATION_H = 20;
 
 /** Undo/Redo 履歴の上限段数。 */
 const MAX_HISTORY = 50;
@@ -196,6 +199,8 @@ function applyResize(
   handle: ResizeHandle,
   dx: number,
   dy: number,
+  minW = MIN_BOUNDARY_W,
+  minH = MIN_BOUNDARY_H,
 ): { x: number; y: number; width: number; height: number } {
   let { x, y, width, height } = start;
   if (handle.includes('e')) width = start.width + dx;
@@ -209,13 +214,13 @@ function applyResize(
     y = start.y + dy;
   }
   // 最小サイズ未満になる場合は、対応する辺で打ち止め（x/y を巻き戻す）。
-  if (width < MIN_BOUNDARY_W) {
-    if (handle.includes('w')) x = start.x + start.width - MIN_BOUNDARY_W;
-    width = MIN_BOUNDARY_W;
+  if (width < minW) {
+    if (handle.includes('w')) x = start.x + start.width - minW;
+    width = minW;
   }
-  if (height < MIN_BOUNDARY_H) {
-    if (handle.includes('n')) y = start.y + start.height - MIN_BOUNDARY_H;
-    height = MIN_BOUNDARY_H;
+  if (height < minH) {
+    if (handle.includes('n')) y = start.y + start.height - minH;
+    height = minH;
   }
   return { x, y, width, height };
 }
@@ -409,6 +414,7 @@ interface DiagramState {
   draggingBoundary: DragState | null;
   draggingAnnotation: DragState | null;
   resizingBoundary: ResizeState | null;
+  resizingAnnotation: ResizeState | null;
   /** 複数ノードのグループ移動中の状態（単一ドラッグは draggingNode を使う）。 */
   draggingGroup: GroupDragState | null;
   /** 範囲選択（マーキー）中の矩形。 */
@@ -601,6 +607,17 @@ interface DiagramState {
   ) => void;
   /** 注釈の単独選択＋ドラッグ開始。 */
   beginAnnotationInteraction: (annotationId: string, clientX: number, clientY: number) => void;
+  /**
+   * 注釈のリサイズ開始。未リサイズの注釈は自動サイズでストアに寸法が無いため、
+   * 描画側で測った現在の幅・高さ（ワールド座標）を渡す。
+   */
+  beginAnnotationResize: (
+    annotationId: string,
+    handle: ResizeHandle,
+    clientX: number,
+    clientY: number,
+    size: { width: number; height: number },
+  ) => void;
   setNodePosition: (id: string, x: number, y: number) => void;
   /** 複数ノードの座標を一括更新（グループ移動用）。 */
   setNodesPositions: (updates: { id: string; x: number; y: number }[]) => void;
@@ -610,6 +627,7 @@ interface DiagramState {
   setBoundariesPositions: (updates: { id: string; x: number; y: number }[]) => void;
   setAnnotationPosition: (id: string, x: number, y: number) => void;
   applyBoundaryResizeDelta: (dx: number, dy: number) => void;
+  applyAnnotationResizeDelta: (dx: number, dy: number) => void;
   endInteraction: () => void;
 
   // ---- actions: marquee（範囲選択） ----
@@ -675,6 +693,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   draggingBoundary: null,
   draggingAnnotation: null,
   resizingBoundary: null,
+  resizingAnnotation: null,
   draggingGroup: null,
   marquee: null,
   linkingFromId: null,
@@ -1649,6 +1668,39 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     );
   },
 
+  beginAnnotationResize: (annotationId, handle, clientX, clientY, size) => {
+    const s = get();
+    const annotation = s.layers[s.activeLayer].annotations.find((a) => a.id === annotationId);
+    if (!annotation) return;
+    set({
+      selectedAnnotationId: annotationId,
+      selectedNodeIds: [],
+      selectedEdgeId: null,
+      selectedBoundaryIds: [],
+      _dragArmed: true,
+      _commitTag: null,
+      resizingAnnotation: {
+        id: annotationId,
+        handle,
+        startX: clientX,
+        startY: clientY,
+        startBox: { x: annotation.x, y: annotation.y, ...size },
+      },
+    });
+  },
+
+  applyAnnotationResizeDelta: (dx, dy) => {
+    const r = get().resizingAnnotation;
+    if (!r) return;
+    if (get()._dragArmed) get().recordHistory();
+    const box = applyResize(r.startBox, r.handle, dx, dy, MIN_ANNOTATION_W, MIN_ANNOTATION_H);
+    set((s) =>
+      withActiveLayer(s, (l) => ({
+        annotations: l.annotations.map((a) => (a.id === r.id ? { ...a, ...box } : a)),
+      })),
+    );
+  },
+
   setAnnotationPosition: (id, x, y) => {
     if (get()._dragArmed) get().recordHistory();
     set((s) =>
@@ -1664,6 +1716,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       draggingBoundary: null,
       draggingAnnotation: null,
       resizingBoundary: null,
+      resizingAnnotation: null,
       draggingGroup: null,
       panning: null,
       // 移動なしのクリックで終わった場合の予約解除

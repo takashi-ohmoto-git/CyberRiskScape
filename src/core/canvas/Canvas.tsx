@@ -42,6 +42,7 @@ export function Canvas({ threats, children, worldOverlay }: CanvasProps) {
   const beginBoundaryInteraction = useDiagramStore((s) => s.beginBoundaryInteraction);
   const beginBoundaryResize = useDiagramStore((s) => s.beginBoundaryResize);
   const beginAnnotationInteraction = useDiagramStore((s) => s.beginAnnotationInteraction);
+  const beginAnnotationResize = useDiagramStore((s) => s.beginAnnotationResize);
   const beginMarquee = useDiagramStore((s) => s.beginMarquee);
   const selectNode = useDiagramStore((s) => s.selectNode);
   const selectEdge = useDiagramStore((s) => s.selectEdge);
@@ -206,6 +207,15 @@ export function Canvas({ threats, children, worldOverlay }: CanvasProps) {
     beginBoundaryResize(boundaryId, handle, e.clientX, e.clientY);
   };
 
+  const onAnnotationResizeStart = (
+    e: MouseEvent,
+    annotationId: string,
+    handle: ResizeHandle,
+    size: { width: number; height: number },
+  ) => {
+    beginAnnotationResize(annotationId, handle, e.clientX, e.clientY, size);
+  };
+
   const onAnnotationMouseDown = (e: MouseEvent, annotationId: string) => {
     e.stopPropagation();
     beginAnnotationInteraction(annotationId, e.clientX, e.clientY);
@@ -303,6 +313,7 @@ export function Canvas({ threats, children, worldOverlay }: CanvasProps) {
             annotation={annotation}
             isSelected={selectedAnnotationId === annotation.id}
             onMouseDown={onAnnotationMouseDown}
+            onResizeStart={onAnnotationResizeStart}
             onDelete={deleteAnnotation}
           />
         ))}

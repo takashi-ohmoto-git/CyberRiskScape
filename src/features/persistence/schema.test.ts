@@ -668,6 +668,28 @@ describe('PersistedProjectSchema', () => {
     expect(r.success).toBe(true);
   });
 
+  it('layer.annotations: リサイズ後の width/height を受理し、0 以下は拒否する', () => {
+    const emptyLayer = { nodes: [], edges: [], boundaries: [] };
+    const parse = (width: number) =>
+      PersistedProjectSchema.safeParse({
+        schemaVersion: PERSISTED_PROJECT_SCHEMA_VERSION,
+        layers: {
+          L0: emptyLayer,
+          L1: {
+            ...emptyLayer,
+            annotations: [{ id: 'ann1', kind: 'callout', x: 0, y: 0, text: 'x', width, height: 80 }],
+          },
+          L2: emptyLayer,
+          L3: emptyLayer,
+        },
+        activeLayer: 'L1',
+        activeFramework: 'STRIDE',
+        updatedAt: 0,
+      });
+    expect(parse(300).success).toBe(true);
+    expect(parse(0).success).toBe(false);
+  });
+
   it('layer.annotations: 未知の kind を拒否する', () => {
     const emptyLayer = { nodes: [], edges: [], boundaries: [] };
     const r = PersistedProjectSchema.safeParse({

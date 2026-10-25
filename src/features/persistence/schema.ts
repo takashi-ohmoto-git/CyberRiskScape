@@ -215,6 +215,9 @@ const PersistedAnnotationSchema = z.object({
   x: z.number(),
   y: z.number(),
   text: z.string(),
+  /** リサイズ後の幅・高さ。旧データには無いため optional（未設定＝自動サイズ）。 */
+  width: z.number().positive().optional(),
+  height: z.number().positive().optional(),
   /** callout のみ。リンク先ノード id（同一レイヤー）。参照先削除時は store 側で解除される。 */
   targetNodeId: z.string().min(1).optional(),
 });

@@ -149,6 +149,45 @@ describe('キャンバス注釈', () => {
     expect(after[0].targetNodeId).toBeUndefined();
   });
 
+  it('右下ハンドルのリサイズで幅・高さが付き、位置は動かない', () => {
+    useDiagramStore.getState().addAnnotation('callout');
+    const a = annotations()[0];
+    const st = useDiagramStore.getState();
+    st.beginAnnotationResize(a.id, 'se', 0, 0, { width: 224, height: 40 });
+    st.applyAnnotationResizeDelta(76, 60);
+    st.endInteraction();
+
+    expect(annotations()[0]).toMatchObject({ x: a.x, y: a.y, width: 300, height: 100 });
+    expect(useDiagramStore.getState().resizingAnnotation).toBeNull();
+  });
+
+  it('左上ハンドルのリサイズは最小サイズで打ち止めになり、右下の角は固定される', () => {
+    useDiagramStore.getState().addAnnotation('label');
+    const a = annotations()[0];
+    const st = useDiagramStore.getState();
+    st.beginAnnotationResize(a.id, 'nw', 0, 0, { width: 100, height: 30 });
+    st.applyAnnotationResizeDelta(500, 500);
+
+    const r = annotations()[0];
+    expect(r.width).toBe(40);
+    expect(r.height).toBe(20);
+    expect(r.x + r.width!).toBe(a.x + 100);
+    expect(r.y + r.height!).toBe(a.y + 30);
+  });
+
+  it('undo でリサイズ前の自動サイズに戻る', () => {
+    useDiagramStore.getState().addAnnotation('callout');
+    const a = annotations()[0];
+    const st = useDiagramStore.getState();
+    st.beginAnnotationResize(a.id, 'e', 0, 0, { width: 224, height: 40 });
+    st.applyAnnotationResizeDelta(50, 0);
+    st.endInteraction();
+    expect(annotations()[0].width).toBe(274);
+
+    useDiagramStore.getState().undo();
+    expect(annotations()[0].width).toBeUndefined();
+  });
+
   it('undo で注釈の追加が取り消され、redo でやり直せる', () => {
     useDiagramStore.getState().addAnnotation('label');
     expect(annotations()).toHaveLength(1);
