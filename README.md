@@ -3,8 +3,8 @@
 **Open-source visual threat modeling for AI, LLM, agentic systems, and post-quantum cryptography**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-251-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-1466%20passing-brightgreen.svg)](#development)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-256-orange.svg)](data/threat-library)
+[![Tests](https://img.shields.io/badge/tests-1475%20passing-brightgreen.svg)](#development)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 **English** | [日本語](README.ja.md)
@@ -24,7 +24,7 @@ For the thinking behind it, see [An Introduction to Secure by Design](guide/secu
 For the feature list, see [here](guide/README.md).
 
 > **Interface language.** English and Japanese are both supported — use the JA / EN switch
-> in the top bar, and your choice is remembered. The interface, all 251 threat rules
+> in the top bar, and your choice is remembered. The interface, all 256 threat rules
 > (name, category, description, mitigations) and every component type label are
 > translated. Help is welcome.
 
@@ -39,9 +39,9 @@ long-term memory** as first-class component types, with a rule set to match.
 
 | Framework | Rules | Covers |
 |---|---:|---|
-| `STRIDE` | 149 | Spoofing, tampering, repudiation, information disclosure, DoS, elevation of privilege |
-| `AI` | 33 | Adversarial ML, model extraction, training data poisoning |
-| `AgenticAI` | 42 | Goal hijacking, tool misuse, privilege carry-over, memory poisoning |
+| `STRIDE` | 171 | Spoofing, tampering, repudiation, information disclosure, DoS, elevation of privilege |
+| `AI` | 35 | Adversarial ML, model extraction, training data poisoning |
+| `AgenticAI` | 50 | Goal hijacking, tool misuse, privilege carry-over, memory poisoning |
 
 This is where the project invests. Most threat modeling tools have zero rules in the third row.
 
@@ -283,7 +283,7 @@ Near-term priorities, in order:
    detection confidence stated explicitly
 
 Done recently: an English UI with a language switcher, plus English translation overlays
-for all 251 threat rules and every component type label, all leaving the existing schemas
+for all 256 threat rules and every component type label, all leaving the existing schemas
 unchanged.
 
 ---

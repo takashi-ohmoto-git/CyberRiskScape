@@ -3,8 +3,8 @@
 **AI・LLM・エージェントシステム・PQC に対応した、OSS のビジュアル脅威モデリングツール**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-251-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-1466%20passing-brightgreen.svg)](#開発)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-256-orange.svg)](data/threat-library)
+[![Tests](https://img.shields.io/badge/tests-1475%20passing-brightgreen.svg)](#開発)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 [English](README.md) | **日本語**
@@ -31,9 +31,9 @@
 
 | フレームワーク区分 | ルール数 | 内容 |
 |---|---:|---|
-| `STRIDE` | 149 | 古典的な脅威（なりすまし・改ざん・情報漏えい 等） |
-| `AI` | 33 | 敵対的 ML、モデル抽出、学習データ汚染 等 |
-| `AgenticAI` | 42 | 目標乗っ取り、ツール誤用、権限の持ち越し、メモリ汚染 等 |
+| `STRIDE` | 171 | 古典的な脅威（なりすまし・改ざん・情報漏えい 等） |
+| `AI` | 35 | 敵対的 ML、モデル抽出、学習データ汚染 等 |
+| `AgenticAI` | 50 | 目標乗っ取り、ツール誤用、権限の持ち越し、メモリ汚染 等 |
 
 ### エコシステム — 開発・API・ID 基盤とつながる
 

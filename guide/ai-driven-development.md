@@ -108,12 +108,16 @@ The systems you build in AI-driven development contain AI itself. CyberRiskScape
 - **You can switch the view between three perspectives**: Human Centric (STRIDE), AI / LLM and Agent-Centric.
 - **Rules based on published sources**: OWASP Top 10 for LLM Applications, OWASP Agentic Security (ASI), MITRE ATLAS, CSA MAESTRO,
   Anthropic's zero trust (for AI agents), the OWASP Non-Human Identities Top 10 and others (each rule cites its source).
-- **You can draw AI building blocks as types**: LLM model, AI agent, Sub-agent, MCP server, Agent memory, Vector DB / RAG,
+- **You can draw AI building blocks as types**: LLM model, AI agent, Sub-agent, Agent skill, MCP server, Agent memory, Vector DB / RAG,
   AI Gateway, Guardrail, and the NHIs that agents use (Service account, Workload identity, OAuth client).
 - **You can declare an agent's character through attributes**: autonomy (Agency), the scope of impact on compromise (Blast Radius) and identity strength (Identity Tier).
   Unset values are evaluated as the worst case, so threats are never rated lightly unless you declare otherwise.
 - **Threats decided by path are told apart**: direct prompt injection (user → LLM) and indirect injection through externally writable data (the web, email, CRM fields and so on)
   are detected separately, by the direction of the connection and the type of the peer.
+- **You can record how agent skills are installed and run**: a skill (for example, a SKILL.md with its scripts) is loaded into the agent's context
+  and runs procedures, scripts and hooks with the agent's privileges, so it is drawn as its own type, separate from an API across the network (External tool / API).
+  Its posture takes four entries — Vetting before adoption, Version pinning, Permission limits and External content fetched at run time. Unset entries are treated as no control,
+  raising threats of installing a malicious skill, a swap through an update, excessive privileges and instructions replaced through fetched content. Entering the actual state clears them.
 
 ---
 
