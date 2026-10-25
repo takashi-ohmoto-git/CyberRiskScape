@@ -25,4 +25,12 @@ describe('sortThreatsBySeverity', () => {
     const sorted = sortThreatsBySeverity([threat('a', 'Critical', true), threat('b', 'Low')]);
     expect(sorted.map((t) => t.id)).toEqual(['b', 'a']);
   });
+
+  it('抑制状態を持たない型（攻撃経路分析の ThreatRef）も重大度順に並べる', () => {
+    const sorted = sortThreatsBySeverity([
+      { threatId: 'a', severity: 'Medium' as const },
+      { threatId: 'b', severity: 'Critical' as const },
+    ]);
+    expect(sorted.map((t) => t.threatId)).toEqual(['b', 'a']);
+  });
 });

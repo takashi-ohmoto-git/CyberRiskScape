@@ -37,6 +37,7 @@ import {
 import { ENTRY_PROBE } from '../../core/notation/edgeNotation';
 import { SEVERITY_BADGE_SOLID } from '../../core/model/severityColors';
 import { CONTROL_STATUS_BADGE, CONTROL_STATUS_LABEL_KEY } from './controlStatusStyle';
+import { sortThreatsBySeverity } from './sortThreatsBySeverity';
 import { useLocale, useT } from '../../i18n';
 
 /** i18n の t() 関数の型（useT の戻り値）。 */
@@ -930,7 +931,7 @@ function DetailPanel({
         <p className="text-xs text-slate-500">{t('attackTree.detail.noThreats')}</p>
       ) : (
         <div className="space-y-1.5">
-          {evidence.threats.map((th) => (
+          {sortThreatsBySeverity(evidence.threats).map((th) => (
             <ThreatRefRow key={th.threatId} threat={th} />
           ))}
         </div>
@@ -1005,7 +1006,7 @@ function DetailPanel({
                 <p className="text-xs text-slate-500">{t('attackTree.detail.noThreats')}</p>
               ) : (
                 <div className="space-y-1.5">
-                  {evidence.threats.map((th) => (
+                  {sortThreatsBySeverity(evidence.threats).map((th) => (
                     <ThreatRefRow key={th.threatId} threat={th} />
                   ))}
                 </div>
