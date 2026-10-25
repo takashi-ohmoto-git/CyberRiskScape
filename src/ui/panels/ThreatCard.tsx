@@ -55,7 +55,7 @@ interface ThreatCardProps {
   threat: ThreatView;
   /** ThreatListPanel のように複数ノードを横断して表示する場合のみ指定。NodePanel では省略。 */
   targetName?: string;
-  /** NodePanel 用。既定はタイトルだけの 1 行で、クリックで全文を展開する。 */
+  /** 既定はタイトルだけの 1 行で、クリックで全文を展開する（NodePanel・ThreatListPanel）。 */
   collapsible?: boolean;
 }
 
@@ -110,8 +110,16 @@ export function ThreatCard({ threat, targetName, collapsible }: ThreatCardProps)
         <span className={`shrink-0 text-xs font-black px-2 py-0.5 rounded-md ${badgeClass}`}>
           {threat.severity}
         </span>
-        <span className="flex-1 min-w-0 text-xs font-bold text-slate-100 line-clamp-2">
-          {threat.name ?? threat.category}
+        <span className="flex-1 min-w-0">
+          <span className="block text-xs font-bold text-slate-100 line-clamp-2">
+            {threat.name ?? threat.category}
+          </span>
+          {/* 複数ノード横断の一覧では、どのノードの脅威かを閉じたままでも示す。 */}
+          {targetName && (
+            <span className="flex items-center gap-1 text-xs text-slate-500 truncate">
+              <Target size={10} className="shrink-0" /> {targetName}
+            </span>
+          )}
         </span>
         {hasAssumption && (
           <span title={t('threatCard.assumption.badge')} className="shrink-0 text-amber-300">

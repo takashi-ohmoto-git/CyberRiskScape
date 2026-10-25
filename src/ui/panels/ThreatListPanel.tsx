@@ -6,6 +6,7 @@ import { getComponentRegistry } from '../../component-library/defaultRegistry';
 import { selectActiveNodes, useDiagramStore } from '../../core/state/diagramStore';
 import { FRAMEWORK_VIEW_LABEL_KEYS } from '../frameworkLabels';
 import { ThreatCard } from './ThreatCard';
+import { sortThreatsBySeverity } from './sortThreatsBySeverity';
 import { useLocale, useT } from '../../i18n';
 
 interface ThreatListPanelProps {
@@ -58,14 +59,14 @@ export function ThreatListPanel({ threats }: ThreatListPanelProps) {
           </button>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-4 space-y-1.5">
         {visible.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-slate-700 opacity-50 p-8 text-center">
             <Eye size={64} className="mb-4" />
             <p className="text-sm font-bold">{t('threats.list.empty')}</p>
           </div>
         ) : (
-          visible.map((threat) => {
+          sortThreatsBySeverity(visible).map((threat) => {
             let targetName: string;
             if (threat.nodeId) {
               const targetNode = nodes.find((n) => n.id === threat.nodeId);
@@ -78,7 +79,7 @@ export function ThreatListPanel({ threats }: ThreatListPanelProps) {
             } else {
               targetName = t('threats.list.wholeProject');
             }
-            return <ThreatCard key={threat.id} threat={threat} targetName={targetName} />;
+            return <ThreatCard key={threat.id} threat={threat} targetName={targetName} collapsible />;
           })
         )}
       </div>
