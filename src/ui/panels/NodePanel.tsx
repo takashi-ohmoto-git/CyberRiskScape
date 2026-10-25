@@ -467,7 +467,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
           </div>
         )}
 
-        {childNodes.length > 0 && (
+        {(childNodes.length > 0 || (config?.canContain?.length ?? 0) > 0) && (
           <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
             <h3 className="text-xs font-bold text-slate-300 mb-3 flex items-center gap-2">
               <Package size={14} className="text-blue-500" />{' '}
@@ -496,6 +496,11 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
                   </button>
                 );
               })}
+              {childNodes.length === 0 && (
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  {t('panels.node.containedEmpty')}
+                </p>
+              )}
             </div>
           </div>
         )}

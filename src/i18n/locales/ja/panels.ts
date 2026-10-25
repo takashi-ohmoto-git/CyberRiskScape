@@ -17,6 +17,7 @@ export const jaPanels = {
   'panels.node.detachTitle': '親から外してトップレベルに戻す',
   'panels.node.detach': '外す',
   'panels.node.containedComponents': '内包コンポーネント ({count})',
+  'panels.node.containedEmpty': 'まだ何も内包していません。内包できるコンポーネントをこのノードの上にドラッグして落とすと内包できます。',
 
   'panels.node.userTrust.guest': 'Guest (来訪者)',
   'panels.node.userTrust.employee': '正社員',

@@ -15,6 +15,7 @@ export const enPanels: Partial<Record<TranslationKey, string>> = {
   'panels.node.detachTitle': 'Detach from parent and move to top level',
   'panels.node.detach': 'Detach',
   'panels.node.containedComponents': 'Contained components ({count})',
+  'panels.node.containedEmpty': 'Nothing contained yet. Drag a containable component and drop it onto this node to contain it.',
 
   'panels.node.userTrust.guest': 'Guest',
   'panels.node.userTrust.employee': 'Employee',
