@@ -353,6 +353,16 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
     ? (allNodes.find((n) => n.id === node.parentId) ?? null)
     : null;
   const childNodes = allNodes.filter((n) => n.parentId === node.id);
+  // この型を内包できる型が一つでもあれば、内包先の候補欄を常に出す。
+  const isContainable = registry.getAll().some((c) => c.canContain?.includes(node.type));
+  // 候補は図にある内包可能なノード。今の親は先頭に置く。
+  const parentCandidates = [
+    ...(parentNode ? [parentNode] : []),
+    ...allNodes.filter(
+      (n) =>
+        n.id !== node.id && n.id !== parentNode?.id && registry.canContain(n.type, node.type),
+    ),
+  ];
 
   const handleDetach = () => {
     if (!parentNode) {
@@ -433,36 +443,60 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
           </p>
         </div>
 
-        {parentNode && (
+        {(parentNode || isContainable) && (
           <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
             <h3 className="text-xs font-bold text-slate-300 mb-3 flex items-center gap-2">
-              <Package size={14} className="text-amber-500" /> {t('panels.node.containedFrom')}
+              <Package size={14} className="text-amber-500" />{' '}
+              {t('panels.node.containableParents', { count: parentCandidates.length })}
             </h3>
-            <div className="flex items-center justify-between gap-2">
-              <button
-                onClick={() => selectNode(parentNode.id)}
-                className="flex items-center gap-2 flex-1 min-w-0 bg-slate-900 hover:bg-slate-800 px-3 py-2 rounded-lg border border-slate-700 text-left transition-colors"
-                title={t('panels.node.selectParentTitle')}
-              >
-                <div
-                  className={`${registry.get(parentNode.type)?.color ?? 'bg-slate-500'} p-1 rounded text-white shrink-0`}
-                >
-                  {renderIcon(
-                    registry.get(parentNode.type)?.icon ?? { kind: 'builtin', name: 'box' },
-                    { size: 10 },
-                  )}
-                </div>
-                <span className="text-xs font-bold text-slate-200 truncate">
-                  {parentNode.label || registry.get(parentNode.type)?.label || parentNode.type}
-                </span>
-              </button>
-              <button
-                onClick={handleDetach}
-                className="shrink-0 px-3 py-2 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-600/40 text-amber-300 rounded-lg text-xs font-black uppercase transition-colors flex items-center gap-1"
-                title={t('panels.node.detachTitle')}
-              >
-                <PackageOpen size={12} /> {t('panels.node.detach')}
-              </button>
+            <div className="space-y-1.5">
+              {parentCandidates.map((candidate) => {
+                const candidateConfig = registry.get(candidate.type);
+                const isParent = candidate.id === parentNode?.id;
+                return (
+                  <div key={candidate.id} className="flex items-center justify-between gap-2">
+                    <button
+                      onClick={() => selectNode(candidate.id)}
+                      className={`flex items-center gap-2 flex-1 min-w-0 bg-slate-900 hover:bg-slate-800 px-3 py-2 rounded-lg border text-left transition-colors ${
+                        isParent ? 'border-amber-500/60' : 'border-slate-700'
+                      }`}
+                      title={isParent ? t('panels.node.selectParentTitle') : undefined}
+                    >
+                      <div
+                        className={`${candidateConfig?.color ?? 'bg-slate-500'} p-1 rounded text-white shrink-0`}
+                      >
+                        {renderIcon(candidateConfig?.icon ?? { kind: 'builtin', name: 'box' }, {
+                          size: 10,
+                        })}
+                      </div>
+                      <span className="text-xs font-bold text-slate-200 truncate flex-1">
+                        {candidate.label || candidateConfig?.label || candidate.type}
+                      </span>
+                      {isParent && (
+                        <span className="text-xs font-bold text-amber-300 shrink-0">
+                          {t('panels.node.containedBadge')}
+                        </span>
+                      )}
+                    </button>
+                    {isParent && (
+                      <button
+                        onClick={handleDetach}
+                        className="shrink-0 px-3 py-2 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-600/40 text-amber-300 rounded-lg text-xs font-black uppercase transition-colors flex items-center gap-1"
+                        title={t('panels.node.detachTitle')}
+                      >
+                        <PackageOpen size={12} /> {t('panels.node.detach')}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+              {!parentNode && (
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  {parentCandidates.length > 0
+                    ? t('panels.node.containableParentsHint')
+                    : t('panels.node.containableParentsEmpty')}
+                </p>
+              )}
             </div>
           </div>
         )}
