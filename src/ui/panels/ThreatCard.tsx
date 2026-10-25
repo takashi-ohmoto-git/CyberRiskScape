@@ -55,6 +55,8 @@ interface ThreatCardProps {
   threat: ThreatView;
   /** ThreatListPanel のように複数ノードを横断して表示する場合のみ指定。NodePanel では省略。 */
   targetName?: string;
+  /** NodePanel 用。既定はタイトルだけの 1 行で、クリックで全文を展開する。 */
+  collapsible?: boolean;
 }
 
 /**
@@ -65,13 +67,14 @@ interface ThreatCardProps {
  * - origin==='detected'：リスク対応方針（回避/低減/移転/受容/誤検知）を編集できる。
  *   受容/誤検知（抑制）のときだけ淡色化し、対応方針バッジを表示する。
  */
-export function ThreatCard({ threat, targetName }: ThreatCardProps) {
+export function ThreatCard({ threat, targetName, collapsible }: ThreatCardProps) {
   const openManualThreatEditor = useDiagramStore((s) => s.openManualThreatEditor);
   const removeManualThreat = useDiagramStore((s) => s.removeManualThreat);
   const t = useT();
   const [locale] = useLocale();
   const { getRule, getSource } = useRuleLookup();
   const [isBasisOpen, setIsBasisOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   // 展開中のコンプライアンス参照（complianceRefs の添字）
   const [openRefs, setOpenRefs] = useState<ReadonlySet<number>>(new Set());
   const toggleRef = (i: number) =>
@@ -90,6 +93,34 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
   const containerClass = SEVERITY_CONTAINER[threat.severity];
 
   const badgeClass = SEVERITY_BADGE_SOLID[threat.severity];
+  const hasAssumption = !isManual && !!threat.assumptionFlags && threat.assumptionFlags.length > 0;
+
+  if (collapsible && !isOpen) {
+    return (
+      <button
+        type="button"
+        id={threatCardDomId(threat.id)}
+        onClick={() => setIsOpen(true)}
+        aria-expanded={false}
+        className={`w-full text-left flex items-center gap-2 px-3 py-2 rounded-xl border-l-4 ${containerClass} border-y border-r border-slate-800 hover:bg-slate-800/60 transition-all ${
+          suppressed ? 'opacity-60' : ''
+        }`}
+      >
+        <ChevronRight size={12} className="shrink-0 text-slate-500" />
+        <span className={`shrink-0 text-xs font-black px-2 py-0.5 rounded-md ${badgeClass}`}>
+          {threat.severity}
+        </span>
+        <span className="flex-1 min-w-0 text-xs font-bold text-slate-100 line-clamp-2">
+          {threat.name ?? threat.category}
+        </span>
+        {hasAssumption && (
+          <span title={t('threatCard.assumption.badge')} className="shrink-0 text-amber-300">
+            <AlertTriangle size={12} />
+          </span>
+        )}
+      </button>
+    );
+  }
 
   return (
     <div
@@ -100,6 +131,18 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
     >
       <div className="flex justify-between items-start mb-2">
         <div className="flex items-center gap-1.5 flex-wrap">
+          {collapsible && (
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              aria-expanded
+              aria-label={t('threats.threatCard.collapse')}
+              title={t('threats.threatCard.collapse')}
+              className="text-slate-500 hover:text-slate-200"
+            >
+              <ChevronDown size={12} />
+            </button>
+          )}
           <span className={`text-xs font-black px-2 py-0.5 rounded-md ${badgeClass}`}>
             {threat.severity}
           </span>
@@ -167,7 +210,12 @@ export function ThreatCard({ threat, targetName }: ThreatCardProps) {
           )}
         </div>
       </div>
-      <h4 className="font-bold text-sm mb-1 text-slate-100">{threat.name ?? threat.category}</h4>
+      <h4
+        onClick={collapsible ? () => setIsOpen(false) : undefined}
+        className={`font-bold text-sm mb-1 text-slate-100 ${collapsible ? 'cursor-pointer' : ''}`}
+      >
+        {threat.name ?? threat.category}
+      </h4>
       <p className="text-xs text-slate-400 leading-relaxed">{threat.description}</p>
 
       {!isManual && threat.assumptionFlags && threat.assumptionFlags.length > 0 && (

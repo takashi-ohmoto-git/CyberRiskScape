@@ -108,14 +108,26 @@ export function ChecklistModal() {
     close();
     if (!threatId) return;
     // パネルの描画を待ってからスクロールする。
-    setTimeout(() => {
+    const highlight = () => {
       const el = document.getElementById(threatCardDomId(threatId));
       if (!el) return;
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // 開いたカードは縦に長いので、中央寄せだと見出しが画面外に出る。先頭を合わせる。
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       el.animate(
         [{ boxShadow: '0 0 0 3px rgb(56 189 248)' }, { boxShadow: '0 0 0 0 rgb(56 189 248 / 0)' }],
         { duration: 2000 },
       );
+    };
+    setTimeout(() => {
+      const el = document.getElementById(threatCardDomId(threatId));
+      if (!el) return;
+      // NodePanel は脅威をタイトルだけの行で並べる。閉じていれば開き、描画を待ってから示す。
+      if (el.getAttribute('aria-expanded') === 'false') {
+        el.click();
+        setTimeout(highlight, 50);
+      } else {
+        highlight();
+      }
     }, 100);
   };
 

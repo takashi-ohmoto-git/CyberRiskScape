@@ -18,6 +18,7 @@ export const jaThreats = {
   'threats.threatCard.controlStatusHeading': '対策実装状況',
   'threats.threatCard.riskTreatmentHeading': 'リスク対応方針',
   'threats.threatCard.editButton': '編集',
+  'threats.threatCard.collapse': '折りたたむ',
   'threats.threatCard.deleteButton': '削除',
 
   // ── ManualThreatModal ──

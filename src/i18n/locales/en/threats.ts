@@ -16,6 +16,7 @@ export const enThreats: Partial<Record<TranslationKey, string>> = {
   'threats.threatCard.controlStatusHeading': 'Control implementation status',
   'threats.threatCard.riskTreatmentHeading': 'Risk treatment',
   'threats.threatCard.editButton': 'Edit',
+  'threats.threatCard.collapse': 'Collapse',
   'threats.threatCard.deleteButton': 'Delete',
 
   // ── ManualThreatModal ──

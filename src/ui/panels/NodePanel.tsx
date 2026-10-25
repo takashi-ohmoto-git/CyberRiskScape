@@ -59,6 +59,7 @@ import { renderIcon } from '../../component-library/iconRegistry';
 import { selectActiveNodes, useDiagramStore } from '../../core/state/diagramStore';
 import { useLocale, useT } from '../../i18n';
 import { ThreatCard } from './ThreatCard';
+import { sortThreatsBySeverity } from './sortThreatsBySeverity';
 import { AttackTreeModal } from './AttackTreeModal';
 import { EntrySearchSection } from './EntrySearchSection';
 import { RecommendTargetsSection } from './RecommendTargetsSection';
@@ -996,9 +997,9 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
             <h3 className="text-xs font-bold text-rose-500 mb-3 uppercase tracking-widest">
               Active Threats ({threats.filter((t) => !isSuppressed(t)).length})
             </h3>
-            <div className="space-y-3">
-              {threats.map((t) => (
-                <ThreatCard key={t.id} threat={t} />
+            <div className="space-y-1.5">
+              {sortThreatsBySeverity(threats).map((t) => (
+                <ThreatCard key={t.id} threat={t} collapsible />
               ))}
             </div>
           </div>
