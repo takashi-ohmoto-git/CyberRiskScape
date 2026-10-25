@@ -77,7 +77,8 @@ export const ComponentDefinitionSchema = z.object({
    * - log：ログの取得・保持期間・確認できる主体 / logRetention：保持期間・確認できる主体のみ
    *   （取得の有無を既存の attackSurface.hasAccessLog で持つ型。攻撃面属性を持つ型）
    * - encryptionAtRest：保管時の暗号化 / patch：パッチの適用状況（SaaS は提供者責任のため付けない）
-   * - accountReview：アカウント棚卸し / dnsRecordReview：DNS レコードの参照先の棚卸し / dataAsset：保有の必要性・件数規模
+   * - accountReview：アカウント棚卸し / dnsRecordReview：DNS レコードの参照先の棚卸し /
+   *   skill：エージェントスキルの審査・版の固定・権限の限定・外部内容の取り込み / dataAsset：保有の必要性・件数規模
    */
   posture: z.array(z.enum(POSTURE_GROUPS)).optional(),
 });

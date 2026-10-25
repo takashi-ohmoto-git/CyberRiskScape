@@ -47,6 +47,10 @@ components:
     label: "AI agent"
     description: "An AI agent that plans, selects tools, and reasons autonomously."
 
+  AGENT_SKILL:
+    label: "Agent skill"
+    description: "A reusable bundle of capability that is loaded into the agent's context and runs instructions, scripts, and hooks with the agent's permissions (for example a SKILL.md with bundled scripts, or an IDE or agent extension). For an API reached over the network, use TOOL instead."
+
   USER:
     label: "User"
     description: "A human end user. Use userTrustAttribute to classify their trust level."

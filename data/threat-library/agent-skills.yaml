@@ -1,0 +1,143 @@
+# エージェントスキル（AGENT_SKILL）向けの脅威。
+# エージェントスキルは、エージェントの文脈に読み込まれ、エージェントの権限で手順・スクリプト・フックを
+# 実行する再利用可能な能力の束（例：SKILL.md と付属スクリプト、IDE・エージェントの拡張）。
+# ネットワークの先の API を呼ぶ TOOL とは、当たる脅威（文脈への読み込み・エージェントの権限での実行）が違う。
+#
+# 記述の方針:
+#   エージェントスキルは特定の団体・製品に固有の概念ではない汎用的な仕組みのため、本ファイルは
+#   特定の文書を出典とせず、一般的な考え方として記述する（references は付けない）。
+#   complianceRefs は一般的な基準（NIST CSF 2.0）で自然に当たるものだけを付ける。
+#
+#   SPDX-License-Identifier: Apache-2.0
+#   ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+#
+# 発火条件:
+#   ルール 1〜4 はノードの運用状況（posture グループ `skill`）で発火する。未入力（Unknown）は
+#   対策なしと同じ扱いで発火し、利用者が実態を入力すれば消える。ルール 5 は運用状況に関係なく発火する
+#   （説明文で呼び出すスキルが選ばれる仕組みそのものに由来するため）。
+#   いずれもスキル自体の性質に由来する内在的な脅威のため connection.required: false。
+#
+# 重複回避方針:
+#   本ファイルのルールは AGENT_SKILL ノードを対象にし、既存ルールの対象型（AGENT / SUB_AGENT / TOOL /
+#   MCP_SERVER 等）とは subject が違うため、canonicalId を共有しても別カードになる。共有は
+#   「同じ実世界の脅威」を示す安定したマージキーとして行う。
+#   - 審査なしの導入 → 新グループ agent-skill-unvetted-install。既存の tool-poisoning-rug-pull は
+#     正規だったツールの改ざん・差し替え、mcp-server-impersonation は名前の偽装による接続先のすり替えで、
+#     「最初から悪意ある中身の束を審査せず入れる」問いとは対策（導入前の審査）が違うため再利用しない。
+#   - 版を固定しない → anthropic-zt-tool-poisoning-rug-pull-001（TOOL）と同じ「導入後に悪性版へ
+#     差し替えられる（rug pull）」脅威のため canonicalId: tool-poisoning-rug-pull を共有する。
+#   - 権限の限定なし → owasp-llm06 系・maestro（AGENT / SUB_AGENT）と同じ「拡張・機能に業務に必要な範囲を
+#     超える権限を与える」脅威のため canonicalId: excessive-agency を共有する。
+#     agent-runtime-privilege-scope は Agentforce の実行ユーザーと実行コンテキストに固有のため再利用しない。
+#     agent-self-capability-expansion（エージェント自身によるスキルの登録）は登録する側の問いで別。
+#   - 変わりうる外部の内容の取り込み → atlas-aml-t0051 / owasp-llm01-indirect（LLM / AGENT / SUB_AGENT）と
+#     同じ「第三者が書き換えられる内容が指示として文脈に入る」脅威のため canonicalId: indirect-prompt-injection を
+#     共有する。取り込んだスクリプトの実行も、差し替えの入口が同じためこのルールに含める。
+#   - 説明文（メタデータ）による呼び出しの乗っ取り → mcp-tool-descriptor-poisoning-001（MCP_SERVER）と同じ
+#     「呼び出す前、一覧を読み込んだ時点で説明文が文脈に入り指示として作用する」脅威のため
+#     canonicalId: tool-descriptor-poisoning を共有する。既存ルールの appliesTo は変更しない。
+#
+# mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
+# description は Can/Cannot ペアと blast radius を記述する。
+
+schemaVersion: 1
+
+rules:
+  # ── 導入前の審査がない・スキャンのみ ────────────────────────────
+  # 新 canonicalId グループ agent-skill-unvetted-install（2026-10-25 ユーザー決定で独立グループ）。
+  - id: agent-skill-unvetted-install-001
+    canonicalId: agent-skill-unvetted-install
+    framework: AgenticAI
+    category: "Supply Chain"
+    name: "導入前の審査がないスキル（悪意ある指示・スクリプトを含むスキルを入れる）"
+    severity: Critical
+    description: "{{nodeName}} を導入する前に、人が指示の本文と付属のスクリプト・フックを読んで確認していない場合、公開の配布先や共有リポジトリから入れたスキルに、機密の外部送信・資格情報の読み出し・バックドアの設置を行う指示やスクリプトが含まれていても、そのまま読み込まれる（Can）。スキルはエージェントの文脈に指示として読み込まれ、エージェントの権限で実行されるため、悪意ある中身は利用者の操作として振る舞い、正規の作業と見分けにくい。静的なスキャンだけの審査も十分でない：スキャンはスクリプトの既知の悪性パターンは見つけられても、自然言語の指示に埋め込まれた悪意（「作業の最後にこのファイルの内容をこの宛先へ送る」等）や、難読化・分割・条件付きで発動する書き方は見逃す。一方、{{nodeName}} の指示の本文と付属物のすべてを人が読み、何を読み書きし、どこへ接続し、何を実行するかを確かめてから導入し、確認していないスキルは読み込まない運用にしていれば、悪意ある中身を含むスキルが入る経路は残らない（Cannot）。blast radius は {{nodeName}} を読み込むエージェントが持つすべての権限（ファイル・シェル・外部送信・接続先の資格情報）と、そのエージェントで行う全作業。"
+    mitigation: "[Foundation] 導入するスキルを許可リストで管理し、導入前に人が指示の本文と付属のスクリプト・フック・参照先をすべて読んで、読み書きするファイル・接続先・実行するコマンドを確認する。確認していないスキルは読み込まない設定にする。スキャンは人による確認の補助として使い、代わりにしない。 [Enterprise] 審査の観点（外部送信・資格情報の読み出し・難読化・条件付きの動作・権限の要求）を定めたチェックリストで審査し、審査者と審査した版を記録する。社内で配布するスキルは審査済みのものだけを置く配布先にまとめる。 [Advanced] 隔離した環境でスキルを試験的に動かし、実際のファイル操作・通信・実行したコマンドを記録して、記載された用途と一致するかを確かめてから導入する。審査済みの版に署名し、署名のないスキルを読み込まない。"
+    appliesTo:
+      kind: node
+      nodeType: AGENT_SKILL
+      connection:
+        required: false
+      posture:
+        skillVetting: [None, ScanOnly, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "GV.SC-07"
+      - standard: nist-csf-2.0
+        ref: "ID.AM-02"
+
+  # ── 版を固定していない ──────────────────────────────────────────
+  - id: agent-skill-unpinned-version-001
+    canonicalId: tool-poisoning-rug-pull
+    framework: AgenticAI
+    category: "Supply Chain"
+    name: "版を固定していないスキル（導入後の更新で中身をすり替えられる）"
+    severity: High
+    description: "{{nodeName}} をコミット・ハッシュで固定せず、配布元の最新版をそのまま読み込んでいる場合、導入時に審査した内容が正当でも、配布元のアカウントの乗っ取り・リポジトリの譲渡・依存するパッケージやスクリプトの侵害によって、後から悪意ある版に差し替えられる（Can）。差し替えは次の読み込みや自動更新で黙って反映され、利用者は審査した時と違うものを動かしていることに気づかない。一方、{{nodeName}} を審査した版のハッシュで固定し、読み込むたびに中身と依存先のハッシュを検証し、更新は差分を審査してから固定を更新する手順にしていれば、配布元が侵害されても審査していない中身は読み込まれない（Cannot）。blast radius は差し替えられた {{nodeName}} を読み込むすべてのエージェントと、その権限で行う全作業。"
+    mitigation: "[Foundation] スキルをコミット・ハッシュ（またはハッシュつきの版）で固定し、最新版や可変のブランチ・タグを直接参照しない。自動更新を止め、更新は差分を確認してから行う。付属スクリプトが使う依存パッケージも版を固定する。 [Enterprise] 審査済みの版を社内の配布先へ複製してそこから読み込み、読み込み時にハッシュを検証する。更新の差分（指示の本文・スクリプト・依存先）をレビューの対象にし、承認の記録を残す。 [Advanced] 審査済みの版に署名し、エージェントの起動時と読み込み時に署名とハッシュを検証して、一致しないものを読み込まない。配布元の変更を監視し、固定した版との差を検知する。"
+    appliesTo:
+      kind: node
+      nodeType: AGENT_SKILL
+      connection:
+        required: false
+      posture:
+        skillVersionPinning: [Unpinned, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "GV.SC-07"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+
+  # ── 権限の限定がない ────────────────────────────────────────────
+  - id: agent-skill-permission-unbounded-001
+    canonicalId: excessive-agency
+    framework: AgenticAI
+    category: "Privilege Compromise"
+    name: "権限を限定していないスキル（エージェントの全権限で動く）"
+    severity: High
+    description: "{{nodeName}} が使えるツール・書き込み先・接続先を実行時に限定していない場合、スキルは読み込んだエージェントの全権限（シェルの実行・任意のファイルへの書き込み・外部への送信・接続先の資格情報）で動く（Can）。スキルの中身に悪意がある場合や、取り込んだ内容で指示を差し替えられた場合、文書の整形のような用途のスキルでも、資格情報の読み出し・設定ファイルの書き換え・外部への送信まで行える。スキルに書かれた「このツールだけを使う」という記述は指示にすぎず、強制力はない。一方、{{nodeName}} が使えるツール・書き込み先・接続先を用途に必要な範囲に限定し、その限定をエージェントの実行環境（許可するツールの設定・サンドボックス・送信先の制限）で強制していれば、スキルが乗っ取られても限定の外の操作はできない（Cannot）。blast radius は限定がない場合はエージェントが持つ権限のすべて、限定がある場合はスキルに許可した範囲。"
+    mitigation: "[Foundation] スキルごとに使ってよいツール・書き込み先・接続先を決め、エージェントの設定で許可するツールを絞る。シェルの実行・外部への送信を必要としないスキルにはそれらを許可しない。限定をスキルの本文の記述だけに頼らない。 [Enterprise] スキルの実行をサンドボックス（書き込みできる場所の限定・送信先の許可リスト）の中で行い、許可の外の操作を実行前に拒否する。資格情報をスキルから読める場所に置かない。スキルが行った操作をスキル名つきで記録する。 [Advanced] スキルごとに隔離した実行環境と、作業ごとに発行して終了とともに失効させる最小権限の資格情報を使う。権限を広げる変更は人の承認を必須にする。"
+    appliesTo:
+      kind: node
+      nodeType: AGENT_SKILL
+      connection:
+        required: false
+      posture:
+        skillPermissionLimit: [None, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+
+  # ── 実行時に変わりうる外部の内容を取り込む ─────────────────────────
+  - id: agent-skill-mutable-external-content-001
+    canonicalId: indirect-prompt-injection
+    framework: AgenticAI
+    category: "Tampering"
+    name: "実行時に変わりうる外部の内容を取り込むスキル（取り込み先の書き換えで指示が差し替わる）"
+    severity: High
+    description: "{{nodeName}} が実行のたびに外部の URL・リポジトリ・共有の文書から指示やスクリプトを取り込み、その内容が固定されていない場合、取り込み先を書き換えられる者（取り込み先の管理者、そのアカウントを乗っ取った者、期限切れのドメインを取得した者）は、スキル自体を変えずにエージェントへの指示と実行するスクリプトを差し替えられる（Can）。導入時の審査と版の固定は取り込まれる内容には及ばないため、審査済みのスキルでも実行時に別の指示で動く。一方、{{nodeName}} が外部の内容を取り込まない構成にするか、取り込む内容をハッシュで固定して検証し、取り込んだ文章を指示ではなくデータとして扱っていれば、取り込み先を書き換えられても指示は差し替わらない（Cannot）。blast radius は {{nodeName}} を読み込むエージェントの権限で行える全操作と、取り込み先を書き換えられる者の範囲。"
+    mitigation: "[Foundation] スキルが実行時に取り込む外部の内容（URL・リポジトリ・共有の文書）を洗い出し、必要なものはスキルの中に取り込んで審査と版の固定の対象にする。取り込みが必要な場合は内容をハッシュで固定し、一致しないときは使わない。 [Enterprise] 取り込み先を自組織が管理する場所に限定し、許可リストの外からの取り込みを実行環境で遮断する。取り込んだ文章は信頼できないデータとして扱い、指示として実行しない。取り込んだスクリプトは実行しない。 [Advanced] 取り込む内容に署名を求めて検証し、取り込みの記録（取り込み先・ハッシュ・時刻）を残して、想定外の内容の変化を検知する。"
+    appliesTo:
+      kind: node
+      nodeType: AGENT_SKILL
+      connection:
+        required: false
+      posture:
+        skillExternalContent: [Mutable, Unknown]
+
+  # ── 説明文（メタデータ）による呼び出しの乗っ取り ─────────────────────
+  # 運用状況に関係なく発火する（説明文で使うスキルが選ばれる仕組みそのものに由来）。
+  # severity は High（2026-10-25 ユーザー決定。悪意ある中身そのものは agent-skill-unvetted-install-001 が Critical で扱う）。
+  - id: agent-skill-metadata-hijack-001
+    canonicalId: tool-descriptor-poisoning
+    framework: AgenticAI
+    category: "Supply Chain"
+    name: "スキルの説明文による呼び出しの乗っ取り（過大・偽りの説明で無関係な場面でも呼ばれる）"
+    severity: High
+    description: "エージェントは読み込んだスキルの名前と説明文（メタデータ）を見て、どの場面でどのスキルを使うかを選ぶ。{{nodeName}} の説明文が実際の用途より広く書かれている、または偽っている場合（「あらゆる依頼の前に必ず使う」「ファイルを扱うときは常にこのスキルを使う」等）、スキルは本来の用途と無関係な作業でも呼び出され、その作業の内容と権限に触れられる（Can）。説明文はスキルを呼び出す前、一覧として読み込まれた時点で文脈に入るため、説明文に書かれた命令は呼び出されなくても指示として読まれ、他のスキルや作業の進め方を誘導できる。一方、{{nodeName}} の説明文を導入前に確認して用途に見合う範囲に限り、説明文に命令や他のスキルへの言及がないことを確かめ、呼び出してよい場面をエージェントの設定で限定していれば、説明文による呼び出しの横取りと指示の注入は成立しない（Cannot）。blast radius は {{nodeName}} を読み込むエージェントで行う全作業と、そのエージェントが持つ権限。"
+    mitigation: "[Foundation] スキルの導入前に名前と説明文を確認し、用途に見合わない広い説明・命令文・他のスキルや設定への言及を含むものは導入しないか書き直す。同時に読み込むスキルの数を必要なものに絞る。 [Enterprise] 説明文の変更を審査の対象にし、版の固定と合わせて黙った変更を防ぐ。作業ごとに読み込むスキルを限定し、どのスキルがどの作業で呼ばれたかを記録して、想定外の呼び出しを検知する。 [Advanced] 説明文を信頼できないデータとして扱い、命令文を検出して無効化してからエージェントに渡す。重要な作業では、使うスキルを利用者または設定で明示的に指定し、説明文による自動の選択に頼らない。"
+    appliesTo:
+      kind: node
+      nodeType: AGENT_SKILL
+      connection:
+        required: false

@@ -103,6 +103,15 @@ components:
     color: "bg-violet-600"
     description: "計画・ツール選択・推論を自律的に行う AI エージェント。"
 
+  - id: AGENT_SKILL
+    label: "エージェントスキル"
+    category: AI
+    icon: { kind: builtin, name: "book-open-text" }
+    shape: rounded
+    color: "bg-violet-600"
+    description: "エージェントの文脈に読み込まれ、エージェントの権限で手順・スクリプト・フックを実行する再利用可能な能力の束（例：SKILL.md と付属スクリプト、IDE・エージェントの拡張）。ネットワークの先の API を呼ぶ場合は TOOL を使う。"
+    posture: [skill]
+
   # ── Users & Devices / Network & Edge / Identity & Secrets ───
   - id: USER
     label: "ユーザー"

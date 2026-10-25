@@ -200,6 +200,14 @@ export const POSTURE_FIELD_VALUES = {
   accountReview: ['Periodic', 'Irregular', 'None'],
   /** DNS レコードの参照先（外部サービス・クラウド資源）の棚卸し */
   dnsRecordReview: ['Periodic', 'Irregular', 'None'],
+  /** エージェントスキルの導入前の審査（指示とスクリプトの確認・スキャン） */
+  skillVetting: ['Reviewed', 'ScanOnly', 'None'],
+  /** エージェントスキルの版の固定（コミット・ハッシュでの固定と検証） */
+  skillVersionPinning: ['Pinned', 'Unpinned'],
+  /** エージェントスキルが使えるツール・書き込み先・接続先の限定の強制 */
+  skillPermissionLimit: ['Enforced', 'None'],
+  /** エージェントスキルが実行時に外部の指示・スクリプトを取り込むか */
+  skillExternalContent: ['None', 'Pinned', 'Mutable'],
   /** データ資産の保有の必要性 */
   dataNecessity: ['Required', 'UnderReview', 'NotRequired'],
   /** データ資産の件数規模 */
@@ -220,6 +228,7 @@ export const POSTURE_GROUPS = [
   'patch',
   'accountReview',
   'dnsRecordReview',
+  'skill',
   'dataAsset',
 ] as const;
 export type PostureGroup = (typeof POSTURE_GROUPS)[number];
@@ -232,6 +241,7 @@ export const POSTURE_GROUP_FIELDS: Readonly<Record<PostureGroup, readonly Postur
   patch: ['patchStatus'],
   accountReview: ['accountReview'],
   dnsRecordReview: ['dnsRecordReview'],
+  skill: ['skillVetting', 'skillVersionPinning', 'skillPermissionLimit', 'skillExternalContent'],
   dataAsset: ['dataNecessity', 'recordVolume'],
 };
 
@@ -244,6 +254,10 @@ export interface NodePosture {
   patchStatus?: (typeof POSTURE_FIELD_VALUES.patchStatus)[number];
   accountReview?: (typeof POSTURE_FIELD_VALUES.accountReview)[number];
   dnsRecordReview?: (typeof POSTURE_FIELD_VALUES.dnsRecordReview)[number];
+  skillVetting?: (typeof POSTURE_FIELD_VALUES.skillVetting)[number];
+  skillVersionPinning?: (typeof POSTURE_FIELD_VALUES.skillVersionPinning)[number];
+  skillPermissionLimit?: (typeof POSTURE_FIELD_VALUES.skillPermissionLimit)[number];
+  skillExternalContent?: (typeof POSTURE_FIELD_VALUES.skillExternalContent)[number];
   dataNecessity?: (typeof POSTURE_FIELD_VALUES.dataNecessity)[number];
   recordVolume?: (typeof POSTURE_FIELD_VALUES.recordVolume)[number];
   /** 最終点検日（YYYY-MM-DD）。記録用で脅威の判定には使わない。全型で入力可。 */
