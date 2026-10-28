@@ -1,0 +1,188 @@
+# Prowler（OSS の CSPM）の検査 ID → 図の属性・脅威ライブラリの canonicalId の対応表（第 1 段：AWS）。
+#
+# 取り込み（import-prowler）は、検査の結果（PASS / FAIL）で次の 2 つを行う。
+#   set          : 図のノードの運用状況（posture）または攻撃面属性（attackSurface）の未入力の項目を埋める。
+#                  field は運用状況の項目名（例: encryptionAtRest）か `attackSurface.<項目名>`。
+#                  pass / fail は、その結果のときに入れる値（片方だけでもよい。書かない側は値を入れない）。
+#   canonicalIds : FAIL の検査を、構成図から検出した脅威（同じ canonicalId）と突き合わせる。
+#
+# 方針:
+#   - 検査 ID は Prowler のリポジトリ（prowler/providers/aws/services/<サービス>/）に実在するものだけを書く。
+#   - 検査の説明文は転載しない。`note` は日本語の短い分類名。
+#   - 1 つの検査 ID は 1 つのエントリにだけ書く（重複は読み込み時にエラー）。
+#   - 値の決め方（1 資源の中では検査どうしで最も良い値、ノードでは資源どうしで最も悪い値）は取り込み側の規則で、ここには書かない。
+#   - 暗号化: 既定の暗号化が有効なら ProviderManagedKey、無効なら None。顧客管理鍵（CMK）を検査する項目だけが
+#     CustomerManagedKey を入れ、その FAIL は値を入れない（既定の暗号化が有効かどうかを示さないため）。
+#     DynamoDB は既定でサービス所有鍵により暗号化済みなので FAIL を None にしない。KMS 暗号化の検査は
+#     AWS 管理鍵と CMK を区別しないため、PASS でも ProviderManagedKey までとする。
+#   - ログの保持期間: cloudwatch_log_group_retention_policy_specific_days_enabled のしきい値は Prowler の
+#     config.yaml（aws.log_group_retention_days）の既定 365 日（2026-10 時点の main で確認）。利用者が config で
+#     変更している場合は PASS が 1 年以上を意味しないため、そのときは対応表を直すこと。
+#   - 棚卸し（accountReview）は FAIL のとき Irregular とするだけで、PASS では何も入れない
+#     （未使用・ローテーションの検査に通っても棚卸しの運用が Periodic とは言えないため）。
+#
+# 出典:
+#   - Prowler https://github.com/prowler-cloud/prowler （Apache-2.0）
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+mappings:
+  # ── 保管時の暗号化 ──
+  - checks:
+      - s3_bucket_default_encryption
+      - rds_instance_storage_encrypted
+      - rds_cluster_storage_encrypted
+      - rds_snapshots_encrypted
+      - ec2_ebs_volume_encryption
+      - ec2_ebs_snapshots_encrypted
+      - efs_encryption_at_rest_enabled
+      - redshift_cluster_encrypted_at_rest
+      - opensearch_service_domains_encryption_at_rest_enabled
+    set: { field: encryptionAtRest, pass: ProviderManagedKey, fail: None }
+    canonicalIds: [data-at-rest-unencrypted]
+    note: 保管時の暗号化（既定）
+
+  - checks:
+      - s3_bucket_kms_encryption
+      - dynamodb_tables_kms_cmk_encryption_enabled
+    set: { field: encryptionAtRest, pass: ProviderManagedKey }
+    note: KMS による暗号化（鍵の種別は区別しない）
+
+  - checks:
+      - bedrock_custom_model_encrypted_with_cmk
+      - bedrock_knowledge_base_encrypted_with_cmk
+      - bedrock_prompt_encrypted_with_cmk
+    set: { field: encryptionAtRest, pass: CustomerManagedKey }
+    note: Bedrock の顧客管理鍵
+
+  # ── ログの取得 ──
+  - checks:
+      - s3_bucket_server_access_logging_enabled
+      - cloudtrail_multi_region_enabled
+      - bedrock_model_invocation_logging_enabled
+      - rds_instance_integration_cloudwatch_logs
+      - rds_cluster_integration_cloudwatch_logs
+      - redshift_cluster_audit_logging
+      - opensearch_service_domains_audit_logging_enabled
+    set: { field: logCollection, pass: Collected, fail: NotCollected }
+    canonicalIds: [log-not-collected]
+    note: ログの取得
+
+  - checks:
+      - bedrock_model_invocation_logging_text_data_enabled
+    canonicalIds: [log-not-collected]
+    note: Bedrock の入出力本文のログ
+
+  - checks:
+      - apigateway_restapi_logging_enabled
+      - apigatewayv2_api_access_logging_enabled
+      - elb_logging_enabled
+      - elbv2_logging_enabled
+    set: { field: attackSurface.hasAccessLog, pass: true, fail: false }
+    canonicalIds: [web-missing-access-log]
+    note: API・ロードバランサのアクセスログ
+
+  - checks:
+      - cloudwatch_log_group_retention_policy_specific_days_enabled
+    set: { field: logRetention, pass: OneYearOrMore }
+    canonicalIds: [log-retention-insufficient]
+    note: ログの保持期間（既定のしきい値 365 日）
+
+  # ── パッチ ──
+  - checks:
+      - ssm_managed_compliant_patching
+    set: { field: patchStatus, pass: UpToDate, fail: Missing }
+    canonicalIds: [known-vulnerability-unpatched]
+    note: パッチ準拠（SSM）
+
+  # ── IAM の棚卸し・鍵 ──
+  - checks:
+      - iam_user_accesskey_unused
+      - iam_rotate_access_key_90_days
+    set: { field: accountReview, fail: Irregular }
+    canonicalIds: [nhi-long-lived-secret]
+    note: 未使用・ローテーションされないアクセスキー
+
+  - checks:
+      - iam_user_console_access_unused
+    set: { field: accountReview, fail: Irregular }
+    note: 未使用のコンソールアクセス
+
+  - checks:
+      - secretsmanager_automatic_rotation_enabled
+      - secretsmanager_secret_rotated_periodically
+    canonicalIds: [nhi-long-lived-secret]
+    note: シークレットのローテーション
+
+  # ── インターネット公開 ──
+  - checks:
+      - ec2_instance_public_ip
+      - elb_internet_facing
+      - elbv2_internet_facing
+      - apigateway_restapi_public
+    set: { field: attackSurface.hasGlobalIp, pass: false, fail: true }
+    canonicalIds: [web-global-ip-exposure]
+    note: インターネットからの到達性
+
+  # ── 属性に入れず突き合わせだけ行うもの ──
+  - checks:
+      - s3_bucket_public_access
+      - s3_bucket_level_public_access_block
+      - s3_bucket_policy_public_write_access
+      - s3_bucket_public_list_acl
+      - s3_bucket_public_write_acl
+      - s3_bucket_object_public
+      - rds_instance_no_public_access
+      - rds_snapshots_public_access
+      - cloudtrail_logs_s3_bucket_is_not_publicly_accessible
+    canonicalIds: [storage-public-access-misconfiguration]
+    note: ストレージ・DB の公開
+
+  - checks:
+      - iam_user_mfa_enabled_console_access
+      - iam_user_hardware_mfa_enabled
+      - iam_root_mfa_enabled
+    canonicalIds: [password-only-internet-channel]
+    note: MFA
+
+  - checks:
+      - iam_role_administratoraccess_policy
+      - iam_user_administrator_access_policy
+      - iam_aws_attached_policy_no_administrative_privileges
+      - iam_policy_allows_privilege_escalation
+    canonicalIds: [nhi-overprivileged]
+    note: 過大な IAM 権限
+
+  - checks:
+      - bedrock_guardrails_configured
+      - bedrock_guardrail_prompt_attack_filter_enabled
+      - bedrock_guardrail_sensitive_information_filter_enabled
+      - bedrock_guardrail_sensitive_information_filter_enforced
+      - bedrock_guardrail_contextual_grounding_filter_enabled
+      - bedrock_agent_guardrail_enabled
+    canonicalIds: [guardrail-probabilistic-bypass, direct-prompt-injection]
+    note: Bedrock のガードレール
+
+  - checks:
+      - bedrock_agent_role_least_privilege
+      - bedrock_agent_role_not_shared_across_agents
+      - bedrock_full_access_policy_attached
+    canonicalIds: [excessive-agency, nhi-overprivileged]
+    note: Bedrock エージェントのロール
+
+  - checks:
+      - bedrock_api_key_no_administrative_privileges
+    canonicalIds: [nhi-overprivileged]
+    note: Bedrock API キーの権限
+
+  - checks:
+      - bedrock_api_key_no_long_term_credentials
+    canonicalIds: [nhi-long-lived-secret, credential-sprawl]
+    note: Bedrock API キーの有効期間
+
+  - checks:
+      - bedrock_vpc_endpoints_configured
+    canonicalIds: [private-endpoint-data-exfiltration]
+    note: Bedrock の VPC エンドポイント

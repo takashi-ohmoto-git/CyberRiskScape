@@ -3,6 +3,7 @@ import { gunzipSync } from 'node:zlib';
 import { basename } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { parseArgs } from 'node:util';
+import { z } from 'zod';
 import {
   analyzeProject,
   analyzeResolvedProject,
@@ -28,6 +29,8 @@ import {
   type FindingsGateResult,
 } from './findingsReport';
 import { parseVeracodeFindings } from '../features/findings-report/parseVeracode';
+import { parseProwlerOcsf } from '../features/prowler-import/parseProwlerOcsf';
+import { importProwler, prowlerReportToJson, prowlerReportToMarkdown } from './importProwler';
 import { buildFindingsReport, evaluateFindingsGate } from '../features/findings-report/buildFindingsReport';
 import { BUNDLED_FINDING_MAP } from '../features/findings-report/findingMap';
 import { buildThreatReport, toDCRHThreatModelMarkdown, toJsonObject } from '../features/export/threatReport';
@@ -96,6 +99,7 @@ const DIFF_FORMATS = ['md', 'json'] as const;
 const TRIGGERS_FORMATS = ['md', 'json'] as const;
 const CHECKLIST_FORMATS = ['md', 'json', 'csv'] as const;
 const FINDINGS_REPORT_FORMATS = ['md', 'json'] as const;
+const IMPORT_PROWLER_REPORTS = ['md', 'json'] as const;
 const TEST_PLAN_FORMATS = ['md', 'json'] as const;
 const INVESTIGATION_TOOLS = ['velociraptor'] as const;
 const SBOM_CRYPTO_FORMATS = ['md', 'json'] as const;
@@ -112,6 +116,7 @@ const USAGE = `使い方:
   import-kong <kong.yaml> [options]
   import-kongctl <kongctl.yaml> [options]
   import-repo <dir> [options]
+  import-prowler <project.json> --ocsf <file> [options]
   import-conjur <policy.yml> [options]
   import-shodan <export.json[.gz]> [options]
   import-scopesentry <export.json> [options]
@@ -169,6 +174,13 @@ import-kongctl のオプション（Kong AI Gateway 2.x の kongctl 宣言ファ
 import-repo のオプション（コーディングエージェントの作業ディレクトリ（リポジトリ）の package.json・requirements*.txt・.env*・.mcp.json・.claude/ から、開発環境と依存パッケージの構成図の下書きを L1 に作り、プロジェクト JSON を出力。.env の値・認証情報は読み取り後に捨てる）:
   --locale <ja|en>                              ノード名の言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
+
+import-prowler のオプション（Prowler の OCSF 出力（*.ocsf.json）の検査結果を、図のノードの運用状況・攻撃面属性の未入力の項目に載せる。入力済みの値は上書きせず、食い違いを報告に出す。ファイル入力のみ）:
+  --ocsf <file>                                 Prowler の OCSF（必須。json-ocsf の出力）
+  --map <file>                                  資源とノードの対応表（任意。JSON {"<資源の uid または名前>": "<ノード ID または C 番号>"}）。
+                                                資源のタグ crs-node=<ノード ID> が優先され、タグの無い資源をこの表で補う
+  --report <md|json>                            報告の形式（既定: md。標準出力）
+  -o, --out <file>                              未入力の項目を埋めたプロジェクト JSON の出力先（指定しなければ書き出さない）
 
 import-conjur のオプション（Conjur / Secrets Manager のポリシーから NHI と読み取り経路の図を L1 に作り、プロジェクト JSON を出力）:
   --locale <ja|en>                              ノード名の言語（既定: ja）
@@ -347,7 +359,10 @@ function parseCliArgs() {
       triggers: { type: 'string' },
       locale: { type: 'string' },
       tool: { type: 'string' },
-      out: { type: 'string' },
+      out: { type: 'string', short: 'o' },
+      ocsf: { type: 'string' },
+      map: { type: 'string' },
+      report: { type: 'string' },
       root: { type: 'string' },
       vars: { type: 'string' },
       veracode: { type: 'string' },
@@ -644,6 +659,49 @@ ${USAGE}`);
   );
   for (const w of warnings) process.stderr.write(`警告: ${w}
 `);
+}
+
+/**
+ * `import-prowler`：Prowler の OCSF 出力の検査結果を、プロジェクト JSON のノードの運用状況・攻撃面属性に載せる。
+ * 未入力の項目だけ埋めて `-o` に書き出し、報告（既定 md）は標準出力。API は呼ばない。
+ */
+function runImportProwler(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  if (!values.ocsf) fail('--ocsf <file> を指定してください（Prowler の *.ocsf.json）。');
+  const report = parseEnum(values.report, IMPORT_PROWLER_REPORTS, 'report') ?? 'md';
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+
+  const parsed = parseProwlerOcsf(readJsonFile(values.ocsf));
+  if (!parsed.ok) fail(`${parsed.error}（${values.ocsf}）`);
+  let nodeMap: Record<string, string> = {};
+  if (values.map) {
+    const m = z.record(z.string(), z.string()).safeParse(readJsonFile(values.map));
+    if (!m.success) fail(`--map は {"<資源の uid または名前>": "<ノード ID>"} の JSON にしてください（${values.map}）`);
+    nodeMap = m.data;
+  }
+
+  let out: ReturnType<typeof importProwler>;
+  try {
+    out = importProwler(readJsonFile(file), parsed, nodeMap);
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  if (values.out) writeFileSync(values.out, JSON.stringify(out.project, null, 2), 'utf-8');
+  process.stdout.write(
+    `${report === 'json' ? JSON.stringify(prowlerReportToJson(out), null, 2) : prowlerReportToMarkdown(out)}
+`,
+  );
+  const s = out.result.summary;
+  process.stderr.write(
+    `Prowler の検査結果を取り込みました（適用 ${s.applied} / 同じ値 ${s.unchanged} / 食い違い ${s.conflicts} / 適用できない ${s.notApplicable} / 対応するノードが無い資源 ${s.unmatchedResources}）
+`,
+  );
 }
 
 /**
@@ -1285,6 +1343,8 @@ function main(): void {
     runPqcSbomReport(values, positionals);
   } else if (command === 'import-repo') {
     runImportRepo(values, positionals);
+  } else if (command === 'import-prowler') {
+    runImportProwler(values, positionals);
   } else if (command === 'import-conjur') {
     runImportConjur(values, positionals);
   } else if (command === 'import-shodan') {

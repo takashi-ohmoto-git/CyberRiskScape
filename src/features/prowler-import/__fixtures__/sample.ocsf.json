@@ -1,0 +1,1058 @@
+[
+  {
+    "message": "s3_bucket_default_encryption PASS",
+    "activity_name": "Create",
+    "finding_info": {
+      "uid": "uid-s3_bucket_default_encryption",
+      "title": "title of s3_bucket_default_encryption",
+      "desc": "DESCRIPTION_TEXT_NOT_NEEDED",
+      "name": "docs-bucket",
+      "types": []
+    },
+    "status_code": "PASS",
+    "status": "New",
+    "severity": "Medium",
+    "risk_details": "RISKDETAILS_LONG_TEXT",
+    "resources": [
+      {
+        "uid": "arn:aws:s3:::docs-bucket",
+        "name": "docs-bucket",
+        "type": "AwsS3Bucket",
+        "group": {
+          "name": "s3"
+        },
+        "region": "ap-northeast-1",
+        "cloud_partition": "aws",
+        "labels": [
+          "crs-node:n-bucket",
+          "team:sample"
+        ],
+        "data": {
+          "details": "SECRET_RESOURCE_DATA_PAYLOAD",
+          "metadata": {
+            "password": "SECRET_RESOURCE_DATA_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "event_code": "s3_bucket_default_encryption",
+      "product": {
+        "name": "Prowler",
+        "uid": "prowler"
+      },
+      "tenant_uid": "123456789012"
+    },
+    "cloud": {
+      "account": {
+        "uid": "123456789012",
+        "name": "sample-account"
+      },
+      "org": {
+        "uid": "o-sample",
+        "name": "sample-org"
+      },
+      "provider": "aws",
+      "region": "ap-northeast-1"
+    },
+    "unmapped": {
+      "categories": [
+        "encryption"
+      ],
+      "compliance": {}
+    }
+  },
+  {
+    "message": "s3_bucket_server_access_logging_enabled FAIL",
+    "activity_name": "Create",
+    "finding_info": {
+      "uid": "uid-s3_bucket_server_access_logging_enabled",
+      "title": "title of s3_bucket_server_access_logging_enabled",
+      "desc": "DESCRIPTION_TEXT_NOT_NEEDED",
+      "name": "docs-bucket",
+      "types": []
+    },
+    "status_code": "FAIL",
+    "status": "New",
+    "severity": "Medium",
+    "risk_details": "RISKDETAILS_LONG_TEXT",
+    "resources": [
+      {
+        "uid": "arn:aws:s3:::docs-bucket",
+        "name": "docs-bucket",
+        "type": "AwsS3Bucket",
+        "group": {
+          "name": "s3"
+        },
+        "region": "ap-northeast-1",
+        "cloud_partition": "aws",
+        "labels": [
+          "crs-node:n-bucket",
+          "team:sample"
+        ],
+        "data": {
+          "details": "SECRET_RESOURCE_DATA_PAYLOAD",
+          "metadata": {
+            "password": "SECRET_RESOURCE_DATA_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "event_code": "s3_bucket_server_access_logging_enabled",
+      "product": {
+        "name": "Prowler",
+        "uid": "prowler"
+      },
+      "tenant_uid": "123456789012"
+    },
+    "cloud": {
+      "account": {
+        "uid": "123456789012",
+        "name": "sample-account"
+      },
+      "org": {
+        "uid": "o-sample",
+        "name": "sample-org"
+      },
+      "provider": "aws",
+      "region": "ap-northeast-1"
+    },
+    "unmapped": {
+      "categories": [
+        "encryption"
+      ],
+      "compliance": {}
+    }
+  },
+  {
+    "message": "s3_bucket_public_access FAIL",
+    "activity_name": "Create",
+    "finding_info": {
+      "uid": "uid-s3_bucket_public_access",
+      "title": "title of s3_bucket_public_access",
+      "desc": "DESCRIPTION_TEXT_NOT_NEEDED",
+      "name": "docs-bucket",
+      "types": []
+    },
+    "status_code": "FAIL",
+    "status": "New",
+    "severity": "Medium",
+    "risk_details": "RISKDETAILS_LONG_TEXT",
+    "resources": [
+      {
+        "uid": "arn:aws:s3:::docs-bucket",
+        "name": "docs-bucket",
+        "type": "AwsS3Bucket",
+        "group": {
+          "name": "s3"
+        },
+        "region": "ap-northeast-1",
+        "cloud_partition": "aws",
+        "labels": [
+          "crs-node:n-bucket",
+          "team:sample"
+        ],
+        "data": {
+          "details": "SECRET_RESOURCE_DATA_PAYLOAD",
+          "metadata": {
+            "password": "SECRET_RESOURCE_DATA_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "event_code": "s3_bucket_public_access",
+      "product": {
+        "name": "Prowler",
+        "uid": "prowler"
+      },
+      "tenant_uid": "123456789012"
+    },
+    "cloud": {
+      "account": {
+        "uid": "123456789012",
+        "name": "sample-account"
+      },
+      "org": {
+        "uid": "o-sample",
+        "name": "sample-org"
+      },
+      "provider": "aws",
+      "region": "ap-northeast-1"
+    },
+    "unmapped": {
+      "categories": [
+        "encryption"
+      ],
+      "compliance": {}
+    }
+  },
+  {
+    "message": "s3_bucket_default_encryption PASS",
+    "activity_name": "Create",
+    "finding_info": {
+      "uid": "uid-s3_bucket_default_encryption",
+      "title": "title of s3_bucket_default_encryption",
+      "desc": "DESCRIPTION_TEXT_NOT_NEEDED",
+      "name": "legacy-bucket",
+      "types": []
+    },
+    "status_code": "PASS",
+    "status": "New",
+    "severity": "Medium",
+    "risk_details": "RISKDETAILS_LONG_TEXT",
+    "resources": [
+      {
+        "uid": "arn:aws:s3:::legacy-bucket",
+        "name": "legacy-bucket",
+        "type": "AwsS3Bucket",
+        "group": {
+          "name": "s3"
+        },
+        "region": "ap-northeast-1",
+        "cloud_partition": "aws",
+        "labels": [
+          "crs-node:C5"
+        ],
+        "data": {
+          "details": "SECRET_RESOURCE_DATA_PAYLOAD",
+          "metadata": {
+            "password": "SECRET_RESOURCE_DATA_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "event_code": "s3_bucket_default_encryption",
+      "product": {
+        "name": "Prowler",
+        "uid": "prowler"
+      },
+      "tenant_uid": "123456789012"
+    },
+    "cloud": {
+      "account": {
+        "uid": "123456789012",
+        "name": "sample-account"
+      },
+      "org": {
+        "uid": "o-sample",
+        "name": "sample-org"
+      },
+      "provider": "aws",
+      "region": "ap-northeast-1"
+    },
+    "unmapped": {
+      "categories": [
+        "encryption"
+      ],
+      "compliance": {}
+    }
+  },
+  {
+    "message": "rds_instance_storage_encrypted PASS",
+    "activity_name": "Create",
+    "finding_info": {
+      "uid": "uid-rds_instance_storage_encrypted",
+      "title": "title of rds_instance_storage_encrypted",
+      "desc": "DESCRIPTION_TEXT_NOT_NEEDED",
+      "name": "chat-db-1",
+      "types": []
+    },
+    "status_code": "PASS",
+    "status": "New",
+    "severity": "Medium",
+    "risk_details": "RISKDETAILS_LONG_TEXT",
+    "resources": [
+      {
+        "uid": "arn:aws:rds:ap-northeast-1:123456789012:db:chat-db-1",
+        "name": "chat-db-1",
+        "type": "AwsRdsDbInstance",
+        "group": {
+          "name": "rds"
+        },
+        "region": "ap-northeast-1",
+        "cloud_partition": "aws",
+        "labels": [],
+        "data": {
+          "details": "SECRET_RESOURCE_DATA_PAYLOAD",
+          "metadata": {
+            "password": "SECRET_RESOURCE_DATA_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "event_code": "rds_instance_storage_encrypted",
+      "product": {
+        "name": "Prowler",
+        "uid": "prowler"
+      },
+      "tenant_uid": "123456789012"
+    },
+    "cloud": {
+      "account": {
+        "uid": "123456789012",
+        "name": "sample-account"
+      },
+      "org": {
+        "uid": "o-sample",
+        "name": "sample-org"
+      },
+      "provider": "aws",
+      "region": "ap-northeast-1"
+    },
+    "unmapped": {
+      "categories": [
+        "encryption"
+      ],
+      "compliance": {}
+    }
+  },
+  {
+    "message": "rds_instance_storage_encrypted FAIL",
+    "activity_name": "Create",
+    "finding_info": {
+      "uid": "uid-rds_instance_storage_encrypted",
+      "title": "title of rds_instance_storage_encrypted",
+      "desc": "DESCRIPTION_TEXT_NOT_NEEDED",
+      "name": "chat-db-2",
+      "types": []
+    },
+    "status_code": "FAIL",
+    "status": "New",
+    "severity": "Medium",
+    "risk_details": "RISKDETAILS_LONG_TEXT",
+    "resources": [
+      {
+        "uid": "arn:aws:rds:ap-northeast-1:123456789012:db:chat-db-2",
+        "name": "chat-db-2",
+        "type": "AwsRdsDbInstance",
+        "group": {
+          "name": "rds"
+        },
+        "region": "ap-northeast-1",
+        "cloud_partition": "aws",
+        "labels": [],
+        "data": {
+          "details": "SECRET_RESOURCE_DATA_PAYLOAD",
+          "metadata": {
+            "password": "SECRET_RESOURCE_DATA_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "event_code": "rds_instance_storage_encrypted",
+      "product": {
+        "name": "Prowler",
+        "uid": "prowler"
+      },
+      "tenant_uid": "123456789012"
+    },
+    "cloud": {
+      "account": {
+        "uid": "123456789012",
+        "name": "sample-account"
+      },
+      "org": {
+        "uid": "o-sample",
+        "name": "sample-org"
+      },
+      "provider": "aws",
+      "region": "ap-northeast-1"
+    },
+    "unmapped": {
+      "categories": [
+        "encryption"
+      ],
+      "compliance": {}
+    }
+  },
+  {
+    "message": "iam_user_accesskey_unused FAIL",
+    "activity_name": "Create",
+    "finding_info": {
+      "uid": "uid-iam_user_accesskey_unused",
+      "title": "title of iam_user_accesskey_unused",
+      "desc": "DESCRIPTION_TEXT_NOT_NEEDED",
+      "name": "batch",
+      "types": []
+    },
+    "status_code": "FAIL",
+    "status": "New",
+    "severity": "Medium",
+    "risk_details": "RISKDETAILS_LONG_TEXT",
+    "resources": [
+      {
+        "uid": "arn:aws:iam::123456789012:user/batch",
+        "name": "batch",
+        "type": "AwsIamUser",
+        "group": {
+          "name": "iam"
+        },
+        "region": "ap-northeast-1",
+        "cloud_partition": "aws",
+        "labels": [
+          "crs-node:n-db"
+        ],
+        "data": {
+          "details": "SECRET_RESOURCE_DATA_PAYLOAD",
+          "metadata": {
+            "password": "SECRET_RESOURCE_DATA_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "event_code": "iam_user_accesskey_unused",
+      "product": {
+        "name": "Prowler",
+        "uid": "prowler"
+      },
+      "tenant_uid": "123456789012"
+    },
+    "cloud": {
+      "account": {
+        "uid": "123456789012",
+        "name": "sample-account"
+      },
+      "org": {
+        "uid": "o-sample",
+        "name": "sample-org"
+      },
+      "provider": "aws",
+      "region": "ap-northeast-1"
+    },
+    "unmapped": {
+      "categories": [
+        "encryption"
+      ],
+      "compliance": {}
+    }
+  },
+  {
+    "message": "elbv2_internet_facing FAIL",
+    "activity_name": "Create",
+    "finding_info": {
+      "uid": "uid-elbv2_internet_facing",
+      "title": "title of elbv2_internet_facing",
+      "desc": "DESCRIPTION_TEXT_NOT_NEEDED",
+      "name": "web-alb",
+      "types": []
+    },
+    "status_code": "FAIL",
+    "status": "New",
+    "severity": "Medium",
+    "risk_details": "RISKDETAILS_LONG_TEXT",
+    "resources": [
+      {
+        "uid": "arn:aws:elasticloadbalancing:ap-northeast-1:123456789012:loadbalancer/app/web/abc",
+        "name": "web-alb",
+        "type": "AwsElbv2LoadBalancer",
+        "group": {
+          "name": "elbv2"
+        },
+        "region": "ap-northeast-1",
+        "cloud_partition": "aws",
+        "labels": [
+          "crs-node:n-web",
+          "env:prod"
+        ],
+        "data": {
+          "details": "SECRET_RESOURCE_DATA_PAYLOAD",
+          "metadata": {
+            "password": "SECRET_RESOURCE_DATA_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "event_code": "elbv2_internet_facing",
+      "product": {
+        "name": "Prowler",
+        "uid": "prowler"
+      },
+      "tenant_uid": "123456789012"
+    },
+    "cloud": {
+      "account": {
+        "uid": "123456789012",
+        "name": "sample-account"
+      },
+      "org": {
+        "uid": "o-sample",
+        "name": "sample-org"
+      },
+      "provider": "aws",
+      "region": "ap-northeast-1"
+    },
+    "unmapped": {
+      "categories": [
+        "encryption"
+      ],
+      "compliance": {}
+    }
+  },
+  {
+    "message": "elbv2_logging_enabled PASS",
+    "activity_name": "Create",
+    "finding_info": {
+      "uid": "uid-elbv2_logging_enabled",
+      "title": "title of elbv2_logging_enabled",
+      "desc": "DESCRIPTION_TEXT_NOT_NEEDED",
+      "name": "web-alb",
+      "types": []
+    },
+    "status_code": "PASS",
+    "status": "New",
+    "severity": "Medium",
+    "risk_details": "RISKDETAILS_LONG_TEXT",
+    "resources": [
+      {
+        "uid": "arn:aws:elasticloadbalancing:ap-northeast-1:123456789012:loadbalancer/app/web/abc",
+        "name": "web-alb",
+        "type": "AwsElbv2LoadBalancer",
+        "group": {
+          "name": "elbv2"
+        },
+        "region": "ap-northeast-1",
+        "cloud_partition": "aws",
+        "labels": [
+          "crs-node:n-web",
+          "env:prod"
+        ],
+        "data": {
+          "details": "SECRET_RESOURCE_DATA_PAYLOAD",
+          "metadata": {
+            "password": "SECRET_RESOURCE_DATA_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "event_code": "elbv2_logging_enabled",
+      "product": {
+        "name": "Prowler",
+        "uid": "prowler"
+      },
+      "tenant_uid": "123456789012"
+    },
+    "cloud": {
+      "account": {
+        "uid": "123456789012",
+        "name": "sample-account"
+      },
+      "org": {
+        "uid": "o-sample",
+        "name": "sample-org"
+      },
+      "provider": "aws",
+      "region": "ap-northeast-1"
+    },
+    "unmapped": {
+      "categories": [
+        "encryption"
+      ],
+      "compliance": {}
+    }
+  },
+  {
+    "message": "cloudwatch_log_group_retention_policy_specific_days_enabled PASS",
+    "activity_name": "Create",
+    "finding_info": {
+      "uid": "uid-cloudwatch_log_group_retention_policy_specific_days_enabled",
+      "title": "title of cloudwatch_log_group_retention_policy_specific_days_enabled",
+      "desc": "DESCRIPTION_TEXT_NOT_NEEDED",
+      "name": "/web",
+      "types": []
+    },
+    "status_code": "PASS",
+    "status": "New",
+    "severity": "Medium",
+    "risk_details": "RISKDETAILS_LONG_TEXT",
+    "resources": [
+      {
+        "uid": "arn:aws:logs:ap-northeast-1:123456789012:log-group:/web",
+        "name": "/web",
+        "type": "AwsLogsLogGroup",
+        "group": {
+          "name": "cloudwatch"
+        },
+        "region": "ap-northeast-1",
+        "cloud_partition": "aws",
+        "labels": [
+          "crs-node:n-web"
+        ],
+        "data": {
+          "details": "SECRET_RESOURCE_DATA_PAYLOAD",
+          "metadata": {
+            "password": "SECRET_RESOURCE_DATA_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "event_code": "cloudwatch_log_group_retention_policy_specific_days_enabled",
+      "product": {
+        "name": "Prowler",
+        "uid": "prowler"
+      },
+      "tenant_uid": "123456789012"
+    },
+    "cloud": {
+      "account": {
+        "uid": "123456789012",
+        "name": "sample-account"
+      },
+      "org": {
+        "uid": "o-sample",
+        "name": "sample-org"
+      },
+      "provider": "aws",
+      "region": "ap-northeast-1"
+    },
+    "unmapped": {
+      "categories": [
+        "encryption"
+      ],
+      "compliance": {}
+    }
+  },
+  {
+    "message": "ssm_managed_compliant_patching PASS",
+    "activity_name": "Create",
+    "finding_info": {
+      "uid": "uid-ssm_managed_compliant_patching",
+      "title": "title of ssm_managed_compliant_patching",
+      "desc": "DESCRIPTION_TEXT_NOT_NEEDED",
+      "name": "i-0abc",
+      "types": []
+    },
+    "status_code": "PASS",
+    "status": "New",
+    "severity": "Medium",
+    "risk_details": "RISKDETAILS_LONG_TEXT",
+    "resources": [
+      {
+        "uid": "arn:aws:ec2:ap-northeast-1:123456789012:instance/i-0abc",
+        "name": "i-0abc",
+        "type": "AwsEc2Instance",
+        "group": {
+          "name": "ssm"
+        },
+        "region": "ap-northeast-1",
+        "cloud_partition": "aws",
+        "labels": [
+          "crs-node:n-web"
+        ],
+        "data": {
+          "details": "SECRET_RESOURCE_DATA_PAYLOAD",
+          "metadata": {
+            "password": "SECRET_RESOURCE_DATA_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "event_code": "ssm_managed_compliant_patching",
+      "product": {
+        "name": "Prowler",
+        "uid": "prowler"
+      },
+      "tenant_uid": "123456789012"
+    },
+    "cloud": {
+      "account": {
+        "uid": "123456789012",
+        "name": "sample-account"
+      },
+      "org": {
+        "uid": "o-sample",
+        "name": "sample-org"
+      },
+      "provider": "aws",
+      "region": "ap-northeast-1"
+    },
+    "unmapped": {
+      "categories": [
+        "encryption"
+      ],
+      "compliance": {}
+    }
+  },
+  {
+    "message": "bedrock_custom_model_encrypted_with_cmk PASS",
+    "activity_name": "Create",
+    "finding_info": {
+      "uid": "uid-bedrock_custom_model_encrypted_with_cmk",
+      "title": "title of bedrock_custom_model_encrypted_with_cmk",
+      "desc": "DESCRIPTION_TEXT_NOT_NEEDED",
+      "name": "m1",
+      "types": []
+    },
+    "status_code": "PASS",
+    "status": "New",
+    "severity": "Medium",
+    "risk_details": "RISKDETAILS_LONG_TEXT",
+    "resources": [
+      {
+        "uid": "arn:aws:bedrock:ap-northeast-1:123456789012:custom-model/m1",
+        "name": "m1",
+        "type": "AwsBedrockCustomModel",
+        "group": {
+          "name": "bedrock"
+        },
+        "region": "ap-northeast-1",
+        "cloud_partition": "aws",
+        "labels": [
+          "crs-node:n-tool"
+        ],
+        "data": {
+          "details": "SECRET_RESOURCE_DATA_PAYLOAD",
+          "metadata": {
+            "password": "SECRET_RESOURCE_DATA_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "event_code": "bedrock_custom_model_encrypted_with_cmk",
+      "product": {
+        "name": "Prowler",
+        "uid": "prowler"
+      },
+      "tenant_uid": "123456789012"
+    },
+    "cloud": {
+      "account": {
+        "uid": "123456789012",
+        "name": "sample-account"
+      },
+      "org": {
+        "uid": "o-sample",
+        "name": "sample-org"
+      },
+      "provider": "aws",
+      "region": "ap-northeast-1"
+    },
+    "unmapped": {
+      "categories": [
+        "encryption"
+      ],
+      "compliance": {}
+    }
+  },
+  {
+    "message": "ec2_ebs_volume_encryption FAIL",
+    "activity_name": "Create",
+    "finding_info": {
+      "uid": "uid-ec2_ebs_volume_encryption",
+      "title": "title of ec2_ebs_volume_encryption",
+      "desc": "DESCRIPTION_TEXT_NOT_NEEDED",
+      "name": "vol-0aaa",
+      "types": []
+    },
+    "status_code": "FAIL",
+    "status": "New",
+    "severity": "Medium",
+    "risk_details": "RISKDETAILS_LONG_TEXT",
+    "resources": [
+      {
+        "uid": "arn:aws:ec2:ap-northeast-1:123456789012:volume/vol-0aaa",
+        "name": "vol-0aaa",
+        "type": "AwsEc2Volume",
+        "group": {
+          "name": "ec2"
+        },
+        "region": "ap-northeast-1",
+        "cloud_partition": "aws",
+        "labels": [],
+        "data": {
+          "details": "SECRET_RESOURCE_DATA_PAYLOAD",
+          "metadata": {
+            "password": "SECRET_RESOURCE_DATA_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "event_code": "ec2_ebs_volume_encryption",
+      "product": {
+        "name": "Prowler",
+        "uid": "prowler"
+      },
+      "tenant_uid": "123456789012"
+    },
+    "cloud": {
+      "account": {
+        "uid": "123456789012",
+        "name": "sample-account"
+      },
+      "org": {
+        "uid": "o-sample",
+        "name": "sample-org"
+      },
+      "provider": "aws",
+      "region": "ap-northeast-1"
+    },
+    "unmapped": {
+      "categories": [
+        "encryption"
+      ],
+      "compliance": {}
+    }
+  },
+  {
+    "message": "s3_bucket_default_encryption FAIL",
+    "activity_name": "Create",
+    "finding_info": {
+      "uid": "uid-s3_bucket_default_encryption",
+      "title": "title of s3_bucket_default_encryption",
+      "desc": "DESCRIPTION_TEXT_NOT_NEEDED",
+      "name": "ghost-bucket",
+      "types": []
+    },
+    "status_code": "FAIL",
+    "status": "New",
+    "severity": "Medium",
+    "risk_details": "RISKDETAILS_LONG_TEXT",
+    "resources": [
+      {
+        "uid": "arn:aws:s3:::ghost-bucket",
+        "name": "ghost-bucket",
+        "type": "AwsS3Bucket",
+        "group": {
+          "name": "s3"
+        },
+        "region": "ap-northeast-1",
+        "cloud_partition": "aws",
+        "labels": [
+          "crs-node:n-missing"
+        ],
+        "data": {
+          "details": "SECRET_RESOURCE_DATA_PAYLOAD",
+          "metadata": {
+            "password": "SECRET_RESOURCE_DATA_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "event_code": "s3_bucket_default_encryption",
+      "product": {
+        "name": "Prowler",
+        "uid": "prowler"
+      },
+      "tenant_uid": "123456789012"
+    },
+    "cloud": {
+      "account": {
+        "uid": "123456789012",
+        "name": "sample-account"
+      },
+      "org": {
+        "uid": "o-sample",
+        "name": "sample-org"
+      },
+      "provider": "aws",
+      "region": "ap-northeast-1"
+    },
+    "unmapped": {
+      "categories": [
+        "encryption"
+      ],
+      "compliance": {}
+    }
+  },
+  {
+    "message": "some_unknown_check FAIL",
+    "activity_name": "Create",
+    "finding_info": {
+      "uid": "uid-some_unknown_check",
+      "title": "title of some_unknown_check",
+      "desc": "DESCRIPTION_TEXT_NOT_NEEDED",
+      "name": "docs-bucket",
+      "types": []
+    },
+    "status_code": "FAIL",
+    "status": "New",
+    "severity": "Medium",
+    "risk_details": "RISKDETAILS_LONG_TEXT",
+    "resources": [
+      {
+        "uid": "arn:aws:s3:::docs-bucket",
+        "name": "docs-bucket",
+        "type": "AwsS3Bucket",
+        "group": {
+          "name": "s3"
+        },
+        "region": "ap-northeast-1",
+        "cloud_partition": "aws",
+        "labels": [
+          "crs-node:n-bucket",
+          "team:sample"
+        ],
+        "data": {
+          "details": "SECRET_RESOURCE_DATA_PAYLOAD",
+          "metadata": {
+            "password": "SECRET_RESOURCE_DATA_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "event_code": "some_unknown_check",
+      "product": {
+        "name": "Prowler",
+        "uid": "prowler"
+      },
+      "tenant_uid": "123456789012"
+    },
+    "cloud": {
+      "account": {
+        "uid": "123456789012",
+        "name": "sample-account"
+      },
+      "org": {
+        "uid": "o-sample",
+        "name": "sample-org"
+      },
+      "provider": "aws",
+      "region": "ap-northeast-1"
+    },
+    "unmapped": {
+      "categories": [
+        "encryption"
+      ],
+      "compliance": {}
+    }
+  },
+  {
+    "message": "s3_bucket_kms_encryption MANUAL",
+    "activity_name": "Create",
+    "finding_info": {
+      "uid": "uid-s3_bucket_kms_encryption",
+      "title": "title of s3_bucket_kms_encryption",
+      "desc": "DESCRIPTION_TEXT_NOT_NEEDED",
+      "name": "docs-bucket",
+      "types": []
+    },
+    "status_code": "MANUAL",
+    "status": "New",
+    "severity": "Medium",
+    "risk_details": "RISKDETAILS_LONG_TEXT",
+    "resources": [
+      {
+        "uid": "arn:aws:s3:::docs-bucket",
+        "name": "docs-bucket",
+        "type": "AwsS3Bucket",
+        "group": {
+          "name": "s3"
+        },
+        "region": "ap-northeast-1",
+        "cloud_partition": "aws",
+        "labels": [
+          "crs-node:n-bucket",
+          "team:sample"
+        ],
+        "data": {
+          "details": "SECRET_RESOURCE_DATA_PAYLOAD",
+          "metadata": {
+            "password": "SECRET_RESOURCE_DATA_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "event_code": "s3_bucket_kms_encryption",
+      "product": {
+        "name": "Prowler",
+        "uid": "prowler"
+      },
+      "tenant_uid": "123456789012"
+    },
+    "cloud": {
+      "account": {
+        "uid": "123456789012",
+        "name": "sample-account"
+      },
+      "org": {
+        "uid": "o-sample",
+        "name": "sample-org"
+      },
+      "provider": "aws",
+      "region": "ap-northeast-1"
+    },
+    "unmapped": {
+      "categories": [
+        "encryption"
+      ],
+      "compliance": {}
+    }
+  },
+  {
+    "message": "s3_bucket_default_encryption FAIL",
+    "activity_name": "Create",
+    "finding_info": {
+      "uid": "uid-s3_bucket_default_encryption",
+      "title": "title of s3_bucket_default_encryption",
+      "desc": "DESCRIPTION_TEXT_NOT_NEEDED",
+      "name": "docs-bucket",
+      "types": []
+    },
+    "status_code": "FAIL",
+    "status": "Suppressed",
+    "severity": "Medium",
+    "risk_details": "RISKDETAILS_LONG_TEXT",
+    "resources": [
+      {
+        "uid": "arn:aws:s3:::docs-bucket",
+        "name": "docs-bucket",
+        "type": "AwsS3Bucket",
+        "group": {
+          "name": "s3"
+        },
+        "region": "ap-northeast-1",
+        "cloud_partition": "aws",
+        "labels": [
+          "crs-node:n-bucket",
+          "team:sample"
+        ],
+        "data": {
+          "details": "SECRET_RESOURCE_DATA_PAYLOAD",
+          "metadata": {
+            "password": "SECRET_RESOURCE_DATA_PAYLOAD"
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "event_code": "s3_bucket_default_encryption",
+      "product": {
+        "name": "Prowler",
+        "uid": "prowler"
+      },
+      "tenant_uid": "123456789012"
+    },
+    "cloud": {
+      "account": {
+        "uid": "123456789012",
+        "name": "sample-account"
+      },
+      "org": {
+        "uid": "o-sample",
+        "name": "sample-org"
+      },
+      "provider": "aws",
+      "region": "ap-northeast-1"
+    },
+    "unmapped": {
+      "categories": [
+        "encryption"
+      ],
+      "compliance": {}
+    }
+  }
+]
