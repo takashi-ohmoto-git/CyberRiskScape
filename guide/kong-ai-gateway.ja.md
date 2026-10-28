@@ -1,4 +1,4 @@
-# Kong AI Gateway を脅威モデリングする — decK の設定から構成図を作る
+# Kong AI Gateway を脅威モデリングする — decK・kongctl の設定から構成図を作る
 
 [English](kong-ai-gateway.md) | **日本語**
 
@@ -15,6 +15,7 @@
 - 生成された図で**実際に検出される脅威**と、AI Gateway の構成で押さえたい脅威
 - `kong.yaml` の変更を PR で見張り、新しい脅威が出たら CI を止める使い方
 - この取り込みで**分からないこと**（図で補う必要がある属性）
+- AI Gateway 2.x の kongctl 宣言ファイルから構成図を作る方法（§7）
 
 **前提：Kong Gateway と decK**（執筆時点の公式の記載による）
 
@@ -27,6 +28,20 @@
 - **Kong AI Gateway** は、AI 向けのプラグイン群の呼び名です。`ai-proxy`（LLM プロバイダへの接続）、
   `ai-prompt-guard` などのガード系、`ai-rag-injector`（RAG）、`ai-mcp-proxy`（MCP）などがあります
   （[出典 2](#参考リンク)）。
+
+**前提：AI Gateway 2.x と kongctl**（執筆時点の公式ドキュメントによる）
+
+- Kong AI Gateway は 2.x に刷新され、構成管理が decK（Service・Route・Plugin）から **kongctl**（Konnect 上の
+  AI Gateway のエンティティ：AI Model・Model Provider・MCP Server・Agent・Policy・Auth Strategy など）に変わりました
+  （[出典 6](#参考リンク)・[7](#参考リンク)・[8](#参考リンク)）。上の説明は decK 版（1.x）のものです。
+  2.x の取り込みは §7 で説明します。
+- どちらの取り込みを使うかは、手元の設定ファイルで決まります（[出典 9](#参考リンク)）。
+
+| 手元の設定 | 使う取り込み |
+|---|---|
+| 1.x／Kong Gateway の decK `kong.yaml` | 画面の **「Kong 設定（decK）を選択」**、CLI の `import-kong`（§3） |
+| 2.x の kongctl 宣言ファイル（`ai_gateways` など） | 画面の **「Kong 設定（kongctl）を選択」**、CLI の `import-kongctl`（§7） |
+| kongctl から decK を呼ぶ構成（`control_planes[]._deck.files`） | `_deck.files` が指す **decK ファイル**を `import-kong` に渡す。`control_planes` だけの kongctl ファイルを `import-kongctl` に渡すと、その旨のエラーが出ます |
 
 **このページの前提となる知識**：[はじめに](getting-started.ja.md)の操作と、
 [テンプレートを作る・使う](templates.ja.md)の読み込み手順。
@@ -49,7 +64,7 @@
 | `ai-rag-injector` | `DB`（ベクターDB / RAG） | LLM への取得経路（`semantic: rag_retrieval`）として描きます |
 | ガード系プラグイン | `GUARDRAIL`（ガードレール） | `ai-prompt-guard`・`ai-semantic-prompt-guard`・`ai-semantic-response-guard`・`ai-sanitizer`・`ai-lakera-guard`・`ai-azure-content-safety`・`ai-aws-guardrails`・`ai-gcp-model-armor`・`ai-custom-guardrail` |
 | `vaults`／`{vault://…}` 参照 | `SECRETS_VAULT`（シークレット管理） | |
-| 認証系プラグイン | クライアント → ゲートウェイの接続の「認証」 | `key-auth`・`basic-auth`・`hmac-auth`・`jwt`・`oauth2`・`openid-connect`・`ldap-auth`・`mtls-auth` など。プラグインごとに認証方式を決める：`key-auth`・`hmac-auth` → APIキー、`basic-auth`・`ldap-auth` → ID/パスワード、`jwt`・`oauth2`・`openid-connect` → トークン、`mtls-auth` → 証明書（§7） |
+| 認証系プラグイン | クライアント → ゲートウェイの接続の「認証」 | `key-auth`・`basic-auth`・`hmac-auth`・`jwt`・`oauth2`・`openid-connect`・`ldap-auth`・`mtls-auth` など。プラグインごとに認証方式を決める：`key-auth`・`hmac-auth` → APIキー、`basic-auth`・`ldap-auth` → ID/パスワード、`jwt`・`oauth2`・`openid-connect` → トークン、`mtls-auth` → 証明書（§8） |
 | Route の `protocols` | クライアント → ゲートウェイの接続の「暗号化」 | `http` を許す Route が 1 つでもあれば平文 |
 | `ip-restriction`・ログ系プラグイン | API ゲートウェイの攻撃面属性 | 送信元 IP 制限・アクセスログを「あり」にします |
 | Consumer | 図にしません | 件数だけ表示します。資格情報は読みません |
@@ -209,7 +224,105 @@ node dist-cli/main.js diff base.json head.json --format md --fail-on High --out 
 
 ---
 
-## 7. 限界
+## 7. AI Gateway 2.x（kongctl）から取り込む
+
+AI Gateway 2.x は、プラグインではなく**エンティティ**（AI Model・Model Provider・MCP Server・Agent・Policy・
+Auth Strategy など）で宣言します。kongctl の宣言ファイルを読み込んで、同じように構成図の下書きを作れます。
+脅威の判定は、ほかの図と同じ脅威ルールが行います。
+
+### 7.1 kongctl のエンティティと型の対応
+
+| kongctl の要素 | CyberRiskScape の型・属性 | 補足 |
+|---|---|---|
+| ゲートウェイ（`ai_gateways[]`） | `AI_GATEWAY`（AIゲートウェイ） | 組織内の境界に置きます（`deployment_type` に関係なく）。説明欄に `deployment_type` と `proxy_urls` のホストを残します |
+| Konnect（管理プレーン） | `API_CONTROL_PLANE`（API管理プレーン） | Kong 社の SaaS なのでインターネット側に置きます。ゲートウェイとはデータプレーン証明書の mTLS で接続する＝認証は証明書 |
+| model の `targets` | `LLM`（LLMモデル） | ターゲットごとに 1 つ。名前は「プロバイダ / モデル名」。ollama・vllm・llama2 は組織内、それ以外はインターネット側 |
+| MCP server：`passthrough-listener`・`upstream-server` | `MCP_SERVER`（MCPサーバー） | ゲートウェイの背後に置きます |
+| MCP server：`conversion-listener` | `MCP_SERVER`（Kong が提供）＋ `BACKEND_API`（バックエンドAPI） | REST を MCP に変換して受けるのは Kong 自身。背後の REST API を別に描きます |
+| MCP server：`listener` | `MCP_SERVER`（Kong が提供） | `sources` が指す MCP サーバーへ接続を描きます |
+| MCP server：`conversion-only` | `BACKEND_API` | `listener` の `sources` から参照されるとき、listener からの接続になります |
+| agent | `AGENT`（AIエージェント） | ゲートウェイの背後に置きます |
+| 上流の配置 | `config.url` のホスト名で判定 | `localhost`・プライベート IP・ドットなしのホスト名、`.internal` `.local` `.svc` `.cluster.local` `.lan` `.corp` で終わるものは組織内。それ以外はインターネット側。URL が無ければ組織内・平文と仮定します |
+| ガード系 policy | `GUARDRAIL`（ガードレール） | 一覧は §2 と同じ。**有効**で、`global: true` か、いずれかのエンティティの `policies` に付いているものだけ |
+| `ai-request-transformer`・`ai-response-transformer` の `config.llm` | `LLM` | 変換のために呼ぶモデルとして描きます |
+| vectordb（model の `config.balancer`、policy の `config.vectordb`） | `DB`（ベクターDB / RAG） | ラベルに strategy（redis・pgvector）を入れます |
+| `ai_gateway_vaults`・`{vault://…}` 参照 | `SECRETS_VAULT`（シークレット管理） | |
+| auth strategy | クライアント → ゲートウェイの接続の「認証」 | `key-auth` → APIキー、`openid-connect` → トークン。エンティティに**付いていなければ認証なし**。公開エンティティ（model・agent・Kong が提供する MCP・`passthrough-listener`）のうち**最も弱いもの**を 1 本の接続に採り、エンティティ別の認証はゲートウェイの説明欄に残します |
+| `proxy_urls` の `protocol` | クライアント → ゲートウェイの接続の「暗号化」 | すべて https なら暗号化あり。http を含むか `proxy_urls` が無ければ**平文と仮定**し、説明欄にその旨を書きます |
+| consumers | 図にしません | 件数だけ表示します |
+
+- 子エンティティ（`ai_gateway_models` など）は、トップレベルに書いて `ai_gateway:` で親を指す形と、
+  `ai_gateways[]` の下に入れ子で書く形の**両方**を読みます。
+- **`!secret`・`!env` の中身は読みません。** プロバイダの `config.auth`、auth strategy の `client_id` / `client_secret`、
+  上流の認証の値、コンシューマーの資格情報は図に持ち込みません。URL もホスト名とスキームだけを使います。
+
+### 7.2 取り込み方
+
+**画面から**：左サイドバーの **Template** → **Import（読み込み）** タブで **「Kong 設定（kongctl）を選択」** を押し、
+宣言ファイル（YAML）を選びます。ゲートウェイ・モデル・MCP サーバー・エージェント・ポリシー・コンシューマーの件数が
+表示されるので、**「適用」** を押すとアクティブなレイヤーが生成された図に置き換わります（Undo で戻せます）。
+
+**CLI から**：
+
+```bash
+npm ci && npm run build:cli
+node dist-cli/main.js import-kongctl ai-gateway.yaml --out model.json
+node dist-cli/main.js analyze model.json --format md
+```
+
+宣言ファイルは、kongctl で既存の AI Gateway から書き出すこともできます（CyberRiskScape 自体は Konnect の API を呼びません）。
+次は公式ドキュメントの例です（[出典 7](#参考リンク)）。MCP サーバー・エージェント・ポリシーなども図にしたい場合は、
+対応するリソースを `--resources` に足してください（指定できる名前は `kongctl dump declarative --help` で確認できます）。
+
+```bash
+kongctl dump declarative \
+  --default-namespace my-namespace \
+  --resources ai_gateways,ai_gateway_models,ai_gateway_model_providers \
+  --pat "$KONNECT_TOKEN" > ai-gateway.yaml
+```
+
+試すためのサンプルを [`templates/kong-ai-gateway-v2.yaml`](templates/kong-ai-gateway-v2.yaml) に置いています
+（実際の資格情報は含みません。秘密情報は環境変数から読むダミーの指定です）。
+
+### 7.3 サンプルの図
+
+サンプルには、次のエンティティがあります。
+
+- OpenAI と ollama を並べたチャットモデル `chat`（OpenID Connect、`ai-prompt-guard` 付き）
+- REST API を MCP のツールに変換する `orders-tools`（API キー）
+- 外部の MCP サーバーへ素通しする `docs-mcp`（クライアント側の認証方式なし。上流の MCP サーバーへはトークンで接続）
+- **認証方式を付けていない** `support-agent`（未認証で公開される例）
+- ガードレール（`ai-prompt-guard`）と、全体に効く semantic cache（ベクターDB は redis）
+
+このサンプルでは CLI の `analyze --format md` の §4 で **113 件**（Critical 25・High 59・Medium 29）の脅威が
+検出されます（執筆時点）。
+
+**取り込み後に見直す属性**
+
+- **managed / serverless のゲートウェイ**：データプレーンが Kong 社のクラウドで動くため、組織内ではなくなります。
+  `deployment_type`（説明欄に表示）を見て、ゲートウェイを置く境界を見直してください
+- **認証の強さ**：OIDC で MFA を必須にしているなら、クライアント → ゲートウェイの接続を「MFA」に上げてください
+- **Kong が提供する MCP への接続**は、ゲートウェイと同じプロセス内として「認証なし・組織内」で描いています
+- **上流への接続**：ゲートウェイからバックエンドへの認証（相互 TLS など）は、`config.upstream.auth` があれば API キー相当、
+  無ければ認証なしと仮定しています。実態に合わせて変更してください
+
+### 7.4 ユースケース：kongctl の宣言ファイルの変更を PR で見張る
+
+§6 と同じ流れです。要素の ID は名前から決まるため、エンティティを足しても既存の要素は同じものとして突き合わされます。
+
+```bash
+# 変更前（main）と変更後（PR）の宣言ファイルから、それぞれプロジェクト JSON を作る
+git show origin/main:ai-gateway.yaml > base-ai-gateway.yaml
+node dist-cli/main.js import-kongctl base-ai-gateway.yaml --out base.json
+node dist-cli/main.js import-kongctl ai-gateway.yaml --out head.json
+
+# 新しい High 以上の脅威があれば exit 1（PR を止める）
+node dist-cli/main.js diff base.json head.json --format md --fail-on High --out result.md
+```
+
+---
+
+## 8. 限界
 
 - **プラグインがあっても「対策済み」にはなりません。** 取り込みは図を作るだけで、対策の実装状況は自動では付きません
 - **認証の強さは控えめに見積もります。** 認証方式はプラグインの種類から決め、1 つのサービスに複数の認証プラグインがあれば最も弱いものを採ります。
@@ -221,6 +334,11 @@ node dist-cli/main.js diff base.json head.json --format md --fail-on High --out 
 - Consumer・Upstream（負荷分散先）・Workspace は図にしません
 - 自動配置は簡易的で、接続が交差することがあります。必要に応じて配置を整えてください
 - プラグイン名と設定の形式は執筆時点の公式ドキュメントによります。新しいプラグインは、未対応なら単に無視されます
+- **2.x（kongctl）の取り込みの限界**
+  - 自前の LLM の宛先 URL を指定する項目は執筆時点のドキュメントに無く、組織内かどうかは provider の種類（ollama・vllm・llama2 か）だけで判定します
+  - `!lookup {id: …}` のように id で指す参照は解決できず、親ゲートウェイは最初のゲートウェイ、その他の参照は未解決として扱います
+  - policy の `condition`（CEL）やコンシューマー単位の適用範囲は読みません
+  - ゲートウェイは `deployment_type` に関係なく組織内に置きます（§7.3）
 
 ---
 
@@ -231,6 +349,10 @@ node dist-cli/main.js diff base.json head.json --format md --fail-on High --out 
 3. AI Proxy プラグイン — <https://developer.konghq.com/plugins/ai-proxy/>
 4. OWASP API Security Top 10 2023 — <https://owasp.org/API-Security/editions/2023/en/0x11-t10/>
 5. OWASP Top 10 for LLM Applications 2025 — <https://genai.owasp.org/llm-top-10/>
+6. AI Gateway 2.x の概念 — <https://developer.konghq.com/ai-gateway/ai-gateway-v2-concepts/>
+7. kongctl で AI Gateway を管理する — <https://developer.konghq.com/ai-gateway/kongctl/>
+8. AI Gateway のエンティティ — <https://developer.konghq.com/ai-gateway/entities/>
+9. kongctl と decK — <https://developer.konghq.com/kongctl/kongctl-and-deck/>
 
 ---
 

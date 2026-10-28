@@ -40,7 +40,7 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | **Cursor** | MCP | エディタ内で脅威を問い合わせる | [MCP 導入ガイド](mcp-integration.ja.md)・[ユースケース](mcp-use-cases.ja.md)（§6） |
 | **Snyk** | MCP（エージェント経由で併用） | 脅威モデルの重要脅威と、コードの脆弱性診断の結果を突き合わせる | [ユースケース](mcp-use-cases.ja.md)（§7） |
 | **GitHub Actions** | CLI・GitHub Action | 構成図の差分から新しい脅威を検出して PR を止める・実行トリガーで見直しを求める | [AI駆動開発のCIに組み込む](ci-integration.ja.md) |
-| **Kong AI Gateway** | 設定ファイルの取り込み（decK の kong.yaml） | 設定から構成図を自動生成する・設定の変更で出る新しい脅威を PR で見張る | [Kong AI Gateway を脅威モデリングする](kong-ai-gateway.ja.md) |
+| **Kong AI Gateway** | 設定ファイルの取り込み（decK の kong.yaml・AI Gateway 2.x の kongctl 宣言ファイル） | 設定から構成図を自動生成する・設定の変更で出る新しい脅威を PR で見張る | [Kong AI Gateway を脅威モデリングする](kong-ai-gateway.ja.md) |
 | **Postman**（Postman CLI・Newman） | 検証用リクエストの書き出し（Collection v2.1） | 検出した脅威が実装でも成立するかを確かめ、CI で回帰テストにする | [脅威を Postman で確かめる](postman.ja.md) |
 | **MITRE ATT&CK Navigator**（レイヤーを取り込める BAS・CTEM・SOC のツール） | Navigator レイヤーの書き出し（JSON） | 攻撃シナリオの経路で模擬する technique を渡し、図で切った経路が実機でも塞がっているかを確かめる | [攻撃経路のどこを切るか](agentic-attacker-paths.ja.md)（§6） |
 | **Salesforce Agentforce** | 専用のステンシル・脅威ルール・テンプレート | Service agent の構成を評価する・エージェント定義の変更を PR で見張る | [Salesforce Agentforce を脅威モデリングする](agentforce.ja.md) |

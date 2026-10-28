@@ -45,7 +45,7 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 |---|---|
 | **MCP**（Claude Code・GitHub Copilot・Cursor など） | コーディングエージェントが設計中に脅威を問い合わせ、構成図を更新する（[ガイド](guide/mcp-integration.ja.md)） |
 | **CI**（GitHub Actions） | 構成図の差分から新しい脅威を検出して PR を止め、結果を SARIF で出力する（[ガイド](guide/ci-integration.ja.md)） |
-| **API ゲートウェイ**（Kong AI Gateway） | decK の設定から構成図を自動生成し、設定の変更を PR で見張る（[ガイド](guide/kong-ai-gateway.ja.md)） |
+| **API ゲートウェイ**（Kong AI Gateway） | decK・kongctl（AI Gateway 2.x）の設定から構成図を自動生成し、設定の変更を PR で見張る（[ガイド](guide/kong-ai-gateway.ja.md)） |
 | **API テスト**（Postman・Postman CLI・Newman） | 検出した脅威を確かめる検証用リクエストを書き出す（[ガイド](guide/postman.ja.md)） |
 | **ペネトレーションテスト**（社内・外部のテスト業者） | 入口・攻撃経路・重点テスト項目と確認観点をまとめた、業者に依存しないテスト計画書を書き出す（[ガイド](guide/pentest-plan.ja.md)） |
 | **侵害の調査**（Velociraptor・同梱のトリアージスクリプト） | 侵害が疑われるときに、脅威モデルから調査計画書を書き出し、集めた証拠を図のノードに重ねて「痕跡あり・否定できない・未調査・痕跡なし」を報告する。侵害の有無は判定しない（[ガイド](guide/compromise-investigation.ja.md)） |

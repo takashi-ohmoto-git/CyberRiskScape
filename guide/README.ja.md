@@ -29,7 +29,7 @@ CyberRiskScape を使う人のための、機能の使い方の一覧です。
 | **[Salesforce Agentforce を脅威モデリングする](agentforce.ja.md)** | Agentforce の構成要素と CyberRiskScape の型の対応、顧客向け Service agent の構成図テンプレート、外部から書き込める CRM 項目を経由する間接プロンプトインジェクション（ForcedLeak 型）など押さえたい脅威と、検出されるルール・されないこと、エージェント定義の変更を PR で見張る方法 |
 | **[SDV を脅威モデリングする](sdv.ja.md)** | SDV の構成要素（ECU・ゾーンコントローラ・ゲートウェイ・TCU・OBD-II・V2X・OTA・車両 PKI）と Vehicle (SDV) の型の対応、ゾーン型アーキテクチャの構成図テンプレート、UN R155 Annex 5 を出典とする 19 ルールと脅威番号の対応、TCU や OBD-II から走行系 ECU への攻撃経路の見方、PQC 移行（ファームウェア署名・終端判定）との関係、限界（型式認証や TARA の代替ではないこと） |
 | **[ScopeSentry の観測結果を構成図にする](scopesentry.ja.md)** | 自前で動かす OSS の ASM「ScopeSentry」の書き出し（資産・脆弱性・サブドメイン乗っ取り）または API（MCP）から、露出したサービスの構成図の下書きを自動で作る方法、新しい DNS（権威DNS・ゾーン）の型と乗っ取りの脅威（運用状況で消す入力）、定期の取り込みと `diff --fail-on` で新しい露出を検知する方法（スキャンは許可された範囲だけ） |
-| **[Kong AI Gateway を脅威モデリングする](kong-ai-gateway.ja.md)** | Kong Gateway の宣言設定（decK の kong.yaml）から構成図の下書きを自動で作る方法（画面・CLI）、設定と型の対応、AI Gateway の構成で押さえたい脅威（認証のない Route・MCP として公開したツール・ガードレールの限界・RAG・管理プレーン）と、kong.yaml の変更を PR で見張る方法 |
+| **[Kong AI Gateway を脅威モデリングする](kong-ai-gateway.ja.md)** | Kong Gateway の宣言設定（decK の kong.yaml）と AI Gateway 2.x の kongctl 宣言ファイルから構成図の下書きを自動で作る方法（画面・CLI）、設定と型の対応、AI Gateway の構成で押さえたい脅威（認証のない Route・MCP として公開したツール・ガードレールの限界・RAG・管理プレーン）と、kong.yaml の変更を PR で見張る方法 |
 | **[NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md)** | サービスアカウント・ワークロードID・OAuthクライアント・RPAボット、特権アクセス管理（PAM）・ID ガバナンス（IGA）の描き方と、OWASP NHI Top 10 にもとづく脅威。Okta・SailPoint・CyberArk（Idira）の MCP サーバーと組み合わせて、図と実際の ID の状態を突き合わせる方法 |
 | **[インターネット露出を減らす](exposure-reduction.ja.md)** | CISA の「Internet Exposure Reduction Guidance」の 4 ステップ（把握・必要性の判断・リスクの低減・定期評価）に沿って、Shodan・Censys で見つけた露出（Web・VPN・RDP・データベース・ローカル LLM）を構成図に描き（Shodan は書き出しから自動生成）、対応前後の脅威の差で効果を示し、定期評価で露出の再発を CLI で検知する方法 |
 | **[IPA の注意喚起（2026 年 10 月）の対策を、会員サイトの図で確かめる](ipa-alert-2026-10.ja.md)** | 不正アクセスによる漏えい等の事案を踏まえた IPA の注意喚起の 17 項目（外部公開アプリケーション・外部サービス・保有データ）を、簡易な会員サイト（フロントエンドサーバー・Web フォーム・決済代行 API）の図で 1 つずつ確かめる：図のどこを見て何を入力するか、運用状況（ログの保持期間・保管時の暗号化・パッチ・アカウント棚卸し・保有データ・最終点検日）の記録、注意喚起チェックリストで 17 項目の現状を一覧（画面・CSV・CLI）、対策後に状態が変わること、更新し続ける運用（点検日・CI） |
@@ -65,7 +65,7 @@ CyberRiskScape を使う人のための、機能の使い方の一覧です。
 - **ほかのツールや製品とつなぎたい** — [連携ガイド](integrations.ja.md) で、連携できる製品と方法を一覧できます。
 - **Salesforce Agentforce の構成を脅威モデル化したい** — [Salesforce Agentforce を脅威モデリングする](agentforce.ja.md) へ。
 - **SDV・コネクテッドカーの構成を脅威モデル化したい** — [SDV を脅威モデリングする](sdv.ja.md) へ。ゾーン型アーキテクチャのテンプレートから始められます。
-- **Kong Gateway（AI Gateway）の構成を脅威モデル化したい** — [Kong AI Gateway を脅威モデリングする](kong-ai-gateway.ja.md) へ。kong.yaml から図の下書きを作れます。
+- **Kong Gateway（AI Gateway）の構成を脅威モデル化したい** — [Kong AI Gateway を脅威モデリングする](kong-ai-gateway.ja.md) へ。kong.yaml（decK）や kongctl の宣言ファイル（AI Gateway 2.x）から図の下書きを作れます。
 - **サービスアカウントや AI エージェントなど NHI のリスクを洗い出したい** — [NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md) へ。
 - **ScopeSentry の結果から構成図を作りたい・サブドメイン乗っ取りを評価したい** — [ScopeSentry の観測結果を構成図にする](scopesentry.ja.md) へ。
 - **インターネットに出ている資産を棚卸しして減らしたい** — [インターネット露出を減らす](exposure-reduction.ja.md) へ。Shodan・Censys の結果から始められます。

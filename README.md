@@ -55,7 +55,7 @@ platforms, and AI agent platforms. It makes no outbound calls, so it also works 
 |---|---|
 | **MCP** (Claude Code, GitHub Copilot, Cursor, and others) | Coding agents query threats and update the diagram while they design ([guide](guide/mcp-integration.md)) |
 | **CI** (GitHub Actions) | Detect new threats from diagram diffs, block the PR, and emit SARIF ([guide](guide/ci-integration.md)) |
-| **API gateways** (Kong AI Gateway) | Generate the diagram from your decK configuration and watch configuration changes in PRs ([guide](guide/kong-ai-gateway.md)) |
+| **API gateways** (Kong AI Gateway) | Generate the diagram from your decK or kongctl (AI Gateway 2.x) configuration and watch configuration changes in PRs ([guide](guide/kong-ai-gateway.md)) |
 | **API testing** (Postman, Postman CLI, Newman) | Export verification requests that check the detected threats ([guide](guide/postman.md)) |
 | **Compromise investigation** (Velociraptor and the bundled triage script) | When you suspect a compromise, export an investigation plan from the threat model and overlay the collected evidence on the diagram's nodes as "traces found", "cannot rule out", "not investigated" or "no traces". It does not determine whether a compromise occurred ([guide](guide/compromise-investigation.md)) |
 | **Penetration testing** (in-house or external testers) | Export a vendor-neutral test plan with entry points, attack paths, focus test items, and check viewpoints ([guide](guide/pentest-plan.md)) |
