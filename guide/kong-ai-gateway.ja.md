@@ -99,7 +99,7 @@ node dist-cli/main.js import-kong kong.yaml --out model.json
 node dist-cli/main.js analyze model.json --format md
 ```
 
-`import-kong` は L1 に図を置いたプロジェクト JSON を出力します。画面の「ファイル（保存 / 開く）」で開くことも、
+`import-kong` は L1 に図を置いたプロジェクト JSON を出力します。画面の「ファイル（保存 / 開く）」や Template の Import タブで開くことも、
 `analyze`・`diff` にそのまま渡すこともできます。CLI 全般は [AI駆動開発のCIに組み込む](ci-integration.ja.md) を参照してください。
 
 ---

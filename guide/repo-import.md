@@ -76,21 +76,9 @@ node dist-cli/main.js analyze repo.json --format md
 
 ### Load it on the screen
 
-"Select JSON file" on the **Template** → **Import** tab reads the **template format**, not a project JSON. Wrap the output with this small
-script first (save it as, for example, `to-template.mjs`).
+The project JSON can be loaded as is, with no conversion.
 
-```js
-// Usage: node to-template.mjs repo.json repo.template.json my-app
-import { readFileSync, writeFileSync } from 'node:fs';
-const [, , src, dst, name] = process.argv;
-const project = JSON.parse(readFileSync(src, 'utf8'));
-writeFileSync(
-  dst,
-  JSON.stringify({ schemaVersion: 1, kind: 'cyberriskscape-template', name, layer: project.layers.L1 }),
-);
-```
-
-1. In the left sidebar, open **Template** → the **Import** tab, press **Select JSON file**, and choose `repo.template.json`.
+1. In the left sidebar, open **Template** → the **Import** tab, press **Select JSON file**, and choose `repo.json`.
 2. The file name and counts appear (the sample in this page is Nodes 12 / Edges 8 / Boundaries 2). Press **Replace and apply** and the
    active layer is replaced with the generated diagram (you are asked to confirm if elements already exist; Undo restores it).
 

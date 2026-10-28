@@ -126,7 +126,7 @@ export const jaProject = {
   'project.templateModal.importIntro1': 'テンプレート JSON を読み込み、アクティブレイヤー（',
   'project.templateModal.importIntro2': '）に',
   'project.templateModal.replaceWord': ' 置き換え ',
-  'project.templateModal.importIntro3': 'で適用します。既存要素があるときは確認します。',
+  'project.templateModal.importIntro3': 'で適用します。既存要素があるときは確認します。CLI が出力したプロジェクト JSON もそのまま読み込めます。',
   'project.templateModal.selectFile': 'JSON ファイルを選択',
   'project.templateModal.importedOpenQuote': '「',
   'project.templateModal.importedStats': '」 — ノード {nodes} / エッジ {edges} / 境界 {boundaries}',

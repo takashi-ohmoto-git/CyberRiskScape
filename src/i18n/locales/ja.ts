@@ -194,6 +194,7 @@ const jaCore = {
   'framework.label.AgenticAI': 'Agent-Centric',
   'io.jsonSyntaxError': 'JSON 構文エラー: {message}',
   'io.validationError': '検証エラー: {issues}',
+  'io.projectEmpty': 'プロジェクト JSON のどのレイヤーにも要素がありません。',
   'appliesToSummary.join.sentence': '',
   'appliesToSummary.join.or': ' または ',
   'appliesToSummary.join.allOf': '、かつ ',

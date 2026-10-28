@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { LayerData } from '../../core/model/types';
-import { PersistedLayerDataSchema } from '../persistence/schema';
+import { PersistedLayerDataSchema, PersistedProjectSchema } from '../persistence/schema';
 import { getLocale, translate } from '../../i18n';
 
 /**
@@ -56,11 +56,32 @@ export type ParseTemplateResult =
   | { ok: true; name: string; layer: LayerData }
   | { ok: false; error: string };
 
+const PROJECT_LAYER_ORDER = ['L0', 'L1', 'L2', 'L3', 'PQC'] as const;
+
+/** プロジェクトから 1 レイヤーを取り出す（activeLayer 優先、空なら要素のある最初のレイヤー）。 */
+function projectToTemplate(
+  project: z.infer<typeof PersistedProjectSchema>,
+  fallbackName: string,
+): ParseTemplateResult {
+  const layers = project.layers;
+  const hasElements = (l?: { nodes: unknown[]; edges: unknown[]; boundaries: unknown[] }) =>
+    !!l && l.nodes.length + l.edges.length + l.boundaries.length > 0;
+  const key = [project.activeLayer, ...PROJECT_LAYER_ORDER].find(
+    (k) => k !== undefined && hasElements(layers?.[k]),
+  );
+  if (!layers || !key) {
+    return { ok: false, error: translate('io.projectEmpty', getLocale()) };
+  }
+  const name = project.projectMeta?.name.trim() || fallbackName.trim() || 'Project';
+  // seq は取り込み側で採番し直す前提のため、テンプレートと同様に落とす。
+  return { ok: true, name, layer: stripSeq(layers[key] as unknown as LayerData) };
+}
+
 /**
  * JSON 文字列を検証し、取り込み可能なテンプレート（名称＋レイヤー図）を生成する。
  * 失敗時はユーザー表示用のエラーメッセージを返す（throw しない）。
  */
-export function parseTemplateFromJson(text: string): ParseTemplateResult {
+export function parseTemplateFromJson(text: string, fallbackName = ''): ParseTemplateResult {
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
@@ -73,6 +94,9 @@ export function parseTemplateFromJson(text: string): ParseTemplateResult {
 
   const result = TemplateExportSchema.safeParse(parsed);
   if (!result.success) {
+    // CLI が出力するプロジェクト JSON（layerToProject の形）も受理し、1 レイヤーを取り出す。
+    const project = PersistedProjectSchema.safeParse(parsed);
+    if (project.success) return projectToTemplate(project.data, fallbackName);
     const issues = result.error.issues
       .map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`)
       .join('; ');

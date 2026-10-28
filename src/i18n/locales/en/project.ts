@@ -127,7 +127,7 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'project.templateModal.importIntro1': 'Load a template JSON and apply it to the active layer (',
   'project.templateModal.importIntro2': ') by',
   'project.templateModal.replaceWord': ' replacing it',
-  'project.templateModal.importIntro3': '. You will be asked to confirm if elements already exist.',
+  'project.templateModal.importIntro3': '. You will be asked to confirm if elements already exist. Project JSON written by the CLI can be loaded as is.',
   'project.templateModal.selectFile': 'Select JSON file',
   'project.templateModal.importedOpenQuote': '"',
   'project.templateModal.importedStats': '" — Nodes {nodes} / Edges {edges} / Boundaries {boundaries}',

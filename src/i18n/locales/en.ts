@@ -172,6 +172,7 @@ const enCore: Partial<Record<TranslationKey, string>> = {
   'framework.label.AgenticAI': 'Agent-Centric',
   'io.jsonSyntaxError': 'JSON syntax error: {message}',
   'io.validationError': 'Validation error: {issues}',
+  'io.projectEmpty': 'No layer in this project JSON contains any elements.',
   'appliesToSummary.join.sentence': ' ',
   'appliesToSummary.join.or': ' or ',
   'appliesToSummary.join.allOf': ', and ',

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parseTemplateFromJson, serializeTemplateToJson } from './io';
 import type { LayerData } from '../../core/model/types';
@@ -72,5 +73,51 @@ describe('parseTemplateFromJson', () => {
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toContain('検証エラー');
+  });
+});
+
+describe('parseTemplateFromJson（CLI 出力のプロジェクト JSON）', () => {
+  const project = (over: Record<string, unknown>) => {
+    const base = JSON.parse(
+      readFileSync('src/cli/__fixtures__/sample-project.json', 'utf-8'),
+    );
+    return JSON.stringify({ ...base, ...over });
+  };
+
+  it('プロジェクト JSON から activeLayer を取り出し、seq を落とし、projectMeta.name を使う', () => {
+    const r = parseTemplateFromJson(project({}), 'file');
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.name).toBe('CLIスモークテスト用サンプル');
+    expect(r.layer.nodes.length).toBeGreaterThan(0);
+    for (const n of r.layer.nodes) expect(n.seq).toBeUndefined();
+  });
+
+  it('activeLayer が空なら要素のある最初のレイヤーを使う', () => {
+    const base = JSON.parse(project({}));
+    const empty = { nodes: [], edges: [], boundaries: [] };
+    const layers = { L0: empty, L1: empty, L2: base.layers.L1, L3: empty };
+    const r = parseTemplateFromJson(project({ layers, activeLayer: 'L1' }), 'file');
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.layer.nodes).toHaveLength(base.layers.L1.nodes.length);
+  });
+
+  it('projectMeta が無ければファイル名を使う', () => {
+    const r = parseTemplateFromJson(project({ projectMeta: undefined }), 'my-file');
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.name).toBe('my-file');
+  });
+
+  it('全レイヤーが空ならエラー', () => {
+    const empty = { nodes: [], edges: [], boundaries: [] };
+    const r = parseTemplateFromJson(project({ layers: { L0: empty, L1: empty, L2: empty, L3: empty } }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toContain('要素がありません');
+  });
+
+  it('どちらにも合わない JSON は従来の検証エラー', () => {
+    const r = parseTemplateFromJson('{"foo":1}');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toContain('検証エラー');
   });
 });

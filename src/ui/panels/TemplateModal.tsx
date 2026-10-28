@@ -110,7 +110,7 @@ export function TemplateModal() {
 
   const handleFile = async (file: File) => {
     const text = await file.text();
-    setParsed(parseTemplateFromJson(text));
+    setParsed(parseTemplateFromJson(text, file.name.replace(/\.json$/i, '')));
     setImportedFileName(file.name);
     setKongSummary(null);
     setKongctlSummary(null);

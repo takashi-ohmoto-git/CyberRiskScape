@@ -74,21 +74,9 @@ node dist-cli/main.js analyze repo.json --format md
 
 ### 画面に読み込む
 
-画面の **Template** → **Import（読み込み）** タブの「JSON ファイルを選択」は、プロジェクト JSON ではなく**テンプレート形式**を読みます。
-次の小さなスクリプトで包んでから読み込みます（`to-template.mjs` などの名前で保存します）。
+出力したプロジェクト JSON は、変換せずにそのまま読み込めます。
 
-```js
-// 使い方: node to-template.mjs repo.json repo.template.json my-app
-import { readFileSync, writeFileSync } from 'node:fs';
-const [, , src, dst, name] = process.argv;
-const project = JSON.parse(readFileSync(src, 'utf8'));
-writeFileSync(
-  dst,
-  JSON.stringify({ schemaVersion: 1, kind: 'cyberriskscape-template', name, layer: project.layers.L1 }),
-);
-```
-
-1. 左サイドバーの **Template** → **Import（読み込み）** タブで **「JSON ファイルを選択」** を押し、`repo.template.json` を選びます。
+1. 左サイドバーの **Template** → **Import（読み込み）** タブで **「JSON ファイルを選択」** を押し、`repo.json` を選びます。
 2. ファイル名と件数（このページのサンプルは ノード 12 / エッジ 8 / 境界 2）が表示されます。**「置き換えて適用」** を押すと、
    アクティブなレイヤーが生成された図に置き換わります（既存の要素があれば確認が出ます。Undo で戻せます）。
 

@@ -100,7 +100,7 @@ node dist-cli/main.js import-kong kong.yaml --out model.json
 node dist-cli/main.js analyze model.json --format md
 ```
 
-`import-kong` writes a project JSON with the diagram on L1. You can open it with "File (Save / Open)" in the UI
+`import-kong` writes a project JSON with the diagram on L1. You can open it with "File (Save / Open)" or the Template Import tab in the UI
 or pass it straight to `analyze` and `diff`. For the CLI in general, see
 [Integrating with AI-Driven Development CI](ci-integration.md).
 
