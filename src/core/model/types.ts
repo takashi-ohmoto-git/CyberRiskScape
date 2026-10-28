@@ -208,6 +208,18 @@ export const POSTURE_FIELD_VALUES = {
   skillPermissionLimit: ['Enforced', 'None'],
   /** エージェントスキルが実行時に外部の指示・スクリプトを取り込むか */
   skillExternalContent: ['None', 'Pinned', 'Mutable'],
+  /** 依存パッケージの整合性ハッシュ付きロックファイルによる全依存の版の固定 */
+  dependencyLockfile: ['Locked', 'Unlocked'],
+  /** インストール時に動くスクリプト（preinstall・postinstall 等）の扱い */
+  installScripts: ['Disabled', 'Reviewed', 'Allowed'],
+  /** 依存を追加する前の確認（実在・公開者・類似名） */
+  dependencyVetting: ['Reviewed', 'ScanOnly', 'None'],
+  /** エージェントに許可したコマンドの広さ（任意コードを実行できる許可があれば Broad） */
+  commandAllowScope: ['Restricted', 'Broad'],
+  /** OS・コンテナのサンドボックスによる書き込み先・実行の制限 */
+  agentSandbox: ['Enforced', 'None'],
+  /** エージェントの外部への通信の許可リストによる制限 */
+  agentEgress: ['Restricted', 'Unrestricted'],
   /** データ資産の保有の必要性 */
   dataNecessity: ['Required', 'UnderReview', 'NotRequired'],
   /** データ資産の件数規模 */
@@ -229,6 +241,8 @@ export const POSTURE_GROUPS = [
   'accountReview',
   'dnsRecordReview',
   'skill',
+  'dependency',
+  'agentPermission',
   'dataAsset',
 ] as const;
 export type PostureGroup = (typeof POSTURE_GROUPS)[number];
@@ -242,6 +256,8 @@ export const POSTURE_GROUP_FIELDS: Readonly<Record<PostureGroup, readonly Postur
   accountReview: ['accountReview'],
   dnsRecordReview: ['dnsRecordReview'],
   skill: ['skillVetting', 'skillVersionPinning', 'skillPermissionLimit', 'skillExternalContent'],
+  dependency: ['dependencyLockfile', 'installScripts', 'dependencyVetting'],
+  agentPermission: ['commandAllowScope', 'agentSandbox', 'agentEgress'],
   dataAsset: ['dataNecessity', 'recordVolume'],
 };
 
@@ -258,6 +274,12 @@ export interface NodePosture {
   skillVersionPinning?: (typeof POSTURE_FIELD_VALUES.skillVersionPinning)[number];
   skillPermissionLimit?: (typeof POSTURE_FIELD_VALUES.skillPermissionLimit)[number];
   skillExternalContent?: (typeof POSTURE_FIELD_VALUES.skillExternalContent)[number];
+  dependencyLockfile?: (typeof POSTURE_FIELD_VALUES.dependencyLockfile)[number];
+  installScripts?: (typeof POSTURE_FIELD_VALUES.installScripts)[number];
+  dependencyVetting?: (typeof POSTURE_FIELD_VALUES.dependencyVetting)[number];
+  commandAllowScope?: (typeof POSTURE_FIELD_VALUES.commandAllowScope)[number];
+  agentSandbox?: (typeof POSTURE_FIELD_VALUES.agentSandbox)[number];
+  agentEgress?: (typeof POSTURE_FIELD_VALUES.agentEgress)[number];
   dataNecessity?: (typeof POSTURE_FIELD_VALUES.dataNecessity)[number];
   recordVolume?: (typeof POSTURE_FIELD_VALUES.recordVolume)[number];
   /** 最終点検日（YYYY-MM-DD）。記録用で脅威の判定には使わない。全型で入力可。 */
@@ -717,7 +739,62 @@ export interface DiagramNode {
   logSinkId?: string;
   /** 暗号属性（PQC 移行支援。PQC レイヤーで入力）。 */
   crypto?: NodeCrypto;
+  /**
+   * 取り込み CLI が記録するインベントリ（依存パッケージ・環境変数名）。記録用で、脅威エンジンは読まない。
+   * 環境変数の値は記録しない（変数名・値の種類・長さだけ）。
+   */
+  inventory?: NodeInventory;
 }
+
+/** 依存パッケージ 1 件（PACKAGE_DEPENDENCIES のインベントリ）。 */
+export interface PackageInventoryItem {
+  name: string;
+  /** ロックファイルの解決済み版、またはマニフェストの指定。 */
+  version?: string;
+  dev?: boolean;
+  optional?: boolean;
+  /** npm lockfile の hasInstallScript。 */
+  hasInstallScript?: boolean;
+  /** resolved URL のホスト名だけ。 */
+  resolvedHost?: string;
+  /** integrity / hash の有無。 */
+  hasIntegrity?: boolean;
+  /** 版が固定されているか（== 指定・ロック済み）。 */
+  pinned?: boolean;
+}
+
+/** 環境変数の値の種類。値そのものは記録しない。 */
+export type EnvValueKind =
+  | 'empty'
+  | 'url'
+  | 'number'
+  | 'boolean'
+  | 'path'
+  | 'jwt'
+  | 'private-key'
+  | 'secret-like'
+  | 'text';
+
+/** 環境変数 1 件（.env のインベントリ）。値は記録しない。 */
+export interface EnvVarInventoryItem {
+  name: string;
+  valueKind: EnvValueKind;
+  length: number;
+}
+
+/**
+ * ノードのインベントリ。`source` はリポジトリ内の相対パス、`collectedAt` は ISO 8601。
+ */
+export type NodeInventory =
+  | { kind: 'npm' | 'pypi'; source: string; collectedAt: string; items: PackageInventoryItem[] }
+  | {
+      kind: 'env';
+      source: string;
+      collectedAt: string;
+      template: boolean;
+      gitIgnored?: boolean;
+      items: EnvVarInventoryItem[];
+    };
 
 export interface DiagramEdge {
   id: string;

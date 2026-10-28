@@ -120,7 +120,18 @@ export function getModel(raw: unknown, opts: GetModelOptions = {}): Record<strin
         id: n.id,
         ...(n.seq != null ? { elementalId: formatElementalId('node', n.seq) } : {}),
         type: n.type,
-        ...pickDefined(n, ['id', 'seq', 'type', 'x', 'y']),
+        ...pickDefined(n, ['id', 'seq', 'type', 'x', 'y', 'inventory']),
+        // インベントリは数千件になりうるため要約だけ返す
+        ...(n.inventory
+          ? {
+              inventory: {
+                kind: n.inventory.kind,
+                source: n.inventory.source,
+                collectedAt: n.inventory.collectedAt,
+                itemCount: n.inventory.items.length,
+              },
+            }
+          : {}),
         boundaryIds: (owning.get(n.id) ?? []).map((b) => b.id),
       })),
       edges: data.edges.map((e) => ({

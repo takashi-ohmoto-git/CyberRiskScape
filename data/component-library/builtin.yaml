@@ -102,6 +102,7 @@ components:
     shape: rounded
     color: "bg-violet-600"
     description: "計画・ツール選択・推論を自律的に行う AI エージェント。"
+    posture: [agentPermission]
 
   - id: AGENT_SKILL
     label: "エージェントスキル"

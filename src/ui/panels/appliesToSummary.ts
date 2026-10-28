@@ -75,6 +75,12 @@ const FIELD_LABEL_KEYS: Record<string, TranslationKey> = {
   skillVersionPinning: 'panels.posture.field.skillVersionPinning',
   skillPermissionLimit: 'panels.posture.field.skillPermissionLimit',
   skillExternalContent: 'panels.posture.field.skillExternalContent',
+  dependencyLockfile: 'panels.posture.field.dependencyLockfile',
+  installScripts: 'panels.posture.field.installScripts',
+  dependencyVetting: 'panels.posture.field.dependencyVetting',
+  commandAllowScope: 'panels.posture.field.commandAllowScope',
+  agentSandbox: 'panels.posture.field.agentSandbox',
+  agentEgress: 'panels.posture.field.agentEgress',
   dataNecessity: 'panels.posture.field.dataNecessity',
   recordVolume: 'panels.posture.field.recordVolume',
 };

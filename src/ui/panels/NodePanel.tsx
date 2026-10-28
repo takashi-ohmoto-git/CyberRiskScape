@@ -66,6 +66,7 @@ import { RecommendTargetsSection } from './RecommendTargetsSection';
 import { ENTRY_SEARCH_APPLICABLE } from '../../features/attack-tree/findEntryPoints';
 import { CryptoPathSection, NodeCryptoSection } from './CryptoSections';
 import { PostureSection } from './PostureSection';
+import { InventorySection } from './InventorySection';
 
 type TFunc = ReturnType<typeof useT>;
 
@@ -920,6 +921,8 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
         )}
 
         <PostureSection node={node} />
+
+        <InventorySection node={node} />
 
         <div className="bg-slate-800/50 rounded-2xl border border-slate-700">
           <button

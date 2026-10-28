@@ -106,6 +106,51 @@ const PersistedCryptoFlowSchema = z.object({
   label: z.string().max(200).optional(),
 });
 
+const PackageInventoryItemSchema = z.object({
+  name: z.string(),
+  version: z.string().optional(),
+  dev: z.boolean().optional(),
+  optional: z.boolean().optional(),
+  hasInstallScript: z.boolean().optional(),
+  resolvedHost: z.string().optional(),
+  hasIntegrity: z.boolean().optional(),
+  pinned: z.boolean().optional(),
+});
+
+const EnvVarInventoryItemSchema = z.object({
+  name: z.string(),
+  valueKind: z.enum([
+    'empty',
+    'url',
+    'number',
+    'boolean',
+    'path',
+    'jwt',
+    'private-key',
+    'secret-like',
+    'text',
+  ]),
+  length: z.number().int().nonnegative(),
+});
+
+/** ノードのインベントリ（kind で判別）。一次ソースは `src/core/model/types.ts` の `NodeInventory`。 */
+const PersistedNodeInventorySchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.enum(['npm', 'pypi']),
+    source: z.string(),
+    collectedAt: z.string(),
+    items: z.array(PackageInventoryItemSchema),
+  }),
+  z.object({
+    kind: z.literal('env'),
+    source: z.string(),
+    collectedAt: z.string(),
+    template: z.boolean(),
+    gitIgnored: z.boolean().optional(),
+    items: z.array(EnvVarInventoryItemSchema),
+  }),
+]);
+
 const PersistedNodeSchema = z.object({
   id: z.string().min(1),
   /** ElementalID 採番（§2.26）。後方互換のため optional（旧データはロード時にマイグレ）。 */
@@ -140,6 +185,8 @@ const PersistedNodeSchema = z.object({
   posture: NodePostureSchema.optional(),
   /** 暗号属性（PQC 移行支援、後方互換のため optional） */
   crypto: PersistedNodeCryptoSchema.optional(),
+  /** インベントリ（記録用、後方互換のため optional）。未知キーは strip＝env 項目の value は読込時に捨てられる。 */
+  inventory: PersistedNodeInventorySchema.optional(),
 });
 
 const PersistedEdgeSchema = z.object({

@@ -79,6 +79,23 @@ describe('getModel', () => {
     expect(l1.nodes[0].description.length).toBeLessThanOrEqual(2001);
   });
 
+  it('インベントリは件数の要約だけを返す', () => {
+    const raw = BASE();
+    raw.layers.L1.nodes[0].inventory = {
+      kind: 'npm',
+      source: 'package-lock.json',
+      collectedAt: '2026-10-29T00:00:00.000Z',
+      items: [{ name: 'a' }, { name: 'b' }],
+    };
+    const l1 = (getModel(raw).layers as Array<Record<string, any>>)[0];
+    expect(l1.nodes[0].inventory).toEqual({
+      kind: 'npm',
+      source: 'package-lock.json',
+      collectedAt: '2026-10-29T00:00:00.000Z',
+      itemCount: 2,
+    });
+  });
+
   it('不正な layer / 入力は Error', () => {
     expect(() => getModel(BASE(), { layer: 'L9' as never })).toThrow(/layer/);
     expect(() => getModel({ foo: 1 })).toThrow(/プロジェクト JSON/);

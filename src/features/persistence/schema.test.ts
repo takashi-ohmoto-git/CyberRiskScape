@@ -739,4 +739,53 @@ describe('PersistedProjectSchema', () => {
     });
     expect(r2.success).toBe(true);
   });
+
+  describe('ノードのインベントリ', () => {
+    const NPM = {
+      kind: 'npm',
+      source: 'package-lock.json',
+      collectedAt: '2026-10-29T00:00:00.000Z',
+      items: [{ name: 'left-pad', version: '1.3.0', pinned: true, hasIntegrity: true }],
+    };
+    const ENV = {
+      kind: 'env',
+      source: '.env',
+      collectedAt: '2026-10-29T00:00:00.000Z',
+      template: false,
+      gitIgnored: true,
+      items: [{ name: 'API_KEY', valueKind: 'secret-like', length: 32 }],
+    };
+    const withInventory = (inventory: unknown) => ({
+      ...VALID_PROJECT,
+      nodes: [{ ...VALID_PROJECT.nodes[0], inventory }],
+    });
+
+    it('npm / env のインベントリが読込で保たれる', () => {
+      for (const inv of [NPM, ENV]) {
+        const r = PersistedProjectSchema.safeParse(withInventory(inv));
+        expect(r.success).toBe(true);
+        if (r.success) expect(r.data.nodes![0].inventory).toEqual(inv);
+      }
+    });
+
+    it('インベントリ無しの既存データがそのまま読める', () => {
+      const r = PersistedProjectSchema.safeParse(VALID_PROJECT);
+      expect(r.success).toBe(true);
+      if (r.success) expect(r.data.nodes![0].inventory).toBeUndefined();
+    });
+
+    it('env 項目に value が紛れても読込時に捨てられる', () => {
+      const dirty = { ...ENV, items: [{ ...ENV.items[0], value: 'sk-secret' }] };
+      const r = PersistedProjectSchema.safeParse(withInventory(dirty));
+      expect(r.success).toBe(true);
+      if (r.success) {
+        expect(JSON.stringify(r.data)).not.toContain('sk-secret');
+        expect(r.data.nodes![0].inventory?.items[0]).not.toHaveProperty('value');
+      }
+    });
+
+    it('未知の kind は拒否する', () => {
+      expect(PersistedProjectSchema.safeParse(withInventory({ ...NPM, kind: 'gem' })).success).toBe(false);
+    });
+  });
 });
