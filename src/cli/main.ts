@@ -43,6 +43,8 @@ import { BRANDING } from '../core/branding';
 import { kongToLayer } from '../features/kong-import/kongToLayer';
 import { layerToProject } from '../features/kong-import/toProject';
 import { kongctlToLayer } from '../features/kongctl-import/kongctlToLayer';
+import { collectRepo } from '../features/repo-import/collectRepo';
+import { repoToLayer } from '../features/repo-import/repoToLayer';
 import { conjurToLayer } from '../features/conjur-import/conjurToLayer';
 import { shodanToLayer } from '../features/shodan-import/shodanToLayer';
 import { scopesentryRecordsToLayer, scopesentryToLayer, type ScopesentryImportResult } from '../features/scopesentry-import/scopesentryToLayer';
@@ -107,6 +109,7 @@ const USAGE = `使い方:
   checklist <project.json> --id <checklistId> [options]
   import-kong <kong.yaml> [options]
   import-kongctl <kongctl.yaml> [options]
+  import-repo <dir> [options]
   import-conjur <policy.yml> [options]
   import-shodan <export.json[.gz]> [options]
   import-scopesentry <export.json> [options]
@@ -157,6 +160,10 @@ import-kong のオプション（Kong の宣言設定から構成図の下書き
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
 import-kongctl のオプション（Kong AI Gateway 2.x の kongctl 宣言ファイルから構成図の下書きを L1 に作り、プロジェクト JSON を出力）:
+  --locale <ja|en>                              ノード名の言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+import-repo のオプション（コーディングエージェントの作業ディレクトリ（リポジトリ）の package.json・requirements*.txt・.env*・.mcp.json・.claude/ から、開発環境と依存パッケージの構成図の下書きを L1 に作り、プロジェクト JSON を出力。.env の値・認証情報は読み取り後に捨てる）:
   --locale <ja|en>                              ノード名の言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
@@ -584,6 +591,47 @@ ${USAGE}`);
     `kongctl 設定を取り込みました（ゲートウェイ ${s.gateways} / モデル ${s.models} / MCP サーバー ${s.mcpServers} / エージェント ${s.agents} / ポリシー ${s.policies} / コンシューマー ${s.consumers}）
 `,
   );
+}
+
+/**
+ * `import-repo`：コーディングエージェントの作業ディレクトリ（リポジトリ）から、開発環境と依存パッケージの
+ * 構成図の下書きを作り、プロジェクト JSON を出力する。`.env` の値・認証情報は出力しない（`repoToLayer` 参照）。
+ */
+function runImportRepo(values: CliValues, positionals: string[]): void {
+  const dir = positionals[1];
+  if (!dir) {
+    fail(`ディレクトリを指定してください。
+
+${USAGE}`);
+  }
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+
+  let isDir = false;
+  try {
+    isDir = statSync(dir).isDirectory();
+  } catch {
+    // 下の fail で報告する
+  }
+  if (!isDir) fail(`ディレクトリを読み込めません: ${dir}`);
+
+  const collected = collectRepo(dir);
+  const result = repoToLayer(collected.files, {
+    collectedAt: new Date().toISOString(),
+    gitIgnored: collected.gitIgnored,
+    repoName: collected.repoName,
+  });
+  if (!result.ok) fail(result.error);
+
+  writeOutput(JSON.stringify(layerToProject(result.layer), null, 2), values.out);
+  const s = result.summary;
+  const warnings = [...collected.warnings, ...s.warnings];
+  process.stderr.write(
+    `リポジトリを取り込みました（マニフェスト ${s.manifests} / パッケージ ${s.packages} / インストールスクリプトあり ${s.installScriptPackages} / .env ${s.envFiles} / MCP サーバー ${s.mcpServers} / スキル ${s.skills} / コマンド ${s.commands}）
+`,
+  );
+  for (const w of warnings) process.stderr.write(`警告: ${w}
+`);
 }
 
 /**
@@ -1182,6 +1230,8 @@ function main(): void {
     runFindingsReport(values, positionals);
   } else if (command === 'pqc-sbom-report') {
     runPqcSbomReport(values, positionals);
+  } else if (command === 'import-repo') {
+    runImportRepo(values, positionals);
   } else if (command === 'import-conjur') {
     runImportConjur(values, positionals);
   } else if (command === 'import-shodan') {
