@@ -57,6 +57,7 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 | **車載・SDV**（コネクテッドカー） | 専用のステンシル（Vehicle (SDV) カテゴリ）・UN R155 Annex 5 を出典とする脅威ルール・ゾーン型アーキテクチャの構成図テンプレートで評価する（[ガイド](guide/sdv.ja.md)） |
 | **AI による脆弱性診断**（Anthropic `defending-code-reference-harness`） | 脅威モデルを `THREAT_MODEL.md` 互換で書き出し、診断の入力にする（[ガイド](guide/security-context.ja.md)） |
 | **脆弱性の修正**（Veracode） | SAST・DAST の指摘を AI で修正する流れに、脅威モデルを前提知識・優先順位・回帰テストとして組み込む構成例（[ガイド](guide/veracode-remediation.ja.md)） |
+| **クラウドの検査**（Prowler） | Prowler の AWS の検査結果（OCSF）で、図のノードの未入力の運用状況・攻撃面属性を埋め、FAIL の検査を図の脅威と突き合わせる（[ガイド](guide/prowler.ja.md)） |
 
 連携できる製品と方法の一覧は [連携ガイド](guide/integrations.ja.md) を参照してください。
 
@@ -170,7 +171,7 @@ npm run test:watch   # テスト watch モード
 npx tsc --noEmit     # 型チェック（strict）
 ```
 
-変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,555 件の
+変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,581 件の
 テストが通ります。
 
 ---

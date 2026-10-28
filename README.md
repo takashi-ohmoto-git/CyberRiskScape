@@ -67,6 +67,7 @@ platforms, and AI agent platforms. It makes no outbound calls, so it also works 
 | **Automotive** (SDV, connected cars) | Dedicated stencils (Vehicle (SDV) category), threat rules based on UN R155 Annex 5, and a zonal-architecture diagram template ([guide](guide/sdv.md)) |
 | **AI-driven vulnerability review** (Anthropic `defending-code-reference-harness`) | Export the threat model as `THREAT_MODEL.md`-compatible input for the review ([guide](guide/security-context.md)) |
 | **Vulnerability remediation** (Veracode) | An example setup that builds the threat model into a flow fixing SAST and DAST findings with AI, as context, prioritization, and regression tests ([guide](guide/veracode-remediation.md)) |
+| **Cloud security scanning** (Prowler) | Fill the operational posture and attack surface attributes still unset on diagram nodes from Prowler's OCSF findings for AWS, and cross-check FAIL checks against the diagram's threats ([guide](guide/prowler.md)) |
 
 For the full list of products and how they connect, see [Integrations](guide/integrations.md).
 
@@ -183,7 +184,7 @@ npm run test:watch   # watch mode
 npx tsc --noEmit     # type check (strict)
 ```
 
-The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,555 tests
+The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,581 tests
 currently pass.
 
 ---
