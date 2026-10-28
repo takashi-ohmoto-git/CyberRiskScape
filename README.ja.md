@@ -3,8 +3,8 @@
 **AI・LLM・エージェントシステム・PQC に対応した、OSS のビジュアル脅威モデリングツール**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-256-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-1475%20passing-brightgreen.svg)](#開発)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-266-orange.svg)](data/threat-library)
+[![Tests](https://img.shields.io/badge/tests-1550%20passing-brightgreen.svg)](#開発)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 [English](README.md) | **日本語**
@@ -31,9 +31,9 @@
 
 | フレームワーク区分 | ルール数 | 内容 |
 |---|---:|---|
-| `STRIDE` | 171 | 古典的な脅威（なりすまし・改ざん・情報漏えい 等） |
+| `STRIDE` | 175 | 古典的な脅威（なりすまし・改ざん・情報漏えい 等） |
 | `AI` | 35 | 敵対的 ML、モデル抽出、学習データ汚染 等 |
-| `AgenticAI` | 50 | 目標乗っ取り、ツール誤用、権限の持ち越し、メモリ汚染 等 |
+| `AgenticAI` | 56 | 目標乗っ取り、ツール誤用、権限の持ち越し、メモリ汚染 等 |
 
 ### エコシステム — 開発・API・ID 基盤とつながる
 
@@ -46,6 +46,7 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 | **MCP**（Claude Code・GitHub Copilot・Cursor など） | コーディングエージェントが設計中に脅威を問い合わせ、構成図を更新する（[ガイド](guide/mcp-integration.ja.md)） |
 | **CI**（GitHub Actions） | 構成図の差分から新しい脅威を検出して PR を止め、結果を SARIF で出力する（[ガイド](guide/ci-integration.ja.md)） |
 | **API ゲートウェイ**（Kong AI Gateway） | decK・kongctl（AI Gateway 2.x）の設定から構成図を自動生成し、設定の変更を PR で見張る（[ガイド](guide/kong-ai-gateway.ja.md)） |
+| **コーディングエージェント**（Claude Code の作業ディレクトリ） | package.json・requirements.txt・.env・.mcp.json・`.claude/` の設定から、開発環境と依存パッケージの構成図を自動生成する。.env の値は記録しない（[ガイド](guide/repo-import.ja.md)） |
 | **API テスト**（Postman・Postman CLI・Newman） | 検出した脅威を確かめる検証用リクエストを書き出す（[ガイド](guide/postman.ja.md)） |
 | **ペネトレーションテスト**（社内・外部のテスト業者） | 入口・攻撃経路・重点テスト項目と確認観点をまとめた、業者に依存しないテスト計画書を書き出す（[ガイド](guide/pentest-plan.ja.md)） |
 | **侵害の調査**（Velociraptor・同梱のトリアージスクリプト） | 侵害が疑われるときに、脅威モデルから調査計画書を書き出し、集めた証拠を図のノードに重ねて「痕跡あり・否定できない・未調査・痕跡なし」を報告する。侵害の有無は判定しない（[ガイド](guide/compromise-investigation.ja.md)） |
@@ -61,7 +62,7 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 
 ### 主な機能
 
-- **ビジュアル DFD エディタ** — 110 種のコンポーネント型（13 ライブラリ・16 カテゴリ）、
+- **ビジュアル DFD エディタ** — 113 種のコンポーネント型（14 ライブラリ・16 カテゴリ）、
   トラスト境界、データフローの暗号化区分・認証状態の表現。ネットワーク・セキュリティ機器
   （クラウドの同等サービスの例つき）、Storage & Databases、DFD 標準記法（Yourdon 法）で
   表示する Basic Shapes (DFD) を収録
@@ -169,7 +170,7 @@ npm run test:watch   # テスト watch モード
 npx tsc --noEmit     # 型チェック（strict）
 ```
 
-変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,466 件の
+変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,550 件の
 テストが通ります。
 
 ---

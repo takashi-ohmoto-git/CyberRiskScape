@@ -37,6 +37,7 @@ Importing configuration files, exporting verification requests, and diff checks 
 | Product | How it connects | Use cases | Page |
 |---|---|---|---|
 | **Claude Code** | MCP | Look up threats while designing, update the diagram, self-review before a PR | [MCP setup guide](mcp-integration.md), [use cases](mcp-use-cases.md) |
+| **Claude Code** (working directory) | Working-directory import (`import-repo`; package.json, requirements.txt, .env, .mcp.json and `.claude/` settings; settings of agents other than `.claude/` are not read) | Generate a diagram of the development environment and its dependency packages; watch changes to dependencies and permission settings in PRs | [Turning a Working Directory into a Threat Model](repo-import.md) |
 | **GitHub Copilot** (VS Code, coding agent) | MCP | Hand off an issue, from updating the diagram to checking threats | [MCP setup guide](mcp-integration.md), [use cases](mcp-use-cases.md) (§5) |
 | **Cursor** | MCP | Query threats from inside the editor | [MCP setup guide](mcp-integration.md), [use cases](mcp-use-cases.md) (§6) |
 | **Snyk** | MCP (side by side, through the agent) | Cross-check the threat model's important threats with code vulnerability scan results | [Use cases](mcp-use-cases.md) (§7) |
@@ -62,7 +63,7 @@ Importing configuration files, exporting verification requests, and diff checks 
 |---|---|
 | Have an AI agent help with threat modeling | MCP (Claude Code, GitHub Copilot, Cursor) |
 | Catch missed threat-model updates in PRs | GitHub Actions |
-| Draw the diagram from existing configuration | Kong AI Gateway, CyberArk (Idira) Conjur, Shodan, ScopeSentry |
+| Draw the diagram from existing configuration | Kong AI Gateway, CyberArk (Idira) Conjur, Shodan, ScopeSentry, a Claude Code working directory (`import-repo`) |
 | Confirm that the threats you flagged are actually closed | Postman |
 | Scope and focus a penetration test | Test plan export ([guide](pentest-plan.md); any provider) |
 | Emulate the attack routes cut on the diagram with BAS | ATT&CK Navigator layer export ([guide](agentic-attacker-paths.md) §6) |

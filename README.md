@@ -3,8 +3,8 @@
 **Open-source visual threat modeling for AI, LLM, agentic systems, and post-quantum cryptography**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-256-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-1475%20passing-brightgreen.svg)](#development)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-266-orange.svg)](data/threat-library)
+[![Tests](https://img.shields.io/badge/tests-1550%20passing-brightgreen.svg)](#development)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 **English** | [日本語](README.ja.md)
@@ -24,7 +24,7 @@ For the thinking behind it, see [An Introduction to Secure by Design](guide/secu
 For the feature list, see [here](guide/README.md).
 
 > **Interface language.** English and Japanese are both supported — use the JA / EN switch
-> in the top bar, and your choice is remembered. The interface, all 256 threat rules
+> in the top bar, and your choice is remembered. The interface, all 266 threat rules
 > (name, category, description, mitigations) and every component type label are
 > translated. Help is welcome.
 
@@ -39,9 +39,9 @@ long-term memory** as first-class component types, with a rule set to match.
 
 | Framework | Rules | Covers |
 |---|---:|---|
-| `STRIDE` | 171 | Spoofing, tampering, repudiation, information disclosure, DoS, elevation of privilege |
+| `STRIDE` | 175 | Spoofing, tampering, repudiation, information disclosure, DoS, elevation of privilege |
 | `AI` | 35 | Adversarial ML, model extraction, training data poisoning |
-| `AgenticAI` | 50 | Goal hijacking, tool misuse, privilege carry-over, memory poisoning |
+| `AgenticAI` | 56 | Goal hijacking, tool misuse, privilege carry-over, memory poisoning |
 
 This is where the project invests. Most threat modeling tools have zero rules in the third row.
 
@@ -56,6 +56,7 @@ platforms, and AI agent platforms. It makes no outbound calls, so it also works 
 | **MCP** (Claude Code, GitHub Copilot, Cursor, and others) | Coding agents query threats and update the diagram while they design ([guide](guide/mcp-integration.md)) |
 | **CI** (GitHub Actions) | Detect new threats from diagram diffs, block the PR, and emit SARIF ([guide](guide/ci-integration.md)) |
 | **API gateways** (Kong AI Gateway) | Generate the diagram from your decK or kongctl (AI Gateway 2.x) configuration and watch configuration changes in PRs ([guide](guide/kong-ai-gateway.md)) |
+| **Coding agents** (a Claude Code working directory) | Generate a diagram of the development environment and dependency packages from package.json, requirements.txt, .env, .mcp.json and `.claude/` settings; values in .env are never recorded ([guide](guide/repo-import.md)) |
 | **API testing** (Postman, Postman CLI, Newman) | Export verification requests that check the detected threats ([guide](guide/postman.md)) |
 | **Compromise investigation** (Velociraptor and the bundled triage script) | When you suspect a compromise, export an investigation plan from the threat model and overlay the collected evidence on the diagram's nodes as "traces found", "cannot rule out", "not investigated" or "no traces". It does not determine whether a compromise occurred ([guide](guide/compromise-investigation.md)) |
 | **Penetration testing** (in-house or external testers) | Export a vendor-neutral test plan with entry points, attack paths, focus test items, and check viewpoints ([guide](guide/pentest-plan.md)) |
@@ -71,7 +72,7 @@ For the full list of products and how they connect, see [Integrations](guide/int
 
 ### Features
 
-- **Visual DFD editor** — 110 component types across 13 libraries and 16 categories, trust
+- **Visual DFD editor** — 113 component types across 14 libraries and 16 categories, trust
   boundaries, and data flows carrying encryption, authentication, and semantic attributes.
   The library covers network and security appliances (with examples of the equivalent cloud
   services), Storage & Databases, and Basic Shapes (DFD) drawn in the classic Yourdon notation
@@ -182,7 +183,7 @@ npm run test:watch   # watch mode
 npx tsc --noEmit     # type check (strict)
 ```
 
-The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,466 tests
+The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,550 tests
 currently pass.
 
 ---
@@ -283,7 +284,7 @@ Near-term priorities, in order:
    detection confidence stated explicitly
 
 Done recently: an English UI with a language switcher, plus English translation overlays
-for all 256 threat rules and every component type label, all leaving the existing schemas
+for all 266 threat rules and every component type label, all leaving the existing schemas
 unchanged.
 
 ---
