@@ -1,0 +1,93 @@
+# Sample Kong AI Gateway 2.x declarative file (kongctl) for the CyberRiskScape guide.
+# Kong AI Gateway 2.x のサンプル宣言ファイル（kongctl）。CyberRiskScape の「Kong 設定（kongctl）」取り込みの動作確認用。
+#
+# Contains no real credentials. Every secret is a placeholder read from an environment variable.
+# 実際の資格情報は含みません。秘密情報はすべて環境変数から読むダミーの指定です。
+#
+# SPDX-License-Identifier: Apache-2.0
+
+ai_gateways:
+  - name: corp-ai-gateway
+    display_name: Corporate AI Gateway
+    deployment_type: hybrid
+    proxy_urls:
+      - host: ai.example.com
+        port: 443
+        protocol: https
+
+    model_providers:
+      - name: openai
+        type: openai
+        config:
+          auth:
+            header_value: !secret
+              source: !env OPENAI_API_KEY
+      - name: local-ollama
+        type: ollama
+
+    auth_strategies:
+      - name: api-key
+        type: key-auth
+      - name: corp-sso
+        type: openid-connect
+        config:
+          issuer: https://idp.example.com/
+          client_id: !secret
+            source: !env OIDC_CLIENT_ID
+          client_secret: !secret
+            source: !env OIDC_CLIENT_SECRET
+
+    models:
+      # Chat model with OpenAI and a local fallback. / OpenAI とローカル LLM を並べたチャット
+      - name: chat
+        type: model
+        targets:
+          - name: gpt-4o
+            provider: openai
+          - name: llama3
+            provider: local-ollama
+        config:
+          route:
+            paths: ["/chat"]
+        access:
+          auth_strategies: [corp-sso]
+        policies: [prompt-guard]
+
+    mcp_servers:
+      # Kong converts a REST API to MCP tools. / Kong が REST API を MCP ツールに変換
+      - name: orders-tools
+        type: conversion-listener
+        config:
+          url: https://orders.example.internal:8443
+        access:
+          auth_strategies: [api-key]
+      # Pass through to an MCP server. / 背後の MCP サーバーへ素通し
+      - name: docs-mcp
+        type: passthrough-listener
+        config:
+          url: https://mcp.docs.example.net/mcp
+          upstream:
+            auth:
+              type: bearer
+              token: !secret
+                source: !env DOCS_MCP_TOKEN
+
+    agents:
+      # No auth strategy = exposed without authentication. / 認証方式を付けていない＝未認証で公開
+      - name: support-agent
+        type: a2a
+        config:
+          url: http://agent.example.internal:9000
+
+    policies:
+      - name: prompt-guard
+        type: ai-prompt-guard
+      - name: semantic-cache
+        type: ai-semantic-cache
+        global: true
+        config:
+          vectordb:
+            strategy: redis
+
+    consumers:
+      - username: partner-app

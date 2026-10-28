@@ -138,6 +138,10 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
     'You can also draft a diagram from a Kong Gateway declarative configuration (decK kong.yaml / JSON). Authentication headers and credential values are not read.',
   'project.templateModal.selectKong': 'Select Kong config (decK)',
   'project.templateModal.kongStats': 'Services {services} / Routes {routes} / Plugins {plugins} / Consumers {consumers} (consumers are not drawn)',
+  'project.templateModal.kongctlIntro':
+    'You can also draft a diagram from a Kong AI Gateway 2.x kongctl declarative file (YAML). The contents of !secret / !env and credentials are not read.',
+  'project.templateModal.selectKongctl': 'Select Kong config (kongctl)',
+  'project.templateModal.kongctlStats': 'Gateways {gateways} / Models {models} / MCP servers {mcpServers} / Agents {agents} / Policies {policies} / Consumers {consumers} (consumers are not drawn)',
   'project.templateModal.conjurIntro':
     'You can also draft a diagram of NHIs and secret read paths from a CyberArk (Idira) Conjur / Secrets Manager policy (YAML). Annotation values and secret values are not put on the diagram.',
   'project.templateModal.selectConjur': 'Select Conjur policy',
@@ -208,6 +212,24 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'kong.desc.service': 'Kong Service: {name} (host: {host}) / Plugins: {plugins}',
   'kong.desc.gateway': 'Plugins: {plugins} / Route authentication: {auth}',
   'kong.desc.noAuth': 'no authentication',
+  // ── Kong AI Gateway 2.x (kongctl) import ──
+  'kongctl.templateName': 'Kong AI Gateway 2.x (generated from kongctl)',
+  'kongctl.error.parse': 'Could not read the file as YAML: {message}',
+  'kongctl.error.deckOnly':
+    'No AI Gateway entities found (only control_planes). Import decK files (_deck.files) with the Kong (decK) import (import-kong).',
+  'kongctl.error.noEntities':
+    'No AI Gateway entities (ai_gateways, ai_gateway_models, ...) found. Select a kongctl declarative file.',
+  'kongctl.node.client': 'API client',
+  'kongctl.node.gateway': 'Kong AI Gateway',
+  'kongctl.node.controlPlane': 'Kong Konnect (control plane)',
+  'kongctl.node.vault': 'Kong Vault ({prefixes})',
+  'kongctl.node.mcpKong': '{name} (served by Kong)',
+  'kongctl.node.vectordb': 'Vector DB ({strategy})',
+  'kongctl.desc.gateway': 'Deployment: {deployment} / Public hosts: {hosts} / Authentication of public entities: {auth}',
+  'kongctl.desc.assumedPlain': ' / proxy_urls is not all https or not set, so client traffic is assumed to be plaintext',
+  'kongctl.desc.noAuth': 'no authentication',
+  'kongctl.desc.model': 'Model: {name} (paths: {paths})',
+  'kongctl.desc.entity': '{kind}: {name} (host: {host})',
   // ── ExportLayersModal（PDF / PNG） ──
   'project.exportModal.titlePdf': 'Export PDF report',
   'project.exportModal.titlePng': 'Export PNG image',

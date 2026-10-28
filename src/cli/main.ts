@@ -42,6 +42,7 @@ import { createCrsMcpServer } from '../mcp/server';
 import { BRANDING } from '../core/branding';
 import { kongToLayer } from '../features/kong-import/kongToLayer';
 import { layerToProject } from '../features/kong-import/toProject';
+import { kongctlToLayer } from '../features/kongctl-import/kongctlToLayer';
 import { conjurToLayer } from '../features/conjur-import/conjurToLayer';
 import { shodanToLayer } from '../features/shodan-import/shodanToLayer';
 import { scopesentryRecordsToLayer, scopesentryToLayer, type ScopesentryImportResult } from '../features/scopesentry-import/scopesentryToLayer';
@@ -105,6 +106,7 @@ const USAGE = `使い方:
   triggers [options]
   checklist <project.json> --id <checklistId> [options]
   import-kong <kong.yaml> [options]
+  import-kongctl <kongctl.yaml> [options]
   import-conjur <policy.yml> [options]
   import-shodan <export.json[.gz]> [options]
   import-scopesentry <export.json> [options]
@@ -151,6 +153,10 @@ checklist のオプション（注意喚起チェックリストを構成図に�
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
 import-kong のオプション（Kong の宣言設定から構成図の下書きを L1 に作り、プロジェクト JSON を出力）:
+  --locale <ja|en>                              ノード名の言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+import-kongctl のオプション（Kong AI Gateway 2.x の kongctl 宣言ファイルから構成図の下書きを L1 に作り、プロジェクト JSON を出力）:
   --locale <ja|en>                              ノード名の言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
@@ -545,6 +551,37 @@ ${USAGE}`);
   const { services, routes, plugins, consumers } = result.summary;
   process.stderr.write(
     `Kong 設定を取り込みました（サービス ${services} / ルート ${routes} / プラグイン ${plugins} / コンシューマー ${consumers}）
+`,
+  );
+}
+
+/**
+ * `import-kongctl`：Kong AI Gateway 2.x の kongctl 宣言ファイルから構成図の下書きを作り、
+ * プロジェクト JSON を出力する。`!secret` の中身・認証情報は読まない（`kongctlToLayer` 参照）。
+ */
+function runImportKongctl(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+
+  let text: string;
+  try {
+    text = readFileSync(file, 'utf-8');
+  } catch (e) {
+    fail(`ファイルを読み込めません: ${file}（${e instanceof Error ? e.message : String(e)}）`);
+  }
+  const result = kongctlToLayer(text);
+  if (!result.ok) fail(result.error);
+
+  writeOutput(JSON.stringify(layerToProject(result.layer), null, 2), values.out);
+  const s = result.summary;
+  process.stderr.write(
+    `kongctl 設定を取り込みました（ゲートウェイ ${s.gateways} / モデル ${s.models} / MCP サーバー ${s.mcpServers} / エージェント ${s.agents} / ポリシー ${s.policies} / コンシューマー ${s.consumers}）
 `,
   );
 }
@@ -1155,6 +1192,8 @@ function main(): void {
     });
   } else if (command === 'import-kong') {
     runImportKong(values, positionals);
+  } else if (command === 'import-kongctl') {
+    runImportKongctl(values, positionals);
   } else if (command === 'mcp') {
     runMcp(values).catch((e: unknown) => {
       fail(`MCP サーバーの起動に失敗しました: ${e instanceof Error ? e.message : String(e)}`);

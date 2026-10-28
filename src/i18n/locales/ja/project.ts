@@ -137,6 +137,10 @@ export const jaProject = {
     'Kong Gateway の宣言設定（decK の kong.yaml / JSON）から構成図の下書きを作ることもできます。認証ヘッダや資格情報の値は読み込みません。',
   'project.templateModal.selectKong': 'Kong 設定（decK）を選択',
   'project.templateModal.kongStats': 'サービス {services} / ルート {routes} / プラグイン {plugins} / コンシューマー {consumers}（コンシューマーは図にしません）',
+  'project.templateModal.kongctlIntro':
+    'Kong AI Gateway 2.x の kongctl 宣言ファイル（YAML）から構成図の下書きを作ることもできます。!secret / !env の中身や認証情報は読み込みません。',
+  'project.templateModal.selectKongctl': 'Kong 設定（kongctl）を選択',
+  'project.templateModal.kongctlStats': 'ゲートウェイ {gateways} / モデル {models} / MCP サーバー {mcpServers} / エージェント {agents} / ポリシー {policies} / コンシューマー {consumers}（コンシューマーは図にしません）',
   'project.templateModal.conjurIntro':
     'CyberArk（Idira）Conjur / Secrets Manager のポリシー（YAML）から、NHI とシークレットの読み取り経路の図を作ることもできます。annotation の値やシークレットの値は図に載せません。',
   'project.templateModal.selectConjur': 'Conjur ポリシーを選択',
@@ -207,6 +211,24 @@ export const jaProject = {
   'kong.desc.service': 'Kong Service: {name}（host: {host}）／ プラグイン: {plugins}',
   'kong.desc.gateway': 'プラグイン: {plugins} ／ ルートの認証: {auth}',
   'kong.desc.noAuth': '認証なし',
+  // ── Kong AI Gateway 2.x (kongctl) 取り込み ──
+  'kongctl.templateName': 'Kong AI Gateway 2.x（kongctl から生成）',
+  'kongctl.error.parse': 'YAML として読み込めません: {message}',
+  'kongctl.error.deckOnly':
+    'AI Gateway のエンティティが見つかりません（control_planes のみ）。decK のファイル（_deck.files）は「Kong 設定（decK）」の取り込み（import-kong）で読み込んでください。',
+  'kongctl.error.noEntities':
+    'AI Gateway のエンティティ（ai_gateways・ai_gateway_models 等）が見つかりません。kongctl の宣言ファイルを選択してください。',
+  'kongctl.node.client': 'API クライアント',
+  'kongctl.node.gateway': 'Kong AI Gateway',
+  'kongctl.node.controlPlane': 'Kong Konnect（管理プレーン）',
+  'kongctl.node.vault': 'Kong Vault（{prefixes}）',
+  'kongctl.node.mcpKong': '{name}（Kong が提供）',
+  'kongctl.node.vectordb': 'ベクターDB（{strategy}）',
+  'kongctl.desc.gateway': 'デプロイ種別: {deployment} ／ 公開ホスト: {hosts} ／ 公開エンティティの認証: {auth}',
+  'kongctl.desc.assumedPlain': ' ／ proxy_urls が https でないか未入力のため、クライアントとの通信は平文と仮定',
+  'kongctl.desc.noAuth': '認証なし',
+  'kongctl.desc.model': 'モデル: {name}（パス: {paths}）',
+  'kongctl.desc.entity': '{kind}: {name}（host: {host}）',
   // ── ExportLayersModal（PDF / PNG） ──
   'project.exportModal.titlePdf': 'PDF レポートの出力',
   'project.exportModal.titlePng': 'PNG 画像の出力',

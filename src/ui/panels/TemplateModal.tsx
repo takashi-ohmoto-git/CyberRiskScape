@@ -15,6 +15,7 @@ import {
   type ParseTemplateResult,
 } from '../../features/templates/io';
 import { kongToLayer, type KongImportSummary } from '../../features/kong-import/kongToLayer';
+import { kongctlToLayer, type KongctlImportSummary } from '../../features/kongctl-import/kongctlToLayer';
 import { conjurToLayer, type ConjurImportSummary } from '../../features/conjur-import/conjurToLayer';
 import { shodanToLayer, type ShodanImportSummary } from '../../features/shodan-import/shodanToLayer';
 import { scopesentryToLayer, type ScopesentryImportSummary } from '../../features/scopesentry-import/scopesentryToLayer';
@@ -53,6 +54,7 @@ export function TemplateModal() {
   const [importedFileName, setImportedFileName] = useState<string | null>(null);
   /** Kong 設定から作った場合のみ、元設定の件数を表示する。 */
   const [kongSummary, setKongSummary] = useState<KongImportSummary | null>(null);
+  const [kongctlSummary, setKongctlSummary] = useState<KongctlImportSummary | null>(null);
   const [conjurSummary, setConjurSummary] = useState<ConjurImportSummary | null>(null);
   const [shodanSummary, setShodanSummary] = useState<ShodanImportSummary | null>(null);
   const [scopesentrySummary, setScopesentrySummary] = useState<ScopesentryImportSummary | null>(null);
@@ -60,6 +62,7 @@ export function TemplateModal() {
   const [confirming, setConfirming] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const kongInputRef = useRef<HTMLInputElement>(null);
+  const kongctlInputRef = useRef<HTMLInputElement>(null);
   const conjurInputRef = useRef<HTMLInputElement>(null);
   const shodanInputRef = useRef<HTMLInputElement>(null);
   const scopesentryInputRef = useRef<HTMLInputElement>(null);
@@ -78,6 +81,7 @@ export function TemplateModal() {
     setParsed(null);
     setImportedFileName(null);
     setKongSummary(null);
+    setKongctlSummary(null);
     setConjurSummary(null);
     setShodanSummary(null);
     setScopesentrySummary(null);
@@ -109,6 +113,7 @@ export function TemplateModal() {
     setParsed(parseTemplateFromJson(text));
     setImportedFileName(file.name);
     setKongSummary(null);
+    setKongctlSummary(null);
     setConjurSummary(null);
     setShodanSummary(null);
     setScopesentrySummary(null);
@@ -119,6 +124,19 @@ export function TemplateModal() {
     const result = kongToLayer(await file.text());
     setParsed(result);
     setKongSummary(result.ok ? result.summary : null);
+    setKongctlSummary(null);
+    setConjurSummary(null);
+    setShodanSummary(null);
+    setScopesentrySummary(null);
+    setImportedFileName(file.name);
+    setConfirming(false);
+  };
+
+  const handleKongctlFile = async (file: File) => {
+    const result = kongctlToLayer(await file.text());
+    setParsed(result);
+    setKongctlSummary(result.ok ? result.summary : null);
+    setKongSummary(null);
     setConjurSummary(null);
     setShodanSummary(null);
     setScopesentrySummary(null);
@@ -131,6 +149,7 @@ export function TemplateModal() {
     setParsed(result);
     setConjurSummary(result.ok ? result.summary : null);
     setKongSummary(null);
+    setKongctlSummary(null);
     setShodanSummary(null);
     setScopesentrySummary(null);
     setImportedFileName(file.name);
@@ -150,6 +169,7 @@ export function TemplateModal() {
     setShodanSummary(result.ok ? result.summary : null);
     setScopesentrySummary(null);
     setKongSummary(null);
+    setKongctlSummary(null);
     setConjurSummary(null);
     setImportedFileName(file.name);
     setConfirming(false);
@@ -161,6 +181,7 @@ export function TemplateModal() {
     setScopesentrySummary(result.ok ? result.summary : null);
     setShodanSummary(null);
     setKongSummary(null);
+    setKongctlSummary(null);
     setConjurSummary(null);
     setImportedFileName(file.name);
     setConfirming(false);
@@ -306,6 +327,28 @@ export function TemplateModal() {
             </button>
 
             <p className="text-xs text-slate-400 leading-relaxed">
+              {t('project.templateModal.kongctlIntro')}
+            </p>
+            <input
+              ref={kongctlInputRef}
+              type="file"
+              accept=".yaml,.yml,application/yaml"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleKongctlFile(file);
+                e.target.value = '';
+              }}
+            />
+            <button
+              onClick={() => kongctlInputRef.current?.click()}
+              className="flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-wider bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg transition-colors"
+            >
+              <Upload size={14} />
+              {t('project.templateModal.selectKongctl')}
+            </button>
+
+            <p className="text-xs text-slate-400 leading-relaxed">
               {t('project.templateModal.conjurIntro')}
             </p>
             <input
@@ -386,6 +429,11 @@ export function TemplateModal() {
                     {kongSummary && (
                       <span className="block text-slate-400 mt-1">
                         {t('project.templateModal.kongStats', { ...kongSummary })}
+                      </span>
+                    )}
+                    {kongctlSummary && (
+                      <span className="block text-slate-400 mt-1">
+                        {t('project.templateModal.kongctlStats', { ...kongctlSummary })}
                       </span>
                     )}
                     {conjurSummary && (
