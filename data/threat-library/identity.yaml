@@ -20,6 +20,16 @@
 #   `DIRECTORY` ノードには当たらない（同じ理由で edge の `source|targetIdentityProviderKind`
 #   も当たらないため、エッジで DIRECTORY を指すなら `sourceType` / `targetType` を使う）。
 #
+#   さらに 2026-10-28、IdP 管理の委任（Okta / Auth0 の Cross App Access〔XAA〕、MCP の
+#   Enterprise-Managed Authorization 等）の脅威 4 件を追加した。XAA は IETF の Internet-Draft
+#   （Identity Assertion JWT Authorization Grant）の実装で、エージェントが SSO の ID トークンを
+#   IdP でトークン交換して委任アサーション（ID-JAG）を得て、アプリ側の認可サーバーでアクセス
+#   トークンに換える。接続の可否は IdP の管理者ポリシーで決まり、利用者の同意画面は出ない。
+#   新しい型・属性は作らず（ユーザー決定）、エージェント → アプリの線を `auth: Token` ＋
+#   `authProviderId`＝IdP（`authProvider: [Declared]`）で描く。発行元が未入力の Token の線は
+#   同意画面型の OAuth として読む。Declared は XAA に限らず IdP 管理の委任全般を含むため、
+#   ルール名は「IdP 管理の委任（XAA 等）」と一般化した。
+#
 #   発火範囲の注意（既存ダイアグラムへの影響）:
 #     - `semantic` 未指定のエッジは `data_flow` 既定で評価されるため、同期系ルールは
 #       **設計者が明示的に directory_sync をマークしたエッジでのみ発火**する。
@@ -33,6 +43,11 @@
 #     - `DIRECTORY` 系 4 件は `nodeType: DIRECTORY` の node ルールであり、**既存ダイアグラムに
 #       DIRECTORY ノードは存在しない**（型自体が新設）ため検出件数を変えない。設計者が
 #       Directory を置いた図でのみ発火する。エッジ軸の条件は一切使っていない。
+#     - IdP 管理の委任 4 件は、AGENT / SUB_AGENT（または SECRETS_VAULT）からアプリ系の型への
+#       `auth: Token` の線でだけ発火する。identity-oauth-consent-grant-sprawl-001 は
+#       identity-local-credential-outside-idp-001 と同じく**発行元が未入力の線で発火する**ため、
+#       エージェント → SaaS 等を Token で描いた既存の図でも検出件数を増やす。発行元の IdP を
+#       宣言すれば消え、代わりに委任ポリシー・受け側検証の 2 件が出る（入れ替わる）。
 #
 # 出典:
 #   - MITRE ATT&CK (Enterprise) T1078.004 "Valid Accounts: Cloud Accounts"（同期用
@@ -74,6 +89,20 @@
 #     出典つきで参照し本文は転載しない）:
 #     T1070 "Indicator Removal"。
 #     https://attack.mitre.org/techniques/
+#   - IETF Internet-Draft draft-ietf-oauth-identity-assertion-authz-grant-04
+#     "Identity Assertion JWT Authorization Grant"（2026-05-21。§9 のセキュリティ考慮：
+#     機密クライアントへの限定・ステップアップ認証・宛先の認可サーバー専用・発行元一覧の非公開・
+#     sub_id の issuer を信頼根拠にしない・DPoP とダウングレード）。IETF Trust の規定下にある
+#     作業文書であり、版が進むと節番号が変わり得る。
+#     https://datatracker.ietf.org/doc/draft-ietf-oauth-identity-assertion-authz-grant/
+#   - Model Context Protocol Blog, "Enterprise-Managed Authorization"（SEP-990）。
+#     https://blog.modelcontextprotocol.io/posts/enterprise-managed-auth/
+#   - Auth0 Docs, "Cross App Access" / "Token Vault"（XAA with Token Vault）。
+#     https://auth0.com/docs/ai-agents-mcp/cross-app-access
+#     https://auth0.com/docs/secure/call-apis-on-users-behalf/token-vault/xaa-with-token-vault
+#   - MITRE ATT&CK (Enterprise) T1528 "Steal Application Access Token"・T1550.001
+#     "Use Alternate Authentication Material: Application Access Token"。
+#     https://attack.mitre.org/techniques/T1528/
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -82,7 +111,8 @@
 #
 # framework について:
 #   本ファイルは従来 IT のアイデンティティ基盤を扱うため、全ルール STRIDE とする
-#   （AI / AgenticAI 固有の攻撃機構は含まない）。
+#   （AI / AgenticAI 固有の攻撃機構は含まない）。IdP 管理の委任 4 件は source にエージェントを
+#   含むが、攻撃機構は OAuth の委任・トークン交換そのもので AI 固有ではないため STRIDE とした。
 #
 # 重複回避方針:
 #   IDENTITY_PROVIDER は zero-trust-access.yaml が既に 3 subject をカバー済みであり、
@@ -183,6 +213,37 @@
 #   - LDAP の匿名バインド・平文バインド等の**プロトコル設定**は本ファイルでは扱わない。
 #     平文通信は stride-edge-plain-encryption-001、無認証は
 #     stride-edge-unauth-internet-001 / zt-implicit-trust-network-location-001 の領分。
+#
+#   IdP 管理の委任（XAA 等）のルール（2026-10-28 に追加した 4 件）について:
+#
+#   - 線の条件は `sourceType: [AGENT, SUB_AGENT]` × アプリ系の targetType（SAAS / MCP_SERVER /
+#     BACKEND_API / CRM / CHAT / MAIL / OTHER_APP）× `auth: [Token]` × `authProvider`。上の
+#     「AGENT 系を sourceType に含めない」方針は弱いサービス認証（None / Password / ApiKey）との
+#     重複を避けるためのもので、Token の線はその対象外であり重ならない。
+#     OAUTH_CLIENT は利用者の SSO を根拠にしない M2M クライアントのため含めない。
+#   - 委任ポリシーの過剰許可（identity-idp-delegation-policy-overgrant-001、canonicalId:
+#     idp-delegation-policy-overgrant）は「IdP の管理者ポリシーが許す範囲」が subject。
+#     AGENT ノード視点の委譲時の権限継承は anthropic-zt-confused-deputy-001
+#     （confused-deputy-delegation）、エージェントの権限過剰一般は excessive-agency 群が扱い、
+#     いずれもノード subject で IdP のポリシーを問わないため別 canonicalId とした。
+#   - 委任アサーション（ID-JAG）の受け側検証不備（identity-id-jag-relying-party-validation-gap-001）は
+#     zt-idp-token-validation-gap-001 と同じ脅威（受け側の aud・発行元等の検証漏れ）のため
+#     canonicalId: idp-relying-party-validation-gap を共有する。あちらは IdP → 受け側の線、こちらは
+#     エージェント → アプリの線で subject が違うため別カードになる。
+#   - 同意画面型 OAuth の散在（identity-oauth-consent-grant-sprawl-001、canonicalId:
+#     oauth-consent-grant-sprawl）は identity-local-credential-outside-idp-001 と「IdP から
+#     見えない」点が共通するが、あちらは Token と AGENT 系を除外しており条件が重ならない。
+#     subject も「利用者が個別に渡した委任（長寿命リフレッシュトークン）」で、ローカルアカウント
+#     ではない。静的 API キー（anthropic-zt-static-api-key-001、weak-service-auth）とも認証方式が違う。
+#   - トークン保管庫の代理交換（identity-token-vault-delegated-exchange-001、canonicalId:
+#     token-vault-delegated-exchange）は api-secrets-vault-concentration-001
+#     （secrets-vault-concentration）と近接するが、あちらは SECRETS_VAULT ノードの「読み出し権限の
+#     集中」、こちらは保管庫 → アプリの線で「利用者不在でも全利用者分のトークンを取り直せる」こと
+#     が subject で、止め方（IdP 側でのリフレッシュトークン失効）も違うため別 canonicalId とした。
+#   - 既存で足りるため追加しないもの：委任トークンの窃取・再利用と DPoP →
+#     zt-bearer-token-replay-001（bearer-token-replay）、IdP 署名鍵の窃取による ID-JAG の偽造 →
+#     zt-idp-signing-key-compromise-001（idp-token-forgery）、保管庫そのものの集中 →
+#     api-secrets-vault-concentration-001。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する。
@@ -568,3 +629,144 @@ rules:
       # クラウド IdP の署名鍵窃取によるトークン偽造は zt-idp-signing-key-compromise-001、
       # 信頼される発行者の追加は identity-idp-federation-trust-tampering-001 が扱う
       # （いずれも別 subject）。
+
+  # ── IdP 管理の委任（XAA 等）: エージェント → アプリの委任トークン ─────────────
+  # 図での表し方（スキーマ非変更・ユーザー決定 2026-10-28）：
+  #   エージェント → アプリの線を auth: Token ＋ authProviderId＝IdP で描く（authProvider: Declared）。
+  #   Declared は XAA に限らず IdP 管理の委任全般（Entra の On-Behalf-Of 等）を含むため、
+  #   ルール名は「IdP 管理の委任（XAA 等）」と一般化する。発行元が未入力（Undeclared）の
+  #   Token の線は「利用者が同意画面で個別に許可した OAuth」として読む（identity-oauth-consent-grant-sprawl-001）。
+  #   source は AGENT / SUB_AGENT。OAUTH_CLIENT は client credentials の M2M クライアント
+  #   （利用者の SSO を根拠にしない）ため含めない（過剰な許可は nhi-overprivileged が扱う）。
+  #   target は利用者の権限で操作されるアプリ系の型。TOOL（function calling 先）・CONNECTOR・DB・LLM は
+  #   weak-service-auth / maestro-tool-edge-001 の領分で、委任の単位としても粗いため含めない。
+  - id: identity-idp-delegation-policy-overgrant-001
+    canonicalId: idp-delegation-policy-overgrant
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "IdP 管理の委任ポリシーの過剰許可（XAA 等）"
+    severity: High
+    description: "{{sourceName}} から {{targetName}} への呼び出しは、組織の IdP が発行元として宣言されたトークンで認証されている。モデル上これは、IdP の管理者ポリシーで {{sourceName}} に {{targetName}} への委任を許す方式（Cross App Access の ID-JAG、MCP の Enterprise-Managed Authorization、Entra の On-Behalf-Of 等）を表し、利用者ごとの同意画面を経ずに、利用者の SSO セッションを根拠として {{targetName}} 用のアクセストークンが払い出される。管理者ポリシーが「全社員グループ × 全スコープ」のような広い単位で許可されている、重要な操作にもステップアップ認証を求めていない、あるいは秘密を保持できない公開クライアントにも発行している場合、攻撃者は乗っ取った {{sourceName}} 1 つ（プロンプトインジェクションで操られたエージェント、窃取されたクライアント資格情報、利用者端末上の公開クライアント）から、利用者の再認証も同意も経ずに、ポリシーが許すすべてのアプリへ利用者本人の権限で到達できる（Can）。発行は IdP の正規の手続きとして記録されるため、個々のアプリ側では通常の利用と区別しにくい。一方、委任ポリシーをエージェントごと・アプリごと・スコープごとに必要最小で許可し、発行をクライアント認証を伴う機密クライアントに限り、書き込み・削除・外部送信など重要なスコープにはステップアップ認証を課していれば、{{sourceName}} が乗っ取られても届くのは当該アプリの最小スコープに限られ、重要な操作は利用者の再認証なしには成立しない（Cannot）。blast radius は IdP の委任ポリシーが {{sourceName}} に許すすべてのアプリと、そのスコープで行える操作。"
+    mitigation: "[Foundation] IdP の委任ポリシー（どのエージェントがどのアプリへどのスコープで委任を受けられるか）を棚卸しし、全社員グループ・全スコープのような広い許可を、エージェントとアプリの組ごとの必要最小のスコープへ絞る。委任を受けられるのをクライアント認証を伴う機密クライアントに限り、公開クライアントには発行しない。 [Enterprise] 書き込み・削除・送金・外部送信など影響の大きいスコープの委任には、ステップアップ認証（直近の再認証・より強い認証方式）を条件にする。委任トークンの発行ログを SIEM に集約し、エージェントごとの発行先アプリ数・頻度の逸脱を検知する。利用者の退職・異動・セッション失効を委任トークンの即時失効へつなぐ。 [Advanced] 委任で払い出すトークンを送信者の鍵に束縛し（DPoP）、有効期間を分単位にする。端末の状態やエージェントの挙動の異常を継続的アクセス評価（CAEP / Shared Signals）で委任の停止へつなぎ、エージェントの侵害を検知した時点ですべての委任を一括で止められるようにする。"
+    appliesTo:
+      kind: edge
+      when:
+        sourceType: [AGENT, SUB_AGENT]
+        targetType: [SAAS, MCP_SERVER, BACKEND_API, CRM, CHAT, MAIL, OTHER_APP]
+        auth: [Token]
+        # 発行元（IdP）を宣言した Token の線＝IdP 管理の委任。未宣言は identity-oauth-consent-grant-sprawl-001。
+        authProvider: [Declared]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-03"
+    references:
+      - title: "IETF Internet-Draft draft-ietf-oauth-identity-assertion-authz-grant-04 - Identity Assertion JWT Authorization Grant（§9.1 機密クライアントへの限定・§9.2 ステップアップ認証）"
+        url: "https://datatracker.ietf.org/doc/draft-ietf-oauth-identity-assertion-authz-grant/"
+      - title: "Model Context Protocol Blog - Enterprise-Managed Authorization（SEP-990。IdP の管理者ポリシーで MCP サーバーへの接続を決める拡張）"
+        url: "https://blog.modelcontextprotocol.io/posts/enterprise-managed-auth/"
+      - title: "Auth0 Docs - Cross App Access（XAA。IdP の管理者ポリシーによるアプリ間の委任）"
+        url: "https://auth0.com/docs/ai-agents-mcp/cross-app-access"
+      # 委任トークンそのものの窃取・再利用（DPoP の有無）は zt-bearer-token-replay-001、
+      # IdP 署名鍵の窃取は zt-idp-signing-key-compromise-001 が扱う（いずれも別 subject）。
+
+  # ── IdP 管理の委任（XAA 等）: 委任アサーションの受け側検証不備 ──────────────
+  # canonicalId は zt-idp-token-validation-gap-001（IdP → 受け側の線）と共有する。
+  # あちらは sourceType: IDENTITY_PROVIDER の線、こちらはエージェント → アプリの線で、subject が違うため別カードになる。
+  - id: identity-id-jag-relying-party-validation-gap-001
+    canonicalId: idp-relying-party-validation-gap
+    framework: STRIDE
+    category: "Spoofing"
+    name: "ID-JAG（IdP 発行の委任アサーション）の受け側検証不備"
+    severity: Medium
+    description: "{{sourceName}} は IdP から受け取った委任アサーション（ID-JAG のような、特定の認可サーバー宛ての署名付き JWT）を {{targetName}} 側の認可サーバーへ提示して、アクセストークンと交換している。受け側が、アサーションの宛先（aud）が自分であること、交換を求めるクライアントがアサーションの client_id と一致すること、トークン種別（typ）が委任アサーションであることのいずれかを確かめていない場合、攻撃者は別のアプリ宛てに発行された委任アサーションや通常の ID トークンを {{targetName}} へ持ち込んで、本来許されていない利用者権限のアクセストークンを得られる（Can）。受け取ったアサーションをさらに別の下流 API へそのまま中継する実装や、アサーション内の利用者識別子の発行元欄（sub_id の issuer 等）を見て信頼する発行元を決める実装では、攻撃者が制御する発行元の名前を書き込んだアサーションまで受理される。一方、{{targetName}} が信頼する IdP の署名鍵だけで署名を検証し、aud・client_id・typ・有効期限・使い捨て識別子（jti）を必ず確認し、受け取ったアサーションを自分専用として下流へ再利用せず、信頼する発行元をアサーションの外の設定で決めていれば、他所向けのアサーションも偽の発行元も受理されない（Cannot）。blast radius は {{targetName}} 上で、受理されたアサーションの利用者に許された全操作。"
+    mitigation: "[Foundation] 委任アサーションの検証を標準のライブラリで行い、署名・発行元（iss）・宛先（aud）・client_id とクライアント認証の一致・トークン種別（typ）・有効期限を必須の確認項目にする。受け取ったアサーションは自分の認可サーバー専用として扱い、別の下流 API へ中継しない。 [Enterprise] 信頼する IdP を設定で明示し、アサーション内の項目（利用者識別子の発行元欄等）から信頼の可否を決めない。使い捨て識別子（jti）で再提示を拒否する。受け入れる発行元の一覧を公開のメタデータで晒さない。拒否したアサーションの件数と理由を監視する。 [Advanced] 交換で払い出すアクセストークンを送信者の鍵に束縛し（DPoP）、束縛を求める設定から束縛なしへ落とす要求（ダウングレード）を拒否する。アサーションに含める利用者情報を交換に必要な最小限にする。"
+    appliesTo:
+      kind: edge
+      when:
+        # identity-idp-delegation-policy-overgrant-001 と同じ線（発行側のポリシー vs 受け側の検証で別 subject）。
+        sourceType: [AGENT, SUB_AGENT]
+        targetType: [SAAS, MCP_SERVER, BACKEND_API, CRM, CHAT, MAIL, OTHER_APP]
+        auth: [Token]
+        authProvider: [Declared]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-04"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+    references:
+      - title: "IETF Internet-Draft draft-ietf-oauth-identity-assertion-authz-grant-04 - Identity Assertion JWT Authorization Grant（§9.3 宛先の認可サーバー専用・§9.4 発行元一覧の非公開・§9.5 sub_id の issuer を信頼根拠にしない・§9.8 DPoP とダウングレード）"
+        url: "https://datatracker.ietf.org/doc/draft-ietf-oauth-identity-assertion-authz-grant/"
+      - title: "MITRE ATT&CK T1550.001 - Use Alternate Authentication Material: Application Access Token（別のアプリ宛てに発行されたアサーションの流用）"
+        url: "https://attack.mitre.org/techniques/T1550/001/"
+
+  # ── 同意画面型 OAuth: IdP から見えない委任の散在 ─────────────────────────
+  # 発行元が未入力（Undeclared）の Token の線を「利用者が同意画面で個別に許可した OAuth」として読む。
+  # identity-local-credential-outside-idp-001 は Token と AGENT 系を除外しており、
+  # anthropic-zt-static-api-key-001（weak-service-auth）は None / Password / ApiKey × TOOL 等なので重ならない。
+  - id: identity-oauth-consent-grant-sprawl-001
+    canonicalId: oauth-consent-grant-sprawl
+    framework: STRIDE
+    category: "Spoofing"
+    name: "同意画面型 OAuth の付与の散在（IdP から見えない委任）"
+    severity: Medium
+    description: "{{sourceName}} から {{targetName}} への呼び出しはトークンで認証されているが、トークンの発行元が宣言されていない。モデル上これは、組織の IdP の委任ポリシーを経ずに、利用者が {{targetName}} の同意画面で個別に {{sourceName}} へ権限を許可する方式（オフラインアクセスの長寿命リフレッシュトークンを渡す OAuth の認可）を表す。この方式では、どの利用者がどのエージェントに何の権限を渡したかが {{targetName}} ごとにばらばらに記録されるだけで、IT 部門は IdP から一覧できず、退職・異動の際に IdP でアカウントを止めても、すでに渡したリフレッシュトークンは {{targetName}} 側で有効なまま残る。攻撃者は、正規のアプリに見せかけた同意画面へ利用者を誘導して広いスコープを許可させる同意フィッシング、あるいは {{sourceName}} が保管するリフレッシュトークンの窃取によって、利用者のパスワードも MFA も知らないまま、長期間 {{targetName}} へ利用者本人として到達できる（Can）。一方、この接続を IdP 管理の委任（Cross App Access 等）へ移し、図でも実構成でも発行元の IdP を宣言していれば、許可は IdP の管理者ポリシーとして一か所で見え、利用者の停止がそのまま委任の停止になる。移せない場合も、利用者による同意を管理者の承認制にして許可するアプリとスコープを限定していれば、同意フィッシングで広い権限を渡すことはできない（Cannot）。blast radius は {{targetName}} 上で、同意したすべての利用者が許可したスコープと、リフレッシュトークンの有効期間。"
+    mitigation: "[Foundation] エージェントや外部アプリへの OAuth の許可（同意）を IdP・各 SaaS の管理画面で棚卸しし、不要な許可・使われていない許可を取り消す。利用者による同意を、管理者が承認したアプリと必要最小のスコープだけに制限する（管理者承認ワークフロー）。退職・異動の手順に、各 SaaS 側の OAuth 許可とリフレッシュトークンの取り消しを入れる。 [Enterprise] エージェントとアプリの接続を、IdP の管理者ポリシーで許可する方式（Cross App Access・MCP の Enterprise-Managed Authorization 等）へ移し、発行元の IdP を図と実構成の双方で宣言する。リフレッシュトークンの有効期間を短くし、使うたびに入れ替える。新規の同意と広いスコープの同意を検知する。 [Advanced] IdP の利用者停止・リスク検知を、継続的アクセス評価（CAEP / Shared Signals）で各 SaaS 側のトークン失効へつなぐ。利用者が個別に同意する方式を組織の設定で禁止し、すべての委任を IdP の管理下に置く。"
+    appliesTo:
+      kind: edge
+      when:
+        sourceType: [AGENT, SUB_AGENT]
+        targetType: [SAAS, MCP_SERVER, BACKEND_API, CRM, CHAT, MAIL, OTHER_APP]
+        auth: [Token]
+        # 発行元を宣言すれば消え、identity-idp-delegation-policy-overgrant-001 /
+        # identity-id-jag-relying-party-validation-gap-001 に入れ替わる。
+        authProvider: [Undeclared]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "MITRE ATT&CK T1528 - Steal Application Access Token（同意フィッシングによるアクセストークンの取得）"
+        url: "https://attack.mitre.org/techniques/T1528/"
+      - title: "Auth0 Docs - Cross App Access（XAA。利用者ごとの同意に代えて IdP の管理者ポリシーで委任を許可する方式）"
+        url: "https://auth0.com/docs/ai-agents-mcp/cross-app-access"
+      # 盗まれたトークンの再利用（DPoP の有無）は zt-bearer-token-replay-001 が扱う（別 subject）。
+
+  # ── トークン保管庫: 利用者に代わるトークンの取り直しの悪用 ──────────────────
+  # api-secrets-vault-concentration-001（canonicalId: secrets-vault-concentration）は SECRETS_VAULT ノードの
+  # 「読み出し権限の集中」が subject。こちらは保管庫 → アプリの線で「預けた利用者のトークンを利用者不在でも
+  # 取り直せる」代理交換が subject で、止め方（IdP 側のリフレッシュトークン失効）も異なるため別 canonicalId。
+  - id: identity-token-vault-delegated-exchange-001
+    canonicalId: token-vault-delegated-exchange
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "トークン保管庫による代理交換の悪用"
+    severity: High
+    description: "{{sourceName}} は利用者の代わりに外部アプリのトークンを預かって払い出す保管庫（トークン保管庫）として、組織の IdP が発行元として宣言されたトークンで {{targetName}} を呼べるようにしている。保管庫は利用者ごとのリフレッシュトークン（オフラインアクセス）や IdP 管理の委任で得たトークンを預かり、保管庫を呼び出すクライアントの資格情報と利用者の識別子をもとに、内部で委任アサーションを取り直して {{targetName}} 用のアクセストークンを返す。攻撃者が保管庫を呼び出すクライアントの資格情報（クライアントシークレット・秘密鍵）を盗めば、利用者がログインしていない時間帯でも、保管庫に登録されたすべての利用者について {{targetName}} のアクセストークンを取り直せる（Can）。取得は保管庫の正規の機能として行われるため、{{targetName}} 側では利用者本人の利用と区別しにくい。保管庫そのものが侵害されて預けたリフレッシュトークンが持ち出された場合は、保管庫の資格情報や保管物を入れ替えても止まらず、発行元の IdP 側でリフレッシュトークンを失効させるまで、攻撃者は保管庫の外で取り直しを続けられる。一方、保管庫からの取得を利用者本人のその時点の有効なセッションを伴う呼び出しに限り、クライアント資格情報を秘密鍵による認証やワークロード ID にして持ち出せないようにし、利用者・アプリごとの取得量を監視し、侵害時に IdP 側でリフレッシュトークンと委任を一括失効する手順を持っていれば、資格情報の窃取だけでは全利用者分のトークンを取り出せず、取り出されても速やかに止められる（Cannot）。blast radius は {{sourceName}} に預けられたすべての利用者の、{{targetName}} を含む登録済みアプリでの権限と、リフレッシュトークンの有効期間。"
+    mitigation: "[Foundation] トークン保管庫を呼び出せるクライアントを列挙して最小化し、クライアント資格情報をコード・設定ファイルに置かずシークレット管理に保管する。保管庫からのトークン取得は、利用者本人の有効なセッションを伴う呼び出しに限る。侵害時に IdP 側で、預けたリフレッシュトークンと委任を利用者単位・アプリ単位で一括失効する手順を文書化する。 [Enterprise] クライアント認証を共有シークレットから秘密鍵による認証（private_key_jwt）やワークロード ID へ移し、資格情報を持ち出せないようにする。利用者・アプリ・時間帯ごとのトークン取得量を監視し、利用者が不在の時間帯の取得や多数の利用者分の連続取得を検知する。保管するスコープを用途に必要な最小にする。 [Advanced] 秘密鍵を HSM やワークロードの証明（アテステーション）に束縛し、保管庫が返すアクセストークンを呼び出し元の鍵に束縛する（DPoP）。保管庫の侵害シグナルを継続的アクセス評価（CAEP / Shared Signals）で IdP 側の失効へ自動でつなぐ。"
+    appliesTo:
+      kind: edge
+      when:
+        sourceType: [SECRETS_VAULT]
+        targetType: [SAAS, MCP_SERVER, BACKEND_API, CRM, CHAT, MAIL, OTHER_APP]
+        auth: [Token]
+        authProvider: [Declared]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-03"
+    references:
+      - title: "Auth0 Docs - Token Vault（XAA with Token Vault。保管したトークンから ID-JAG を取り直してアクセストークンを返す仕組み）"
+        url: "https://auth0.com/docs/secure/call-apis-on-users-behalf/token-vault/xaa-with-token-vault"
+      - title: "IETF Internet-Draft draft-ietf-oauth-identity-assertion-authz-grant-04 - Identity Assertion JWT Authorization Grant（§9.1 機密クライアントへの限定）"
+        url: "https://datatracker.ietf.org/doc/draft-ietf-oauth-identity-assertion-authz-grant/"
+      - title: "MITRE ATT&CK T1528 - Steal Application Access Token（保管されたトークンの取得）"
+        url: "https://attack.mitre.org/techniques/T1528/"
+      # SECRETS_VAULT ノードの読み出し権限の集中は api-secrets-vault-concentration-001 が扱う（別 subject）。

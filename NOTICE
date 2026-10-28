@@ -496,6 +496,28 @@ verbatim.
 
    Referenced by: data/threat-library/network-infra.yaml
 
+--------------------------------------------------------------------------------
+27. IdP-managed delegation for AI agents (Cross App Access)
+   - IETF OAuth Working Group, Internet-Draft
+     draft-ietf-oauth-identity-assertion-authz-grant-04, "Identity Assertion
+     JWT Authorization Grant" (2026-05-21)
+     https://datatracker.ietf.org/doc/draft-ietf-oauth-identity-assertion-authz-grant/
+     Internet-Drafts are subject to the IETF Trust's Legal Provisions Relating
+     to IETF Documents (BCP 78 / BCP 79). Referenced by draft name, title and
+     section number with a short Japanese summary only; no draft text is
+     reproduced. Section numbers may change in later revisions.
+   - Model Context Protocol Blog, "Enterprise-Managed Authorization" (SEP-990)
+     https://blog.modelcontextprotocol.io/posts/enterprise-managed-auth/
+   - Auth0 Docs (Okta, Inc.), "Cross App Access" and "Token Vault"
+     https://auth0.com/docs/ai-agents-mcp/cross-app-access ,
+     https://auth0.com/docs/secure/call-apis-on-users-behalf/token-vault/xaa-with-token-vault
+   The blog and documentation are referenced by title and URL with a short
+   Japanese summary only; no text is reproduced. See each site for its terms
+   of use. Okta and Auth0 are trademarks of Okta, Inc.; the names are used
+   descriptively, and this project is not affiliated with or endorsed by them.
+
+   Referenced by: data/threat-library/identity.yaml
+
 ================================================================================
 Runtime dependencies
 ================================================================================
