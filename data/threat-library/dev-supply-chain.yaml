@@ -1,0 +1,183 @@
+# 開発サプライチェーンとコーディングエージェントの権限に関する脅威。
+# 依存パッケージ（PACKAGE_DEPENDENCIES：マニフェストごとの依存全体）・パッケージレジストリ
+# （PACKAGE_REGISTRY：npm・PyPI 等の取得元）・コーディングエージェント（AGENT）の権限設定を対象にする。
+# 作業ディレクトリ（リポジトリ）から脅威モデルを作る import-repo が描く図で当たる脅威。
+#
+# 記述の方針:
+#   依存パッケージの取得とコーディングエージェントの権限設定は特定の団体・製品に固有の概念ではない
+#   汎用的な仕組みのため、本ファイルは特定の文書を出典とせず、一般的な考え方として記述する
+#   （references は付けない）。complianceRefs は一般的な基準（NIST CSF 2.0）で自然に当たるものだけを付ける。
+#
+#   SPDX-License-Identifier: Apache-2.0
+#   ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+#
+# 発火条件:
+#   ルール 1〜3 は PACKAGE_DEPENDENCIES の運用状況（posture グループ `dependency`）、
+#   ルール 5・6 は AGENT の運用状況（posture グループ `agentPermission`）で発火する。未入力（Unknown）は
+#   対策なしと同じ扱いで発火し、利用者が実態を入力すれば消える。ルール 6 は 2 つの条件（agentSandbox と
+#   agentEgress）の AND で、どちらか一方でも対策済みなら発火しない（posture のフィールド間は AND、
+#   フィールド内の値は OR）。ルール 4 は運用状況に関係なく発火する（公開レジストリの仕組みそのものに由来）。
+#   いずれも対象の性質に由来する内在的な脅威のため connection.required: false。
+#
+# 重複回避方針:
+#   - 版を固定していない依存 → agent-skills.yaml の agent-skill-unpinned-version-001 と同じ
+#     「導入後に悪性版へ差し替えられる（rug pull）」脅威のため canonicalId: tool-poisoning-rug-pull を共有する。
+#     subject の型が違う（AGENT_SKILL と PACKAGE_DEPENDENCIES）ため別カードになる。
+#   - インストール時スクリプト → 新グループ package-install-script-execution。tool-poisoning-rug-pull は
+#     「正規だったものの差し替え」、本ルールは「入れた時点で任意コードが動く」問いで、対策（スクリプトの
+#     無効化・審査）が違うため再利用しない。
+#   - 確認せずに追加する依存 → 新グループ package-lookalike-name。agent-skill-unvetted-install
+#     （AGENT_SKILL）は導入するスキルの中身の審査、本ルールは「名前が似ている・存在しない名前を先回りで
+#     登録された」偽パッケージを入れる問いで、対象の型と攻撃の入口（名前の取り違え）が違う。
+#   - レジストリの公開者アカウントの乗っ取り・同名の公開パッケージ → 新グループ package-registry-poisoning。
+#     tool-poisoning-rug-pull は利用側が固定していない問い、本ルールは取得元の側の問いで対策が違う。
+#     third-party-extension-supply-chain（THIRD_PARTY_EXTENSION）は自社ページに組み込む外部スクリプトで別。
+#   - 任意コードを実行できるコマンド許可 → owasp-llm06 系・agent-skill-permission-unbounded-001 と同じ
+#     「業務に必要な範囲を超える権限を与える」脅威のため canonicalId: excessive-agency を共有する。
+#     agent-code-execution-rce（エージェントが生成したコードの予期せぬ実行）は生成物の問いで別。
+#   - 作業フォルダの秘密情報の外部送信 → 新グループ agent-workspace-secret-exfiltration。
+#     既存の indirect-prompt-injection は「指示が差し替わる」入口、credential-sprawl は
+#     「資格情報が散在する」保管の問いで、本ルールは「隔離も送信先の制限もない実行環境から秘密が出ていく」
+#     出口の問いのため再利用しない。agent-uncontrolled-egress は AGENT から公衆網への接続（edge）を
+#     扱い、本ルールは AGENT ノードの実行環境の設定（サンドボックス × 送信先の制限）を扱うため別。
+#
+# mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
+# description は Can/Cannot ペアと blast radius を記述する。
+
+schemaVersion: 1
+
+rules:
+  # ── ロックファイルで版を固定していない ──────────────────────────
+  - id: dev-dependency-unlocked-001
+    canonicalId: tool-poisoning-rug-pull
+    framework: AgenticAI
+    category: "Supply Chain"
+    name: "版を固定していない依存パッケージ（後から悪性版を取り込む）"
+    severity: High
+    description: "{{nodeName}} をロックファイルで固定せず、範囲指定（^ ~ 等）や最新版の指定のまま取得している場合、導入時に確認した内容が正当でも、公開者のアカウントの乗っ取り・リポジトリの譲渡・依存先の侵害によって後から公開された悪性版を、次のインストールやビルドで黙って取り込む（Can）。取り込まれた版は開発端末・CI・本番のビルドにそのまま入り、開発者は確認した時と違うものを動かしていることに気づかない。一方、{{nodeName}} をロックファイルで固定してコミットし、インストールはロックファイルの内容と完全一致を求める方式（npm ci 等）にして、更新は差分を確認してから行う手順にしていれば、公開元が侵害されても確認していない版は取り込まれない（Cannot）。blast radius は {{nodeName}} を取得するすべての開発端末・CI・ビルド成果物と、それらが持つ権限と資格情報。"
+    mitigation: "[Foundation] ロックファイル（package-lock.json・poetry.lock 等）を作ってリポジトリに含め、インストールはロックファイルと完全に一致させる方式（npm ci・pip のハッシュ固定等）にする。範囲指定の依存を直接取得しない。更新は差分を確認してから行う。 [Enterprise] 依存の更新を専用のプルリクエストにし、追加・更新された依存と公開日をレビューの対象にする。公開直後の版は一定期間待ってから取り込む設定にする。社内のミラーから取得し、ミラーに入れた版だけを使う。 [Advanced] ロックファイルの整合性ハッシュを検証し、ビルドの出所（来歴）を記録して署名する。ビルド環境から公開レジストリへ直接接続させず、審査済みの版だけをミラーに置く。"
+    appliesTo:
+      kind: node
+      nodeType: PACKAGE_DEPENDENCIES
+      connection:
+        required: false
+      posture:
+        dependencyLockfile: [Unlocked, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "GV.SC-07"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+
+  # ── インストール時スクリプトの実行を許している ───────────────────
+  # 新 canonicalId グループ package-install-script-execution。
+  - id: dev-dependency-install-scripts-001
+    canonicalId: package-install-script-execution
+    framework: AgenticAI
+    category: "Code Execution"
+    name: "インストール時スクリプトの実行を許している依存パッケージ（取得しただけで任意コードが動く）"
+    severity: High
+    description: "{{nodeName}} のパッケージがインストール時に実行するスクリプト（preinstall・postinstall 等）を、内容を確認せず許している場合、悪意あるパッケージや侵害されたパッケージは、取得した瞬間に開発者の権限で任意のコードを実行できる（Can）。インストールはアプリを動かす前に行われるため、コードの審査や実行時の防御より前に動き、開発端末や CI に置かれた資格情報（トークン・SSH 鍵・クラウドの認証情報・.env）の読み出しと外部への送信、他のファイルの書き換えまで行える。コーディングエージェントが依存を追加してインストールする場合は、人が内容を見る機会がなくそのまま実行される。一方、インストール時スクリプトを既定で無効にし、必要なパッケージだけを内容を確認したうえで許可していれば、取得しただけでは任意コードは動かない（Cannot）。ただしインストール後にアプリが読み込む際の実行までは止められないため、版の固定と取得元の確認と合わせて防ぐ。blast radius は {{nodeName}} を取得する開発端末・CI と、そこに置かれたすべての資格情報。"
+    mitigation: "[Foundation] インストール時スクリプトを既定で無効にし（npm の ignore-scripts 等）、スクリプトが必要なパッケージだけを人が内容を確認して個別に許可する。許可したパッケージの一覧をリポジトリに記録する。 [Enterprise] CI のインストール工程では資格情報を持たせず、取得とビルドを分離する。許可リストの追加をレビューの対象にし、スクリプトを持つパッケージの追加を検知して通知する。 [Advanced] インストール工程を、書き込める場所と送信先を限定した使い捨ての隔離環境で行い、実行されたコマンドと通信を記録して想定外の動作を検知する。"
+    appliesTo:
+      kind: node
+      nodeType: PACKAGE_DEPENDENCIES
+      connection:
+        required: false
+      posture:
+        installScripts: [Allowed, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "GV.SC-07"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+
+  # ── 確認せずに依存を追加する ────────────────────────────────────
+  # 新 canonicalId グループ package-lookalike-name。
+  - id: dev-dependency-unvetted-001
+    canonicalId: package-lookalike-name
+    framework: AgenticAI
+    category: "Supply Chain"
+    name: "確認せずに追加する依存パッケージ（類似名・先回りで登録された偽パッケージを入れる）"
+    severity: High
+    description: "{{nodeName}} に依存を追加するとき、名前・公開者・利用実績・内容を人が確認していない場合、人気のあるパッケージに綴りを似せた偽パッケージ（typosquatting）を取り違えて入れる（Can）。AI が提案する依存には実在しない名前が含まれることがあり、その名前を攻撃者が先回りで公開して待ち受ける手口（slopsquatting）では、提案をそのまま追加した時点で悪性のパッケージが入る。コーディングエージェントが自分で依存を追加し、インストールまで進める場面では、人が名前を見る機会がなく、取り違えと先回りの登録がそのまま取り込まれる。一方、依存の追加を人が確認する手順（名前の綴り・公開者・公開日・利用実績・リポジトリとの対応）にし、エージェントによる追加も承認を必須にして、社内で審査済みの一覧から選ぶ運用にしていれば、偽パッケージが入る経路は残らない（Cannot）。自動のスキャンだけの確認は、新しく公開された悪性パッケージや内容の確認までは担保しない。blast radius は {{nodeName}} を取得する開発端末・CI・ビルド成果物と、それらが持つ権限と資格情報。"
+    mitigation: "[Foundation] 依存を追加するときは、名前の綴り・公開者・公開日・利用実績・リポジトリとの対応を人が確認する。AI が提案した依存は、実在することと意図したパッケージであることを確認してから追加する。コーディングエージェントによる依存の追加とインストールは、人の承認を必須にする（許可リストにインストール系のコマンドを入れない）。 [Enterprise] 追加できる依存を社内のレジストリやミラーに置いた審査済みの一覧に限り、一覧にない名前は取得できないようにする。依存の追加をレビューの対象にし、新規の依存・公開後間もないパッケージを検知して通知する。スキャンは人による確認の補助として使う。 [Advanced] 依存の内容（スクリプト・通信・ファイル操作）を隔離環境で試験的に動かして確認してから許可する。公開者の署名や来歴の証明がないパッケージを許可しない。"
+    appliesTo:
+      kind: node
+      nodeType: PACKAGE_DEPENDENCIES
+      connection:
+        required: false
+      posture:
+        dependencyVetting: [None, ScanOnly, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "GV.SC-07"
+      - standard: nist-csf-2.0
+        ref: "ID.AM-02"
+
+  # ── パッケージレジストリの公開側の乗っ取り・同名の公開パッケージ ─────────
+  # 運用状況に関係なく発火する（公開レジストリの仕組みそのものに由来）。
+  # 新 canonicalId グループ package-registry-poisoning。
+  - id: dev-registry-publisher-takeover-001
+    canonicalId: package-registry-poisoning
+    framework: AgenticAI
+    category: "Supply Chain"
+    name: "パッケージレジストリの乗っ取り・同名の公開パッケージ（悪性版の公開と dependency confusion）"
+    severity: High
+    description: "{{nodeName}} のような誰でも公開できるパッケージレジストリでは、公開者のアカウントを乗っ取った者やリポジトリの譲渡を受けた者が、正規のパッケージの新しい版として悪性版を公開できる（Can）。取得する側は同じ名前・同じ配布元から入れているため、正規の更新と見分けがつかない。また、社内で使うパッケージと同じ名前のパッケージを公開レジストリに先に登録しておくと、取得元の指定が曖昧な環境では社内版より新しい版番号の公開版が優先して取り込まれる（dependency confusion）。一方、公開者のアカウントに多要素認証を求め、社内パッケージの名前を公開レジストリ側で予約し、取得元を名前の範囲（スコープ）ごとに社内のレジストリへ固定していれば、同名の公開パッケージは取り込まれない（Cannot）。ただし公開元が正規の公開者のまま侵害された場合は、取得側の版の固定と審査でしか防げない。blast radius は {{nodeName}} から取得するすべての依存パッケージと、それを取得する開発端末・CI・ビルド成果物。"
+    mitigation: "[Foundation] 社内パッケージの名前を公開レジストリ側でも予約し、取得元を名前の範囲ごとに社内のレジストリへ固定する。自組織が公開するパッケージの公開者アカウントには多要素認証を必須にし、公開用のトークンは短命にする。取得側は版を固定して更新を確認する。 [Enterprise] 公開レジストリへ直接接続させず、審査済みの版だけを置く社内のミラー経由で取得する。公開者・リポジトリの変更と、社内パッケージと同名の公開パッケージの出現を監視して通知する。 [Advanced] パッケージの来歴の証明（署名・ビルドの出所）を検証し、証明のない版を取り込まない。公開は信頼できる公開の仕組み（短命な認証での公開）に限り、長期のトークンを置かない。"
+    appliesTo:
+      kind: node
+      nodeType: PACKAGE_REGISTRY
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "GV.SC-07"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+
+  # ── 任意コードを実行できるコマンド許可 ──────────────────────────
+  - id: dev-agent-command-allow-broad-001
+    canonicalId: excessive-agency
+    framework: AgenticAI
+    category: "Privilege Compromise"
+    name: "任意コードを実行できるコマンド許可（npx *・Bash(*)・node/python の実行を許可している）"
+    severity: High
+    description: "{{nodeName}} が、任意のコードを実行できるコマンド（npx *、Bash(*)、node や python によるスクリプトの実行、シェルの起動を含むもの等）を確認なしで実行できる許可を持っている場合、人の承認を経ずに任意の処理を実行できる（Can）。取り込んだ文章（読み込んだファイル・Web ページ・依存パッケージの README 等）に埋め込まれた指示や、悪性の依存パッケージに誘導されたエージェントは、許可の範囲内でそのままファイルの読み書き・外部との通信・追加のインストールを行える。拒否リスト（deny）で危険なコマンドを列挙しても、書き方の違い（引数の順序・別のシェル・別のインタプリタ・スクリプトファイルを経由した実行）で迂回できるため、拒否リストだけでは対策にならない。一方、許可を用途に必要な個別のコマンドと引数に限り（許可リスト）、任意コードを実行できるコマンドは都度人が承認する設定にしていれば、誘導されても許可の外の操作はできない（Cannot）。blast radius は {{nodeName}} を動かす端末で実行できるすべての操作と、その端末・作業フォルダに置かれた資格情報。"
+    mitigation: "[Foundation] 許可は用途に必要な個別のコマンドと引数だけを列挙する許可リストにし、npx *・Bash(*)・node/python の実行・シェルの起動を包括的に許可しない。任意コードを実行できるコマンドは都度人が承認する。拒否リストは補助にとどめ、拒否だけで守る設計にしない。 [Enterprise] 許可の設定ファイルをリポジトリにレビュー付きで管理し、許可の追加を検知して通知する。許可の範囲を実行環境の側（サンドボックス・書き込み先と送信先の制限）でも強制し、設定の記述だけに頼らない。実行したコマンドを記録する。 [Advanced] 作業ごとに隔離した実行環境と、作業ごとに発行して終了とともに失効させる最小権限の資格情報を使う。許可を広げる変更は人の承認を必須にする。"
+    appliesTo:
+      kind: node
+      nodeType: AGENT
+      connection:
+        required: false
+      posture:
+        commandAllowScope: [Broad, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+
+  # ── 作業フォルダの秘密情報の外部送信 ────────────────────────────
+  # サンドボックスなし かつ 送信先の制限なし の AND（どちらか一方が有効なら発火しない）。
+  # 新 canonicalId グループ agent-workspace-secret-exfiltration。
+  - id: dev-agent-workspace-secret-exfiltration-001
+    canonicalId: agent-workspace-secret-exfiltration
+    framework: AgenticAI
+    category: "Information Disclosure"
+    name: "作業フォルダの秘密情報の外部送信（隔離も送信先の制限もない実行環境）"
+    severity: Critical
+    description: "{{nodeName}} がサンドボックスなしで動き、かつ外部への通信先を制限していない場合、作業フォルダ内の秘密情報（.env・資格情報ファイル・SSH 鍵・クラウドの認証情報）は、プロンプトインジェクションや悪性の依存パッケージに誘導されたエージェントによって読み出され、任意の宛先へ送られる（Can）。ファイルの読み出しも外部への送信も通常の開発作業（ファイルを読む・パッケージを取得する・API を呼ぶ）と同じ操作のため、正規の作業と見分けにくい。一方、サンドボックスで読める場所を作業に必要な範囲に限るか、通信先を許可リストに限るかのどちらかを強制していれば、秘密情報を読めても外へ出す経路か、そもそも読む経路のどちらかが閉じる（Cannot）。両方を備えれば、一方が破られても流出しない。blast radius は {{nodeName}} を動かす端末と作業フォルダに置かれたすべての秘密情報、およびそれらで接続できる外部サービス。"
+    mitigation: "[Foundation] エージェントをサンドボックス（読み書きできる場所を作業フォルダに限る）の中で動かし、通信先を許可リストに限る。.env などの秘密情報を作業フォルダに置かず、必要な資格情報は作業ごとに短命のものを渡す。 [Enterprise] 通信先の制限は端末やネットワークの側（プロキシ・ファイアウォール）で強制し、エージェントの設定だけに頼らない。秘密情報の読み出しと外部への送信を記録し、秘密情報を含む通信を検知して遮断する。作業フォルダに秘密情報が置かれていないかを定期的に走査する。 [Advanced] 作業ごとに使い捨ての隔離環境と最小権限の資格情報を使い、資格情報は環境の外に置いて代理で付与する。想定外の宛先への通信と秘密情報の読み出しを異常として検知し、自動で遮断する。"
+    appliesTo:
+      kind: node
+      nodeType: AGENT
+      connection:
+        required: false
+      posture:
+        agentSandbox: [None, Unknown]
+        agentEgress: [Unrestricted, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"

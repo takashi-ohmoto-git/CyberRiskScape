@@ -126,6 +126,8 @@ import {
   Printer,
   TextSearch,
   ShieldAlert,
+  Package,
+  Boxes,
   type LucideIcon,
 } from 'lucide-react';
 import { cloneElement, createElement, type ReactElement } from 'react';
@@ -264,6 +266,8 @@ const BUILTIN_ICONS: Record<string, LucideIcon> = {
   'shield-alert': ShieldAlert,
   'book-a': BookA,
   'book-open-text': BookOpenText,
+  package: Package,
+  boxes: Boxes,
 };
 
 const FALLBACK_ICON: LucideIcon = HelpCircle;

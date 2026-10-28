@@ -1,0 +1,49 @@
+# 開発サプライチェーン拡張コンポーネントライブラリ。
+#
+# コーディングエージェントの作業ディレクトリ（リポジトリ）から脅威モデルを作る機能（import-repo）の
+# 第 1 段として、依存パッケージとその取得元を図に描くための 2 型：
+#   - PACKAGE_DEPENDENCIES: 1 つのマニフェスト（package.json / requirements.txt 等）が持つ依存パッケージ全体
+#   - PACKAGE_REGISTRY: 依存パッケージの取得元となる公開／社内のレジストリ（npm・PyPI 等）
+#
+# 個々のパッケージは型を増やさず、ノードのインベントリ（DiagramNode.inventory）に記録する。
+# canContain は「その型が保管するもの」だけに使う方針のため付けない。
+# 型名は特定製品に寄せない汎用名とする（製品名はノードのラベルで付ける）。
+#
+# 別ライブラリ（builtin.yaml と分離）にし、library メタに `builtin: true` を付けないことで、
+# LeftSidebar のライブラリトグルで無効化できる（api-platform.yaml と同じ方針）。
+#
+# ライセンス: Apache-2.0（同梱）。外部フレームワークからの引用はない。
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+library:
+  id: dev-supply-chain
+  title: "Dev Supply Chain Components"
+  version: "1.0"
+  license: "Apache-2.0"
+  description: "開発サプライチェーン型（依存パッケージ / パッケージレジストリ）。"
+
+categories:
+  - id: SERVICES
+    label: "API & DevOps"
+    order: 31
+
+components:
+  - id: PACKAGE_DEPENDENCIES
+    label: "依存パッケージ"
+    category: SERVICES
+    icon: { kind: builtin, name: "package" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "1 つのマニフェスト（package.json、requirements.txt 等）が持つ依存パッケージ全体。ビルド・実行時に取得して組み込むライブラリはこの型で表し、個々のパッケージはインベントリに記録する。自社ページに組み込む第三者のコード（外部 JavaScript・プラグイン）は THIRD_PARTY_EXTENSION、ネットワーク越しに利用する外部サービスは SaaS を使う。"
+    posture: [dependency]
+
+  - id: PACKAGE_REGISTRY
+    label: "パッケージレジストリ"
+    category: SERVICES
+    icon: { kind: builtin, name: "boxes" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "npm レジストリ・PyPI など、依存パッケージを取得する公開／社内のレジストリ。取得元の信頼性（公開か社内か、ミラーか）を表す。取得したライブラリ自体は PACKAGE_DEPENDENCIES、利用する外部サービスは SaaS を使う。"

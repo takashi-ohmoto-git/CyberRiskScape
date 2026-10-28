@@ -1,0 +1,18 @@
+# English overlay for `data/component-library/dev-supply-chain.yaml`.
+#
+# The Japanese file is the source of truth: only `label` and `description` are
+# translated here, keyed by component type id.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+components:
+  PACKAGE_DEPENDENCIES:
+    label: "Package dependencies"
+    description: "All dependency packages declared by one manifest (package.json, requirements.txt, and similar). Use this type for libraries that are fetched and bundled at build or run time, and record each package in the inventory. Third-party code embedded in your own pages (external JavaScript, plugins) is THIRD_PARTY_EXTENSION; external services used over the network are SaaS."
+
+  PACKAGE_REGISTRY:
+    label: "Package registry"
+    description: "A public or internal registry that serves dependency packages, such as the npm registry or PyPI. It represents how trustworthy the source is (public, internal, or mirror). The fetched libraries themselves are PACKAGE_DEPENDENCIES; external services you use are SaaS."
