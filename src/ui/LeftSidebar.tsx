@@ -36,6 +36,7 @@ import { saveProject } from '../features/persistence/repository';
 import { buildThreatReport, toCsv, toJson, toDCRHThreatModelMarkdown } from '../features/export/threatReport';
 import { triggerDownload } from '../features/export/download';
 import { toPostmanCollection } from '../features/postman-export/toPostmanCollection';
+import { buildSbomForAi } from '../features/sbom-ai/buildSbomForAi';
 import { buildTestPlan } from '../features/test-plan/buildTestPlan';
 import { testPlanToMarkdown } from '../features/test-plan/testPlanOutput';
 import { buildRoe } from '../features/roe-export/buildRoe';
@@ -90,6 +91,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
   const setActiveLayer = useDiagramStore((s) => s.setActiveLayer);
   const layers = useDiagramStore((s) => s.layers);
   const [openSections, setOpenSections] = useState<Set<string>>(new Set([PROJECT_SECTION_KEY]));
+  const [sbomIncludeThreats, setSbomIncludeThreats] = useState(false);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   const handleSaveNow = async () => {
@@ -117,7 +119,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
     }
   };
 
-  const handleExportReport = (format: 'csv' | 'json' | 'DCRH-threat-model' | 'postman' | 'test-plan' | 'investigation-plan' | 'roe' | 'attack-navigator') => {
+  const handleExportReport = (format: 'csv' | 'json' | 'DCRH-threat-model' | 'postman' | 'test-plan' | 'investigation-plan' | 'roe' | 'attack-navigator' | 'sbom-ai') => {
     const s = useDiagramStore.getState();
     const input = {
       threats,
@@ -136,6 +138,18 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
     } else if (format === 'postman') {
       const { collection } = toPostmanCollection(input);
       triggerDownload(`${base}.postman_collection.json`, JSON.stringify(collection, null, 2), 'application/json');
+    } else if (format === 'sbom-ai') {
+      const bom = buildSbomForAi(input, {
+        includeThreats: sbomIncludeThreats,
+        timestamp: new Date().toISOString(),
+        serialNumber: `urn:uuid:${crypto.randomUUID()}`,
+        locale,
+      });
+      triggerDownload(
+        `${base.replace(/^threat-report/, 'sbom-ai')}.cdx.json`,
+        JSON.stringify(bom, null, 2),
+        'application/json',
+      );
     } else if (format === 'test-plan') {
       triggerDownload(
         `${base.replace(/^threat-report/, 'test-plan')}.md`,
@@ -390,6 +404,23 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                     <Download size={12} className="text-emerald-400 shrink-0" />
                     {t('project.sidebar.exportNavigator')}
                   </button>
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => handleExportReport('sbom-ai')}
+                      className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
+                    >
+                      <Download size={12} className="text-emerald-400 shrink-0" />
+                      {t('project.sidebar.exportSbomAi')}
+                    </button>
+                    <label className="flex items-center gap-2 px-2 text-xs text-slate-300 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={sbomIncludeThreats}
+                        onChange={(e) => setSbomIncludeThreats(e.target.checked)}
+                      />
+                      {t('project.sidebar.exportSbomAiThreats')}
+                    </label>
+                  </div>
                   <button
                     onClick={openChecklist}
                     className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"

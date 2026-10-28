@@ -27,6 +27,8 @@ export const jaProject = {
   'project.sidebar.exportTestPlan': 'ペネトレーションテスト計画書（Markdown）',
   'project.sidebar.exportRoe': '交戦規定（RoE）／スコープ宣言（Markdown）',
   'project.sidebar.exportNavigator': 'ATT&CK Navigator レイヤー（JSON）',
+  'project.sidebar.exportSbomAi': 'SBOM for AI（CycloneDX 1.7 JSON）',
+  'project.sidebar.exportSbomAiThreats': '未対策の脅威も含める（既定は実装済みの対策のみ）',
   'navigator.layerName': '{product}: {system}',
   'navigator.description.main':
     '{system} の脅威モデルから {product} が生成（{date}）。検出脅威の参照にある ATT&CK Enterprise の technique をスコア付けしたもの。CTEM / BAS / SOC ツールでのカバレッジ可視化に取り込めます。',

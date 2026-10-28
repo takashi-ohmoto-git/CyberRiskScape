@@ -27,6 +27,8 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'project.sidebar.exportTestPlan': 'Penetration test plan (Markdown)',
   'project.sidebar.exportRoe': 'Rules of engagement (RoE) / scope declaration (Markdown)',
   'project.sidebar.exportNavigator': 'ATT&CK Navigator layer (JSON)',
+  'project.sidebar.exportSbomAi': 'SBOM for AI (CycloneDX 1.7 JSON)',
+  'project.sidebar.exportSbomAiThreats': 'Include unmitigated threats (default: implemented controls only)',
   'navigator.layerName': '{product}: {system}',
   'navigator.description.main':
     'Generated from the threat model of {system} by {product} ({date}). Scores the ATT&CK Enterprise techniques referenced by the detected threats. Import it into CTEM / BAS / SOC tools to visualize coverage.',

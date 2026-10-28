@@ -1,6 +1,7 @@
 import { readFileSync, statSync, writeFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import { basename } from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { parseArgs } from 'node:util';
 import {
   analyzeProject,
@@ -50,6 +51,7 @@ import { shodanToLayer } from '../features/shodan-import/shodanToLayer';
 import { scopesentryRecordsToLayer, scopesentryToLayer, type ScopesentryImportResult } from '../features/scopesentry-import/scopesentryToLayer';
 import { apiKeyFromEnv, fetchViaMcp, MAX_RECORDS } from '../features/scopesentry-import/fetchViaMcp';
 import { toPostmanCollection } from '../features/postman-export/toPostmanCollection';
+import { buildSbomForAi } from '../features/sbom-ai/buildSbomForAi';
 import { VarsFileSchema, applyVariableValues, filterByBaseUrl } from '../features/postman-export/dastOptions';
 import { buildTestPlan } from '../features/test-plan/buildTestPlan';
 import { parseSbomText } from '../features/sbom-crypto/parseCycloneDx';
@@ -115,6 +117,7 @@ const USAGE = `使い方:
   import-scopesentry <export.json> [options]
   import-scopesentry --api <base-url> [options]
   export-postman <project.json> [options]
+  export-sbom-ai <project.json> [options]
   export-test-plan <project.json> [options]
   export-roe <project.json> [options]
   export-attack-navigator <project.json> [options]
@@ -190,6 +193,13 @@ export-postman のオプション（検出脅威を確かめる確認リクエ�
   --out <file>                                  出力先ファイル（既定: 標準出力）
   --vars <file.json>                            変数の値（{"C7_host": "..."} 形式）を埋める。token_ を埋めると出力に認証情報が入る
   --base-url <url>                              この URL 配下へのリクエストだけ残す（DAST の base URL 用）。未使用の変数も除く
+
+export-sbom-ai のオプション（脅威モデルから SBOM for AI（G7 Minimum Elements）を CycloneDX 1.7 JSON で出力。図に無い要素は unknown と記録する。env インベントリは出さない）:
+  --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある最初のレイヤー）
+  --include-threats                             未抑制の脅威も vulnerabilities に載せる（既定: 載せない。実装済みの対策だけ declarations に出す）
+  --author <name>                               metadata.authors に載せる作成者名（既定: 載せない）
+  --locale <ja|en>                              表示言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
 
 export-test-plan のオプション（脅威モデルからペネトレーションテスト計画書（ベンダー中立）を出力）:
   --format <md|json>                            出力形式（既定: md）
@@ -346,6 +356,8 @@ function parseCliArgs() {
       sbom: { type: 'string' },
       node: { type: 'string' },
       'base-url': { type: 'string' },
+      author: { type: 'string' },
+      'include-threats': { type: 'boolean' },
       api: { type: 'string' },
       project: { type: 'string' },
       search: { type: 'string' },
@@ -812,6 +824,45 @@ ${USAGE}`);
 }
 
 /**
+ * `export-sbom-ai`：脅威モデルから SBOM for AI を CycloneDX 1.7 JSON で出力する。
+ * 既定は実装済みの対策だけ。`--include-threats` で未抑制の脅威も vulnerabilities に載せる。
+ */
+function runExportSbomAi(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  const layer = parseEnum(values.layer, LAYER_KEYS, 'layer');
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+
+  let results: LayerAnalysisResult[];
+  try {
+    results = analyzeProject(readJsonFile(file), { layer, locale });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  const target = results[0];
+  if (!target) fail('ノードのあるレイヤーがありません。');
+
+  const bom = buildSbomForAi(target.input, {
+    includeThreats: values['include-threats'] ?? false,
+    author: values.author,
+    timestamp: new Date().toISOString(),
+    serialNumber: `urn:uuid:${randomUUID()}`,
+    locale,
+  });
+  writeOutput(JSON.stringify(bom, null, 2), values.out);
+  const count = (k: string) => (Array.isArray(bom[k]) ? (bom[k] as unknown[]).length : 0);
+  process.stderr.write(
+    `SBOM for AI（CycloneDX 1.7）を出力しました（${target.layer}・components ${count('components')} 件・services ${count('services')} 件・vulnerabilities ${count('vulnerabilities')} 件）
+`,
+  );
+}
+
+/**
  * `export-investigation-plan`：脅威モデルから、侵害の疑いがあるときの調査計画（対象ノード・調査観点・
  * 調べられない恐れ）を Markdown または JSON で出力する。
  */
@@ -1214,6 +1265,8 @@ function main(): void {
     runChecklist(values, positionals);
   } else if (command === 'export-postman') {
     runExportPostman(values, positionals);
+  } else if (command === 'export-sbom-ai') {
+    runExportSbomAi(values, positionals);
   } else if (command === 'export-test-plan') {
     runExportTestPlan(values, positionals);
   } else if (command === 'export-roe') {
