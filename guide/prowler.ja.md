@@ -132,6 +132,7 @@ node dist-cli/main.js import-prowler src/features/prowler-import/__fixtures__/sa
 - Prowler の検査結果を図のノードに載せた結果。入力済みの値は上書きしない（食い違いは下に出す）。
 - 検査結果 16 件（検査 12 種を対応表で処理 / 対応表に無い 1 種 / MANUAL 1 件）（読めなかった 0 件・ミュート済み 1 件は除外）
 - 適用 8 / 同じ値 0 / 食い違い 1 / 適用できない 1 / 対応するノードが無い資源 2
+- 図の脅威との突き合わせは、結びついたノード自身の脅威とだけ行う（ノードに結びつかない資源の FAIL 2 件は突き合わせていない）
 
 ## 適用した値（未入力だった項目）
 
@@ -152,6 +153,10 @@ node dist-cli/main.js import-prowler src/features/prowler-import/__fixtures__/sa
 
 - C4 社内ツール（TOOL）の encryptionAtRest: Prowler CustomerManagedKey ← m1（bedrock_custom_model_encrypted_with_cmk=CustomerManagedKey）
 
+## 鍵の種類を確認してください（Prowler では判別できない。CMK なら顧客管理の鍵に変更）
+
+- C3 文書ストレージ の encryptionAtRest = ProviderManagedKey ← docs-bucket（s3_bucket_default_encryption）
+
 ## 対応するノードが無い資源
 
 - vol-0aaa（ec2 / AwsEc2Volume / ap-northeast-1）: タグ crs-node も --map の対応も無い — 検査 ec2_ebs_volume_encryption
@@ -159,12 +164,10 @@ node dist-cli/main.js import-prowler src/features/prowler-import/__fixtures__/sa
 
 ## 図の脅威と突き合わせ（FAIL の検査）
 
-### 確認された（図の脅威に Prowler の FAIL の裏付けがある）
+### 確認された（結びついたノードの脅威に Prowler の FAIL の裏付けがある）
 
 - **data-at-rest-unencrypted** — 図の脅威: [Medium] 保管時に暗号化していない（媒体・バックアップ・スナップショットの持ち出しで読まれる）
   - chat-db-2（C2 会話ログDB） — rds_instance_storage_encrypted
-  - vol-0aaa — ec2_ebs_volume_encryption
-  - ghost-bucket — s3_bucket_default_encryption
 - **log-not-collected** — 図の脅威: [Medium] ログを取得していない（侵害の検知・調査ができない）
   - docs-bucket（C3 文書ストレージ） — s3_bucket_server_access_logging_enabled
 - **storage-public-access-misconfiguration** — 図の脅威: [High] ストレージの公開設定の誤りによるデータ露出
@@ -176,6 +179,12 @@ node dist-cli/main.js import-prowler src/features/prowler-import/__fixtures__/sa
 
 - **nhi-long-lived-secret**
   - batch（C2 会話ログDB） — iam_user_accesskey_unused
+
+### ノードに結びつかないため突き合わせていない（FAIL）
+
+- **data-at-rest-unencrypted**
+  - vol-0aaa — ec2_ebs_volume_encryption
+  - ghost-bucket — s3_bucket_default_encryption
 
 ### 対応づけできない（FAIL だが脅威の対応が無い検査）
 
@@ -190,12 +199,14 @@ node dist-cli/main.js import-prowler src/features/prowler-import/__fixtures__/sa
 | 食い違い | すでに入力してある値と Prowler の値が違う。**適用していない**ので、どちらが実態かを確かめて直す |
 | 適用できない | ノードの型がその項目を持たない（例：社内ツール型には「保管時の暗号化」が無い）。適用せず報告だけ |
 | 対応するノードが無い資源 | タグも `--map` も無い、またはタグが指すノードが図に無い。**図に描き足す・タグを直す**手がかり |
-| 確認された | FAIL の検査に対応する脅威が、図でも検出されている |
-| 図に無い候補 | Prowler は FAIL だが、図からはその脅威が検出されていない（そのノードに属性・線が足りない可能性） |
+| 鍵の種類を確認してください | 鍵の種類を判別できない検査で「事業者管理の鍵」を入れた項目。**CMK を使っているなら顧客管理の鍵に直す** |
+| 確認された | FAIL の検査に対応する脅威が、結びついたノード自身の脅威として図でも検出されている |
+| 図に無い候補 | Prowler は FAIL だが、結びついたノードでその脅威が検出されていない（そのノードに属性・線が足りない可能性） |
+| 結びつかないため突き合わせていない | ノードに結びつかない資源の FAIL。確認された・図に無い候補のどちらにも数えない。**図に描き足す・タグを直す**と突き合わせられる |
 | 対応づけできない | FAIL だが、対応表に脅威の対応が無い検査 |
 
-> 「確認された」の欄で、ノードに結びつかない資源（上の例の `vol-0aaa`・`ghost-bucket`）は、**図のどこかに同じ種類の脅威があれば**確認扱いになります。
-> どのノードの脅威かまでは見ていないので、「対応するノードが無い資源」とあわせて読んでください。
+> 突き合わせは、**資源が結びついたノード自身の脅威**とだけ行います（そのノードにつながる線の脅威は見ません）。
+> ノードに結びつかない資源（上の例の `vol-0aaa`・`ghost-bucket`）の FAIL は、図のどこかに同じ種類の脅威があっても確認扱いにせず、「突き合わせていない」に件数と一覧を出します。
 
 ### 3.6 埋めた図を画面で見る
 
@@ -217,6 +228,8 @@ node dist-cli/main.js import-prowler src/features/prowler-import/__fixtures__/sa
 - **棚卸し（アカウント棚卸し）は FAIL のときだけ「不定期」。** 未使用・ローテーションの検査に通っても、棚卸しの運用が「定期的に実施」とは言えないため、PASS では何も入れません。
 - **値を入れない結果もあります。** 顧客管理鍵（CMK）の検査は、PASS のときだけ「自組織管理の鍵」を入れます。FAIL は既定の暗号化が有効かどうかを示さないため、値を入れません。
   KMS の暗号化の検査も、AWS 管理鍵と CMK を区別しないので、PASS でも「事業者管理の鍵」までです。DynamoDB は既定で暗号化済みのため、FAIL を「なし」にしません。
+- **「事業者管理の鍵」は鍵の種類が未確認です。** 既定の暗号化・KMS の検査は、CMK でも PASS になるため、値は入れますが報告の「鍵の種類を確認してください」に出します。
+  ノードに入力済みの値が「自組織管理の鍵」なら、食い違いにせず上書きもしません（「なし」なら食い違い）。1 つの資源で CMK を判別できる検査（Bedrock の 3 件）が PASS なら、そちらの「自組織管理の鍵」を優先します。
 - **ミュート済みは除外。** Prowler でミュートした（`Suppressed`）検査結果は読みません。**MANUAL**（人の確認が要る検査）は件数を数えるだけで、値にも突き合わせにも使いません。
 - 対応表に載っていない検査は、値にも突き合わせにも使いません。FAIL のものは「対応づけできない」に出ます。
 
@@ -240,9 +253,9 @@ node dist-cli/main.js import-prowler src/features/prowler-import/__fixtures__/sa
 
 | 分類 | 検査 ID | 入る属性（結果ごとの値） | 突き合わせる脅威（canonicalId） |
 |---|---|---|---|
-| 保管時の暗号化（既定） | `s3_bucket_default_encryption`<br>`rds_instance_storage_encrypted`<br>`rds_cluster_storage_encrypted`<br>`rds_snapshots_encrypted`<br>`ec2_ebs_volume_encryption`<br>`ec2_ebs_snapshots_encrypted`<br>`efs_encryption_at_rest_enabled`<br>`redshift_cluster_encrypted_at_rest`<br>`opensearch_service_domains_encryption_at_rest_enabled` | 保管時の暗号化：PASS → 事業者管理の鍵 / FAIL → なし | `data-at-rest-unencrypted` |
-| KMS による暗号化（鍵の種別は区別しない） | `s3_bucket_kms_encryption`<br>`dynamodb_tables_kms_cmk_encryption_enabled` | 保管時の暗号化：PASS → 事業者管理の鍵 | — |
-| Bedrock の顧客管理鍵 | `bedrock_custom_model_encrypted_with_cmk`<br>`bedrock_knowledge_base_encrypted_with_cmk`<br>`bedrock_prompt_encrypted_with_cmk` | 保管時の暗号化：PASS → 自組織管理の鍵 | — |
+| 保管時の暗号化（既定。鍵の種類は未確認） | `s3_bucket_default_encryption`<br>`rds_instance_storage_encrypted`<br>`rds_cluster_storage_encrypted`<br>`rds_snapshots_encrypted`<br>`ec2_ebs_volume_encryption`<br>`ec2_ebs_snapshots_encrypted`<br>`efs_encryption_at_rest_enabled`<br>`redshift_cluster_encrypted_at_rest`<br>`opensearch_service_domains_encryption_at_rest_enabled` | 保管時の暗号化：PASS → 事業者管理の鍵 / FAIL → なし | `data-at-rest-unencrypted` |
+| KMS による暗号化（鍵の種別は区別しない。種類は未確認） | `s3_bucket_kms_encryption`<br>`dynamodb_tables_kms_cmk_encryption_enabled` | 保管時の暗号化：PASS → 事業者管理の鍵 | — |
+| Bedrock の顧客管理鍵（CMK を判別できる） | `bedrock_custom_model_encrypted_with_cmk`<br>`bedrock_knowledge_base_encrypted_with_cmk`<br>`bedrock_prompt_encrypted_with_cmk` | 保管時の暗号化：PASS → 自組織管理の鍵 | — |
 | ログの取得 | `s3_bucket_server_access_logging_enabled`<br>`cloudtrail_multi_region_enabled`<br>`bedrock_model_invocation_logging_enabled`<br>`rds_instance_integration_cloudwatch_logs`<br>`rds_cluster_integration_cloudwatch_logs`<br>`redshift_cluster_audit_logging`<br>`opensearch_service_domains_audit_logging_enabled` | ログの取得：PASS → 取得している / FAIL → 取得していない | `log-not-collected` |
 | Bedrock の入出力本文のログ | `bedrock_model_invocation_logging_text_data_enabled` | — | `log-not-collected` |
 | API・ロードバランサのアクセスログ | `apigateway_restapi_logging_enabled`<br>`apigatewayv2_api_access_logging_enabled`<br>`elb_logging_enabled`<br>`elbv2_logging_enabled` | アクセスログ（攻撃面）：PASS → 有り / FAIL → 無し | `web-missing-access-log` |

@@ -69,6 +69,21 @@ describe('prowler map (prowler.yaml)', () => {
     expect(m?.set).toEqual({ field: 'logRetention', pass: 'OneYearOrMore' });
   });
 
+  it('keyTypeUnverified は暗号化の PASS の ProviderManagedKey にだけ付き、CMK の検査には付かない', () => {
+    const flagged = BUNDLED_PROWLER_MAP.filter((m) => m.set?.keyTypeUnverified);
+    expect(flagged.length).toBeGreaterThan(0);
+    for (const m of flagged) expect(m.set).toMatchObject({ field: 'encryptionAtRest', pass: 'ProviderManagedKey' });
+    for (const m of BUNDLED_PROWLER_MAP) {
+      if (m.set?.pass === 'CustomerManagedKey') expect(m.set.keyTypeUnverified).toBeUndefined();
+    }
+    expect(findProwlerMapping(BUNDLED_PROWLER_MAP, 's3_bucket_kms_encryption')?.set?.keyTypeUnverified).toBe(true);
+    expect(() =>
+      loadProwlerMap(
+        'schemaVersion: 1\nmappings:\n  - checks: [a]\n    set: { field: logCollection, pass: Collected, keyTypeUnverified: true }\n',
+      ),
+    ).toThrow(/keyTypeUnverified/);
+  });
+
   it('不正な対応表はエラー', () => {
     const base = (set: string, extra = '') =>
       `schemaVersion: 1\nmappings:\n  - checks: [a]\n    set: ${set}\n${extra}`;

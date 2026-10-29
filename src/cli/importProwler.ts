@@ -26,18 +26,15 @@ export interface ImportProwlerOutput {
   skipped: ParsedProwler['skipped'];
 }
 
-/** 全レイヤーの検出脅威を、突き合わせ用に（対象ノード id つきで）まとめる。 */
+/** 全レイヤーのノード自身の検出脅威を、突き合わせ用に（対象ノード id つきで）まとめる。 */
 export function collectThreatRefs(results: readonly LayerAnalysisResult[]): ThreatRef[] {
   const out: ThreatRef[] = [];
   for (const r of results) {
     for (const t of r.threats) {
       if (!t.canonicalId) continue;
-      let nodeIds: string[] = [];
-      if (t.subject?.kind === 'node') nodeIds = [t.subject.id];
-      else if (t.subject?.kind === 'edge') {
-        const e = r.input.edges.find((x) => x.id === t.subject?.id);
-        if (e) nodeIds = [e.source, e.target];
-      }
+      // 突き合わせはノード自身の脅威だけ（エッジの脅威は端点のノードに結びつけない）
+      if (t.subject?.kind !== 'node') continue;
+      const nodeIds = [t.subject.id];
       out.push({ canonicalId: t.canonicalId, name: t.name ?? t.category, severity: effectiveSeverity(t), nodeIds });
     }
   }
@@ -107,6 +104,7 @@ export function prowlerReportToMarkdown(out: ImportProwlerOutput): string {
     `- 検査結果 ${s.findings} 件（検査 ${s.mappedChecks} 種を対応表で処理 / 対応表に無い ${s.unknownChecks} 種 / MANUAL ${s.manual} 件）` +
       `（読めなかった ${out.skipped.invalid} 件・ミュート済み ${out.skipped.muted} 件は除外）`,
     `- 適用 ${s.applied} / 同じ値 ${s.unchanged} / 食い違い ${s.conflicts} / 適用できない ${s.notApplicable} / 対応するノードが無い資源 ${s.unmatchedResources}`,
+    `- 図の脅威との突き合わせは、結びついたノード自身の脅威とだけ行う（ノードに結びつかない資源の FAIL ${s.unlinkedFails} 件は突き合わせていない）`,
     '',
     '## 適用した値（未入力だった項目）',
     '',
@@ -126,6 +124,22 @@ export function prowlerReportToMarkdown(out: ImportProwlerOutput): string {
     lines.push(`- ${n.node}（${n.type}）の ${n.field}: Prowler ${show(n.prowler)} ← ${basisText(n.basis)}`);
   }
 
+  const keyTypeItems = r.applied.filter((a) => a.keyTypeUnverified);
+  lines.push('', '## 鍵の種類を確認してください（Prowler では判別できない。CMK なら顧客管理の鍵に変更）', '');
+  if (keyTypeItems.length === 0) lines.push('なし');
+  for (const a of keyTypeItems) {
+    const items = a.basis
+      .filter((b) => b.keyTypeUnverified)
+      .map(
+        (b) =>
+          `${b.resource}（${b.checks
+            .filter((c) => c.value === 'ProviderManagedKey')
+            .map((c) => c.checkId)
+            .join('、')}）`,
+      );
+    lines.push(`- ${a.node} の ${a.field} = ${show(a.value)} ← ${items.join(' / ')}`);
+  }
+
   if (r.unchanged.length > 0) {
     lines.push('', '## 同じ値（変更なし）', '');
     for (const u of r.unchanged) lines.push(`- ${u.node} の ${u.field} = ${show(u.value)}`);
@@ -140,7 +154,7 @@ export function prowlerReportToMarkdown(out: ImportProwlerOutput): string {
     );
   }
 
-  lines.push('', '## 図の脅威と突き合わせ（FAIL の検査）', '', '### 確認された（図の脅威に Prowler の FAIL の裏付けがある）', '');
+  lines.push('', '## 図の脅威と突き合わせ（FAIL の検査）', '', '### 確認された（結びついたノードの脅威に Prowler の FAIL の裏付けがある）', '');
   if (r.confirmed.length === 0) lines.push('なし');
   for (const c of r.confirmed) {
     const names = [...new Set(c.threats.map((t) => `[${t.severity}] ${t.name}`))];
@@ -153,6 +167,13 @@ export function prowlerReportToMarkdown(out: ImportProwlerOutput): string {
   for (const n of r.notInModel) {
     lines.push(`- **${n.canonicalId}**`);
     for (const h of n.hits) lines.push(`  - ${h.resource}${h.node ? `（${h.node}）` : ''} — ${h.checkId}`);
+  }
+
+  lines.push('', '### ノードに結びつかないため突き合わせていない（FAIL）', '');
+  if (r.unlinkedFails.length === 0) lines.push('なし');
+  for (const n of r.unlinkedFails) {
+    lines.push(`- **${n.canonicalId}**`);
+    for (const h of n.hits) lines.push(`  - ${h.resource} — ${h.checkId}`);
   }
 
   lines.push('', '### 対応づけできない（FAIL だが脅威の対応が無い検査）', '');

@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { importProwler, prowlerReportToJson, prowlerReportToMarkdown } from './importProwler';
-import { analyzeProject } from './analyze';
+import { collectThreatRefs, importProwler, prowlerReportToJson, prowlerReportToMarkdown } from './importProwler';
+import { analyzeProject, analyzeResolvedProject, resolveProject } from './analyze';
 import { parseProwlerOcsf } from '../features/prowler-import/parseProwlerOcsf';
+import { applyProwler } from '../features/prowler-import/applyProwler';
+import { BUNDLED_PROWLER_MAP } from '../features/prowler-import/prowlerMap';
 import { PersistedProjectSchema } from '../features/persistence/schema';
 
 const read = (name: string) =>
@@ -87,6 +89,69 @@ describe('importProwler', () => {
     expect(JSON.stringify(out.result.confirmed)).not.toContain('elbv2_logging_enabled');
   });
 
+  it('突き合わせはノード自身の脅威とだけ行い、ノードに結びつかない FAIL は確認済み・図に無いに数えない', () => {
+    const out = run();
+    // エッジの脅威は突き合わせ対象に渡さない（nodeIds はノード 1 件）
+    const refs = collectThreatRefs(analyzeResolvedProject(resolveProject(project)));
+    expect(refs.length).toBeGreaterThan(0);
+    expect(refs.every((t) => t.nodeIds.length === 1)).toBe(true);
+    // 結びつかない資源（vol-0aaa・ghost-bucket）の FAIL は unlinkedFails にだけ出る
+    const unlinked = out.result.unlinkedFails.find((u) => u.canonicalId === 'data-at-rest-unencrypted');
+    expect(unlinked?.hits.map((h) => h.resource).sort()).toEqual(['ghost-bucket', 'vol-0aaa']);
+    expect(out.result.summary.unlinkedFails).toBe(
+      out.result.unlinkedFails.reduce((n, u) => n + u.hits.length, 0),
+    );
+    const bound = JSON.stringify([out.result.confirmed, out.result.notInModel]);
+    expect(bound).not.toContain('vol-0aaa');
+    expect(bound).not.toContain('ghost-bucket');
+    // 結びついたノードの FAIL（n-db の rds 暗号化）は確認済みに入る
+    expect(out.result.confirmed.map((c) => c.canonicalId)).toContain('data-at-rest-unencrypted');
+    expect(prowlerReportToMarkdown(out)).toContain('### ノードに結びつかないため突き合わせていない');
+  });
+
+  it('鍵の種類が未確認の ProviderManagedKey は適用して確認を促し、入力済みの CMK とは食い違いにしない', () => {
+    const out = run();
+    const a = out.result.applied.find((x) => x.nodeId === 'n-bucket' && x.field === 'encryptionAtRest');
+    expect(a).toMatchObject({ value: 'ProviderManagedKey', keyTypeUnverified: true });
+    // 最悪の値が None（FAIL）なら確認の対象にしない
+    const db = out.result.applied.find((x) => x.nodeId === 'n-db' && x.field === 'encryptionAtRest');
+    expect(db?.keyTypeUnverified).toBeUndefined();
+    const md = prowlerReportToMarkdown(out);
+    expect(md).toContain('## 鍵の種類を確認してください');
+    expect(md).toMatch(/鍵の種類を確認してください[\s\S]*文書ストレージ の encryptionAtRest = ProviderManagedKey/);
+
+    // 入力済みが CMK → 食い違いにせず同じ値の扱い（上書きもしない）
+    const pre = structuredClone(project);
+    pre.layers.L1.nodes[2].posture = { encryptionAtRest: 'CustomerManagedKey' };
+    const out2 = run(nodeMap, pre);
+    expect(out2.result.conflicts.some((c) => c.nodeId === 'n-bucket')).toBe(false);
+    expect(out2.result.unchanged.some((u) => u.nodeId === 'n-bucket' && u.value === 'CustomerManagedKey')).toBe(true);
+    expect(nodeOf(out2.project, 'n-bucket')?.posture?.encryptionAtRest).toBe('CustomerManagedKey');
+
+    // 入力済みが None → 従来どおり食い違い
+    const pre3 = structuredClone(project);
+    pre3.layers.L1.nodes[2].posture = { encryptionAtRest: 'None' };
+    expect(run(nodeMap, pre3).result.conflicts.some((c) => c.nodeId === 'n-bucket')).toBe(true);
+  });
+
+  it('資源内で CMK を判別できる検査が PASS なら CustomerManagedKey が優先され、確認の対象にならない', () => {
+    const f = (checkId: string) => ({
+      checkId,
+      status: 'PASS' as const,
+      resources: [{ uid: 'arn:x', name: 'x', nodeTag: 'n-bucket' }],
+      categories: [],
+    });
+    const nodes = [{ id: 'n-bucket', layer: 'L1' as const, type: 'STORAGE' as const }];
+    const r = applyProwler({
+      nodes,
+      findings: [f('s3_bucket_default_encryption'), f('bedrock_custom_model_encrypted_with_cmk')],
+      map: BUNDLED_PROWLER_MAP,
+      threats: [],
+    });
+    expect(r.applied[0]).toMatchObject({ value: 'CustomerManagedKey' });
+    expect(r.applied[0].keyTypeUnverified).toBeUndefined();
+  });
+
   it('出力のプロジェクトはスキーマに通り、analyzeProject で解析できる', () => {
     const out = run();
     expect(PersistedProjectSchema.safeParse(out.project).success).toBe(true);
@@ -139,7 +204,7 @@ describe('importProwler', () => {
 
   it('報告 md に主要な節が出る', () => {
     const md = prowlerReportToMarkdown(run());
-    for (const h of ['## 適用した値', '## 食い違い', '## 適用できない', '## 対応するノードが無い資源', '### 確認された']) {
+    for (const h of ['## 適用した値', '## 食い違い', '## 適用できない', '## 対応するノードが無い資源', '## 鍵の種類を確認してください', '### 確認された']) {
       expect(md).toContain(h);
     }
   });

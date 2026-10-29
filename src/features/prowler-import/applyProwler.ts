@@ -24,7 +24,9 @@ import {
  *   値の決定  : 1 つの資源の中では検査どうしで最も良い値、ノードでは資源どうしで最も悪い値（順序は prowlerMap.ts）
  *   上書きなし : ノードに既に値があり Prowler の値と違えば適用せず「食い違い」。未入力のときだけ埋める
  *   適用できない: ノードの型が持たない項目は適用せず報告
- *   突き合わせ : FAIL の検査の canonicalId を、検出済みの脅威と照合する
+ *   突き合わせ : FAIL の検査の canonicalId を、結びついたノード自身の脅威とだけ照合する（エッジの脅威は対象外）。
+ *                ノードに結びつかない資源の FAIL は照合せず「突き合わせていない」として別に出す
+ *   鍵の種類   : 鍵の種類を判別できない検査の ProviderManagedKey は keyTypeUnverified を付けて報告する
  */
 
 /** 取り込み対象のノード 1 件分（プロジェクトの全レイヤーから集める）。 */
@@ -43,7 +45,7 @@ export interface ThreatRef {
   canonicalId: string;
   name: string;
   severity: string;
-  /** 脅威の対象になっているノード id（エッジの脅威は両端）。 */
+  /** 脅威の対象になっているノード id（ノード自身の脅威のみ。エッジの脅威は渡さない）。 */
   nodeIds: string[];
 }
 
@@ -63,6 +65,8 @@ export interface BasisEntry {
   checks: { checkId: string; value: FieldValue }[];
   /** その資源の値（検査どうしで最も良い値）。 */
   value: FieldValue;
+  /** 値が鍵の種類を判別できない検査だけで決まった ProviderManagedKey（CMK の可能性がある）。 */
+  keyTypeUnverified?: boolean;
 }
 
 interface FieldChange {
@@ -75,6 +79,8 @@ interface FieldChange {
 
 export interface AppliedValue extends FieldChange {
   value: FieldValue;
+  /** 値が鍵の種類を判別できない ProviderManagedKey（利用者に確認を促す）。 */
+  keyTypeUnverified?: boolean;
 }
 export interface UnchangedValue extends FieldChange {
   value: FieldValue;
@@ -114,6 +120,11 @@ export interface NotInModelEntry {
   canonicalId: string;
   hits: CrossCheckHit[];
 }
+/** ノードに結びつかない資源の FAIL（突き合わせていない）。canonicalId ごと。 */
+export interface UnlinkedFailEntry {
+  canonicalId: string;
+  hits: CrossCheckHit[];
+}
 export interface UnmappedCheck {
   checkId: string;
   severity?: string;
@@ -132,6 +143,8 @@ export interface ProwlerImportResult {
     conflicts: number;
     notApplicable: number;
     unmatchedResources: number;
+    /** ノードに結びつかない資源の FAIL（資源 × 検査の件数）。 */
+    unlinkedFails: number;
   };
   applied: AppliedValue[];
   unchanged: UnchangedValue[];
@@ -140,6 +153,8 @@ export interface ProwlerImportResult {
   unmatchedResources: UnmatchedResource[];
   confirmed: ConfirmedEntry[];
   notInModel: NotInModelEntry[];
+  /** ノードに結びつかない資源の FAIL。突き合わせていない（確認済みにも図に無いにも数えない）。 */
+  unlinkedFails: UnlinkedFailEntry[];
   /** FAIL だが canonicalId の対応が無い検査。 */
   unmappedChecks: UnmappedCheck[];
 }
@@ -182,7 +197,12 @@ interface ResourceAcc {
   resource: string;
   checks: { checkId: string; value: FieldValue }[];
   value: FieldValue;
+  /** 値が ProviderManagedKey の検査（pmkChecks）のうち、鍵の種類を判別できないもの。 */
+  unverifiedChecks: Set<string>;
+  pmkChecks: Set<string>;
 }
+
+const PMK = 'ProviderManagedKey';
 
 export function applyProwler(input: ApplyProwlerInput): ProwlerImportResult {
   const { nodes, map, nodeMap = {} } = input;
@@ -193,7 +213,8 @@ export function applyProwler(input: ApplyProwlerInput): ProwlerImportResult {
   // node id → field → 資源キー → 資源ごとの値（検査どうしで最も良い値）
   const acc = new Map<string, Map<string, Map<string, ResourceAcc>>>();
   const unmatched = new Map<string, UnmatchedResource>();
-  const failHits: { canonicalId: string; hit: CrossCheckHit; nodeId?: string }[] = [];
+  const failHits: { canonicalId: string; hit: CrossCheckHit; nodeId: string }[] = [];
+  const unlinked = new Map<string, UnlinkedFailEntry>();
   const unmappedFail = new Map<string, UnmappedCheck>();
 
   for (const f of input.findings) {
@@ -236,11 +257,19 @@ export function applyProwler(input: ApplyProwlerInput): ProwlerImportResult {
 
       if (f.status === 'FAIL') {
         for (const canonicalId of mapping.canonicalIds ?? []) {
-          failHits.push({
-            canonicalId,
-            nodeId: node?.id,
-            hit: { resource: label, node: node ? nodeLabel(node) : undefined, checkId: f.checkId },
-          });
+          if (node) {
+            failHits.push({
+              canonicalId,
+              nodeId: node.id,
+              hit: { resource: label, node: nodeLabel(node), checkId: f.checkId },
+            });
+          } else {
+            const e = unlinked.get(canonicalId) ?? { canonicalId, hits: [] };
+            unlinked.set(canonicalId, e);
+            if (!e.hits.some((x) => x.resource === label && x.checkId === f.checkId)) {
+              e.hits.push({ resource: label, checkId: f.checkId });
+            }
+          }
         }
       }
 
@@ -251,11 +280,19 @@ export function applyProwler(input: ApplyProwlerInput): ProwlerImportResult {
       fields.set(mapping.set.field, resources2);
       const resKey = r.uid ?? r.name ?? '';
       const prev = resources2.get(resKey);
-      if (prev) {
-        prev.value = betterValue(mapping.set.field, prev.value, value);
-        prev.checks.push({ checkId: f.checkId, value });
-      } else {
-        resources2.set(resKey, { resource: label, checks: [{ checkId: f.checkId, value }], value });
+      const entry: ResourceAcc = prev ?? {
+        resource: label,
+        checks: [],
+        value,
+        unverifiedChecks: new Set(),
+        pmkChecks: new Set(),
+      };
+      if (!prev) resources2.set(resKey, entry);
+      else entry.value = betterValue(mapping.set.field, entry.value, value);
+      entry.checks.push({ checkId: f.checkId, value });
+      if (value === PMK) {
+        entry.pmkChecks.add(f.checkId);
+        if (mapping.set.keyTypeUnverified) entry.unverifiedChecks.add(f.checkId);
       }
     }
   }
@@ -273,16 +310,24 @@ export function applyProwler(input: ApplyProwlerInput): ProwlerImportResult {
         resource: r.resource,
         checks: r.checks,
         value: r.value,
+        // 資源の値が PMK で、その PMK を出した検査がすべて鍵の種類を判別できないとき
+        ...(r.value === PMK && r.pmkChecks.size > 0 && r.pmkChecks.size === r.unverifiedChecks.size
+          ? { keyTypeUnverified: true }
+          : {}),
       }));
       const value = basis.map((b) => b.value).reduce((a, b) => worseValue(field, a, b));
+      // ノードの値が PMK なら、PMK の資源に判別できないものがあれば確認を促す
+      const keyTypeUnverified = value === PMK && basis.some((b) => b.value === PMK && b.keyTypeUnverified);
       const common = { nodeId, layer: node.layer, node: nodeLabel(node), field, basis };
       if (!acceptsField(node.type, field)) {
         notApplicable.push({ ...common, type: node.type, prowler: value });
         continue;
       }
       const current = currentValue(node, field);
-      if (current === undefined) applied.push({ ...common, value });
+      if (current === undefined) applied.push({ ...common, value, ...(keyTypeUnverified ? { keyTypeUnverified } : {}) });
       else if (current === value) unchanged.push({ ...common, value });
+      // 入力済みが CMK で Prowler が鍵の種類を判別できない PMK なら、食い違いにしない（同じ値の扱い）
+      else if (keyTypeUnverified && current === 'CustomerManagedKey') unchanged.push({ ...common, value: current });
       else conflicts.push({ ...common, current, prowler: value });
     }
   }
@@ -294,9 +339,7 @@ export function applyProwler(input: ApplyProwlerInput): ProwlerImportResult {
     if (!hits.some((x) => x.resource === h.resource && x.node === h.node && x.checkId === h.checkId)) hits.push(h);
   };
   for (const { canonicalId, hit, nodeId } of failHits) {
-    const threats = input.threats.filter(
-      (t) => t.canonicalId === canonicalId && (nodeId === undefined || t.nodeIds.includes(nodeId)),
-    );
+    const threats = input.threats.filter((t) => t.canonicalId === canonicalId && t.nodeIds.includes(nodeId));
     if (threats.length > 0) {
       const e = confirmedMap.get(canonicalId) ?? { canonicalId, hits: [], threats: [] };
       confirmedMap.set(canonicalId, e);
@@ -321,6 +364,7 @@ export function applyProwler(input: ApplyProwlerInput): ProwlerImportResult {
       conflicts: conflicts.length,
       notApplicable: notApplicable.length,
       unmatchedResources: unmatched.size,
+      unlinkedFails: [...unlinked.values()].reduce((n, e) => n + e.hits.length, 0),
     },
     applied,
     unchanged,
@@ -329,6 +373,7 @@ export function applyProwler(input: ApplyProwlerInput): ProwlerImportResult {
     unmatchedResources: [...unmatched.values()],
     confirmed: [...confirmedMap.values()].sort(byId),
     notInModel: [...notInModelMap.values()].sort(byId),
+    unlinkedFails: [...unlinked.values()].sort(byId),
     unmappedChecks: [...unmappedFail.values()].sort((a, b) => b.count - a.count || a.checkId.localeCompare(b.checkId)),
   };
   return result;

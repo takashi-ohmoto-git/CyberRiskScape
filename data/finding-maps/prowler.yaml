@@ -15,6 +15,10 @@
 #     CustomerManagedKey を入れ、その FAIL は値を入れない（既定の暗号化が有効かどうかを示さないため）。
 #     DynamoDB は既定でサービス所有鍵により暗号化済みなので FAIL を None にしない。KMS 暗号化の検査は
 #     AWS 管理鍵と CMK を区別しないため、PASS でも ProviderManagedKey までとする。
+#     鍵の種類を判別できない検査の ProviderManagedKey には keyTypeUnverified: true を付ける（CMK の可能性がある。
+#     取り込みの報告で鍵の種類の確認を促し、入力済みの CustomerManagedKey とは食い違いにしない）。
+#     kafka_cluster_encryption_at_rest_uses_cmk は CMK を判別できるが、サーバーレスのクラスターは CMK でなくても
+#     PASS になる（Prowler のコードで確認）ため載せない。
 #   - ログの保持期間: cloudwatch_log_group_retention_policy_specific_days_enabled のしきい値は Prowler の
 #     config.yaml（aws.log_group_retention_days）の既定 365 日（2026-10 時点の main で確認）。利用者が config で
 #     変更している場合は PASS が 1 年以上を意味しないため、そのときは対応表を直すこと。
@@ -40,14 +44,14 @@ mappings:
       - efs_encryption_at_rest_enabled
       - redshift_cluster_encrypted_at_rest
       - opensearch_service_domains_encryption_at_rest_enabled
-    set: { field: encryptionAtRest, pass: ProviderManagedKey, fail: None }
+    set: { field: encryptionAtRest, pass: ProviderManagedKey, fail: None, keyTypeUnverified: true }
     canonicalIds: [data-at-rest-unencrypted]
     note: 保管時の暗号化（既定）
 
   - checks:
       - s3_bucket_kms_encryption
       - dynamodb_tables_kms_cmk_encryption_enabled
-    set: { field: encryptionAtRest, pass: ProviderManagedKey }
+    set: { field: encryptionAtRest, pass: ProviderManagedKey, keyTypeUnverified: true }
     note: KMS による暗号化（鍵の種別は区別しない）
 
   - checks:

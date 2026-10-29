@@ -135,6 +135,7 @@ node dist-cli/main.js import-prowler src/features/prowler-import/__fixtures__/sa
 - Prowler の検査結果を図のノードに載せた結果。入力済みの値は上書きしない（食い違いは下に出す）。
 - 検査結果 16 件（検査 12 種を対応表で処理 / 対応表に無い 1 種 / MANUAL 1 件）（読めなかった 0 件・ミュート済み 1 件は除外）
 - 適用 8 / 同じ値 0 / 食い違い 1 / 適用できない 1 / 対応するノードが無い資源 2
+- 図の脅威との突き合わせは、結びついたノード自身の脅威とだけ行う（ノードに結びつかない資源の FAIL 2 件は突き合わせていない）
 
 ## 適用した値（未入力だった項目）
 
@@ -155,6 +156,10 @@ node dist-cli/main.js import-prowler src/features/prowler-import/__fixtures__/sa
 
 - C4 社内ツール（TOOL）の encryptionAtRest: Prowler CustomerManagedKey ← m1（bedrock_custom_model_encrypted_with_cmk=CustomerManagedKey）
 
+## 鍵の種類を確認してください（Prowler では判別できない。CMK なら顧客管理の鍵に変更）
+
+- C3 文書ストレージ の encryptionAtRest = ProviderManagedKey ← docs-bucket（s3_bucket_default_encryption）
+
 ## 対応するノードが無い資源
 
 - vol-0aaa（ec2 / AwsEc2Volume / ap-northeast-1）: タグ crs-node も --map の対応も無い — 検査 ec2_ebs_volume_encryption
@@ -162,12 +167,10 @@ node dist-cli/main.js import-prowler src/features/prowler-import/__fixtures__/sa
 
 ## 図の脅威と突き合わせ（FAIL の検査）
 
-### 確認された（図の脅威に Prowler の FAIL の裏付けがある）
+### 確認された（結びついたノードの脅威に Prowler の FAIL の裏付けがある）
 
 - **data-at-rest-unencrypted** — 図の脅威: [Medium] 保管時に暗号化していない（媒体・バックアップ・スナップショットの持ち出しで読まれる）
   - chat-db-2（C2 会話ログDB） — rds_instance_storage_encrypted
-  - vol-0aaa — ec2_ebs_volume_encryption
-  - ghost-bucket — s3_bucket_default_encryption
 - **log-not-collected** — 図の脅威: [Medium] ログを取得していない（侵害の検知・調査ができない）
   - docs-bucket（C3 文書ストレージ） — s3_bucket_server_access_logging_enabled
 - **storage-public-access-misconfiguration** — 図の脅威: [High] ストレージの公開設定の誤りによるデータ露出
@@ -179,6 +182,12 @@ node dist-cli/main.js import-prowler src/features/prowler-import/__fixtures__/sa
 
 - **nhi-long-lived-secret**
   - batch（C2 会話ログDB） — iam_user_accesskey_unused
+
+### ノードに結びつかないため突き合わせていない（FAIL）
+
+- **data-at-rest-unencrypted**
+  - vol-0aaa — ec2_ebs_volume_encryption
+  - ghost-bucket — s3_bucket_default_encryption
 
 ### 対応づけできない（FAIL だが脅威の対応が無い検査）
 
@@ -193,12 +202,14 @@ How to read it (what the headings mean):
 | 食い違い (Conflicts) | The value already entered differs from Prowler's. It is **not applied**; check which is the truth and fix it |
 | 適用できない (Not applicable) | The node's type does not have that item (for example the internal tool type has no "encryption at rest"). Reported only |
 | 対応するノードが無い資源 (Resources without a node) | No tag and no `--map` entry, or the tag points to a node that is not on the diagram. A clue to **add it to the diagram or fix the tag** |
-| 確認された (Confirmed) | The threat for a FAIL check is also detected on the diagram |
-| 図に無い候補 (Candidates not in the diagram) | Prowler says FAIL but the diagram does not detect that threat (that node may lack attributes or links) |
+| 鍵の種類を確認してください (Check the key type) | Items set to "provider-managed key" by a check that cannot tell the key type. **If you use a CMK, change it to customer-managed key** |
+| 確認された (Confirmed) | The threat for a FAIL check is also detected as a threat of the tied node itself |
+| 図に無い候補 (Candidates not in the diagram) | Prowler says FAIL but that threat is not detected on the tied node (that node may lack attributes or links) |
+| ノードに結びつかないため突き合わせていない (Not cross-checked: no node) | FAIL for a resource not tied to a node. Counted neither as confirmed nor as a candidate. **Add it to the diagram or fix the tag** to cross-check it |
 | 対応づけできない (Cannot be mapped) | FAIL, but the mapping has no threat for the check |
 
-> Under "Confirmed", a resource that is not tied to a node (`vol-0aaa` and `ghost-bucket` in the example above) counts as confirmed **if the same kind of threat exists anywhere on the diagram**.
-> It does not check which node the threat belongs to, so read it together with "Resources without a node".
+> The cross-check uses only **the threats of the node the resource is tied to** (threats on links connected to that node are not looked at).
+> A FAIL for a resource not tied to a node (`vol-0aaa` and `ghost-bucket` in the example above) is not counted as confirmed even if the same kind of threat exists elsewhere on the diagram; its count and list appear under "not cross-checked".
 
 ### 3.6 See the filled diagram on the screen
 
@@ -220,6 +231,8 @@ attack surface attributes, and the "assumed because unset" mark disappears for t
 - **Account review becomes "Irregular" only on FAIL.** Passing an unused-key or rotation check does not show that the review process is "Periodic", so PASS enters nothing.
 - **Some results enter no value.** A customer-managed key (CMK) check enters "customer-managed key" only on PASS. A FAIL does not show whether default encryption is on, so it enters nothing.
   KMS encryption checks do not distinguish AWS-managed keys from CMKs, so even PASS goes only as far as "provider-managed key". DynamoDB is encrypted by default, so a FAIL is not turned into "None".
+- **"Provider-managed key" has an unverified key type.** The default-encryption and KMS checks also PASS with a CMK, so the value is entered but listed under "Check the key type" in the report.
+  If the node already has "customer-managed key", it is neither a conflict nor overwritten ("None" is still a conflict). If a check that can tell a CMK (the three Bedrock checks) PASSes for the same resource, its "customer-managed key" wins.
 - **Muted results are excluded.** Findings muted in Prowler (`Suppressed`) are not read. **MANUAL** (checks that need a human) are only counted, and used neither for values nor for cross-checking.
 - Checks not in the mapping are used neither for values nor for cross-checking. The FAIL ones appear under "cannot be mapped".
 
@@ -243,9 +256,9 @@ The mapping is `data/finding-maps/prowler.yaml` (like threat knowledge, it lives
 
 | Group | Check IDs | Attribute set (value per result) | Threats cross-checked (canonicalId) |
 |---|---|---|---|
-| Encryption at rest (default) | `s3_bucket_default_encryption`<br>`rds_instance_storage_encrypted`<br>`rds_cluster_storage_encrypted`<br>`rds_snapshots_encrypted`<br>`ec2_ebs_volume_encryption`<br>`ec2_ebs_snapshots_encrypted`<br>`efs_encryption_at_rest_enabled`<br>`redshift_cluster_encrypted_at_rest`<br>`opensearch_service_domains_encryption_at_rest_enabled` | Encryption at rest：PASS → provider-managed key / FAIL → None | `data-at-rest-unencrypted` |
-| KMS encryption (key type not distinguished) | `s3_bucket_kms_encryption`<br>`dynamodb_tables_kms_cmk_encryption_enabled` | Encryption at rest：PASS → provider-managed key | — |
-| Bedrock customer-managed keys | `bedrock_custom_model_encrypted_with_cmk`<br>`bedrock_knowledge_base_encrypted_with_cmk`<br>`bedrock_prompt_encrypted_with_cmk` | Encryption at rest：PASS → customer-managed key | — |
+| Encryption at rest (default; key type unverified) | `s3_bucket_default_encryption`<br>`rds_instance_storage_encrypted`<br>`rds_cluster_storage_encrypted`<br>`rds_snapshots_encrypted`<br>`ec2_ebs_volume_encryption`<br>`ec2_ebs_snapshots_encrypted`<br>`efs_encryption_at_rest_enabled`<br>`redshift_cluster_encrypted_at_rest`<br>`opensearch_service_domains_encryption_at_rest_enabled` | Encryption at rest：PASS → provider-managed key / FAIL → None | `data-at-rest-unencrypted` |
+| KMS encryption (key type not distinguished; unverified) | `s3_bucket_kms_encryption`<br>`dynamodb_tables_kms_cmk_encryption_enabled` | Encryption at rest：PASS → provider-managed key | — |
+| Bedrock customer-managed keys (CMK can be told) | `bedrock_custom_model_encrypted_with_cmk`<br>`bedrock_knowledge_base_encrypted_with_cmk`<br>`bedrock_prompt_encrypted_with_cmk` | Encryption at rest：PASS → customer-managed key | — |
 | Log collection | `s3_bucket_server_access_logging_enabled`<br>`cloudtrail_multi_region_enabled`<br>`bedrock_model_invocation_logging_enabled`<br>`rds_instance_integration_cloudwatch_logs`<br>`rds_cluster_integration_cloudwatch_logs`<br>`redshift_cluster_audit_logging`<br>`opensearch_service_domains_audit_logging_enabled` | Log collection：PASS → Collected / FAIL → Not collected | `log-not-collected` |
 | Bedrock prompt/response body logging | `bedrock_model_invocation_logging_text_data_enabled` | — | `log-not-collected` |
 | API and load balancer access logs | `apigateway_restapi_logging_enabled`<br>`apigatewayv2_api_access_logging_enabled`<br>`elb_logging_enabled`<br>`elbv2_logging_enabled` | Access log (attack surface)：PASS → Yes / FAIL → No | `web-missing-access-log` |

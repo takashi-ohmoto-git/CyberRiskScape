@@ -53,6 +53,8 @@ const ProwlerMapSchema = z.object({
           field: z.string().min(1),
           pass: z.union([z.string(), z.boolean()]).optional(),
           fail: z.union([z.string(), z.boolean()]).optional(),
+          /** PASS の ProviderManagedKey が鍵の種類（AWS 管理鍵か CMK か）を判別できない検査に付ける。 */
+          keyTypeUnverified: z.boolean().optional(),
         })
         .optional(),
       canonicalIds: z.array(z.string().min(1)).optional(),
@@ -68,6 +70,9 @@ function validateSet(set: NonNullable<ProwlerMapping['set']>, where: string): vo
   if (!order) throw new Error(`[prowler-map] ${where}: 未対応の項目 ${set.field}`);
   if (set.pass === undefined && set.fail === undefined) {
     throw new Error(`[prowler-map] ${where}: set に pass も fail もありません`);
+  }
+  if (set.keyTypeUnverified && (set.field !== 'encryptionAtRest' || set.pass !== 'ProviderManagedKey')) {
+    throw new Error(`[prowler-map] ${where}: keyTypeUnverified は encryptionAtRest の pass: ProviderManagedKey にだけ付けられます`);
   }
   const posture = set.field in POSTURE_FIELD_VALUES ? POSTURE_FIELD_VALUES[set.field as PostureEnumKey] : undefined;
   for (const v of [set.pass, set.fail]) {
