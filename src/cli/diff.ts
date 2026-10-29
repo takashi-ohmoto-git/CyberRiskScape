@@ -56,7 +56,7 @@ function assetLabel(
   const b = boundaries.find((x) => x.id === subject.id);
   if (!b) return '';
   const id = b.seq != null ? formatElementalId('boundary', b.seq) : b.id;
-  return `${id} ${b.vlanName?.trim() || b.blastRadiusLabel?.trim() || b.type}`;
+  return `${id} ${b.label?.trim() || b.vlanName?.trim() || b.blastRadiusLabel?.trim() || b.type}`;
 }
 
 /** 脅威 1 件分の差分エントリ。`asset` は検出元の版（添加は head、解消は base）の図から求める。 */

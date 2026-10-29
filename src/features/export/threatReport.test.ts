@@ -441,6 +441,31 @@ describe('toDCRHThreatModelMarkdown', () => {
     expect(csv).toContain('決済系の侵害範囲'); // CSV の asset 列にはラベルが出る
   });
 
+  it('境界名は label が vlanName より優先される', () => {
+    const boundary: DiagramBoundary = {
+      id: 'zone1',
+      seq: 1,
+      type: 'ROUNDED',
+      x: 0,
+      y: 0,
+      width: 10,
+      height: 10,
+      trustLevel: 'Internal',
+      vlanName: 'vlan-office',
+      label: '基幹システム区画',
+    };
+    const boundaryThreat: ThreatView = {
+      ...T_HIGH,
+      id: 'r-zone',
+      subject: { kind: 'boundary', id: 'zone1' },
+    };
+    const csv = toCsv(
+      buildThreatReport({ ...input([boundaryThreat]), edges: EDGES, boundaries: [boundary] }),
+    );
+    expect(csv).toContain('基幹システム区画');
+    expect(csv).not.toContain('vlan-office');
+  });
+
   it('status マッピング：implemented→mitigated / accepted→risk_accepted', () => {
     const impl: ThreatView = {
       ...T_HIGH,

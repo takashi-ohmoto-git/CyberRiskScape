@@ -872,6 +872,12 @@ export interface DiagramBoundary {
   /** 取り扱い機密データ区分。 */
   sensitiveData?: SensitiveData;
 
+  /**
+   * 自由記述のラベル名（RECT / RECT_DASHED / ROUNDED / ROUNDED_DASHED 共通、64 文字まで）。
+   * BLAST_RADIUS は従来どおり blastRadiusLabel を使う。
+   */
+  label?: string;
+
   // ── BLAST_RADIUS（侵害時の影響範囲）専用属性 ──
   /**
    * 影響範囲の自由記述ラベル（例：「決済系の侵害範囲」）。

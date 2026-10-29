@@ -162,6 +162,22 @@ export function BoundaryPanel({ boundary }: BoundaryPanelProps) {
         <p className="text-xs text-slate-500 font-bold uppercase">{typeName}</p>
       </div>
       <div className="p-6 space-y-8 flex-1 overflow-y-auto">
+        {boundary.type !== 'BLAST_RADIUS' && (
+          <section>
+            <label className="text-xs font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
+              {t('panels.boundary.labelField')}
+            </label>
+            <input
+              type="text"
+              value={boundary.label ?? ''}
+              onChange={(e) => onUpdate(boundary.id, 'label', e.target.value || undefined)}
+              placeholder={t('panels.boundary.labelPlaceholder')}
+              maxLength={64}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500"
+            />
+          </section>
+        )}
+
         {boundary.type === 'RECT' && (
           <TrustLevelSection
             value={boundary.trustLevel}

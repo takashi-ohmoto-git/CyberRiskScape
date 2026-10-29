@@ -51,7 +51,7 @@ function assetLabel(
   const b = boundaries.find((x) => x.id === subject.id);
   if (!b) return '';
   const id = b.seq != null ? formatElementalId('boundary', b.seq) : b.id;
-  return `${id} ${b.vlanName?.trim() || b.blastRadiusLabel?.trim() || b.type}`;
+  return `${id} ${b.label?.trim() || b.vlanName?.trim() || b.blastRadiusLabel?.trim() || b.type}`;
 }
 
 /** 脅威 1 件を生成したルールの id（検出脅威はルール id、手動脅威は固定 id）。 */

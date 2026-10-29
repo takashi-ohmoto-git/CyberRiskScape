@@ -288,6 +288,8 @@ export const jaPanels = {
   'panels.boundary.vlanIdInvalid': '0〜4094 の整数で入力してください',
   'panels.boundary.networkAddressPlaceholder': '例: 10.0.0.0/24',
   'panels.boundary.networkAddressInvalid': 'CIDR 形式で入力してください（例: 10.0.0.0/24）',
+  'panels.boundary.labelField': 'ラベル',
+  'panels.boundary.labelPlaceholder': '例: 基幹システム区画',
   'panels.boundary.blastRadiusLabelField': '影響範囲ラベル',
   'panels.boundary.blastRadiusPlaceholder': '例: 決済系の侵害範囲',
   'panels.boundary.blastRadiusNote':

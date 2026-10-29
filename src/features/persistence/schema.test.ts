@@ -62,6 +62,19 @@ describe('PersistedProjectSchema', () => {
     expect(r.success).toBe(true);
   });
 
+  it('境界の label は 64 文字まで受理し、超えると拒否する', () => {
+    const withLabel = (label: string) =>
+      PersistedProjectSchema.safeParse({
+        ...VALID_PROJECT,
+        boundaries: [{ ...VALID_PROJECT.boundaries[0], label }],
+      });
+    const ok = withLabel('基幹システム区画');
+    expect(ok.success).toBe(true);
+    if (ok.success) expect(ok.data.boundaries?.[0]?.label).toBe('基幹システム区画');
+    expect(withLabel('a'.repeat(64)).success).toBe(true);
+    expect(withLabel('a'.repeat(65)).success).toBe(false);
+  });
+
   it('境界の width が 0 以下なら拒否する', () => {
     const r = PersistedProjectSchema.safeParse({
       ...VALID_PROJECT,

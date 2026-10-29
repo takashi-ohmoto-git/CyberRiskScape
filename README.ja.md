@@ -171,7 +171,7 @@ npm run test:watch   # テスト watch モード
 npx tsc --noEmit     # 型チェック（strict）
 ```
 
-変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,581 件の
+変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,588 件の
 テストが通ります。
 
 ---

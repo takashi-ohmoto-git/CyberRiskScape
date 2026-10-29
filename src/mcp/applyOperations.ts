@@ -251,6 +251,7 @@ const boundaryAttrShape = {
   microSegmentationStatus: MicroStatusSchema.optional(),
   sensitiveData: SensitiveDataSchema.optional(),
   blastRadiusLabel: z.string().max(64).optional(),
+  label: z.string().max(64).optional(),
 };
 
 const BoundarySetSchema = opObject({
@@ -263,6 +264,7 @@ const BoundarySetSchema = opObject({
   microSegmentationStatus: MicroStatusSchema.optional(),
   sensitiveData: SensitiveDataSchema.optional(),
   blastRadiusLabel: z.string().max(64).nullable().optional(),
+  label: z.string().max(64).nullable().optional(),
 });
 
 
@@ -689,10 +691,10 @@ function applyDeleteEdge(work: Work, op: Extract<Operation, { op: 'delete_edge' 
 
 /** 境界の型ごとに設定できる属性。 */
 const BOUNDARY_ATTRS_BY_TYPE: Record<BoundaryTypeId, readonly string[]> = {
-  RECT: [],
-  RECT_DASHED: [],
-  ROUNDED: ['macroTrust', 'vlanName', 'vlanId', 'networkAddress'],
-  ROUNDED_DASHED: ['microTrust', 'microSegmentationStatus', 'sensitiveData'],
+  RECT: ['label'],
+  RECT_DASHED: ['label'],
+  ROUNDED: ['label', 'macroTrust', 'vlanName', 'vlanId', 'networkAddress'],
+  ROUNDED_DASHED: ['label', 'microTrust', 'microSegmentationStatus', 'sensitiveData'],
   BLAST_RADIUS: ['blastRadiusLabel'],
 };
 const ALL_BOUNDARY_ATTRS = Object.values(BOUNDARY_ATTRS_BY_TYPE).flat();

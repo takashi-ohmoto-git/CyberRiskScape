@@ -56,7 +56,9 @@ export function BoundaryView({
     ? blastLabel
       ? `${t(config.nameKey)}: ${blastLabel}`
       : t(config.nameKey)
-    : `${boundary.trustLevel}: ${t(config.nameKey)}`;
+    : boundary.label?.trim()
+      ? `${boundary.trustLevel}: ${t(config.nameKey)}: ${boundary.label.trim()}`
+      : `${boundary.trustLevel}: ${t(config.nameKey)}`;
 
   return (
     <div

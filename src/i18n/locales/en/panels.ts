@@ -286,6 +286,8 @@ export const enPanels: Partial<Record<TranslationKey, string>> = {
   'panels.boundary.vlanIdPlaceholder': 'e.g. 100',
   'panels.boundary.vlanIdInvalid': 'Enter an integer between 0 and 4094',
   'panels.boundary.networkAddressPlaceholder': 'e.g. 10.0.0.0/24',
+  'panels.boundary.labelField': 'Label',
+  'panels.boundary.labelPlaceholder': 'e.g. Core systems zone',
   'panels.boundary.blastRadiusLabelField': 'Blast radius label',
   'panels.boundary.blastRadiusPlaceholder': 'e.g. Payment systems impact scope',
   'panels.boundary.blastRadiusNote':

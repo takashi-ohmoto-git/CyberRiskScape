@@ -40,7 +40,7 @@ function assetLabel(
   }
   const b = boundaries.find((x) => x.id === subject.id);
   if (!b) return '';
-  return `${b.seq != null ? formatElementalId('boundary', b.seq) : b.id} ${b.vlanName?.trim() || b.blastRadiusLabel?.trim() || b.type}`;
+  return `${b.seq != null ? formatElementalId('boundary', b.seq) : b.id} ${b.label?.trim() || b.vlanName?.trim() || b.blastRadiusLabel?.trim() || b.type}`;
 }
 
 /** 全レイヤーの検出脅威を、突き合わせ用の形にまとめる。 */

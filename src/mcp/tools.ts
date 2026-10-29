@@ -194,7 +194,7 @@ function elementInfo(
   return {
     kind: 'boundary',
     id: b.id,
-    label: trunc(`${eid}${b.vlanName?.trim() || b.blastRadiusLabel?.trim() || b.type}`) ?? '',
+    label: trunc(`${eid}${b.label?.trim() || b.vlanName?.trim() || b.blastRadiusLabel?.trim() || b.type}`) ?? '',
   };
 }
 

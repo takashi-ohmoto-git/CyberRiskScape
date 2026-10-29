@@ -368,6 +368,22 @@ describe('正常系：境界・注釈', () => {
     expect(owningIds(removed.project, 'n-llm')).toEqual([]);
   });
 
+  it('境界の label：4 型で set/unset でき、BLAST_RADIUS には設定できない', () => {
+    for (const type of ['RECT', 'RECT_DASHED', 'ROUNDED', 'ROUNDED_DASHED'] as const) {
+      const added = apply([{ op: 'add_boundary', type, ref: 'bx', label: '区画A' }]);
+      const b = l1(added.project).boundaries.find((x) => x.type === type && x.label === '区画A');
+      expect(b).toBeDefined();
+      const cleared = apply([
+        { op: 'add_boundary', type, ref: 'bx', label: '区画A' },
+        { op: 'update_boundary', id: '@bx', set: { label: null } },
+      ]);
+      expect(l1(cleared.project).boundaries.some((x) => x.type === type && x.label)).toBe(false);
+    }
+    expect(() =>
+      apply([{ op: 'add_boundary', type: 'BLAST_RADIUS', label: 'x' }]),
+    ).toThrow(McpOperationError);
+  });
+
   it('add_annotation：callout は対象ノードにリンクでき、label は対象不可', () => {
     const { project, results } = apply([
       { op: 'add_annotation', kind: 'callout', text: '注意', targetNodeId: 'n-db' },

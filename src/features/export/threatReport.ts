@@ -169,7 +169,7 @@ function buildAssetIndex(
   for (const b of boundaries) {
     index.set(`boundary:${b.id}`, {
       elementalId: b.seq != null ? formatElementalId('boundary', b.seq) : b.id,
-      name: b.vlanName?.trim() || b.blastRadiusLabel?.trim() || b.type,
+      name: b.label?.trim() || b.vlanName?.trim() || b.blastRadiusLabel?.trim() || b.type,
     });
   }
   return index;

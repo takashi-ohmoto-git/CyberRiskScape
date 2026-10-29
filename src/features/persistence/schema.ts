@@ -234,6 +234,7 @@ const PersistedBoundarySchema = z.object({
   microTrust: MicroTrustAttributeSchema.optional(),
   microSegmentationStatus: MicroSegmentationStatusSchema.optional(),
   sensitiveData: SensitiveDataSchema.optional(),
+  label: z.string().max(64).optional(),
   // ── BLAST_RADIUS 専用属性（後方互換のため optional） ──
   blastRadiusLabel: z.string().max(64).optional(),
 });

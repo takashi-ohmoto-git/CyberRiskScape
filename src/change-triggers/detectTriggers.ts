@@ -48,7 +48,7 @@ function edgeLabel(e: DiagramEdge): string {
 
 function boundaryLabel(b: DiagramBoundary): string {
   const id = b.seq != null ? formatElementalId('boundary', b.seq) : b.id;
-  return `${id} ${b.vlanName?.trim() || b.blastRadiusLabel?.trim() || b.type}`;
+  return `${id} ${b.label?.trim() || b.vlanName?.trim() || b.blastRadiusLabel?.trim() || b.type}`;
 }
 
 /** 任意オブジェクトから `any` を使わずフィールド値を取り出す。 */
