@@ -133,6 +133,21 @@ agent reads it and can send data out.
 Import it and **117 threats** are detected. For how Agentforce building blocks map to types and how to read
 the detected threats, see [Threat Modeling Salesforce Agentforce](agentforce.md).
 
+### The AI-run SOC templates
+
+An architecture where an AI agent does Tier 1 investigation, a human approves at Tier 2, and a SOAR runs containment, as a before and an after diagram.
+
+| File | Contents |
+|---|---|
+| [`templates/ai-soc-before.en.json`](templates/ai-soc-before.en.json) | Before (English) |
+| [`templates/ai-soc-before.ja.json`](templates/ai-soc-before.ja.json) | Before (Japanese) |
+| [`templates/ai-soc-after.en.json`](templates/ai-soc-after.en.json) | After (English) |
+| [`templates/ai-soc-after.ja.json`](templates/ai-soc-after.ja.json) | After (Japanese) |
+
+**Inside:** 14 components, 16 data flows, 2 trust boundaries (customer environment = Internet, AI SOC platform = Internal).
+Import them and **103 threats** (before) and **76 threats** (after) are detected. To read the results, see
+[Threat Modeling an AI-Run SOC](ai-soc.md).
+
 ### The NHI and identity platform template
 
 A single diagram that puts service accounts, workload identities, OAuth clients and RPA bots together with privileged

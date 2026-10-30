@@ -134,6 +134,21 @@ LINE の Webhook 署名未検証・チャネル乗っ取り、通話録音（生
 読み込むと **117 件**の脅威が検出されます。構成要素の対応づけと、検出される脅威の読み方は
 [Salesforce Agentforce を脅威モデリングする](agentforce.ja.md)を参照してください。
 
+### AI に SOC を任せる構成のテンプレート
+
+AI エージェントが 1 次調査、人が 2 次で承認、SOAR が封じ込めを実行する構成を、対策前と対策後の 2 枚で用意しています。
+
+| ファイル | 内容 |
+|---|---|
+| [`templates/ai-soc-before.ja.json`](templates/ai-soc-before.ja.json) | 対策前（日本語版） |
+| [`templates/ai-soc-before.en.json`](templates/ai-soc-before.en.json) | 対策前（英語版） |
+| [`templates/ai-soc-after.ja.json`](templates/ai-soc-after.ja.json) | 対策後（日本語版） |
+| [`templates/ai-soc-after.en.json`](templates/ai-soc-after.en.json) | 対策後（英語版） |
+
+**中身：** コンポーネント 14・データフロー 16・トラスト境界 2（お客様環境＝Internet、AI SOC 基盤＝Internal）。
+読み込むと、対策前は **103 件**、対策後は **76 件**の脅威が検出されます。読み方は
+[AI に SOC を任せる構成を脅威モデリングする](ai-soc.ja.md)を参照してください。
+
 ### NHI と ID 基盤のテンプレート
 
 サービスアカウント・ワークロードID・OAuthクライアント・RPAボットと、特権アクセス管理・ID ガバナンス・IdP を

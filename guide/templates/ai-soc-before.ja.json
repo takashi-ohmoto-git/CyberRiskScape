@@ -1,0 +1,305 @@
+{
+  "schemaVersion": 1,
+  "kind": "cyberriskscape-template",
+  "name": "AI に SOC を任せる構成 — 対策前（Agentic MDR / AI SOC の確認用）",
+  "layer": {
+    "nodes": [
+      {
+        "id": "ns_fw",
+        "type": "FIREWALL",
+        "x": 60,
+        "y": 110,
+        "label": "お客様のログ元（FW・プロキシ）"
+      },
+      {
+        "id": "ns_edr",
+        "type": "EDR_DFIR_SERVER",
+        "x": 60,
+        "y": 260,
+        "label": "お客様の EDR / XDR"
+      },
+      {
+        "id": "ns_saas",
+        "type": "SAAS",
+        "x": 60,
+        "y": 460,
+        "label": "お客様のクラウドログ元（IdP・SaaS）"
+      },
+      {
+        "id": "ns_team",
+        "type": "USER",
+        "x": 60,
+        "y": 680,
+        "label": "お客様のセキュリティチーム",
+        "managedState": "Managed",
+        "userTrustAttribute": "Partner"
+      },
+      {
+        "id": "ns_sys",
+        "type": "CONNECTOR",
+        "x": 420,
+        "y": 60,
+        "label": "Syslog コレクタ"
+      },
+      {
+        "id": "ns_api",
+        "type": "CONNECTOR",
+        "x": 420,
+        "y": 360,
+        "label": "API コネクタ"
+      },
+      {
+        "id": "ns_siem",
+        "type": "SIEM",
+        "x": 700,
+        "y": 200,
+        "label": "SIEM（ログ基盤）"
+      },
+      {
+        "id": "ns_soar",
+        "type": "SOAR",
+        "x": 980,
+        "y": 200,
+        "label": "SOAR（対応の自動化）",
+        "description": "インシデント対応ワークフロー。AI への調査指示・経過記録・通知・Tier2 承認依頼・承認済み封じ込めの実行"
+      },
+      {
+        "id": "ns_agent",
+        "type": "AGENT",
+        "x": 1260,
+        "y": 200,
+        "label": "Tier1 アナリスト AI エージェント",
+        "agentAttributes": {
+          "agency": "Bounded",
+          "blastRadius": "CrossTenant"
+        }
+      },
+      {
+        "id": "ns_llm",
+        "type": "LLM",
+        "x": 1540,
+        "y": 60,
+        "label": "LLM"
+      },
+      {
+        "id": "ns_gw",
+        "type": "AI_GATEWAY",
+        "x": 1260,
+        "y": 460,
+        "label": "ツールゲートウェイ"
+      },
+      {
+        "id": "ns_kb",
+        "type": "DB",
+        "x": 1540,
+        "y": 360,
+        "label": "ナレッジ検索（お客様環境・セキュリティ知識）"
+      },
+      {
+        "id": "ns_t2",
+        "type": "USER",
+        "x": 980,
+        "y": 40,
+        "label": "Tier2 アナリスト",
+        "managedState": "Managed",
+        "userTrustAttribute": "Employee"
+      },
+      {
+        "id": "ns_portal",
+        "type": "FRONT_END_SERVER",
+        "x": 980,
+        "y": 680,
+        "label": "ポータルサイト"
+      }
+    ],
+    "edges": [
+      {
+        "id": "es_01",
+        "source": "ns_fw",
+        "target": "ns_sys",
+        "auth": "None",
+        "network": "VPN",
+        "encryption": "Plain",
+        "dataFlow": "outbound",
+        "dataFlowName": "ログ送信"
+      },
+      {
+        "id": "es_02",
+        "source": "ns_api",
+        "target": "ns_edr",
+        "auth": "ApiKey",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "inbound",
+        "dataFlowName": "製品アラート取得"
+      },
+      {
+        "id": "es_03",
+        "source": "ns_api",
+        "target": "ns_saas",
+        "auth": "ApiKey",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "inbound",
+        "dataFlowName": "クラウドログ取得"
+      },
+      {
+        "id": "es_04",
+        "source": "ns_sys",
+        "target": "ns_siem",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "取込"
+      },
+      {
+        "id": "es_05",
+        "source": "ns_api",
+        "target": "ns_siem",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "取込"
+      },
+      {
+        "id": "es_06",
+        "source": "ns_siem",
+        "target": "ns_soar",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "トリガー実行"
+      },
+      {
+        "id": "es_07",
+        "source": "ns_soar",
+        "target": "ns_agent",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "起動指示・調査報告",
+        "semantic": "delegation"
+      },
+      {
+        "id": "es_08",
+        "source": "ns_agent",
+        "target": "ns_llm",
+        "auth": "ApiKey",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional"
+      },
+      {
+        "id": "es_09",
+        "source": "ns_agent",
+        "target": "ns_gw",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "調査・自動封じ込め",
+        "semantic": "tool_invocation"
+      },
+      {
+        "id": "es_10",
+        "source": "ns_gw",
+        "target": "ns_siem",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "ログ検索",
+        "semantic": "tool_invocation"
+      },
+      {
+        "id": "es_11",
+        "source": "ns_gw",
+        "target": "ns_edr",
+        "auth": "ApiKey",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "調査・封じ込め",
+        "semantic": "tool_invocation"
+      },
+      {
+        "id": "es_12",
+        "source": "ns_soar",
+        "target": "ns_gw",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "封じ込め（Tier2 承認後）",
+        "semantic": "tool_invocation"
+      },
+      {
+        "id": "es_13",
+        "source": "ns_agent",
+        "target": "ns_kb",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "inbound",
+        "dataFlowName": "ナレッジ参照",
+        "semantic": "rag_retrieval"
+      },
+      {
+        "id": "es_14",
+        "source": "ns_t2",
+        "target": "ns_soar",
+        "auth": "MFA",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "エスカレーション・承認"
+      },
+      {
+        "id": "es_15",
+        "source": "ns_soar",
+        "target": "ns_portal",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "初報・続報"
+      },
+      {
+        "id": "es_16",
+        "source": "ns_team",
+        "target": "ns_portal",
+        "auth": "MFA",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "状況確認・問合せ"
+      }
+    ],
+    "boundaries": [
+      {
+        "id": "bs_cust",
+        "type": "RECT",
+        "x": 20,
+        "y": 20,
+        "width": 300,
+        "height": 800,
+        "trustLevel": "Internet",
+        "label": "お客様環境"
+      },
+      {
+        "id": "bs_plat",
+        "type": "RECT",
+        "x": 380,
+        "y": 20,
+        "width": 1400,
+        "height": 800,
+        "trustLevel": "Internal",
+        "label": "AI SOC 基盤"
+      }
+    ]
+  }
+}
