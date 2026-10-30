@@ -95,6 +95,7 @@ rules:
       kind: node
       anyOf:
         - nodeType: HYPERVISOR
+        - nodeType: SOAR
         - nodeType: FILE_SERVER
         - nodeType: MEMORY_STORE
         - nodeType: CI_PIPELINE
@@ -177,6 +178,7 @@ rules:
       kind: node
       anyOf:
         - nodeType: HYPERVISOR
+        - nodeType: SOAR
         - nodeType: FILE_SERVER
         - nodeType: MEMORY_STORE
         - nodeType: CI_PIPELINE
@@ -394,6 +396,7 @@ rules:
         - nodeType: HYPERVISOR
         - nodeType: SIEM
         - nodeType: EDR_DFIR_SERVER
+        - nodeType: SOAR
         - nodeType: FILE_SERVER
         - nodeType: BACKEND_API
         - nodeType: API_CONTROL_PLANE
@@ -488,6 +491,7 @@ rules:
         - nodeType: HYPERVISOR
         - nodeType: SIEM
         - nodeType: EDR_DFIR_SERVER
+        - nodeType: SOAR
         - nodeType: FILE_SERVER
         - nodeType: CI_PIPELINE
         - nodeType: SECRETS_VAULT

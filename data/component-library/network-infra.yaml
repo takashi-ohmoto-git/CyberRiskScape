@@ -237,6 +237,7 @@ components:
     color: "bg-green-600"
     description: "セキュリティ運用の自動化・オーケストレーション基盤（SOAR）。アラートを受けて、プレイブック（手順の定義）に沿って調査・通知・封じ込め（端末の隔離、通信の遮断、アカウントの停止など）を連携先の製品へ自動で実行する。連携先の API キー・資格情報と、案件・対応の記録を保管する。Microsoft Sentinel のオートメーション（Logic Apps）・Palo Alto Cortex XSOAR・Splunk SOAR・Google SecOps SOAR・Tines 等が該当する。ログを集めて検知する側は SIEM、端末を調べる側は EDR / DFIR サーバーで描く。"
     canContain: [CREDENTIAL, LOG]
+    posture: [log, patch, accountReview]
 
   - id: ZTNA_PROXY
     label: "ZTNA / ID認識プロキシ"
