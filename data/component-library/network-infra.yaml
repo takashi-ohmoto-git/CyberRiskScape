@@ -1,11 +1,11 @@
 # Network & Security Infrastructure コンポーネントライブラリ。
 #
 # PQC 移行支援で「経路上で暗号が変わる箇所（終端・復号・トンネル化）」を描くための
-# ネットワーク機器・セキュリティ製品の 23 型：
+# ネットワーク機器・セキュリティ製品の 24 型：
 #   NETWORK        : L2_SWITCH / ROUTER / LOAD_BALANCER / REVERSE_PROXY / CDN / DNS_ZONE / VPN_GATEWAY /
 #                    WIRELESS_AP / SERVICE_MESH
 #   PROTECT        : FIREWALL / WAF / IDS_IPS / SECURE_WEB_GATEWAY / SASE / EMAIL_GATEWAY /
-#                    ZTNA_PROXY / SIEM / EDR_DFIR_SERVER（ラベルは Security Controls）
+#                    ZTNA_PROXY / SIEM / EDR_DFIR_SERVER / SOAR（ラベルは Security Controls）
 #   CONTACT_CENTER : SBC
 #   CLOUD          : PRIVATE_ENDPOINT
 #   SERVERS        : BASTION / HYPERVISOR
@@ -228,6 +228,15 @@ components:
     description: "各端末にエージェントを置き、検知・調査のために端末の情報を集めたり、端末上でコマンドやスクリプトを一斉に実行したりする管理サーバー（EDR の管理コンソール、DFIR の収集・調査基盤）。端末側の EDR の有無は、パソコン・スマートフォンの管理状態（Managed (管理下) / Unmanaged (未管理)）で表す。集めた証拠やテレメトリを描くときは文書の「ログ」などを中に置く。Velociraptor・Microsoft Defender for Endpoint・CrowdStrike Falcon 等の管理側が該当する。MDM・資産管理・パッチ配布のサーバーは含めない。"
     canContain: [LOG, CREDENTIAL, PERSONAL_INFO, CONFIDENTIAL_INFO, OTHER_DOCUMENT]
     posture: [logRetention, patch, accountReview]
+
+  - id: SOAR
+    label: "SOAR"
+    category: PROTECT
+    icon: { kind: builtin, name: "workflow" }
+    shape: rounded
+    color: "bg-green-600"
+    description: "セキュリティ運用の自動化・オーケストレーション基盤（SOAR）。アラートを受けて、プレイブック（手順の定義）に沿って調査・通知・封じ込め（端末の隔離、通信の遮断、アカウントの停止など）を連携先の製品へ自動で実行する。連携先の API キー・資格情報と、案件・対応の記録を保管する。Microsoft Sentinel のオートメーション（Logic Apps）・Palo Alto Cortex XSOAR・Splunk SOAR・Google SecOps SOAR・Tines 等が該当する。ログを集めて検知する側は SIEM、端末を調べる側は EDR / DFIR サーバーで描く。"
+    canContain: [CREDENTIAL, LOG]
 
   - id: ZTNA_PROXY
     label: "ZTNA / ID認識プロキシ"

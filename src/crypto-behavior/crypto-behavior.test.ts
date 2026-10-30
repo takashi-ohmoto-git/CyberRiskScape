@@ -20,8 +20,8 @@ import {
 import { componentRegistry } from '../component-library/defaultRegistry';
 
 describe('termination.yaml', () => {
-  it('スキーマを通り、31 型を含む', () => {
-    expect(BUNDLED_TERMINATION_BEHAVIORS).toHaveLength(31);
+  it('スキーマを通り、32 型を含む', () => {
+    expect(BUNDLED_TERMINATION_BEHAVIORS).toHaveLength(32);
   });
 
   it('componentType が一意', () => {
@@ -42,7 +42,7 @@ describe('termination.yaml', () => {
       .getAll()
       .filter((c) => componentRegistry.getLibraryIdOf(c.id) === 'network-infra')
       .map((c) => c.id);
-    expect(infra.length).toBe(23);
+    expect(infra.length).toBe(24);
     for (const id of infra) {
       if (id === 'HSM') expect(covered.has(id)).toBe(false);
       else expect(covered.has(id), id).toBe(true);

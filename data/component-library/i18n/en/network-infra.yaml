@@ -94,6 +94,10 @@ components:
     label: "EDR / DFIR server"
     description: "A management server that places an agent on each endpoint and, for detection and investigation, collects endpoint information or runs commands and scripts on many endpoints at once (an EDR management console, a DFIR collection and investigation platform). Whether an endpoint itself has EDR is expressed by the managed state of the PC or smartphone (Managed / Unmanaged). To draw the collected evidence and telemetry, put documents such as Log inside it. The management side of Velociraptor, Microsoft Defender for Endpoint and CrowdStrike Falcon falls here. MDM, asset management and patch distribution servers are not included."
 
+  SOAR:
+    label: "SOAR"
+    description: "A security orchestration, automation and response platform (SOAR). On an alert, it runs investigation, notification and containment (isolating an endpoint, blocking traffic, suspending an account) in connected products by following playbooks (defined procedures). It holds the API keys and credentials of the connected products, and the case and response records. Microsoft Sentinel automation (Logic Apps), Palo Alto Cortex XSOAR, Splunk SOAR, Google SecOps SOAR and Tines fall here. Draw the side that collects logs and detects as a SIEM, and the side that investigates endpoints as an EDR / DFIR server."
+
   PRIVATE_ENDPOINT:
     label: "Private endpoint"
     description: "A private endpoint. The private entry point to a cloud service; passes encryption through (the destination service terminates TLS). In the cloud this includes AWS PrivateLink (interface VPC endpoints), Azure Private Link (private endpoints), Google Cloud Private Service Connect, and OCI private endpoints."

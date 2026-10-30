@@ -86,6 +86,10 @@ behaviors:
     default: terminate
     alternatives: []
     note: "エージェントからの TLS（製品独自の CA で証明書を固定することが多い）と、管理画面・API の TLS を終端する。エージェントとの通信の暗号方式は製品が決めるため、PQC への対応は製品の更新に依存する。独自 CA と API の証明書の有効期限・配布先を確認する。"
+  - componentType: SOAR
+    default: terminate
+    alternatives: []
+    note: "管理画面・API・Webhook の受信の TLS を終端し、連携先の製品の API へ別の接続で呼び出す。連携先ごとの区間の暗号と、連携用の資格情報（API キー・証明書）の保管先を確認する。"
   - componentType: ZTNA_PROXY
     default: terminate
     alternatives: []

@@ -1,0 +1,219 @@
+# セキュリティ運用の自動化（SOAR）と、AI エージェントにセキュリティ運用（SOC）を任せる構成の脅威ルール。
+# 出典（すべて既存ファイルで引用済みの枠組み。本文の逐語転載はせず日本語で要約）:
+#   - OWASP Top 10 for Agentic Applications 2026（ASI01 / ASI02 / ASI03 / ASI09）、OWASP GenAI Security Project（CC BY-SA 4.0）。
+#     https://genai.owasp.org/
+#   - Anthropic "Zero Trust for AI Agents"（エージェントの ID と権限、テナント分離）。
+#   - MITRE ATLAS 2026.09: AML.T0051.001 "LLM Prompt Injection: Indirect"、AML.T0053 "AI Agent Tool Invocation"。
+#     https://atlas.mitre.org/techniques/
+#   - MITRE ATT&CK: T1078 "Valid Accounts"、T1552 "Unsecured Credentials"、T1685 "Disable or Modify Tools"。
+#     https://attack.mitre.org/
+#   - NIST SP 800-61 Rev. 3 "Incident Response Recommendations and Considerations for Cybersecurity Risk Management"。
+#     https://csrc.nist.gov/pubs/sp/800/61/r3/final
+#   - NIST CSF 2.0（complianceRefs）。
+#
+# SPDX-License-Identifier: Apache-2.0
+# ライセンス: 本ファイルは Apache License 2.0（LICENSE 参照）。
+# 出典の帰属表示は NOTICE を参照。
+#
+# 重複回避方針（network-infra.yaml・owasp-asi-top10.yaml・maestro.yaml と同じ運用）:
+#   展示会で見た Agentic MDR（AI エージェントが 1 次調査、人が 2 次で承認）の構成を描いて分析したところ、
+#   AI・LLM・SIEM・EDR まわりは既存ルールで出る一方、次の 5 点が出なかった。本ファイルはその差分だけを追加する。
+#   - SOAR への連携資格情報と対応権限の集中 → 新規（soar-response-authority-concentration）。
+#     SIEM の機微ログと連携用の資格情報の集中（siem-data-credential-concentration）は集まる中身がログ、
+#     端末へ一斉に配信できる管理サーバーの乗っ取り（endpoint-fleet-mass-execution）は端末のエージェント経由の実行が手口。
+#     こちらは多数の製品・顧客環境へ「遮断・隔離・アカウント停止」を行う権限と、その API の資格情報が集まる点が異なるため別。
+#   - プレイブック・自動化ルールの改ざん → 新規（soar-playbook-tampering）。EDR の除外設定・ポリシーの書き換え
+#     （edr-detection-blinding）は検知の無効化、こちらは対応の無効化・握り潰しと、悪意ある処理の自動実行。PROCESS の改ざん
+#     （process-tampering）は汎用の処理で、対応手順の定義という SOAR 固有の資産を扱わないため別。
+#   - 自動対応の悪用（誘発された封じ込めによる業務停止）→ 新規（induced-automated-response-abuse）。ツール呼び出しの
+#     乗っ取り全般（excessive-agency・agent-untrusted-response）と違い、「正規の防御操作そのものを攻撃の道具にする」点と、
+#     対応先（EDR・FW・IdP・ディレクトリ）への接続を前提チャネルにする点が異なる。
+#   - 高リスク操作への人の承認が効いていない → 新規（agent-high-risk-approval-gap）。ツール実行の承認ゲートの欠落
+#     （tool-approval-gate-gap）は GUARDRAIL の設計、擬人化・自動化バイアスの悪用（human-agent-trust-exploitation）は
+#     エージェントの説得で承認させる手口。こちらは承認の有無と形骸化そのもの（承認なし・承認疲れ）で、対象は AGENT。
+#   - テナントを越えた調査・対応 → 新規（agent-cross-tenant-operation）。メモリの越境（memory-cross-tenant-bleed）は
+#     MEMORY_STORE の分離欠如、こちらは 1 つのエージェントが複数顧客を扱うこと自体と、あるテナントのデータに仕込まれた
+#     指示で別のテナントを操作できること。
+#   上記 5 グループは問いが異なるため、いずれも既存グループへ統合しない（2026-10-31 確定）。
+#
+# agentAttributes（agency・blastRadius）は「未入力＝悪い値と同じ扱い」（2026-10-31 ユーザー決定）で、
+# 未入力でも発火する（agency は Autonomous、blastRadius は Admin として評価される）。
+#
+# 接続条件はノードルールでは semantic（tool_invocation 等）を指定できない（peerType と direction のみ）。
+# 自動対応の悪用は、対応先の型（peerType）への送信（direction: outbound）で表す。
+#
+# mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
+# description は Can/Cannot ペアと blast radius を意識して記述する。
+
+schemaVersion: 1
+
+rules:
+  # ── SOAR への連携資格情報と対応権限の集中（内在）────────────────────
+  # severity は High。EDR の一斉実行（netinfra-edr-fleet-mass-execution-001、Critical）は端末で任意の
+  #   コマンドを直接実行できるが、SOAR は連携先が許す操作の範囲に依存するため一段下げる。
+  - id: secops-soar-authority-concentration-001
+    canonicalId: soar-response-authority-concentration
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "SOAR への連携資格情報と対応権限（隔離・遮断・アカウント停止）の集中"
+    severity: High
+    description: "{{nodeName}} は、多数の製品（EDR・ファイアウォール・IdP・ディレクトリ・メール・チケット管理等）の API キーや資格情報を保管し、それらを使って端末の隔離、通信の遮断、アカウントの停止・パスワードのリセットを自動で実行できる。MSSP や MDR のように複数の顧客環境を扱う場合は、顧客ごとの資格情報と権限がまとまって 1 か所にある。{{nodeName}} の脆弱性の悪用、管理者アカウントの奪取、連携用の資格情報の窃取、権限の過大な連携アカウントのいずれかで握った攻撃者は、保管された資格情報で連携先に直接入り込み、また正規の自動対応として多数のシステムや顧客環境を一斉に遮断・停止できる（Can）。連携先の側からは、{{nodeName}} からの操作は正規の対応として見えるため止めにくい。一方、連携用の資格情報を用途ごとに最小の権限へ分け、対応の種類ごとに実行できる範囲を絞り、破壊的な対応に承認を入れ、{{nodeName}} の管理面を限定していれば、1 つの弱点だけでは広い範囲の遮断や連携先への侵入には至らない（Cannot）。blast radius は連携しているすべての製品と顧客環境、およびそこで実行できる対応操作。"
+    mitigation: "[Foundation] 連携用の API キー・資格情報を専用の保管庫（シークレット管理）に置き、{{nodeName}} の設定ファイルや案件の記録に平文で残さない。連携先ごとに専用のアカウントを作り、実行する対応（調査のみ・隔離・遮断・アカウント停止）に必要な最小の権限だけを与える。管理画面と API を管理用ネットワークに限り、管理者にフィッシング耐性のある MFA を必須にする。 [Enterprise] 顧客（テナント）ごとに連携用の資格情報と実行環境を分け、他の顧客の資格情報を読めない構成にする。破壊的な対応（アカウント停止・広い範囲の遮断・端末の一斉隔離）に別の担当者の承認と上限（件数・範囲）を設け、実行の記録を {{nodeName}} の外のログ基盤へ送って監視する。資格情報を短い有効期限で払い出し、定期的に更新する。 [Advanced] {{nodeName}} の侵害を想定し、連携用の資格情報の一斉失効と再発行の手順を演習する。連携先の側で、{{nodeName}} からの操作の接続元・種類・量を検知する。資格情報を保管せず、実行時に短命のトークンを払い出す方式（ワークロード ID）へ移行する。"
+    appliesTo:
+      kind: node
+      nodeType: SOAR
+      # 対応の自動化基盤として存在すること自体が前提の内在リスクで、接続関係に依存しない。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "MITRE ATT&CK T1552 - Unsecured Credentials（保管された連携用の資格情報の窃取）"
+        url: "https://attack.mitre.org/techniques/T1552/"
+      - title: "MITRE ATT&CK T1078 - Valid Accounts（窃取した連携用アカウントの悪用）"
+        url: "https://attack.mitre.org/techniques/T1078/"
+
+  # ── プレイブック・自動化ルールの改ざん（内在）──────────────────────
+  - id: secops-soar-playbook-tampering-001
+    canonicalId: soar-playbook-tampering
+    framework: STRIDE
+    category: "Tampering"
+    name: "プレイブック・自動化ルールの改ざんによる対応の無効化・案件の握り潰し・悪意ある処理の自動実行"
+    severity: High
+    description: "{{nodeName}} は、アラートに対して何を調べ、誰に通知し、何を遮断するかをプレイブック（手順の定義）や自動化ルールとして持ち、アラートのたびに自動で実行する。{{nodeName}} の編集権限を得た攻撃者（または内部の管理者）は、特定の送信元や特定のホストのアラートを自動でクローズする条件を足す、通知先を外す、封じ込めの手順を無効にする、といった変更で、自分の活動に対する対応を止められる。また、プレイブックには外部へのコマンド実行やスクリプト、連携先への API 呼び出しを書けるため、悪意ある処理を正規の自動対応として全アラートに対して実行させることもできる（Can）。変更が正規の設定操作として行われ、定義が変わったことを誰も見ていなければ、対応が止まったことは攻撃が進んだ後でしか分からない。一方、プレイブックの編集に承認とバージョン管理を入れ、変更の記録を {{nodeName}} の外のログ基盤で監視し、自動クローズの件数の急変を検知していれば、変更はその時点または対応の異常として見つかる（Cannot）。blast radius は {{nodeName}} が扱うすべてのアラートの対応と、プレイブックが実行できる連携先の操作。"
+    mitigation: "[Foundation] プレイブック・自動化ルールの編集権限を少数の担当者に限り、閲覧・実行・編集の権限を分ける。編集にフィッシング耐性のある MFA を必須にする。自動クローズや通知の除外の条件を一覧にして、定期的に棚卸しする。 [Enterprise] プレイブックをバージョン管理し、本番への反映をレビューと承認を経た変更だけにする（コードとして管理し、画面からの直接編集を禁止する）。変更の記録を SIEM など {{nodeName}} の外のログ基盤へ送り、自動クローズの条件の追加、通知先の削除、外部コマンドを実行する手順の追加を検知ルールに入れる。プレイブックから実行できる連携先の操作を権限で制限する。 [Advanced] 重要なプレイブックに署名を付け、実行時に署名と承認済みの版を検証する。自動クローズしたアラートの一部を人が定期的に抜き取り検査し、握り潰しを検出する。{{nodeName}} とは別の経路（別の検知製品）で、同じ攻撃への対応が動いたかを確かめる。"
+    appliesTo:
+      kind: node
+      nodeType: SOAR
+      # 対応手順を定義して自動実行する役割そのものが前提の内在リスクで、接続関係に依存しない。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+      - standard: nist-csf-2.0
+        ref: "DE.AE-02"
+      - standard: nist-csf-2.0
+        ref: "RS.MA-01"
+    references:
+      - title: "MITRE ATT&CK T1685 - Disable or Modify Tools（対応・検知の仕組みの無効化・設定の改変）"
+        url: "https://attack.mitre.org/techniques/T1685/"
+      - title: "NIST SP 800-61 Rev. 3 - Incident Response Recommendations and Considerations for Cybersecurity Risk Management（対応手順の整備と変更管理）"
+        url: "https://csrc.nist.gov/pubs/sp/800/61/r3/final"
+
+  # ── 自動対応の悪用（誘発された封じ込めによる業務停止）（経路依存）─────────
+  # 対応先: EDR・ファイアウォール・Web ゲートウェイ・SASE・IdP・ディレクトリ（隔離・遮断・アカウント停止の権限を持つ型）。
+  # AI_GATEWAY は AI エージェントがツールゲートウェイ経由で対応先に届く構成のために含める（ノードルールは 1 ホップしか
+  # 見られない）。MCP_SERVER・TOOL は AI エージェントの通常の接続で広く出て過検知になるため含めない。
+  # peerType に AI_GATEWAY を含めるのは、ツールゲートウェイ経由で対応先に届く構成（接続条件は 1 ホップのみ）を拾うため。
+  #   LLM 呼び出し専用の AI ゲートウェイでも発火し得るが、未入力＝悪い値の方針に合わせて見逃しより過検知を取る。
+  - id: secops-induced-automated-response-abuse-001
+    canonicalId: induced-automated-response-abuse
+    framework: AgenticAI
+    category: "Tool Misuse"
+    name: "自動対応の悪用（偽のアラート・ログで誘発した封じ込めによる業務停止）"
+    severity: High
+    description: "{{nodeName}} が、端末の隔離、通信の遮断、アカウントの停止ができる対応先（EDR・ファイアウォール・Web ゲートウェイ・IdP・ディレクトリ等。AI ゲートウェイを経由してツールが届く場合を含む）へ操作を送る構成では、攻撃者は封じ込めの仕組みそのものを道具にできる。攻撃者は、正規の防御操作を誘う偽のアラートや、ログに紛れ込ませた文字列（ログ・メール件名・ファイル名・ホスト名に埋めた指示を含む）を作り、重要なサーバーの隔離、取引先や拠点への通信の遮断、管理者や業務アカウントの停止を、{{nodeName}} 自身に実行させられる。AI エージェントが調査して判断する構成では、取り込んだログの中の指示で判断が誘導される（Can）。実行されるのは正規の対応なので、攻撃者は侵入しなくても業務を止められ、本当の攻撃から目をそらす陽動にもなる。一方、重要な資産とアカウントを自動対応の対象から外すか人の承認を必須にし、一度に実行できる件数・範囲に上限を置き、誤った封じ込めを速やかに戻す手順があれば、誘発されても業務停止は限られる（Cannot）。blast radius は対応先が隔離・遮断・停止できるすべての端末・通信・アカウントと、それに依存する業務。"
+    mitigation: "[Foundation] 自動で実行してよい対応を、影響の小さいもの（通知・調査・単一端末の隔離）に限り、重要なサーバー・取引先との通信・管理者や業務の中核のアカウントは自動対応の対象外にして、実行前に人の承認を求める。ログやアラートに含まれる文字列は、指示ではなくデータとして扱う（AI エージェントの入力で明確に区別する）。 [Enterprise] 一度に実行できる件数と範囲、一定時間あたりの回数に上限を置き、上限に達したら実行を止めて人に回す。同じ発信元のアラートが短時間に集中したときの自動対応を保留する。封じ込めを元に戻す手順（隔離の解除・遮断の解除・アカウントの再有効化）を用意して演習する。対応の実行を、誰が（どのエージェント・プレイブックが）どのアラートに基づいて行ったかを含めて記録し、監視する。 [Advanced] 封じ込めの前に、アラートの根拠を独立した情報源（別の検知製品・資産の重要度・変更履歴）で確かめる。偽のアラートによる誘発を想定した演習（レッドチーム）を行い、陽動への対応手順を持つ。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SOAR
+      # 対応先へ操作を送る（outbound）接続があるときだけ発火する。双方向（bidirectional）の線も outbound を満たす。
+      connection:
+        direction: outbound
+        peerType: [EDR_DFIR_SERVER, FIREWALL, SECURE_WEB_GATEWAY, SASE, IDENTITY_PROVIDER, DIRECTORY, AI_GATEWAY]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "RS.MA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI02: Tool Misuse and Exploitation"
+        url: "https://genai.owasp.org/"
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI01: Agent Goal Hijack（取り込んだデータの指示による判断の誘導）"
+        url: "https://genai.owasp.org/"
+      - title: "MITRE ATLAS AML.T0053 AI Agent Tool Invocation（対応先ツールの呼び出し）"
+        url: "https://atlas.mitre.org/techniques/AML.T0053"
+      - title: "NIST SP 800-61 Rev. 3 - Incident Response Recommendations and Considerations for Cybersecurity Risk Management（対応と封じ込めの手順・役割の整備）"
+        url: "https://csrc.nist.gov/pubs/sp/800/61/r3/final"
+
+  # ── 高リスク操作への人の承認が効いていない（承認がない、または形だけ）（内在）──
+  # 未入力は agency: Autonomous として評価され発火する（大方針：未入力＝悪い値と同じ扱い、2026-10-31 ユーザー決定）。
+  # tool-approval-gate-gap（GUARDRAIL の設計）とは対象が違い、excessive-agency（自律動作の暴走）とは
+  #   権限の広さではなく承認の有無と形骸化を問う点で別グループにする。
+  - id: secops-agent-approval-ineffective-001
+    canonicalId: agent-high-risk-approval-gap
+    framework: AgenticAI
+    category: "Human-Agent Trust"
+    name: "高リスク操作への人の承認が効いていない（承認がない、または大量の依頼で形だけになっている）"
+    severity: High
+    description: "{{nodeName}} が隔離・遮断・削除・送金・外部送信のような影響の大きい操作を、人の承認なしに、または形だけの承認で実行できる構成では、プロンプトインジェクションや誤判断で誤った操作が出ても、止める人がいない。承認を置いていても、承認の依頼が大量に来て担当者が内容を確かめずに通す（承認疲れ）、承認画面に操作の対象と影響が出ておらず判断できない、承認なしで実行される例外の経路がある、承認者がエージェントの推奨をそのまま信頼する、のいずれかに当てはまれば、承認は誤りを止める防御として働かない（Can）。承認があること自体が安心の根拠になり、見直されにくい。一方、影響の大きい操作の種類を決めて承認を必須にし、承認の依頼を件数と重要度で絞り、承認画面に操作の対象・根拠・影響の範囲を示し、承認なしの経路が無いことを検証していれば、誤った操作は実行前に止まる（Cannot）。blast radius は {{nodeName}} が承認なしで実行できる操作の影響範囲。"
+    mitigation: "[Foundation] 影響の大きい操作（隔離・遮断・アカウント停止・削除・送金・外部送信）を一覧にして、承認を必須にする。承認なしで実行できる例外の経路（別のツール・API・自動化）が無いことを確かめる。承認の画面に、操作の対象・根拠となったデータ・影響の範囲を示す。 [Enterprise] 承認の依頼を、リスクの低いものは自動で処理（事後確認）し、リスクの高いものだけを人に回して件数を絞る。承認の件数・所要時間・全件承認の割合を監視し、内容を見ていない兆候（数秒での承認の連続）を検知する。不可逆な操作や広い範囲に及ぶ操作は二者承認にする。 [Advanced] 承認の判断をあとから抜き取り検査し、誤承認の割合を測る。エージェントの推奨に頼らず判断できる独立した情報（別の検知製品・資産の重要度・変更履歴）を承認画面に出す。承認者の交代と休憩の仕組みで、承認疲れを防ぐ。"
+    appliesTo:
+      kind: node
+      nodeType: AGENT
+      # 承認の有無はエージェントの運用設計の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+      # 実行を伴う（Bounded / Autonomous）エージェントのみ対象。助言だけ（None / Advisory）は実行しないので対象外。
+      # 未入力は Autonomous として評価され発火する。
+      agentAttributes:
+        agency: [Bounded, Autonomous]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "GV.RR-02"
+      - standard: nist-csf-2.0
+        ref: "PR.AT-01"
+    references:
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI09: Human-Agent Trust Exploitation（承認者の過信・自動化バイアス）"
+        url: "https://genai.owasp.org/"
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI02: Tool Misuse and Exploitation"
+        url: "https://genai.owasp.org/"
+      - title: "OWASP Agentic AI - Threats and Mitigations (Overwhelming Human in the Loop)"
+        url: "https://genai.owasp.org/"
+
+  # ── テナントを越えた調査・対応（内在）────────────────────────────
+  # 未入力は blastRadius: Admin として評価され発火する（大方針：未入力＝悪い値と同じ扱い、2026-10-31 ユーザー決定）。
+  # memory-cross-tenant-bleed（MEMORY_STORE の分離欠如）とは対象が違うため別グループにする。
+  - id: secops-agent-cross-tenant-operation-001
+    canonicalId: agent-cross-tenant-operation
+    framework: AgenticAI
+    category: "Elevation of Privilege"
+    name: "テナントを越えた調査・対応（あるテナントのデータに仕込まれた指示による、別テナントの環境の調査・封じ込め）"
+    severity: High
+    description: "{{nodeName}} が複数のテナント（顧客・組織）の環境を 1 つの権限と実行環境で扱う構成（MDR・MSSP など）では、あるテナントのログ・アラート・チケット・ファイルに攻撃者が仕込んだ指示が、{{nodeName}} の判断に混ざり得る。{{nodeName}} の権限が単一のテナントに限られていないため、その指示は別のテナントの環境に対する調査（ログ・資産・ユーザー情報の読み取りと持ち出し）や封じ込め（端末の隔離・通信の遮断・アカウントの停止）として実行され得る（Can）。攻撃者は 1 つの顧客のログに文字列を紛れ込ませるだけで、直接関わりのない別の顧客に被害を与えられ、被害を受けた側は原因が別の顧客にあることに気づきにくい。一方、テナントごとにエージェントの実行環境・資格情報・ツールの接続先を分け、実行中のテナントの範囲外を操作できない権限にし、あるテナントのデータを他のテナントの処理に持ち込まなければ、仕込まれた指示は自分のテナントの内側にとどまる（Cannot）。blast radius は {{nodeName}} の権限が及ぶすべてのテナントの環境とデータ。"
+    mitigation: "[Foundation] エージェントの権限と資格情報を、処理中の 1 つのテナントに限る。ツールの呼び出しに必ずテナントの識別子を持たせ、呼び出し先の側で、権限のないテナントへの操作を拒否する。ログ・アラート・チケットの内容は、指示ではなくデータとして扱う。 [Enterprise] テナントごとにエージェントのインスタンス・実行環境・メモリ・資格情報を分離し、1 回の処理に複数のテナントのデータを混ぜない。テナントをまたぐ操作が必要な場合は、人の承認を必須にして記録する。テナントの境界を越えた呼び出しの試行を検知する。 [Advanced] テナントごとに短命で範囲を限った資格情報を、処理の開始時に払い出す（エージェント自身は広い権限を持たない）。テナント間の分離を、あるテナントに偽の指示を仕込んだテストデータで定期的に検証する。"
+    appliesTo:
+      kind: node
+      nodeType: AGENT
+      # テナントの分離はエージェントの権限設計の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+      # 影響範囲がテナントをまたぐ（CrossTenant）か全体（Admin）のエージェントのみ対象。
+      # 未入力は Admin として評価され発火する。Self / ReadOnly / Tenant と明示したものは対象外。
+      agentAttributes:
+        blastRadius: [CrossTenant, Admin]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "Anthropic - Zero Trust for AI Agents (Identity and privilege abuse / tenant isolation)"
+      - title: "OWASP Top 10 for Agentic Applications 2026 - ASI03: Identity and Privilege Abuse"
+        url: "https://genai.owasp.org/"
+      - title: "MITRE ATLAS AML.T0051.001 LLM Prompt Injection: Indirect（他テナントのデータに仕込まれた指示の取り込み）"
+        url: "https://atlas.mitre.org/techniques/AML.T0051.001"

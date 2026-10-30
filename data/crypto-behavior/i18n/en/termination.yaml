@@ -45,6 +45,8 @@ behaviors:
     note: "Terminates TLS from log sources (syslog over TLS, HTTPS collection APIs) and from the viewing console. Check whether plaintext syslog (UDP/TCP) is accepted and how each source leg is encrypted."
   EDR_DFIR_SERVER:
     note: "Terminates TLS from the agents (often pinned to a product-specific CA) and the TLS of the management console and API. The product decides how agent traffic is encrypted, so PQC readiness depends on product updates. Check the expiry and distribution of the private CA and API certificates."
+  SOAR:
+    note: "Terminates TLS for the console, API and incoming webhooks, and calls the APIs of connected products over separate connections. Check the encryption of each connected-product leg and where the integration credentials (API keys, certificates) are stored."
   ZTNA_PROXY:
     note: "Terminates the user's TLS, authenticates and authorizes, then relays to the internal app over a separate connection. Confirm encryption on the app-side leg."
   PRIVATE_ENDPOINT:
