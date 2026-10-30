@@ -226,6 +226,12 @@ rules:
         ref: "PR.PS-02"
       - standard: nist-csf-2.0
         ref: "PR.IR-01"
+      - standard: d3fend
+        ref: "D3-SU"
+      - standard: d3fend
+        ref: "D3-ACH"
+      - standard: d3fend
+        ref: "D3-ITF"
     references:
       - title: "CISA - Known Exploited Vulnerabilities Catalog（悪用が確認された脆弱性の優先修正）"
         url: "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
@@ -262,6 +268,8 @@ rules:
         ref: "PR.DS-02"
       - standard: nist-csf-2.0
         ref: "PR.PS-01"
+      - standard: d3fend
+        ref: "D3-CERO"
     references:
       - title: "NIST SP 800-52 Rev.2 - Guidelines for the Selection, Configuration, and Use of TLS Implementations（TLS の証明書検証）"
         url: "https://csrc.nist.gov/pubs/sp/800/52/r2/final"
@@ -292,6 +300,10 @@ rules:
         ref: "PR.DS-02"
       - standard: nist-csf-2.0
         ref: "GV.SC-07"
+      - standard: d3fend
+        ref: "D3-CBAN"
+      - standard: d3fend
+        ref: "D3-ITF"
     references:
       - title: "NIST SP 800-52 Rev.2 - Guidelines for the Selection, Configuration, and Use of TLS Implementations（TLS 終端と証明書検証）"
         url: "https://csrc.nist.gov/pubs/sp/800/52/r2/final"
@@ -320,6 +332,10 @@ rules:
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.DS-02"
+      - standard: d3fend
+        ref: "D3-TAAN"
+      - standard: d3fend
+        ref: "D3-MENCR"
     references:
       - title: "IETF RFC 8461 - SMTP MTA Strict Transport Security (MTA-STS)"
         url: "https://www.rfc-editor.org/rfc/rfc8461"
@@ -348,6 +364,10 @@ rules:
         ref: "PR.IR-01"
       - standard: nist-csf-2.0
         ref: "DE.CM-01"
+      - standard: d3fend
+        ref: "D3-LAMED"
+      - standard: d3fend
+        ref: "D3-BDI"
     references:
       - title: "IEEE 802.1X - Port-Based Network Access Control（ポートに接続する機器の認証）"
         url: "https://standards.ieee.org/"
@@ -376,6 +396,10 @@ rules:
         ref: "PR.IR-01"
       - standard: nist-csf-2.0
         ref: "PR.AA-03"
+      - standard: d3fend
+        ref: "D3-CBAN"
+      - standard: d3fend
+        ref: "D3-LAMED"
     references:
       - title: "NIST SP 800-153 - Guidelines for Securing Wireless Local Area Networks (WLANs)（不正アクセスポイントの検知と無線の構成）"
         url: "https://csrc.nist.gov/pubs/sp/800/153/final"
@@ -403,6 +427,10 @@ rules:
         ref: "PR.AA-05"
       - standard: nist-csf-2.0
         ref: "DE.CM-03"
+      - standard: d3fend
+        ref: "D3-MFA"
+      - standard: d3fend
+        ref: "D3-UAP"
     references:
       - title: "NIST SP 800-207 - Zero Trust Architecture（ポリシー強制点と、リクエストごとの最小権限の付与）"
         url: "https://csrc.nist.gov/pubs/sp/800/207/final"
@@ -431,6 +459,10 @@ rules:
         ref: "PR.AA-05"
       - standard: nist-csf-2.0
         ref: "PR.IR-01"
+      - standard: d3fend
+        ref: "D3-NRAM"
+      - standard: d3fend
+        ref: "D3-ITF"
     references:
       - title: "NIST SP 800-207 - Zero Trust Architecture（ポリシー決定点・ポリシー強制点と、その迂回の防止）"
         url: "https://csrc.nist.gov/pubs/sp/800/207/final"
@@ -459,6 +491,8 @@ rules:
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.DS-02"
+      - standard: d3fend
+        ref: "D3-ET"
     references:
       - title: "NIST SP 800-52 Rev.2 - Guidelines for the Selection, Configuration, and Use of TLS Implementations（通信の暗号化）"
         url: "https://csrc.nist.gov/pubs/sp/800/52/r2/final"
@@ -492,6 +526,10 @@ rules:
         ref: "PR.DS-02"
       - standard: nist-csf-2.0
         ref: "PR.IR-01"
+      - standard: d3fend
+        ref: "D3-OTF"
+      - standard: d3fend
+        ref: "D3-DNSAL"
     references:
       - title: "AWS - Control access to VPC endpoints using endpoint policies（エンドポイントポリシーによる接続先の制限）"
         url: "https://docs.aws.amazon.com/vpc/latest/privatelink/vpc-endpoints-access.html"
@@ -522,6 +560,10 @@ rules:
         ref: "PR.DS-02"
       - standard: nist-csf-2.0
         ref: "PR.AA-03"
+      - standard: d3fend
+        ref: "D3-CBAN"
+      - standard: d3fend
+        ref: "D3-NRAM"
     references:
       - title: "NIST SP 800-204A - Building Secure Microservices-based Applications Using Service-Mesh Architecture（サービス間の mTLS と認可）"
         url: "https://csrc.nist.gov/pubs/sp/800/204/a/final"
@@ -552,6 +594,10 @@ rules:
         ref: "PR.AA-03"
       - standard: nist-csf-2.0
         ref: "PR.PS-01"
+      - standard: d3fend
+        ref: "D3-CERO"
+      - standard: d3fend
+        ref: "D3-CR"
     references:
       - title: "NIST SP 800-204A - Building Secure Microservices-based Applications Using Service-Mesh Architecture（メッシュの証明書の発行と鍵の保護）"
         url: "https://csrc.nist.gov/pubs/sp/800/204/a/final"
@@ -603,6 +649,10 @@ rules:
         ref: "PR.PS-01"
       - standard: nist-csf-2.0
         ref: "PR.IR-01"
+      - standard: d3fend
+        ref: "D3-SU"
+      - standard: d3fend
+        ref: "D3-ACH"
     references:
       - title: "IETF RFC 9112 - HTTP/1.1（メッセージ本文の長さの決め方と、リクエストスマグリングの注意）"
         url: "https://www.rfc-editor.org/rfc/rfc9112"
@@ -644,6 +694,8 @@ rules:
         ref: "PR.AA-05"
       - standard: nist-csf-2.0
         ref: "PR.IR-01"
+      - standard: d3fend
+        ref: "D3-CM"
     references:
       - title: "IETF RFC 7239 - Forwarded HTTP Extension（転送ヘッダーと、信頼できないプロキシの値の扱い）"
         url: "https://www.rfc-editor.org/rfc/rfc7239"
@@ -679,6 +731,10 @@ rules:
         ref: "PR.IR-01"
       - standard: nist-csf-2.0
         ref: "PR.AA-05"
+      - standard: d3fend
+        ref: "D3-ITF"
+      - standard: d3fend
+        ref: "D3-CBAN"
     references:
       - title: "MITRE CWE-288 - Authentication Bypass Using an Alternate Path or Channel"
         url: "https://cwe.mitre.org/data/definitions/288.html"
@@ -716,6 +772,8 @@ rules:
         ref: "PR.PS-01"
       - standard: nist-csf-2.0
         ref: "PR.DS-01"
+      - standard: d3fend
+        ref: "D3-ACH"
     references:
       - title: "IETF RFC 9111 - HTTP Caching（キャッシュキーと、保存してよい応答）"
         url: "https://www.rfc-editor.org/rfc/rfc9111"
@@ -750,6 +808,8 @@ rules:
         ref: "PR.PS-01"
       - standard: nist-csf-2.0
         ref: "PR.DS-01"
+      - standard: d3fend
+        ref: "D3-ACH"
     references:
       - title: "IETF RFC 9111 - HTTP Caching（キャッシュキーと、保存してよい応答）"
         url: "https://www.rfc-editor.org/rfc/rfc9111"
@@ -782,6 +842,12 @@ rules:
         ref: "PR.IR-01"
       - standard: nist-csf-2.0
         ref: "PR.DS-11"
+      - standard: d3fend
+        ref: "D3-MFA"
+      - standard: d3fend
+        ref: "D3-UAP"
+      - standard: d3fend
+        ref: "D3-NTF"
     references:
       - title: "NIST SP 800-125A Rev.1 - Security Recommendations for Server-based Hypervisor Platforms（管理の権限と管理用ネットワークの分離）"
         url: "https://csrc.nist.gov/pubs/sp/800/125/a/r1/final"
@@ -812,6 +878,8 @@ rules:
         ref: "PR.IR-01"
       - standard: nist-csf-2.0
         ref: "PR.PS-01"
+      - standard: d3fend
+        ref: "D3-ACH"
     references:
       - title: "NIST SP 800-125A Rev.1 - Security Recommendations for Server-based Hypervisor Platforms（仮想マシンの分離と仮想デバイス）"
         url: "https://csrc.nist.gov/pubs/sp/800/125/a/r1/final"
@@ -840,6 +908,10 @@ rules:
         ref: "PR.PS-04"
       - standard: nist-csf-2.0
         ref: "PR.AA-05"
+      - standard: d3fend
+        ref: "D3-FIM"
+      - standard: d3fend
+        ref: "D3-UAP"
     references:
       - title: "NIST SP 800-92 - Guide to Computer Security Log Management（ログの保護と、ログ管理の権限）"
         url: "https://csrc.nist.gov/pubs/sp/800/92/final"
@@ -873,6 +945,10 @@ rules:
         ref: "PR.DS-01"
       - standard: nist-csf-2.0
         ref: "PR.AA-05"
+      - standard: d3fend
+        ref: "D3-CRO"
+      - standard: d3fend
+        ref: "D3-MFA"
     references:
       - title: "NIST SP 800-92 - Guide to Computer Security Log Management（ログの機密性とアクセス制御）"
         url: "https://csrc.nist.gov/pubs/sp/800/92/final"
@@ -902,6 +978,10 @@ rules:
         ref: "DE.CM-01"
       - standard: nist-csf-2.0
         ref: "PR.PS-04"
+      - standard: d3fend
+        ref: "D3-EHB"
+      - standard: d3fend
+        ref: "D3-SDM"
     references:
       - title: "NIST SP 800-92 - Guide to Computer Security Log Management（ログの取得の停止と欠落への対応）"
         url: "https://csrc.nist.gov/pubs/sp/800/92/final"
@@ -933,6 +1013,12 @@ rules:
         ref: "PR.PS-02"
       - standard: nist-csf-2.0
         ref: "PR.IR-01"
+      - standard: d3fend
+        ref: "D3-MFA"
+      - standard: d3fend
+        ref: "D3-UAP"
+      - standard: d3fend
+        ref: "D3-NTF"
     references:
       - title: "MITRE ATT&CK T1072 - Software Deployment Tools（管理サーバーからの一斉配信の悪用）"
         url: "https://attack.mitre.org/techniques/T1072/"
@@ -959,6 +1045,10 @@ rules:
         ref: "DE.CM-01"
       - standard: nist-csf-2.0
         ref: "PR.PS-01"
+      - standard: d3fend
+        ref: "D3-UAP"
+      - standard: d3fend
+        ref: "D3-SDM"
     references:
       - title: "MITRE ATT&CK T1685 - Disable or Modify Tools（検知ツールの無効化・設定の改変）"
         url: "https://attack.mitre.org/techniques/T1685/"
@@ -983,6 +1073,10 @@ rules:
         ref: "PR.DS-01"
       - standard: nist-csf-2.0
         ref: "PR.AA-05"
+      - standard: d3fend
+        ref: "D3-FE"
+      - standard: d3fend
+        ref: "D3-UAP"
     references:
       - title: "Velociraptor Security Advisories（組織をまたぐデータの露出 CVE-2026-78412 等）"
         url: "https://docs.velociraptor.app/announcements/advisories/v0-77-2/"

@@ -18,6 +18,7 @@ export const StandardIdSchema = z.enum([
   'jp-ai-business-guideline',
   'nist-csf-2.0',
   'nist-csf-2.0-examples',
+  'd3fend',
 ]);
 
 /**

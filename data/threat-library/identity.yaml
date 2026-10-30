@@ -273,6 +273,10 @@ rules:
         ref: "PR.AA-01"
       - standard: nist-csf-2.0
         ref: "DE.CM-03"
+      - standard: d3fend
+        ref: "D3-UAP"
+      - standard: d3fend
+        ref: "D3-CBAN"
     references:
       - title: "MITRE ATT&CK T1078.004 - Valid Accounts: Cloud Accounts（同期用サービスアカウントを含む正規アカウントの悪用）"
         url: "https://attack.mitre.org/techniques/T1078/004/"
@@ -300,6 +304,8 @@ rules:
         ref: "PR.DS-01"
       - standard: nist-csf-2.0
         ref: "DE.AE-03"
+      - standard: d3fend
+        ref: "D3-DAM"
     references:
       - title: "MITRE ATT&CK T1098 - Account Manipulation（アカウント属性の改ざんによる権限取得・永続化）"
         url: "https://attack.mitre.org/techniques/T1098/"
@@ -357,6 +363,10 @@ rules:
         ref: "PR.AA-05"
       - standard: nist-csf-2.0
         ref: "DE.CM-09"
+      - standard: d3fend
+        ref: "D3-DTP"
+      - standard: d3fend
+        ref: "D3-MFA"
     references:
       - title: "MITRE ATT&CK T1484.002 - Domain or Tenant Policy Modification: Trust Modification"
         url: "https://attack.mitre.org/techniques/T1484/002/"
@@ -424,6 +434,10 @@ rules:
         ref: "PR.AA-01"
       - standard: nist-csf-2.0
         ref: "PR.IR-01"
+      - standard: d3fend
+        ref: "D3-MFA"
+      - standard: d3fend
+        ref: "D3-UAP"
     references:
       - title: "MITRE ATT&CK T1556.007 - Modify Authentication Process: Hybrid Identity（オンプレ側の認証処理への介入によるクラウド認証の迂回）"
         url: "https://attack.mitre.org/techniques/T1556/007/"
@@ -462,6 +476,8 @@ rules:
         ref: "PR.AA-01"
       - standard: nist-csf-2.0
         ref: "PR.AA-05"
+      - standard: d3fend
+        ref: "D3-LAM"
     references:
       - title: "MITRE ATT&CK T1078.003 - Valid Accounts: Local Accounts（システム固有のローカルアカウントの悪用）"
         url: "https://attack.mitre.org/techniques/T1078/003/"
@@ -533,6 +549,10 @@ rules:
         ref: "PR.AA-05"
       - standard: nist-csf-2.0
         ref: "PR.PS-01"
+      - standard: d3fend
+        ref: "D3-SPP"
+      - standard: d3fend
+        ref: "D3-CRO"
     references:
       - title: "MITRE ATT&CK T1558.003 - Steal or Forge Kerberos Tickets: Kerberoasting（SPN 宛チケットのオフライン解析）"
         url: "https://attack.mitre.org/techniques/T1558/003/"
@@ -561,6 +581,10 @@ rules:
         ref: "PR.AA-01"
       - standard: nist-csf-2.0
         ref: "DE.CM-09"
+      - standard: d3fend
+        ref: "D3-UAP"
+      - standard: d3fend
+        ref: "D3-RTA"
     references:
       - title: "MITRE ATT&CK T1003.006 - OS Credential Dumping: DCSync（複製プロトコル経由の資格情報取得）"
         url: "https://attack.mitre.org/techniques/T1003/006/"
@@ -591,6 +615,10 @@ rules:
         ref: "PR.AA-05"
       - standard: nist-csf-2.0
         ref: "DE.CM-09"
+      - standard: d3fend
+        ref: "D3-UAP"
+      - standard: d3fend
+        ref: "D3-LFP"
     references:
       - title: "MITRE ATT&CK T1484.001 - Domain or Tenant Policy Modification: Group Policy Modification"
         url: "https://attack.mitre.org/techniques/T1484/001/"
@@ -621,6 +649,8 @@ rules:
         ref: "PR.AA-05"
       - standard: nist-csf-2.0
         ref: "PR.PS-01"
+      - standard: d3fend
+        ref: "D3-UAP"
     references:
       - title: "MITRE ATT&CK T1550.003 - Use Alternate Authentication Material: Pass the Ticket（回収したチケットによる本人なりすまし）"
         url: "https://attack.mitre.org/techniques/T1550/003/"
@@ -663,6 +693,8 @@ rules:
         ref: "PR.AA-01"
       - standard: nist-csf-2.0
         ref: "DE.CM-03"
+      - standard: d3fend
+        ref: "D3-UAP"
     references:
       - title: "IETF Internet-Draft draft-ietf-oauth-identity-assertion-authz-grant-04 - Identity Assertion JWT Authorization Grant（§9.1 機密クライアントへの限定・§9.2 ステップアップ認証）"
         url: "https://datatracker.ietf.org/doc/draft-ietf-oauth-identity-assertion-authz-grant/"
@@ -729,6 +761,8 @@ rules:
         ref: "PR.AA-01"
       - standard: nist-csf-2.0
         ref: "PR.AA-05"
+      - standard: d3fend
+        ref: "D3-CR"
     references:
       - title: "MITRE ATT&CK T1528 - Steal Application Access Token（同意フィッシングによるアクセストークンの取得）"
         url: "https://attack.mitre.org/techniques/T1528/"
@@ -762,6 +796,8 @@ rules:
         ref: "PR.AA-05"
       - standard: nist-csf-2.0
         ref: "DE.CM-03"
+      - standard: d3fend
+        ref: "D3-CR"
     references:
       - title: "Auth0 Docs - Token Vault（XAA with Token Vault。保管したトークンから ID-JAG を取り直してアクセストークンを返す仕組み）"
         url: "https://auth0.com/docs/secure/call-apis-on-users-behalf/token-vault/xaa-with-token-vault"

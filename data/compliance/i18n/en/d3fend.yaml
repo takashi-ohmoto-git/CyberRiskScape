@@ -1,0 +1,113 @@
+# English overlay for `data/compliance/d3fend.yaml`.
+#
+# The Japanese file is the source of truth: only `title` and `summary` are translated
+# here, keyed by the item's `ref`. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - `title` uses the official D3FEND technique name (D3FEND 1.6.0) as published.
+#   - `summary` is this project's own one-to-two line summary,
+#     never a verbatim reproduction of the D3FEND definition text.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+standard: d3fend
+
+disclaimer: "title / summary are this project's own adaptation and summary of MITRE D3FEND 1.6.0 technique names. See the source URL for the original definitions."
+
+items:
+  # Harden
+  "D3-MFA":
+    title: "Multi-factor Authentication"
+    summary: "Require two or more pieces of evidence to verify a user, so a leaked password alone is not enough to get in."
+  "D3-CBAN":
+    title: "Certificate-based Authentication"
+    summary: "Authenticate only principals that hold a digital certificate, such as mutual TLS between services or device certificates."
+  "D3-SPP":
+    title: "Strong Password Policy"
+    summary: "Raise password length and complexity requirements so passwords resist brute force and offline cracking."
+  "D3-CRO":
+    title: "Credential Rotation"
+    summary: "Regularly replace passwords, API keys, and certificates to shorten the time a leaked credential stays usable."
+  "D3-CERO":
+    title: "Certificate Rotation"
+    summary: "Replace certificates and private keys on a plan so a compromised key is usable for a limited time and scope."
+  "D3-TAAN":
+    title: "Transfer Agent Authentication"
+    summary: "Verify that the servers relaying a message are authorized to send it."
+  "D3-MENCR":
+    title: "Message Encryption"
+    summary: "Encrypt the message body with a cryptographic key so its content stays unreadable even if intercepted en route."
+  "D3-FE":
+    title: "File Encryption"
+    summary: "Encrypt stored files with a cryptographic key so the content stays unreadable if the storage leaks."
+  "D3-SU":
+    title: "Software Update"
+    summary: "Replace outdated software with fixed versions to close publicly known vulnerabilities."
+  "D3-ACH":
+    title: "Application Configuration Hardening"
+    summary: "Review an application's configuration and cut unneeded features and loose settings to shrink its attack surface."
+
+  # Detect
+  "D3-RTA":
+    title: "RPC Traffic Analysis"
+    summary: "Monitor remote procedure call traffic to learn normal behavior and spot suspicious calls."
+  "D3-DAM":
+    title: "Domain Account Monitoring"
+    summary: "Watch the creation and modification of domain user accounts to detect unauthorized tampering."
+  "D3-LAM":
+    title: "Local Account Monitoring"
+    summary: "Review the local accounts each system holds to find forgotten accounts and suspicious use."
+  "D3-FIM":
+    title: "File Integrity Monitoring"
+    summary: "Detect suspicious changes to files, which helps find tampering with or deletion of logs and configuration."
+  "D3-SDM":
+    title: "System Daemon Monitoring"
+    summary: "Track changes in the state or configuration of critical resident processes, such as an agent being stopped."
+  "D3-EHB":
+    title: "Endpoint Health Beacon"
+    summary: "Endpoints send periodic status signals, and a missing signal is treated as a sign of compromise or shutdown."
+
+  # Isolate
+  "D3-UAP":
+    title: "User Account Permissions"
+    summary: "Limit the resources an account can reach to the minimum it needs, preventing over-privileged accounts."
+  "D3-LFP":
+    title: "Local File Permissions"
+    summary: "Use OS features to define who may read or write files, narrowing write access on shared folders and the like."
+  "D3-DTP":
+    title: "Domain Trust Policy"
+    summary: "Restrict trust between domains through configuration so unneeded or unauthorized trusts cannot be added."
+  "D3-NRAM":
+    title: "Network Resource Access Mediation"
+    summary: "Decide whether to allow a user or process reaching a system or service over the network before letting it through."
+  "D3-LAMED":
+    title: "LAN Access Mediation"
+    summary: "Authenticate and verify devices before they join a LAN and refuse unauthenticated ones, as with 802.1X."
+  "D3-BDI":
+    title: "Broadcast Domain Isolation"
+    summary: "Limit how many hosts can talk to each other on a LAN so one compromised host does not reach the whole segment."
+  "D3-ITF":
+    title: "Inbound Traffic Filtering"
+    summary: "Restrict traffic from untrusted networks toward the inside, passing only the sources that are allowed."
+  "D3-OTF":
+    title: "Outbound Traffic Filtering"
+    summary: "Restrict traffic from the inside toward untrusted networks so data cannot leave to destinations that are not allowed."
+  "D3-NTF":
+    title: "Network Traffic Filtering"
+    summary: "Pass only allowed traffic regardless of direction, for example to keep management networks separate."
+  "D3-ET":
+    title: "Encrypted Tunnels"
+    summary: "Encrypt and encapsulate traffic on the path to prevent eavesdropping and tampering on dedicated lines and VPN segments."
+  "D3-DNSAL":
+    title: "DNS Allowlisting"
+    summary: "Resolve only approved domains to stop redirection or connections to unexpected destinations."
+  "D3-CM":
+    title: "Content Modification"
+    summary: "Rewrite content that does not meet policy before passing it on, such as stripping or overwriting untrusted request headers."
+
+  # Evict
+  "D3-CR":
+    title: "Credential Revocation"
+    summary: "Revoke credentials that may have been stolen so they can no longer be used to authenticate."

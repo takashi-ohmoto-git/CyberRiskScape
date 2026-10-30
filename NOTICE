@@ -85,6 +85,17 @@ verbatim.
                   data/threat-library/network-infra.yaml,
                   data/threat-library/zero-trust-access.yaml
 
+   MITRE D3FEND
+   https://d3fend.mitre.org/
+   © The MITRE Corporation. The D3FEND knowledge base is published in the
+   d3fend/d3fend-ontology repository under the MIT License.
+   Technique IDs (D3-xxx) are referenced with attribution; no D3FEND text is
+   reproduced verbatim.
+
+   Referenced by: data/compliance/d3fend.yaml,
+                  data/threat-library/network-infra.yaml,
+                  data/threat-library/identity.yaml
+
 --------------------------------------------------------------------------------
 3. Model Context Protocol — Security Best Practices
    https://modelcontextprotocol.io/
