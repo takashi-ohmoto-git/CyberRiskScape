@@ -54,6 +54,7 @@ Importing configuration files, exporting verification requests, and diff checks 
 | **Anthropic `defending-code-reference-harness`** | `THREAT_MODEL.md`-compatible export | Use the threat model as input to an AI-driven vulnerability review | [Turning Your Threat Model into a Security Context](security-context.md) |
 | **Veracode** | Example setup (Veracode CLI and Findings API combined with `THREAT_MODEL.md`, `findings-report`, and the Postman export) | Build the threat model into a flow that fixes SAST and DAST findings with AI, as context, prioritization, and regression tests; use the Postman export as the DAST scan scope | [Fixing Veracode Findings with AI](veracode-remediation.md) |
 | **Prowler** | Findings import (`import-prowler`; OCSF output of AWS checks, CLI only) | Replace "assumed because unset" posture and attack surface attributes with measurements; cross-check FAIL checks against the threats on the diagram | [Putting Prowler Findings on the Diagram](prowler.md) |
+| **Cisco AI Defense** (skill-scanner / mcp-scanner) | Findings cross-reference (`findings-report --skill-scanner / --mcp-scanner`; result files, CLI only) | Cross-reference agent skill and MCP server scan results with the diagram's threats through an AITech mapping table; find what is left undrawn | [Cross-Reference Agent Skill and MCP Server Scan Results with the Threat Model](ai-scanners.md) |
 | **Velociraptor** | Importing collections (extracted folders), artifact hints in the investigation plan, and the EDR / DFIR server stencil and threat rules | When you suspect a compromise, decide which artifacts to collect on the nodes along the attack routes, and overlay the collections on the nodes as a report | [Scoping and reporting a suspected-compromise investigation](compromise-investigation.md) |
 
 ---
@@ -75,6 +76,7 @@ Importing configuration files, exporting verification requests, and diff checks 
 | Put the threat model to work in vulnerability review | Anthropic `defending-code-reference-harness`, Snyk |
 | Build a flow that fixes vulnerability findings with AI | Veracode |
 | Reflect cloud scan results (AWS) in the diagram's attributes | Prowler |
+| Cross-reference agent skill / MCP server scan results with the diagram | Cisco AI Defense (skill-scanner / mcp-scanner) |
 | Decide where to look and report the results when you suspect a compromise | Velociraptor and the bundled triage script ([guide](compromise-investigation.md)) |
 
 ---

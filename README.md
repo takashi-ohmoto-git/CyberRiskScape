@@ -4,7 +4,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Threat rules](https://img.shields.io/badge/threat%20rules-266-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-1555%20passing-brightgreen.svg)](#development)
+[![Tests](https://img.shields.io/badge/tests-1626%20passing-brightgreen.svg)](#development)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 **English** | [日本語](README.ja.md)
@@ -68,6 +68,7 @@ platforms, and AI agent platforms. It makes no outbound calls, so it also works 
 | **AI-driven vulnerability review** (Anthropic `defending-code-reference-harness`) | Export the threat model as `THREAT_MODEL.md`-compatible input for the review ([guide](guide/security-context.md)) |
 | **Vulnerability remediation** (Veracode) | An example setup that builds the threat model into a flow fixing SAST and DAST findings with AI, as context, prioritization, and regression tests ([guide](guide/veracode-remediation.md)) |
 | **Cloud security scanning** (Prowler) | Fill the operational posture and attack surface attributes still unset on diagram nodes from Prowler's OCSF findings for AWS, and cross-check FAIL checks against the diagram's threats ([guide](guide/prowler.md)) |
+| **AI component scanning** (Cisco AI Defense skill-scanner / mcp-scanner) | Cross-reference agent skill and MCP server scan results with the diagram's threats through an AITech mapping table, and find what is left undrawn ([guide](guide/ai-scanners.md)) |
 
 For the full list of products and how they connect, see [Integrations](guide/integrations.md).
 
@@ -184,7 +185,7 @@ npm run test:watch   # watch mode
 npx tsc --noEmit     # type check (strict)
 ```
 
-The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,588 tests
+The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,626 tests
 currently pass.
 
 ---

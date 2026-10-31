@@ -45,6 +45,7 @@ CyberRiskScape を使う人のための、機能の使い方の一覧です。
 | **[脅威モデルからペネトレーションテスト計画書を作る](pentest-plan.ja.md)** | 脅威モデルから、テスト業者に依存しないペネトレーションテスト計画書（Markdown）を書き出す方法（画面・CLI）：攻撃者が直接届く入口、OBJECTIVE を持つ攻撃者ごとの攻撃経路とチョークポイント、重大度順の重点テスト項目と確認観点（OWASP API Top 10・LLM Top 10・WSTG・MASVS を参照）、受容・誤検知とした脅威の前提確認、限界 |
 | **[Veracode の指摘を AI で直す](veracode-remediation.ja.md)** | Veracode の SAST・DAST をスケジュールで起動し、指摘を AI（Veracode Fix・コーディングエージェント）で修正し、テストと再検査で解消を確かめる流れの構成例：脅威モデル（THREAT_MODEL.md）を修正の前提にする・findings-report で指摘を脅威モデルと突き合わせて優先順位を付ける・DAST は Postman 書き出しで確かめる・指摘を図に戻す、GitHub Actions の例、AI に修正させるときの安全のための設計と限界 |
 | **[Prowler の検査結果を構成図に載せる](prowler.ja.md)** | Prowler（OSS のクラウドセキュリティ検査ツール）が OCSF で出力した検査結果で、図のノードの運用状況・攻撃面属性の未入力の項目を CLI で埋め（「未入力のため仮定」を実測に置き換える）、FAIL の検査を図の脅威と突き合わせる方法、タグによる資源の結びつけ、対応している AWS の検査、秘密情報の扱い、限界（架空のサンプルでのみ確認） |
+| **[エージェントスキル・MCP サーバーの検査結果を脅威モデルと突き合わせる](ai-scanners.ja.md)** | Cisco AI Defense の skill-scanner / mcp-scanner の結果を、図から検出した脅威と CLI で突き合わせる方法（確認された・描き漏れ候補・対応づけできない・検査が完了していない項目）、ノードへの絞り込み、AITech 対応表、秘密情報の扱い、CI での重大度ゲート、限界（架空のサンプルでのみ確認） |
 | **[AI駆動開発における Secure by Design と脅威モデリング](ai-driven-development.ja.md)** | AI が設計・実装・レビューを担う開発で、脅威モデルを「AI が読み書きし、人が判断する正本」として回す考え方と、企画・設計・実装・レビュー・検証・評価・運用の工程ごとに CyberRiskScape でできること、AI そのものの脅威モデル化、AI と人の境界、段階的な導入。各ガイドへの地図 |
 | **[Secure by Design 入門](secure-by-design.ja.md)** | 背景にある考え方。Secure by Design とは何か、なぜ今求められるのか、脅威モデリングが担う 4 つの役割、そして経営層・企画・セキュリティ・監査・CI が 1 つの脅威モデルを共有する Security Context Layer としての CyberRiskScape の役割。CISA 主導の国際共同ガイダンスに基づく |
 
@@ -83,6 +84,7 @@ CyberRiskScape を使う人のための、機能の使い方の一覧です。
 - **ペネトレーションテストの範囲と重点を、脅威モデルを根拠に決めたい** — [脅威モデルからペネトレーションテスト計画書を作る](pentest-plan.ja.md) へ。
 - **Veracode の指摘を AI で直す流れを、脅威モデルを前提に組みたい** — [Veracode の指摘を AI で直す](veracode-remediation.ja.md) へ。
 - **Prowler（AWS）の実測で「未入力のため仮定」を置き換えたい・Prowler の FAIL を図の脅威と突き合わせたい** — [Prowler の検査結果を構成図に載せる](prowler.ja.md) へ。
+- **エージェントスキル・MCP サーバーの検査ツール（skill-scanner / mcp-scanner）の結果を、図と脅威モデルに突き合わせたい** — [エージェントスキル・MCP サーバーの検査結果を脅威モデルと突き合わせる](ai-scanners.ja.md) へ。
 - **AI駆動開発で脅威モデリングをどう続けるか、全体像を知りたい** — [AI駆動開発における Secure by Design と脅威モデリング](ai-driven-development.ja.md) へ。
 - **この取り組みの意義を誰かに説明したい** — [Secure by Design 入門](secure-by-design.ja.md) は
   単独で読める内容になっています。
