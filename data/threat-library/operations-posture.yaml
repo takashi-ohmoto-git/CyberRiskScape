@@ -527,6 +527,35 @@ rules:
       - title: "MITRE ATT&CK T1078 - Valid Accounts（棚卸しされず残ったアカウントへのログイン）"
         url: "https://attack.mitre.org/techniques/T1078/"
 
+  # ── AI 資産の使用状況の棚卸しがない・不定期 ─────────────────────
+  - id: posture-ai-usage-review-missing-001
+    canonicalId: ai-asset-dormant-access
+    framework: STRIDE
+    category: "Spoofing"
+    name: "AI 資産の使用状況の棚卸しがない・不定期（使われていないエージェント・モデル・MCP サーバーが権限と資格情報を持ったまま残る）"
+    severity: Medium
+    description: "使われなくなった {{nodeName}} が、ツールの権限・API キーやトークン・到達できる入口（エンドポイント・チャット窓口）を持ったまま残る（Can）。利用者がいないので異常な呼び出しに誰も気づかず、監視・パッチ・プロンプトの見直しの対象からも外れやすい。攻撃者はそこを足場に、権限の範囲で操作・持ち出しができる。一方、最終利用の時期を資産ごとに記録し、一定期間使われていないものを停止して権限・資格情報を回収していれば、残る足場が無い（Cannot）。blast radius は {{nodeName}} が持つ権限・資格情報で届く範囲。"
+    mitigation: "[Foundation] エージェント・モデル・MCP サーバーの一覧に所有者と最終利用日を持たせ、少なくとも四半期に 1 回棚卸しし、使われていないものは停止して API キー・トークン・ツールの許可を回収する。資産を作る手順に廃止の手順を組み込む。 [Enterprise] 呼び出しの記録（ゲートウェイ・クラウドの利用メトリクス・監査ログ）から最終利用日を自動で集め、一定期間（例：30 日）使われていない資産を通知する。使われなくなった資産も一覧から消さず「最終利用：それ以前」として残し、廃止まで追跡する。 [Advanced] 資格情報を短命化し、使われない資産の権限が自然に失効するようにする（長期の静的キーを持たせない）。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: AGENT
+        - nodeType: SUB_AGENT
+        - nodeType: MCP_SERVER
+        - nodeType: LLM
+      connection:
+        required: false
+      posture:
+        aiUsageReview: [None, Irregular, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "ID.AM-08"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "MITRE ATT&CK T1078 - Valid Accounts（使われず残った資格情報の悪用）"
+        url: "https://attack.mitre.org/techniques/T1078/"
+
   # ── DNS レコードの参照先の棚卸しがない・不定期 ───────────────────
   - id: posture-dns-dangling-record-001
     canonicalId: subdomain-takeover

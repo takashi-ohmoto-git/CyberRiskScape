@@ -200,6 +200,8 @@ export const POSTURE_FIELD_VALUES = {
   accountReview: ['Periodic', 'Irregular', 'None'],
   /** DNS レコードの参照先（外部サービス・クラウド資源）の棚卸し */
   dnsRecordReview: ['Periodic', 'Irregular', 'None'],
+  /** AI 資産（エージェント・モデル・MCP サーバー）の使用状況の棚卸し＝使われていない資産の停止と権限・資格情報の回収 */
+  aiUsageReview: ['Periodic', 'Irregular', 'None'],
   /** エージェントスキルの導入前の審査（指示とスクリプトの確認・スキャン） */
   skillVetting: ['Reviewed', 'ScanOnly', 'None'],
   /** エージェントスキルの版の固定（コミット・ハッシュでの固定と検証） */
@@ -240,6 +242,7 @@ export const POSTURE_GROUPS = [
   'patch',
   'accountReview',
   'dnsRecordReview',
+  'aiUsageReview',
   'skill',
   'dependency',
   'agentPermission',
@@ -255,6 +258,7 @@ export const POSTURE_GROUP_FIELDS: Readonly<Record<PostureGroup, readonly Postur
   patch: ['patchStatus'],
   accountReview: ['accountReview'],
   dnsRecordReview: ['dnsRecordReview'],
+  aiUsageReview: ['aiUsageReview'],
   skill: ['skillVetting', 'skillVersionPinning', 'skillPermissionLimit', 'skillExternalContent'],
   dependency: ['dependencyLockfile', 'installScripts', 'dependencyVetting'],
   agentPermission: ['commandAllowScope', 'agentSandbox', 'agentEgress'],
@@ -270,6 +274,7 @@ export interface NodePosture {
   patchStatus?: (typeof POSTURE_FIELD_VALUES.patchStatus)[number];
   accountReview?: (typeof POSTURE_FIELD_VALUES.accountReview)[number];
   dnsRecordReview?: (typeof POSTURE_FIELD_VALUES.dnsRecordReview)[number];
+  aiUsageReview?: (typeof POSTURE_FIELD_VALUES.aiUsageReview)[number];
   skillVetting?: (typeof POSTURE_FIELD_VALUES.skillVetting)[number];
   skillVersionPinning?: (typeof POSTURE_FIELD_VALUES.skillVersionPinning)[number];
   skillPermissionLimit?: (typeof POSTURE_FIELD_VALUES.skillPermissionLimit)[number];

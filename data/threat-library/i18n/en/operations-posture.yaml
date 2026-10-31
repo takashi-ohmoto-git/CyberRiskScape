@@ -97,6 +97,15 @@ rules:
       "1":
         title: "MITRE ATT&CK T1078 - Valid Accounts (signing in to accounts left unreviewed)"
 
+  posture-ai-usage-review-missing-001:
+    category: "Spoofing"
+    name: "No or irregular review of AI asset usage (unused agents, models, and MCP servers remain with their privileges and credentials)"
+    description: "An unused {{nodeName}} remains with its tool privileges, API keys or tokens, and reachable entry points (endpoints, chat front doors) (Can). Because nobody uses it, nobody notices abnormal calls, and it tends to fall out of monitoring, patching, and prompt review. An attacker can use it as a foothold to operate on and exfiltrate whatever its privileges reach. On the other hand, if the last-used time is recorded per asset and assets unused for a set period are stopped and have their privileges and credentials revoked, no foothold remains (Cannot). The blast radius is everything reachable with the privileges and credentials held by {{nodeName}}."
+    mitigation: "[Foundation] Keep an owner and a last-used date for each agent, model, and MCP server in the inventory, review it at least quarterly, and stop unused assets and revoke their API keys, tokens, and tool permissions. Build decommissioning into the procedure for creating assets. [Enterprise] Collect last-used dates automatically from call records (gateway, cloud usage metrics, audit logs) and notify on assets unused for a set period (e.g., 30 days). Keep unused assets in the inventory as 'last used: before that date' rather than deleting them, and track them until decommissioned. [Advanced] Shorten the lifetime of credentials so that the privileges of unused assets expire on their own (do not issue long-lived static keys)."
+    references:
+      "0":
+        title: "MITRE ATT&CK T1078 - Valid Accounts (abuse of credentials left behind unused)"
+
   posture-dns-dangling-record-001:
     category: "Spoofing"
     name: "No or irregular review of DNS record targets (records pointing at decommissioned external resources remain, allowing subdomain takeover)"

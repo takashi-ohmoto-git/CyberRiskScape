@@ -71,6 +71,7 @@ const FIELD_LABEL_KEYS: Record<string, TranslationKey> = {
   patchStatus: 'panels.posture.field.patchStatus',
   accountReview: 'panels.posture.field.accountReview',
   dnsRecordReview: 'panels.posture.field.dnsRecordReview',
+  aiUsageReview: 'panels.posture.field.aiUsageReview',
   skillVetting: 'panels.posture.field.skillVetting',
   skillVersionPinning: 'panels.posture.field.skillVersionPinning',
   skillPermissionLimit: 'panels.posture.field.skillPermissionLimit',

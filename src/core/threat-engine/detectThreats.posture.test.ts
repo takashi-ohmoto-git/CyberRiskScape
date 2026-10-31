@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { detectThreats } from './detectThreats';
 import type { DiagramNode } from '../model/types';
 import { componentRegistry } from '../../component-library/defaultRegistry';
+import { BUNDLED_THREAT_LIBRARY } from '../../threat-library/loader/bundledLibrary';
 import { PostureMatchSchema, ThreatRuleSchema, type ThreatRule } from '../../threat-library/schema/threatRule';
 
 /**
@@ -167,5 +168,20 @@ describe('containsType 軸と conditions での段階分け', () => {
         appliesTo: { kind: 'node', nodeType: 'DATABASE', conditions: [{ when: {}, severity: 'High' }] },
       }),
     ).toThrow();
+  });
+});
+
+describe('posture-ai-usage-review-missing-001（AI 資産の使用状況の棚卸し）', () => {
+  const bundled = BUNDLED_THREAT_LIBRARY.rules.filter((r) => r.id === 'posture-ai-usage-review-missing-001');
+  const fired = (node: DiagramNode) => run(bundled[0], [node]);
+
+  it.each(['AGENT', 'LLM'] as const)('%s は未入力で発火し、Periodic で消え、Irregular で発火する', (type) => {
+    const node: DiagramNode = { id: 'n', type, x: 0, y: 0 };
+    expect(bundled).toHaveLength(1);
+    const unset = fired(node);
+    expect(unset).toHaveLength(1);
+    expect(unset[0].assumptionFlags).toEqual(['posture']);
+    expect(fired({ ...node, posture: { aiUsageReview: 'Periodic' } })).toHaveLength(0);
+    expect(fired({ ...node, posture: { aiUsageReview: 'Irregular' } })).toHaveLength(1);
   });
 });

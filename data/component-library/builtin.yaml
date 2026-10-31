@@ -76,6 +76,7 @@ components:
     shape: rounded
     color: "bg-violet-600"
     description: "大規模言語モデル（推論API、ホスト型、ローカル型を含む）。"
+    posture: [aiUsageReview]
 
   - id: DB
     label: "ベクターDB / RAG"
@@ -102,7 +103,7 @@ components:
     shape: rounded
     color: "bg-violet-600"
     description: "計画・ツール選択・推論を自律的に行う AI エージェント。"
-    posture: [agentPermission]
+    posture: [agentPermission, aiUsageReview]
 
   - id: AGENT_SKILL
     label: "エージェントスキル"
