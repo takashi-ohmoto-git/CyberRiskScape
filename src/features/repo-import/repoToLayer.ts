@@ -515,17 +515,34 @@ export function repoToLayer(files: RepoFile[], opts: RepoImportOptions): RepoImp
           hooks: t(hooks ? 'repo.word.yes' : 'repo.word.no'),
         }) + (broad.length > 0 ? t('repo.desc.broad', { entries: broad.join(', ') }) : ''),
       ...(Object.keys(posture).length > 0 ? { posture } : {}),
+      inventory: {
+        kind: 'agent',
+        source: '.claude/',
+        collectedAt: opts.collectedAt,
+        allowCount: allow.length,
+        denyCount: deny.length,
+        tools,
+        broadAllows: broad,
+        sandbox,
+        hooks,
+        items: [
+          ...[...skillNames].sort().map((name) => ({ name, kind: 'skill' as const })),
+          ...[...commandNames].sort().map((name) => ({ name: `/${name}`, kind: 'command' as const })),
+        ],
+      },
     });
     addEdge(agent.id, pc.id, 'None', 'VPC', 'Plain', { dataFlow: 'bidirectional' });
 
-    const addSkill = (idPrefix: string, label: string) => {
-      const id = `repo-${idPrefix}-${slug(label)}`;
+    // skill・command は 1 件ずつ描くと図が読めなくなるため、種類ごとに 1 ノードへ集約する。
+    // 名前の一覧はエージェントのインベントリに置き、ダッシュボードで見る（steps-2026-11 §2.112）。
+    const addSkillGroup = (id: string, count: number, label: string) => {
+      if (count === 0) return;
       const n = addNode({ id, type: 'AGENT_SKILL', ...place(true), label });
       internalIds.push(n.id);
       addEdge(agent!.id, n.id, 'None', 'VPC', 'Plain', { dataFlow: 'outbound' });
     };
-    for (const s of [...skillNames].sort()) addSkill('skill', s);
-    for (const c of [...commandNames].sort()) addSkill('cmd', `/${c}`);
+    addSkillGroup('repo-skills', skillNames.size, t('repo.node.skills', { count: skillNames.size }));
+    addSkillGroup('repo-commands', commandNames.size, t('repo.node.commands', { count: commandNames.size }));
   }
 
   // ── MCP サーバー ──

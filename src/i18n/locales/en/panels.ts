@@ -111,6 +111,7 @@ export const enPanels: Partial<Record<TranslationKey, string>> = {
   'panels.inventory.kind.npm': 'npm',
   'panels.inventory.kind.pypi': 'PyPI',
   'panels.inventory.kind.env': 'Environment variables',
+  'panels.inventory.kind.agent': 'Agent settings',
   'panels.inventory.count': '{count} items',
   'panels.inventory.collectedAt': 'Collected',
   'panels.inventory.copy': 'Copy',

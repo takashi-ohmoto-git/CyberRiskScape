@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Cloud,
   Crosshair,
+  LayoutDashboard,
   GitBranch,
   Link as LinkIcon,
   Package,
@@ -56,7 +57,8 @@ import { formatElementalId } from '../../core/model/elementalId';
 import { getNodeDisplayName } from '../../core/model/nodeDisplay';
 import { getComponentRegistry } from '../../component-library/defaultRegistry';
 import { renderIcon } from '../../component-library/iconRegistry';
-import { selectActiveNodes, useDiagramStore } from '../../core/state/diagramStore';
+import { selectActiveEdges, selectActiveNodes, useDiagramStore } from '../../core/state/diagramStore';
+import { RepoDashboardModal } from '../../features/repo-import/RepoDashboardModal';
 import { useLocale, useT } from '../../i18n';
 import { ThreatCard } from './ThreatCard';
 import { sortThreatsBySeverity } from './sortThreatsBySeverity';
@@ -266,6 +268,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
   const setNodePosition = useDiagramStore((s) => s.setNodePosition);
   const selectNode = useDiagramStore((s) => s.selectNode);
   const allNodes = useDiagramStore(selectActiveNodes);
+  const allEdges = useDiagramStore(selectActiveEdges);
   const config = registry.get(node.type);
   const typeLabel = config?.label ?? node.type;
   const colorClass = config?.color ?? 'bg-slate-500';
@@ -313,6 +316,7 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
   // agency / identityTier は適用対象ノード型のみ表示する。
   const [agentAttrsOpen, setAgentAttrsOpen] = useState(false);
   const [attackTreeOpen, setAttackTreeOpen] = useState(false);
+  const [repoDashboardOpen, setRepoDashboardOpen] = useState(false);
 
   /** エージェント属性 1 フィールドだけを更新（他フィールドは保持）。空文字選択で undefined に戻す。 */
   const onUpdateAgentAttr = <K extends keyof AgentAttributes>(
@@ -922,6 +926,15 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
 
         <PostureSection node={node} />
 
+        {node.inventory?.kind === 'agent' && (
+          <button
+            onClick={() => setRepoDashboardOpen(true)}
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold text-xs transition-colors"
+          >
+            <LayoutDashboard size={14} /> {t('repoDashboard.open')}
+          </button>
+        )}
+
         <InventorySection node={node} />
 
         <div className="bg-slate-800/50 rounded-2xl border border-slate-700">
@@ -1053,6 +1066,14 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
           {t('panels.common.close')}
         </button>
       </div>
+
+      {repoDashboardOpen && node.inventory?.kind === 'agent' && (
+        <RepoDashboardModal
+          layer={{ nodes: allNodes, edges: allEdges, boundaries: [], annotations: [] }}
+          agentId={node.id}
+          onClose={() => setRepoDashboardOpen(false)}
+        />
+      )}
 
       {attackTreeOpen && showAttacker && (
         <AttackTreeModal

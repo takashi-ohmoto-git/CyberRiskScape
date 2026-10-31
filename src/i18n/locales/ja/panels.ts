@@ -112,6 +112,7 @@ export const jaPanels = {
   'panels.inventory.kind.npm': 'npm',
   'panels.inventory.kind.pypi': 'PyPI',
   'panels.inventory.kind.env': '環境変数',
+  'panels.inventory.kind.agent': 'エージェント設定',
   'panels.inventory.count': '{count} 件',
   'panels.inventory.collectedAt': '取得日時',
   'panels.inventory.copy': 'コピー',

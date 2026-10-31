@@ -149,6 +149,18 @@ const PersistedNodeInventorySchema = z.discriminatedUnion('kind', [
     gitIgnored: z.boolean().optional(),
     items: z.array(EnvVarInventoryItemSchema),
   }),
+  z.object({
+    kind: z.literal('agent'),
+    source: z.string(),
+    collectedAt: z.string(),
+    allowCount: z.number().int().nonnegative(),
+    denyCount: z.number().int().nonnegative(),
+    tools: z.array(z.string()),
+    broadAllows: z.array(z.string()),
+    sandbox: z.boolean(),
+    hooks: z.boolean(),
+    items: z.array(z.object({ name: z.string(), kind: z.enum(['skill', 'command']) })),
+  }),
 ]);
 
 const PersistedNodeSchema = z.object({

@@ -239,6 +239,8 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'repo.node.pc': 'Developer workstation',
   'repo.node.agent': 'Coding agent (Claude Code)',
   'repo.node.registry': 'Package registry ({host})',
+  'repo.node.skills': 'Skills ({count})',
+  'repo.node.commands': 'Commands ({count})',
   'repo.word.yes': 'yes',
   'repo.word.no': 'no',
   'repo.word.enabled': 'enabled',

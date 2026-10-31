@@ -236,12 +236,33 @@ describe('repoToLayer', () => {
     expect(remote.x).toBeGreaterThan(internet.x);
   });
 
-  it('スキルとコマンドを名前だけで AGENT_SKILL にし、エージェントから線を引く', () => {
+  it('スキルとコマンドを種類ごとに 1 つの AGENT_SKILL に集約し、エージェントから線を引く', () => {
     const { layer, summary } = ok();
-    const skills = byType(layer, 'AGENT_SKILL').map((n) => n.label);
-    expect(skills.sort()).toEqual(['/deploy', 'review']);
-    expect(layer.edges.filter((e) => e.source === 'repo-agent' && skills.length > 0).length).toBeGreaterThan(2);
+    const groups = byType(layer, 'AGENT_SKILL');
+    expect(groups.map((n) => n.id).sort()).toEqual(['repo-commands', 'repo-skills']);
+    for (const g of groups) expect(layer.edges.some((e) => e.source === 'repo-agent' && e.target === g.id)).toBe(true);
     expect(summary).toMatchObject({ skills: 1, commands: 1 });
+  });
+
+  it('スキル・コマンドの名前と設定の要約をエージェントのインベントリに残す（許可ルールの中身は残さない）', () => {
+    const agent = ok().layer.nodes.find((n) => n.id === 'repo-agent')!;
+    expect(agent.inventory).toMatchObject({
+      kind: 'agent',
+      source: '.claude/',
+      items: [
+        { name: 'review', kind: 'skill' },
+        { name: '/deploy', kind: 'command' },
+      ],
+    });
+    if (agent.inventory?.kind !== 'agent') throw new Error('agent inventory expected');
+    expect(agent.inventory.allowCount).toBeGreaterThan(0);
+    expect(agent.inventory.broadAllows).toEqual(['Bash(npx *)']);
+    expect(JSON.stringify(agent.inventory)).not.toContain(ALLOW_SECRET);
+  });
+
+  it('スキルもコマンドも無ければ集約ノードを作らない', () => {
+    const files = FILES.filter((f) => !f.path.startsWith('.claude/skills/') && !f.path.startsWith('.claude/commands/'));
+    expect(byType(ok(files).layer, 'AGENT_SKILL')).toHaveLength(0);
   });
 
   it('ID はパスと名前から決まり、入力順に依存しない', () => {

@@ -238,6 +238,8 @@ export const jaProject = {
   'repo.node.pc': '開発端末',
   'repo.node.agent': 'コーディングエージェント（Claude Code）',
   'repo.node.registry': 'パッケージレジストリ（{host}）',
+  'repo.node.skills': 'スキル（{count} 件）',
+  'repo.node.commands': 'コマンド（{count} 件）',
   'repo.word.yes': 'あり',
   'repo.word.no': 'なし',
   'repo.word.enabled': '有効',

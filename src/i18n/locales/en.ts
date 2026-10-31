@@ -16,6 +16,7 @@ import { enInvestigation } from './en/investigation';
 import { enInvestigationReport } from './en/investigationReport';
 import { enSbomCrypto } from './en/sbomCrypto';
 import { enRoe } from './en/roe';
+import { enRepoDashboard } from './en/repoDashboard';
 
 
 /**
@@ -203,4 +204,5 @@ export const en: Partial<Record<TranslationKey, string>> = {
   ...enInvestigationReport,
   ...enSbomCrypto,
   ...enRoe,
+  ...enRepoDashboard,
 };

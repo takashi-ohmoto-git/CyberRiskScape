@@ -787,8 +787,16 @@ export interface EnvVarInventoryItem {
   length: number;
 }
 
+/** エージェントの skill / command 1 件（AGENT のインベントリ）。名前だけを記録する。 */
+export interface AgentAssetInventoryItem {
+  name: string;
+  kind: 'skill' | 'command';
+}
+
 /**
  * ノードのインベントリ。`source` はリポジトリ内の相対パス、`collectedAt` は ISO 8601。
+ * `agent` はコーディングエージェントの設定（`.claude/`）の要約。許可ルールの中身は記録しない
+ * （トークンが混じりうるため。件数・ツール名・固定一覧に一致した広い許可だけ）。
  */
 export type NodeInventory =
   | { kind: 'npm' | 'pypi'; source: string; collectedAt: string; items: PackageInventoryItem[] }
@@ -799,6 +807,18 @@ export type NodeInventory =
       template: boolean;
       gitIgnored?: boolean;
       items: EnvVarInventoryItem[];
+    }
+  | {
+      kind: 'agent';
+      source: string;
+      collectedAt: string;
+      allowCount: number;
+      denyCount: number;
+      tools: string[];
+      broadAllows: string[];
+      sandbox: boolean;
+      hooks: boolean;
+      items: AgentAssetInventoryItem[];
     };
 
 export interface DiagramEdge {

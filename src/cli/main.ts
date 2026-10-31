@@ -60,6 +60,8 @@ import { layerToProject } from '../features/kong-import/toProject';
 import { kongctlToLayer } from '../features/kongctl-import/kongctlToLayer';
 import { collectRepo } from '../features/repo-import/collectRepo';
 import { repoToLayer } from '../features/repo-import/repoToLayer';
+import { buildRepoDashboard } from '../features/repo-import/buildRepoDashboard';
+import { renderRepoDashboardHtml } from '../features/repo-import/renderRepoDashboardHtml';
 import { conjurToLayer } from '../features/conjur-import/conjurToLayer';
 import { shodanToLayer } from '../features/shodan-import/shodanToLayer';
 import { scopesentryRecordsToLayer, scopesentryToLayer, type ScopesentryImportResult } from '../features/scopesentry-import/scopesentryToLayer';
@@ -188,6 +190,7 @@ import-kongctl のオプション（Kong AI Gateway 2.x の kongctl 宣言ファ
 import-repo のオプション（コーディングエージェントの作業ディレクトリ（リポジトリ）の package.json・requirements*.txt・.env*・.mcp.json・.claude/ から、開発環境と依存パッケージの構成図の下書きを L1 に作り、プロジェクト JSON を出力。.env の値・認証情報は読み取り後に捨てる）:
   --locale <ja|en>                              ノード名の言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
+  --dashboard <file>                            エージェント（スキル・コマンド・MCP・依存・.env の名前）のダッシュボードを単体の HTML で出力（.claude/ が無ければ出さない）
 
 import-prowler のオプション（Prowler の OCSF 出力（*.ocsf.json）の検査結果を、図のノードの運用状況・攻撃面属性の未入力の項目に載せる。入力済みの値は上書きせず、食い違いを報告に出す。ファイル入力のみ）:
   --ocsf <file>                                 Prowler の OCSF（必須。json-ocsf の出力）
@@ -387,6 +390,7 @@ function parseCliArgs() {
       locale: { type: 'string' },
       tool: { type: 'string' },
       out: { type: 'string', short: 'o' },
+      dashboard: { type: 'string' },
       ocsf: { type: 'string' },
       in: { type: 'string' },
       map: { type: 'string' },
@@ -694,6 +698,17 @@ ${USAGE}`);
   );
   for (const w of warnings) process.stderr.write(`警告: ${w}
 `);
+
+  if (values.dashboard) {
+    const agent = result.layer.nodes.find((n) => n.inventory?.kind === 'agent');
+    const data = agent ? buildRepoDashboard(result.layer, agent.id) : undefined;
+    if (!data) {
+      process.stderr.write('警告: エージェントの設定（.claude/）が見つからないため、ダッシュボードは出力しません\n');
+    } else {
+      writeFileSync(values.dashboard, renderRepoDashboardHtml(data, locale), 'utf-8');
+      process.stderr.write(`ダッシュボードを出力しました: ${values.dashboard}\n`);
+    }
+  }
 }
 
 /**

@@ -28,6 +28,7 @@ import { jaInvestigation } from './ja/investigation';
 import { jaInvestigationReport } from './ja/investigationReport';
 import { jaSbomCrypto } from './ja/sbomCrypto';
 import { jaRoe } from './ja/roe';
+import { jaRepoDashboard } from './ja/repoDashboard';
 
 const jaCore = {
   'app.loading': '読み込み中…',
@@ -228,6 +229,7 @@ export const ja = {
   ...jaInvestigationReport,
   ...jaSbomCrypto,
   ...jaRoe,
+  ...jaRepoDashboard,
 } as const;
 
 /** 全翻訳キーの型。en 等の他ロケールはこの部分集合を持つ。 */
