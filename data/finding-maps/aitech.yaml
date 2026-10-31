@@ -1,0 +1,170 @@
+# AI 向けスキャナー（エージェントスキル・MCP サーバーの検査ツール）の指摘の AITech / AISubtech コード
+# → 脅威ライブラリの canonicalId の対応表。
+#
+# 指摘に付いたコードがここに載っていれば、構成図から検出した脅威（同じ canonicalId）と突き合わせる。
+# 引き方は「AISubtech が載っていればそれ、無ければ親の AITech」。
+# スキャナーの版によってはサブ技術の番号が分類の版とずれる（例: Tool Shadowing が AISubtech-12.1.5 と
+# AISubtech-12.1.4 の両方で出る）ため、技術（AITech）単位の行を必ず置いて受け止める。
+#
+# 方針:
+#   - コードだけを置く。分類の定義文は転載しない。`note` は日本語の短い分類名。
+#   - 1 つのコードは 1 つの mapping にだけ書く（重複は読み込み時にエラー）。
+#     1 つのコードが複数の canonicalId に対応してよい。
+#   - 構成図の脅威として当てはまりにくいもの（AITech-15.1 の有害コンテンツの各種・8.5〜8.7 の個人情報の種別・
+#     17.1 センサー・19.x クロスモーダル等）は意図的に載せない。載せないコードはレポートの「対応づけできない指摘」に出る。
+#
+# 出典:
+#   - Cisco AI Security and Safety Taxonomy 2.0.0（コード体系のみ参照）。
+#     確認は skill-scanner に同梱のスナップショット（skill_scanner/data/taxonomy/cisco_ai_taxonomy.json、
+#     revision 655a343ac943a51b6f61f86e47156e7752c15dc6、Apache-2.0）で行った（2026-10-31）。
+#     https://github.com/cisco-ai-defense/skill-scanner
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+mappings:
+  # ── 目的の乗っ取り（プロンプトインジェクション）──
+  - aitech: [AITech-1.1]
+    canonicalIds: [direct-prompt-injection, llm-jailbreak, tool-descriptor-poisoning]
+    note: 直接のプロンプトインジェクション・ジェイルブレイク（スキルや MCP の説明文に埋め込まれた指示を含む）
+
+  - aitech: [AITech-1.2]
+    canonicalIds: [indirect-prompt-injection]
+    note: 間接プロンプトインジェクション
+
+  # ── 自律性の逸脱 ──
+  - aisubtech: [AISubtech-2.1.1]
+    canonicalIds: [tool-approval-gate-gap, agent-high-risk-approval-gap]
+    note: 承認を経ない実行
+
+  - aitech: [AITech-2.1]
+    canonicalIds: [excessive-agency, agent-action-scope-escape]
+    note: 過剰な権限・宣言外の機能の使用
+
+  - aitech: [AITech-2.2]
+    canonicalIds: [rogue-agent-drift]
+    note: 目的のずれ
+
+  # ── なりすまし ──
+  - aitech: [AITech-3.1]
+    canonicalIds: [mcp-server-impersonation]
+    note: なりすまし・信頼されたエージェントの偽装
+
+  # ── 通信の侵害 ──
+  - aitech: [AITech-4.1]
+    canonicalIds: [inter-agent-comms-integrity]
+    note: エージェント間の指示の注入
+
+  - aitech: [AITech-4.2]
+    canonicalIds: [shared-context-poisoning]
+    note: コンテキスト境界への攻撃
+
+  - aisubtech: [AISubtech-4.3.5]
+    canonicalIds: [tool-descriptor-poisoning]
+    note: 機能の誇張・広すぎる呼び出し条件
+
+  - aitech: [AITech-4.3]
+    canonicalIds: [tool-descriptor-poisoning, inter-agent-comms-integrity]
+    note: プロトコルの悪用（名前の衝突・再束縛・リプレイ等）
+
+  # ── 永続化 ──
+  - aitech: [AITech-5.1]
+    canonicalIds: [memory-write-untrusted-persistence]
+    note: メモリーへの永続化
+
+  - aitech: [AITech-5.2]
+    canonicalIds: [agent-config-integrity]
+    note: 設定への永続化
+
+  # ── 学習データ・メモリーの汚染 ──
+  - aitech: [AITech-6.1]
+    canonicalIds: [training-data-poisoning]
+    note: 学習データの汚染
+
+  - aitech: [AITech-7.2]
+    canonicalIds: [agent-memory-poisoning, memory-store-tampering]
+    note: メモリーの改ざん
+
+  - aitech: [AITech-7.3]
+    canonicalIds: [rag-retrieval-provenance-gap]
+    note: データソースの悪用
+
+  # ── データの持ち出し・情報の露出 ──
+  - aitech: [AITech-8.2]
+    canonicalIds: [agent-workspace-secret-exfiltration, agent-uncontrolled-egress]
+    note: データの持ち出し（エージェントのツール経由を含む）
+
+  - aitech: [AITech-8.3]
+    canonicalIds: [llm-sensitive-info-disclosure]
+    note: 情報の露出
+
+  - aitech: [AITech-8.4]
+    canonicalIds: [system-prompt-leakage]
+    note: システムプロンプトの抜き出し
+
+  # ── サプライチェーン（コード実行・難読化・依存の侵害）──
+  - aisubtech: [AISubtech-9.1.3]
+    canonicalIds: [agent-uncontrolled-egress]
+    note: 許可されていないネットワーク接続
+
+  - aitech: [AITech-9.1]
+    canonicalIds: [agent-code-execution-rce]
+    note: コード実行・コマンドやテンプレートの注入・許可されていないシステムへのアクセス
+
+  - aitech: [AITech-9.2]
+    canonicalIds: [agent-skill-unvetted-install]
+    note: 難読化・バックドア（審査をすり抜ける中身）
+
+  - aisubtech: [AISubtech-9.3.3]
+    canonicalIds: [tool-poisoning-rug-pull]
+    note: 依存の差し替え（ラグプル）・版の固定なし
+
+  - aitech: [AITech-9.3]
+    canonicalIds: [third-party-extension-supply-chain, agent-skill-unvetted-install]
+    note: 悪意あるパッケージ・ツールの混入、名前の詐称
+
+  # ── モデルの窃取・回避 ──
+  - aitech: [AITech-10.1]
+    canonicalIds: [model-theft]
+    note: モデルの抽出
+
+  - aitech: [AITech-10.2]
+    canonicalIds: [model-inversion]
+    note: モデルの反転
+
+  - aitech: [AITech-11.1, AITech-11.2]
+    canonicalIds: [adversarial-evasion]
+    note: 敵対的な回避
+
+  # ── ツール・出力の悪用 ──
+  - aisubtech: [AISubtech-12.1.2]
+    canonicalIds: [tool-descriptor-poisoning]
+    note: ツールの説明文の汚染
+
+  - aitech: [AITech-12.1]
+    canonicalIds: [tool-chaining-abuse, tool-descriptor-poisoning]
+    note: ツールの悪用（引数の操作・危険な実行・ツールのなりすまし）
+
+  - aitech: [AITech-12.2]
+    canonicalIds: [improper-output-handling]
+    note: 出力の不適切な扱い
+
+  # ── 可用性・コスト ──
+  - aitech: [AITech-13.1, AITech-13.2]
+    canonicalIds: [llm-resource-exhaustion]
+    note: 資源の枯渇・コストの搾取
+
+  # ── 権限の侵害 ──
+  - aitech: [AITech-14.1]
+    canonicalIds: [credential-sprawl, agent-workspace-secret-exfiltration]
+    note: 資格情報の窃取・埋め込まれた資格情報・不十分なアクセス制御
+
+  - aitech: [AITech-14.2]
+    canonicalIds: [confused-deputy-delegation]
+    note: 委任された権限の悪用
+
+  # ── マルウェア（有害コンテンツのうち、スキル・ツールの中身として出るもの）──
+  - aisubtech: [AISubtech-15.1.1]
+    canonicalIds: [agent-skill-unvetted-install, third-party-extension-supply-chain]
+    note: マルウェア・エクスプロイト

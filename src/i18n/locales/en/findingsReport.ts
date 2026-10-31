@@ -35,6 +35,22 @@ export const enFindingsReport: Partial<Record<TranslationKey, string>> = {
   'findingsReport.recorded': '[Recorded decision: {labels}. Check that it does not contradict the findings]',
   'findingsReport.priority.line': 'diagram {modelSeverity} / Veracode {severity}',
 
+  // For skill-scanner / mcp-scanner (Cisco AI Defense): cross-referenced through the AITech mapping table
+  'findingsReport.intro.aitech':
+    '{source} findings cross-referenced with the threats detected in the diagram, through an AITech taxonomy mapping table. Findings whose classification is not in the table appear under "Findings that could not be mapped".',
+  'findingsReport.scopeNode':
+    'Target node: {node} (only threats on this node, its edges, the nodes across those edges, and its containing parent/children are cross-referenced)',
+  'findingsReport.summary.incompleteItems': 'Items whose scan did not complete: {count} (an unscanned item is not necessarily safe)',
+  'findingsReport.findingsCount.label': 'Findings: {count} (max severity {max})',
+  'findingsReport.aitechUnknown': 'No classification',
+  'findingsReport.priority.lineSource': 'diagram {modelSeverity} / {source} {severity}',
+  'findingsReport.gate.stderrSource':
+    '--fail-on {failOn}: {count} {source} finding(s) are backed by an unsuppressed threat at or above the threshold.',
+  'findingsReport.cli.sourceRequired':
+    'Specify a scan results file with exactly one of --veracode, --skill-scanner or --mcp-scanner.',
+  'findingsReport.cli.sourceExclusive':
+    '--veracode, --skill-scanner and --mcp-scanner cannot be combined. Specify only one.',
+
   'findingsReport.cli.missingVeracode': 'Specify a Veracode results file with --veracode.',
   'findingsReport.cli.done':
     'Cross-referenced (open {open}, matched {confirmed}, not in diagram {notInModel}, unmapped {unmapped}, excluded SCA {sca} / closed {closed})',

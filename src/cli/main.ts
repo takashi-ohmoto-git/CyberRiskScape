@@ -24,15 +24,19 @@ import {
 import { triggersToJson, triggersToMarkdown } from './triggers';
 import {
   collectModelThreats,
+  countNodeMatches,
   findingsReportToJson,
   findingsReportToMarkdown,
   type FindingsGateResult,
+  type FindingsSource,
 } from './findingsReport';
 import { parseVeracodeFindings } from '../features/findings-report/parseVeracode';
+import { parseSkillScannerFindings } from '../features/findings-report/parseSkillScanner';
+import { parseMcpScannerFindings } from '../features/findings-report/parseMcpScanner';
 import { parseProwlerOcsf } from '../features/prowler-import/parseProwlerOcsf';
 import { importProwler, prowlerReportToJson, prowlerReportToMarkdown } from './importProwler';
 import { buildFindingsReport, evaluateFindingsGate } from '../features/findings-report/buildFindingsReport';
-import { BUNDLED_FINDING_MAP } from '../features/findings-report/findingMap';
+import { BUNDLED_AITECH_MAP, BUNDLED_FINDING_MAP } from '../features/findings-report/findingMap';
 import { buildThreatReport, toDCRHThreatModelMarkdown, toJsonObject } from '../features/export/threatReport';
 import { effectiveSeverity } from '../core/model/risk';
 import { setLocale, translate, type Locale } from '../i18n';
@@ -129,7 +133,7 @@ const USAGE = `使い方:
   export-investigation-plan <project.json> [options]
   export-triage-patterns [options]
   investigation-report <project.json> --evidence <dir|file> --hosts <hosts.json> [options]
-  findings-report <project.json> --veracode <file> [options]
+  findings-report <project.json> (--veracode <file> | --skill-scanner <file> | --mcp-scanner <file>) [options]
   pqc-sbom-report <project.json> --sbom <file> --node <C番号> [options]
   mcp [options]
 
@@ -252,8 +256,12 @@ investigation-report のオプション（集めた証拠をノードに重ね�
   --locale <ja|en>                              表示言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
-findings-report のオプション（Veracode の結果ファイルの指摘を、CWE の対応表を介して検出脅威と突き合わせる。ファイル入力のみ）:
-  --veracode <file>                             Veracode の結果（必須。Pipeline Scan の results.json または Findings API v2 の応答 JSON）
+findings-report のオプション（スキャン結果の指摘を、対応表（Veracode は CWE、skill-scanner / mcp-scanner は AITech）を介して検出脅威と突き合わせる。ファイル入力のみ）:
+  --veracode <file>                             Veracode の結果（Pipeline Scan の results.json または Findings API v2 の応答 JSON）
+  --skill-scanner <file>                        Cisco AI Defense skill-scanner の結果（--format json。scan-all の出力も可）
+  --mcp-scanner <file>                          Cisco AI Defense mcp-scanner の結果（--format raw / --raw / known-configs --raw）
+                                                上の 3 つのうちちょうど 1 つを指定する
+  --node <C番号>                                対象のノードの ID（任意。指定時はそのノード・接する線・線の先のノード・内包の親子の脅威とだけ突き合わせる）
   --format <md|json>                            出力形式（既定: md）
   --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある全レイヤー）
   --framework <STRIDE|AI|AgenticAI|ALL>         対象フレームワーク（既定: ALL）
@@ -366,6 +374,8 @@ function parseCliArgs() {
       root: { type: 'string' },
       vars: { type: 'string' },
       veracode: { type: 'string' },
+      'skill-scanner': { type: 'string' },
+      'mcp-scanner': { type: 'string' },
       evidence: { type: 'string', multiple: true },
       hosts: { type: 'string' },
       sbom: { type: 'string' },
@@ -1136,7 +1146,8 @@ ${USAGE}`);
 
 /**
  * `findings-report`：Veracode の結果ファイル（Pipeline Scan / Findings API v2）の指摘を、
- * CWE の対応表（`data/finding-maps/cwe.yaml`）を介して構成図の検出脅威と突き合わせる。API は呼ばない。
+ * CWE の対応表（`data/finding-maps/cwe.yaml`）を介して構成図の検出脅威と突き合わせる。
+ * Cisco AI Defense の skill-scanner / mcp-scanner の結果は AITech の対応表（`aitech.yaml`）を介する。API は呼ばない。
  */
 function runFindingsReport(values: CliValues, positionals: string[]): void {
   const file = positionals[1];
@@ -1147,14 +1158,29 @@ ${USAGE}`);
   }
   const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
   setLocale(locale);
-  if (!values.veracode) fail(translate('findingsReport.cli.missingVeracode', locale));
+  const sources = (
+    [
+      ['veracode', values.veracode],
+      ['skill-scanner', values['skill-scanner']],
+      ['mcp-scanner', values['mcp-scanner']],
+    ] as const
+  ).filter((x): x is readonly [FindingsSource, string] => !!x[1]);
+  if (sources.length === 0) fail(translate('findingsReport.cli.sourceRequired', locale));
+  if (sources.length > 1) fail(translate('findingsReport.cli.sourceExclusive', locale));
+  const [source, sourceFile] = sources[0];
   const format = parseEnum(values.format, FINDINGS_REPORT_FORMATS, 'format') ?? 'md';
   const layer = parseEnum(values.layer, LAYER_KEYS, 'layer');
   const framework = parseEnum(values.framework, FRAMEWORKS, 'framework');
   const failOn = parseEnum(values['fail-on'], SEVERITIES, 'fail-on');
 
-  const parsed = parseVeracodeFindings(readJsonFile(values.veracode));
-  if (!parsed.ok) fail(`${parsed.error}（${values.veracode}）`);
+  const rawFindings = readJsonFile(sourceFile);
+  const parsed =
+    source === 'veracode'
+      ? parseVeracodeFindings(rawFindings)
+      : source === 'skill-scanner'
+        ? parseSkillScannerFindings(rawFindings)
+        : parseMcpScannerFindings(rawFindings);
+  if (!parsed.ok) fail(`${parsed.error}（${sourceFile}）`);
 
   let results: LayerAnalysisResult[];
   try {
@@ -1163,21 +1189,33 @@ ${USAGE}`);
     fail(e instanceof Error ? e.message : String(e));
   }
   if (results.length === 0) fail('ノードのあるレイヤーがありません。');
+  if (values.node && countNodeMatches(results, values.node) === 0) {
+    fail(
+      translate('sbomCrypto.cli.nodeNotFound', locale, {
+        node: values.node,
+        layer: results.map((r) => r.layer).join('/'),
+        ids: [...new Set(results.flatMap((r) => r.input.nodes.map(nodeElementalId)))].join(', ') || '-',
+      }),
+    );
+  }
 
   const reportInput = {
     findings: parsed.findings,
-    threats: collectModelThreats(results),
+    threats: collectModelThreats(results, values.node),
     excluded: parsed.excluded,
     map: BUNDLED_FINDING_MAP,
+    aitechMap: BUNDLED_AITECH_MAP,
+    incompleteItems: 'incompleteItems' in parsed ? parsed.incompleteItems : undefined,
   };
+  const reportOpts = { source, node: values.node };
   const report = buildFindingsReport(reportInput);
   const gate: FindingsGateResult | undefined = failOn
     ? { failOn, offenders: evaluateFindingsGate(reportInput, failOn) }
     : undefined;
   writeOutput(
     format === 'json'
-      ? JSON.stringify(findingsReportToJson(report, gate), null, 2)
-      : findingsReportToMarkdown(report, gate),
+      ? JSON.stringify(findingsReportToJson(report, gate, reportOpts), null, 2)
+      : findingsReportToMarkdown(report, gate, reportOpts),
     values.out,
   );
   const s = report.summary;
@@ -1194,7 +1232,15 @@ ${USAGE}`);
   );
   if (gate && gate.offenders.length > 0) {
     process.stderr.write(
-      `${translate('findingsReport.gate.stderr', locale, { failOn: gate.failOn, count: gate.offenders.length })}\n`,
+      `${
+        source === 'veracode'
+          ? translate('findingsReport.gate.stderr', locale, { failOn: gate.failOn, count: gate.offenders.length })
+          : translate('findingsReport.gate.stderrSource', locale, {
+              failOn: gate.failOn,
+              count: gate.offenders.length,
+              source,
+            })
+      }\n`,
     );
     process.exitCode = 1;
   }

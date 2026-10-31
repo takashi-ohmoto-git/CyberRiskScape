@@ -36,6 +36,22 @@ export const jaFindingsReport = {
   'findingsReport.recorded': '［記録済みの判断: {labels}。指摘と食い違っていないか確認］',
   'findingsReport.priority.line': '構成図 {modelSeverity} / Veracode {severity}',
 
+  // skill-scanner / mcp-scanner（Cisco AI Defense）用。AITech 分類の対応表を介して突き合わせる
+  'findingsReport.intro.aitech':
+    '{source} の指摘を、AITech 分類の対応表を介して構成図から検出した脅威と突き合わせた結果です。対応表にない分類の指摘は「対応づけできない指摘」に出ます。',
+  'findingsReport.scopeNode':
+    '対象ノード: {node}（このノード・接する線・線の先のノード・内包の親子の脅威とだけ突き合わせています）',
+  'findingsReport.summary.incompleteItems': '検査が完了していない項目: {count} 件（検査できていない項目は安全とは限りません）',
+  'findingsReport.findingsCount.label': '指摘: {count} 件（重大度の最大 {max}）',
+  'findingsReport.aitechUnknown': '分類なし',
+  'findingsReport.priority.lineSource': '構成図 {modelSeverity} / {source} {severity}',
+  'findingsReport.gate.stderrSource':
+    '--fail-on {failOn}: 構成図で {failOn} 以上の未抑制の脅威に当たる {source} の指摘が {count} 件あります。',
+  'findingsReport.cli.sourceRequired':
+    '--veracode・--skill-scanner・--mcp-scanner のうちどれか 1 つに、スキャン結果のファイルを指定してください。',
+  'findingsReport.cli.sourceExclusive':
+    '--veracode・--skill-scanner・--mcp-scanner は同時に指定できません。1 つだけ指定してください。',
+
   'findingsReport.cli.missingVeracode': '--veracode に Veracode の結果ファイルを指定してください。',
   'findingsReport.cli.done':
     '突き合わせました（未解決 {open} 件・一致 {confirmed} 件・構成図に無い {notInModel} 件・対応づけできない {unmapped} 件・除外 SCA {sca} 件／解決済み {closed} 件）',

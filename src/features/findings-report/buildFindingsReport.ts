@@ -1,7 +1,7 @@
 import { SUPPRESSING_STATUSES } from '../../core/model/types';
 import type { ControlStatusValue, LayerKey, Severity, SuppressionStatus } from '../../core/model/types';
-import type { FindingMapping } from './findingMap';
-import { cweToCanonicalIds } from './findingMap';
+import type { AitechMapping, FindingMapping } from './findingMap';
+import { aitechToCanonicalIds, cweToCanonicalIds } from './findingMap';
 import type { NormalizedFinding } from './parseVeracode';
 
 /**
@@ -50,6 +50,11 @@ export interface UnmappedEntry {
   /** CWE 番号。CWE 無しの指摘は undefined。 */
   cwe?: number;
   cweName?: string;
+  /** Cisco 系の分類（Veracode の指摘では付かない）。 */
+  aitech?: string;
+  aitechName?: string;
+  aisubtech?: string;
+  aisubtechName?: string;
   capec: string[];
   findings: FindingGroup;
 }
@@ -70,6 +75,8 @@ export interface FindingsReport {
     confirmedThreats: number;
     excludedSca: number;
     excludedClosed: number;
+    /** mcp-scanner で status が completed 以外の項目数（0 や Veracode では付かない）。 */
+    incompleteItems?: number;
   };
   confirmed: ConfirmedEntry[];
   notInModel: NotInModelEntry[];
@@ -82,6 +89,22 @@ export interface BuildFindingsReportInput {
   threats: ModelThreat[];
   excluded: { sca: number; closed: number };
   map: readonly FindingMapping[];
+  /** Cisco 系の指摘（origin あり）を引く AITech 対応表。 */
+  aitechMap?: readonly AitechMapping[];
+  /** mcp-scanner で status が completed 以外の項目数。 */
+  incompleteItems?: number;
+}
+
+/** 指摘 → canonicalId 一覧。Veracode は CWE、Cisco 系は AISubtech → AITech で引く。対応表に無ければ undefined。 */
+function canonicalIdsOf(input: BuildFindingsReportInput, f: NormalizedFinding): readonly string[] | undefined {
+  if (f.origin) return aitechToCanonicalIds(input.aitechMap ?? [], f.aitech, f.aisubtech);
+  return f.cwe !== undefined ? cweToCanonicalIds(input.map, f.cwe) : undefined;
+}
+
+/** 対応づけできない指摘のグループ化キー。Veracode は CWE、Cisco 系は aisubtech||aitech（無ければ「分類なし」）。 */
+function unmappedKey(f: NormalizedFinding): string {
+  if (f.origin) return `a:${f.aisubtech ?? f.aitech ?? ''}`;
+  return `c:${f.cwe ?? ''}`;
 }
 
 const SEVERITY_RANK: Record<Severity, number> = { Low: 1, Medium: 2, High: 3, Critical: 4 };
@@ -119,14 +142,14 @@ export function buildFindingsReport(input: BuildFindingsReportInput): FindingsRe
 
   const confirmedFindings = new Map<string, NormalizedFinding[]>();
   const notInModelFindings = new Map<string, NormalizedFinding[]>();
-  const unmappedByCwe = new Map<number | undefined, NormalizedFinding[]>();
+  const unmappedByKey = new Map<string, NormalizedFinding[]>();
   const priorityRaw: PriorityEntry[] = [];
   const counted = { confirmed: 0, notInModel: 0, unmapped: 0 };
 
   for (const f of open) {
-    const ids = f.cwe !== undefined ? cweToCanonicalIds(input.map, f.cwe) : undefined;
+    const ids = canonicalIdsOf(input, f);
     if (!ids) {
-      pushTo(unmappedByCwe, f.cwe, f);
+      pushTo(unmappedByKey, unmappedKey(f), f);
       counted.unmapped += 1;
       continue;
     }
@@ -160,18 +183,31 @@ export function buildFindingsReport(input: BuildFindingsReportInput): FindingsRe
     .map(([canonicalId, fs]) => ({ canonicalId, findings: group(fs) }))
     .sort((a, b) => b.findings.maxSeverity - a.findings.maxSeverity || a.canonicalId.localeCompare(b.canonicalId));
 
-  const unmapped: UnmappedEntry[] = [...unmappedByCwe.entries()]
-    .map(([cwe, fs]) => ({
-      cwe,
-      cweName: fs.find((f) => f.cweName)?.cweName,
-      capec: [...new Set(fs.flatMap((f) => (f.capec ? [f.capec] : [])))].sort(),
-      findings: group(fs),
-    }))
+  const unmapped: UnmappedEntry[] = [...unmappedByKey.values()]
+    .map((fs): UnmappedEntry => {
+      const first = fs[0];
+      const cisco = first.origin
+        ? {
+            aitech: first.aitech,
+            aitechName: fs.find((f) => f.aitechName)?.aitechName,
+            aisubtech: first.aisubtech,
+            aisubtechName: fs.find((f) => f.aisubtechName)?.aisubtechName,
+          }
+        : {};
+      return {
+        cwe: first.cwe,
+        cweName: fs.find((f) => f.cweName)?.cweName,
+        ...cisco,
+        capec: [...new Set(fs.flatMap((f) => (f.capec ? [f.capec] : [])))].sort(),
+        findings: group(fs),
+      };
+    })
     .sort(
       (a, b) =>
         b.findings.maxSeverity - a.findings.maxSeverity ||
         b.findings.count - a.findings.count ||
-        (a.cwe ?? 1e9) - (b.cwe ?? 1e9),
+        (a.cwe ?? 1e9) - (b.cwe ?? 1e9) ||
+        (a.aisubtech ?? a.aitech ?? '').localeCompare(b.aisubtech ?? b.aitech ?? ''),
     );
 
   const priority = priorityRaw
@@ -190,6 +226,7 @@ export function buildFindingsReport(input: BuildFindingsReportInput): FindingsRe
       confirmedThreats: confirmed.reduce((n, c) => n + c.modelThreats.length, 0),
       excludedSca: input.excluded.sca,
       excludedClosed: input.excluded.closed,
+      ...(input.incompleteItems ? { incompleteItems: input.incompleteItems } : {}),
     },
     confirmed,
     notInModel,
@@ -212,8 +249,8 @@ export function evaluateFindingsGate(input: BuildFindingsReportInput, failOn: Se
   }
   const offenders: NormalizedFinding[] = [];
   for (const f of input.findings) {
-    if (f.status !== 'open' || f.cwe === undefined) continue;
-    const ids = cweToCanonicalIds(input.map, f.cwe);
+    if (f.status !== 'open') continue;
+    const ids = canonicalIdsOf(input, f);
     if (!ids) continue;
     const rank = maxModelRank(ids.flatMap((id) => byCanonical.get(id) ?? []));
     if (rank >= SEVERITY_RANK[failOn]) offenders.push(f);

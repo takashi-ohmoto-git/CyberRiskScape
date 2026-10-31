@@ -23,6 +23,13 @@ export interface NormalizedFinding {
   /** MANUAL の攻撃カテゴリ（値はそのまま。対応づけはしない）。 */
   capec?: string;
   status: 'open' | 'closed';
+  /** Cisco AI Defense 系スキャナーの指摘のとき、その種別（Veracode では付かない）。 */
+  origin?: 'skill-scanner' | 'mcp-scanner';
+  /** Cisco 系の AITech / AISubtech コードと名前（コードと名前だけ。説明文は取り込まない）。 */
+  aitech?: string;
+  aitechName?: string;
+  aisubtech?: string;
+  aisubtechName?: string;
 }
 
 export interface ParsedFindings {

@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "layers": {
+    "L0": {
+      "nodes": [],
+      "edges": [],
+      "boundaries": [],
+      "annotations": []
+    },
+    "L1": {
+      "nodes": [
+        {
+          "id": "n-agent",
+          "seq": 1,
+          "type": "AGENT",
+          "x": 0,
+          "y": 0,
+          "label": "業務エージェント"
+        },
+        {
+          "id": "n-skill",
+          "seq": 2,
+          "type": "AGENT_SKILL",
+          "x": 240,
+          "y": 0,
+          "label": "請求書スキル"
+        },
+        {
+          "id": "n-mcp",
+          "seq": 3,
+          "type": "MCP_SERVER",
+          "x": 240,
+          "y": 160,
+          "label": "社内検索MCP"
+        },
+        {
+          "id": "n-db",
+          "seq": 4,
+          "type": "DB",
+          "x": 480,
+          "y": 160,
+          "label": "社内DB"
+        }
+      ],
+      "edges": [
+        {
+          "id": "e-agent-skill",
+          "seq": 1,
+          "source": "n-agent",
+          "target": "n-skill",
+          "auth": "None",
+          "network": "VPC",
+          "encryption": "TLS"
+        },
+        {
+          "id": "e-agent-mcp",
+          "seq": 2,
+          "source": "n-agent",
+          "target": "n-mcp",
+          "auth": "None",
+          "network": "VPC",
+          "encryption": "TLS"
+        },
+        {
+          "id": "e-mcp-db",
+          "seq": 3,
+          "source": "n-mcp",
+          "target": "n-db",
+          "auth": "None",
+          "network": "VPC",
+          "encryption": "TLS"
+        }
+      ],
+      "boundaries": [],
+      "annotations": []
+    },
+    "L2": {
+      "nodes": [],
+      "edges": [],
+      "boundaries": [],
+      "annotations": []
+    },
+    "L3": {
+      "nodes": [],
+      "edges": [],
+      "boundaries": [],
+      "annotations": []
+    }
+  },
+  "activeLayer": "L1",
+  "idCounters": {
+    "L0": {
+      "node": 0,
+      "edge": 0,
+      "boundary": 0
+    },
+    "L1": {
+      "node": 4,
+      "edge": 3,
+      "boundary": 0
+    },
+    "L2": {
+      "node": 0,
+      "edge": 0,
+      "boundary": 0
+    },
+    "L3": {
+      "node": 0,
+      "edge": 0,
+      "boundary": 0
+    }
+  },
+  "activeFramework": "ALL",
+  "projectMeta": {
+    "name": "AI スキャナー突き合わせ用サンプル",
+    "systemName": "社内向けAIチャットボット",
+    "purpose": "社内問い合わせ対応を自動化するLLMチャットボット",
+    "businessImpact": "停止時は問い合わせ業務が手動対応に戻る",
+    "securityObjectives": "会話ログの機密性を守る"
+  },
+  "updatedAt": 0
+}
