@@ -23,5 +23,6 @@ export function hydrateFromPersisted(loaded: PersistedProject): void {
     suppressions: loaded.suppressions,
     riskScores: resolveRiskScores(loaded),
     controlStatuses: loaded.controlStatuses,
+    findings: loaded.findings,
   });
 }

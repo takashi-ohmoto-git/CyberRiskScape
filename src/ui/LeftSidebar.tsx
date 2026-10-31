@@ -109,6 +109,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
         suppressions: s.suppressions,
         riskScores: s.riskScores,
         controlStatuses: s.controlStatuses,
+        findings: s.findings,
       });
       setSaveState('saved');
       setTimeout(() => setSaveState('idle'), 1500);

@@ -1015,6 +1015,54 @@ export interface ControlStatusState {
   at: number;
 }
 
+/**
+ * 外部製品の指摘の出どころ（docs/architecture.md §8.2）。
+ * `format` は入力の標準形式。形式を増やすときは union を広げる。
+ */
+export interface FindingSource {
+  format: 'ocsf';
+  /** 製品名（例: 'Prowler'）。取り込み直しはこの単位で置き換える。 */
+  product: string;
+  productVersion?: string;
+  /** 取り込んだ時刻（ISO 8601）。 */
+  importedAt: string;
+}
+
+/** 標準の識別子 1 つ（例: { scheme: 'prowler-check', value: 's3_bucket_default_encryption' }）。 */
+export interface FindingIdentifier {
+  scheme: string;
+  value: string;
+}
+
+/**
+ * 外部製品が報告した指摘（脆弱性・設定不備）1 件。取り込んだ事実であり、人の判断は持たない。
+ * プロジェクト直下の `findings` にレイヤー横断で保持する（docs/architecture.md §8.2）。
+ */
+export interface Finding {
+  /** 安定 ID（`${source.product}:${externalId}`）。取り込み直しで同じ指摘は同じ ID になる。 */
+  id: string;
+  source: FindingSource;
+  /** 製品側の ID（伏せ字済み）。 */
+  externalId: string;
+  identifiers: FindingIdentifier[];
+  title?: string;
+  /** 正規化した深刻度（Informational は Low）。 */
+  severity: Severity;
+  /** 製品の元の深刻度表記。 */
+  sourceSeverity?: string;
+  /** 翻訳辞書（data/finding-maps/）で引いた脅威の分類。 */
+  canonicalIds: string[];
+  /** 結びついたノード。無ければ未結合。 */
+  subject?: { layer: LayerKey; nodeId: string };
+  /** 表示用の資源情報（伏せ字済み）。 */
+  resource?: { label: string; type?: string; region?: string };
+  /** 製品が観測した時刻（ISO 8601）。 */
+  observedAt?: string;
+}
+
+/** 保持する指摘の上限（docs/architecture.md §8.2）。 */
+export const MAX_FINDINGS = 5000;
+
 /** リスク評価各項目の 3 段階スコア（1=低 / 2=中 / 3=高）。 */
 export type RiskValue = 1 | 2 | 3;
 

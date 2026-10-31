@@ -40,7 +40,7 @@ import { BUNDLED_AITECH_MAP, BUNDLED_FINDING_MAP } from '../features/findings-re
 import { buildThreatReport, toDCRHThreatModelMarkdown, toJsonObject } from '../features/export/threatReport';
 import { effectiveSeverity } from '../core/model/risk';
 import { setLocale, translate, type Locale } from '../i18n';
-import { ATTACK_OBJECTIVE_APPLICABLE, LAYER_KEYS, type FrameworkView, type Severity } from '../core/model/types';
+import { ATTACK_OBJECTIVE_APPLICABLE, LAYER_KEYS, type Finding, type FrameworkView, type Severity } from '../core/model/types';
 import { formatElementalId } from '../core/model/elementalId';
 import { getChangeTriggers } from '../change-triggers/loader/bundledChangeTriggers';
 import { loadChangeTriggers } from '../change-triggers/loader/loadChangeTriggers';
@@ -142,6 +142,7 @@ analyze のオプション:
   --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある全レイヤー）
   --framework <STRIDE|AI|AgenticAI|ALL>         対象フレームワーク（既定: ALL）
   --fail-on <Critical|High|Medium|Low>          指定した重大度以上の未抑制脅威があれば exit 1
+  --with-findings                               --format sarif のとき、プロジェクトに保存された外部製品の指摘（import-prowler で保存）を製品ごとの run として追加
   --locale <ja|en>                              表示言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
@@ -383,6 +384,7 @@ function parseCliArgs() {
       'base-url': { type: 'string' },
       author: { type: 'string' },
       'include-threats': { type: 'boolean' },
+      'with-findings': { type: 'boolean' },
       api: { type: 'string' },
       project: { type: 'string' },
       search: { type: 'string' },
@@ -404,6 +406,7 @@ function runAnalyze(values: CliValues, positionals: string[]): void {
   const framework = parseEnum(values.framework, FRAMEWORKS, 'framework');
   const failOn = parseEnum(values['fail-on'], SEVERITIES, 'fail-on');
   const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  if (values['with-findings'] && format !== 'sarif') fail('--with-findings は --format sarif のときだけ使えます。');
 
   const raw = readJsonFile(file);
 
@@ -412,8 +415,11 @@ function runAnalyze(values: CliValues, positionals: string[]): void {
   setLocale(locale);
 
   let results: LayerAnalysisResult[];
+  let findings: Finding[] | undefined;
   try {
-    results = analyzeProject(raw, { layer, framework, locale });
+    const resolved = resolveProject(raw);
+    results = analyzeResolvedProject(resolved, { layer, framework, locale });
+    if (values['with-findings']) findings = resolved.findings;
   } catch (e) {
     fail(e instanceof Error ? e.message : String(e));
   }
@@ -421,7 +427,7 @@ function runAnalyze(values: CliValues, positionals: string[]): void {
   const artifactUri = file.replace(/\\/g, '/');
   let output: string;
   if (format === 'sarif') {
-    output = JSON.stringify(toSarif(results, { artifactUri }), null, 2);
+    output = JSON.stringify(toSarif(results, { artifactUri, findings }), null, 2);
   } else if (format === 'md') {
     const exportDate = formatLocalDate(new Date());
     output = results.map((r) => toDCRHThreatModelMarkdown(r.input, exportDate)).join('\n\n');
@@ -698,7 +704,7 @@ ${USAGE}`);
 
   let out: ReturnType<typeof importProwler>;
   try {
-    out = importProwler(readJsonFile(file), parsed, nodeMap);
+    out = importProwler(readJsonFile(file), parsed, nodeMap, undefined, new Date().toISOString());
   } catch (e) {
     fail(e instanceof Error ? e.message : String(e));
   }

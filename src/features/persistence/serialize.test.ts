@@ -9,7 +9,7 @@ import {
   type SerializableState,
 } from './serialize';
 import { PERSISTED_PROJECT_SCHEMA_VERSION } from './schema';
-import { EMPTY_LAYER, type LayerData, type LayerKey } from '../../core/model/types';
+import { EMPTY_LAYER, MAX_FINDINGS, type Finding, type LayerData, type LayerKey } from '../../core/model/types';
 
 const L1_DATA: LayerData = {
   nodes: [
@@ -429,6 +429,43 @@ describe('serializeProject / deserializeProject', () => {
     const out = serializeProject({ ...STATE, controlStatuses });
     const restored = deserializeProject(out);
     expect(restored?.controlStatuses).toEqual(controlStatuses);
+  });
+
+  // ─── findings（外部製品の指摘。architecture §8.2） ──────────────────
+  const FINDING: Finding = {
+    id: 'Prowler:prowler-aws-s3_bucket_default_encryption-*-us-east-1-example-bucket',
+    source: { format: 'ocsf', product: 'Prowler', productVersion: '5.0.0', importedAt: '2026-10-31T00:00:00.000Z' },
+    externalId: 'prowler-aws-s3_bucket_default_encryption-*-us-east-1-example-bucket',
+    identifiers: [{ scheme: 'prowler-check', value: 's3_bucket_default_encryption' }],
+    title: 'Check if S3 buckets have default encryption enabled.',
+    severity: 'Medium',
+    sourceSeverity: 'Medium',
+    canonicalIds: ['data-at-rest-unencrypted'],
+    subject: { layer: 'L1', nodeId: 'n2' },
+    resource: { label: 'example-bucket', type: 'AwsS3Bucket', region: 'us-east-1' },
+    observedAt: '2026-10-30T12:00:00.000Z',
+  };
+
+  it('findings: 空のときは省略される（後方互換）', () => {
+    expect('findings' in serializeProject(STATE)).toBe(false);
+    expect('findings' in serializeProject({ ...STATE, findings: [] })).toBe(false);
+  });
+
+  it('findings: round-trip で保持される', () => {
+    const restored = deserializeProject(serializeProject({ ...STATE, findings: [FINDING] }));
+    expect(restored?.findings).toEqual([FINDING]);
+  });
+
+  it('findings: 上限を超えると読み込まない', () => {
+    const out = JSON.parse(JSON.stringify(serializeProject({ ...STATE, findings: [FINDING] })));
+    out.findings = Array.from({ length: MAX_FINDINGS + 1 }, (_, i) => ({ ...FINDING, id: `p:${i}` }));
+    expect(deserializeProject(out)).toBeNull();
+  });
+
+  it('findings: 未知の形式は読み込まない', () => {
+    const out = JSON.parse(JSON.stringify(serializeProject({ ...STATE, findings: [FINDING] })));
+    out.findings[0].source.format = 'unknown';
+    expect(deserializeProject(out)).toBeNull();
   });
 });
 

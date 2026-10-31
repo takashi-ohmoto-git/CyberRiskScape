@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { toSarif } from './sarif';
 import type { LayerAnalysisResult } from './analyze';
-import { EMPTY_PROJECT_META, type DiagramNode, type ThreatView } from '../core/model/types';
+import { BRANDING } from '../core/branding';
+import { EMPTY_PROJECT_META, type DiagramNode, type Finding, type ThreatView } from '../core/model/types';
 
 /** テスト内で参照するフィールドのみを持つ SARIF ログの最小形（`any` を避けるため）。 */
 interface SarifLog {
@@ -127,5 +128,63 @@ describe('toSarif', () => {
     const sarif = toSarif(results([manual]), { artifactUri: 'sample.json' }) as SarifLog;
     expect(sarif.runs[0].results[0].ruleId).toBe('manual-threat');
     expect(sarif.runs[0].results[0].level).toBe('warning');
+  });
+});
+
+describe('toSarif（指摘 run）', () => {
+  const finding = (over: Partial<Finding>): Finding => ({
+    id: 'Prowler:f1',
+    source: { format: 'ocsf', product: 'Prowler', productVersion: '5.0.0', importedAt: 't' },
+    externalId: 'f1',
+    identifiers: [{ scheme: 'prowler-check', value: 'chk_a' }],
+    title: '指摘 A',
+    severity: 'High',
+    sourceSeverity: 'high',
+    canonicalIds: ['canon-a'],
+    subject: { layer: 'L1', nodeId: 'n1' },
+    resource: { label: 'res-1' },
+    ...over,
+  });
+  const linked: ThreatView = { ...DETECTED, canonicalId: 'canon-a' };
+  type Run = {
+    tool: { driver: { name: string; version?: string; rules: { id: string }[] } };
+    conversion?: { tool: { driver: { name: string } } };
+    results: { ruleId: string; level: string; partialFingerprints: { findingId: string }; properties: Record<string, unknown>; logicalLocations: { name: string }[] }[];
+    properties?: { lostInConversion: string[] };
+  };
+
+  it('findings を渡さない・空なら run は 1 つのまま', () => {
+    const a = toSarif(results([linked]), { artifactUri: 'x.json' });
+    expect(toSarif(results([linked]), { artifactUri: 'x.json', findings: [] })).toEqual(a);
+    expect((a as SarifLog).runs).toHaveLength(1);
+  });
+
+  it('製品ごとの run を足し、変換元として本ツールを記す', () => {
+    const sarif = toSarif(results([linked]), { artifactUri: 'x.json', findings: [finding({})] }) as { runs: Run[] };
+    expect(sarif.runs).toHaveLength(2);
+    const run = sarif.runs[1];
+    expect(run.tool.driver).toMatchObject({ name: 'Prowler', version: '5.0.0', rules: [{ id: 'chk_a' }] });
+    expect(run.conversion?.tool.driver.name).toBe(BRANDING.name);
+    expect(run.properties?.lostInConversion.length).toBeGreaterThan(0);
+    const r = run.results[0];
+    expect(r.ruleId).toBe('chk_a');
+    expect(r.level).toBe('error');
+    expect(r.partialFingerprints.findingId).toBe('Prowler:f1');
+    expect(r.logicalLocations[0].name).toBe('C1 GPT');
+    expect(r.properties).toMatchObject({ layer: 'L1', node: 'C1 GPT', linkedThreatIds: ['rule-a-n1'], canonicalIds: ['canon-a'] });
+  });
+
+  it('未結合・ノード消失・canonicalId 不一致では linkedThreatIds が空', () => {
+    const list = [
+      finding({ id: 'p:1', subject: undefined }),
+      finding({ id: 'p:2', subject: { layer: 'L1', nodeId: 'gone' } }),
+      finding({ id: 'p:3', canonicalIds: ['other'] }),
+    ];
+    const sarif = toSarif(results([linked]), { artifactUri: 'x.json', findings: list }) as { runs: Run[] };
+    const rs = sarif.runs[1].results;
+    expect(rs.map((r) => r.properties.linkedThreatIds)).toEqual([[], [], []]);
+    expect(rs[0].properties.node).toBeUndefined();
+    expect(rs[1].properties.layer).toBeUndefined();
+    expect(rs[0].logicalLocations[0].name).toBe('res-1');
   });
 });

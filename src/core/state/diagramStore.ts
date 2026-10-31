@@ -4,6 +4,7 @@ import type {
   BoundaryTypeId,
   ComponentTypeId,
   ControlStatusState,
+  Finding,
   ControlStatusValue,
   CryptoFlow,
   DiagramAnnotation,
@@ -336,6 +337,8 @@ export interface HydratePayload {
   riskScores?: Record<string, RiskScore>;
   /** 対策実装状況（threatId キー）。省略時は未設定。 */
   controlStatuses?: Record<string, ControlStatusState>;
+  /** 外部製品の指摘（docs/architecture.md §8.2）。省略時は指摘なし。 */
+  findings?: Finding[];
   /** ElementalID 採番カウンタ。省略時は全レイヤー 0 始まり。 */
   idCounters?: LayerSeqCounters;
 }
@@ -395,6 +398,11 @@ interface DiagramState {
   riskScores: Record<string, RiskScore>;
   /** 検出/手動脅威への対策実装状況（threatId キー、グローバル）。suppression とは別レイヤー。 */
   controlStatuses: Record<string, ControlStatusState>;
+  /**
+   * 外部製品の指摘（docs/architecture.md §8.2）。取り込み（CLI）で入り、画面では編集しない。
+   * 保存時に書き戻すために保持する（Undo/Redo の対象外）。
+   */
+  findings: Finding[];
   /** 手動脅威エディタモーダルの開閉状態（UI 表示用、永続化しない）。 */
   isManualThreatModalOpen: boolean;
   /** 編集中の手動脅威 id。null = 新規追加モード。 */
@@ -681,6 +689,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   suppressions: {},
   riskScores: {},
   controlStatuses: {},
+  findings: [],
   isManualThreatModalOpen: false,
   editingManualThreatId: null,
 
@@ -721,6 +730,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       suppressions: payload.suppressions ?? {},
       riskScores: payload.riskScores ?? {},
       controlStatuses: payload.controlStatuses ?? {},
+      findings: payload.findings ?? [],
       isHydrated: true,
       selectedNodeIds: [],
       selectedEdgeId: null,
@@ -1327,6 +1337,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       suppressions: {},
       riskScores: {},
       controlStatuses: {},
+      findings: [],
       isNewProjectConfirmOpen: false,
       selectedNodeIds: [],
       selectedEdgeId: null,

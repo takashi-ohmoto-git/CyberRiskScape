@@ -139,6 +139,7 @@ export function ProjectFileModal() {
         suppressions: s.suppressions,
         riskScores: s.riskScores,
         controlStatuses: s.controlStatuses,
+        findings: s.findings,
       });
       await writeProjectFile(dir, name, project);
       await refresh(dir);

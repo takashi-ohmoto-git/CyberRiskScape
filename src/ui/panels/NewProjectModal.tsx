@@ -70,6 +70,7 @@ export function NewProjectModal() {
       suppressions: s.suppressions,
       riskScores: s.riskScores,
       controlStatuses: s.controlStatuses,
+      findings: s.findings,
     });
     const base = projectFilename(s.projectMeta.name);
     if (!isFileSystemAccessSupported()) {

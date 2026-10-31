@@ -147,13 +147,14 @@ async function loadModel(realRoot: string, rel: string): Promise<LoadedModel> {
 
 // ── 書き込み ───────────────────────────────────────────────────────────────
 
-/** エージェントが変更してはならない判断系フィールド（受容・誤検知・リスク評価・対策実装状況・手動脅威・メタ）。 */
+/** エージェントが変更してはならないフィールド（人の判断：受容・誤検知・リスク評価・対策実装状況・手動脅威・メタ／取り込んだ事実：指摘）。 */
 const JUDGEMENT_FIELDS = [
   'suppressions',
   'riskScores',
   'dreadScores',
   'controlStatuses',
   'manualThreats',
+  'findings',
   'projectMeta',
 ] as const satisfies readonly (keyof PersistedProject)[];
 

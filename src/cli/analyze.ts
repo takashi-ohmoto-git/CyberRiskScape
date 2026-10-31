@@ -17,6 +17,7 @@ import {
   type FrameworkView,
   type LayerData,
   type LayerKey,
+  type Finding,
   type ManualThreat,
   type ProjectMeta,
   type RiskScore,
@@ -55,6 +56,8 @@ export interface ResolvedProject {
   riskScores: Record<string, RiskScore> | undefined;
   controlStatuses: Record<string, ControlStatusState> | undefined;
   projectMeta: ProjectMeta;
+  /** 外部製品の指摘（`analyze --with-findings` の SARIF 書き出し用）。 */
+  findings: Finding[] | undefined;
 }
 
 /**
@@ -81,6 +84,7 @@ export function resolveProject(raw: unknown): ResolvedProject {
     riskScores: resolveRiskScores(loaded),
     controlStatuses: loaded.controlStatuses,
     projectMeta: loaded.projectMeta ?? EMPTY_PROJECT_META,
+    findings: loaded.findings,
   };
 }
 

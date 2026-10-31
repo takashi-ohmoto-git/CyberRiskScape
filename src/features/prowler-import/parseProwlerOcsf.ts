@@ -27,12 +27,18 @@ export interface NormalizedProwlerFinding {
   status: ProwlerStatus;
   severity?: string;
   title?: string;
+  /** 製品側の指摘 ID（`finding_info.uid`。12 桁のアカウント ID は伏せ字）。 */
+  uid?: string;
+  /** 観測時刻（`time_dt`。ISO 8601）。 */
+  observedAt?: string;
   resources: ProwlerResource[];
   categories: string[];
 }
 
 export interface ParsedProwler {
   findings: NormalizedProwlerFinding[];
+  /** Prowler のバージョン（`metadata.product.version`。最初に見つかったもの）。 */
+  productVersion?: string;
   skipped: {
     /** 形が読めなかった、または PASS/FAIL/MANUAL 以外の項目。 */
     invalid: number;
@@ -60,11 +66,17 @@ const ResourceSchema = z
 
 const FindingSchema = z
   .object({
-    metadata: z.object({ event_code: z.string().min(1) }).passthrough(),
+    metadata: z
+      .object({
+        event_code: z.string().min(1),
+        product: z.object({ version: str }).passthrough().optional().catch(undefined),
+      })
+      .passthrough(),
+    time_dt: str,
     status_code: z.string(),
     status: str,
     severity: str,
-    finding_info: z.object({ title: str }).passthrough().optional().catch(undefined),
+    finding_info: z.object({ title: str, uid: str }).passthrough().optional().catch(undefined),
     resources: z.array(ResourceSchema).optional().catch(undefined),
     unmapped: z
       .object({ categories: z.array(z.string()).optional().catch(undefined) })
@@ -120,6 +132,7 @@ export function parseProwlerOcsf(raw: unknown): ParseProwlerResult {
 
   const findings: NormalizedProwlerFinding[] = [];
   const skipped = { invalid: 0, muted: 0 };
+  let productVersion: string | undefined;
   for (const item of items) {
     const p = FindingSchema.safeParse(item);
     if (!p.success) {
@@ -136,7 +149,10 @@ export function parseProwlerOcsf(raw: unknown): ParseProwlerResult {
       skipped.muted += 1;
       continue;
     }
+    productVersion ??= clean(f.metadata.product?.version);
     findings.push({
+      uid: clean(f.finding_info?.uid)?.replace(/\b\d{12}\b/g, '*'),
+      observedAt: clean(f.time_dt),
       checkId: f.metadata.event_code,
       status,
       severity: f.severity,
@@ -155,5 +171,5 @@ export function parseProwlerOcsf(raw: unknown): ParseProwlerResult {
   if (findings.length === 0 && skipped.invalid === items.length && items.length > 0) {
     return { ok: false, error: 'Prowler の OCSF の検査結果として読める項目がありませんでした。' };
   }
-  return { ok: true, findings, skipped };
+  return { ok: true, findings, productVersion, skipped };
 }

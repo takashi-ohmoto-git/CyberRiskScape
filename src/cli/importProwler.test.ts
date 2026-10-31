@@ -17,12 +17,31 @@ const nodeMap = read('sample-map.json') as Record<string, string>;
 function run(map: Record<string, string> = nodeMap, raw: unknown = project) {
   const parsed = parseProwlerOcsf(ocsf);
   if (!parsed.ok) throw new Error(parsed.error);
-  return importProwler(raw, parsed, map);
+  return importProwler(raw, parsed, map, undefined, '2026-10-31T00:00:00.000Z');
 }
 
 const nodeOf = (p: ReturnType<typeof run>['project'], id: string) => p.layers?.L1?.nodes.find((n) => n.id === id);
 
 describe('importProwler', () => {
+  it('FAIL の指摘を project.findings に保存し、取り込み直しで置き換える', () => {
+    const out = run();
+    const fs = out.project.findings ?? [];
+    expect(fs.length).toBeGreaterThan(0);
+    expect(fs.every((f) => f.source.product === 'Prowler')).toBe(true);
+    expect(out.findings).toMatchObject({ stored: fs.length, truncated: 0, added: fs.length, resolved: 0, continued: 0 });
+    expect(fs.find((f) => f.identifiers[0].value === 's3_bucket_public_access')?.subject).toEqual({
+      layer: 'L1',
+      nodeId: 'n-bucket',
+    });
+    expect(JSON.stringify(fs)).not.toContain('123456789012');
+    expect(prowlerReportToMarkdown(out)).toContain('## 保存した指摘（FAIL）');
+    expect(prowlerReportToJson(out).findings).toEqual(out.findings);
+
+    const again = run(nodeMap, JSON.parse(JSON.stringify(out.project)));
+    expect(again.project.findings).toHaveLength(fs.length);
+    expect(again.findings).toMatchObject({ added: 0, resolved: 0, continued: fs.length });
+  });
+
   it('未入力の項目だけ埋める（資源内は最良・ノード内は最悪）', () => {
     const out = run();
     expect(nodeOf(out.project, 'n-bucket')?.posture).toEqual({

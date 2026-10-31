@@ -6,6 +6,7 @@ import {
   type DiagramBoundary,
   type DiagramEdge,
   type DiagramNode,
+  type Finding,
   type ElementRef,
   type Severity,
   type ThreatView,
@@ -15,6 +16,8 @@ import type { LayerAnalysisResult } from './analyze';
 /** `toSarif` のオプション。`artifactUri` は入力ファイルの参照先（相対パス等）。 */
 export interface ToSarifOptions {
   artifactUri: string;
+  /** 指定し、かつ 1 件以上あるとき、製品ごとの run を run[0] の後ろに追加する（`--with-findings`）。 */
+  findings?: readonly Finding[];
 }
 
 /** 手動脅威（ルール非経由）に割り当てる固定 ruleId。 */
@@ -95,7 +98,7 @@ interface SarifResult {
  */
 export function toSarif(
   results: LayerAnalysisResult[],
-  { artifactUri }: ToSarifOptions,
+  { artifactUri, findings }: ToSarifOptions,
 ): object {
   const rules = new Map<string, SarifRule>();
   const sarifResults: SarifResult[] = [];
@@ -158,6 +161,75 @@ export function toSarif(
         },
         results: sarifResults,
       },
+      ...(findings && findings.length > 0 ? findingRuns(results, findings, artifactUri) : []),
     ],
   };
+}
+
+/** 変換で持ち越さない情報（SARIF の指摘 run に明記する）。 */
+const LOST_IN_CONVERSION = [
+  'PASS results (reflected in node posture instead)',
+  'remediation text',
+  'resource configuration',
+];
+
+/** 外部製品の指摘を製品ごとの run にする（docs/architecture.md §8.3）。 */
+function findingRuns(results: LayerAnalysisResult[], findings: readonly Finding[], artifactUri: string): object[] {
+  const byProduct = new Map<string, Finding[]>();
+  for (const f of findings) byProduct.set(f.source.product, [...(byProduct.get(f.source.product) ?? []), f]);
+
+  return [...byProduct.entries()].map(([product, list]) => {
+    const rules = new Map<string, { id: string; shortDescription: { text: string } }>();
+    const sarifResults = list.map((f) => {
+      const ruleId =
+        f.identifiers.find((i) => i.scheme === 'prowler-check')?.value ?? f.identifiers[0]?.value ?? f.id;
+      if (!rules.has(ruleId)) rules.set(ruleId, { id: ruleId, shortDescription: { text: f.title ?? ruleId } });
+
+      // ノードが消えていれば未結合として扱う
+      const layerResult = f.subject ? results.find((r) => r.layer === f.subject?.layer) : undefined;
+      const node = f.subject ? layerResult?.input.nodes.find((n) => n.id === f.subject?.nodeId) : undefined;
+      const nodeLabel =
+        layerResult && node && f.subject
+          ? assetLabel({ kind: 'node', id: f.subject.nodeId }, layerResult.input.nodes, [], [])
+          : '';
+      const linkedThreatIds =
+        layerResult && node && f.subject
+          ? layerResult.threats
+              .filter(
+                (t) =>
+                  t.subject?.kind === 'node' &&
+                  t.subject.id === f.subject?.nodeId &&
+                  t.canonicalId !== undefined &&
+                  f.canonicalIds.includes(t.canonicalId),
+              )
+              .map((t) => t.id)
+          : [];
+      const resourceLabel = f.resource?.label ?? '';
+
+      return {
+        ruleId,
+        level: sarifLevel(f.severity),
+        message: { text: [nodeLabel, f.title ?? '', resourceLabel].filter((s) => s !== '').join(' - ') },
+        locations: [{ physicalLocation: { artifactLocation: { uri: artifactUri } } }],
+        logicalLocations: [{ name: nodeLabel || resourceLabel, kind: 'element' }],
+        partialFingerprints: { findingId: f.id },
+        properties: {
+          severity: f.severity,
+          ...(f.sourceSeverity ? { sourceSeverity: f.sourceSeverity } : {}),
+          canonicalIds: f.canonicalIds,
+          ...(nodeLabel && f.subject ? { layer: f.subject.layer, node: nodeLabel } : {}),
+          linkedThreatIds,
+          ...(f.observedAt ? { observedAt: f.observedAt } : {}),
+          ...(f.resource ? { resource: f.resource } : {}),
+        },
+      };
+    });
+    const version = list.find((f) => f.source.productVersion)?.source.productVersion;
+    return {
+      tool: { driver: { name: product, ...(version ? { version } : {}), rules: [...rules.values()] } },
+      conversion: { tool: { driver: { name: BRANDING.name } } },
+      results: sarifResults,
+      properties: { lostInConversion: LOST_IN_CONVERSION },
+    };
+  });
 }

@@ -1,5 +1,5 @@
 import { analyzeResolvedProject, resolveProject, type LayerAnalysisResult } from './analyze';
-import { LAYER_KEYS, type LayerKey } from '../core/model/types';
+import { LAYER_KEYS, MAX_FINDINGS, type LayerKey } from '../core/model/types';
 import { effectiveSeverity } from '../core/model/risk';
 import { deserializeProject } from '../features/persistence/serialize';
 import type { PersistedProject } from '../features/persistence/schema';
@@ -11,6 +11,7 @@ import {
   type ProwlerImportResult,
   type ThreatRef,
 } from '../features/prowler-import/applyProwler';
+import { replaceFindings, toFindings } from '../features/prowler-import/toFindings';
 import type { ParsedProwler } from '../features/prowler-import/parseProwlerOcsf';
 import { BUNDLED_PROWLER_MAP, type FieldValue, type ProwlerMapping } from '../features/prowler-import/prowlerMap';
 
@@ -24,6 +25,8 @@ export interface ImportProwlerOutput {
   /** 未入力の項目だけ埋めたプロジェクト。 */
   project: PersistedProject;
   skipped: ParsedProwler['skipped'];
+  /** 保存した指摘（FAIL）の件数。`added/resolved/continued` は前回取り込みとの差。 */
+  findings: { stored: number; truncated: number; added: number; resolved: number; continued: number };
 }
 
 /** 全レイヤーのノード自身の検出脅威を、突き合わせ用に（対象ノード id つきで）まとめる。 */
@@ -46,6 +49,7 @@ export function importProwler(
   parsed: ParsedProwler,
   nodeMap: Readonly<Record<string, string>> = {},
   map: readonly ProwlerMapping[] = BUNDLED_PROWLER_MAP,
+  importedAt: string = new Date().toISOString(),
 ): ImportProwlerOutput {
   const resolved = resolveProject(rawProject);
   const nodes: ImportNodeRef[] = LAYER_KEYS.flatMap((layer) =>
@@ -75,7 +79,28 @@ export function importProwler(
   } else if (loaded.nodes) {
     project.nodes = fillNodes(loaded.nodes, result.applied, 'L1' as LayerKey);
   }
-  return { result, project, skipped: parsed.skipped };
+
+  const converted = toFindings({
+    findings: parsed.findings,
+    map,
+    nodes,
+    nodeMap,
+    productVersion: parsed.productVersion,
+    importedAt,
+  });
+  const replaced = replaceFindings(loaded.findings, converted.findings, 'Prowler');
+  if (replaced.findings.length > 0) project.findings = replaced.findings;
+  else delete project.findings;
+  return {
+    result,
+    project,
+    skipped: parsed.skipped,
+    findings: {
+      stored: converted.findings.length,
+      truncated: converted.truncated,
+      ...replaced.diff,
+    },
+  };
 }
 
 const show = (v: FieldValue): string => String(v);
@@ -181,6 +206,12 @@ export function prowlerReportToMarkdown(out: ImportProwlerOutput): string {
   for (const u of r.unmappedChecks) {
     lines.push(`- ${u.checkId}${u.severity ? ` [${u.severity}]` : ''}${u.title ? ` ${u.title}` : ''} × ${u.count}`);
   }
+
+  const f = out.findings;
+  lines.push('', '## 保存した指摘（FAIL）', '');
+  lines.push(`- 保存 ${f.stored} 件（新規 ${f.added} / 解消 ${f.resolved} / 継続 ${f.continued}）`);
+  if (f.truncated > 0) lines.push(`- 上限（${MAX_FINDINGS} 件）を超えたため保存しなかった指摘 ${f.truncated} 件`);
+  lines.push('- 指摘は --out のプロジェクト JSON に保存され、`analyze --format sarif --with-findings` で書き出せる');
   return lines.join('\n');
 }
 
@@ -190,6 +221,7 @@ export function prowlerReportToJson(out: ImportProwlerOutput): Record<string, un
     schemaVersion: 1,
     kind: 'cyberriskscape-prowler-import-report',
     skipped: out.skipped,
+    findings: out.findings,
     ...out.result,
   };
 }

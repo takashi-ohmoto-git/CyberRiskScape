@@ -159,9 +159,9 @@ export interface ProwlerImportResult {
   unmappedChecks: UnmappedCheck[];
 }
 
-type NodeLookup = { kind: 'found'; node: ImportNodeRef } | { kind: 'unknown' } | { kind: 'ambiguous' };
+export type NodeLookup = { kind: 'found'; node: ImportNodeRef } | { kind: 'unknown' } | { kind: 'ambiguous' };
 
-function lookupNode(nodes: readonly ImportNodeRef[], ref: string): NodeLookup {
+export function lookupNode(nodes: readonly ImportNodeRef[], ref: string): NodeLookup {
   const byId = nodes.find((n) => n.id === ref);
   if (byId) return { kind: 'found', node: byId };
   const m = /^C(\d+)$/.exec(ref);

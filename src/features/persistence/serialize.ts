@@ -1,5 +1,6 @@
 import type {
   ControlStatusState,
+  Finding,
   FrameworkView,
   LayerData,
   LayerKey,
@@ -33,6 +34,8 @@ export interface SerializableState {
   riskScores?: Record<string, RiskScore>;
   /** 対策実装状況（threatId キー）。省略時は保存しない。 */
   controlStatuses?: Record<string, ControlStatusState>;
+  /** 外部製品の指摘（docs/architecture.md §8.2）。省略時・空は保存しない。 */
+  findings?: readonly Finding[];
   /** ElementalID 採番カウンタ（§2.26）。省略時は保存しない（旧テスト互換）。 */
   idCounters?: LayerSeqCounters;
 }
@@ -68,6 +71,8 @@ export function serializeProject(state: SerializableState): PersistedProject {
   const hasRiskScores = !!riskScores && Object.keys(riskScores).length > 0;
   const controlStatuses = state.controlStatuses;
   const hasControlStatuses = !!controlStatuses && Object.keys(controlStatuses).length > 0;
+  const findings = state.findings;
+  const hasFindings = !!findings && findings.length > 0;
   return {
     schemaVersion: PERSISTED_PROJECT_SCHEMA_VERSION,
     layers: state.layers,
@@ -80,6 +85,7 @@ export function serializeProject(state: SerializableState): PersistedProject {
     ...(hasSuppressions ? { suppressions } : {}),
     ...(hasRiskScores ? { riskScores } : {}),
     ...(hasControlStatuses ? { controlStatuses } : {}),
+    ...(hasFindings ? { findings: [...findings] } : {}),
     updatedAt: Date.now(),
   };
 }

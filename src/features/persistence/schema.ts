@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CRYPTO_TERMINATIONS } from '../../core/model/types';
+import { CRYPTO_TERMINATIONS, MAX_FINDINGS } from '../../core/model/types';
 import {
   AgencyLevelSchema,
   AuthTypeSchema,
@@ -371,6 +371,33 @@ const PersistedRiskScoreSchema = z.object({
   at: z.number().int().nonnegative(),
 });
 
+/** 外部製品の指摘（docs/architecture.md §8.2）。取り込んだ事実で、人の判断は持たない。 */
+const FINDING_TEXT_MAX = 200;
+const PersistedFindingSchema = z.object({
+  id: z.string().min(1).max(600),
+  source: z.object({
+    format: z.literal('ocsf'),
+    product: z.string().min(1).max(100),
+    productVersion: z.string().max(50).optional(),
+    importedAt: z.string().max(40),
+  }),
+  externalId: z.string().min(1).max(500),
+  identifiers: z.array(z.object({ scheme: z.string().min(1).max(50), value: z.string().min(1).max(FINDING_TEXT_MAX) })).max(20),
+  title: z.string().max(FINDING_TEXT_MAX).optional(),
+  severity: SeveritySchema,
+  sourceSeverity: z.string().max(50).optional(),
+  canonicalIds: z.array(z.string().min(1).max(FINDING_TEXT_MAX)).max(20),
+  subject: z.object({ layer: LayerKeySchema, nodeId: z.string().min(1) }).optional(),
+  resource: z
+    .object({
+      label: z.string().max(FINDING_TEXT_MAX),
+      type: z.string().max(FINDING_TEXT_MAX).optional(),
+      region: z.string().max(50).optional(),
+    })
+    .optional(),
+  observedAt: z.string().max(40).optional(),
+});
+
 export const PersistedProjectSchema = z.object({
   schemaVersion: z.literal(PERSISTED_PROJECT_SCHEMA_VERSION),
   /**
@@ -427,6 +454,11 @@ export const PersistedProjectSchema = z.object({
    * schemaVersion は据え置き（optional 追加は後方互換）。
    */
   controlStatuses: z.record(z.string().min(1), PersistedControlStatusSchema).optional(),
+  /**
+   * 外部製品の指摘（レイヤー横断）。省略時は指摘なしとして起動。
+   * schemaVersion は据え置き（optional 追加は後方互換）。
+   */
+  findings: z.array(PersistedFindingSchema).max(MAX_FINDINGS).optional(),
   updatedAt: z.number().int().nonnegative(),
 });
 
