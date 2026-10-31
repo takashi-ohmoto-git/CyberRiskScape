@@ -38,6 +38,7 @@ import { ENTRY_PROBE } from '../../core/notation/edgeNotation';
 import { SEVERITY_BADGE_SOLID } from '../../core/model/severityColors';
 import { CONTROL_STATUS_BADGE, CONTROL_STATUS_LABEL_KEY } from './controlStatusStyle';
 import { sortThreatsBySeverity } from './sortThreatsBySeverity';
+import { AttackMatrixModal } from './AttackMatrixModal';
 import { useLocale, useT } from '../../i18n';
 
 /** i18n の t() 関数の型（useT の戻り値）。 */
@@ -493,15 +494,17 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
   const [includeEntries, setIncludeEntries] = useState(true);
   const [selection, setSelection] = useState<Selection>(null);
   const [hoveredRouteIndex, setHoveredRouteIndex] = useState<number | null>(null);
+  const [matrixOpen, setMatrixOpen] = useState(false);
   const t = useT();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      // ATT&CK マトリクス（子モーダル）が開いている間は子だけが閉じる
+      if (e.key === 'Escape' && !matrixOpen) onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [onClose, matrixOpen]);
 
   const targetId = attacker.attackObjectiveId ?? '';
   const target = nodes.find((n) => n.id === targetId);
@@ -596,13 +599,24 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
           <h2 className="text-sm font-bold uppercase tracking-widest text-slate-300 flex items-center gap-2">
             <GitBranch size={16} className="text-rose-400" /> {t('attackTree.title')}
           </h2>
-          <button
-            onClick={onClose}
-            className="text-slate-500 hover:text-slate-200 transition-colors"
-            aria-label={t('analytics.close')}
-          >
-            <X size={16} />
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setMatrixOpen(true)}
+              disabled={!hasPath}
+              title={t('panels.attackMatrix.openTitle')}
+              className="px-2 py-1 rounded border border-slate-700 text-xs font-bold text-slate-300 hover:border-rose-500 disabled:opacity-40 disabled:hover:border-slate-700"
+            >
+              {t('panels.attackMatrix.open')}
+            </button>
+            <button
+              onClick={onClose}
+              className="text-slate-500 hover:text-slate-200 transition-colors"
+              aria-label={t('analytics.close')}
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 text-xs font-bold text-slate-400 flex-wrap">
@@ -895,6 +909,18 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
 
         <p className="text-xs text-slate-500 leading-relaxed">{t('attackTree.footnote')}</p>
       </div>
+
+      {matrixOpen && (
+        <AttackMatrixModal
+          attackerId={attacker.id}
+          allThreats={allThreats}
+          graph={graph}
+          analysis={analysis}
+          nodes={nodes}
+          edges={edges}
+          onClose={() => setMatrixOpen(false)}
+        />
+      )}
     </div>
   );
 }
