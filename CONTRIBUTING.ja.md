@@ -17,12 +17,12 @@ Issue と Pull Request を歓迎します。
 npm install
 npm run dev          # 開発サーバ起動
 npx tsc --noEmit     # 型チェック（strict）
-npm run lint         # ESLint（warn のみ。CI は総数の上限で判定。設定は eslint.config.js）
+npm run lint         # ESLint（CI は --max-warnings 0＝警告 1 件でも失敗。設定は eslint.config.js）
 npm test             # テスト一括実行
 npm run build        # 本番ビルド
 ```
 
-Pull Request を出す前に、型チェックとテストが通ることを確認してください。
+Pull Request を出す前に、型チェック・lint・テストが通ることを確認してください。
 これらは CI（`.github/workflows/ci.yml`）でも実行されます。
 
 ## 脅威ルールを追加する
