@@ -1,6 +1,6 @@
 # CyberRiskScape
 
-**Open-source visual threat modeling for AI, LLM, agentic systems, and post-quantum cryptography**
+**An open-source Security Context Layer built on threat modeling — for AI, LLM, agentic systems, and post-quantum cryptography**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Threat rules](https://img.shields.io/badge/threat%20rules-272-orange.svg)](data/threat-library)
@@ -8,6 +8,11 @@
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 **English** | [日本語](README.ja.md)
+
+CyberRiskScape takes in results from your security tools — attack surface management, cloud posture,
+vulnerability management, identity platforms, AI security scanners — and turns them into context:
+asset relationships, threat models, attack paths, and correlated risk that people and AI agents can
+act on (see *Ecosystem* below). At its core is threat modeling:
 
 Draw a data flow diagram in your browser, and CyberRiskScape enumerates the threats that
 apply to your architecture — including the ones classical threat modeling tools have no

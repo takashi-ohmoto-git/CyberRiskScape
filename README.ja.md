@@ -1,6 +1,6 @@
 # CyberRiskScape
 
-**AI・LLM・エージェントシステム・PQC に対応した、OSS のビジュアル脅威モデリングツール**
+**脅威モデリングを中核とした、OSS の Security Context Layer — AI・LLM・エージェントシステム・PQC に対応**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Threat rules](https://img.shields.io/badge/threat%20rules-272-orange.svg)](data/threat-library)
@@ -8,6 +8,10 @@
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 [English](README.md) | **日本語**
+
+ASM・クラウドの検査・脆弱性管理・ID 基盤・AI セキュリティのスキャナーなど、お使いのセキュリティ製品の結果を取り込み、
+資産の関係・脅威モデル・攻撃経路・リスクの相関として文脈化して、人と AI エージェントの判断に渡します
+（下の「エコシステム」節）。その中核が脅威モデリングです。
 
 ブラウザ上でシステム構成図（DFD）を描くと、構成に応じた脅威が自動で列挙されます。
 サーバ不要・完全ローカル動作で、設計データが外部に送信されることはありません。
