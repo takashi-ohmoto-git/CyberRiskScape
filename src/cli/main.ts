@@ -35,6 +35,13 @@ import { parseSkillScannerFindings } from '../features/findings-report/parseSkil
 import { parseMcpScannerFindings } from '../features/findings-report/parseMcpScanner';
 import { parseProwlerOcsf } from '../features/prowler-import/parseProwlerOcsf';
 import { importProwler, prowlerReportToJson, prowlerReportToMarkdown } from './importProwler';
+import {
+  findingsReportToJson as importFindingsReportToJson,
+  findingsReportToMarkdown as importFindingsReportToMarkdown,
+  importFindings,
+} from './importFindings';
+import { parseScap } from '../features/scap-import/parseScap';
+import { MAX_FILE_BYTES } from './readEvidence';
 import { buildFindingsReport, evaluateFindingsGate } from '../features/findings-report/buildFindingsReport';
 import { BUNDLED_AITECH_MAP, BUNDLED_FINDING_MAP } from '../features/findings-report/findingMap';
 import { buildThreatReport, toDCRHThreatModelMarkdown, toJsonObject } from '../features/export/threatReport';
@@ -104,6 +111,7 @@ const TRIGGERS_FORMATS = ['md', 'json'] as const;
 const CHECKLIST_FORMATS = ['md', 'json', 'csv'] as const;
 const FINDINGS_REPORT_FORMATS = ['md', 'json'] as const;
 const IMPORT_PROWLER_REPORTS = ['md', 'json'] as const;
+const IMPORT_FINDINGS_FORMATS = ['xccdf', 'arf', 'oval'] as const;
 const TEST_PLAN_FORMATS = ['md', 'json'] as const;
 const INVESTIGATION_TOOLS = ['velociraptor'] as const;
 const SBOM_CRYPTO_FORMATS = ['md', 'json'] as const;
@@ -121,6 +129,7 @@ const USAGE = `使い方:
   import-kongctl <kongctl.yaml> [options]
   import-repo <dir> [options]
   import-prowler <project.json> --ocsf <file> [options]
+  import-findings <project.json> --format <xccdf|arf|oval> --in <file> [options]
   import-conjur <policy.yml> [options]
   import-shodan <export.json[.gz]> [options]
   import-scopesentry <export.json> [options]
@@ -186,6 +195,15 @@ import-prowler のオプション（Prowler の OCSF 出力（*.ocsf.json）の�
                                                 資源のタグ crs-node=<ノード ID> が優先され、タグの無い資源をこの表で補う
   --report <md|json>                            報告の形式（既定: md。標準出力）
   -o, --out <file>                              未入力の項目を埋めたプロジェクト JSON の出力先（指定しなければ書き出さない）
+
+import-findings のオプション（SCAP の結果（XCCDF 1.1/1.2・ARF 1.1・OVAL 5 の結果。OpenSCAP 等の出力）の fail・脆弱性を、共通モデルの指摘としてプロジェクト JSON に保存する。取り込み直しはホスト単位で置き換える。ファイル入力のみ）:
+  --format <xccdf|arf|oval>                     入力の形式（必須。ファイルの中身と違えばエラー）
+  --in <file>                                   SCAP の結果の XML（必須。64 MB まで）
+  --node <C番号|ID>                             ファイル内のすべてのホストをこのノードに結びつける（--map より優先）
+  --map <file>                                  ホストとノードの対応表（任意。JSON {"<ホスト名|FQDN|IP>": "<ノード ID または C 番号>"}）
+  --report <md|json>                            報告の形式（既定: md。標準出力）
+  -o, --out <file>                              指摘を保存したプロジェクト JSON の出力先（指定しなければ書き出さない）。
+                                                保存した指摘は analyze --format sarif --with-findings で書き出せる
 
 import-conjur のオプション（Conjur / Secrets Manager のポリシーから NHI と読み取り経路の図を L1 に作り、プロジェクト JSON を出力）:
   --locale <ja|en>                              ノード名の言語（既定: ja）
@@ -370,6 +388,7 @@ function parseCliArgs() {
       tool: { type: 'string' },
       out: { type: 'string', short: 'o' },
       ocsf: { type: 'string' },
+      in: { type: 'string' },
       map: { type: 'string' },
       report: { type: 'string' },
       root: { type: 'string' },
@@ -716,6 +735,62 @@ ${USAGE}`);
   const s = out.result.summary;
   process.stderr.write(
     `Prowler の検査結果を取り込みました（適用 ${s.applied} / 同じ値 ${s.unchanged} / 食い違い ${s.conflicts} / 適用できない ${s.notApplicable} / 対応するノードが無い資源 ${s.unmatchedResources}）
+`,
+  );
+}
+
+/**
+ * `import-findings`：SCAP の結果（XCCDF・ARF・OVAL）を指摘としてプロジェクト JSON に保存する。
+ * 指摘を保存した JSON は `-o` に書き出し、報告（既定 md）は標準出力。
+ */
+function runImportFindings(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  const format = parseEnum(values.format, IMPORT_FINDINGS_FORMATS, 'format');
+  if (!format) fail(`--format <${IMPORT_FINDINGS_FORMATS.join('|')}> を指定してください。`);
+  if (!values.in) fail('--in <file> を指定してください（SCAP の結果の XML）。');
+  const report = parseEnum(values.report, IMPORT_PROWLER_REPORTS, 'report') ?? 'md';
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+
+  let xml = '';
+  try {
+    if (statSync(values.in).size > MAX_FILE_BYTES) {
+      fail(`ファイルが大きすぎます（上限 ${MAX_FILE_BYTES / 1024 / 1024} MB）: ${values.in}`);
+    }
+    xml = readFileSync(values.in, 'utf-8');
+  } catch (e) {
+    fail(`ファイルを読み込めません: ${values.in}（${e instanceof Error ? e.message : String(e)}）`);
+  }
+  const parsed = parseScap(xml);
+  if (!parsed.ok) fail(`${parsed.error}（${values.in}）`);
+  if (parsed.format !== format) {
+    fail(`--format ${format} と入力の形式（${parsed.format}）が一致しません（${values.in}）`);
+  }
+  let nodeMap: Record<string, string> = {};
+  if (values.map) {
+    const m = z.record(z.string(), z.string()).safeParse(readJsonFile(values.map));
+    if (!m.success) fail(`--map は {"<ホスト名|FQDN|IP>": "<ノード ID>"} の JSON にしてください（${values.map}）`);
+    nodeMap = m.data;
+  }
+
+  let out: ReturnType<typeof importFindings>;
+  try {
+    out = importFindings(readJsonFile(file), parsed, { nodeMap, nodeRef: values.node });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  if (values.out) writeFileSync(values.out, JSON.stringify(out.project, null, 2), 'utf-8');
+  process.stdout.write(
+    `${report === 'json' ? JSON.stringify(importFindingsReportToJson(out), null, 2) : importFindingsReportToMarkdown(out)}
+`,
+  );
+  process.stderr.write(
+    `SCAP の結果を取り込みました（ホスト ${out.hosts.length} / 保存した指摘 ${out.stored} / 未結合のホスト ${out.hosts.filter((h) => !h.linked).length}）
 `,
   );
 }
@@ -1397,6 +1472,8 @@ function main(): void {
     runImportRepo(values, positionals);
   } else if (command === 'import-prowler') {
     runImportProwler(values, positionals);
+  } else if (command === 'import-findings') {
+    runImportFindings(values, positionals);
   } else if (command === 'import-conjur') {
     runImportConjur(values, positionals);
   } else if (command === 'import-shodan') {

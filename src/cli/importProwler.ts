@@ -7,11 +7,12 @@ import {
   applyProwler,
   fillNodes,
   type BasisEntry,
-  type ImportNodeRef,
   type ProwlerImportResult,
   type ThreatRef,
 } from '../features/prowler-import/applyProwler';
-import { replaceFindings, toFindings } from '../features/prowler-import/toFindings';
+import type { ImportNodeRef } from '../features/findings-import/resolveNode';
+import { toFindings } from '../features/prowler-import/toFindings';
+import { replaceFindings } from '../features/findings-import/replaceFindings';
 import type { ParsedProwler } from '../features/prowler-import/parseProwlerOcsf';
 import { BUNDLED_PROWLER_MAP, type FieldValue, type ProwlerMapping } from '../features/prowler-import/prowlerMap';
 

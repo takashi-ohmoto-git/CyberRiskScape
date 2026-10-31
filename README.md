@@ -190,7 +190,7 @@ npm run test:watch   # watch mode
 npx tsc --noEmit     # type check (strict)
 ```
 
-The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,660 tests
+The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,698 tests
 currently pass.
 
 ---

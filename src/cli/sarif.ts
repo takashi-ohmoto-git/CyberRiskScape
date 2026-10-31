@@ -166,12 +166,13 @@ export function toSarif(
   };
 }
 
-/** 変換で持ち越さない情報（SARIF の指摘 run に明記する）。 */
-const LOST_IN_CONVERSION = [
-  'PASS results (reflected in node posture instead)',
-  'remediation text',
-  'resource configuration',
-];
+/** 変換で持ち越さない情報（形式ごと。SARIF の指摘 run に明記する）。 */
+const LOST_IN_CONVERSION: Record<Finding['source']['format'], string[]> = {
+  ocsf: ['PASS results (reflected in node posture instead)', 'remediation text', 'resource configuration'],
+  xccdf: ['pass/notapplicable/notchecked results', 'rule descriptions and fix text', 'target facts'],
+  arf: ['pass/notapplicable/notchecked results', 'rule descriptions and fix text', 'target facts'],
+  oval: ['definitions evaluated as not vulnerable', 'test details and collected items'],
+};
 
 /** 外部製品の指摘を製品ごとの run にする（docs/architecture.md §8.3）。 */
 function findingRuns(results: LayerAnalysisResult[], findings: readonly Finding[], artifactUri: string): object[] {
@@ -181,8 +182,7 @@ function findingRuns(results: LayerAnalysisResult[], findings: readonly Finding[
   return [...byProduct.entries()].map(([product, list]) => {
     const rules = new Map<string, { id: string; shortDescription: { text: string } }>();
     const sarifResults = list.map((f) => {
-      const ruleId =
-        f.identifiers.find((i) => i.scheme === 'prowler-check')?.value ?? f.identifiers[0]?.value ?? f.id;
+      const ruleId = f.identifiers[0]?.value ?? f.id;
       if (!rules.has(ruleId)) rules.set(ruleId, { id: ruleId, shortDescription: { text: f.title ?? ruleId } });
 
       // ノードが消えていれば未結合として扱う
@@ -229,7 +229,7 @@ function findingRuns(results: LayerAnalysisResult[], findings: readonly Finding[
       tool: { driver: { name: product, ...(version ? { version } : {}), rules: [...rules.values()] } },
       conversion: { tool: { driver: { name: BRANDING.name } } },
       results: sarifResults,
-      properties: { lostInConversion: LOST_IN_CONVERSION },
+      properties: { lostInConversion: [...new Set(list.flatMap((f) => LOST_IN_CONVERSION[f.source.format]))] },
     };
   });
 }

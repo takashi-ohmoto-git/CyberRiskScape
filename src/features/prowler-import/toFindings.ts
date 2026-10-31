@@ -1,5 +1,6 @@
-import { MAX_FINDINGS, type Finding, type Severity } from '../../core/model/types';
-import { lookupNode, type ImportNodeRef } from './applyProwler';
+import type { Finding } from '../../core/model/types';
+import { capFindings, normalizeSeverity } from '../findings-import/replaceFindings';
+import { lookupNode, type ImportNodeRef } from '../findings-import/resolveNode';
 import { resourceLabel, type NormalizedProwlerFinding, type ProwlerResource } from './parseProwlerOcsf';
 import { findProwlerMapping, type ProwlerMapping } from './prowlerMap';
 
@@ -14,19 +15,6 @@ const TEXT_MAX = 200;
 const EXTERNAL_ID_MAX = 500;
 
 const mask = (s: string): string => s.replace(/\b\d{12}\b/g, '*');
-
-function normalizeSeverity(raw: string | undefined): Severity {
-  switch (raw?.toLowerCase()) {
-    case 'critical':
-      return 'Critical';
-    case 'high':
-      return 'High';
-    case 'medium':
-      return 'Medium';
-    default:
-      return 'Low';
-  }
-}
 
 export interface ToFindingsInput {
   findings: readonly NormalizedProwlerFinding[];
@@ -104,28 +92,5 @@ export function toFindings(input: ToFindingsInput): { findings: Finding[]; trunc
       out.push(finding);
     }
   }
-  const truncated = Math.max(0, out.length - MAX_FINDINGS);
-  return { findings: truncated > 0 ? out.slice(0, MAX_FINDINGS) : out, truncated };
-}
-
-export interface FindingsDiff {
-  added: number;
-  resolved: number;
-  continued: number;
-}
-
-/** 同じ製品の指摘を丸ごと置き換える（スナップショット）。他製品の指摘は触らない。 */
-export function replaceFindings(
-  existing: readonly Finding[] | undefined,
-  incoming: readonly Finding[],
-  product: string,
-): { findings: Finding[]; diff: FindingsDiff } {
-  const prev = (existing ?? []).filter((f) => f.source.product === product);
-  const prevIds = new Set(prev.map((f) => f.id));
-  const nextIds = new Set(incoming.map((f) => f.id));
-  const continued = [...nextIds].filter((id) => prevIds.has(id)).length;
-  return {
-    findings: [...(existing ?? []).filter((f) => f.source.product !== product), ...incoming],
-    diff: { added: nextIds.size - continued, resolved: prevIds.size - continued, continued },
-  };
+  return capFindings(out);
 }

@@ -1,0 +1,80 @@
+# SCAP の結果（XCCDF・ARF・OVAL）の指摘 → 脅威ライブラリの canonicalId の対応表（第 2 経路）。
+#
+# rules      : XCCDF のルール名 → canonicalId。ComplianceAsCode の接頭辞
+#              `xccdf_org.ssgproject.content_rule_` を除いた短い名前で照合する。
+# ovalClasses: OVAL の定義の class（vulnerability / patch）で true の定義 → canonicalId。
+#
+# 方針:
+#   - ルール名は ComplianceAsCode/content の linux_os/guide 配下に実在するものだけを書く
+#     （2026-10-31 に GitHub のツリーで rule.yml の存在を確認）。ルールの説明文は転載しない。
+#     `note` は日本語の短い分類名。
+#   - 代表的なルールだけで始める。量産しない。載せないルールは、取り込み報告の「対応づけできない」に出る。
+#   - 1 つのルール名は 1 回だけ書く（重複は読み込み時にエラー）。
+#
+# 出典:
+#   - ComplianceAsCode/content https://github.com/ComplianceAsCode/content （BSD-3-Clause）— ルール名のみ
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+rules:
+  sshd_disable_root_login:
+    canonicalIds: [process-privilege-escalation]
+    note: SSH の root 直接ログイン
+
+  sshd_disable_empty_passwords:
+    canonicalIds: [weak-service-auth]
+    note: SSH の空パスワード許可
+
+  no_empty_passwords:
+    canonicalIds: [weak-service-auth]
+    note: 空パスワードのアカウント
+
+  sudo_remove_nopasswd:
+    canonicalIds: [process-privilege-escalation]
+    note: sudo のパスワード不要設定
+
+  sudo_require_authentication:
+    canonicalIds: [process-privilege-escalation]
+    note: sudo の認証省略
+
+  service_auditd_enabled:
+    canonicalIds: [log-not-collected]
+    note: 監査デーモンの無効
+
+  package_audit_installed:
+    canonicalIds: [log-not-collected]
+    note: 監査パッケージの未導入
+
+  service_rsyslog_enabled:
+    canonicalIds: [log-not-collected]
+    note: rsyslog の無効
+
+  package_rsyslog_installed:
+    canonicalIds: [log-not-collected]
+    note: rsyslog の未導入
+
+  rsyslog_remote_loghost:
+    canonicalIds: [log-not-collected]
+    note: ログの遠隔転送なし
+
+  auditd_data_retention_max_log_file:
+    canonicalIds: [log-retention-insufficient]
+    note: 監査ログのサイズ上限
+
+  auditd_data_retention_num_logs:
+    canonicalIds: [log-retention-insufficient]
+    note: 監査ログの保持世代数
+
+  security_patches_up_to_date:
+    canonicalIds: [known-vulnerability-unpatched]
+    note: セキュリティパッチ未適用
+
+  encrypt_partitions:
+    canonicalIds: [data-at-rest-unencrypted]
+    note: パーティションの暗号化なし
+
+ovalClasses:
+  vulnerability: [known-vulnerability-unpatched]
+  patch: [known-vulnerability-unpatched]

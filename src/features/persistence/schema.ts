@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CRYPTO_TERMINATIONS, MAX_FINDINGS } from '../../core/model/types';
+import { CRYPTO_TERMINATIONS, FINDING_FORMATS, MAX_FINDINGS } from '../../core/model/types';
 import {
   AgencyLevelSchema,
   AuthTypeSchema,
@@ -376,9 +376,10 @@ const FINDING_TEXT_MAX = 200;
 const PersistedFindingSchema = z.object({
   id: z.string().min(1).max(600),
   source: z.object({
-    format: z.literal('ocsf'),
+    format: z.enum(FINDING_FORMATS),
     product: z.string().min(1).max(100),
     productVersion: z.string().max(50).optional(),
+    scope: z.string().min(1).max(200).optional(),
     importedAt: z.string().max(40),
   }),
   externalId: z.string().min(1).max(500),

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<oval_results xmlns="http://oval.mitre.org/XMLSchema/oval-results-5" xmlns:oval="http://oval.mitre.org/XMLSchema/oval-common-5" xmlns:oval-def="http://oval.mitre.org/XMLSchema/oval-definitions-5" xmlns:oval-sc="http://oval.mitre.org/XMLSchema/oval-system-characteristics-5">
+  <generator>
+    <oval:product_name>cpe:/a:open-scap:oscap</oval:product_name>
+    <oval:product_version>1.3.8</oval:product_version>
+    <oval:schema_version>5.11</oval:schema_version>
+    <oval:timestamp>2026-10-30T11:00:00</oval:timestamp>
+  </generator>
+  <oval-def:oval_definitions>
+    <oval-def:definitions>
+      <oval-def:definition id="oval:com.example.demo:def:10" version="1" class="vulnerability">
+        <oval-def:metadata>
+          <oval-def:title>Demo openssl flaw</oval-def:title>
+          <oval-def:reference source="CVE" ref_id="CVE-2099-2222" ref_url="https://example.com/cve"/>
+          <oval-def:reference source="RHSA" ref_id="RHSA-2099:0001" ref_url="https://example.com/rhsa"/>
+          <oval-def:advisory><oval-def:severity>Important</oval-def:severity></oval-def:advisory>
+        </oval-def:metadata>
+      </oval-def:definition>
+      <oval-def:definition id="oval:com.example.demo:def:11" version="1" class="vulnerability">
+        <oval-def:metadata><oval-def:title>Demo zlib flaw</oval-def:title></oval-def:metadata>
+      </oval-def:definition>
+      <oval-def:definition id="oval:com.example.demo:def:12" version="1" class="patch">
+        <oval-def:metadata>
+          <oval-def:title>Demo errata patch</oval-def:title>
+          <oval-def:advisory><oval-def:severity>Moderate</oval-def:severity></oval-def:advisory>
+        </oval-def:metadata>
+      </oval-def:definition>
+      <oval-def:definition id="oval:com.example.demo:def:13" version="1" class="inventory">
+        <oval-def:metadata><oval-def:title>Demo OS is installed</oval-def:title></oval-def:metadata>
+      </oval-def:definition>
+    </oval-def:definitions>
+  </oval-def:oval_definitions>
+  <results>
+    <system>
+      <definitions>
+        <definition definition_id="oval:com.example.demo:def:10" result="true"/>
+        <definition definition_id="oval:com.example.demo:def:11" result="false"/>
+        <definition definition_id="oval:com.example.demo:def:12" result="true"/>
+        <definition definition_id="oval:com.example.demo:def:13" result="true"/>
+      </definitions>
+      <oval-sc:oval_system_characteristics>
+        <oval-sc:system_info>
+          <oval-sc:primary_host_name>db01.example.internal</oval-sc:primary_host_name>
+          <oval-sc:interfaces>
+            <oval-sc:interface>
+              <oval-sc:interface_name>eth0</oval-sc:interface_name>
+              <oval-sc:ip_address>192.0.2.20</oval-sc:ip_address>
+            </oval-sc:interface>
+          </oval-sc:interfaces>
+        </oval-sc:system_info>
+      </oval-sc:oval_system_characteristics>
+    </system>
+  </results>
+</oval_results>

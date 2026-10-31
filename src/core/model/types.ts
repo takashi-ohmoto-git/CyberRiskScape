@@ -1015,15 +1015,22 @@ export interface ControlStatusState {
   at: number;
 }
 
+/** 指摘の入力形式（docs/architecture.md §8.6）。 */
+export const FINDING_FORMATS = ['ocsf', 'xccdf', 'arf', 'oval'] as const;
+export type FindingFormat = (typeof FINDING_FORMATS)[number];
+
 /**
  * 外部製品の指摘の出どころ（docs/architecture.md §8.2）。
  * `format` は入力の標準形式。形式を増やすときは union を広げる。
  */
 export interface FindingSource {
-  format: 'ocsf';
-  /** 製品名（例: 'Prowler'）。取り込み直しはこの単位で置き換える。 */
+  /** 読んだファイルの形式（§8.6）。 */
+  format: FindingFormat;
+  /** 製品名（例: 'Prowler'・'OpenSCAP'）。取り込み直しは product × scope の単位で置き換える。 */
   product: string;
   productVersion?: string;
+  /** 置き換えの範囲（SCAP は検査対象のホスト。Prowler は無し）。 */
+  scope?: string;
   /** 取り込んだ時刻（ISO 8601）。 */
   importedAt: string;
 }

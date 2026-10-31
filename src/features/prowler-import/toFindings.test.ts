@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_FINDINGS, type Finding } from '../../core/model/types';
+import { MAX_FINDINGS } from '../../core/model/types';
 import { readFileSync } from 'node:fs';
 import { deserializeProject } from '../persistence/serialize';
-import type { ImportNodeRef } from './applyProwler';
+import type { ImportNodeRef } from '../findings-import/resolveNode';
 import { parseProwlerOcsf, type NormalizedProwlerFinding } from './parseProwlerOcsf';
 import { BUNDLED_PROWLER_MAP } from './prowlerMap';
-import { replaceFindings, toFindings } from './toFindings';
+import { toFindings } from './toFindings';
 
 const NODES: ImportNodeRef[] = [
   { id: 'n-bucket', layer: 'L1', seq: 3, type: 'STORAGE' },
@@ -135,27 +135,5 @@ describe('toFindings', () => {
     expect(parsed.productVersion).toBe('5.1.2');
     expect(parsed.findings[0].uid).toBe('prowler-c1-*-r');
     expect(parsed.findings[0].observedAt).toBe('2026-10-30T01:02:03Z');
-  });
-});
-
-describe('replaceFindings', () => {
-  const mk = (product: string, id: string): Finding => ({
-    id,
-    source: { format: 'ocsf', product, importedAt: 't' },
-    externalId: id,
-    identifiers: [],
-    severity: 'Low',
-    canonicalIds: [],
-  });
-
-  it('同じ製品を置き換え、他製品は残し、新規・解消・継続を数える', () => {
-    const existing = [mk('Prowler', 'a'), mk('Prowler', 'b'), mk('Other', 'o')];
-    const out = replaceFindings(existing, [mk('Prowler', 'b'), mk('Prowler', 'c')], 'Prowler');
-    expect(out.findings.map((x) => x.id).sort()).toEqual(['b', 'c', 'o']);
-    expect(out.diff).toEqual({ added: 1, resolved: 1, continued: 1 });
-  });
-
-  it('既存が無ければ全て新規', () => {
-    expect(replaceFindings(undefined, [mk('Prowler', 'a')], 'Prowler').diff).toEqual({ added: 1, resolved: 0, continued: 0 });
   });
 });

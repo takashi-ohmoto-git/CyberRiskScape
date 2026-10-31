@@ -8,6 +8,7 @@ import {
   type PostureEnumKey,
 } from '../../core/model/types';
 import { formatElementalId } from '../../core/model/elementalId';
+import { lookupNode, type ImportNodeRef, type NodeLookup } from '../findings-import/resolveNode';
 import { resourceLabel, type NormalizedProwlerFinding, type ProwlerResource } from './parseProwlerOcsf';
 import {
   attackSurfaceKeyOf,
@@ -28,17 +29,6 @@ import {
  *                ノードに結びつかない資源の FAIL は照合せず「突き合わせていない」として別に出す
  *   鍵の種類   : 鍵の種類を判別できない検査の ProviderManagedKey は keyTypeUnverified を付けて報告する
  */
-
-/** 取り込み対象のノード 1 件分（プロジェクトの全レイヤーから集める）。 */
-export interface ImportNodeRef {
-  id: string;
-  layer: LayerKey;
-  seq?: number;
-  type: ComponentTypeId;
-  label?: string;
-  posture?: object;
-  attackSurface?: object;
-}
 
 /** 突き合わせ用の検出済み脅威 1 件分。 */
 export interface ThreatRef {
@@ -157,20 +147,6 @@ export interface ProwlerImportResult {
   unlinkedFails: UnlinkedFailEntry[];
   /** FAIL だが canonicalId の対応が無い検査。 */
   unmappedChecks: UnmappedCheck[];
-}
-
-export type NodeLookup = { kind: 'found'; node: ImportNodeRef } | { kind: 'unknown' } | { kind: 'ambiguous' };
-
-export function lookupNode(nodes: readonly ImportNodeRef[], ref: string): NodeLookup {
-  const byId = nodes.find((n) => n.id === ref);
-  if (byId) return { kind: 'found', node: byId };
-  const m = /^C(\d+)$/.exec(ref);
-  if (m) {
-    const hits = nodes.filter((n) => n.seq === Number(m[1]));
-    if (hits.length === 1) return { kind: 'found', node: hits[0] };
-    if (hits.length > 1) return { kind: 'ambiguous' };
-  }
-  return { kind: 'unknown' };
 }
 
 function nodeLabel(n: ImportNodeRef): string {

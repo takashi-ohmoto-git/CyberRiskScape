@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<arf:asset-report-collection xmlns:arf="http://scap.nist.gov/schema/asset-reporting-format/1.1" xmlns:ai="http://scap.nist.gov/schema/asset-identification/1.1" xmlns:core="http://scap.nist.gov/schema/reporting-core/1.1" xmlns:xccdf="http://checklists.nist.gov/xccdf/1.2" xmlns:oval-res="http://oval.mitre.org/XMLSchema/oval-results-5" xmlns:oval-def="http://oval.mitre.org/XMLSchema/oval-definitions-5" xmlns:oval-sc="http://oval.mitre.org/XMLSchema/oval-system-characteristics-5" xmlns:oval-common="http://oval.mitre.org/XMLSchema/oval-common-5">
+  <core:relationships xmlns:arfvocab="http://scap.nist.gov/specifications/arf/vocabulary/relationships/1.0#">
+    <core:relationship type="arfvocab:createdFor" subject="collection1">
+      <core:ref>request1</core:ref>
+    </core:relationship>
+    <core:relationship type="arfvocab:isAbout" subject="xccdf1">
+      <core:ref>asset0</core:ref>
+    </core:relationship>
+    <core:relationship type="arfvocab:isAbout" subject="oval1">
+      <core:ref>asset0</core:ref>
+    </core:relationship>
+  </core:relationships>
+  <arf:report-requests>
+    <arf:report-request id="request1">
+      <arf:content>
+        <ds:data-stream-collection xmlns:ds="http://scap.nist.gov/schema/scap/source/1.2" id="scap_org.example_collection_demo">
+          <ds:component id="scap_org.example_comp_demo-xccdf.xml">
+            <xccdf:Benchmark id="xccdf_org.example_benchmark_demo">
+              <xccdf:Group id="xccdf_org.ssgproject.content_group_services">
+                <xccdf:Rule id="xccdf_org.ssgproject.content_rule_sshd_disable_root_login" severity="medium">
+                  <xccdf:title>Disable SSH Root Login</xccdf:title>
+                  <xccdf:ident system="https://ncp.nist.gov/cce">CCE-80901-0</xccdf:ident>
+                </xccdf:Rule>
+                <xccdf:Rule id="xccdf_org.ssgproject.content_rule_security_patches_up_to_date" severity="high">
+                  <xccdf:title>Security Patches Up To Date</xccdf:title>
+                </xccdf:Rule>
+              </xccdf:Group>
+            </xccdf:Benchmark>
+          </ds:component>
+        </ds:data-stream-collection>
+      </arf:content>
+    </arf:report-request>
+  </arf:report-requests>
+  <core:assets>
+    <core:asset id="asset0">
+      <core:extended-info>
+        <ai:asset>
+          <ai:computing-device>
+            <ai:connections>
+              <ai:connection>
+                <ai:ip-address><ai:ip-v4>192.0.2.10</ai:ip-v4></ai:ip-address>
+              </ai:connection>
+            </ai:connections>
+            <ai:fqdn>web01.example.internal</ai:fqdn>
+            <ai:hostname>web01</ai:hostname>
+          </ai:computing-device>
+        </ai:asset>
+      </core:extended-info>
+    </core:asset>
+  </core:assets>
+  <core:reports>
+    <core:report id="xccdf1">
+      <core:content>
+        <xccdf:TestResult id="xccdf_org.open-scap_testresult_demo" end-time="2026-10-30T10:00:00+00:00" test-system="cpe:/a:redhat:openscap:1.3.8">
+          <xccdf:target>web01.example.internal</xccdf:target>
+          <xccdf:target-address>192.0.2.10</xccdf:target-address>
+          <xccdf:rule-result idref="xccdf_org.ssgproject.content_rule_sshd_disable_root_login" severity="medium">
+            <xccdf:result>fail</xccdf:result>
+            <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+              <xccdf:check-content-ref name="oval:ssg-sshd_disable_root_login:def:1" href="#oval0"/>
+            </xccdf:check>
+          </xccdf:rule-result>
+          <xccdf:rule-result idref="xccdf_org.ssgproject.content_rule_security_patches_up_to_date" severity="high">
+            <xccdf:result>pass</xccdf:result>
+          </xccdf:rule-result>
+        </xccdf:TestResult>
+      </core:content>
+    </core:report>
+    <core:report id="oval1">
+      <core:content>
+        <oval-res:oval_results>
+          <oval-common:generator>
+            <oval-common:product_name>cpe:/a:open-scap:oscap</oval-common:product_name>
+            <oval-common:product_version>1.3.8</oval-common:product_version>
+          </oval-common:generator>
+          <oval-def:oval_definitions>
+            <oval-def:definitions>
+              <oval-def:definition id="oval:ssg-sshd_disable_root_login:def:1" version="1" class="vulnerability">
+                <oval-def:metadata><oval-def:title>Disable SSH Root Login</oval-def:title></oval-def:metadata>
+              </oval-def:definition>
+              <oval-def:definition id="oval:com.example.demo:def:2" version="1" class="vulnerability">
+                <oval-def:metadata>
+                  <oval-def:title>Demo kernel flaw</oval-def:title>
+                  <oval-def:reference source="CVE" ref_id="CVE-2099-1111" ref_url="https://example.com/cve"/>
+                  <oval-def:advisory><oval-def:severity>Critical</oval-def:severity></oval-def:advisory>
+                </oval-def:metadata>
+              </oval-def:definition>
+              <oval-def:definition id="oval:com.example.demo:def:3" version="1" class="vulnerability">
+                <oval-def:metadata><oval-def:title>Demo libfoo flaw (not vulnerable)</oval-def:title></oval-def:metadata>
+              </oval-def:definition>
+            </oval-def:definitions>
+          </oval-def:oval_definitions>
+          <oval-res:results>
+            <oval-res:system>
+              <oval-res:definitions>
+                <oval-res:definition definition_id="oval:ssg-sshd_disable_root_login:def:1" result="true"/>
+                <oval-res:definition definition_id="oval:com.example.demo:def:2" result="true"/>
+                <oval-res:definition definition_id="oval:com.example.demo:def:3" result="false"/>
+              </oval-res:definitions>
+              <oval-sc:oval_system_characteristics>
+                <oval-sc:system_info>
+                  <oval-sc:primary_host_name>web01.example.internal</oval-sc:primary_host_name>
+                </oval-sc:system_info>
+              </oval-sc:oval_system_characteristics>
+            </oval-res:system>
+          </oval-res:results>
+        </oval-res:oval_results>
+      </core:content>
+    </core:report>
+  </core:reports>
+</arf:asset-report-collection>

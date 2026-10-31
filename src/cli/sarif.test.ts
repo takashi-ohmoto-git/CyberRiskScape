@@ -187,4 +187,30 @@ describe('toSarif（指摘 run）', () => {
     expect(rs[1].properties.layer).toBeUndefined();
     expect(rs[0].logicalLocations[0].name).toBe('res-1');
   });
+
+  it('SCAP の指摘：ruleId は identifiers[0]、失うものは形式ごと（混在は和集合）', () => {
+    const scap = (format: 'xccdf' | 'arf' | 'oval', id: string): Finding =>
+      finding({
+        id: `OpenSCAP:${id}`,
+        source: { format, product: 'OpenSCAP', productVersion: '1.3.8', scope: 'web01', importedAt: 't' },
+        identifiers: [{ scheme: format === 'oval' ? 'oval-def' : 'xccdf-rule', value: id }],
+      });
+    const x = toSarif(results([linked]), { artifactUri: 'x.json', findings: [finding({}), scap('xccdf', 'xccdf_rule_1')] }) as { runs: Run[] };
+    expect(x.runs).toHaveLength(3);
+    const run = x.runs[2];
+    expect(run.tool.driver).toMatchObject({ name: 'OpenSCAP', version: '1.3.8' });
+    expect(run.results[0].ruleId).toBe('xccdf_rule_1');
+    expect(run.properties?.lostInConversion).toEqual([
+      'pass/notapplicable/notchecked results',
+      'rule descriptions and fix text',
+      'target facts',
+    ]);
+    const o = toSarif(results([linked]), { artifactUri: 'x.json', findings: [scap('oval', 'oval:x:def:1')] }) as { runs: Run[] };
+    expect(o.runs[1].properties?.lostInConversion).toEqual([
+      'definitions evaluated as not vulnerable',
+      'test details and collected items',
+    ]);
+    const mixed = toSarif(results([linked]), { artifactUri: 'x.json', findings: [scap('xccdf', 'a'), scap('oval', 'b')] }) as { runs: Run[] };
+    expect(mixed.runs[1].properties?.lostInConversion).toHaveLength(5);
+  });
 });
