@@ -62,10 +62,15 @@ verbatim.
    © The MITRE Corporation. Licensed under the Creative Commons Attribution
    4.0 International License (CC BY 4.0).
    https://creativecommons.org/licenses/by/4.0/
-   Technique IDs (Txxxx) are referenced with attribution; no ATT&CK text is
-   reproduced verbatim.
+   Technique IDs (Txxxx) are referenced with attribution. The IDs and names
+   (no descriptions) of the Enterprise matrix's tactics, techniques and
+   sub-techniques are bundled in data/attack-matrix/. The Japanese names
+   are unofficial translations (not provided by MITRE).
 
-   Referenced by: data/threat-library/identity.yaml,
+   Referenced by: data/attack-matrix/enterprise-attack.yaml,
+                  data/attack-matrix/i18n/ja/enterprise-attack.yaml
+                  (unofficial Japanese names),
+                  data/threat-library/identity.yaml,
                   data/threat-library/zero-trust-access.yaml,
                   data/threat-library/web-form.yaml,
                   data/threat-library/payment-page.yaml,

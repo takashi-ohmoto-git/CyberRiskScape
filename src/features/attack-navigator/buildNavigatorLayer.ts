@@ -154,7 +154,7 @@ function buildScenarios(input: NavigatorInput): Scenario[] {
 }
 
 /** 脅威の対象要素キー。node / edge 以外（境界など）は攻撃経路に載らないので null。 */
-function threatElementKey(t: ThreatView): string | null {
+export function threatElementKey(t: ThreatView): string | null {
   const kind = t.subject?.kind ?? 'node';
   const id = t.subject?.id ?? t.nodeId;
   if (kind === 'node') return nodeElementKey(id);
@@ -173,6 +173,23 @@ function extract(re: RegExp, text: string): string[] {
   const out: string[] = [];
   for (const m of text.matchAll(re)) out.push(m[0]);
   return out;
+}
+
+type RefLike = { title: string; url?: string };
+const refsText = (refs: readonly RefLike[]) => refs.map((r) => `${r.title} ${r.url ?? ''}`).join(' ');
+
+/** references から ATLAS technique ID（AML.T*）を取り出す。 */
+export function extractAtlasTechniqueIds(refs: readonly RefLike[]): string[] {
+  return extract(ATLAS_RE, refsText(refs));
+}
+
+/**
+ * references から ATT&CK Enterprise technique ID を重複なしで取り出す。
+ * ATLAS を先に取り除き（AML.T0051 の "T0051" を誤認しないため）、`T1078/004` は `T1078.004` に正規化する。
+ */
+export function extractAttackTechniqueIds(refs: readonly RefLike[]): string[] {
+  const attackText = refsText(refs).replace(ATLAS_RE, ' ');
+  return [...new Set(extract(ATTACK_RE, attackText).map((x) => x.replace('/', '.')))];
 }
 
 export function buildNavigatorLayer(
@@ -206,14 +223,11 @@ export function buildNavigatorLayer(
     const onScenarios = key ? scenarios.filter((s) => s.elementKeys.has(key)) : [];
     if (selected && onScenarios.length === 0) continue; // 指定シナリオの経路外
 
-    const text = refs.map((r) => `${r.title} ${r.url ?? ''}`).join(' ');
     const sev = effectiveSeverity(threat);
     const name = threat.name ?? threat.category;
 
-    for (const id of extract(ATLAS_RE, text)) atlas.add(id);
-    // ATLAS を先に取り除く（AML.T0051 の "T0051" を ATT&CK と誤認しないため）
-    const attackText = text.replace(ATLAS_RE, ' ');
-    for (const id of new Set(extract(ATTACK_RE, attackText).map((x) => x.replace('/', '.')))) {
+    for (const id of extractAtlasTechniqueIds(refs)) atlas.add(id);
+    for (const id of extractAttackTechniqueIds(refs)) {
       const cur = attack.get(id) ?? { sev, names: new Set(), scenarios: new Set(), chokes: new Set() };
       if (SEV_RANK[sev] > SEV_RANK[cur.sev]) cur.sev = sev;
       cur.names.add(name);

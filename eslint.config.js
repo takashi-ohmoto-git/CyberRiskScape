@@ -66,7 +66,7 @@ export default tseslint.config(
 
   // Node で実行される設定ファイル・補助スクリプト
   {
-    files: ['*.config.{js,ts}', '.claude/**/*.mjs'],
+    files: ['*.config.{js,ts}', '.claude/**/*.mjs', 'tools/**/*.mjs'],
     languageOptions: { globals: globals.node },
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
