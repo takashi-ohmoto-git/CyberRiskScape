@@ -402,7 +402,7 @@ rules:
     name: "AI 加速攻撃者による friction-only 防御の無効化"
     severity: High
     description: "{{nodeName}} は AI エージェントを利用する、または自律エージェント自体が主体となる攻撃者を表す。AI 加速攻撃では偵察・フィッシング文面生成・脆弱性探索・横展開の試行コストが per-attempt でほぼゼロになり、人間の攻撃者を前提とした「手間で抑止する」防御（レート制限・複雑な手順・難読化）は時間稼ぎにしかならない（Can）。攻撃は 24/365 並列で実行され、対象組織ごとのカスタマイズも自動化される。一方、攻撃を不可能にする制御（ハードウェア束縛資格情報・暗号学的アイデンティティ・そもそも存在しないネットワーク経路）は試行回数を増やしても突破できない（Cannot）。blast radius はモデル上で friction-only 防御に依存している全経路。"
-    mitigation: "[Foundation] 自組織の防御策を Impossible vs Tedious の観点で棚卸しし、「面倒にするだけ」の対策（SMS-MFA・非標準ポート・手順の複雑化）を構造的な対策へ置き換える計画を立てる。 [Enterprise] phishing-resistant 認証・短命資格情報・マイクロセグメンテーションで、自動化攻撃の主要経路（資格情報窃取・横展開）を構造的に閉じる。機械速度の攻撃に対応するため検知・対応も自動化する。 [Advanced] ハードウェア束縛アイデンティティと継続的検証により、窃取・なりすましに依存する攻撃チェーン全体を無効化する。"
+    mitigation: "[Foundation] 自組織の防御策を Impossible vs Tedious の観点で棚卸しし、「面倒にするだけ」の対策（SMS-MFA・非標準ポート・手順の複雑化）を構造的な対策へ置き換える計画を立てる。 [Enterprise] phishing-resistant 認証・短命資格情報・マイクロセグメンテーションで、自動化攻撃の主要経路（資格情報窃取・横展開）を構造的に閉じる。機械速度の攻撃に対応するため検知・対応も自動化する（セッションの無効化・追加の認証の要求を、人の確認を待たずに実行する）。漏えいしたパス・鍵・トークンは、攻撃者が覚えていて後で戻る前提で、すぐに失効させて作り直す。偽の認証情報・偽のファイル（Canary token）を置き、使われたら警報を出す（正規の利用者は使わないため誤報が少ない）。 [Advanced] ハードウェア束縛アイデンティティと継続的検証により、窃取・なりすましに依存する攻撃チェーン全体を無効化する。"
     appliesTo:
       kind: node
       nodeType: AGENTIC_ATTACKER
@@ -423,6 +423,8 @@ rules:
         url: "https://atlas.mitre.org/techniques/AML.T0117"
       - title: "MITRE ATLAS AML.T0124 Autonomous Attack Orchestration（複数のエージェントによる攻撃の自律的な統制）"
         url: "https://atlas.mitre.org/techniques/AML.T0124"
+      - title: "MITRE D3FEND D3-DUC Decoy User Credential（使われたら警報を出す偽の認証情報）"
+        url: "https://d3fend.mitre.org/technique/d3f:DecoyUserCredential/"
 
   # ── 認証材料（CREDENTIAL）の静的保管・スプロール（intrinsic）─────────
   - id: zt-credential-sprawl-static-secret-001
@@ -432,7 +434,7 @@ rules:
     name: "認証材料の静的保管・スプロール"
     severity: High
     description: "{{nodeName}}（API キー・トークン・パスワード・秘密鍵等の認証材料）がソースコード・設定ファイル・共有ストレージ・チャット履歴等に静的に保管・散在していると、攻撃者はいずれか 1 箇所の侵害（リポジトリ流出・端末侵害・ログ閲覧）で認証材料を入手し、それが許す全リソースへ正規の資格情報として横展開できる（Can）。静的な長寿命シークレットは漏えいの検知も失効も遅れがちで、ローテーションされないまま長期間有効であり続けることが多い。一方、シークレットマネージャで集中管理し、短命・動的に発行された資格情報のみを使い、発行と利用を監査していれば、静的窃取そのものが価値を失う（Cannot）。blast radius は当該認証材料が許すアクセス範囲全体。"
-    mitigation: "[Foundation] リポジトリ・設定・共有ドキュメントのシークレットスキャンを導入し、検出した静的シークレットをシークレットマネージャへ移行・ローテーションする。 [Enterprise] 長寿命シークレットを廃止し、短命トークン・動的シークレット（発行時に TTL 付与）へ移行する。発行・利用を監査ログで追跡する。 [Advanced] ワークロードアイデンティティ（SPIFFE 等）・HSM/TPM 束縛により「コピー可能な静的シークレット」自体を排除する。"
+    mitigation: "[Foundation] リポジトリ・設定・共有ドキュメントのシークレットスキャンを導入し、検出した静的シークレットをシークレットマネージャへ移行・ローテーションする。漏えいが分かった認証材料は、置き場所から消すだけでなく直ちに失効・再発行する。 [Enterprise] 長寿命シークレットを廃止し、短命トークン・動的シークレット（発行時に TTL 付与）へ移行する。発行・利用を監査ログで追跡する。偽の認証材料（Canary token）をリポジトリ・設定・共有ドキュメントに置き、使われたら警報を出す。 [Advanced] ワークロードアイデンティティ（SPIFFE 等）・HSM/TPM 束縛により「コピー可能な静的シークレット」自体を排除する。"
     appliesTo:
       kind: node
       nodeType: CREDENTIAL
@@ -451,6 +453,8 @@ rules:
       # エッジ上の静的 API キー利用（呼び出し時の弱い認証）は weak-service-auth 群が扱う（別 subject）。
       - title: "MITRE ATT&CK T1552.001 - Unsecured Credentials: Credentials In Files（ファイル・設定に置かれた認証材料の取得）"
         url: "https://attack.mitre.org/techniques/T1552/001/"
+      - title: "MITRE D3FEND D3-DUC Decoy User Credential（使われたら警報を出す偽の認証情報）"
+        url: "https://d3fend.mitre.org/technique/d3f:DecoyUserCredential/"
 
   # ── IdP 署名鍵侵害によるトークン偽造（Golden SAML 型）─────────────
   - id: zt-idp-signing-key-compromise-001

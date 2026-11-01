@@ -1,6 +1,8 @@
 # Web フォーム（WEB_FORM）と公開 Web サーバー（FRONT_END_SERVER）の固有脅威。
 # 問い合わせ・資料請求・申込フォームのように、社外の不特定者が自由記述や添付ファイルを
 # 送り込める入口と、そこを足がかりにした Web シェルの設置を扱う。
+# あわせて、図に描かれない公開 Web サーバー・API の中身（公開ディレクトリのファイル、
+# 画面・応答の文章）から漏れる手がかりを扱う（2026-11-02 追加）。
 #
 # 出典（一次情報のみをルールの根拠とする。二次情報だけで裏付く事実は本文に用いない）:
 #   - MITRE ATT&CK（T1505.003 Server Software Component: Web Shell、
@@ -11,6 +13,8 @@
 #   - IPA「安全なウェブサイトの作り方」（メールヘッダ・インジェクション）。
 #   - 個人情報保護委員会「個人情報の保護に関する法律についてのガイドライン（通則編）」
 #     （安全管理措置）。
+#   - OWASP Web Security Testing Guide（WSTG-CONF-04・WSTG-INFO-03・WSTG-INFO-05・WSTG-ATHN-02）。
+#   - MITRE CWE（CWE-527・CWE-530・CWE-615・CWE-1393）、ATT&CK（T1595.003・T1078.001）。
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -31,6 +35,16 @@
 #     plaintext-transmission）でカバー済み。
 #   - Web シェルは WEB_FORM（添付ファイル経由）と FRONT_END_SERVER（公開アプリの脆弱性経由）の
 #     2 ルールで canonicalId: web-shell-implant を共有する。subject が異なるため別カードになる。
+#   - 公開ディレクトリの設定ファイル・バックアップ・.git（webserver-public-dir-sensitive-file-exposure-001）は、
+#     保存データ一般の漏えい（stride-data-store-info-disclosure-001、DATA_STORE 系）と、取り出された
+#     認証材料の散在（zt-credential-sprawl-static-secret-001、CREDENTIAL 型）に近接するが、どちらも
+#     図に描かれた保管先・認証材料が前提。公開ディレクトリの中身は図に描かれないため、公開 Web サーバー側の
+#     別の問い（何を公開ディレクトリに置いているか）として新しい canonicalId にする。
+#   - 画面・応答の文章のヒント（webapp-content-credential-hint-001）は、エラー応答の内部情報
+#     （api-error-response-disclosure-001、canonicalId: api-error-information-disclosure）と近接するが、
+#     あちらは失敗時の技術情報（スタックトレース・版）、こちらは正常時に人向けに書いた文章の中の
+#     資格情報・運用の決まりで、対策も別（文章の点検・初期パスワードの発行）のため別 canonicalId。
+#     複合機の初期パスワード（endpoint-mfp-admin-stored-data-exposure-001）は機器の出荷時の既定値で別の問い。
 
 schemaVersion: 1
 
@@ -91,6 +105,77 @@ rules:
         url: "https://attack.mitre.org/techniques/T1190/"
       - title: "NSA / Australian Signals Directorate - Detect and Prevent Web Shell Malware (2020)"
         url: "https://media.defense.gov/2020/Jun/09/2002313081/-1/-1/0/CSI-DETECT-AND-PREVENT-WEB-SHELL-MALWARE-20200422.PDF"
+
+  # ── 公開ディレクトリに置いた秘密ファイル・バックアップ・リポジトリの露出（内在）──
+  - id: webserver-public-dir-sensitive-file-exposure-001
+    canonicalId: web-public-dir-sensitive-file-exposure
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "公開ディレクトリに置いた設定ファイル・バックアップ・リポジトリの露出"
+    severity: High
+    description: "{{nodeName}} はインターネットから到達できる。Web で公開されるディレクトリに、環境設定ファイル（.env 等）・データベースのダンプやサイトのバックアップ（.sql・.zip・.bak 等）・バージョン管理のリポジトリ（.git）・古いファイルが残っていると、攻撃者はよく使われるファイル名の一覧を順に要求するだけで、それらを取得できる（Can）。robots.txt や sitemap に「見せたくないパス」を書くと、かえって置き場所を教えることになる。取得したファイルにはデータベースの接続情報・API トークン・管理画面のパス・会員のデータが含まれやすく、次の段階の侵入の鍵として使われる。この探索は正しい形のリクエストだけで行われ、攻撃らしい入力を含まないため、WAF のシグネチャでは止めにくい。AI エージェントを使う攻撃者は、取得した中身を読んで次に試すことを数分で決める。一方、公開ディレクトリにはデプロイした公開用のファイルだけを置き、設定ファイル・バックアップ・リポジトリを公開ディレクトリの外に置き、ドット始まりのファイルとバックアップの拡張子への要求を Web サーバーの設定で拒否していれば、ファイル名を当てても何も返らない（Cannot）。blast radius は公開ディレクトリに置かれたファイルの中身すべてと、そこに含まれる認証情報で到達できる範囲。"
+    mitigation: "[Foundation] 公開ディレクトリには公開用のファイルだけを置き、設定ファイル（.env 等）・データベースのダンプ・バックアップ・.git を公開ディレクトリの外に置く。ドット始まりのファイルと、バックアップ・一時ファイルの拡張子（.bak・.sql・.zip・.old 等）への要求を Web サーバーの設定で拒否する。robots.txt に秘密のパスを書かない。ディレクトリの一覧表示を無効にする。 [Enterprise] デプロイを成果物（ビルドした公開用ファイル）だけの配布にし、作業ディレクトリやリポジトリをそのまま公開しない。公開ディレクトリを定期的に点検し、よく狙われるファイル名への外部からの要求で 200 が返らないことを確かめる。万一置いてしまったファイルに含まれる認証情報は、ファイルを消すだけでなく失効させて作り直す。 [Advanced] 存在しないはずのファイル名（.env・バックアップ等）への要求の連続を検知し、送信元を自動で遮断する。偽の設定ファイルや偽のトークン（Canary token）を置き、使われたら警報を出す。"
+    appliesTo:
+      kind: node
+      nodeType: FRONT_END_SERVER
+      # 公開ディレクトリの中身は図に描かれない（バックアップや .env を図に置く人はいない）ため、
+      # 描かれた要素ではなく公開 Web サーバーそのものに当てる。内在脅威として接続は問わない。
+      connection:
+        required: false
+      attackSurface:
+        hasGlobalIp: true
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "OWASP Web Security Testing Guide - WSTG-CONF-04 Review Old Backup and Unreferenced Files for Sensitive Information"
+        url: "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/04-Review_Old_Backup_and_Unreferenced_Files_for_Sensitive_Information"
+      - title: "OWASP Web Security Testing Guide - WSTG-INFO-03 Review Webserver Metafiles for Information Leakage（robots.txt 等）"
+        url: "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/01-Information_Gathering/03-Review_Webserver_Metafiles_for_Information_Leakage"
+      - title: "MITRE CWE-530: Exposure of Backup File to an Unauthorized Control Sphere"
+        url: "https://cwe.mitre.org/data/definitions/530.html"
+      - title: "MITRE CWE-527: Exposure of Version-Control Repository to an Unauthorized Control Sphere"
+        url: "https://cwe.mitre.org/data/definitions/527.html"
+      - title: "MITRE ATT&CK T1595.003 Active Scanning: Wordlist Scanning"
+        url: "https://attack.mitre.org/techniques/T1595/003/"
+
+  # ── 画面・応答の文章に書いた資格情報のヒントと決まった形の初期パスワード（内在）──
+  - id: webapp-content-credential-hint-001
+    canonicalId: web-content-credential-hint
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "画面・応答の文章に書いた資格情報のヒントと決まった形の初期パスワード"
+    severity: High
+    description: "{{nodeName}} はインターネットから到達できる。ログイン画面の注記・ヘルプの文・HTML のコメント・エラーの文・API の応答の説明欄などに、初期パスワードの決め方（「ログイン ID の末尾に年」等）・管理画面のパス・運用の決まり・鍵の値を書いている場合や、初期パスワードを ID や年から作る決まった形にしている場合、攻撃者はそれを読んで、そのとおりに正規のログインができる（Can）。こうした文章はスクリプトでは意味を取れないため、これまでは人が見つけるまで残りがちだったが、AI エージェントを使う攻撃者は公開している画面と応答の文章をすべて読み、書かれた決まりを数分で試す。正規のログインに見えるため、入力値の検査や WAF では止まらない。一方、公開している画面・応答に資格情報やその作り方・運用の決まりを書かず、初期パスワードを推測できない値で個別に発行し、最初のログインで必ず変更させていれば、文章を読んでもログインには届かない（Cannot）。blast radius は書かれたヒントで入れるアカウントの権限すべてで、管理者のアカウントなら {{nodeName}} が扱う全データと管理機能。"
+    mitigation: "[Foundation] ログイン画面・ヘルプ・エラーの文・HTML のコメント・API の応答に、初期パスワードの作り方・管理画面のパス・運用の決まり・鍵やトークンの値を書かない。初期パスワードは推測できない値で個別に発行し、最初のログインで変更させる（ID や年の組み合わせのような決まった形を使わない）。管理者のアカウントには多要素認証を必須にする。 [Enterprise] 公開しているページと API の応答に、文章として何が書かれているかをリリースのたびに点検する（コメント・隠し項目・説明欄を含む）。画面に表示する鍵やトークンは必要な時だけ表示し、一括の書き出しなど影響の大きい操作にはその都度の追加の認証をかける。 [Advanced] 公開しているページと応答の文章を定期的に機械で読み、資格情報・内部のパス・運用の決まりに当たる記述を検知する。初期パスワードのままのアカウントを検知して停止する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: FRONT_END_SERVER
+        - nodeType: BACKEND_API
+      # 画面・応答の文章はモデルに描かれないため、インターネットから到達できる Web サーバー・API そのものに当てる。
+      connection:
+        required: false
+      attackSurface:
+        hasGlobalIp: true
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "OWASP Web Security Testing Guide - WSTG-INFO-05 Review Webpage Content for Information Leakage"
+        url: "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/01-Information_Gathering/05-Review_Webpage_Content_for_Information_Leakage"
+      - title: "OWASP Web Security Testing Guide - WSTG-ATHN-02 Testing for Default Credentials"
+        url: "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/04-Authentication_Testing/02-Testing_for_Default_Credentials"
+      - title: "MITRE CWE-615: Inclusion of Sensitive Information in Source Code Comments"
+        url: "https://cwe.mitre.org/data/definitions/615.html"
+      - title: "MITRE CWE-1393: Use of Default Password"
+        url: "https://cwe.mitre.org/data/definitions/1393.html"
+      - title: "MITRE ATT&CK T1078.001 Valid Accounts: Default Accounts"
+        url: "https://attack.mitre.org/techniques/T1078/001/"
 
   # ── 入力値が下流で解釈されるインジェクション（経路依存）──────────
   - id: webform-input-injection-001

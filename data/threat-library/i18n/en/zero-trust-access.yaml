@@ -135,7 +135,7 @@ rules:
     category: "Adversary"
     name: "AI-accelerated attackers defeating friction-only defenses"
     description: "{{nodeName}} represents an attacker who uses AI agents, or an autonomous agent that is itself the attacking party. AI-accelerated attacks drive the per-attempt cost of reconnaissance, phishing-content generation, vulnerability probing, and lateral-movement attempts to near zero, so defenses built around a human attacker, ones that rely on friction, such as rate limiting, complex procedures, or obfuscation, only buy time rather than stop the attack (Can). Attacks run 24/365 in parallel, and per-target customization is automated too. If, instead, controls that make the attack impossible are in place, hardware-bound credentials, cryptographic identity, or a network path that simply does not exist, more attempts cannot break through (Cannot). The blast radius is every path in the model that depends on friction-only defense."
-    mitigation: "[Foundation] Inventory your defenses through the lens of Impossible vs Tedious, and plan to replace controls that merely add friction (SMS MFA, non-standard ports, complicated procedures) with structural ones. [Enterprise] Close the primary paths of automated attack (credential theft, lateral movement) structurally with phishing-resistant authentication, short-lived credentials, and micro-segmentation. Automate detection and response to match machine-speed attacks. [Advanced] Neutralize entire attack chains that depend on theft or impersonation through hardware-bound identity and continuous verification."
+    mitigation: "[Foundation] Inventory your defenses through the lens of Impossible vs Tedious, and plan to replace controls that merely add friction (SMS MFA, non-standard ports, complicated procedures) with structural ones. [Enterprise] Close the primary paths of automated attack (credential theft, lateral movement) structurally with phishing-resistant authentication, short-lived credentials, and micro-segmentation. Automate detection and response to match machine-speed attacks (invalidate sessions and require step-up authentication without waiting for a human). Revoke and reissue any leaked path, key or token at once, on the assumption that the attacker remembers it and comes back later. Plant fake credentials and fake files (canary tokens) and raise an alert when they are used (legitimate users never touch them, so false alarms are rare). [Advanced] Neutralize entire attack chains that depend on theft or impersonation through hardware-bound identity and continuous verification."
     references:
       "1":
         title: "MITRE ATT&CK T1588.007 - Obtain Capabilities: Artificial Intelligence (use of AI for the attack)"
@@ -145,12 +145,14 @@ rules:
         title: "MITRE ATLAS AML.T0117 Autonomous Attack-Path Adaptation (autonomously building and revising the attack path)"
       "4":
         title: "MITRE ATLAS AML.T0124 Autonomous Attack Orchestration (autonomous orchestration of attacks across multiple agents)"
+      "5":
+        title: "MITRE D3FEND D3-DUC Decoy User Credential (fake credentials that raise an alert when used)"
 
   zt-credential-sprawl-static-secret-001:
     category: "Information Disclosure"
     name: "Static storage and sprawl of credentials"
     description: "When {{nodeName}} (credentials such as API keys, tokens, passwords, or private keys) is stored statically and scattered across source code, configuration files, shared storage, and chat history, a single compromise anywhere, a leaked repository, a compromised endpoint, or exposed logs, lets an attacker obtain the credential and move laterally, as a legitimate holder, into every resource it grants access to (Can). Static, long-lived secrets tend to lag in leak detection and revocation, and often remain valid for long periods without rotation. If, instead, secrets are centrally managed in a secrets manager and only short-lived, dynamically issued credentials are used with issuance and use audited, static theft alone loses its value (Cannot). The blast radius is the entire access scope that credential grants."
-    mitigation: "[Foundation] Introduce secret scanning across repositories, configuration, and shared documents, and migrate any static secrets found into a secrets manager with rotation. [Enterprise] Retire long-lived secrets in favor of short-lived, dynamic secrets issued with a TTL. Track issuance and use through audit logs. [Advanced] Eliminate copyable static secrets altogether through workload identity (e.g. SPIFFE) and HSM/TPM binding."
+    mitigation: "[Foundation] Introduce secret scanning across repositories, configuration, and shared documents, and migrate any static secrets found into a secrets manager with rotation. When a credential is known to have leaked, do not just remove it from where it was left: revoke and reissue it immediately. [Enterprise] Retire long-lived secrets in favor of short-lived, dynamic secrets issued with a TTL. Track issuance and use through audit logs. Plant fake credentials (canary tokens) in repositories, configuration and shared documents, and raise an alert when they are used. [Advanced] Eliminate copyable static secrets altogether through workload identity (e.g. SPIFFE) and HSM/TPM binding."
     references:
       "0":
         title: "OWASP Secrets Management Cheat Sheet (centralized management and dynamic secrets)"
@@ -158,6 +160,8 @@ rules:
         title: "NIST SP 800-207 - Zero Trust Architecture (per-session, short-lived credentials)"
       "2":
         title: "MITRE ATT&CK T1552.001 - Unsecured Credentials: Credentials In Files (obtaining credentials left in files and configuration)"
+      "3":
+        title: "MITRE D3FEND D3-DUC Decoy User Credential (fake credentials that raise an alert when used)"
 
   zt-idp-signing-key-compromise-001:
     category: "Spoofing"
