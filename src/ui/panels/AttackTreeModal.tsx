@@ -39,6 +39,7 @@ import { SEVERITY_BADGE_SOLID } from '../../core/model/severityColors';
 import { CONTROL_STATUS_BADGE, CONTROL_STATUS_LABEL_KEY } from './controlStatusStyle';
 import { sortThreatsBySeverity } from './sortThreatsBySeverity';
 import { AttackMatrixModal } from './AttackMatrixModal';
+import { findFootholdChains, type FootholdKind, type FootholdLink } from '../../features/attack-tree/footholdChains';
 import { useLocale, useT } from '../../i18n';
 
 /** i18n の t() 関数の型（useT の戻り値）。 */
@@ -399,6 +400,57 @@ function ChokePointChip({
 }
 
 /** 経路コスト表示（Infinity は「遮断」）。 */
+const FOOTHOLD_KIND_KEY = {
+  credential: 'attackTree.foothold.kind.credential',
+  path: 'attackTree.foothold.kind.path',
+  hint: 'attackTree.foothold.kind.hint',
+} as const satisfies Record<FootholdKind, string>;
+
+/** 手がかりの連鎖（経路の根拠。コスト・順位には含めない）。 */
+function FootholdPanel({
+  links,
+  nodeById,
+  t,
+}: {
+  links: FootholdLink[];
+  nodeById: Map<string, DiagramNode>;
+  t: TFunc;
+}) {
+  const [open, setOpen] = useState(false); // 経路の図の高さを保つため既定は閉じる;
+  return (
+    <div className="bg-slate-800/40 border border-slate-700 rounded-xl">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-300"
+      >
+        {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+        {t('attackTree.foothold.heading', { count: links.length })}
+      </button>
+      {open && (
+        <div className="px-3 pb-3 space-y-2">
+          <p className="text-xs text-slate-500 leading-relaxed">{t('attackTree.foothold.body')}</p>
+          <ul className="overflow-auto max-h-40 space-y-1.5 text-xs text-slate-300">
+            {links.map((l) => (
+              <li key={l.threatId} className="leading-relaxed">
+                <span className="font-bold">{nodeShortLabel(nodeById.get(l.sourceNodeId), l.sourceNodeId)}</span>
+                {' — '}
+                {l.threatName}
+                <span className="block text-slate-400">
+                  {t('attackTree.foothold.yields')}: {l.yields.map((k) => t(FOOTHOLD_KIND_KEY[k])).join('・')}
+                  {' ／ '}
+                  {t('attackTree.foothold.affects')}:{' '}
+                  {l.affectedNodeIds.map((id) => nodeShortLabel(nodeById.get(id), id)).join(', ')}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function formatRouteCost(cost: number, t: TFunc): string {
   return Number.isFinite(cost) ? String(cost) : t('attackTree.routeTable.blocked');
 }
@@ -551,6 +603,18 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
   );
 
   const hasPath = graph.routes.length > 0 && layout !== null;
+  const footholdLinks = useMemo(
+    () =>
+      findFootholdChains({
+        nodes,
+        edges: analysisEdges,
+        boundaries,
+        threats: allThreats,
+        attackerId: attacker.id,
+        routeNodeIds: graph.nodeIds,
+      }),
+    [nodes, analysisEdges, boundaries, allThreats, attacker.id, graph.nodeIds],
+  );
 
   const weakestRoute = analysis.feasible ? analysis.routes[0] : undefined;
   const weakestNodeIds = useMemo(() => new Set(weakestRoute?.route.nodeIds ?? []), [weakestRoute]);
@@ -904,6 +968,8 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
             t={t}
           />
         )}
+
+        {hasPath && footholdLinks.length > 0 && <FootholdPanel links={footholdLinks} nodeById={nodeById} t={t} />}
 
         {graph.truncated && <p className="text-xs text-amber-400/80 font-bold">⚠ {t('attackTree.truncated')}</p>}
 

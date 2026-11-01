@@ -1,0 +1,42 @@
+# 攻撃経路の分析で「手がかりを渡す脅威」とみなす canonicalId の一覧。
+#
+# 1 つずつは軽微な情報の漏れでも、攻撃者は拾った値（認証情報・管理画面の場所・正しい値の形）を
+# 次のノードの鍵として使い、段をつないで目的に近づく。ここに載せた脅威が、攻撃者から到達できる
+# ノードで出ていれば、攻撃経路の画面に「同じゾーンのノードを弱める手がかり」として並べる。
+# 経路のコストと順位は変えない（根拠の表示のみ。docs の攻撃経路分析の設計メモ §10）。
+#
+# 方針:
+#   - 載せるのは「拾った値が別の段の鍵になる」脅威だけ。漏えいそのものが目的の脅威
+#     （個人情報の大量取得・一括書き出し等）は載せない。
+#   - yields は渡すものの種類：credential（認証情報・鍵・トークン）／path（管理画面・内部 API 等の場所）／
+#     hint（正しい値の形・運用の決まり・使っている版）。
+#   - 1 つの canonicalId は 1 回だけ書く（重複は読み込み時にエラー）。
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+footholds:
+  - canonicalId: web-public-dir-sensitive-file-exposure
+    yields: [credential, path]
+    note: 公開ディレクトリの .env・バックアップ・.git
+
+  - canonicalId: web-content-credential-hint
+    yields: [credential, path, hint]
+    note: 画面・応答の文章のヒント、決まった形の初期パスワード
+
+  - canonicalId: api-error-information-disclosure
+    yields: [path, hint]
+    note: エラー応答の内部情報・正しい値
+
+  - canonicalId: credential-sprawl
+    yields: [credential]
+    note: 認証材料の静的保管・散在
+
+  - canonicalId: api-workspace-secret-exposure
+    yields: [credential]
+    note: API 開発ツールの共有ワークスペースの認証材料
+
+  - canonicalId: api-mobile-embedded-client-secret
+    yields: [credential]
+    note: モバイルアプリに埋め込んだ秘密情報
