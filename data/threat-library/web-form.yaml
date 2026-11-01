@@ -2,7 +2,8 @@
 # 問い合わせ・資料請求・申込フォームのように、社外の不特定者が自由記述や添付ファイルを
 # 送り込める入口と、そこを足がかりにした Web シェルの設置を扱う。
 # あわせて、図に描かれない公開 Web サーバー・API の中身（公開ディレクトリのファイル、
-# 画面・応答の文章）から漏れる手がかりを扱う（2026-11-02 追加）。
+# 画面・応答の文章）から漏れる手がかりと、業務アプリの管理画面（ADMIN_CONSOLE）からの
+# 一括書き出しを扱う（2026-11-02 追加）。
 #
 # 出典（一次情報のみをルールの根拠とする。二次情報だけで裏付く事実は本文に用いない）:
 #   - MITRE ATT&CK（T1505.003 Server Software Component: Web Shell、
@@ -14,7 +15,8 @@
 #   - 個人情報保護委員会「個人情報の保護に関する法律についてのガイドライン（通則編）」
 #     （安全管理措置）。
 #   - OWASP Web Security Testing Guide（WSTG-CONF-04・WSTG-INFO-03・WSTG-INFO-05・WSTG-ATHN-02）。
-#   - MITRE CWE（CWE-527・CWE-530・CWE-615・CWE-1393）、ATT&CK（T1595.003・T1078.001）。
+#   - MITRE CWE（CWE-527・CWE-530・CWE-615・CWE-1393）、ATT&CK（T1595.003・T1078.001・T1213）。
+#   - OWASP API Security Top 10 2023（API6）、NIST SP 800-63B（再認証）。
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -45,6 +47,11 @@
 #     あちらは失敗時の技術情報（スタックトレース・版）、こちらは正常時に人向けに書いた文章の中の
 #     資格情報・運用の決まりで、対策も別（文章の点検・初期パスワードの発行）のため別 canonicalId。
 #     複合機の初期パスワード（endpoint-mfp-admin-stored-data-exposure-001）は機器の出荷時の既定値で別の問い。
+#   - 管理画面（ADMIN_CONSOLE）からの一括書き出し（admin-console-bulk-export-unguarded-001）は、API の大量取得
+#     （api-bulk-data-harvesting-001、canonicalId: api-bulk-data-harvesting）と近接するが、あちらは利用者向け API を
+#     繰り返し呼ぶ取得の上限・検知、こちらは管理者の正規機能 1 回での全件の持ち出しで、対策（その都度の再認証・
+#     書き出しの記録・項目の絞り込み）も別のため別 canonicalId。管理画面のインターネット露出は攻撃面属性の
+#     stride-web-remote-mgmt-exposed-001 ほか stride-web-* が ADMIN_CONSOLE も対象にする（2026-11-02）。
 
 schemaVersion: 1
 
@@ -88,7 +95,10 @@ rules:
     mitigation: "[Foundation] 公開アプリ・CMS・プラグイン・ミドルウェアの脆弱性を期限を決めて修正し、使っていない機能やプラグインは削除する。Web サーバーの実行ユーザーから公開ディレクトリへの書き込み権限を外す。 [Enterprise] 公開ディレクトリのファイル改ざんを検知する（ファイル整合性監視）。Web サーバーのプロセスがシェルやコマンドを起動したことを EDR で検知する。WAF の前段配置と、Web サーバーから内部ネットワーク・インターネットへの通信の制限を併用する。 [Advanced] デプロイ物を読み取り専用のイメージとして配布し、実行中のサーバーではファイルを書き換えられない構成にする。Web シェルの侵害を想定した調査・再構築の手順を用意する。"
     appliesTo:
       kind: node
-      nodeType: FRONT_END_SERVER
+      anyOf:
+        - nodeType: FRONT_END_SERVER
+        # 業務アプリの管理画面（2026-11-02）も公開アプリの脆弱性で同じく Web シェルを置かれうるため加える。
+        - nodeType: ADMIN_CONSOLE
       connection:
         required: false
       attackSurface:
@@ -117,7 +127,9 @@ rules:
     mitigation: "[Foundation] 公開ディレクトリには公開用のファイルだけを置き、設定ファイル（.env 等）・データベースのダンプ・バックアップ・.git を公開ディレクトリの外に置く。ドット始まりのファイルと、バックアップ・一時ファイルの拡張子（.bak・.sql・.zip・.old 等）への要求を Web サーバーの設定で拒否する。robots.txt に秘密のパスを書かない。ディレクトリの一覧表示を無効にする。 [Enterprise] デプロイを成果物（ビルドした公開用ファイル）だけの配布にし、作業ディレクトリやリポジトリをそのまま公開しない。公開ディレクトリを定期的に点検し、よく狙われるファイル名への外部からの要求で 200 が返らないことを確かめる。万一置いてしまったファイルに含まれる認証情報は、ファイルを消すだけでなく失効させて作り直す。 [Advanced] 存在しないはずのファイル名（.env・バックアップ等）への要求の連続を検知し、送信元を自動で遮断する。偽の設定ファイルや偽のトークン（Canary token）を置き、使われたら警報を出す。"
     appliesTo:
       kind: node
-      nodeType: FRONT_END_SERVER
+      anyOf:
+        - nodeType: FRONT_END_SERVER
+        - nodeType: ADMIN_CONSOLE
       # 公開ディレクトリの中身は図に描かれない（バックアップや .env を図に置く人はいない）ため、
       # 描かれた要素ではなく公開 Web サーバーそのものに当てる。内在脅威として接続は問わない。
       connection:
@@ -155,6 +167,7 @@ rules:
       anyOf:
         - nodeType: FRONT_END_SERVER
         - nodeType: BACKEND_API
+        - nodeType: ADMIN_CONSOLE
       # 画面・応答の文章はモデルに描かれないため、インターネットから到達できる Web サーバー・API そのものに当てる。
       connection:
         required: false
@@ -176,6 +189,36 @@ rules:
         url: "https://cwe.mitre.org/data/definitions/1393.html"
       - title: "MITRE ATT&CK T1078.001 Valid Accounts: Default Accounts"
         url: "https://attack.mitre.org/techniques/T1078/001/"
+
+  # ── 管理画面からのデータの一括書き出し（経路依存：業務データの保管先・API とつながる）──
+  - id: admin-console-bulk-export-unguarded-001
+    canonicalId: admin-bulk-export-unguarded
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "管理画面からのデータの一括書き出しに追加の認証・記録・上限が無い"
+    severity: High
+    description: "{{nodeName}} は業務データ（会員・顧客・注文等）の保管先や API につながり、一覧の表示や CSV 等への一括書き出しができる。書き出しにその都度の追加の認証が無く、誰が・いつ・何件書き出したかを記録・監視しておらず、件数や頻度に上限が無い場合、管理者のアカウントやセッション、画面に表示された書き出し用の鍵を手に入れた攻撃者は、1 回の操作で全件を持ち出せる（Can）。管理画面の操作は正規の機能の利用に見えるため、入力値の検査や WAF では止まらず、AI エージェントを使う攻撃者はログインから書き出しまでを数分で終える。一方、一括の書き出しにその都度の追加の認証（再認証・1 回だけ使えるトークン）をかけ、書き出しの実行者・時刻・件数を記録して通常と違う量を検知・遮断し、書き出す項目を業務に必要な最小限に絞っていれば、アカウントを奪われても全件を一度に持ち出すことはできず、短時間で気づける（Cannot）。blast radius は {{nodeName}} から書き出せる業務データの全件。"
+    mitigation: "[Foundation] 一括の書き出しにその都度の追加の認証（パスワードの再入力・多要素認証・1 回だけ使えるトークン）をかける。書き出し用の鍵を画面に常に表示しない。書き出しの実行者・時刻・件数をログに残す。標準の出力項目を業務に必要な最小限にし、電話番号・接続元 IP 等は既定で含めない。 [Enterprise] 書き出しの件数・頻度に上限を設け、通常と違う量・時間帯・接続元の書き出しを検知して通知・遮断する。書き出しの権限を必要な担当者だけに分ける。 [Advanced] 大量の書き出しに別の担当者の承認を必須にする。書き出したファイルに利用者ごとの印を付け、流出したときに出どころを追えるようにする。"
+    appliesTo:
+      kind: node
+      nodeType: ADMIN_CONSOLE
+      # 業務データの保管先・API とつながるときだけ発火する（向きは問わない。管理画面から保管先へ線を引く描き方が多い）。
+      # ピアの中身（PERSONAL_INFO 等）は条件にできないため、業務データを持ちうる型で近似する。
+      connection:
+        direction: any
+        peerType: [DATABASE, DATA_STORE, FILE_SERVER, CRM, BACKEND_API]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-01"
+    references:
+      - title: "OWASP API Security Top 10 2023 - API6:2023 Unrestricted Access to Sensitive Business Flows"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa6-unrestricted-access-to-sensitive-business-flows/"
+      - title: "NIST SP 800-63B - Digital Identity Guidelines: Authentication and Lifecycle Management（再認証）"
+        url: "https://pages.nist.gov/800-63-4/sp800-63b.html"
+      - title: "MITRE ATT&CK T1213 - Data from Information Repositories（業務システムからのデータの取得）"
+        url: "https://attack.mitre.org/techniques/T1213/"
 
   # ── 入力値が下流で解釈されるインジェクション（経路依存）──────────
   - id: webform-input-injection-001

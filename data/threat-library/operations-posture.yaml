@@ -400,6 +400,7 @@ rules:
         - nodeType: FILE_SERVER
         - nodeType: BACKEND_API
         - nodeType: API_CONTROL_PLANE
+        - nodeType: ADMIN_CONSOLE
         - nodeType: WEB_FORM
         - nodeType: PC
         - nodeType: SMARTPHONE
@@ -488,6 +489,7 @@ rules:
       # SERVICE_ACCOUNT は nhi-improper-offboarding-001 が同じ問いを常に出すため対象外。
       anyOf:
         - nodeType: API_CONTROL_PLANE
+        - nodeType: ADMIN_CONSOLE
         - nodeType: HYPERVISOR
         - nodeType: SIEM
         - nodeType: EDR_DFIR_SERVER

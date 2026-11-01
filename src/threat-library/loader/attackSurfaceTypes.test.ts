@@ -79,6 +79,8 @@ describe.each([
     'API_CONTROL_PLANE',
     STRIDE_WEB_RULES.filter((id) => !['stride-web-no-waf-001', 'stride-web-no-ddos-protection-001'].includes(id)),
   ],
+  // ADMIN_CONSOLE（2026-11-02）。DDoS は公開サイト側（前段）の性質なので入力項目に無い
+  ['ADMIN_CONSOLE', STRIDE_WEB_RULES.filter((id) => id !== 'stride-web-no-ddos-protection-001')],
 ] as const)('%s の攻撃面属性', (type, expected) => {
   it('未入力では入力できる項目を問うルールだけが「未入力のため仮定」付きで出る', () => {
     const out = ruleIdsFor(type);

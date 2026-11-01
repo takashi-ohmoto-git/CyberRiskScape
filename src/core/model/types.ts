@@ -154,6 +154,7 @@ export const ATTACK_SURFACE_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set([
   'MCP_SERVER',
   'API_CONTROL_PLANE',
   'AI_GATEWAY',
+  'ADMIN_CONSOLE',
 ]);
 
 /** 型ごとに入力できる項目を絞る（未掲載の型は全項目）。入力できない項目は脅威・侵入口の判定にも使わない。 */
@@ -178,6 +179,15 @@ export const ATTACK_SURFACE_KEYS_BY_TYPE: Partial<Record<ComponentTypeId, readon
     'hasRemoteAccessRestriction',
     'hasUserAuthentication',
     'hasAccessLog',
+  ],
+  // 業務アプリの Web 管理画面の公開条件。DDoS は公開サイト側（前段）の性質なので除く
+  ADMIN_CONSOLE: [
+    'hasGlobalIp',
+    'hasSourceIpRestriction',
+    'hasRemoteAccessRestriction',
+    'hasUserAuthentication',
+    'hasAccessLog',
+    'hasWafProtection',
   ],
 };
 

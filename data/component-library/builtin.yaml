@@ -181,6 +181,16 @@ components:
     description: "Web サーバー等、アプリやコンテンツを自身で提供する外部公開ポイント。中継だけを行うものはリバースプロキシを使う。attackSurface 属性で公開条件・防御策の有無を表現する。"
     posture: [logRetention, patch]
 
+  - id: ADMIN_CONSOLE
+    label: "管理画面"
+    category: SERVERS
+    icon: { kind: builtin, name: "layout-dashboard" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "業務アプリの Web 管理画面（会員・注文・コンテンツの管理、データの一括書き出し等）。利用者向けの公開画面とは別のノードとして描く。API ゲートウェイの管理面は API 管理プレーン、サーバーへの保守接続は踏み台を使う。公開条件は attackSurface 属性で表現する。"
+    canContain: [CREDENTIAL, LOG]
+    posture: [logRetention, patch, accountReview]
+
   - id: CONNECTOR
     label: "コネクタ"
     category: NETWORK

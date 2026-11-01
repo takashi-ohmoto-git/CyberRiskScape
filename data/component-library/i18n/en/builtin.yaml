@@ -78,6 +78,10 @@ components:
     label: "Front-end Server"
     description: "An internet-facing entry point, such as a web server, that serves applications or content itself. Use the reverse proxy for components that only relay. Use the attackSurface attribute to state how it is exposed and what defenses are in place."
 
+  ADMIN_CONSOLE:
+    label: "Admin Console"
+    description: "The web admin console of a business application (managing members, orders or content, bulk data export and so on). Draw it as a node separate from the public pages for users. Use the API control plane for an API gateway's management plane, and the bastion for maintenance access to servers. Use the attackSurface attribute to state how it is exposed."
+
   CONNECTOR:
     label: "Connector"
     description: "A relay node (a message broker, an iPaaS, a sidecar proxy). In the cloud this includes Amazon SQS, SNS, EventBridge and MSK, Azure Service Bus and Event Hubs, Google Cloud Pub/Sub, OCI Streaming, and, as a database proxy, Amazon RDS Proxy."

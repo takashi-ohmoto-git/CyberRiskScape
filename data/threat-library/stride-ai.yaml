@@ -548,6 +548,7 @@ rules:
         - nodeType: BACKEND_API
         - nodeType: MCP_SERVER
         - nodeType: API_CONTROL_PLANE
+        - nodeType: ADMIN_CONSOLE
       connection:
         required: false
       attackSurface:
@@ -578,6 +579,7 @@ rules:
         - nodeType: BACKEND_API
         - nodeType: MCP_SERVER
         - nodeType: API_CONTROL_PLANE
+        - nodeType: ADMIN_CONSOLE
       connection:
         required: false
       attackSurface:
@@ -605,6 +607,7 @@ rules:
         - nodeType: REVERSE_PROXY
         - nodeType: BACKEND_API
         - nodeType: API_CONTROL_PLANE
+        - nodeType: ADMIN_CONSOLE
       connection:
         required: false
       attackSurface:
@@ -639,6 +642,7 @@ rules:
         - nodeType: BACKEND_API
         - nodeType: MCP_SERVER
         - nodeType: API_CONTROL_PLANE
+        - nodeType: ADMIN_CONSOLE
       connection:
         required: false
       attackSurface:
@@ -671,6 +675,7 @@ rules:
         - nodeType: BACKEND_API
         - nodeType: MCP_SERVER
         - nodeType: API_CONTROL_PLANE
+        - nodeType: ADMIN_CONSOLE
       connection:
         required: false
       attackSurface:
@@ -701,6 +706,7 @@ rules:
         - nodeType: GATEWAY
         - nodeType: REVERSE_PROXY
         - nodeType: BACKEND_API
+        - nodeType: ADMIN_CONSOLE
       connection:
         required: false
       attackSurface:
@@ -759,6 +765,7 @@ rules:
         - nodeType: BACKEND_API
         - nodeType: MCP_SERVER
         - nodeType: API_CONTROL_PLANE
+        - nodeType: ADMIN_CONSOLE
       connection:
         required: false
       attackSurface:
@@ -792,6 +799,7 @@ rules:
         - nodeType: BACKEND_API
         - nodeType: MCP_SERVER
         - nodeType: API_CONTROL_PLANE
+        - nodeType: ADMIN_CONSOLE
       connection:
         required: false
       attackSurface:

@@ -138,6 +138,8 @@ rules:
         - nodeType: DB
         - nodeType: GATEWAY
         - nodeType: FRONT_END_SERVER
+        # 業務アプリの管理画面（2026-11-02）も Web アプリとして TLS を終端し、暗号の設定を持つため加える。
+        - nodeType: ADMIN_CONSOLE
         # リバースプロキシ（2026-10-20）は利用者の TLS を終端し、証明書と暗号の設定を持つため加える。
         - nodeType: REVERSE_PROXY
         # TLS を終端する経路上の機器（2026-10-20）も証明書と暗号の設定を持つため加える。
@@ -212,6 +214,8 @@ rules:
         - nodeType: DB
         - nodeType: GATEWAY
         - nodeType: FRONT_END_SERVER
+        # 業務アプリの管理画面（2026-11-02）も Web アプリとして TLS を終端し、暗号の設定を持つため加える。
+        - nodeType: ADMIN_CONSOLE
         # リバースプロキシ（2026-10-20）は TLS を終端し、暗号スイート・鍵交換の設定を持つため加える。
         - nodeType: REVERSE_PROXY
         # TLS を終端する経路上の機器（2026-10-20）も暗号スイート・鍵交換の設定を持つため加える。
