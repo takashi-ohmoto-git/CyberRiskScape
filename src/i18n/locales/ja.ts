@@ -190,6 +190,13 @@ const jaCore = {
   'attackTree.foothold.kind.credential': '認証情報・鍵',
   'attackTree.foothold.kind.path': '場所（管理画面・内部 API）',
   'attackTree.foothold.kind.hint': '正しい値・運用の決まり',
+  'attackTree.detectionGap.heading': '検知の空白（{count} 経路、うち全区間 {blind} 経路）',
+  'attackTree.detectionGap.body':
+    '経路上で、ログが監視先（SIEM 等）に届かないノードの区間です。記録だけのログは、人が見に行くまで気づけないため空白に含めます。ログが届いても検知ルールや対応があるとは限りません。経路のコストや順位には影響しません。ノードの「このコンポーネントのログを送る SIEM」やログの属性を入力すると更新されます。',
+  'attackTree.detectionGap.state.forwarded': '監視先に届く',
+  'attackTree.detectionGap.state.localOnly': '記録のみ',
+  'attackTree.detectionGap.state.none': 'ログなし',
+  'attackTree.detectionGap.assumed': '未入力のため仮定',
   'attackTree.routeTable.colRoute': '経路',
   'attackTree.routeTable.colCost': 'コスト',
   'attackTree.routeTable.colWeakestHop': '最弱ホップ',

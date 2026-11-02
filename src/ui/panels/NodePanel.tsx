@@ -46,6 +46,7 @@ import {
   ATTACK_SURFACE_APPLICABLE,
   ATTACK_SURFACE_KEYS_BY_TYPE,
   AUTH_PROVIDER_APPLICABLE,
+  AUTH_PROVIDER_EXCLUDED_CATEGORIES,
   LOG_SINK_APPLICABLE,
   IDP_KIND_APPLICABLE,
   IDENTITY_TIER_APPLICABLE,
@@ -71,15 +72,6 @@ import { PostureSection } from './PostureSection';
 import { InventorySection } from './InventorySection';
 
 type TFunc = ReturnType<typeof useT>;
-
-/**
- * 「このコンポーネント自身の認証の預け先」を入力**できない**カテゴリ。
- *
- * 型の許可リストを持たないのは、この属性が意味を持つ型の方が多数派で、include リストだと
- * 新しい型を足すたびに更新漏れが起きるため。除外すべきはデータ資産と攻撃者の 2 カテゴリだけ。
- * **エンジンは型で絞らない**（宣言されたものを読むだけ）。絞るのは入力 UI の責務。
- */
-const AUTH_PROVIDER_EXCLUDED_CATEGORIES: ReadonlySet<string> = new Set(['DOCUMENTS', 'ATTACKER']);
 
 /** 管理状態（Managed/Unmanaged）を持つコンポーネント型。 */
 const MANAGED_STATE_APPLICABLE: ReadonlySet<ComponentTypeId> = new Set([

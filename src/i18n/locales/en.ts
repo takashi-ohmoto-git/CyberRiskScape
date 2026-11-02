@@ -77,6 +77,13 @@ const enCore: Partial<Record<TranslationKey, string>> = {
   'attackTree.foothold.kind.credential': 'credentials and keys',
   'attackTree.foothold.kind.path': 'locations (admin console, internal APIs)',
   'attackTree.foothold.kind.hint': 'valid values and operating rules',
+  'attackTree.detectionGap.heading': 'Detection gaps ({count} routes, {blind} with no coverage at all)',
+  'attackTree.detectionGap.body':
+    "Stretches of a route where nodes' logs do not reach a monitoring destination (SIEM, etc.). Logs that are only recorded locally are counted as gaps, because nobody notices until someone goes to look. Even logs that arrive do not guarantee a detection rule or a response. Route costs and ranking are not affected. Fill in \"SIEM that receives this component's logs\" or the log attributes on a node to update this.",
+  'attackTree.detectionGap.state.forwarded': 'reaches monitoring',
+  'attackTree.detectionGap.state.localOnly': 'logged locally only',
+  'attackTree.detectionGap.state.none': 'no logs',
+  'attackTree.detectionGap.assumed': 'assumed: not entered',
   'attackTree.routeTable.colRoute': 'Route',
   'attackTree.routeTable.colCost': 'Cost',
   'attackTree.routeTable.colWeakestHop': 'Weakest hop',

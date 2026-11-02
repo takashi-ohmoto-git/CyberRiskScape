@@ -10,7 +10,7 @@ import { getComponentRegistry } from '../../component-library/defaultRegistry';
 import { renderIcon } from '../../component-library/iconRegistry';
 import { getNodeDisplayName } from '../../core/model/nodeDisplay';
 import { formatElementalId } from '../../core/model/elementalId';
-import type { DiagramEdge, DiagramNode, ThreatView } from '../../core/model/types';
+import { AUTH_PROVIDER_EXCLUDED_CATEGORIES, type DiagramEdge, type DiagramNode, type ThreatView } from '../../core/model/types';
 import { buildAttackGraph, type AttackGraphResult, type LogicalHop } from '../../features/attack-tree/buildAttackGraph';
 import {
   aggregateLogicalHopEvidence,
@@ -40,6 +40,7 @@ import { CONTROL_STATUS_BADGE, CONTROL_STATUS_LABEL_KEY } from './controlStatusS
 import { sortThreatsBySeverity } from './sortThreatsBySeverity';
 import { AttackMatrixModal } from './AttackMatrixModal';
 import { findFootholdChains, type FootholdKind, type FootholdLink } from '../../features/attack-tree/footholdChains';
+import { assessRouteDetection, type DetectionState, type RouteDetection } from '../../features/attack-tree/detectionGaps';
 import { useLocale, useT } from '../../i18n';
 
 /** i18n の t() 関数の型（useT の戻り値）。 */
@@ -451,6 +452,60 @@ function FootholdPanel({
   );
 }
 
+const DETECTION_STATE_KEY = {
+  forwarded: 'attackTree.detectionGap.state.forwarded',
+  localOnly: 'attackTree.detectionGap.state.localOnly',
+  none: 'attackTree.detectionGap.state.none',
+} as const satisfies Record<DetectionState, string>;
+
+/** 検知の空白（経路上でログが監視先に届かない区間。コスト・順位には含めない）。 */
+function DetectionGapPanel({
+  routes,
+  nodeById,
+  t,
+}: {
+  routes: { index: number; detection: RouteDetection }[];
+  nodeById: Map<string, DiagramNode>;
+  t: TFunc;
+}) {
+  const [open, setOpen] = useState(false); // 経路の図の高さを保つため既定は閉じる
+  const blind = routes.filter((r) => r.detection.blind).length;
+  return (
+    <div className="bg-slate-800/40 border border-slate-700 rounded-xl">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-300"
+      >
+        {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+        {t('attackTree.detectionGap.heading', { count: routes.length, blind })}
+      </button>
+      {open && (
+        <div className="px-3 pb-3 space-y-2">
+          <p className="text-xs text-slate-500 leading-relaxed">{t('attackTree.detectionGap.body')}</p>
+          <ul className="overflow-auto max-h-40 space-y-1.5 text-xs text-slate-300">
+            {routes.map((r) => (
+              <li key={r.index} className="leading-relaxed">
+                <span className="text-slate-500 font-bold">{r.index + 1}</span>{' '}
+                {r.detection.nodes.map((n, i) => (
+                  <span key={n.nodeId}>
+                    {i > 0 && ' → '}
+                    <span className="font-bold">{nodeShortLabel(nodeById.get(n.nodeId), n.nodeId)}</span>
+                    {' ('}
+                    {t(DETECTION_STATE_KEY[n.state])}
+                    {n.assumed && `・${t('attackTree.detectionGap.assumed')}`}
+                    {')'}
+                  </span>
+                ))}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function formatRouteCost(cost: number, t: TFunc): string {
   return Number.isFinite(cost) ? String(cost) : t('attackTree.routeTable.blocked');
 }
@@ -615,6 +670,27 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
       }),
     [nodes, analysisEdges, boundaries, allThreats, attacker.id, graph.nodeIds],
   );
+
+  const [locale] = useLocale();
+  const detectionRoutes = useMemo(() => {
+    const registry = getComponentRegistry(locale);
+    // ログの属性を入力できる型（NodePanel の「ログの送信先」と同じ条件。SHADOW は評価側で扱う）
+    const isLogInputAvailable = (n: DiagramNode) => {
+      const category = registry.get(n.type)?.category;
+      return category === undefined || !AUTH_PROVIDER_EXCLUDED_CATEGORIES.has(category);
+    };
+    return analysis.routes
+      .map((r, index) => ({
+        index,
+        detection: assessRouteDetection({
+          routeNodeIds: r.route.nodeIds,
+          nodes,
+          attackerId: attacker.id,
+          isLogInputAvailable,
+        }),
+      }))
+      .filter((r) => r.detection.gaps.length > 0);
+  }, [analysis.routes, nodes, attacker.id, locale]);
 
   const weakestRoute = analysis.feasible ? analysis.routes[0] : undefined;
   const weakestNodeIds = useMemo(() => new Set(weakestRoute?.route.nodeIds ?? []), [weakestRoute]);
@@ -969,6 +1045,7 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
           />
         )}
 
+        {hasPath && detectionRoutes.length > 0 && <DetectionGapPanel routes={detectionRoutes} nodeById={nodeById} t={t} />}
         {hasPath && footholdLinks.length > 0 && <FootholdPanel links={footholdLinks} nodeById={nodeById} t={t} />}
 
         {graph.truncated && <p className="text-xs text-amber-400/80 font-bold">⚠ {t('attackTree.truncated')}</p>}

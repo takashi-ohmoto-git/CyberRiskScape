@@ -402,6 +402,15 @@ export const SANCTION_ATTRIBUTE_APPLICABLE: ReadonlySet<ComponentTypeId> = new S
 export type IdentityProviderKind = 'IDaaS' | 'Directory' | 'Hybrid' | 'Social' | 'Custom';
 
 /**
+ * 「このコンポーネント自身の認証の預け先」を入力**できない**カテゴリ。
+ *
+ * 型の許可リストを持たないのは、この属性が意味を持つ型の方が多数派で、include リストだと
+ * 新しい型を足すたびに更新漏れが起きるため。除外すべきはデータ資産と攻撃者の 2 カテゴリだけ。
+ * **エンジンは型で絞らない**（宣言されたものを読むだけ）。絞るのは入力 UI の責務。
+ */
+export const AUTH_PROVIDER_EXCLUDED_CATEGORIES: ReadonlySet<string> = new Set(['DOCUMENTS', 'ATTACKER']);
+
+/**
  * エッジの `authProviderId` が参照できるノード型（資格情報の発行元になり得る型）。
  * `DIRECTORY`（AD / LDAP）は Kerberos 等で自ら認証するため発行元になり得る。
  */
