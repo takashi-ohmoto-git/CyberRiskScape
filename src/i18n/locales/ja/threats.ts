@@ -77,6 +77,8 @@ export const jaThreats = {
   'threats.list.addScenario': 'シナリオ追加',
   'threats.list.suppressedShow': '抑制済み {count} 件を表示',
   'threats.list.suppressedHide': '抑制済み {count} 件を非表示',
+  'threats.list.verifiedOnly': '実証された攻撃手段 {count} 件だけを表示',
+  'threats.list.verifiedShowAll': 'すべての脅威を表示',
   'threats.list.empty': '脅威は検出されませんでした',
   'threats.list.typeTarget': '{type}型（該当ノードなし）',
   'threats.list.wholeProject': 'プロジェクト全体',

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { LayerData } from '../../core/model/types';
-import { PersistedLayerDataSchema, PersistedProjectSchema } from '../persistence/schema';
+import { PersistedLayerDataSchema, PersistedProjectSchema, type PersistedProject } from '../persistence/schema';
 import { getLocale, translate } from '../../i18n';
 
 /**
@@ -53,7 +53,7 @@ export function serializeTemplateToJson(name: string, layer: LayerData): string 
 }
 
 export type ParseTemplateResult =
-  | { ok: true; name: string; layer: LayerData }
+  | { ok: true; name: string; layer: LayerData; project?: PersistedProject }
   | { ok: false; error: string };
 
 const PROJECT_LAYER_ORDER = ['L0', 'L1', 'L2', 'L3', 'PQC'] as const;
@@ -74,7 +74,13 @@ function projectToTemplate(
   }
   const name = project.projectMeta?.name.trim() || fallbackName.trim() || 'Project';
   // seq は取り込み側で採番し直す前提のため、テンプレートと同様に落とす。
-  return { ok: true, name, layer: stripSeq(layers[key] as unknown as LayerData) };
+  return {
+    ok: true,
+    name,
+    layer: stripSeq(layers[key] as unknown as LayerData),
+    // 指摘はノードに結びつくので、図だけ取り込むと失われる。プロジェクト全体として開けるように渡す
+    ...(project.findings?.length ? { project } : {}),
+  };
 }
 
 /**

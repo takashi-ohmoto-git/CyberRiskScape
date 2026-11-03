@@ -7,7 +7,8 @@ import {
   useDiagramStore,
 } from '../../core/state/diagramStore';
 import { formatLocalDate } from '../../core/model/localDate';
-import { getLocale, translate, useT } from '../../i18n';
+import { getLocale, translate, useLocale, useT } from '../../i18n';
+import { hydrateFromPersisted } from '../../features/persistence/hydrate';
 import { triggerDownload } from '../../features/export/download';
 import {
   parseTemplateFromJson,
@@ -39,6 +40,7 @@ function templateFilename(name: string, layer: string): string {
  */
 export function TemplateModal() {
   const t = useT();
+  const [locale] = useLocale();
   const isOpen = useDiagramStore((s) => s.isTemplateModalOpen);
   const close = useDiagramStore((s) => s.closeTemplate);
   const activeLayer = useDiagramStore((s) => s.activeLayer);
@@ -187,8 +189,28 @@ export function TemplateModal() {
     setConfirming(false);
   };
 
+  const handleSample = async () => {
+    const text =
+      locale === 'en'
+        ? (await import('../../../guide/templates/artex-verified-attacks.en.json?raw')).default
+        : (await import('../../../guide/templates/artex-verified-attacks.ja.json?raw')).default;
+    setParsed(parseTemplateFromJson(text));
+    setImportedFileName(t('project.templateModal.sampleVerifiedAttacks'));
+    setConfirming(false);
+  };
+
   const handleApplyImport = () => {
     if (!parsed || !parsed.ok) return;
+    // 指摘を持つプロジェクトは全体を置き換えるので、要素の数によらず確認する
+    if (parsed.project) {
+      if (!confirming) {
+        setConfirming(true);
+        return;
+      }
+      hydrateFromPersisted(parsed.project);
+      close();
+      return;
+    }
     // 既存要素がある初回クリックはインライン確認に切り替える（実行は次クリック）。
     if (activeCount > 0 && !confirming) {
       setConfirming(true);
@@ -285,6 +307,16 @@ export function TemplateModal() {
               {t('project.templateModal.importIntro3')}
             </p>
 
+            <button
+              onClick={() => void handleSample()}
+              className="flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold tracking-wider text-slate-200 border border-slate-600 hover:border-slate-400 rounded-lg transition-colors"
+            >
+              <Upload size={14} />
+              {t('project.templateModal.sampleVerifiedAttacks')}
+            </button>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              {t('project.templateModal.sampleVerifiedAttacksHint')}
+            </p>
             <input
               ref={fileInputRef}
               type="file"
@@ -460,10 +492,12 @@ export function TemplateModal() {
 
             {confirming && (
               <div className="rounded-lg border border-amber-600/60 bg-amber-900/20 p-3 text-xs text-amber-200 leading-relaxed">
-                {t('project.templateModal.confirmReplace', {
-                  layer: activeLayer,
-                  count: activeCount,
-                })}
+                {parsed?.ok && parsed.project
+                  ? t('project.templateModal.confirmReplaceProject')
+                  : t('project.templateModal.confirmReplace', {
+                      layer: activeLayer,
+                      count: activeCount,
+                    })}
               </div>
             )}
 

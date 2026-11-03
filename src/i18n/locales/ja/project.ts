@@ -134,6 +134,9 @@ export const jaProject = {
     '{layer} には既に {count} 件の要素があります。これらを破棄してテンプレートで置き換えます。「置き換える」を押すと適用します（元に戻すで復元できます）。',
   'project.templateModal.replaceButton': '置き換える',
   'project.templateModal.replaceAndApply': '置き換えて適用',
+  'project.templateModal.sampleVerifiedAttacks': 'サンプル：ARTEX が実際に実行した攻撃手段（架空の構成）',
+  'project.templateModal.sampleVerifiedAttacksHint': '開発者が ARTEX で検証した範囲に限られ、網羅したものではありません。',
+  'project.templateModal.confirmReplaceProject': 'このファイルはプロジェクト全体を置き換えます（他のレイヤーも含む）。',
   'project.templateModal.apply': '適用',
   'project.templateModal.kongIntro':
     'Kong Gateway の宣言設定（decK の kong.yaml / JSON）から構成図の下書きを作ることもできます。認証ヘッダや資格情報の値は読み込みません。',

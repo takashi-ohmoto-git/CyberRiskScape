@@ -135,6 +135,9 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
     '{layer} already has {count} elements. They will be discarded and replaced with the template. Press "Replace" to apply (you can restore with Undo).',
   'project.templateModal.replaceButton': 'Replace',
   'project.templateModal.replaceAndApply': 'Replace and apply',
+  'project.templateModal.sampleVerifiedAttacks': 'Sample: attack techniques ARTEX actually executed (fictional setup)',
+  'project.templateModal.sampleVerifiedAttacksHint': 'Limited to what the developer tested with ARTEX; not exhaustive.',
+  'project.templateModal.confirmReplaceProject': 'This replaces the whole project, including other layers.',
   'project.templateModal.apply': 'Apply',
   'project.templateModal.kongIntro':
     'You can also draft a diagram from a Kong Gateway declarative configuration (decK kong.yaml / JSON). Authentication headers and credential values are not read.',

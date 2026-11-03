@@ -1,0 +1,574 @@
+{
+  "schemaVersion": 1,
+  "layers": {
+    "L0": {
+      "nodes": [],
+      "edges": [],
+      "boundaries": [],
+      "annotations": []
+    },
+    "L1": {
+      "nodes": [
+        {
+          "id": "n1",
+          "seq": 1,
+          "type": "AGENTIC_ATTACKER",
+          "x": 104,
+          "y": 128,
+          "label": "ARTEX (test origin)"
+        },
+        {
+          "id": "n2",
+          "seq": 2,
+          "type": "FRONT_END_SERVER",
+          "x": 432,
+          "y": 212,
+          "label": "Public website",
+          "attackSurface": {
+            "hasGlobalIp": true
+          }
+        },
+        {
+          "id": "n3",
+          "seq": 3,
+          "type": "BACKUP_STORAGE",
+          "x": 760,
+          "y": 212,
+          "label": "Backup in the public area"
+        },
+        {
+          "id": "n4",
+          "seq": 4,
+          "type": "CREDENTIAL",
+          "x": 760,
+          "y": 212,
+          "parentId": "n3",
+          "label": "API token (in the backup)"
+        },
+        {
+          "id": "n5",
+          "seq": 5,
+          "type": "BACKEND_API",
+          "x": 432,
+          "y": 380,
+          "label": "Member API",
+          "attackSurface": {
+            "hasGlobalIp": true,
+            "hasUserAuthentication": false
+          }
+        },
+        {
+          "id": "n6",
+          "seq": 6,
+          "type": "ADMIN_CONSOLE",
+          "x": 432,
+          "y": 548,
+          "label": "Business admin console",
+          "attackSurface": {
+            "hasGlobalIp": true,
+            "hasUserAuthentication": true
+          }
+        },
+        {
+          "id": "n7",
+          "seq": 7,
+          "type": "DATABASE",
+          "x": 760,
+          "y": 464,
+          "label": "Member DB"
+        },
+        {
+          "id": "n8",
+          "seq": 8,
+          "type": "PERSONAL_INFO",
+          "x": 760,
+          "y": 464,
+          "parentId": "n7",
+          "label": "Member data"
+        },
+        {
+          "id": "n9",
+          "seq": 9,
+          "type": "PC",
+          "x": 104,
+          "y": 296,
+          "label": "Member device"
+        },
+        {
+          "id": "n10",
+          "seq": 10,
+          "type": "PC",
+          "x": 104,
+          "y": 464,
+          "label": "Operator device"
+        },
+        {
+          "id": "n11",
+          "seq": 11,
+          "type": "ADMIN_CONSOLE",
+          "x": 432,
+          "y": 716,
+          "label": "Internal device admin console",
+          "attackSurface": {
+            "hasGlobalIp": true,
+            "hasUserAuthentication": true
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "seq": 1,
+          "source": "n1",
+          "target": "n2",
+          "auth": "None",
+          "network": "Internet",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "Test traffic"
+        },
+        {
+          "id": "e2",
+          "seq": 2,
+          "source": "n2",
+          "target": "n3",
+          "auth": "None",
+          "network": "VPC",
+          "encryption": "Plain",
+          "dataFlow": "outbound",
+          "dataFlowName": "Test traffic"
+        },
+        {
+          "id": "e3",
+          "seq": 3,
+          "source": "n1",
+          "target": "n5",
+          "auth": "None",
+          "network": "Internet",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "Test traffic"
+        },
+        {
+          "id": "e4",
+          "seq": 4,
+          "source": "n1",
+          "target": "n6",
+          "auth": "Password",
+          "network": "Internet",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "Test traffic"
+        },
+        {
+          "id": "e5",
+          "seq": 5,
+          "source": "n5",
+          "target": "n7",
+          "auth": "Password",
+          "network": "VPC",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "Test traffic"
+        },
+        {
+          "id": "e6",
+          "seq": 6,
+          "source": "n6",
+          "target": "n7",
+          "auth": "Password",
+          "network": "VPC",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "Test traffic"
+        },
+        {
+          "id": "e7",
+          "seq": 7,
+          "source": "n9",
+          "target": "n2",
+          "auth": "None",
+          "network": "Internet",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "Test traffic"
+        },
+        {
+          "id": "e8",
+          "seq": 8,
+          "source": "n9",
+          "target": "n5",
+          "auth": "Password",
+          "network": "Internet",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "Test traffic"
+        },
+        {
+          "id": "e9",
+          "seq": 9,
+          "source": "n10",
+          "target": "n6",
+          "auth": "Password",
+          "network": "Internet",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "Test traffic"
+        },
+        {
+          "id": "e10",
+          "seq": 10,
+          "source": "n1",
+          "target": "n11",
+          "auth": "Password",
+          "network": "Internet",
+          "encryption": "Plain",
+          "dataFlow": "outbound",
+          "dataFlowName": "Test traffic"
+        }
+      ],
+      "boundaries": [
+        {
+          "id": "b1",
+          "seq": 1,
+          "type": "RECT",
+          "x": 64,
+          "y": 64,
+          "width": 208,
+          "height": 790,
+          "trustLevel": "Internet",
+          "label": "Internet"
+        },
+        {
+          "id": "b2",
+          "seq": 2,
+          "type": "ROUNDED",
+          "x": 392,
+          "y": 64,
+          "width": 536,
+          "height": 790,
+          "trustLevel": "Internal",
+          "macroTrust": "Security Zone",
+          "label": "Fictional e-commerce site"
+        }
+      ],
+      "annotations": []
+    },
+    "L2": {
+      "nodes": [],
+      "edges": [],
+      "boundaries": [],
+      "annotations": []
+    },
+    "L3": {
+      "nodes": [],
+      "edges": [],
+      "boundaries": [],
+      "annotations": []
+    }
+  },
+  "activeLayer": "L1",
+  "idCounters": {
+    "L0": {
+      "node": 0,
+      "edge": 0,
+      "boundary": 0
+    },
+    "L1": {
+      "node": 11,
+      "edge": 10,
+      "boundary": 2
+    },
+    "L2": {
+      "node": 0,
+      "edge": 0,
+      "boundary": 0
+    },
+    "L3": {
+      "node": 0,
+      "edge": 0,
+      "boundary": 0
+    }
+  },
+  "activeFramework": "ALL",
+  "projectMeta": {
+    "name": "Attack techniques ARTEX actually executed (fictional setup)",
+    "systemName": "Fictional e-commerce site",
+    "purpose": "",
+    "businessImpact": "",
+    "securityObjectives": ""
+  },
+  "updatedAt": 1793750400000,
+  "findings": [
+    {
+      "id": "ARTEX:Fictional setup:1",
+      "source": {
+        "format": "pentest",
+        "product": "ARTEX",
+        "scope": "Fictional setup",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "externalId": "1",
+      "identifiers": [
+        {
+          "scheme": "pentest-id",
+          "value": "1"
+        }
+      ],
+      "title": "Call the member list API unauthenticated, using only a version header",
+      "severity": "High",
+      "sourceSeverity": "high",
+      "canonicalIds": [
+        "api-object-level-authorization"
+      ],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n5"
+      },
+      "resource": {
+        "label": "Fictional setup"
+      },
+      "observedAt": "2026-11"
+    },
+    {
+      "id": "ARTEX:Fictional setup:2",
+      "source": {
+        "format": "pentest",
+        "product": "ARTEX",
+        "scope": "Fictional setup",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "externalId": "2",
+      "identifiers": [
+        {
+          "scheme": "pentest-id",
+          "value": "2"
+        }
+      ],
+      "title": "Fetch a database dump from a listed public directory",
+      "severity": "High",
+      "sourceSeverity": "high",
+      "canonicalIds": [
+        "web-public-dir-sensitive-file-exposure"
+      ],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n2"
+      },
+      "resource": {
+        "label": "Fictional setup"
+      },
+      "observedAt": "2026-11"
+    },
+    {
+      "id": "ARTEX:Fictional setup:3",
+      "source": {
+        "format": "pentest",
+        "product": "ARTEX",
+        "scope": "Fictional setup",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "externalId": "3",
+      "identifiers": [
+        {
+          "scheme": "pentest-id",
+          "value": "3"
+        }
+      ],
+      "title": "Log in to the admin console using the initial-password convention noted on the screen",
+      "severity": "High",
+      "sourceSeverity": "high",
+      "canonicalIds": [
+        "web-content-credential-hint"
+      ],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n6"
+      },
+      "resource": {
+        "label": "Fictional setup"
+      },
+      "observedAt": "2026-11"
+    },
+    {
+      "id": "ARTEX:Fictional setup:4",
+      "source": {
+        "format": "pentest",
+        "product": "ARTEX",
+        "scope": "Fictional setup",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "externalId": "4",
+      "identifiers": [
+        {
+          "scheme": "pentest-id",
+          "value": "4"
+        }
+      ],
+      "title": "Bulk-retrieve member data through the admin console export",
+      "severity": "High",
+      "sourceSeverity": "high",
+      "canonicalIds": [
+        "admin-bulk-export-unguarded"
+      ],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n6"
+      },
+      "resource": {
+        "label": "Fictional setup"
+      },
+      "observedAt": "2026-11"
+    },
+    {
+      "id": "ARTEX:Fictional setup:5",
+      "source": {
+        "format": "pentest",
+        "product": "ARTEX",
+        "scope": "Fictional setup",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "externalId": "5",
+      "identifiers": [
+        {
+          "scheme": "pentest-id",
+          "value": "5"
+        }
+      ],
+      "title": "Pass requests with a forged or omitted anti-tamper header",
+      "severity": "Medium",
+      "sourceSeverity": "medium",
+      "canonicalIds": [],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n11"
+      },
+      "resource": {
+        "label": "Fictional setup"
+      },
+      "observedAt": "2026-11"
+    },
+    {
+      "id": "ARTEX:Fictional setup:6",
+      "source": {
+        "format": "pentest",
+        "product": "ARTEX",
+        "scope": "Fictional setup",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "externalId": "6",
+      "identifiers": [
+        {
+          "scheme": "pentest-id",
+          "value": "6"
+        }
+      ],
+      "title": "Repeat failed logins to lock every user out",
+      "severity": "Medium",
+      "sourceSeverity": "medium",
+      "canonicalIds": [],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n11"
+      },
+      "resource": {
+        "label": "Fictional setup"
+      },
+      "observedAt": "2026-11"
+    },
+    {
+      "id": "ARTEX:Fictional setup:7",
+      "source": {
+        "format": "pentest",
+        "product": "ARTEX",
+        "scope": "Fictional setup",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "externalId": "7",
+      "identifiers": [
+        {
+          "scheme": "pentest-id",
+          "value": "7"
+        }
+      ],
+      "title": "Run the login process over plain HTTP",
+      "severity": "High",
+      "sourceSeverity": "high",
+      "canonicalIds": [
+        "plaintext-transmission"
+      ],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n11"
+      },
+      "resource": {
+        "label": "Fictional setup"
+      },
+      "observedAt": "2026-11"
+    },
+    {
+      "id": "ARTEX:Fictional setup:8",
+      "source": {
+        "format": "pentest",
+        "product": "ARTEX",
+        "scope": "Fictional setup",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "externalId": "8",
+      "identifiers": [
+        {
+          "scheme": "pentest-id",
+          "value": "8"
+        }
+      ],
+      "title": "Trigger a detailed error with an unauthenticated malformed request to learn internal paths",
+      "severity": "Low",
+      "sourceSeverity": "low",
+      "canonicalIds": [
+        "api-error-information-disclosure"
+      ],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n11"
+      },
+      "resource": {
+        "label": "Fictional setup"
+      },
+      "observedAt": "2026-11"
+    }
+  ],
+  "manualThreats": {
+    "L0": [],
+    "L1": [
+      {
+        "id": "pentest-ARTEX:Fictional setup:5",
+        "framework": "STRIDE",
+        "nodeId": "n11",
+        "category": "Pass requests with a forged or omitted anti-tamper header",
+        "severity": "Medium",
+        "description": "The console attaches an anti-tamper header to every request, but the server does not verify it, so arbitrary or missing values are processed.",
+        "mitigation": "Check integrity on the server. Do not treat client-side computation as a defense."
+      },
+      {
+        "id": "pentest-ARTEX:Fictional setup:6",
+        "framework": "STRIDE",
+        "nodeId": "n11",
+        "category": "Repeat failed logins to lock every user out",
+        "severity": "Medium",
+        "description": "A few failed logins by an unauthenticated party stop logins for all users for a while. Changing the source or user name still increments a shared counter.",
+        "mitigation": "Separate lockout counters per user and source. Slow down or add a challenge instead of stopping everyone."
+      },
+      {
+        "id": "pentest-ARTEX:Fictional setup:8",
+        "framework": "STRIDE",
+        "nodeId": "n11",
+        "category": "Trigger a detailed error with an unauthenticated malformed request to learn internal paths",
+        "severity": "Low",
+        "description": "An unauthenticated request returns a detailed error page that reveals internal server paths.",
+        "mitigation": "Return a fixed message to users and keep details only in server-side logs."
+      }
+    ],
+    "L2": [],
+    "L3": []
+  }
+}

@@ -1,0 +1,574 @@
+{
+  "schemaVersion": 1,
+  "layers": {
+    "L0": {
+      "nodes": [],
+      "edges": [],
+      "boundaries": [],
+      "annotations": []
+    },
+    "L1": {
+      "nodes": [
+        {
+          "id": "n1",
+          "seq": 1,
+          "type": "AGENTIC_ATTACKER",
+          "x": 104,
+          "y": 128,
+          "label": "ARTEX（検査の実行元）"
+        },
+        {
+          "id": "n2",
+          "seq": 2,
+          "type": "FRONT_END_SERVER",
+          "x": 432,
+          "y": 212,
+          "label": "公開 Web サイト",
+          "attackSurface": {
+            "hasGlobalIp": true
+          }
+        },
+        {
+          "id": "n3",
+          "seq": 3,
+          "type": "BACKUP_STORAGE",
+          "x": 760,
+          "y": 212,
+          "label": "公開領域のバックアップ"
+        },
+        {
+          "id": "n4",
+          "seq": 4,
+          "type": "CREDENTIAL",
+          "x": 760,
+          "y": 212,
+          "parentId": "n3",
+          "label": "API トークン（バックアップ内）"
+        },
+        {
+          "id": "n5",
+          "seq": 5,
+          "type": "BACKEND_API",
+          "x": 432,
+          "y": 380,
+          "label": "会員 API",
+          "attackSurface": {
+            "hasGlobalIp": true,
+            "hasUserAuthentication": false
+          }
+        },
+        {
+          "id": "n6",
+          "seq": 6,
+          "type": "ADMIN_CONSOLE",
+          "x": 432,
+          "y": 548,
+          "label": "業務の管理画面",
+          "attackSurface": {
+            "hasGlobalIp": true,
+            "hasUserAuthentication": true
+          }
+        },
+        {
+          "id": "n7",
+          "seq": 7,
+          "type": "DATABASE",
+          "x": 760,
+          "y": 464,
+          "label": "会員 DB"
+        },
+        {
+          "id": "n8",
+          "seq": 8,
+          "type": "PERSONAL_INFO",
+          "x": 760,
+          "y": 464,
+          "parentId": "n7",
+          "label": "会員情報"
+        },
+        {
+          "id": "n9",
+          "seq": 9,
+          "type": "PC",
+          "x": 104,
+          "y": 296,
+          "label": "会員の端末"
+        },
+        {
+          "id": "n10",
+          "seq": 10,
+          "type": "PC",
+          "x": 104,
+          "y": 464,
+          "label": "運用者の端末"
+        },
+        {
+          "id": "n11",
+          "seq": 11,
+          "type": "ADMIN_CONSOLE",
+          "x": 432,
+          "y": 716,
+          "label": "社内機器の管理画面",
+          "attackSurface": {
+            "hasGlobalIp": true,
+            "hasUserAuthentication": true
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "seq": 1,
+          "source": "n1",
+          "target": "n2",
+          "auth": "None",
+          "network": "Internet",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "検査の通信"
+        },
+        {
+          "id": "e2",
+          "seq": 2,
+          "source": "n2",
+          "target": "n3",
+          "auth": "None",
+          "network": "VPC",
+          "encryption": "Plain",
+          "dataFlow": "outbound",
+          "dataFlowName": "検査の通信"
+        },
+        {
+          "id": "e3",
+          "seq": 3,
+          "source": "n1",
+          "target": "n5",
+          "auth": "None",
+          "network": "Internet",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "検査の通信"
+        },
+        {
+          "id": "e4",
+          "seq": 4,
+          "source": "n1",
+          "target": "n6",
+          "auth": "Password",
+          "network": "Internet",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "検査の通信"
+        },
+        {
+          "id": "e5",
+          "seq": 5,
+          "source": "n5",
+          "target": "n7",
+          "auth": "Password",
+          "network": "VPC",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "検査の通信"
+        },
+        {
+          "id": "e6",
+          "seq": 6,
+          "source": "n6",
+          "target": "n7",
+          "auth": "Password",
+          "network": "VPC",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "検査の通信"
+        },
+        {
+          "id": "e7",
+          "seq": 7,
+          "source": "n9",
+          "target": "n2",
+          "auth": "None",
+          "network": "Internet",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "検査の通信"
+        },
+        {
+          "id": "e8",
+          "seq": 8,
+          "source": "n9",
+          "target": "n5",
+          "auth": "Password",
+          "network": "Internet",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "検査の通信"
+        },
+        {
+          "id": "e9",
+          "seq": 9,
+          "source": "n10",
+          "target": "n6",
+          "auth": "Password",
+          "network": "Internet",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "検査の通信"
+        },
+        {
+          "id": "e10",
+          "seq": 10,
+          "source": "n1",
+          "target": "n11",
+          "auth": "Password",
+          "network": "Internet",
+          "encryption": "Plain",
+          "dataFlow": "outbound",
+          "dataFlowName": "検査の通信"
+        }
+      ],
+      "boundaries": [
+        {
+          "id": "b1",
+          "seq": 1,
+          "type": "RECT",
+          "x": 64,
+          "y": 64,
+          "width": 208,
+          "height": 790,
+          "trustLevel": "Internet",
+          "label": "インターネット"
+        },
+        {
+          "id": "b2",
+          "seq": 2,
+          "type": "ROUNDED",
+          "x": 392,
+          "y": 64,
+          "width": 536,
+          "height": 790,
+          "trustLevel": "Internal",
+          "macroTrust": "Security Zone",
+          "label": "架空の EC サイト"
+        }
+      ],
+      "annotations": []
+    },
+    "L2": {
+      "nodes": [],
+      "edges": [],
+      "boundaries": [],
+      "annotations": []
+    },
+    "L3": {
+      "nodes": [],
+      "edges": [],
+      "boundaries": [],
+      "annotations": []
+    }
+  },
+  "activeLayer": "L1",
+  "idCounters": {
+    "L0": {
+      "node": 0,
+      "edge": 0,
+      "boundary": 0
+    },
+    "L1": {
+      "node": 11,
+      "edge": 10,
+      "boundary": 2
+    },
+    "L2": {
+      "node": 0,
+      "edge": 0,
+      "boundary": 0
+    },
+    "L3": {
+      "node": 0,
+      "edge": 0,
+      "boundary": 0
+    }
+  },
+  "activeFramework": "ALL",
+  "projectMeta": {
+    "name": "ARTEX が実際に実行した攻撃手段（架空の構成）",
+    "systemName": "架空の EC サイト",
+    "purpose": "",
+    "businessImpact": "",
+    "securityObjectives": ""
+  },
+  "updatedAt": 1793750400000,
+  "findings": [
+    {
+      "id": "ARTEX:架空の構成:1",
+      "source": {
+        "format": "pentest",
+        "product": "ARTEX",
+        "scope": "架空の構成",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "externalId": "1",
+      "identifiers": [
+        {
+          "scheme": "pentest-id",
+          "value": "1"
+        }
+      ],
+      "title": "版を示すヘッダーだけで、未認証のまま会員一覧 API を呼び出す",
+      "severity": "High",
+      "sourceSeverity": "high",
+      "canonicalIds": [
+        "api-object-level-authorization"
+      ],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n5"
+      },
+      "resource": {
+        "label": "架空の構成"
+      },
+      "observedAt": "2026-11"
+    },
+    {
+      "id": "ARTEX:架空の構成:2",
+      "source": {
+        "format": "pentest",
+        "product": "ARTEX",
+        "scope": "架空の構成",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "externalId": "2",
+      "identifiers": [
+        {
+          "scheme": "pentest-id",
+          "value": "2"
+        }
+      ],
+      "title": "公開ディレクトリの一覧からバックアップの DB ダンプを取得する",
+      "severity": "High",
+      "sourceSeverity": "high",
+      "canonicalIds": [
+        "web-public-dir-sensitive-file-exposure"
+      ],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n2"
+      },
+      "resource": {
+        "label": "架空の構成"
+      },
+      "observedAt": "2026-11"
+    },
+    {
+      "id": "ARTEX:架空の構成:3",
+      "source": {
+        "format": "pentest",
+        "product": "ARTEX",
+        "scope": "架空の構成",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "externalId": "3",
+      "identifiers": [
+        {
+          "scheme": "pentest-id",
+          "value": "3"
+        }
+      ],
+      "title": "画面の注記にある初期パスワードの決まりから、管理画面にログインする",
+      "severity": "High",
+      "sourceSeverity": "high",
+      "canonicalIds": [
+        "web-content-credential-hint"
+      ],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n6"
+      },
+      "resource": {
+        "label": "架空の構成"
+      },
+      "observedAt": "2026-11"
+    },
+    {
+      "id": "ARTEX:架空の構成:4",
+      "source": {
+        "format": "pentest",
+        "product": "ARTEX",
+        "scope": "架空の構成",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "externalId": "4",
+      "identifiers": [
+        {
+          "scheme": "pentest-id",
+          "value": "4"
+        }
+      ],
+      "title": "管理画面の書き出し機能で、会員情報を一括で取得する",
+      "severity": "High",
+      "sourceSeverity": "high",
+      "canonicalIds": [
+        "admin-bulk-export-unguarded"
+      ],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n6"
+      },
+      "resource": {
+        "label": "架空の構成"
+      },
+      "observedAt": "2026-11"
+    },
+    {
+      "id": "ARTEX:架空の構成:5",
+      "source": {
+        "format": "pentest",
+        "product": "ARTEX",
+        "scope": "架空の構成",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "externalId": "5",
+      "identifiers": [
+        {
+          "scheme": "pentest-id",
+          "value": "5"
+        }
+      ],
+      "title": "改ざん防止ヘッダーを偽造・省略して要求を通す",
+      "severity": "Medium",
+      "sourceSeverity": "medium",
+      "canonicalIds": [],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n11"
+      },
+      "resource": {
+        "label": "架空の構成"
+      },
+      "observedAt": "2026-11"
+    },
+    {
+      "id": "ARTEX:架空の構成:6",
+      "source": {
+        "format": "pentest",
+        "product": "ARTEX",
+        "scope": "架空の構成",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "externalId": "6",
+      "identifiers": [
+        {
+          "scheme": "pentest-id",
+          "value": "6"
+        }
+      ],
+      "title": "ログイン失敗を繰り返し、全利用者をログインできなくする",
+      "severity": "Medium",
+      "sourceSeverity": "medium",
+      "canonicalIds": [],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n11"
+      },
+      "resource": {
+        "label": "架空の構成"
+      },
+      "observedAt": "2026-11"
+    },
+    {
+      "id": "ARTEX:架空の構成:7",
+      "source": {
+        "format": "pentest",
+        "product": "ARTEX",
+        "scope": "架空の構成",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "externalId": "7",
+      "identifiers": [
+        {
+          "scheme": "pentest-id",
+          "value": "7"
+        }
+      ],
+      "title": "HTTP（平文）のままログイン処理を実行する",
+      "severity": "High",
+      "sourceSeverity": "high",
+      "canonicalIds": [
+        "plaintext-transmission"
+      ],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n11"
+      },
+      "resource": {
+        "label": "架空の構成"
+      },
+      "observedAt": "2026-11"
+    },
+    {
+      "id": "ARTEX:架空の構成:8",
+      "source": {
+        "format": "pentest",
+        "product": "ARTEX",
+        "scope": "架空の構成",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "externalId": "8",
+      "identifiers": [
+        {
+          "scheme": "pentest-id",
+          "value": "8"
+        }
+      ],
+      "title": "認証なしの不正な要求で詳細なエラーを出させ、内部のパスを得る",
+      "severity": "Low",
+      "sourceSeverity": "low",
+      "canonicalIds": [
+        "api-error-information-disclosure"
+      ],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n11"
+      },
+      "resource": {
+        "label": "架空の構成"
+      },
+      "observedAt": "2026-11"
+    }
+  ],
+  "manualThreats": {
+    "L0": [],
+    "L1": [
+      {
+        "id": "pentest-ARTEX:架空の構成:5",
+        "framework": "STRIDE",
+        "nodeId": "n11",
+        "category": "改ざん防止ヘッダーを偽造・省略して要求を通す",
+        "severity": "Medium",
+        "description": "管理画面は全ての要求に改ざん防止のヘッダーを付けるが、サーバーが検証しておらず、任意の値や欠落でも処理される。",
+        "mitigation": "完全性の確認はサーバー側で行う。クライアント側の計算を防御として扱わない。"
+      },
+      {
+        "id": "pentest-ARTEX:架空の構成:6",
+        "framework": "STRIDE",
+        "nodeId": "n11",
+        "category": "ログイン失敗を繰り返し、全利用者をログインできなくする",
+        "severity": "Medium",
+        "description": "未認証の相手が数回ログインに失敗するだけで、全利用者のログインが一定時間止まる。送信元や利用者名を変えても、共有のカウンタが増える。",
+        "mitigation": "ロックのカウンタを利用者と送信元の単位に分ける。全体を止めず、遅延や追加の確認で抑える。"
+      },
+      {
+        "id": "pentest-ARTEX:架空の構成:8",
+        "framework": "STRIDE",
+        "nodeId": "n11",
+        "category": "認証なしの不正な要求で詳細なエラーを出させ、内部のパスを得る",
+        "severity": "Low",
+        "description": "認証なしの要求で詳細なエラーページが返り、サーバーの内部のパスが分かる。",
+        "mitigation": "利用者向けのエラーは定型文にし、詳細はサーバー側のログにだけ残す。"
+      }
+    ],
+    "L2": [],
+    "L3": []
+  }
+}

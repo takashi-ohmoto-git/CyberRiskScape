@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Eye, EyeOff, Plus, ShieldAlert } from 'lucide-react';
+import { BadgeCheck, Eye, EyeOff, Plus, ShieldAlert } from 'lucide-react';
 import { isSuppressed, type ThreatView } from '../../core/model/types';
 import { getNodeDisplayName } from '../../core/model/nodeDisplay';
 import { getComponentRegistry } from '../../component-library/defaultRegistry';
 import { selectActiveNodes, useDiagramStore } from '../../core/state/diagramStore';
 import { FRAMEWORK_VIEW_LABEL_KEYS } from '../frameworkLabels';
+import { findingsForThreat } from '../../features/pentest-import/matchFindings';
 import { ThreatCard } from './ThreatCard';
 import { sortThreatsBySeverity } from './sortThreatsBySeverity';
 import { useLocale, useT } from '../../i18n';
@@ -19,12 +20,18 @@ export function ThreatListPanel({ threats }: ThreatListPanelProps) {
   const nodes = useDiagramStore(selectActiveNodes);
   const framework = useDiagramStore((s) => s.activeFramework);
   const openManualThreatEditor = useDiagramStore((s) => s.openManualThreatEditor);
+  const findings = useDiagramStore((s) => s.findings);
 
   const [hideSuppressed, setHideSuppressed] = useState(false);
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
 
   const suppressedCount = threats.filter((t) => isSuppressed(t)).length;
   const activeCount = threats.length - suppressedCount;
-  const visible = hideSuppressed ? threats.filter((t) => !isSuppressed(t)) : threats;
+  const verified = threats.filter((t) => findingsForThreat(findings, t).length > 0);
+  // 実証された脅威が無くなったら（別のプロジェクトを開いた等）絞り込みを解く
+  const showVerifiedOnly = verifiedOnly && verified.length > 0;
+  const base = showVerifiedOnly ? verified : threats;
+  const visible = hideSuppressed ? base.filter((t) => !isSuppressed(t)) : base;
 
   return (
     <div className="flex flex-col h-full">
@@ -47,6 +54,23 @@ export function ThreatListPanel({ threats }: ThreatListPanelProps) {
             {activeCount} ISSUES
           </span>
         </div>
+        {verified.length > 0 && (
+          <button
+            onClick={() => setVerifiedOnly((v) => !v)}
+            aria-pressed={showVerifiedOnly}
+            title={t('threats.threatCard.pentestVerifiedHint')}
+            className={`mt-3 flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded border transition-colors ${
+              showVerifiedOnly
+                ? 'bg-slate-200 text-slate-900 border-slate-200'
+                : 'bg-slate-700/60 text-slate-200 border-slate-500 hover:border-slate-300'
+            }`}
+          >
+            <BadgeCheck size={12} />
+            {showVerifiedOnly
+              ? t('threats.list.verifiedShowAll')
+              : t('threats.list.verifiedOnly', { count: verified.length })}
+          </button>
+        )}
         {suppressedCount > 0 && (
           <button
             onClick={() => setHideSuppressed((v) => !v)}

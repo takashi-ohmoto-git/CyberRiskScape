@@ -75,6 +75,8 @@ export const enThreats: Partial<Record<TranslationKey, string>> = {
   'threats.list.addScenario': 'Add scenario',
   'threats.list.suppressedShow': 'Show {count} suppressed',
   'threats.list.suppressedHide': 'Hide {count} suppressed',
+  'threats.list.verifiedOnly': 'Show only the {count} verified attack techniques',
+  'threats.list.verifiedShowAll': 'Show all threats',
   'threats.list.empty': 'No threats detected',
   'threats.list.typeTarget': '{type} type (no matching node)',
   'threats.list.wholeProject': 'Whole project',
