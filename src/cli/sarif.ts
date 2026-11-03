@@ -172,6 +172,7 @@ const LOST_IN_CONVERSION: Record<Finding['source']['format'], string[]> = {
   xccdf: ['pass/notapplicable/notchecked results', 'rule descriptions and fix text', 'target facts'],
   arf: ['pass/notapplicable/notchecked results', 'rule descriptions and fix text', 'target facts'],
   oval: ['definitions evaluated as not vulnerable', 'test details and collected items'],
+  pentest: ['evidence and request/response details (kept in the source product)', 'summary and remediation text'],
 };
 
 /** 外部製品の指摘を製品ごとの run にする（docs/architecture.md §8.3）。 */

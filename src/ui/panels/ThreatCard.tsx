@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   AlertTriangle,
+  BadgeCheck,
   BookOpen,
   ChevronDown,
   ChevronRight,
@@ -23,6 +24,7 @@ import { getComplianceMap } from '../../compliance/loader/bundledComplianceMap';
 import { makeComplianceKey } from '../../compliance/loader/loadComplianceMap';
 import type { StandardId } from '../../compliance/schema/complianceItem';
 import { summarizeAppliesTo } from './appliesToSummary';
+import { findingsForThreat } from '../../features/pentest-import/matchFindings';
 import { useRuleLookup } from './useRuleLookup';
 import { threatCardDomId } from './threatCardDomId';
 import { useLocale, useT, type Locale, type TranslationKey } from '../../i18n';
@@ -70,6 +72,7 @@ interface ThreatCardProps {
 export function ThreatCard({ threat, targetName, collapsible }: ThreatCardProps) {
   const openManualThreatEditor = useDiagramStore((s) => s.openManualThreatEditor);
   const removeManualThreat = useDiagramStore((s) => s.removeManualThreat);
+  const findings = useDiagramStore((s) => s.findings);
   const t = useT();
   const [locale] = useLocale();
   const { getRule, getSource } = useRuleLookup();
@@ -83,6 +86,10 @@ export function ThreatCard({ threat, targetName, collapsible }: ThreatCardProps)
       if (!next.delete(i)) next.add(i);
       return next;
     });
+
+  // ペンテストで実際に成立が確かめられた指摘（製品は重複を除いて並べる）
+  const pentestFindings = useMemo(() => findingsForThreat(findings, threat), [findings, threat]);
+  const pentestProducts = [...new Set(pentestFindings.map((f) => f.source.product))];
 
   const isManual = threat.origin === 'manual';
   // 「抑制」（淡色化）扱いは受容/誤検知のみ。回避/低減/移転は表示維持。
@@ -121,6 +128,15 @@ export function ThreatCard({ threat, targetName, collapsible }: ThreatCardProps)
             </span>
           )}
         </span>
+        {pentestProducts.length > 0 && (
+          <span
+            title={t('threats.threatCard.pentestVerifiedHint')}
+            className="shrink-0 text-xs font-bold px-2 py-0.5 rounded bg-slate-700/60 text-slate-200 border border-slate-500 inline-flex items-center gap-1"
+          >
+            <BadgeCheck size={12} />
+            {t('threats.threatCard.pentestVerified', { product: pentestProducts.join(', ') })}
+          </span>
+        )}
         {hasAssumption && (
           <span title={t('threatCard.assumption.badge')} className="shrink-0 text-amber-300">
             <AlertTriangle size={12} />
@@ -209,6 +225,15 @@ export function ThreatCard({ threat, targetName, collapsible }: ThreatCardProps)
               <AlertTriangle size={10} /> {t('threatCard.assumption.badge')}
             </span>
           )}
+          {pentestProducts.length > 0 && (
+            <span
+              className="text-xs bg-slate-700/60 text-slate-200 px-2 py-0.5 rounded font-bold inline-flex items-center gap-1 whitespace-nowrap border border-slate-500"
+              title={t('threats.threatCard.pentestVerifiedHint')}
+            >
+              <BadgeCheck size={10} />{' '}
+              {t('threats.threatCard.pentestVerified', { product: pentestProducts.join(', ') })}
+            </span>
+          )}
           {!isManual && threat.suppression && (
             <span
               className={`text-xs px-2 py-0.5 rounded border font-bold ${RISK_TREATMENT_BADGE[threat.suppression.status]}`}
@@ -225,6 +250,18 @@ export function ThreatCard({ threat, targetName, collapsible }: ThreatCardProps)
         {threat.name ?? threat.category}
       </h4>
       <p className="text-xs text-slate-400 leading-relaxed">{threat.description}</p>
+
+      {pentestFindings.length > 0 && (
+        <ul className="mt-2 space-y-0.5">
+          {pentestFindings.map((f) => (
+            <li key={f.id} className="text-xs text-slate-300 leading-snug">
+              {f.title ?? f.externalId}
+              {f.resource?.label && <span className="text-slate-500"> · {f.resource.label}</span>}
+              {f.observedAt && <span className="text-slate-500"> · {f.observedAt.slice(0, 10)}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
 
       {!isManual && threat.assumptionFlags && threat.assumptionFlags.length > 0 && (
         <div className="mt-2 p-2 rounded-lg bg-amber-500/5 border border-amber-500/20 space-y-1">

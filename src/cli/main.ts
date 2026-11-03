@@ -41,6 +41,8 @@ import {
   importFindings,
 } from './importFindings';
 import { parseScap } from '../features/scap-import/parseScap';
+import { importPentest, pentestReportToJson, pentestReportToMarkdown } from './importPentest';
+import { parseRegistry } from '../features/pentest-import/parseRegistry';
 import { MAX_FILE_BYTES } from './readEvidence';
 import { buildFindingsReport, evaluateFindingsGate } from '../features/findings-report/buildFindingsReport';
 import { BUNDLED_AITECH_MAP, BUNDLED_FINDING_MAP } from '../features/findings-report/findingMap';
@@ -132,6 +134,7 @@ const USAGE = `使い方:
   import-repo <dir> [options]
   import-prowler <project.json> --ocsf <file> [options]
   import-findings <project.json> --format <xccdf|arf|oval> --in <file> [options]
+  import-pentest <project.json> --in <registry.yaml> [options]
   import-conjur <policy.yml> [options]
   import-shodan <export.json[.gz]> [options]
   import-scopesentry <export.json> [options]
@@ -207,6 +210,12 @@ import-findings のオプション（SCAP の結果（XCCDF 1.1/1.2・ARF 1.1・
   --report <md|json>                            報告の形式（既定: md。標準出力）
   -o, --out <file>                              指摘を保存したプロジェクト JSON の出力先（指定しなければ書き出さない）。
                                                 保存した指摘は analyze --format sarif --with-findings で書き出せる
+
+import-pentest のオプション（ペンテストの指摘の台帳 YAML のうち status が open の指摘を、共通モデルの指摘としてプロジェクト JSON に保存する。取り込み直しは scope 単位で置き換える。既存の脅威カードに載らない指摘は手動脅威（STRIDE）として足す。証拠・鍵は台帳に含めない）:
+  --in <registry.yaml>                          指摘の台帳 YAML（必須。64 MB まで）
+  --scope <scope>                               この scope の項目だけ取り込む（任意。他の scope の指摘は触らない）
+  --report <md|json>                            報告の形式（既定: md。標準出力）
+  -o, --out <file>                              指摘を保存したプロジェクト JSON の出力先（指定しなければ書き出さない）
 
 import-conjur のオプション（Conjur / Secrets Manager のポリシーから NHI と読み取り経路の図を L1 に作り、プロジェクト JSON を出力）:
   --locale <ja|en>                              ノード名の言語（既定: ja）
@@ -411,6 +420,7 @@ function parseCliArgs() {
       api: { type: 'string' },
       project: { type: 'string' },
       search: { type: 'string' },
+      scope: { type: 'string' },
       help: { type: 'boolean' },
     },
   });
@@ -806,6 +816,49 @@ ${USAGE}`);
   );
   process.stderr.write(
     `SCAP の結果を取り込みました（ホスト ${out.hosts.length} / 保存した指摘 ${out.stored} / 未結合のホスト ${out.hosts.filter((h) => !h.linked).length}）
+`,
+  );
+}
+
+/**
+ * `import-pentest`：ペンテストの指摘の台帳（YAML）を指摘としてプロジェクト JSON に保存する。
+ * 指摘を保存した JSON は `-o` に書き出し、報告（既定 md）は標準出力。
+ */
+function runImportPentest(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  if (!values.in) fail('--in <registry.yaml> を指定してください（指摘の台帳 YAML）。');
+  const report = parseEnum(values.report, IMPORT_PROWLER_REPORTS, 'report') ?? 'md';
+
+  let text = '';
+  try {
+    if (statSync(values.in).size > MAX_FILE_BYTES) {
+      fail(`ファイルが大きすぎます（上限 ${MAX_FILE_BYTES / 1024 / 1024} MB）: ${values.in}`);
+    }
+    text = readFileSync(values.in, 'utf-8');
+  } catch (e) {
+    fail(`ファイルを読み込めません: ${values.in}（${e instanceof Error ? e.message : String(e)}）`);
+  }
+  const parsed = parseRegistry(text);
+  if (!parsed.ok) fail(`${parsed.error}（${values.in}）`);
+
+  let out: ReturnType<typeof importPentest>;
+  try {
+    out = importPentest(readJsonFile(file), parsed.registry, { scope: values.scope });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  if (values.out) writeFileSync(values.out, JSON.stringify(out.project, null, 2), 'utf-8');
+  process.stdout.write(
+    `${report === 'json' ? JSON.stringify(pentestReportToJson(out), null, 2) : pentestReportToMarkdown(out)}
+`,
+  );
+  process.stderr.write(
+    `ペンテストの指摘を取り込みました（保存 ${out.stored} / 手動脅威 ${out.manualAdded} / 未結合 ${out.unlinked.length}）
 `,
   );
 }
@@ -1489,6 +1542,8 @@ function main(): void {
     runImportProwler(values, positionals);
   } else if (command === 'import-findings') {
     runImportFindings(values, positionals);
+  } else if (command === 'import-pentest') {
+    runImportPentest(values, positionals);
   } else if (command === 'import-conjur') {
     runImportConjur(values, positionals);
   } else if (command === 'import-shodan') {

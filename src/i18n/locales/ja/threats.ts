@@ -11,6 +11,9 @@ export const jaThreats = {
   'threats.threatCard.corroborationHint':
     '複数ソースが同一脅威を指摘しています（出典欄に全て掲載）。',
   'threats.threatCard.corroborationSources': '{count} ソース',
+  'threats.threatCard.pentestVerified': '{product} で実証',
+  'threats.threatCard.pentestVerifiedHint':
+    'このツールが実際に実行して成立した攻撃手段です。検証した範囲に限られ、網羅したものではありません。',
   'threats.threatCard.mitigationHeadingTiered': '緩和策（3 段階成熟度）',
   'threats.threatCard.mitigationHeading': '緩和策',
   'threats.threatCard.complianceHeading': 'コンプライアンス',

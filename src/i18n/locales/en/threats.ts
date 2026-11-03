@@ -9,6 +9,9 @@ export const enThreats: Partial<Record<TranslationKey, string>> = {
   'threats.threatCard.corroborationHint':
     'Multiple sources flag this same threat (all listed under References).',
   'threats.threatCard.corroborationSources': '{count} sources',
+  'threats.threatCard.pentestVerified': 'Verified by {product}',
+  'threats.threatCard.pentestVerifiedHint':
+    'An attack technique this tool actually executed successfully. Limited to what was tested; not exhaustive.',
   'threats.threatCard.mitigationHeadingTiered': 'Mitigations (3-tier maturity)',
   'threats.threatCard.mitigationHeading': 'Mitigations',
   'threats.threatCard.complianceHeading': 'Compliance',
