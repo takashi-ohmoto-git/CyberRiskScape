@@ -222,6 +222,7 @@ function findingRuns(results: LayerAnalysisResult[], findings: readonly Finding[
           linkedThreatIds,
           ...(f.observedAt ? { observedAt: f.observedAt } : {}),
           ...(f.resource ? { resource: f.resource } : {}),
+          ...(f.outcome ? { outcome: f.outcome } : {}),
         },
       };
     });

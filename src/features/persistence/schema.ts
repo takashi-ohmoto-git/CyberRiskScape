@@ -409,6 +409,7 @@ const PersistedFindingSchema = z.object({
     })
     .optional(),
   observedAt: z.string().max(40).optional(),
+  outcome: z.literal('attempted').optional(),
 });
 
 export const PersistedProjectSchema = z.object({

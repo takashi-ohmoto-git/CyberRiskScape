@@ -1104,6 +1104,8 @@ export interface Finding {
   resource?: { label: string; type?: string; region?: string };
   /** 製品が観測した時刻（ISO 8601）。 */
   observedAt?: string;
+  /** ペンテストで試行したが成立を確認していない指摘。無ければ成立を確認した指摘（実証）。 */
+  outcome?: 'attempted';
 }
 
 /** 保持する指摘の上限（docs/architecture.md §8.2）。 */

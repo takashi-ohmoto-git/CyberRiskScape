@@ -8,6 +8,7 @@ import {
   ExternalLink,
   Layers,
   Pencil,
+  Crosshair,
   ShieldCheck,
   Target,
   Trash2,
@@ -89,7 +90,8 @@ export function ThreatCard({ threat, targetName, collapsible }: ThreatCardProps)
 
   // ペンテストで実際に成立が確かめられた指摘（製品は重複を除いて並べる）
   const pentestFindings = useMemo(() => findingsForThreat(findings, threat), [findings, threat]);
-  const pentestProducts = [...new Set(pentestFindings.map((f) => f.source.product))];
+  const pentestProducts = [...new Set(pentestFindings.filter((f) => f.outcome !== 'attempted').map((f) => f.source.product))];
+  const attemptedProducts = [...new Set(pentestFindings.filter((f) => f.outcome === 'attempted').map((f) => f.source.product))];
 
   const isManual = threat.origin === 'manual';
   // 「抑制」（淡色化）扱いは受容/誤検知のみ。回避/低減/移転は表示維持。
@@ -135,6 +137,15 @@ export function ThreatCard({ threat, targetName, collapsible }: ThreatCardProps)
           >
             <BadgeCheck size={12} />
             {t('threats.threatCard.pentestVerified', { product: pentestProducts.join(', ') })}
+          </span>
+        )}
+        {attemptedProducts.length > 0 && (
+          <span
+            title={t('threats.threatCard.pentestAttemptedHint')}
+            className="shrink-0 text-xs font-bold px-2 py-0.5 rounded bg-slate-800/60 text-slate-300 border border-dashed border-slate-500 inline-flex items-center gap-1"
+          >
+            <Crosshair size={12} />
+            {t('threats.threatCard.pentestAttempted', { product: attemptedProducts.join(', ') })}
           </span>
         )}
         {hasAssumption && (
@@ -234,6 +245,15 @@ export function ThreatCard({ threat, targetName, collapsible }: ThreatCardProps)
               {t('threats.threatCard.pentestVerified', { product: pentestProducts.join(', ') })}
             </span>
           )}
+          {attemptedProducts.length > 0 && (
+            <span
+              className="text-xs bg-slate-800/60 text-slate-300 px-2 py-0.5 rounded font-bold inline-flex items-center gap-1 whitespace-nowrap border border-dashed border-slate-500"
+              title={t('threats.threatCard.pentestAttemptedHint')}
+            >
+              <Crosshair size={10} />{' '}
+              {t('threats.threatCard.pentestAttempted', { product: attemptedProducts.join(', ') })}
+            </span>
+          )}
           {!isManual && threat.suppression && (
             <span
               className={`text-xs px-2 py-0.5 rounded border font-bold ${RISK_TREATMENT_BADGE[threat.suppression.status]}`}
@@ -256,6 +276,9 @@ export function ThreatCard({ threat, targetName, collapsible }: ThreatCardProps)
           {pentestFindings.map((f) => (
             <li key={f.id} className="text-xs text-slate-300 leading-snug">
               {f.title ?? f.externalId}
+              {f.outcome === 'attempted' && (
+                <span className="text-slate-500"> · {t('threats.threatCard.pentestAttemptedTag')}</span>
+              )}
               {f.resource?.label && <span className="text-slate-500"> · {f.resource.label}</span>}
               {f.observedAt && <span className="text-slate-500"> · {f.observedAt.slice(0, 10)}</span>}
             </li>

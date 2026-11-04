@@ -108,6 +108,7 @@ findings:
 ```
 
 - `status` is `open`, `fixed`, or `false-positive`. **Only `open` is imported.**
+- With `outcome: attempted`, the card shows "Attempted by ARTEX" instead of "Verified" (the technique was tried, but success was not confirmed). If omitted, the card shows "Verified". Use "Show only the attempted attack techniques" in the threat list to narrow down.
 - `canonicalIds` ties a finding to existing threat cards. A finding with no card to land on is added as a manual threat (STRIDE).
 - `node` is the diagram's C number or a node ID (labels cannot be used).
 - `description` and `mitigation` can also be written.
@@ -128,6 +129,7 @@ findings:
 
 - **Limited to what the CyberRiskScape developer actually verified; not exhaustive.** A technique that is not listed does not mean it fails or that the system is safe.
 - "Verified" is **a fact that the technique was executed against that target and succeeded**. It is not proof that attackers will always use that technique.
+- "Attempted" is **a record that the technique was tried against that target**. It shows neither that it succeeded nor that it cannot succeed.
 - Results change with product version, configuration, and environment. The same technique may or may not work in another environment.
 - The sample diagram is **fictional** and is not an actual test environment.
 - CyberRiskScape has **no feature to run ARTEX**. It only integrates through a file (the registry YAML).

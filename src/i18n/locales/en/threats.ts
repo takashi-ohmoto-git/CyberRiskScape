@@ -12,6 +12,10 @@ export const enThreats: Partial<Record<TranslationKey, string>> = {
   'threats.threatCard.pentestVerified': 'Verified by {product}',
   'threats.threatCard.pentestVerifiedHint':
     'An attack technique this tool actually executed successfully. Limited to what was tested; not exhaustive.',
+  'threats.threatCard.pentestAttempted': 'Attempted by {product}',
+  'threats.threatCard.pentestAttemptedHint':
+    'A record that this tool tried this attack technique. Success was not confirmed. Techniques not tried are not necessarily safe.',
+  'threats.threatCard.pentestAttemptedTag': 'attempted',
   'threats.threatCard.mitigationHeadingTiered': 'Mitigations (3-tier maturity)',
   'threats.threatCard.mitigationHeading': 'Mitigations',
   'threats.threatCard.complianceHeading': 'Compliance',
@@ -76,6 +80,7 @@ export const enThreats: Partial<Record<TranslationKey, string>> = {
   'threats.list.suppressedShow': 'Show {count} suppressed',
   'threats.list.suppressedHide': 'Hide {count} suppressed',
   'threats.list.verifiedOnly': 'Show only the {count} verified attack techniques',
+  'threats.list.attemptedOnly': 'Show only the {count} attempted attack techniques',
   'threats.list.verifiedShowAll': 'Show all threats',
   'threats.list.empty': 'No threats detected',
   'threats.list.typeTarget': '{type} type (no matching node)',

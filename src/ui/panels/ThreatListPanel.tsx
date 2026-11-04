@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BadgeCheck, Eye, EyeOff, Plus, ShieldAlert } from 'lucide-react';
+import { BadgeCheck, Crosshair, Eye, EyeOff, Plus, ShieldAlert } from 'lucide-react';
 import { isSuppressed, type ThreatView } from '../../core/model/types';
 import { getNodeDisplayName } from '../../core/model/nodeDisplay';
 import { getComponentRegistry } from '../../component-library/defaultRegistry';
@@ -23,14 +23,16 @@ export function ThreatListPanel({ threats }: ThreatListPanelProps) {
   const findings = useDiagramStore((s) => s.findings);
 
   const [hideSuppressed, setHideSuppressed] = useState(false);
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [pentestFilter, setPentestFilter] = useState<'verified' | 'attempted' | null>(null);
 
   const suppressedCount = threats.filter((t) => isSuppressed(t)).length;
   const activeCount = threats.length - suppressedCount;
-  const verified = threats.filter((t) => findingsForThreat(findings, t).length > 0);
-  // 実証された脅威が無くなったら（別のプロジェクトを開いた等）絞り込みを解く
-  const showVerifiedOnly = verifiedOnly && verified.length > 0;
-  const base = showVerifiedOnly ? verified : threats;
+  const verified = threats.filter((t) => findingsForThreat(findings, t).some((f) => f.outcome !== 'attempted'));
+  const attempted = threats.filter((t) => findingsForThreat(findings, t).some((f) => f.outcome === 'attempted'));
+  // 該当する脅威が無くなったら（別のプロジェクトを開いた等）絞り込みを解く
+  const showVerifiedOnly = pentestFilter === 'verified' && verified.length > 0;
+  const showAttemptedOnly = pentestFilter === 'attempted' && attempted.length > 0;
+  const base = showVerifiedOnly ? verified : showAttemptedOnly ? attempted : threats;
   const visible = hideSuppressed ? base.filter((t) => !isSuppressed(t)) : base;
 
   return (
@@ -56,7 +58,7 @@ export function ThreatListPanel({ threats }: ThreatListPanelProps) {
         </div>
         {verified.length > 0 && (
           <button
-            onClick={() => setVerifiedOnly((v) => !v)}
+            onClick={() => setPentestFilter(showVerifiedOnly ? null : 'verified')}
             aria-pressed={showVerifiedOnly}
             title={t('threats.threatCard.pentestVerifiedHint')}
             className={`mt-3 flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded border transition-colors ${
@@ -69,6 +71,23 @@ export function ThreatListPanel({ threats }: ThreatListPanelProps) {
             {showVerifiedOnly
               ? t('threats.list.verifiedShowAll')
               : t('threats.list.verifiedOnly', { count: verified.length })}
+          </button>
+        )}
+        {attempted.length > 0 && (
+          <button
+            onClick={() => setPentestFilter(showAttemptedOnly ? null : 'attempted')}
+            aria-pressed={showAttemptedOnly}
+            title={t('threats.threatCard.pentestAttemptedHint')}
+            className={`mt-3 flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded border border-dashed transition-colors ${
+              showAttemptedOnly
+                ? 'bg-slate-200 text-slate-900 border-slate-200'
+                : 'bg-slate-800/60 text-slate-300 border-slate-500 hover:border-slate-300'
+            }`}
+          >
+            <Crosshair size={12} />
+            {showAttemptedOnly
+              ? t('threats.list.verifiedShowAll')
+              : t('threats.list.attemptedOnly', { count: attempted.length })}
           </button>
         )}
         {suppressedCount > 0 && (

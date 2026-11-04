@@ -14,6 +14,10 @@ export const jaThreats = {
   'threats.threatCard.pentestVerified': '{product} で実証',
   'threats.threatCard.pentestVerifiedHint':
     'このツールが実際に実行して成立した攻撃手段です。検証した範囲に限られ、網羅したものではありません。',
+  'threats.threatCard.pentestAttempted': '{product} 試行',
+  'threats.threatCard.pentestAttemptedHint':
+    'このツールが攻撃手段として試行した記録です。成立は確認されていません。試行していない手段が安全という意味でもありません。',
+  'threats.threatCard.pentestAttemptedTag': '試行',
   'threats.threatCard.mitigationHeadingTiered': '緩和策（3 段階成熟度）',
   'threats.threatCard.mitigationHeading': '緩和策',
   'threats.threatCard.complianceHeading': 'コンプライアンス',
@@ -78,6 +82,7 @@ export const jaThreats = {
   'threats.list.suppressedShow': '抑制済み {count} 件を表示',
   'threats.list.suppressedHide': '抑制済み {count} 件を非表示',
   'threats.list.verifiedOnly': '実証された攻撃手段 {count} 件だけを表示',
+  'threats.list.attemptedOnly': '試行された攻撃手段 {count} 件だけを表示',
   'threats.list.verifiedShowAll': 'すべての脅威を表示',
   'threats.list.empty': '脅威は検出されませんでした',
   'threats.list.typeTarget': '{type}型（該当ノードなし）',
