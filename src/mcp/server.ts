@@ -155,6 +155,7 @@ const JUDGEMENT_FIELDS = [
   'controlStatuses',
   'manualThreats',
   'findings',
+  'assets',
   'projectMeta',
 ] as const satisfies readonly (keyof PersistedProject)[];
 

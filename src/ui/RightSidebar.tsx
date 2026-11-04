@@ -27,6 +27,7 @@ export function RightSidebar({ threats }: RightSidebarProps) {
   const selectedEdgeId = useDiagramStore((s) => s.selectedEdgeId);
   const selectedBoundaryId = useDiagramStore(selectPrimaryBoundaryId);
   const selectedAnnotationId = useDiagramStore((s) => s.selectedAnnotationId);
+  const isAssetViewOpen = useDiagramStore((s) => s.isAssetViewOpen);
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? null;
   const selectedEdge = edges.find((e) => e.id === selectedEdgeId) ?? null;
@@ -35,7 +36,10 @@ export function RightSidebar({ threats }: RightSidebarProps) {
 
   return (
     <aside className="w-96 bg-slate-900 border-l border-slate-800 flex flex-col z-50 shadow-2xl overflow-y-auto animate-in slide-in-from-right duration-300">
-      {selectedAnnotation ? (
+      {isAssetViewOpen ? (
+        // Asset タブは読み取り専用。行を選ぶと、そのノードの脅威と指摘だけを見せる
+        <ThreatListPanel threats={selectedNode ? threats.filter((t) => t.nodeId === selectedNode.id) : threats} />
+      ) : selectedAnnotation ? (
         <AnnotationPanel annotation={selectedAnnotation} />
       ) : selectedBoundary ? (
         <BoundaryPanel boundary={selectedBoundary} />

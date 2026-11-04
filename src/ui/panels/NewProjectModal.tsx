@@ -71,6 +71,7 @@ export function NewProjectModal() {
       riskScores: s.riskScores,
       controlStatuses: s.controlStatuses,
       findings: s.findings,
+      assets: s.assets,
     });
     const base = projectFilename(s.projectMeta.name);
     if (!isFileSystemAccessSupported()) {

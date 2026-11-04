@@ -1111,6 +1111,50 @@ export interface Finding {
 /** 保持する指摘の上限（docs/architecture.md §8.2）。 */
 export const MAX_FINDINGS = 5000;
 
+/** 資産の出どころ（docs/architecture.md §8.7）。取り込み直しは product × scope の単位で置き換える。 */
+export interface AssetSource {
+  product: string;
+  scope?: string;
+  /** API 定義から来た資産か（観測ではなく宣言）。 */
+  definition?: boolean;
+  importedAt: string;
+}
+
+/** エンドポイントのパラメータ。値は持たない。 */
+export interface AssetParam {
+  name: string;
+  location: string;
+}
+
+/** 資産が結びつく図のノード。 */
+export interface AssetSubject {
+  layer: LayerKey;
+  nodeId: string;
+}
+
+/** 外部製品から取り込んだ資産 1 件（サービスまたはエンドポイント）。ホストはサービスから派生する。 */
+export interface Asset {
+  id: string;
+  source: AssetSource;
+  kind: 'service' | 'endpoint';
+  host: string;
+  ip?: string;
+  domain?: string;
+  port?: number;
+  serviceName?: string;
+  /** 製品が報告した技術（未検証）。 */
+  technologies?: string[];
+  method?: string;
+  url?: string;
+  params?: AssetParam[];
+  /** 結びついたノード。無ければ未対応。 */
+  subject?: AssetSubject;
+  observedAt?: string;
+}
+
+/** 保持する資産の上限（docs/architecture.md §8.7）。 */
+export const MAX_ASSETS = 5000;
+
 /** リスク評価各項目の 3 段階スコア（1=低 / 2=中 / 3=高）。 */
 export type RiskValue = 1 | 2 | 3;
 

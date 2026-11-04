@@ -14,6 +14,7 @@ import type {
   DragState,
   RiskScore,
   ElementKind,
+  Asset,
   FrameworkView,
   GroupDragState,
   LayerData,
@@ -339,6 +340,8 @@ export interface HydratePayload {
   controlStatuses?: Record<string, ControlStatusState>;
   /** 外部製品の指摘（docs/architecture.md §8.2）。省略時は指摘なし。 */
   findings?: Finding[];
+  /** 取り込んだ資産（docs/architecture.md §8.7）。省略時は空。 */
+  assets?: Asset[];
   /** ElementalID 採番カウンタ。省略時は全レイヤー 0 始まり。 */
   idCounters?: LayerSeqCounters;
 }
@@ -403,6 +406,9 @@ interface DiagramState {
    * 保存時に書き戻すために保持する（Undo/Redo の対象外）。
    */
   findings: Finding[];
+  assets: Asset[];
+  /** Asset タブを表示中か（保存しない）。脅威の絞り込み（activeFramework）とは別の状態。 */
+  isAssetViewOpen: boolean;
   /** 手動脅威エディタモーダルの開閉状態（UI 表示用、永続化しない）。 */
   isManualThreatModalOpen: boolean;
   /** 編集中の手動脅威 id。null = 新規追加モード。 */
@@ -495,6 +501,7 @@ interface DiagramState {
 
   // ---- actions: mode ----
   setActiveFramework: (f: FrameworkView) => void;
+  openAssetView: () => void;
   toggleFocusMode: () => void;
 
   // ---- actions: layer ----
@@ -690,6 +697,8 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   riskScores: {},
   controlStatuses: {},
   findings: [],
+  assets: [],
+  isAssetViewOpen: false,
   isManualThreatModalOpen: false,
   editingManualThreatId: null,
 
@@ -731,6 +740,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       riskScores: payload.riskScores ?? {},
       controlStatuses: payload.controlStatuses ?? {},
       findings: payload.findings ?? [],
+      assets: payload.assets ?? [],
       isHydrated: true,
       selectedNodeIds: [],
       selectedEdgeId: null,
@@ -1018,7 +1028,8 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     }));
   },
 
-  setActiveFramework: (f) => set({ activeFramework: f }),
+  setActiveFramework: (f) => set({ activeFramework: f, isAssetViewOpen: false }),
+  openAssetView: () => set({ isAssetViewOpen: true }),
   toggleFocusMode: () => set((s) => ({ isFocusMode: !s.isFocusMode })),
 
   setActiveLayer: (layer) =>
@@ -1338,6 +1349,8 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       riskScores: {},
       controlStatuses: {},
       findings: [],
+      assets: [],
+      isAssetViewOpen: false,
       isNewProjectConfirmOpen: false,
       selectedNodeIds: [],
       selectedEdgeId: null,

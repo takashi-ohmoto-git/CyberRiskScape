@@ -43,6 +43,8 @@ import {
 import { parseScap } from '../features/scap-import/parseScap';
 import { importPentest, pentestReportToJson, pentestReportToMarkdown } from './importPentest';
 import { parseRegistry } from '../features/pentest-import/parseRegistry';
+import { parseArtexEndpoints, parseArtexServices } from '../features/asset-import/artexAssets';
+import { artexAssetsReportToJson, artexAssetsReportToMarkdown, importArtexAssets } from './importArtexAssets';
 import { MAX_FILE_BYTES } from './readEvidence';
 import { buildFindingsReport, evaluateFindingsGate } from '../features/findings-report/buildFindingsReport';
 import { BUNDLED_AITECH_MAP, BUNDLED_FINDING_MAP } from '../features/findings-report/findingMap';
@@ -135,6 +137,7 @@ const USAGE = `使い方:
   import-prowler <project.json> --ocsf <file> [options]
   import-findings <project.json> --format <xccdf|arf|oval> --in <file> [options]
   import-pentest <project.json> --in <registry.yaml> [options]
+  import-artex-assets <project.json> --scope <scope> [--services <file>] [--endpoints <file>] [options]
   import-conjur <policy.yml> [options]
   import-shodan <export.json[.gz]> [options]
   import-scopesentry <export.json> [options]
@@ -216,6 +219,15 @@ import-pentest のオプション（ペンテストの指摘の台帳 YAML の�
   --scope <scope>                               この scope の項目だけ取り込む（任意。他の scope の指摘は触らない）
   --report <md|json>                            報告の形式（既定: md。標準出力）
   -o, --out <file>                              指摘を保存したプロジェクト JSON の出力先（指定しなければ書き出さない）
+
+import-artex-assets のオプション（ARTEX の資産 API の JSON から、サービスとエンドポイントを Asset タブ用に保存する。パラメータの値は保存しない）:
+  --services <file>                             GET /api/assets?type=service&task_id=N の JSON（--endpoints とどちらか必須）
+  --endpoints <file>                            GET /api/assets?type=endpoint&task_id=N の JSON
+  --scope <scope>                               置き換えの範囲（必須。例: task-3）
+  --map <file>                                  ホストとノードの対応表（任意。JSON {"<IP|ドメイン>": "<C番号|ノード ID>"}）
+  --node <C番号|ID>                             対応表に無いホストを結びつけるノード（任意。無ければ未対応）
+  --report <md|json>                            報告の形式（既定: md。標準出力）
+  -o, --out <file>                              資産を保存したプロジェクト JSON の出力先（指定しなければ報告のみ）
 
 import-conjur のオプション（Conjur / Secrets Manager のポリシーから NHI と読み取り経路の図を L1 に作り、プロジェクト JSON を出力）:
   --locale <ja|en>                              ノード名の言語（既定: ja）
@@ -403,6 +415,8 @@ function parseCliArgs() {
       ocsf: { type: 'string' },
       in: { type: 'string' },
       map: { type: 'string' },
+      services: { type: 'string' },
+      endpoints: { type: 'string' },
       report: { type: 'string' },
       root: { type: 'string' },
       vars: { type: 'string' },
@@ -861,6 +875,47 @@ ${USAGE}`);
     `ペンテストの指摘を取り込みました（保存 ${out.stored} / 手動脅威 ${out.manualAdded} / 未結合 ${out.unlinked.length}）
 `,
   );
+}
+
+/**
+ * `import-artex-assets`：ARTEX の資産 API の JSON をプロジェクト JSON に保存する（docs/architecture.md §8.7）。
+ */
+function runImportArtexAssets(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) fail(`入力ファイルを指定してください。\n\n${USAGE}`);
+  if (!values.services && !values.endpoints) fail('--services か --endpoints のどちらかを指定してください。');
+  if (!values.scope) fail('--scope を指定してください（例: task-3）。');
+  const report = parseEnum(values.report, IMPORT_PROWLER_REPORTS, 'report') ?? 'md';
+
+  const services = values.services ? parseArtexServices(readJsonFile(values.services)) : ({ ok: true, records: [], skippedBySource: 0 } as const);
+  if (!services.ok) fail(`${services.error}（${values.services}）`);
+  const endpoints = values.endpoints ? parseArtexEndpoints(readJsonFile(values.endpoints)) : ({ ok: true, records: [], skippedBySource: 0 } as const);
+  if (!endpoints.ok) fail(`${endpoints.error}（${values.endpoints}）`);
+
+  let nodeMap: Record<string, string> = {};
+  if (values.map) {
+    const m = z.record(z.string(), z.string()).safeParse(readJsonFile(values.map));
+    if (!m.success) fail('--map は {"<IP|ドメイン>": "<C番号|ノード ID>"} の JSON にしてください。');
+    nodeMap = m.data;
+  }
+
+  let out: ReturnType<typeof importArtexAssets>;
+  try {
+    out = importArtexAssets(
+      readJsonFile(file),
+      {
+        services: services.records,
+        endpoints: endpoints.records,
+        skippedBySource: services.skippedBySource + endpoints.skippedBySource,
+      },
+      { scope: values.scope, nodeMap, ...(values.node ? { node: values.node } : {}) },
+    );
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  if (values.out) writeFileSync(values.out, JSON.stringify(out.project, null, 2), 'utf-8');
+  process.stdout.write(`${report === 'json' ? JSON.stringify(artexAssetsReportToJson(out), null, 2) : artexAssetsReportToMarkdown(out)}\n`);
+  process.stderr.write(`資産を取り込みました（サービス ${out.services} / エンドポイント ${out.endpoints} / 未対応のホスト ${out.unlinkedHosts.length}）\n`);
 }
 
 /**
@@ -1544,6 +1599,8 @@ function main(): void {
     runImportFindings(values, positionals);
   } else if (command === 'import-pentest') {
     runImportPentest(values, positionals);
+  } else if (command === 'import-artex-assets') {
+    runImportArtexAssets(values, positionals);
   } else if (command === 'import-conjur') {
     runImportConjur(values, positionals);
   } else if (command === 'import-shodan') {

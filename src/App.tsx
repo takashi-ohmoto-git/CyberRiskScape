@@ -20,6 +20,7 @@ import { useLocale, useT } from './i18n';
 import { Canvas } from './core/canvas/Canvas';
 import { Legend } from './core/canvas/Legend';
 import { LeftSidebar } from './ui/LeftSidebar';
+import { AssetView } from './ui/panels/AssetView';
 import { RightSidebar } from './ui/RightSidebar';
 import { TopControls } from './ui/TopControls';
 import { LinkingIndicator } from './ui/LinkingIndicator';
@@ -58,6 +59,7 @@ export default function App() {
   const suppressions = useDiagramStore((s) => s.suppressions);
   const riskScores = useDiagramStore((s) => s.riskScores);
   const controlStatuses = useDiagramStore((s) => s.controlStatuses);
+  const isAssetViewOpen = useDiagramStore((s) => s.isAssetViewOpen);
   const isLibraryInspectorOpen = useDiagramStore((s) => s.isLibraryInspectorOpen);
   const closeLibraryInspector = useDiagramStore((s) => s.closeLibraryInspector);
 
@@ -111,8 +113,9 @@ export default function App() {
       {!isFocusMode && <LeftSidebar threats={threats} />}
 
       <Canvas threats={threats} worldOverlay={<EntryProbeLayer threats={threats} />}>
+        <AssetView />
         <TopControls />
-        <Legend />
+        {!isAssetViewOpen && <Legend />}
         {linkingFromId && <LinkingIndicator />}
       </Canvas>
 

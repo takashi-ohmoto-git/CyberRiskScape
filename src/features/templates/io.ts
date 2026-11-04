@@ -79,7 +79,7 @@ function projectToTemplate(
     name,
     layer: stripSeq(layers[key] as unknown as LayerData),
     // 指摘はノードに結びつくので、図だけ取り込むと失われる。プロジェクト全体として開けるように渡す
-    ...(project.findings?.length ? { project } : {}),
+    ...(project.findings?.length || project.assets?.length ? { project } : {}),
   };
 }
 

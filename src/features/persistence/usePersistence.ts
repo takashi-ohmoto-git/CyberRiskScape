@@ -62,7 +62,8 @@ export function usePersistence(): void {
         state.suppressions !== prev.suppressions ||
         state.riskScores !== prev.riskScores ||
         state.controlStatuses !== prev.controlStatuses ||
-        state.findings !== prev.findings;
+        state.findings !== prev.findings ||
+        state.assets !== prev.assets;
       if (!changed) return;
       pendingSnapshot = {
         layers: state.layers,
@@ -76,6 +77,7 @@ export function usePersistence(): void {
         riskScores: state.riskScores,
         controlStatuses: state.controlStatuses,
         findings: state.findings,
+        assets: state.assets,
       };
       if (timer !== null) clearTimeout(timer);
       timer = setTimeout(flush, DEBOUNCE_MS);

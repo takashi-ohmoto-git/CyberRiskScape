@@ -27,6 +27,8 @@ export function TopControls() {
   const [locale, setLocale] = useLocale();
   const activeFramework = useDiagramStore((s) => s.activeFramework);
   const isFocusMode = useDiagramStore((s) => s.isFocusMode);
+  const isAssetViewOpen = useDiagramStore((s) => s.isAssetViewOpen);
+  const openAssetView = useDiagramStore((s) => s.openAssetView);
   const setActiveFramework = useDiagramStore((s) => s.setActiveFramework);
   const toggleFocusMode = useDiagramStore((s) => s.toggleFocusMode);
   const openAnalytics = useDiagramStore((s) => s.openAnalytics);
@@ -51,7 +53,7 @@ export function TopControls() {
             key={f}
             onClick={() => setActiveFramework(f)}
             className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${
-              activeFramework === f
+              !isAssetViewOpen && activeFramework === f
                 ? 'bg-blue-600 text-white shadow-lg'
                 : 'hover:bg-slate-800 text-slate-500'
             }`}
@@ -59,6 +61,18 @@ export function TopControls() {
             {t(FRAMEWORK_VIEW_LABEL_KEYS[f])}
           </button>
         ))}
+        <div className="w-px my-1 bg-slate-700" />
+        <button
+          onClick={openAssetView}
+          aria-pressed={isAssetViewOpen}
+          className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${
+            isAssetViewOpen
+              ? 'bg-blue-600 text-white shadow-lg'
+              : 'hover:bg-slate-800 text-slate-500'
+          }`}
+        >
+          {t('project.assetView.tab')}
+        </button>
       </div>
 
       <div className="flex gap-1 bg-slate-900/90 backdrop-blur-xl p-1.5 rounded-2xl border border-slate-700 shadow-2xl">

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CRYPTO_TERMINATIONS, FINDING_FORMATS, MAX_FINDINGS } from '../../core/model/types';
+import { CRYPTO_TERMINATIONS, FINDING_FORMATS, MAX_ASSETS, MAX_FINDINGS } from '../../core/model/types';
 import {
   AgencyLevelSchema,
   AuthTypeSchema,
@@ -412,6 +412,28 @@ const PersistedFindingSchema = z.object({
   outcome: z.literal('attempted').optional(),
 });
 
+const PersistedAssetSchema = z.object({
+  id: z.string().min(1).max(3000),
+  source: z.object({
+    product: z.string().min(1).max(100),
+    scope: z.string().min(1).max(200).optional(),
+    definition: z.boolean().optional(),
+    importedAt: z.string().max(40),
+  }),
+  kind: z.enum(['service', 'endpoint']),
+  host: z.string().min(1).max(FINDING_TEXT_MAX),
+  ip: z.string().max(100).optional(),
+  domain: z.string().max(FINDING_TEXT_MAX).optional(),
+  port: z.number().int().min(1).max(65535).optional(),
+  serviceName: z.string().max(200).optional(),
+  technologies: z.array(z.string().max(200)).max(100).optional(),
+  method: z.string().max(20).optional(),
+  url: z.string().max(2000).optional(),
+  params: z.array(z.object({ name: z.string().max(200), location: z.string().max(50) })).max(200).optional(),
+  subject: z.object({ layer: LayerKeySchema, nodeId: z.string().min(1) }).optional(),
+  observedAt: z.string().max(40).optional(),
+});
+
 export const PersistedProjectSchema = z.object({
   schemaVersion: z.literal(PERSISTED_PROJECT_SCHEMA_VERSION),
   /**
@@ -473,6 +495,7 @@ export const PersistedProjectSchema = z.object({
    * schemaVersion は据え置き（optional 追加は後方互換）。
    */
   findings: z.array(PersistedFindingSchema).max(MAX_FINDINGS).optional(),
+  assets: z.array(PersistedAssetSchema).max(MAX_ASSETS).optional(),
   updatedAt: z.number().int().nonnegative(),
 });
 

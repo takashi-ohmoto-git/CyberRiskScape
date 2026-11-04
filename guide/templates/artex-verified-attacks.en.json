@@ -570,5 +570,243 @@
     ],
     "L2": [],
     "L3": []
-  }
+  },
+  "assets": [
+    {
+      "id": "ARTEX:sample:service:203.0.113.10:443:https",
+      "source": {
+        "product": "ARTEX",
+        "scope": "sample",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "kind": "service",
+      "host": "203.0.113.10",
+      "ip": "203.0.113.10",
+      "domain": "www.example.com",
+      "port": 443,
+      "serviceName": "https",
+      "technologies": [
+        "nginx"
+      ],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n2"
+      },
+      "observedAt": "2026-11-01"
+    },
+    {
+      "id": "ARTEX:sample:service:203.0.113.10:80:http",
+      "source": {
+        "product": "ARTEX",
+        "scope": "sample",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "kind": "service",
+      "host": "203.0.113.10",
+      "ip": "203.0.113.10",
+      "domain": "www.example.com",
+      "port": 80,
+      "serviceName": "http",
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n2"
+      },
+      "observedAt": "2026-11-01"
+    },
+    {
+      "id": "ARTEX:sample:service:203.0.113.20:443:https",
+      "source": {
+        "product": "ARTEX",
+        "scope": "sample",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "kind": "service",
+      "host": "203.0.113.20",
+      "ip": "203.0.113.20",
+      "domain": "api.example.com",
+      "port": 443,
+      "serviceName": "https",
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n5"
+      },
+      "observedAt": "2026-11-01"
+    },
+    {
+      "id": "ARTEX:sample:service:203.0.113.30:443:https",
+      "source": {
+        "product": "ARTEX",
+        "scope": "sample",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "kind": "service",
+      "host": "203.0.113.30",
+      "ip": "203.0.113.30",
+      "domain": "admin.example.com",
+      "port": 443,
+      "serviceName": "https",
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n6"
+      },
+      "observedAt": "2026-11-01"
+    },
+    {
+      "id": "ARTEX:sample:endpoint:GET:https://www.example.com/",
+      "source": {
+        "product": "ARTEX",
+        "scope": "sample",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "kind": "endpoint",
+      "host": "www.example.com",
+      "method": "GET",
+      "url": "https://www.example.com/",
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n2"
+      },
+      "observedAt": "2026-11-01"
+    },
+    {
+      "id": "ARTEX:sample:endpoint:GET:https://www.example.com/backup/",
+      "source": {
+        "product": "ARTEX",
+        "scope": "sample",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "kind": "endpoint",
+      "host": "www.example.com",
+      "method": "GET",
+      "url": "https://www.example.com/backup/",
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n2"
+      },
+      "observedAt": "2026-11-01"
+    },
+    {
+      "id": "ARTEX:sample:endpoint:GET:https://admin.example.com/?page=login",
+      "source": {
+        "product": "ARTEX",
+        "scope": "sample",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "kind": "endpoint",
+      "host": "admin.example.com",
+      "method": "GET",
+      "url": "https://admin.example.com/?page=login",
+      "params": [
+        {
+          "name": "page",
+          "location": "query"
+        }
+      ],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n6"
+      },
+      "observedAt": "2026-11-01"
+    },
+    {
+      "id": "ARTEX:sample:endpoint:POST:https://admin.example.com/?page=login",
+      "source": {
+        "product": "ARTEX",
+        "scope": "sample",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "kind": "endpoint",
+      "host": "admin.example.com",
+      "method": "POST",
+      "url": "https://admin.example.com/?page=login",
+      "params": [
+        {
+          "name": "page",
+          "location": "query"
+        },
+        {
+          "name": "user",
+          "location": "body"
+        },
+        {
+          "name": "password",
+          "location": "body"
+        }
+      ],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n6"
+      },
+      "observedAt": "2026-11-01"
+    },
+    {
+      "id": "ARTEX:sample:endpoint:GET:https://admin.example.com/?page=export",
+      "source": {
+        "product": "ARTEX",
+        "scope": "sample",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "kind": "endpoint",
+      "host": "admin.example.com",
+      "method": "GET",
+      "url": "https://admin.example.com/?page=export",
+      "params": [
+        {
+          "name": "page",
+          "location": "query"
+        }
+      ],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n6"
+      },
+      "observedAt": "2026-11-01"
+    },
+    {
+      "id": "ARTEX:sample:endpoint:GET:https://api.example.com/v1/members",
+      "source": {
+        "product": "ARTEX",
+        "scope": "sample",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "kind": "endpoint",
+      "host": "api.example.com",
+      "method": "GET",
+      "url": "https://api.example.com/v1/members",
+      "params": [
+        {
+          "name": "page",
+          "location": "query"
+        }
+      ],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n5"
+      },
+      "observedAt": "2026-11-01"
+    },
+    {
+      "id": "ARTEX:sample:endpoint:GET:https://api.example.com/v1/members/{id}",
+      "source": {
+        "product": "ARTEX",
+        "scope": "sample",
+        "importedAt": "2026-11-04T00:00:00.000Z"
+      },
+      "kind": "endpoint",
+      "host": "api.example.com",
+      "method": "GET",
+      "url": "https://api.example.com/v1/members/{id}",
+      "params": [
+        {
+          "name": "id",
+          "location": "path"
+        }
+      ],
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n5"
+      },
+      "observedAt": "2026-11-01"
+    }
+  ]
 }
