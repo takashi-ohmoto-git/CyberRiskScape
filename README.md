@@ -4,7 +4,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Threat rules](https://img.shields.io/badge/threat%20rules-272-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-1762%20passing-brightgreen.svg)](#development)
+[![Tests](https://img.shields.io/badge/tests-1843%20passing-brightgreen.svg)](#development)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 **English** | [日本語](README.ja.md)
@@ -94,6 +94,7 @@ For the full list of products and how they connect, see [Integrations](guide/int
   and a PQC verdict (based on the CRYPTREC Cryptographic Algorithm List, Table 2, and NIST FIPS
   203/204/205), and a simple report (CSV) can be exported. A CycloneDX SBOM / CBOM can also be read to
   check a node's cryptographic libraries and the PQC verdicts of its algorithms ([guide](guide/pqc-migration.md))
+- **Component (BOM) import and export** — save the components of a CycloneDX or SPDX SBOM, CBOM, or AI BOM, link them to nodes, check them in the Asset tab, and export them as SPDX 2.3 and CycloneDX 1.7 ([guide](guide/sbom.md))
 - **Layer copy** — copy a depth layer to the PQC layer (or back) as a draft
 - **Operational posture record** — record per node what a diagram cannot show on its own:
   logging (collection, retention, who can review), encryption at rest, patch status, account
@@ -191,7 +192,7 @@ npm run test:watch   # watch mode
 npx tsc --noEmit     # type check (strict)
 ```
 
-The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,698 tests
+The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,843 tests
 currently pass.
 
 ---

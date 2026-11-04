@@ -58,7 +58,7 @@ With the sample open, press **Asset** at the top of the screen. You can switch t
 | **Requests** | Developers | A method + URL |
 | **API** | Developers and API owners | A method + URL, grouped by API |
 
-Pressing a row narrows the threat list on the right to that node's threats. Press the same row again to undo this. Pressing a threat tab (ALL, etc.) returns to the diagram.
+Pressing a row narrows the threat list on the right to that node's threats. Press the same row again to undo this. Pressing a threat tab (ALL, etc.) returns to the diagram. For the fourth view, **SBOM**, see the [SBOM, CBOM, and AI BOM guide](sbom.md).
 
 ![The Requests view of the Asset tab](../assets/guide/artex/asset-requests.en.png)
 

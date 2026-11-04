@@ -4,7 +4,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Threat rules](https://img.shields.io/badge/threat%20rules-272-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-1762%20passing-brightgreen.svg)](#開発)
+[![Tests](https://img.shields.io/badge/tests-1843%20passing-brightgreen.svg)](#開発)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 [English](README.md) | **日本語**
@@ -81,6 +81,7 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
   暗号を終端・復号するノードで区間に分けて分析。区間ごとに終端判定・蓋然性・PQC 判定
   （CRYPTREC 暗号リスト表 2・NIST FIPS 203/204/205 に基づく）を出し、簡易レポート（CSV）を
   出力。CycloneDX の SBOM／CBOM から、ノードの暗号ライブラリ・アルゴリズムの PQC 判定も確認できる（[ガイド](guide/pqc-migration.ja.md)）
+- **部品（BOM）の取り込みと書き出し** — CycloneDX・SPDX の SBOM／CBOM／AI BOM の部品を保存してノードに結びつけ、Asset タブで確認し、SPDX 2.3・CycloneDX 1.7 で書き出す（[ガイド](guide/sbom.ja.md)）
 - **レイヤー間の複製** — 深度レイヤーと PQC レイヤーの間で、下書きとして図を複製
 - **運用状況の記録** — 図だけでは分からないことをノードごとに記録：ログ（取得・保持期間・確認できる主体）、
   保管時の暗号化、パッチの適用状況、アカウント棚卸し、保有データの必要性と件数規模、最終点検日。
@@ -177,7 +178,7 @@ npm run test:watch   # テスト watch モード
 npx tsc --noEmit     # 型チェック（strict）
 ```
 
-変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,698 件の
+変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,843 件の
 テストが通ります。
 
 ---

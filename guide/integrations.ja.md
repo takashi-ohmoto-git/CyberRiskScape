@@ -53,6 +53,7 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | **Anthropic `defending-code-reference-harness`** | `THREAT_MODEL.md` 互換の書き出し | 脅威モデルを、AI による脆弱性診断の入力にする | [Security Context に変換する](security-context.ja.md) |
 | **Veracode** | 構成例（Veracode CLI・Findings API と、`THREAT_MODEL.md`・`findings-report`・Postman 書き出しの組み合わせ） | SAST・DAST の指摘を AI で修正する流れに、脅威モデルを前提知識・優先順位・回帰テストとして組み込む・Postman 書き出しを DAST の検査範囲にする | [Veracode の指摘を AI で直す](veracode-remediation.ja.md) |
 | **Prowler** | 検査結果の取り込み（`import-prowler`。AWS の検査の OCSF 出力・CLI のみ） | 「未入力のため仮定」の運用状況・攻撃面属性を実測に置き換える・FAIL の検査を図の脅威と突き合わせる | [Prowler の検査結果を構成図に載せる](prowler.ja.md) |
+| **CycloneDX・SPDX** | 部品の取り込み（`import-sbom`。CLI のみ）・書き出し（`export-spdx`・`export-sbom-ai`。画面からも可） | SBOM・CBOM・AI BOM の部品をノードに結びつけ、Asset タブで確かめて、標準形式で書き出す（[ガイド](sbom.ja.md)） |
 | **ARTEX** | 台帳 YAML の取り込み（`import-pentest`）・資産の取り込み（`import-artex-assets`。Asset タブに表示）。CLI のみ | 実際に実行して成立した攻撃手段を脅威カードに「実証」として表示する（開発者が検証した内容に限り網羅しない） | [ARTEX が実際に実行した攻撃手段を脅威カードで見る](artex.ja.md) |
 | **Cisco AI Defense**（skill-scanner / mcp-scanner） | 検査結果の突き合わせ（`findings-report --skill-scanner / --mcp-scanner`。結果ファイル・CLI のみ） | エージェントスキル・MCP サーバーの検査結果を、AITech 対応表を介して図の脅威と突き合わせる・描き漏れを見つける | [エージェントスキル・MCP サーバーの検査結果を脅威モデルと突き合わせる](ai-scanners.ja.md) |
 | **Velociraptor** | 収集結果（展開したフォルダー）の取り込み・調査計画書への artifact の手がかり・EDR / DFIR サーバーのステンシルと脅威ルール | 侵害が疑われるときに、攻撃経路上のノードで集める artifact を決め、収集結果をノードに重ねて報告する | [侵害の疑いがあるときに、脅威モデルで調べる範囲を決め、結果を報告する](compromise-investigation.ja.md) |
