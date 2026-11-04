@@ -48,6 +48,25 @@ Sample files: [`templates/artex-verified-attacks.en.json`](templates/artex-verif
 
 ---
 
+### 2.1 See assets in the Asset tab
+
+With the sample open, press **Asset** at the top of the screen. You can switch the assets ARTEX found between three views.
+
+| View | Intended for | One row is |
+|---|---|---|
+| **Hosts & domains** | Infrastructure and security staff | An IP or domain (with its open ports) |
+| **Requests** | Developers | A method + URL |
+| **API** | Developers and API owners | A method + URL, grouped by API |
+
+Pressing a row narrows the threat list on the right to that node's threats. Press the same row again to undo this. Pressing a threat tab (ALL, etc.) returns to the diagram.
+
+![The Requests view of the Asset tab](../assets/guide/artex/asset-requests.en.png)
+
+An endpoint appears under API if either of the following applies, and under Requests otherwise. Whether the URL contains `/api/` is not used.
+
+- The linked node is an API type (backend API, API gateway, etc.)
+- It came from an API definition (no import path currently brings API definitions in as assets)
+
 ## 3. Attack techniques ARTEX actually executed
 
 > **This list is limited to what the CyberRiskScape developer actually verified. It is not exhaustive.** Attack steps and values are not included.
@@ -125,14 +144,39 @@ findings:
 
 ---
 
+### 5.3 Import assets
+
+Save the JSON responses from ARTEX's asset API and import them into a project JSON.
+
+```bash
+node dist-cli/main.js import-artex-assets my-project.json \
+  --services services.json --endpoints endpoints.json \
+  --scope task-3 --map asset-map.json -o with-assets.json
+```
+
+- `--services`: the response of `GET /api/assets?type=service&task_id=N`
+- `--endpoints`: the response of `GET /api/assets?type=endpoint&task_id=N`
+- Either one is enough. You can open the URL in a logged-in browser and save the result
+- `--scope`: the replacement scope (required). Only assets in the same scope are replaced
+- `--map`: a host-to-node table (`{"<IP or domain>": "<C number or node ID>"}`). `--node` links hosts missing from the table to one node. Hosts with neither are shown as **Unmapped**; nothing is linked by guessing
+- `-o`: where to write the project JSON containing the assets
+
+**What is and is not imported**
+
+- Only the **name and location** of parameters are saved, never their values. URL credentials and query values whose names look secret are also masked
+- Only assets with `task_source` of `agent` are used, because the others were not observed in that task
+- Internal IPs and URLs still end up in the project JSON. **Check the contents before sharing the file**
+- ARTEX's response files can contain parameter values, so delete them after importing
+
 ## 6. Limits
 
 - **Limited to what the CyberRiskScape developer actually verified; not exhaustive.** A technique that is not listed does not mean it fails or that the system is safe.
 - "Verified" is **a fact that the technique was executed against that target and succeeded**. It is not proof that attackers will always use that technique.
 - "Attempted" is **a record that the technique was tried against that target**. It shows neither that it succeeded nor that it cannot succeed.
-- Results change with product version, configuration, and environment. The same technique may or may not work in another environment.
+- The Asset tab lists **only the assets that were observed**. An asset that is not listed may still exist. The technologies column is the product's report and is unverified.
+- Results vary with product versiononfiguration, and environment. The same technique may or may not work in another environment.
 - The sample diagram is **fictional** and is not an actual test environment.
-- CyberRiskScape has **no feature to run ARTEX**. It only integrates through a file (the registry YAML).
+- CyberRiskScape has **no feature to run ARTEX**. It only integrates through files (the registry YAML and asset JSON).
 - Whether ARTEX's results are correct is for you to confirm.
 
 ---
