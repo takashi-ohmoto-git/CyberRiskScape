@@ -1,4 +1,4 @@
-import type { Asset, AssetSubject, ComponentTypeId, DiagramNode, LayerKey } from '../../core/model/types';
+import type { Asset, AssetSubject, BomComponent, ComponentTypeId, DiagramNode, LayerKey } from '../../core/model/types';
 
 /**
  * 資産を Asset タブの 3 つの見方（ホスト・ドメイン／リクエスト／API）に振り分ける（docs/architecture.md §8.7）。
@@ -41,6 +41,8 @@ export interface AssetViews {
   hosts: HostRow[];
   requests: Asset[];
   apis: ApiGroup[];
+  /** SBOM の見方。CBOM・AI BOM の部品も kind で区別して載る。 */
+  sbom: BomComponent[];
 }
 
 const latest = (a: string | undefined, b: string | undefined) => (a && b ? (a > b ? a : b) : (a ?? b));
@@ -84,7 +86,11 @@ function buildHosts(services: readonly Asset[]): HostRow[] {
 const endpointOrder = (a: Asset, b: Asset) =>
   (a.url ?? '').localeCompare(b.url ?? '') || (a.method ?? '').localeCompare(b.method ?? '');
 
-export function buildAssetViews(assets: readonly Asset[], nodes: readonly AssetViewNode[]): AssetViews {
+export function buildAssetViews(
+  assets: readonly Asset[],
+  nodes: readonly AssetViewNode[],
+  bomComponents: readonly BomComponent[] = [],
+): AssetViews {
   const endpoints = assets.filter((a) => a.kind === 'endpoint');
   const apiEndpoints = endpoints.filter((a) => isApi(a, nodes));
   const groups = new Map<string, ApiGroup>();
@@ -104,5 +110,6 @@ export function buildAssetViews(assets: readonly Asset[], nodes: readonly AssetV
     hosts: buildHosts(assets.filter((a) => a.kind === 'service')),
     requests: endpoints.filter((a) => !isApi(a, nodes)).sort(endpointOrder),
     apis: [...groups.values()].map((g) => ({ ...g, endpoints: [...g.endpoints].sort(endpointOrder) })),
+    sbom: [...bomComponents].sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)),
   };
 }

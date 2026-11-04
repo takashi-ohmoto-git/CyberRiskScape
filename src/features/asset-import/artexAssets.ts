@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { toIsoTimestamp } from '../../core/model/assetIdentity';
 import type { AssetParam } from '../../core/model/types';
 
 /**
@@ -9,11 +10,13 @@ import type { AssetParam } from '../../core/model/types';
  * - `task_source` が `agent` の資産だけを使う。`company` はタスク作成時に企業の資産が結びついただけで、
  *   そのタスクの観測ではない
  * - URL の資格情報と、名前が秘密に見えるクエリの値は伏せる
+ * - 観測時刻は ISO 8601 にそろえる
  */
 
 const Text = z.string().max(2000);
 
 const RecordSchema = z.object({
+  id: z.number().int().optional(),
   type: z.enum(['service', 'endpoint']),
   task_source: z.string().max(50).optional(),
   domain: Text.optional(),
@@ -30,6 +33,8 @@ const RecordSchema = z.object({
 const ResponseSchema = z.object({ assets: z.array(RecordSchema).max(100_000) });
 
 export interface ArtexServiceRecord {
+  /** ARTEX 側の資産 ID。 */
+  artexId?: string;
   host: string;
   ip?: string;
   domain?: string;
@@ -40,6 +45,8 @@ export interface ArtexServiceRecord {
 }
 
 export interface ArtexEndpointRecord {
+  /** ARTEX 側の資産 ID。 */
+  artexId?: string;
   host: string;
   method: string;
   url: string;
@@ -68,6 +75,14 @@ export function sanitizeUrl(raw: string): string {
     })
     .join('&');
   return `${noCredentials.slice(0, q)}?${masked}${fragment.length > 0 ? `#${fragment.join('#')}` : ''}`;
+}
+
+function common(a: { id?: number; last_seen?: string }) {
+  const observedAt = a.last_seen ? toIsoTimestamp(a.last_seen) : undefined;
+  return {
+    ...(a.id !== undefined ? { artexId: String(a.id) } : {}),
+    ...(observedAt ? { observedAt } : {}),
+  };
 }
 
 function hostFromUrl(url: string | undefined): string | undefined {
@@ -100,7 +115,7 @@ export function parseArtexServices(raw: unknown): ParseArtexResult<ArtexServiceR
         ...(a.port ? { port: a.port } : {}),
         ...(a.service_name ? { serviceName: a.service_name.toLowerCase() } : {}),
         technologies: a.technologies ?? [],
-        ...(a.last_seen ? { observedAt: a.last_seen } : {}),
+        ...common(a),
       },
     ];
   });
@@ -121,7 +136,7 @@ export function parseArtexEndpoints(raw: unknown): ParseArtexResult<ArtexEndpoin
         url: sanitizeUrl(a.url),
         ...(a.port ? { port: a.port } : {}),
         params: (a.params ?? []).map((p) => ({ name: p.name, location: p.location ?? '' })),
-        ...(a.last_seen ? { observedAt: a.last_seen } : {}),
+        ...common(a),
       },
     ];
   });

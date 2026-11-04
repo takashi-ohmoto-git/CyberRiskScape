@@ -37,6 +37,9 @@ import { buildThreatReport, toCsv, toJson, toDCRHThreatModelMarkdown } from '../
 import { triggerDownload } from '../features/export/download';
 import { toPostmanCollection } from '../features/postman-export/toPostmanCollection';
 import { buildSbomForAi } from '../features/sbom-ai/buildSbomForAi';
+import { buildSpdx } from '../features/bom-import/buildSpdx';
+import { listBomComponents } from '../features/bom-import/listBomComponents';
+import { version as APP_VERSION } from '../../package.json';
 import { buildTestPlan } from '../features/test-plan/buildTestPlan';
 import { testPlanToMarkdown } from '../features/test-plan/testPlanOutput';
 import { buildRoe } from '../features/roe-export/buildRoe';
@@ -111,6 +114,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
         controlStatuses: s.controlStatuses,
         findings: s.findings,
         assets: s.assets,
+        bomComponents: s.bomComponents,
       });
       setSaveState('saved');
       setTimeout(() => setSaveState('idle'), 1500);
@@ -121,7 +125,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
     }
   };
 
-  const handleExportReport = (format: 'csv' | 'json' | 'DCRH-threat-model' | 'postman' | 'test-plan' | 'investigation-plan' | 'roe' | 'attack-navigator' | 'sbom-ai') => {
+  const handleExportReport = (format: 'csv' | 'json' | 'DCRH-threat-model' | 'postman' | 'test-plan' | 'investigation-plan' | 'roe' | 'attack-navigator' | 'sbom-ai' | 'spdx') => {
     const s = useDiagramStore.getState();
     const input = {
       threats,
@@ -140,12 +144,25 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
     } else if (format === 'postman') {
       const { collection } = toPostmanCollection(input);
       triggerDownload(`${base}.postman_collection.json`, JSON.stringify(collection, null, 2), 'application/json');
+    } else if (format === 'spdx') {
+      const parts = listBomComponents(
+        s.bomComponents,
+        LAYER_KEYS.flatMap((layer) => s.layers[layer].nodes.map((node) => ({ node, layer }))),
+      );
+      const { document } = buildSpdx(parts, {
+        name: s.projectMeta.systemName.trim() || s.projectMeta.name.trim() || 'unknown',
+        created: new Date().toISOString(),
+        documentNamespace: `urn:uuid:${crypto.randomUUID()}`,
+        toolVersion: APP_VERSION,
+      });
+      triggerDownload(`${base.replace(/^threat-report/, 'sbom')}.spdx.json`, JSON.stringify(document, null, 2), 'application/json');
     } else if (format === 'sbom-ai') {
       const bom = buildSbomForAi(input, {
         includeThreats: sbomIncludeThreats,
         timestamp: new Date().toISOString(),
         serialNumber: `urn:uuid:${crypto.randomUUID()}`,
         locale,
+        importedComponents: s.bomComponents,
       });
       triggerDownload(
         `${base.replace(/^threat-report/, 'sbom-ai')}.cdx.json`,
@@ -405,6 +422,13 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                   >
                     <Download size={12} className="text-emerald-400 shrink-0" />
                     {t('project.sidebar.exportNavigator')}
+                  </button>
+                  <button
+                    onClick={() => handleExportReport('spdx')}
+                    className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold bg-slate-900/40 border-slate-800 text-slate-300 hover:border-slate-600"
+                  >
+                    <Download size={12} className="text-emerald-400 shrink-0" />
+                    {t('project.sidebar.exportSpdx')}
                   </button>
                   <div className="space-y-1">
                     <button

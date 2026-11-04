@@ -575,10 +575,22 @@
     {
       "id": "ARTEX:sample:service:203.0.113.10:443:https",
       "source": {
+        "format": "artex-assets",
         "product": "ARTEX",
         "scope": "sample",
         "importedAt": "2026-11-04T00:00:00.000Z"
       },
+      "externalId": "service:203.0.113.10:443:https",
+      "identifiers": [
+        {
+          "scheme": "ip",
+          "value": "203.0.113.10"
+        },
+        {
+          "scheme": "fqdn",
+          "value": "www.example.com"
+        }
+      ],
       "kind": "service",
       "host": "203.0.113.10",
       "ip": "203.0.113.10",
@@ -592,15 +604,27 @@
         "layer": "L1",
         "nodeId": "n2"
       },
-      "observedAt": "2026-11-01"
+      "observedAt": "2026-11-01T00:00:00.000Z"
     },
     {
       "id": "ARTEX:sample:service:203.0.113.10:80:http",
       "source": {
+        "format": "artex-assets",
         "product": "ARTEX",
         "scope": "sample",
         "importedAt": "2026-11-04T00:00:00.000Z"
       },
+      "externalId": "service:203.0.113.10:80:http",
+      "identifiers": [
+        {
+          "scheme": "ip",
+          "value": "203.0.113.10"
+        },
+        {
+          "scheme": "fqdn",
+          "value": "www.example.com"
+        }
+      ],
       "kind": "service",
       "host": "203.0.113.10",
       "ip": "203.0.113.10",
@@ -611,15 +635,27 @@
         "layer": "L1",
         "nodeId": "n2"
       },
-      "observedAt": "2026-11-01"
+      "observedAt": "2026-11-01T00:00:00.000Z"
     },
     {
       "id": "ARTEX:sample:service:203.0.113.20:443:https",
       "source": {
+        "format": "artex-assets",
         "product": "ARTEX",
         "scope": "sample",
         "importedAt": "2026-11-04T00:00:00.000Z"
       },
+      "externalId": "service:203.0.113.20:443:https",
+      "identifiers": [
+        {
+          "scheme": "ip",
+          "value": "203.0.113.20"
+        },
+        {
+          "scheme": "fqdn",
+          "value": "api.example.com"
+        }
+      ],
       "kind": "service",
       "host": "203.0.113.20",
       "ip": "203.0.113.20",
@@ -630,15 +666,27 @@
         "layer": "L1",
         "nodeId": "n5"
       },
-      "observedAt": "2026-11-01"
+      "observedAt": "2026-11-01T00:00:00.000Z"
     },
     {
       "id": "ARTEX:sample:service:203.0.113.30:443:https",
       "source": {
+        "format": "artex-assets",
         "product": "ARTEX",
         "scope": "sample",
         "importedAt": "2026-11-04T00:00:00.000Z"
       },
+      "externalId": "service:203.0.113.30:443:https",
+      "identifiers": [
+        {
+          "scheme": "ip",
+          "value": "203.0.113.30"
+        },
+        {
+          "scheme": "fqdn",
+          "value": "admin.example.com"
+        }
+      ],
       "kind": "service",
       "host": "203.0.113.30",
       "ip": "203.0.113.30",
@@ -649,15 +697,27 @@
         "layer": "L1",
         "nodeId": "n6"
       },
-      "observedAt": "2026-11-01"
+      "observedAt": "2026-11-01T00:00:00.000Z"
     },
     {
       "id": "ARTEX:sample:endpoint:GET:https://www.example.com/",
       "source": {
+        "format": "artex-assets",
         "product": "ARTEX",
         "scope": "sample",
         "importedAt": "2026-11-04T00:00:00.000Z"
       },
+      "externalId": "endpoint:GET:https://www.example.com/",
+      "identifiers": [
+        {
+          "scheme": "fqdn",
+          "value": "www.example.com"
+        },
+        {
+          "scheme": "url",
+          "value": "https://www.example.com/"
+        }
+      ],
       "kind": "endpoint",
       "host": "www.example.com",
       "method": "GET",
@@ -666,15 +726,27 @@
         "layer": "L1",
         "nodeId": "n2"
       },
-      "observedAt": "2026-11-01"
+      "observedAt": "2026-11-01T00:00:00.000Z"
     },
     {
       "id": "ARTEX:sample:endpoint:GET:https://www.example.com/backup/",
       "source": {
+        "format": "artex-assets",
         "product": "ARTEX",
         "scope": "sample",
         "importedAt": "2026-11-04T00:00:00.000Z"
       },
+      "externalId": "endpoint:GET:https://www.example.com/backup/",
+      "identifiers": [
+        {
+          "scheme": "fqdn",
+          "value": "www.example.com"
+        },
+        {
+          "scheme": "url",
+          "value": "https://www.example.com/backup/"
+        }
+      ],
       "kind": "endpoint",
       "host": "www.example.com",
       "method": "GET",
@@ -683,15 +755,27 @@
         "layer": "L1",
         "nodeId": "n2"
       },
-      "observedAt": "2026-11-01"
+      "observedAt": "2026-11-01T00:00:00.000Z"
     },
     {
       "id": "ARTEX:sample:endpoint:GET:https://admin.example.com/?page=login",
       "source": {
+        "format": "artex-assets",
         "product": "ARTEX",
         "scope": "sample",
         "importedAt": "2026-11-04T00:00:00.000Z"
       },
+      "externalId": "endpoint:GET:https://admin.example.com/?page=login",
+      "identifiers": [
+        {
+          "scheme": "fqdn",
+          "value": "admin.example.com"
+        },
+        {
+          "scheme": "url",
+          "value": "https://admin.example.com/?page=login"
+        }
+      ],
       "kind": "endpoint",
       "host": "admin.example.com",
       "method": "GET",
@@ -706,15 +790,27 @@
         "layer": "L1",
         "nodeId": "n6"
       },
-      "observedAt": "2026-11-01"
+      "observedAt": "2026-11-01T00:00:00.000Z"
     },
     {
       "id": "ARTEX:sample:endpoint:POST:https://admin.example.com/?page=login",
       "source": {
+        "format": "artex-assets",
         "product": "ARTEX",
         "scope": "sample",
         "importedAt": "2026-11-04T00:00:00.000Z"
       },
+      "externalId": "endpoint:POST:https://admin.example.com/?page=login",
+      "identifiers": [
+        {
+          "scheme": "fqdn",
+          "value": "admin.example.com"
+        },
+        {
+          "scheme": "url",
+          "value": "https://admin.example.com/?page=login"
+        }
+      ],
       "kind": "endpoint",
       "host": "admin.example.com",
       "method": "POST",
@@ -737,15 +833,27 @@
         "layer": "L1",
         "nodeId": "n6"
       },
-      "observedAt": "2026-11-01"
+      "observedAt": "2026-11-01T00:00:00.000Z"
     },
     {
       "id": "ARTEX:sample:endpoint:GET:https://admin.example.com/?page=export",
       "source": {
+        "format": "artex-assets",
         "product": "ARTEX",
         "scope": "sample",
         "importedAt": "2026-11-04T00:00:00.000Z"
       },
+      "externalId": "endpoint:GET:https://admin.example.com/?page=export",
+      "identifiers": [
+        {
+          "scheme": "fqdn",
+          "value": "admin.example.com"
+        },
+        {
+          "scheme": "url",
+          "value": "https://admin.example.com/?page=export"
+        }
+      ],
       "kind": "endpoint",
       "host": "admin.example.com",
       "method": "GET",
@@ -760,15 +868,27 @@
         "layer": "L1",
         "nodeId": "n6"
       },
-      "observedAt": "2026-11-01"
+      "observedAt": "2026-11-01T00:00:00.000Z"
     },
     {
       "id": "ARTEX:sample:endpoint:GET:https://api.example.com/v1/members",
       "source": {
+        "format": "artex-assets",
         "product": "ARTEX",
         "scope": "sample",
         "importedAt": "2026-11-04T00:00:00.000Z"
       },
+      "externalId": "endpoint:GET:https://api.example.com/v1/members",
+      "identifiers": [
+        {
+          "scheme": "fqdn",
+          "value": "api.example.com"
+        },
+        {
+          "scheme": "url",
+          "value": "https://api.example.com/v1/members"
+        }
+      ],
       "kind": "endpoint",
       "host": "api.example.com",
       "method": "GET",
@@ -783,15 +903,27 @@
         "layer": "L1",
         "nodeId": "n5"
       },
-      "observedAt": "2026-11-01"
+      "observedAt": "2026-11-01T00:00:00.000Z"
     },
     {
       "id": "ARTEX:sample:endpoint:GET:https://api.example.com/v1/members/{id}",
       "source": {
+        "format": "artex-assets",
         "product": "ARTEX",
         "scope": "sample",
         "importedAt": "2026-11-04T00:00:00.000Z"
       },
+      "externalId": "endpoint:GET:https://api.example.com/v1/members/{id}",
+      "identifiers": [
+        {
+          "scheme": "fqdn",
+          "value": "api.example.com"
+        },
+        {
+          "scheme": "url",
+          "value": "https://api.example.com/v1/members/{id}"
+        }
+      ],
       "kind": "endpoint",
       "host": "api.example.com",
       "method": "GET",
@@ -806,7 +938,129 @@
         "layer": "L1",
         "nodeId": "n5"
       },
-      "observedAt": "2026-11-01"
+      "observedAt": "2026-11-01T00:00:00.000Z"
+    }
+  ],
+  "bomComponents": [
+    {
+      "id": "cyclonedx:sample:pkg:npm/express@4.19.2",
+      "source": {
+        "format": "cyclonedx",
+        "product": "CycloneDX",
+        "scope": "sample",
+        "importedAt": "2026-11-05T00:00:00.000Z"
+      },
+      "externalId": "pkg:npm/express@4.19.2",
+      "identifiers": [
+        {
+          "scheme": "purl",
+          "value": "pkg:npm/express@4.19.2"
+        }
+      ],
+      "kind": "software",
+      "sourceType": "library",
+      "name": "express",
+      "version": "4.19.2",
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n5"
+      },
+      "observedAt": "2026-11-05T00:00:00.000Z"
+    },
+    {
+      "id": "cyclonedx:sample:pkg:npm/jsonwebtoken@9.0.2",
+      "source": {
+        "format": "cyclonedx",
+        "product": "CycloneDX",
+        "scope": "sample",
+        "importedAt": "2026-11-05T00:00:00.000Z"
+      },
+      "externalId": "pkg:npm/jsonwebtoken@9.0.2",
+      "identifiers": [
+        {
+          "scheme": "purl",
+          "value": "pkg:npm/jsonwebtoken@9.0.2"
+        }
+      ],
+      "kind": "software",
+      "sourceType": "library",
+      "name": "jsonwebtoken",
+      "version": "9.0.2",
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n5"
+      },
+      "observedAt": "2026-11-05T00:00:00.000Z"
+    },
+    {
+      "id": "cyclonedx:sample:pkg:npm/ejs@3.1.10",
+      "source": {
+        "format": "cyclonedx",
+        "product": "CycloneDX",
+        "scope": "sample",
+        "importedAt": "2026-11-05T00:00:00.000Z"
+      },
+      "externalId": "pkg:npm/ejs@3.1.10",
+      "identifiers": [
+        {
+          "scheme": "purl",
+          "value": "pkg:npm/ejs@3.1.10"
+        }
+      ],
+      "kind": "software",
+      "sourceType": "library",
+      "name": "ejs",
+      "version": "3.1.10",
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n2"
+      },
+      "observedAt": "2026-11-05T00:00:00.000Z"
+    },
+    {
+      "id": "cyclonedx:sample:alg-rsa-2048",
+      "source": {
+        "format": "cyclonedx",
+        "product": "CycloneDX",
+        "scope": "sample",
+        "importedAt": "2026-11-05T00:00:00.000Z"
+      },
+      "externalId": "alg-rsa-2048",
+      "identifiers": [],
+      "kind": "crypto",
+      "sourceType": "cryptographic-asset",
+      "name": "RSA-2048",
+      "crypto": {
+        "assetType": "algorithm",
+        "primitive": "signature",
+        "parameterSet": "2048",
+        "nistQuantumSecurityLevel": 0
+      },
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n5"
+      },
+      "observedAt": "2026-11-05T00:00:00.000Z"
+    },
+    {
+      "id": "cyclonedx:sample:sample-model",
+      "source": {
+        "format": "cyclonedx",
+        "product": "CycloneDX",
+        "scope": "sample",
+        "importedAt": "2026-11-05T00:00:00.000Z"
+      },
+      "externalId": "sample-model",
+      "identifiers": [],
+      "kind": "ai-model",
+      "sourceType": "machine-learning-model",
+      "name": "sample-support-model",
+      "version": "1.0",
+      "subject": {
+        "layer": "L1",
+        "nodeId": "n5"
+      },
+      "observedAt": "2026-11-05T00:00:00.000Z"
     }
   ]
 }

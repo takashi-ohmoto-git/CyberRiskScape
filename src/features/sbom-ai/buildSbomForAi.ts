@@ -1,4 +1,5 @@
-import type { DiagramEdge, DiagramNode, ThreatView } from '../../core/model/types';
+import type { BomComponent, DiagramEdge, DiagramNode, ThreatView } from '../../core/model/types';
+import { isExactVersion, purlOf } from '../../core/model/purl';
 import { isSuppressed } from '../../core/model/types';
 import { effectiveSeverity } from '../../core/model/risk';
 import { formatElementalId } from '../../core/model/elementalId';
@@ -48,6 +49,8 @@ export interface SbomForAiOptions {
   serialNumber: string;
   /** 型ラベル（無名ノードの名前）の言語。 */
   locale: Locale;
+  /** 取り込んだ部品（CycloneDX・SPDX）。対象のレイヤーのノードか、未対応のものを載せる。 */
+  importedComponents?: readonly BomComponent[];
 }
 
 const NS = 'cyberriskscape:';
@@ -97,18 +100,51 @@ const ref = (id: string) => `node:${id}`;
 const bomLink = (serialNumber: string, bomRef: string) =>
   `urn:cdx:${serialNumber.replace(/^urn:uuid:/, '')}/1#${bomRef.replace(/[^A-Za-z0-9:._~-]/g, (c) => encodeURIComponent(c))}`;
 
-/** purl の版を付けてよい「固定された版」か。範囲指定（^ ~ >= * 等）は false。 */
-function isExactVersion(version: string, pinned: boolean | undefined): boolean {
-  return pinned !== false && /^\d[0-9A-Za-z.+_!-]*$/.test(version);
+/** 取り込んだ部品の、CycloneDX の `type`。元が CycloneDX ならその値を使う。 */
+const CYCLONEDX_TYPES = new Set([
+  'application', 'framework', 'library', 'container', 'platform', 'operating-system', 'device',
+  'device-driver', 'firmware', 'file', 'machine-learning-model', 'data', 'cryptographic-asset',
+]);
+function cycloneDxTypeOf(c: BomComponent): string {
+  if (c.kind === 'crypto') return 'cryptographic-asset';
+  if (c.kind === 'ai-model') return 'machine-learning-model';
+  if (c.kind === 'dataset') return 'data';
+  const lower = (c.sourceType ?? '').toLowerCase();
+  return CYCLONEDX_TYPES.has(lower) ? lower : 'library';
 }
 
-function purlOf(kind: 'npm' | 'pypi', name: string, version?: string): string {
-  const v = version ? `@${encodeURIComponent(version)}` : '';
-  if (kind === 'npm') {
-    const n = name.startsWith('@') ? `%40${name.slice(1)}` : name;
-    return `pkg:npm/${n}${v}`;
-  }
-  return `pkg:pypi/${name.toLowerCase().replace(/_/g, '-')}${v}`;
+const CRYPTO_ASSET_TYPES: Partial<Record<NonNullable<BomComponent['crypto']>['assetType'], string>> = {
+  algorithm: 'algorithm',
+  protocol: 'protocol',
+  certificate: 'certificate',
+  material: 'related-crypto-material',
+};
+
+/** 暗号資産の性質。CycloneDX の必須項目 `assetType` に当てはまらなければ付けない。 */
+function cryptoPropertiesOf(c: BomComponent): Json | undefined {
+  const p = c.crypto;
+  const assetType = p && CRYPTO_ASSET_TYPES[p.assetType];
+  if (!p || !assetType) return undefined;
+  return {
+    assetType,
+    ...(p.assetType === 'algorithm'
+      ? {
+          algorithmProperties: {
+            ...(p.parameterSet ? { parameterSetIdentifier: p.parameterSet } : {}),
+            ...(p.nistQuantumSecurityLevel !== undefined ? { nistQuantumSecurityLevel: p.nistQuantumSecurityLevel } : {}),
+          },
+        }
+      : {}),
+    ...(p.assetType === 'protocol'
+      ? {
+          protocolProperties: {
+            ...(p.protocolVersion ? { version: p.protocolVersion } : {}),
+            ...(p.cipherSuites ? { cipherSuites: p.cipherSuites.map((name) => ({ name })) } : {}),
+          },
+        }
+      : {}),
+    ...(p.assetType === 'certificate' && p.notValidAfter ? { certificateProperties: { notValidAfter: p.notValidAfter } } : {}),
+  };
 }
 
 export function buildSbomForAi(project: BuildThreatReportInput, opts: SbomForAiOptions): Json {
@@ -336,6 +372,33 @@ export function buildSbomForAi(project: BuildThreatReportInput, opts: SbomForAiO
         properties: props,
       });
     }
+  }
+
+  // 取り込んだ部品。同じノードにインベントリと同じ purl があれば出さない
+  const emittedPurls = new Set(components.flatMap((c) => (typeof c.purl === 'string' && typeof c['bom-ref'] === 'string' ? [`${c['bom-ref'].split(':')[1]}\u0000${c.purl}`] : [])));
+  for (const c of opts.importedComponents ?? []) {
+    const nodeId = c.subject?.nodeId;
+    if (nodeId !== undefined && !memberIds.has(nodeId)) continue;
+    const purl = c.identifiers.find((i) => i.scheme === 'purl')?.value;
+    const cpe = c.identifiers.find((i) => i.scheme === 'cpe')?.value;
+    const sha256 = c.identifiers.find((i) => i.scheme === 'sha-256')?.value;
+    if (purl && nodeId !== undefined && emittedPurls.has(`${nodeId}\u0000${purl}`)) continue;
+    const bomPartRef = `bom:${c.id}`;
+    const cryptoProperties = c.kind === 'crypto' ? cryptoPropertiesOf(c) : undefined;
+    components.push({
+      type: cycloneDxTypeOf(c),
+      'bom-ref': bomPartRef,
+      name: c.name,
+      ...(c.version ? { version: c.version } : {}),
+      ...(purl ? { purl } : {}),
+      ...(cpe ? { cpe } : {}),
+      ...(sha256 ? { hashes: [{ alg: 'SHA-256', content: sha256 }] } : {}),
+      ...(cryptoProperties ? { cryptoProperties } : {}),
+      properties: [{ name: `${NS}source`, value: `${c.source.format}:${c.source.product}` }],
+    });
+    if (nodeId !== undefined) dep(ref(nodeId), bomPartRef);
+    else dep(SYSTEM_REF, bomPartRef);
+    dep(bomPartRef);
   }
 
   const system: Json = {

@@ -15,6 +15,7 @@ import type {
   RiskScore,
   ElementKind,
   Asset,
+  BomComponent,
   FrameworkView,
   GroupDragState,
   LayerData,
@@ -342,6 +343,8 @@ export interface HydratePayload {
   findings?: Finding[];
   /** 取り込んだ資産（docs/architecture.md §8.7）。省略時は空。 */
   assets?: Asset[];
+  /** 取り込んだ部品（docs/architecture.md §8.8）。省略時は空。 */
+  bomComponents?: BomComponent[];
   /** ElementalID 採番カウンタ。省略時は全レイヤー 0 始まり。 */
   idCounters?: LayerSeqCounters;
 }
@@ -407,6 +410,7 @@ interface DiagramState {
    */
   findings: Finding[];
   assets: Asset[];
+  bomComponents: BomComponent[];
   /** Asset タブを表示中か（保存しない）。脅威の絞り込み（activeFramework）とは別の状態。 */
   isAssetViewOpen: boolean;
   /** 手動脅威エディタモーダルの開閉状態（UI 表示用、永続化しない）。 */
@@ -698,6 +702,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   controlStatuses: {},
   findings: [],
   assets: [],
+  bomComponents: [],
   isAssetViewOpen: false,
   isManualThreatModalOpen: false,
   editingManualThreatId: null,
@@ -741,6 +746,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       controlStatuses: payload.controlStatuses ?? {},
       findings: payload.findings ?? [],
       assets: payload.assets ?? [],
+      bomComponents: payload.bomComponents ?? [],
       isHydrated: true,
       selectedNodeIds: [],
       selectedEdgeId: null,
@@ -1350,6 +1356,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       controlStatuses: {},
       findings: [],
       assets: [],
+      bomComponents: [],
       isAssetViewOpen: false,
       isNewProjectConfirmOpen: false,
       selectedNodeIds: [],

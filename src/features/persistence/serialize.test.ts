@@ -446,6 +446,27 @@ describe('serializeProject / deserializeProject', () => {
     observedAt: '2026-10-30T12:00:00.000Z',
   };
 
+  it('assets: format・externalId・identifiers が無い古い行 → 補って読み、時刻を ISO 8601 にする', () => {
+    const out = JSON.parse(JSON.stringify(serializeProject(STATE)));
+    out.assets = [
+      {
+        id: 'ARTEX:s:service:203.0.113.10:443:https',
+        source: { product: 'ARTEX', scope: 's', importedAt: '2026-11-04T00:00:00.000Z' },
+        kind: 'service',
+        host: '203.0.113.10',
+        ip: '203.0.113.10',
+        port: 443,
+        observedAt: '2026-11-04 06:58:29.773049+00',
+      },
+    ];
+    expect(deserializeProject(out)?.assets?.[0]).toMatchObject({
+      source: { format: 'artex-assets' },
+      externalId: 'ARTEX:s:service:203.0.113.10:443:https',
+      identifiers: [{ scheme: 'ip', value: '203.0.113.10' }],
+      observedAt: '2026-11-04T06:58:29.773Z',
+    });
+  });
+
   it('findings: 空のときは省略される（後方互換）', () => {
     expect('findings' in serializeProject(STATE)).toBe(false);
     expect('findings' in serializeProject({ ...STATE, findings: [] })).toBe(false);

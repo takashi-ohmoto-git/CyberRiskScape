@@ -2,6 +2,7 @@ import { resolveProject } from './analyze';
 import { LAYER_KEYS, MAX_ASSETS, type Asset, type LayerKey } from '../core/model/types';
 import { deserializeProject } from '../features/persistence/serialize';
 import type { PersistedProject } from '../features/persistence/schema';
+import { assetIdentifiers } from '../core/model/assetIdentity';
 import { lookupNode, type ImportNodeRef } from '../features/findings-import/resolveNode';
 import type { ArtexEndpointRecord, ArtexServiceRecord } from '../features/asset-import/artexAssets';
 
@@ -12,6 +13,14 @@ import type { ArtexEndpointRecord, ArtexServiceRecord } from '../features/asset-
  */
 
 const PRODUCT = 'ARTEX';
+const MAX_IDENTIFIERS = 20;
+
+/** 同一判定の鍵に ARTEX の資産 ID を足す（まとめた行の分も残す）。 */
+const identifiersOf = (base: Asset['identifiers'], prev: Asset['identifiers'] | undefined, artexId: string | undefined) => {
+  const artex = (prev ?? []).filter((i) => i.scheme === 'artex-asset-id');
+  const ids = artexId && !artex.some((i) => i.value === artexId) ? [...artex, { scheme: 'artex-asset-id', value: artexId }] : artex;
+  return [...base, ...ids].slice(0, MAX_IDENTIFIERS);
+};
 
 export interface ImportArtexAssetsInput {
   services: readonly ArtexServiceRecord[];
@@ -56,7 +65,7 @@ export function importArtexAssets(
     resolved.layers[layer].nodes.map((n) => ({ id: n.id, layer, seq: n.seq, type: n.type, label: n.label })),
   );
   const importedAt = options.importedAt ?? new Date().toISOString();
-  const source = { product: PRODUCT, scope: options.scope, importedAt };
+  const source = { format: 'artex-assets' as const, product: PRODUCT, scope: options.scope, importedAt };
   const unlinkedHosts = new Set<string>();
   const badNodeRefs = new Set<string>();
 
@@ -88,11 +97,14 @@ export function importArtexAssets(
     const observedAt = latest(prev?.observedAt, s.observedAt);
     const technologies = [...new Set([...(prev?.technologies ?? []), ...s.technologies])];
     const domain = prev?.domain ?? s.domain;
+    const host = s.ip ?? s.host;
     services.set(id, {
       id,
       source,
+      externalId,
+      identifiers: identifiersOf(assetIdentifiers({ host, ip: s.ip, domain }), prev?.identifiers, s.artexId),
       kind: 'service',
-      host: s.ip ?? s.host,
+      host,
       ...(s.ip ? { ip: s.ip } : {}),
       ...(domain ? { domain } : {}),
       ...(s.port ? { port: s.port } : {}),
@@ -105,11 +117,14 @@ export function importArtexAssets(
 
   const endpoints = new Map<string, Asset>();
   for (const e of input.endpoints) {
-    const id = `${PRODUCT}:${options.scope}:endpoint:${e.method}:${e.url}`;
+    const externalId = `endpoint:${e.method}:${e.url}`;
+    const id = `${PRODUCT}:${options.scope}:${externalId}`;
     const subject = subjectOf(e.host);
     endpoints.set(id, {
       id,
       source,
+      externalId,
+      identifiers: identifiersOf(assetIdentifiers({ host: e.host, url: e.url }), endpoints.get(id)?.identifiers, e.artexId),
       kind: 'endpoint',
       host: e.host,
       method: e.method,

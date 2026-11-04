@@ -45,8 +45,16 @@ describe('parseTemplateFromJson', () => {
     const p = JSON.parse(read('ja'));
     delete p.findings;
     delete p.assets;
+    delete p.bomComponents;
     const r = parseTemplateFromJson(JSON.stringify(p));
     expect(r.ok && r.project).toBeUndefined();
+  });
+  it('部品だけを持つプロジェクト → プロジェクト全体として扱う', () => {
+    const p = JSON.parse(read('ja'));
+    delete p.findings;
+    delete p.assets;
+    const r = parseTemplateFromJson(JSON.stringify(p));
+    expect(r.ok && r.project?.bomComponents?.length).toBeGreaterThan(0);
   });
   it('資産だけを持つプロジェクト → プロジェクト全体として扱う', () => {
     const p = JSON.parse(read('ja'));

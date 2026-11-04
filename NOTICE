@@ -489,6 +489,9 @@ verbatim.
 25. Software bill of materials formats and cryptographic library release notes
    - OWASP CycloneDX specification 1.6 / 1.7 (including CBOM)
      https://cyclonedx.org/ , https://github.com/CycloneDX/specification
+   - SPDX specification 2.3 (the JSON schema is used in tests under
+     src/features/bom-import/__fixtures__/; CC BY 3.0)
+     https://spdx.dev/ , https://github.com/spdx/spdx-spec
    - Package URL (purl) specification
      https://github.com/package-url/purl-spec
    - OpenSSL 3.5 release notes  https://openssl-library.org/news/openssl-3.5-notes/

@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { CRYPTO_TERMINATIONS, FINDING_FORMATS, MAX_ASSETS, MAX_FINDINGS } from '../../core/model/types';
+import { ASSET_FORMATS, BOM_FORMATS, CRYPTO_TERMINATIONS, FINDING_FORMATS, MAX_ASSETS, MAX_BOM_COMPONENTS, MAX_FINDINGS, type Asset } from '../../core/model/types';
+import { assetIdentifiers, toIsoTimestamp } from '../../core/model/assetIdentity';
 import {
   AgencyLevelSchema,
   AuthTypeSchema,
@@ -412,14 +413,22 @@ const PersistedFindingSchema = z.object({
   outcome: z.literal('attempted').optional(),
 });
 
+/**
+ * format・externalId・identifiers が無い行は、これらを足す前（2026-11-04）に保存したデータ。
+ * 読めないとプロジェクトごと開けなくなるので、ここで補う。時刻も ISO 8601 にそろえる。
+ */
 const PersistedAssetSchema = z.object({
   id: z.string().min(1).max(3000),
   source: z.object({
+    format: z.enum(ASSET_FORMATS).default('artex-assets'),
     product: z.string().min(1).max(100),
+    productVersion: z.string().max(50).optional(),
     scope: z.string().min(1).max(200).optional(),
     definition: z.boolean().optional(),
     importedAt: z.string().max(40),
   }),
+  externalId: z.string().min(1).max(3000).optional(),
+  identifiers: z.array(z.object({ scheme: z.string().min(1).max(50), value: z.string().min(1).max(2000) })).max(20).optional(),
   kind: z.enum(['service', 'endpoint']),
   host: z.string().min(1).max(FINDING_TEXT_MAX),
   ip: z.string().max(100).optional(),
@@ -430,6 +439,46 @@ const PersistedAssetSchema = z.object({
   method: z.string().max(20).optional(),
   url: z.string().max(2000).optional(),
   params: z.array(z.object({ name: z.string().max(200), location: z.string().max(50) })).max(200).optional(),
+  subject: z.object({ layer: LayerKeySchema, nodeId: z.string().min(1) }).optional(),
+  observedAt: z.string().max(40).optional(),
+}).transform((a): Asset => {
+  const { observedAt, ...rest } = a;
+  const iso = observedAt ? toIsoTimestamp(observedAt) : undefined;
+  return {
+    ...rest,
+    externalId: a.externalId ?? a.id,
+    identifiers: a.identifiers ?? assetIdentifiers(a),
+    ...(iso ? { observedAt: iso } : {}),
+  };
+});
+
+const PersistedBomComponentSchema = z.object({
+  id: z.string().min(1).max(3000),
+  source: z.object({
+    format: z.enum(BOM_FORMATS),
+    product: z.string().min(1).max(100),
+    productVersion: z.string().max(50).optional(),
+    scope: z.string().min(1).max(200).optional(),
+    importedAt: z.string().max(40),
+  }),
+  externalId: z.string().min(1).max(2500),
+  identifiers: z.array(z.object({ scheme: z.string().min(1).max(50), value: z.string().min(1).max(2000) })).max(20),
+  kind: z.enum(['software', 'crypto', 'ai-model', 'dataset', 'other']),
+  sourceType: z.string().max(50).optional(),
+  name: z.string().min(1).max(500),
+  version: z.string().max(200).optional(),
+  crypto: z
+    .object({
+      assetType: z.enum(['algorithm', 'protocol', 'certificate', 'material', 'other']),
+      primitive: z.string().max(50).optional(),
+      parameterSet: z.string().max(100).optional(),
+      curve: z.string().max(100).optional(),
+      nistQuantumSecurityLevel: z.number().optional(),
+      protocolVersion: z.string().max(50).optional(),
+      cipherSuites: z.array(z.string().max(200)).max(50).optional(),
+      notValidAfter: z.string().max(40).optional(),
+    })
+    .optional(),
   subject: z.object({ layer: LayerKeySchema, nodeId: z.string().min(1) }).optional(),
   observedAt: z.string().max(40).optional(),
 });
@@ -496,6 +545,7 @@ export const PersistedProjectSchema = z.object({
    */
   findings: z.array(PersistedFindingSchema).max(MAX_FINDINGS).optional(),
   assets: z.array(PersistedAssetSchema).max(MAX_ASSETS).optional(),
+  bomComponents: z.array(PersistedBomComponentSchema).max(MAX_BOM_COMPONENTS).optional(),
   updatedAt: z.number().int().nonnegative(),
 });
 

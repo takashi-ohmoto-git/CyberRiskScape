@@ -141,6 +141,7 @@ export function ProjectFileModal() {
         controlStatuses: s.controlStatuses,
         findings: s.findings,
         assets: s.assets,
+        bomComponents: s.bomComponents,
       });
       await writeProjectFile(dir, name, project);
       await refresh(dir);

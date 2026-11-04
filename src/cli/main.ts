@@ -44,6 +44,12 @@ import { parseScap } from '../features/scap-import/parseScap';
 import { importPentest, pentestReportToJson, pentestReportToMarkdown } from './importPentest';
 import { parseRegistry } from '../features/pentest-import/parseRegistry';
 import { parseArtexEndpoints, parseArtexServices } from '../features/asset-import/artexAssets';
+import { parseBom } from '../features/bom-import/parseBom';
+import { deserializeProject } from '../features/persistence/serialize';
+import { version as APP_VERSION } from '../../package.json';
+import { buildSpdx } from '../features/bom-import/buildSpdx';
+import { listBomComponents } from '../features/bom-import/listBomComponents';
+import { bomReportToJson, bomReportToMarkdown, importBom } from './importBom';
 import { artexAssetsReportToJson, artexAssetsReportToMarkdown, importArtexAssets } from './importArtexAssets';
 import { MAX_FILE_BYTES } from './readEvidence';
 import { buildFindingsReport, evaluateFindingsGate } from '../features/findings-report/buildFindingsReport';
@@ -138,12 +144,14 @@ const USAGE = `使い方:
   import-findings <project.json> --format <xccdf|arf|oval> --in <file> [options]
   import-pentest <project.json> --in <registry.yaml> [options]
   import-artex-assets <project.json> --scope <scope> [--services <file>] [--endpoints <file>] [options]
+  import-sbom <project.json> --sbom <file> --scope <scope> [options]
   import-conjur <policy.yml> [options]
   import-shodan <export.json[.gz]> [options]
   import-scopesentry <export.json> [options]
   import-scopesentry --api <base-url> [options]
   export-postman <project.json> [options]
   export-sbom-ai <project.json> [options]
+  export-spdx <project.json> [options]
   export-test-plan <project.json> [options]
   export-roe <project.json> [options]
   export-attack-navigator <project.json> [options]
@@ -228,6 +236,16 @@ import-artex-assets のオプション（ARTEX の資産 API の JSON から、�
   --node <C番号|ID>                             対応表に無いホストを結びつけるノード（任意。無ければ未対応）
   --report <md|json>                            報告の形式（既定: md。標準出力）
   -o, --out <file>                              資産を保存したプロジェクト JSON の出力先（指定しなければ報告のみ）
+
+import-sbom のオプション（CycloneDX または SPDX 2.x の JSON の部品を保存する。形式は中身で判定する。依存関係・ライセンス・鍵の値は保存しない）:
+  --sbom <file>                                 BOM の JSON（必須）
+  --scope <scope>                               置き換えの範囲（必須。同じ形式・同じ scope の部品を置き換える）
+  --node <C番号|ID>                             すべての部品を結びつけるノード（任意。無ければ未対応）
+  --report <md|json>                            報告の形式（既定: md。標準出力）
+  -o, --out <file>                              部品を保存したプロジェクト JSON の出力先（指定しなければ報告のみ）
+
+export-spdx のオプション（取り込んだ部品と依存パッケージのインベントリを SPDX 2.3 JSON で出力する。暗号資産は SPDX 2.3 に載らないので出さない）:
+  --out <file>                                  出力先ファイル（既定: 標準出力）
 
 import-conjur のオプション（Conjur / Secrets Manager のポリシーから NHI と読み取り経路の図を L1 に作り、プロジェクト JSON を出力）:
   --locale <ja|en>                              ノード名の言語（既定: ja）
@@ -877,6 +895,51 @@ ${USAGE}`);
   );
 }
 
+/** `import-sbom`：CycloneDX・SPDX の部品をプロジェクト JSON に保存する（docs/architecture.md §8.8）。 */
+function runImportSbom(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) fail(`入力ファイルを指定してください。\n\n${USAGE}`);
+  if (!values.sbom) fail('--sbom <file> を指定してください。');
+  if (!values.scope) fail('--scope を指定してください。');
+  const report = parseEnum(values.report, IMPORT_PROWLER_REPORTS, 'report') ?? 'md';
+
+  const parsed = parseBom(readJsonFile(values.sbom));
+  if (!parsed.ok) fail(`${parsed.error}（${values.sbom}）`);
+
+  let out: ReturnType<typeof importBom>;
+  try {
+    out = importBom(readJsonFile(file), parsed, { scope: values.scope, ...(values.node ? { node: values.node } : {}) });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  if (values.out) writeFileSync(values.out, JSON.stringify(out.project, null, 2), 'utf-8');
+  process.stdout.write(`${report === 'json' ? JSON.stringify(bomReportToJson(out), null, 2) : bomReportToMarkdown(out)}\n`);
+  process.stderr.write(`部品を取り込みました（保存 ${out.stored} / 上限で除外 ${out.truncated}）\n`);
+}
+
+/** `export-spdx`：部品を SPDX 2.3 JSON で出力する（docs/architecture.md §8.8）。 */
+function runExportSpdx(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) fail(`入力ファイルを指定してください。\n\n${USAGE}`);
+  const raw = readJsonFile(file);
+  const loaded = deserializeProject(raw);
+  if (!loaded) fail('プロジェクト JSON の形式が不正です。');
+  const resolved = resolveProject(raw);
+  const parts = listBomComponents(
+    loaded.bomComponents ?? [],
+    LAYER_KEYS.flatMap((layer) => resolved.layers[layer].nodes.map((node) => ({ node, layer }))),
+  );
+  const meta = loaded.projectMeta;
+  const out = buildSpdx(parts, {
+    name: meta?.systemName.trim() || meta?.name.trim() || 'unknown',
+    created: new Date().toISOString(),
+    documentNamespace: `urn:uuid:${randomUUID()}`,
+    toolVersion: APP_VERSION,
+  });
+  writeOutput(JSON.stringify(out.document, null, 2), values.out);
+  process.stderr.write(`SPDX 2.3 を出力しました（パッケージ ${out.packages} / SPDX に載らず除外した暗号資産 ${out.omittedCrypto}）\n`);
+}
+
 /**
  * `import-artex-assets`：ARTEX の資産 API の JSON をプロジェクト JSON に保存する（docs/architecture.md §8.7）。
  */
@@ -1125,6 +1188,7 @@ ${USAGE}`);
     timestamp: new Date().toISOString(),
     serialNumber: `urn:uuid:${randomUUID()}`,
     locale,
+    importedComponents: deserializeProject(readJsonFile(file))?.bomComponents,
   });
   writeOutput(JSON.stringify(bom, null, 2), values.out);
   const count = (k: string) => (Array.isArray(bom[k]) ? (bom[k] as unknown[]).length : 0);
@@ -1599,6 +1663,10 @@ function main(): void {
     runImportFindings(values, positionals);
   } else if (command === 'import-pentest') {
     runImportPentest(values, positionals);
+  } else if (command === 'import-sbom') {
+    runImportSbom(values, positionals);
+  } else if (command === 'export-spdx') {
+    runExportSpdx(values, positionals);
   } else if (command === 'import-artex-assets') {
     runImportArtexAssets(values, positionals);
   } else if (command === 'import-conjur') {

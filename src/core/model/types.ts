@@ -1062,9 +1062,12 @@ export type FindingFormat = (typeof FINDING_FORMATS)[number];
  * 外部製品の指摘の出どころ（docs/architecture.md §8.2）。
  * `format` は入力の標準形式。形式を増やすときは union を広げる。
  */
-export interface FindingSource {
+export type FindingSource = ImportSource<FindingFormat>;
+
+/** 共通モデルの要素（指摘・資産）に共通の出どころ（docs/architecture.md §8.2・§8.7）。 */
+export interface ImportSource<F extends string> {
   /** 読んだファイルの形式（§8.6）。 */
-  format: FindingFormat;
+  format: F;
   /** 製品名（例: 'Prowler'・'OpenSCAP'）。取り込み直しは product × scope の単位で置き換える。 */
   product: string;
   productVersion?: string;
@@ -1111,13 +1114,14 @@ export interface Finding {
 /** 保持する指摘の上限（docs/architecture.md §8.2）。 */
 export const MAX_FINDINGS = 5000;
 
-/** 資産の出どころ（docs/architecture.md §8.7）。取り込み直しは product × scope の単位で置き換える。 */
-export interface AssetSource {
-  product: string;
-  scope?: string;
+/** 資産の入力の形式。 */
+export const ASSET_FORMATS = ['artex-assets'] as const;
+export type AssetFormat = (typeof ASSET_FORMATS)[number];
+
+/** 資産の出どころ（docs/architecture.md §8.7）。 */
+export interface AssetSource extends ImportSource<AssetFormat> {
   /** API 定義から来た資産か（観測ではなく宣言）。 */
   definition?: boolean;
-  importedAt: string;
 }
 
 /** エンドポイントのパラメータ。値は持たない。 */
@@ -1132,10 +1136,18 @@ export interface AssetSubject {
   nodeId: string;
 }
 
-/** 外部製品から取り込んだ資産 1 件（サービスまたはエンドポイント）。ホストはサービスから派生する。 */
+/**
+ * 共通モデルの資産 1 件（docs/architecture.md §8.7）。製品がその時点で観測した事実で、人の判断は持たない。
+ * Enterprise の DB では「観測」の 1 行に当たり、資産本体は `identifiers` で名寄せする。ホストはサービスから派生する。
+ */
 export interface Asset {
+  /** 安定 ID（`${product}:${scope}:${externalId}`）。 */
   id: string;
   source: AssetSource;
+  /** 製品ごとに、同じ資産なら同じになる ID。 */
+  externalId: string;
+  /** 同一判定の鍵。scheme は ip・fqdn・hostname・url（将来 arn・purl・cpe）と製品の ID。 */
+  identifiers: FindingIdentifier[];
   kind: 'service' | 'endpoint';
   host: string;
   ip?: string;
@@ -1149,11 +1161,56 @@ export interface Asset {
   params?: AssetParam[];
   /** 結びついたノード。無ければ未対応。 */
   subject?: AssetSubject;
+  /** 製品が観測した時刻（ISO 8601）。 */
   observedAt?: string;
 }
 
 /** 保持する資産の上限（docs/architecture.md §8.7）。 */
 export const MAX_ASSETS = 5000;
+
+/** 部品の出どころの形式。`inventory` は保存せず、ノードのインベントリから読み出すときだけ使う。 */
+export const BOM_FORMATS = ['cyclonedx', 'spdx', 'inventory'] as const;
+export type BomFormat = (typeof BOM_FORMATS)[number];
+
+export type BomKind = 'software' | 'crypto' | 'ai-model' | 'dataset' | 'other';
+
+/** 暗号資産の性質。鍵の値は持たない。 */
+export interface BomCryptoProperties {
+  assetType: 'algorithm' | 'protocol' | 'certificate' | 'material' | 'other';
+  primitive?: string;
+  parameterSet?: string;
+  curve?: string;
+  nistQuantumSecurityLevel?: number;
+  protocolVersion?: string;
+  cipherSuites?: string[];
+  notValidAfter?: string;
+}
+
+/**
+ * 共通モデルの部品 1 件（docs/architecture.md §8.8）。SBOM・CBOM・AI BOM の中身を 1 つの要素で扱う。
+ * ステンシルの型（Component）と区別するため BomComponent と呼ぶ。人の判断は持たない。
+ */
+export interface BomComponent {
+  id: string;
+  source: ImportSource<BomFormat>;
+  /** purl。無ければ bom-ref・SPDXID、それも無ければ 名前@版。 */
+  externalId: string;
+  /** 同一判定の鍵。scheme は purl・cpe・sha-256。 */
+  identifiers: FindingIdentifier[];
+  kind: BomKind;
+  /** 元の種別（CycloneDX の type・SPDX の primaryPackagePurpose）。 */
+  sourceType?: string;
+  name: string;
+  version?: string;
+  crypto?: BomCryptoProperties;
+  /** 結びついたノード。無ければ未対応。 */
+  subject?: AssetSubject;
+  /** BOM の作成時刻（ISO 8601）。 */
+  observedAt?: string;
+}
+
+/** OSS で保持する部品の上限（docs/architecture.md §8.8）。Enterprise は DB に依存する。 */
+export const MAX_BOM_COMPONENTS = 5000;
 
 /** リスク評価各項目の 3 段階スコア（1=低 / 2=中 / 3=高）。 */
 export type RiskValue = 1 | 2 | 3;

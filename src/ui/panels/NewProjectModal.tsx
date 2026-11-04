@@ -72,6 +72,7 @@ export function NewProjectModal() {
       controlStatuses: s.controlStatuses,
       findings: s.findings,
       assets: s.assets,
+      bomComponents: s.bomComponents,
     });
     const base = projectFilename(s.projectMeta.name);
     if (!isFileSystemAccessSupported()) {

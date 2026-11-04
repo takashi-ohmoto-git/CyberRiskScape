@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { selectPrimaryNodeId, useDiagramStore } from '../../core/state/diagramStore';
 import { getNodeDisplayName } from '../../core/model/nodeDisplay';
 import { formatElementalId } from '../../core/model/elementalId';
-import type { Asset, AssetSubject, DiagramNode, LayerKey } from '../../core/model/types';
+import type { Asset, AssetSubject, BomComponent, BomKind, DiagramNode, LayerKey } from '../../core/model/types';
 import { LAYER_KEYS } from '../../core/model/types';
 import {
   buildAssetViews,
@@ -10,14 +10,15 @@ import {
   type AssetViews,
   type HostRow,
 } from '../../features/asset-view/buildAssetViews';
-import { useT } from '../../i18n';
+import { listBomComponents } from '../../features/bom-import/listBomComponents';
+import { useT, type TranslationKey } from '../../i18n';
 
 /**
  * Asset タブの画面（docs/architecture.md §8.7）。読み取り専用。
  * 表の部分は props だけで描ける AssetViewBody に分け、テストしやすくしている。
  */
 
-export type AssetMode = 'hosts' | 'requests' | 'apis';
+export type AssetMode = 'hosts' | 'requests' | 'apis' | 'sbom';
 
 /** 結びついたノードの表示用情報。解決できなければ null（未対応）。 */
 export interface ResolvedNode {
@@ -121,6 +122,50 @@ function HostsTable({ rows, resolve, onOpen }: { rows: HostRow[]; resolve: Asset
   );
 }
 
+const KIND_LABEL_KEYS: Record<BomKind, TranslationKey> = {
+  software: 'project.assetView.kind.software',
+  crypto: 'project.assetView.kind.crypto',
+  'ai-model': 'project.assetView.kind.ai-model',
+  dataset: 'project.assetView.kind.dataset',
+  other: 'project.assetView.kind.other',
+};
+
+function SbomTable({ rows, resolve, onOpen }: { rows: BomComponent[]; resolve: AssetViewBodyProps['resolve']; onOpen: AssetViewBodyProps['onOpen'] }) {
+  const t = useT();
+  return (
+    <table className="w-full border-collapse">
+      <thead>
+        <tr>
+          <th className={TH}>{t('project.assetView.col.name')}</th>
+          <th className={TH}>{t('project.assetView.col.version')}</th>
+          <th className={TH}>{t('project.assetView.col.kind')}</th>
+          <th className={TH}>{t('project.assetView.col.identifier')}</th>
+          <th className={TH}>{t('project.assetView.col.source')}</th>
+          <th className={TH}>{t('project.assetView.col.node')}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((c) => {
+          const resolved = resolve(c.subject);
+          const id = c.identifiers.find((i) => i.scheme === 'purl') ?? c.identifiers.find((i) => i.scheme === 'cpe');
+          return (
+            <tr key={c.id} {...rowProps(c.subject, resolved, onOpen)}>
+              <td className={TD}>{c.name}</td>
+              <td className={`${TD} font-mono`}>{c.version ?? ''}</td>
+              <td className={TD}>{t(KIND_LABEL_KEYS[c.kind])}</td>
+              <td className={`${TD} font-mono break-all`}>{id?.value ?? ''}</td>
+              <td className={TD}>{c.source.product}</td>
+              <td className={TD}>
+                <NodeCell resolved={resolved} />
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
 function methodClass(method: string | undefined): string {
   if (method === 'POST') return 'bg-orange-900/50 text-orange-300 border-orange-700';
   if (method === 'GET') return 'bg-sky-900/50 text-sky-300 border-sky-700';
@@ -170,6 +215,9 @@ export function AssetViewBody({ views, mode, resolve, onOpen }: AssetViewBodyPro
   if (mode === 'hosts') {
     return views.hosts.length === 0 ? empty : <HostsTable rows={views.hosts} resolve={resolve} onOpen={onOpen} />;
   }
+  if (mode === 'sbom') {
+    return views.sbom.length === 0 ? empty : <SbomTable rows={views.sbom} resolve={resolve} onOpen={onOpen} />;
+  }
   if (mode === 'requests') {
     return views.requests.length === 0 ? empty : <EndpointsTable endpoints={views.requests} resolve={resolve} onOpen={onOpen} />;
   }
@@ -197,17 +245,19 @@ export function AssetViewBody({ views, mode, resolve, onOpen }: AssetViewBodyPro
   );
 }
 
-const MODES: AssetMode[] = ['hosts', 'requests', 'apis'];
+const MODES: AssetMode[] = ['hosts', 'requests', 'apis', 'sbom'];
 const MODE_LABEL_KEYS = {
   hosts: 'project.assetView.mode.hosts',
   requests: 'project.assetView.mode.requests',
   apis: 'project.assetView.mode.apis',
+  sbom: 'project.assetView.mode.sbom',
 } as const;
 
 export function AssetView() {
   const t = useT();
   const isOpen = useDiagramStore((s) => s.isAssetViewOpen);
   const assets = useDiagramStore((s) => s.assets);
+  const bomComponents = useDiagramStore((s) => s.bomComponents);
   const layers = useDiagramStore((s) => s.layers);
   const findings = useDiagramStore((s) => s.findings);
   const setActiveLayer = useDiagramStore((s) => s.setActiveLayer);
@@ -222,8 +272,13 @@ export function AssetView() {
   }, [layers]);
 
   const views = useMemo(
-    () => buildAssetViews(assets, nodes.map(({ node, layer }) => ({ id: node.id, type: node.type, layer }))),
-    [assets, nodes],
+    () =>
+      buildAssetViews(
+        assets,
+        nodes.map(({ node, layer }) => ({ id: node.id, type: node.type, layer })),
+        listBomComponents(bomComponents, nodes),
+      ),
+    [assets, bomComponents, nodes],
   );
 
   const resolve = useMemo(() => {
@@ -258,11 +313,12 @@ export function AssetView() {
     hosts: views.hosts.length,
     requests: views.requests.length,
     apis: apiCount,
+    sbom: views.sbom.length,
   };
 
   return (
     <div className="absolute inset-0 z-[5] bg-slate-950 pt-36 px-6 pb-6 overflow-auto select-text">
-      {assets.length === 0 ? (
+      {assets.length === 0 && views.sbom.length === 0 ? (
         <p className="text-sm text-slate-300 max-w-2xl">{t('project.assetView.emptyAll')}</p>
       ) : (
         <>

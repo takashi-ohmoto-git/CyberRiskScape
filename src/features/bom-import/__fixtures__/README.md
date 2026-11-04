@@ -1,0 +1,9 @@
+# SPDX 2.3 公式スキーマ（テスト用）
+
+出力が SPDX 2.3 のスキーマに適合することを `ajv` で検証するための、公式スキーマの写し。
+JSON はファイル冒頭にコメントを書けないため、出典と取得日はここに記す。
+
+- 出典：https://github.com/spdx/spdx-spec （`support/2.3` ブランチの `schemas/spdx-schema.json`）
+- 取得日：2026-11-05
+- ライセンス：Creative Commons Attribution 3.0 Unported（SPDX specification）
+- 無改変。ファイル名だけ `spdx-2.3.schema.json` に変えた。

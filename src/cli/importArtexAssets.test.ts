@@ -33,6 +33,30 @@ describe('importArtexAssets', () => {
     expect(assets).toHaveLength(2);
     expect(assets.every((a) => a.subject?.nodeId !== undefined)).toBe(true);
   });
+  it('出どころの形式と同一判定の鍵を持ち、まとめた行の ARTEX の ID も残す', () => {
+    const out = importArtexAssets(
+      project(),
+      {
+        services: [
+          { ...https, domain: 'www.example.com', artexId: '62' },
+          { ...https, artexId: '111' },
+        ],
+        endpoints: [{ ...login, artexId: '74' }],
+        skippedBySource: 0,
+      },
+      { scope: 'task-a', importedAt: AT },
+    );
+    const [service, endpoint] = out.project.assets ?? [];
+    expect(service.source.format).toBe('artex-assets');
+    expect(service.identifiers).toEqual([
+      { scheme: 'ip', value: '203.0.113.10' },
+      { scheme: 'fqdn', value: 'www.example.com' },
+      { scheme: 'artex-asset-id', value: '62' },
+      { scheme: 'artex-asset-id', value: '111' },
+    ]);
+    expect(endpoint.externalId).toBe('endpoint:POST:https://203.0.113.10/login');
+    expect(endpoint.identifiers).toContainEqual({ scheme: 'url', value: 'https://203.0.113.10/login' });
+  });
   it('対応が無ければ未対応として保存し、推測で結びつけない', () => {
     const out = importArtexAssets(project(), { services: [https], endpoints: [], skippedBySource: 0 }, { scope: 'task-a', importedAt: AT });
     expect(out.unlinkedHosts).toEqual(['203.0.113.10']);

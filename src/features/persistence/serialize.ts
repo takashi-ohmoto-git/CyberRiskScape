@@ -1,6 +1,7 @@
 import type {
   ControlStatusState,
   Asset,
+  BomComponent,
   Finding,
   FrameworkView,
   LayerData,
@@ -38,6 +39,7 @@ export interface SerializableState {
   /** 外部製品の指摘（docs/architecture.md §8.2）。省略時・空は保存しない。 */
   findings?: readonly Finding[];
   assets?: readonly Asset[];
+  bomComponents?: readonly BomComponent[];
   /** ElementalID 採番カウンタ（§2.26）。省略時は保存しない（旧テスト互換）。 */
   idCounters?: LayerSeqCounters;
 }
@@ -77,6 +79,8 @@ export function serializeProject(state: SerializableState): PersistedProject {
   const hasFindings = !!findings && findings.length > 0;
   const assets = state.assets;
   const hasAssets = !!assets && assets.length > 0;
+  const bomComponents = state.bomComponents;
+  const hasBomComponents = !!bomComponents && bomComponents.length > 0;
   return {
     schemaVersion: PERSISTED_PROJECT_SCHEMA_VERSION,
     layers: state.layers,
@@ -91,6 +95,7 @@ export function serializeProject(state: SerializableState): PersistedProject {
     ...(hasControlStatuses ? { controlStatuses } : {}),
     ...(hasFindings ? { findings: [...findings] } : {}),
     ...(hasAssets ? { assets: [...assets] } : {}),
+    ...(hasBomComponents ? { bomComponents: [...bomComponents] } : {}),
     updatedAt: Date.now(),
   };
 }

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { Asset } from '../../core/model/types';
+import type { Asset, BomComponent } from '../../core/model/types';
 import { buildAssetViews, type AssetViewNode } from './buildAssetViews';
 
-const source = { product: 'Example', scope: 's', importedAt: '2026-11-04T00:00:00Z' };
+const source = { format: 'artex-assets', product: 'Example', scope: 's', importedAt: '2026-11-04T00:00:00Z' } as const;
 const nodes: AssetViewNode[] = [
   { id: 'web', type: 'FRONT_END_SERVER', layer: 'L1' },
   { id: 'api', type: 'BACKEND_API', layer: 'L1' },
@@ -10,6 +10,8 @@ const nodes: AssetViewNode[] = [
 const svc = (id: string, over: Partial<Asset> = {}): Asset => ({
   id,
   source,
+  externalId: id,
+  identifiers: [],
   kind: 'service',
   host: '203.0.113.10',
   ip: '203.0.113.10',
@@ -20,6 +22,8 @@ const svc = (id: string, over: Partial<Asset> = {}): Asset => ({
 const ep = (id: string, over: Partial<Asset> = {}): Asset => ({
   id,
   source,
+  externalId: id,
+  identifiers: [],
   kind: 'endpoint',
   host: 'www.example.com',
   method: 'GET',
@@ -72,6 +76,17 @@ describe('buildAssetViews', () => {
   it('消えたノードに結びつくエンドポイント → リクエストに載る', () => {
     const v = buildAssetViews([ep('a', { subject: { layer: 'L1', nodeId: 'gone' } })], nodes);
     expect(v.requests).toHaveLength(1);
+  });
+  it('部品は名前順で SBOM の見方に載る', () => {
+    const part = (name: string): BomComponent => ({
+      id: name,
+      source: { format: 'spdx', product: 'x', importedAt: '2026-11-05T00:00:00Z' },
+      externalId: name,
+      identifiers: [],
+      kind: 'software',
+      name,
+    });
+    expect(buildAssetViews([], nodes, [part('b'), part('a')]).sbom.map((c) => c.name)).toEqual(['a', 'b']);
   });
   it('API はノードごとにまとまる', () => {
     const subject = { layer: 'L1', nodeId: 'api' } as const;
