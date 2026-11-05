@@ -103,6 +103,11 @@
 #   - MITRE ATT&CK (Enterprise) T1528 "Steal Application Access Token"・T1550.001
 #     "Use Alternate Authentication Material: Application Access Token"。
 #     https://attack.mitre.org/techniques/T1528/
+#   - OWASP Cheat Sheet Series, "Password Storage Cheat Sheet"・NIST SP 800-63B-4 §3.1.1.2
+#     "Password Verifiers"・MITRE CWE-916・MITRE ATT&CK (Enterprise) T1110.002 "Brute Force: Password
+#     Cracking"（2026-11-05 追加。パスワードの保管方式）。
+#     https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
+#     https://pages.nist.gov/800-63-4/sp800-63b.html
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -244,6 +249,17 @@
 #     zt-bearer-token-replay-001（bearer-token-replay）、IdP 署名鍵の窃取による ID-JAG の偽造 →
 #     zt-idp-signing-key-compromise-001（idp-token-forgery）、保管庫そのものの集中 →
 #     api-secrets-vault-concentration-001。
+#
+#   パスワードの保管方式（identity-weak-password-hash-001、2026-11-05）について:
+#
+#   - zt-credential-sprawl-static-secret-001（credential-sprawl）は CREDENTIAL ノードの「置き場所の
+#     散在」、data-store-info-disclosure は「データが読まれること」が subject。こちらは「読まれた後に
+#     平文へ戻せるか」が subject で、止め方（ハッシュ方式の変更）も違うため別 canonicalId とした。
+#   - 資格情報コーパスの一括取得（identity-directory-replication-credential-dump-001）は取得の手段、
+#     こちらは取得後の解読のしやすさで、併発しても重複しない。
+#   - 発火は「資格情報を内包するストア」に絞る（appliesTo の containsType）。図に内包を描かない
+#     ストアには出ない。全ストアに出すと、パスワードを持たないストアにも同じカードが並ぶため。
+#     IDENTITY_PROVIDER は内包を描けない型で、製品側が保管する場合が多いので対象外。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する。
@@ -806,3 +822,39 @@ rules:
       - title: "MITRE ATT&CK T1528 - Steal Application Access Token（保管されたトークンの取得）"
         url: "https://attack.mitre.org/techniques/T1528/"
       # SECRETS_VAULT ノードの読み出し権限の集中は api-secrets-vault-concentration-001 が扱う（別 subject）。
+
+  # ── パスワードの保管方式 ─────────────────────────────────────
+  - id: identity-weak-password-hash-001
+    canonicalId: weak-password-hash
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "計算コストの低いハッシュ・ソルトなしでのパスワードの保管"
+    severity: High
+    description: "{{nodeName}} が利用者のパスワードを保管している場合に、MD5・SHA-1・SHA-256 のような高速なハッシュをそのまま使っている、またはパスワードごとのソルトを付けていないと、保管データを入手した攻撃者は手元の環境で試行回数の制限を受けずに解読し、大量のパスワードを平文に戻せる（Can）。ソルトがなければ、同じパスワードの利用者の特定や、事前計算したテーブルによる解読も容易になる。一方、計算コストを調整できるパスワード専用のハッシュ方式とパスワードごとのソルトで保管していれば、漏えいしても解読には 1 件ごとに大きな計算コストがかかり、弱いパスワード以外を短時間で一括して平文に戻すことはできない（Cannot）。保管データの漏えいそのものは防げないため、アクセス制御や暗号化とは別に必要な対策である。blast radius は保管されている全アカウントと、同じパスワードを使い回している他のサービス。"
+    mitigation: "[Foundation] パスワード専用のハッシュ方式で保管する（第一候補は Argon2id、使えなければ scrypt。bcrypt は既存システム向け、FIPS 140 への準拠が必要なら PBKDF2）。パスワードごとに一意のソルトを付け、方式とコストの値を一緒に保存する。製品が保存形式を決めている場合は、その形式と設定できる範囲を確認する。 [Enterprise] 古い方式のハッシュは、次回のログイン時に新しい方式で保存し直す。ログインしない利用者のものは削除してパスワードの再設定を求めるか、既存のハッシュをさらに新しい方式でハッシュする。コストの値を定期的に見直す。ペッパーを使う場合は、ハッシュと同じ場所に置かず、シークレット管理または HSM で保管する。 [Advanced] IdP への連携やパスキーへ移行し、{{nodeName}} にパスワードを保管しない構成にする。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: DATABASE
+        - nodeType: DB
+        - nodeType: DATA_STORE
+        - nodeType: DIRECTORY
+      # 保管方式は図に現れない実装の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+      # 資格情報を内包すると図に描いたストアに限る（理由はファイル冒頭の重複回避方針）。
+      containsType: [CREDENTIAL]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+    references:
+      - title: "OWASP Cheat Sheet Series - Password Storage Cheat Sheet（ハッシュ方式の選び方・ソルトとペッパー・既存ハッシュの移行）"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html"
+      - title: "NIST SP 800-63B-4 - Digital Identity Guidelines: Authentication and Authenticator Management（§3.1.1.2 Password Verifiers）"
+        url: "https://pages.nist.gov/800-63-4/sp800-63b.html"
+      - title: "MITRE CWE-916: Use of Password Hash With Insufficient Computational Effort"
+        url: "https://cwe.mitre.org/data/definitions/916.html"
+      - title: "MITRE ATT&CK T1110.002 - Brute Force: Password Cracking（入手したハッシュの解読）"
+        url: "https://attack.mitre.org/techniques/T1110/002/"

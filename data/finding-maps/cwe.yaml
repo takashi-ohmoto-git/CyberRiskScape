@@ -62,6 +62,10 @@ mappings:
     canonicalIds: [credential-sprawl, api-mobile-embedded-client-secret]
     note: ハードコードされた資格情報
 
+  - cwe: [916]
+    canonicalIds: [weak-password-hash]
+    note: 計算コストの低いパスワードハッシュ
+
   - cwe: [200, 209, 359]
     canonicalIds: [data-store-info-disclosure]
     note: 情報の露出
