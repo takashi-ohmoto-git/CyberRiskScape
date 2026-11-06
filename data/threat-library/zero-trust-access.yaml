@@ -10,6 +10,9 @@
 #     Management"（verifier impersonation resistance / phishing 耐性認証）。
 #   - CISA, "Implementing Phishing-Resistant MFA"（AiTM フィッシングと MFA 迂回）。
 #   - CISA, "Insider Threat Mitigation Guide"。
+#   - NIST SP 800-53 Rev.5 "Security and Privacy Controls for Information Systems and Organizations"
+#     （AC-17 リモートアクセス・AC-2 アカウント管理。委託先の保守接続、2026-11-06）。
+#     https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final
 #   - Anthropic, "Zero Trust for AI Agents", 2026-05-18（AI 加速攻撃 /
 #     Impossible vs Tedious テスト）。
 #   - OWASP Secrets Management Cheat Sheet（シークレットの集中管理・動的発行）。
@@ -115,7 +118,13 @@
 #     zt-insider-legitimate-access-abuse-001 でカバー済。本ファイルの外部協働者ルールは
 #     USER ノードの userTrustAttribute 宣言（Guest/Contractor/Partner）に基づく
 #     「経路」視点で、sourceUserTrust 軸（スキーマ拡張で追加）を初使用する。
-#     ノード側で未宣言なら発火しない（managedState と同じ明示宣言方式）。
+#     ノード側で未宣言なら Unknown（社員と確認できない利用者）として発火する（2026-11-06 ユーザー決定。未入力＝悪い値）。
+#     社員（Employee）を明示した USER では発火しない。未宣言で発火したカードには「未入力のため仮定」（userTrust）の印が付く。
+#     委託先の常設の保守接続・操作の記録なし・作業後に残るアカウントと管理者権限（2026-11-06）は、新しいルールにせず
+#     このルールを広げて扱う（同じ「外部協働者のアクセスのライフサイクルが自組織の統制から外れる」脅威）。保守の入口
+#     （VPN_GATEWAY / BASTION）と管理面（ADMIN_CONSOLE / API_CONTROL_PLANE）を対象に足し、保守の入口・管理面・仮想化基盤への
+#     線では保守接続向けの description を出す。VPN の到達範囲（zt-vpn-broad-network-access-001）・踏み台への特権の集中
+#     （pam-privileged-concentration）とは subject と問いが異なる。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する。
@@ -710,20 +719,28 @@ rules:
     name: "外部協働者の機微システムアクセス（失効・統制ギャップ）"
     severity: Medium
     description: "{{sourceName}}（委託先・パートナー・ゲストとして宣言されたユーザー）から {{targetName}} への経路では、アクセス権のライフサイクルが自組織の人事プロセスと連動しない。攻撃者は契約終了・再委託・担当交代後も失効されず残った正規アカウントを悪用でき、所属組織側の端末・教育・監査統制が及ばないため、侵害兆候の検知も自組織からは困難になる（Can）。一方、外部協働者のアクセスを期限付き（契約期間に連動した自動失効）で発行し、自組織のフェデレーション経由（ゲスト ID 管理）で認証・ログを掌握し、付与権限を担当業務のリソースに限定していれば、放置アカウントを足掛かりとした機微システムへの到達は成立しない（Cannot）。blast radius は当該外部協働者に付与された権限の範囲。"
-    mitigation: "[Foundation] 外部協働者アカウントに有効期限を必須化し、契約管理と連動した棚卸し・失効プロセスを確立する。共有アカウントでの外部委託を禁止する。 [Enterprise] ゲスト ID 管理（自組織 IdP のフェデレーション/ゲスト招待）へ一本化し、アクセスレビューを定期実施する。付与権限は担当業務のリソースに限定し、機微操作は職務分離する。 [Advanced] 外部協働者のセッションに継続的なリスク評価（デバイスポスチャ・行動分析）を適用し、契約 DB との自動照合で即時失効を保証する。"
+    mitigation: "[Foundation] 外部協働者アカウントに有効期限を必須化し、契約管理と連動した棚卸し・失効プロセスを確立する。共有アカウントでの外部委託を禁止する。委託先の保守用の接続（VPN・リモートデスクトップ・保守回線）を洗い出し、MFA を必須にする。保守の接続は常時つなげず、作業の申請・承認のときだけ開放し、作業が終わったらアカウントと権限を無効にする。 [Enterprise] ゲスト ID 管理（自組織 IdP のフェデレーション/ゲスト招待）へ一本化し、アクセスレビューを定期実施する。付与権限は担当業務のリソースに限定し、機微操作は職務分離する。保守の接続は作業者・端末・接続先ごとに許可し（ネットワーク全体へは届かせない）、踏み台・特権アクセス管理を経由させて操作を記録する。管理者権限は常時付与せず、作業のときだけ期限付きで与える。 [Advanced] 外部協働者のセッションに継続的なリスク評価（デバイスポスチャ・行動分析）を適用し、契約 DB との自動照合で即時失効を保証する。保守の接続を VPN からアプリケーション単位のゼロトラストアクセスへ移す。"
     appliesTo:
       kind: edge
       when:
-        # userTrustAttribute を明示宣言した USER ノードでのみ発火（未宣言は不成立）。
-        sourceUserTrust: [Guest, Contractor, Partner]
+        # USER ノードのうち、社員（Employee）を明示したもの以外で発火する（未宣言は Unknown＝悪い値と同じ扱い）。
+        sourceType: [USER]
+        sourceUserTrust: [Guest, Contractor, Partner, Unknown]
         # 業務 DB・ストレージ（storage ライブラリ）への外部協働者のアクセスも同じ失効・統制の問いを持つため加える。
         # ファイルサーバー・仮想化基盤・SIEM（2026-10-21）も、委託先の運用担当・監視事業者が触ることが多く同じ問いを持つため加える。
-        targetType: [DB, DATA_STORE, LLM, AGENT, MCP_SERVER, MEMORY_STORE, SAAS, IAAS, PAAS, CRM, DATABASE, STORAGE, FILE_SERVER, HYPERVISOR, SIEM]
+        # 保守の入口（VPN 装置・踏み台）と管理面（管理画面・API 管理プレーン）（2026-11-06）も、委託先の常設の保守接続と
+        # 作業後に残る権限という同じ問いを持つため加える。
+        targetType: [DB, DATA_STORE, LLM, AGENT, MCP_SERVER, MEMORY_STORE, SAAS, IAAS, PAAS, CRM, DATABASE, STORAGE, FILE_SERVER, HYPERVISOR, SIEM, VPN_GATEWAY, BASTION, ADMIN_CONSOLE, API_CONTROL_PLANE]
       conditions:
         - when:
             sourceUserTrust: [Guest]
           severity: High
           description: "{{sourceName}}（ゲストとして宣言されたユーザー）から {{targetName}} への経路は、身元保証・契約上の守秘義務が最も弱い区分からの機微システムアクセスである（Can: ゲスト招待の放置・転送により意図しない第三者が正規経路で到達し得る）。ゲストアクセスに短い自動失効と最小権限（閲覧のみ等）を強制していれば、放置招待を足掛かりとした機微データへの到達は成立しない（Cannot）。"
+        # 保守の入口・管理面への線は、委託先の常設の保守接続（注意喚起の「正規の認証情報を用いた侵入口」）として述べる。
+        # severity は既定の Medium のまま（引き上げるかは人間判断）。
+        - when:
+            targetType: [VPN_GATEWAY, BASTION, ADMIN_CONSOLE, API_CONTROL_PLANE, HYPERVISOR]
+          description: "{{sourceName}}（委託先・パートナーとして宣言されたユーザー）から {{targetName}} への経路は、保守・運用のための接続である。保守用の VPN・リモートデスクトップ・保守回線が常時つながり、作業が終わった後もアカウントと管理者権限が残っている場合、委託先から漏れた資格情報や委託先の侵害された端末を使った攻撃者は、正規の保守作業と同じ経路・同じ認証情報で {{targetName}} に入り、管理者として操作できる（Can）。操作が記録されていなければ、正規の作業と区別して検知することも、事後に何をされたかを確かめることもできない。一方、保守の接続を作業の承認のときだけ開放し、MFA と作業者・端末・接続先ごとの許可で到達範囲を絞り、踏み台・特権アクセス管理を経由させて操作を記録し、管理者権限を作業のときだけ期限付きで与えていれば、作業時間外に漏れた資格情報だけでは入れず、入られた場合も範囲が限られ記録が残る（Cannot）。blast radius は {{targetName}} の管理権限が届く範囲。"
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.AA-05"
@@ -737,3 +754,7 @@ rules:
       # 内部者（正規権限者）の悪用は zt-insider-legitimate-access-abuse-001（INSIDER_THREAT ノード視点）が扱う（別 subject）。
       - title: "MITRE ATT&CK T1199 - Trusted Relationship（委託先・パートナーの残ったアカウントを経由した侵入）"
         url: "https://attack.mitre.org/techniques/T1199/"
+      - title: "MITRE ATT&CK T1133 - External Remote Services（委託先の保守用の VPN・リモートデスクトップを経由した侵入）"
+        url: "https://attack.mitre.org/techniques/T1133/"
+      - title: "NIST SP 800-53 Rev.5 AC-17 Remote Access / AC-2 Account Management（保守の接続の限定と作業後のアカウントの無効化）"
+        url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"

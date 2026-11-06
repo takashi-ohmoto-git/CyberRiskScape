@@ -31,6 +31,7 @@
 #   - MITRE CWE（CWE-444 / CWE-348 / CWE-288 / CWE-524）。
 #   - OWASP Web Security Testing Guide（WSTG-INPV-15 HTTP Splitting Smuggling / WSTG-INPV-17 Host Header
 #     Injection）と OWASP API Security Top 10 2023（API8 Security Misconfiguration）。
+#     API9 Improper Inventory Management は前段を経由した管理面への到達のルール（2026-11-06）で参照。
 #   - PortSwigger Web Security Academy（HTTP request smuggling / HTTP Host header attacks /
 #     Web cache poisoning / Web cache deception）。
 #   - NIST SP 800-125 "Guide to Security for Full Virtualization Technologies" /
@@ -52,7 +53,7 @@
 #     T1133 "External Remote Services"、T1040 "Network Sniffing"、
 #     T1537 "Transfer Data to Cloud Account"、T1649 "Steal or Forge Authentication Certificates"、
 #     T1486 "Data Encrypted for Impact"、T1611 "Escape to Host"、T1070 "Indicator Removal"、
-#     T1552 "Unsecured Credentials"。
+#     T1552 "Unsecured Credentials"、T1595.003 "Active Scanning: Wordlist Scanning"（2026-11-06）。
 #     https://attack.mitre.org/techniques/
 #   本文は逐語転載せず日本語要約のみ。
 #
@@ -113,6 +114,13 @@
 #     （client-endpoint-info-disclosure）とは保存場所と攻撃者が異なり別。
 #   - 背後のサーバーへの直接到達 → api-backend-gateway-bypass-001 と同じ脅威のため canonicalId: api-gateway-bypass を
 #     共有する（subject が異なり別カード）。CDN の迂回は CDN のルールの中で扱っており、独立させない。
+#   - 前段の振り分けルール（パス・ホスト名・優先順位・既定の転送）を経由した管理面への到達（2026-11-06）→
+#     netinfra-front-proxy-management-path-exposure-001。管理面の露出（stride-web-remote-mgmt-exposed-001 /
+#     api-control-plane-internet-exposure-001）は管理面の型自体の攻撃面属性か、信頼境界の外からの直接の線で判定し、
+#     「Internet → 前段 → 管理面」で管理面を Global IP 無しと入力した構成では出ないため追加した。同じ脅威として
+#     canonicalId: web-remote-management-exposure を共有する（管理面のノードが subject。未入力の管理面では
+#     stride-web-remote-mgmt-exposed-001 と 1 枚に畳み込まれる）。前段の型（REVERSE_PROXY 等）自身の管理面の露出とは
+#     subject が異なる。
 #
 #   前段のプロキシ全般への拡大（2026-10-21）について:
 #   - スマグリング・転送ヘッダーは LOAD_BALANCER / WAF / CDN / GATEWAY にも、キャッシュは CDN にも出す
@@ -742,6 +750,49 @@ rules:
         url: "https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/"
       - title: "NIST SP 800-207 - Zero Trust Architecture（ポリシー強制点の迂回の防止）"
         url: "https://csrc.nist.gov/pubs/sp/800/207/final"
+
+  # ── 前段の振り分けを経由した管理面への到達（経路依存）──────────────────────
+  # stride-web-remote-mgmt-exposed-001（管理面の型自体の攻撃面属性）と同じ「管理面にインターネットから届く」脅威のため
+  # canonicalId: web-remote-management-exposure を共有する。管理面の型を Global IP 無しと入力しても、前段の
+  # 振り分けで外から届く構成を拾う。攻撃面属性が未入力の管理面では両方が当たり、同じノードで 1 枚に畳み込まれる。
+  - id: netinfra-front-proxy-management-path-exposure-001
+    canonicalId: web-remote-management-exposure
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "前段の振り分けルールを経由した管理面への到達"
+    severity: High
+    description: "{{nodeName}}（管理画面・管理用の API）は、インターネットに面した前段（リバースプロキシ・API ゲートウェイ・CDN）から要求を受け取る位置にある。{{nodeName}} 自体にグローバル IP が無くても、前段の振り分けルール（URL のパス・ホスト名）の書き方や優先順位の誤り、どのルールにも当たらない要求を既定で背後へ転送する設定、パスの正規化の違い（/admin と /%61dmin、末尾のスラッシュ、大文字小文字）があると、攻撃者は公開サイトと同じ入口から {{nodeName}} の管理機能に要求を届けられる（Can）。攻撃者は公開サイトのパスやホスト名を機械的に試して、外部に公開するつもりのなかった管理機能を探す。届いた後は、認証の総当たり・既定の資格情報・管理機能の既知の脆弱性を狙える。一方、管理機能を利用者向けとは別のホスト名・別の入口（管理用のネットワーク・VPN・IAP の背後）に分け、前段には公開するパスだけを明示的に許可して、それ以外の要求を既定で拒否し、外部からの到達を定期的に確かめていれば、前段を経由して {{nodeName}} に届く経路は無い（Cannot）。前段から {{nodeName}} への線が、設定の配布など利用者の要求を中継しない通信であれば、線の向き（データの流れ）を {{nodeName}} から前段へ直すとこのカードは出ない。blast radius は {{nodeName}} が管理するすべての機能・データと、その管理権限で変更できる範囲。"
+    mitigation: "[Foundation] 前段（リバースプロキシ・ロードバランサー・API ゲートウェイ・WAF・CDN）の振り分けルールを棚卸しし、パスとホスト名の条件・ルールの優先順位・どのルールにも当たらない要求の扱い（既定の転送先・既定の応答）を確認する。公開するパスだけを明示的に許可し、それ以外は既定で拒否（404 等）にする。管理機能は利用者向けとは別のホスト名・別の入口に分け、管理用ネットワーク・VPN・IAP の背後に置く。 [Enterprise] 組織の外のネットワークから、管理用のパス・ホスト名に到達できないことを定期的に確かめる（構成を変えるたびと、外部からの観測による資産の棚卸しのたび）。前段でのパスの正規化（エンコード・大文字小文字・末尾のスラッシュ）と背後の解釈を揃える。振り分けルールを設定ファイルで管理し、変更をレビューする。 [Advanced] 管理面への到達を利用者の属性と端末の状態で都度判定する（ゼロトラストアクセス）。管理用のパスへの外部からの要求を検知して通知する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: ADMIN_CONSOLE
+        - nodeType: API_CONTROL_PLANE
+      # インターネットに面した前段から要求を受け取る（inbound）ときだけ発火する。前段がインターネットに面しているかは
+      # 前段の攻撃面属性 hasGlobalIp で判定する（未入力は Global IP 有り＝大方針どおり発火）。CDN は攻撃面属性を入力できないが、
+      # 常にインターネットに面するため残す。LOAD_BALANCER / WAF は攻撃面属性を入力できず、社内向けの構成でも消せない
+      # カードになるため対象にしない（2026-11-06 ユーザー判断）。
+      connection:
+        direction: inbound
+        peerType: [REVERSE_PROXY, GATEWAY, CDN]
+        peerAttackSurface:
+          hasGlobalIp: true
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "OWASP API Security Top 10 2023 - API8:2023 Security Misconfiguration"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/"
+      - title: "OWASP API Security Top 10 2023 - API9:2023 Improper Inventory Management（公開するつもりのない入口の把握）"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa9-improper-inventory-management/"
+      - title: "NIST SP 800-53 Rev.5 AC-17 Remote Access（管理用のリモートアクセスの経路の限定）"
+        url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"
+      - title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application（前段を経由して届いた管理機能の悪用）"
+        url: "https://attack.mitre.org/techniques/T1190/"
+      - title: "MITRE ATT&CK T1595.003 - Active Scanning: Wordlist Scanning（パス・ホスト名の機械的な探索）"
+        url: "https://attack.mitre.org/techniques/T1595/003/"
 
   # ── Web キャッシュポイズニング / Web キャッシュデセプション（経路依存）──────────
   - id: netinfra-reverse-proxy-cache-poisoning-001

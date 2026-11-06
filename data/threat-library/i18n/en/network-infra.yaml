@@ -219,6 +219,21 @@ rules:
       "2":
         title: "NIST SP 800-207 - Zero Trust Architecture (preventing bypass of the policy enforcement point)"
 
+  netinfra-front-proxy-management-path-exposure-001:
+    category: "Elevation of Privilege"
+    name: "Reaching the management plane through the front tier's routing rules"
+    description: "{{nodeName}} (an admin console or management API) receives requests from a front tier that faces the internet (reverse proxy, API gateway, or CDN). Even if {{nodeName}} itself has no global IP, mistakes in how the front tier's routing rules (URL path and host name) are written or prioritized, a setting that forwards requests matching no rule to the back end by default, or differences in path normalization (/admin vs. /%61dmin, trailing slashes, letter case) let an attacker deliver requests to {{nodeName}}'s management functions through the same entry point as the public site (Can). Attackers probe the public site's paths and host names mechanically to find management functions that were never meant to be exposed. Once there, they can go after brute-forced authentication, default credentials, and known vulnerabilities in the management functions. If, instead, management functions are separated onto a different host name and a different entry point (behind a management network, VPN, or IAP), the front tier explicitly allows only the paths meant to be public and rejects everything else by default, and reachability from outside is checked regularly, no path reaches {{nodeName}} through the front tier (Cannot). If the line from the front tier to {{nodeName}} does not relay user requests (for example, it only distributes configuration), correcting the line's direction (data flow) to run from {{nodeName}} to the front tier makes this card disappear. The blast radius is every function and all data that {{nodeName}} manages, and everything its management privileges can change."
+    mitigation: "[Foundation] Inventory the routing rules on the front tier (reverse proxy, load balancer, API gateway, WAF, CDN) and check the path and host-name conditions, the rule priority, and how requests that match no rule are handled (default destination and default response). Explicitly allow only the paths meant to be public and reject everything else by default (404 or similar). Separate management functions onto a different host name and entry point from the user-facing ones, and place them behind a management network, VPN, or IAP. [Enterprise] Regularly confirm from a network outside the organization that management paths and host names are unreachable (on every configuration change and every asset inventory based on external observation). Align path normalization (encoding, letter case, trailing slashes) on the front tier with how the back end interprets paths. Manage routing rules as configuration files and review changes. [Advanced] Decide access to the management plane per request based on user attributes and device state (zero trust access). Detect and alert on external requests to management paths."
+    references:
+      "1":
+        title: "OWASP API Security Top 10 2023 - API9:2023 Improper Inventory Management (knowing entry points that were not meant to be exposed)"
+      "2":
+        title: "NIST SP 800-53 Rev.5 AC-17 Remote Access (restricting the paths for administrative remote access)"
+      "3":
+        title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application (abusing management functions reached through the front tier)"
+      "4":
+        title: "MITRE ATT&CK T1595.003 - Active Scanning: Wordlist Scanning (mechanical probing of paths and host names)"
+
   netinfra-reverse-proxy-cache-poisoning-001:
     category: "Tampering"
     name: "Web cache poisoning and web cache deception"

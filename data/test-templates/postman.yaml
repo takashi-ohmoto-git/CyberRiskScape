@@ -15,6 +15,8 @@
 #   - OWASP API Security Top 10 2023（API1 BOLA / API2 Broken Authentication / API4 Unrestricted Resource
 #     Consumption / API5 BFLA / API8 Security Misconfiguration）
 #     https://owasp.org/API-Security/editions/2023/en/0x11-t10/
+#   - OWASP Credential Stuffing Prevention Cheat Sheet（ログインの試行の制限）
+#     https://cheatsheetseries.owasp.org/cheatsheets/Credential_Stuffing_Prevention_Cheat_Sheet.html
 #   - OWASP Top 10 for LLM Applications 2025（LLM01 Prompt Injection / LLM07 System Prompt Leakage）
 #     https://genai.owasp.org/llm-top-10/
 #   - Postman Collection Format v2.1.0
@@ -123,6 +125,44 @@ templates:
         const names = pm.response.headers.map(function (h) { return h.key.toLowerCase(); });
         const found = names.some(function (n) { return n === "ratelimit-limit" || n.indexOf("x-ratelimit-limit") === 0; });
         pm.expect(found, "RateLimit-Limit or X-RateLimit-Limit-* header").to.be.true;
+      });
+
+  - id: login-attempt-throttling
+    match:
+      canonicalIds:
+        - login-credential-guessing
+    name: "ログインの試行が制限されるか"
+    purpose: "検証用のアカウントに誤ったパスワードでログインを送り、失敗が拒否されることと、少数回（login_attempt_limit。既定 10 回）の失敗の後に 429 または 423 で制限されることを確かめる。Collection Runner でこのリクエストだけを login_attempt_limit 回繰り返して実行する。本番の利用者のアカウントは使わず、ロックされてよい検証用のアカウント（login_test_user）を用意する。パスワードを推測する攻撃ではなく、制限の有無だけを見る。"
+    variables:
+      - key: "$NODE_login_path"
+        value: "/login"
+        description: "ログイン（認証）のエンドポイントのパス"
+      - key: "login_test_user"
+        value: ""
+        description: "ロックされてよい検証用のアカウント（本番の利用者のアカウントは使わない）"
+      - key: "login_wrong_password"
+        value: "crs-throttle-test-wrong-password"
+        description: "検証用の誤ったパスワード（正しいパスワードを推測する値は入れない）"
+      - key: "login_attempt_limit"
+        value: "10"
+        description: "制限が掛かるはずの失敗回数。Collection Runner の繰り返し回数に同じ値を指定する"
+    request:
+      method: POST
+      url: "https://{{$NODE_host}}{{$NODE_login_path}}"
+      headers:
+        - key: Content-Type
+          value: application/json
+      body: |
+        { "username": "{{login_test_user}}", "password": "{{login_wrong_password}}" }
+    tests: |
+      pm.test("Failed login is rejected", function () {
+        pm.expect(pm.response.code).to.be.oneOf([400, 401, 403, 423, 429]);
+      });
+      pm.test("Login attempts are throttled after repeated failures (429/423)", function () {
+        const limit = Number(pm.variables.get("login_attempt_limit") || 10);
+        // 最後の回だけ判定する（Collection Runner の繰り返し回数を limit にする）。
+        if (pm.info.iteration + 1 < limit) return;
+        pm.expect(pm.response.code).to.be.oneOf([423, 429]);
       });
 
   - id: management-plane-exposure

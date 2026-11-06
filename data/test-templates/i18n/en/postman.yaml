@@ -34,6 +34,15 @@ templates:
     name: "Is rate limiting applied?"
     purpose: "Send a single request and check that rate-limit headers (RateLimit-Limit or X-RateLimit-Limit-*) are returned. No load testing is performed."
 
+  login-attempt-throttling:
+    name: "Are login attempts throttled?"
+    purpose: "Send a login for a test account with a wrong password and check that the failure is rejected, and that after a small number of failures (login_attempt_limit, 10 by default) it is limited with 429 or 423. Run only this request login_attempt_limit times with the Collection Runner. Do not use real users' accounts; prepare a test account that may be locked (login_test_user). This does not guess passwords; it only checks whether a limit exists."
+    variables:
+      $NODE_login_path: "Path of the login (authentication) endpoint"
+      login_test_user: "Test account that may be locked (do not use real users' accounts)"
+      login_wrong_password: "Wrong password for the test (do not put values that guess the real password)"
+      login_attempt_limit: "Number of failures after which the limit should apply. Use the same value as the Collection Runner iteration count"
+
   management-plane-exposure:
     name: "Is the management plane unreachable from outside?"
     purpose: "From a network outside the organization, send to the management URL (Admin API or console) and check that it is rejected or unreachable. Being unable to connect also passes (the test passes, and the run also shows a request error)."

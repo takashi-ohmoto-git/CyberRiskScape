@@ -26,6 +26,9 @@
 #     API5 Broken Function Level Authorization）、OWASP JSON Web Token Cheat Sheet、
 #     OWASP Automated Threats to Web Applications（OAT-011 Scraping）、OWASP MASVS
 #   - IETF RFC 8252（OAuth 2.0 for Native Apps）、RFC 7636（PKCE）、RFC 8725（JWT BCP）
+#   - IETF RFC 6749（OAuth 2.0。§2.1 公開クライアント）、RFC 9700（OAuth 2.0 Security BCP）、NICT CYNEX の A2B 攻撃の
+#     注意喚起の PDF 版 https://cynex.nict.go.jp/pdf/library/lettice/261013-01.pdf
+#     （ブラウザの JavaScript に埋め込んだ秘密情報のルール、2026-11-06）
 #   - OWASP API Security Top 10 2023（API7 Server Side Request Forgery）、OWASP Cheat Sheet Series
 #     （Server-Side Request Forgery Prevention / Injection Prevention / Query Parameterization /
 #     Deserialization / File Upload / OS Command Injection Defense）
@@ -39,6 +42,9 @@
 #     （Generation of Error Message Containing Sensitive Information）、OWASP Error Handling Cheat Sheet
 #   - NIST SP 800-204「Security Strategies for Microservices-based Application Systems」
 #     https://csrc.nist.gov/pubs/sp/800/204/final （サーキットブレーカー・負荷分散・スロットリング）
+#   - OWASP Credential Stuffing Prevention Cheat Sheet、NIST SP 800-63B-4（試行回数の制限・漏えい済みパスワードの拒否）
+#     https://cheatsheetseries.owasp.org/cheatsheets/Credential_Stuffing_Prevention_Cheat_Sheet.html
+#     https://pages.nist.gov/800-63-4/sp800-63b.html （認証の入口への推測攻撃のルール、2026-11-06）
 #   - MITRE ATT&CK (Enterprise) v20.0（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
 #     出典つきで参照し本文は転載しない）:
 #     T1190 "Exploit Public-Facing Application"、T1078 "Valid Accounts"、
@@ -50,7 +56,9 @@
 #     T1550.001 "Use Alternate Authentication Material: Application Access Token"、
 #     T1606 "Forge Web Credentials"、T1552.005 "Unsecured Credentials: Cloud Instance Metadata API"、
 #     T1505.003 "Server Software Component: Web Shell"、T1059 "Command and Scripting Interpreter"、
-#     T1592.002 "Gather Victim Host Information: Software"。
+#     T1592.002 "Gather Victim Host Information: Software"、
+#     T1110.001 "Brute Force: Password Guessing"、T1110.003 "Brute Force: Password Spraying"、
+#     T1110.004 "Brute Force: Credential Stuffing"（2026-11-06）。
 #     https://attack.mitre.org/techniques/
 #   本文は逐語転載せず日本語要約のみ。
 #
@@ -86,6 +94,11 @@
 #     IdP を描かない構成（アプリのサーバーが自前でセッション・JWT を発行・検証する）も含め、
 #     利用者の端末や、利用者の操作を代行する SaaS・業務アプリから呼ばれる API 側の検証を扱う。
 #     subject が異なるため別 canonicalId とする。
+#   - ブラウザの JavaScript（SPA）に埋め込んだ API キー・クライアントシークレット（api-web-client-embedded-secret-001、
+#     2026-11-06）は、スマートフォンのアプリ（api-mobile-embedded-secret-001）と同じ脅威のため canonicalId:
+#     api-mobile-embedded-client-secret を共有する。あちらは対象ノード、こちらは公衆網の線が subject で別カードになる
+#     （ノードのルールでは相手 USER の利用者区分を見られず、社員のリモート接続を除けないため線にした）。社員（Employee）と
+#     宣言した USER は除き、未宣言の USER は Unknown として発火する。
 #   - アプリを解析してバックエンド API を直接狙う攻撃（A2B 攻撃）で狙われる SSRF・SQL / NoSQL
 #     インジェクション・コード実行を、バックエンド側の実装の問いとして 3 ルール（api-backend-ssrf-001 /
 #     api-backend-query-injection-001 / api-backend-remote-code-execution-001）で扱う。IDOR は BOLA
@@ -112,6 +125,15 @@
 #     GATEWAY / REVERSE_PROXY）とは別の問い（下流を呼ぶ側のタイムアウト・サーキットブレーカー・
 #     隔離）。同じ問いを GATEWAY に重ねないため対象は BACKEND_API だけにする。AI エージェント間の
 #     誤った判断の波及（cascading-failures、ASI08）とも機構と subject が異なり別。
+#   - 認証の入口（ログイン・パスワード再設定・MFA のコード入力）への総当たり・リスト型攻撃・パスワードスプレー
+#     （api-login-credential-guessing-001、canonicalId: login-credential-guessing、2026-11-06 新設）は既存に専用のルールが無い。
+#     アカウント乗っ取り一般（stride-user-spoofing-001、user-account-takeover）は USER ノードの側から MFA 等を問い、
+#     パスワード・API キーだけの公衆網の線（stride-edge-password-internet-001、password-only-internet-channel）は線の
+#     認証方式を問う。本ルールは入口のサーバー側の試行の制限・分散した試行の検知を問い、subject と対策が異なるため別グループ。
+#     ゲートウェイの量の制限（gateway-resource-exhaustion）は可用性、大量取得（api-bulk-data-harvesting）は認証後の
+#     データの取得量を扱い別。IdP のログイン画面は identity.yaml の identity-idp-login-credential-guessing-001 が同じ
+#     canonicalId で扱う。管理画面（ADMIN_CONSOLE）も同じルールの対象にし、必ずログインを持つため conditions で High に
+#     する（2026-11-06 ユーザー判断）。管理面の露出そのもの（web-remote-management-exposure）とは問いが異なり併発する。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する。
@@ -367,6 +389,49 @@ rules:
       - title: "MITRE ATT&CK T1552.001 - Unsecured Credentials: Credentials In Files（アプリの解析による埋め込みの秘密情報の取り出し）"
         url: "https://attack.mitre.org/techniques/T1552/001/"
 
+  # ── BACKEND_API / GATEWAY: ブラウザの JavaScript に埋め込んだ秘密情報への依存（経路依存）──
+  # api-mobile-embedded-secret-001（スマートフォンのアプリ、ノード）と同じ脅威のため canonicalId を共有する。
+  # こちらは利用者の端末・ブラウザから公衆網経由で呼ぶ線が subject（別カード）。
+  - id: api-web-client-embedded-secret-001
+    canonicalId: api-mobile-embedded-client-secret
+    framework: STRIDE
+    category: "Spoofing"
+    name: "ブラウザの JavaScript に埋め込んだ秘密情報による呼び出し元の確認"
+    severity: Medium
+    description: "{{sourceName}} はブラウザで動く Web アプリ（SPA 等）から公衆網経由で {{targetName}} を呼び出す。JavaScript の中に API キー・クライアントシークレット・署名用の鍵を埋め込み、それを持っていることを「正規の Web アプリからの呼び出し」の証明にしている場合、攻撃者はブラウザに配信された JavaScript（ソースマップを含む）を開発者ツールで読むか、通信を観察するだけでその値を取り出し、Web アプリを介さずにスクリプトから {{targetName}} を直接呼び出せる（Can）。ブラウザに配信したコードは誰でも読めるため、難読化や環境変数としての埋め込み（ビルド時に JavaScript へ書き込まれる）でも秘密情報は守れない（OAuth 2.0 でも、ブラウザで動くアプリはシークレットを秘匿できない公開クライアントとして扱う）。Web アプリを経由しない呼び出しは、画面側の入力チェックや画面遷移を前提にした制限を素通りし、BOLA などの認可不備と組み合わさると大量の情報取得につながる。一方、ブラウザに渡す値を認証にも認可にも使わず、利用者ごとのトークン（PKCE を用いた認可コードフロー、またはサーバー側でトークンを保持する構成）で呼び出し元の利用者を確かめ、すべての認可判断をサーバー側で行っていれば、取り出した値だけでは何もできない（Cannot）。秘密情報を埋め込んでいない場合は当たらない。blast radius はブラウザに埋め込んだ値で呼び出せる {{targetName}} の全機能。"
+    mitigation: "[Foundation] ブラウザに配信する JavaScript・設定ファイル・ソースマップに、API キー・クライアントシークレット・署名用の鍵を含めない（ビルド時に埋め込まれる環境変数も同じ）。ブラウザに渡すキーが必要なサービスは、そのキーを認証・認可の根拠にせず、利用できるドメイン・機能・量を制限する。利用者の認証は、PKCE を用いた OAuth 2.0 の認可コードフロー等で発行した利用者ごとの短命なトークンで行い、認可の判断はすべてサーバー側で行う。 [Enterprise] 秘密情報が要る外部の API の呼び出しはサーバー側（BFF 等）に移し、ブラウザには利用者のセッションだけを持たせる。一度でも配信した JavaScript に含まれていた秘密情報は漏えい済みとして扱い、ローテーションする。 [Advanced] 配信する成果物（JavaScript・ソースマップ）に秘密情報が含まれていないかを CI で検査する。Web アプリを経由しない呼び出しのパターン（画面では起こらない順序・頻度）を検知する。"
+    appliesTo:
+      kind: edge
+      # 公衆網（Internet）経由で API・ゲートウェイを呼ぶ利用者の端末・利用者。PC は利用者区分を持たないため型だけで判定する。
+      # USER は社員（Employee）と宣言したものを除く（社員のリモート接続の VPN を GATEWAY で描いた図での誤検知を避けるため）。
+      # 未宣言の USER は Unknown として一致し、カードに「未入力のため仮定」の印が付く（大方針どおり）。
+      anyOf:
+        - sourceType: [PC]
+          targetType: [BACKEND_API, GATEWAY]
+          network: [Internet]
+        - sourceType: [USER]
+          sourceUserTrust: [Guest, Contractor, Partner, Unknown]
+          targetType: [BACKEND_API, GATEWAY]
+          network: [Internet]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+    references:
+      - title: "NICT CYNEX（LETTICE）注意喚起「相次ぐ情報漏洩、その原因の一つは『アプリ解析からのサーバ攻撃』」（2026-10-13、A2B 攻撃）"
+        url: "https://cynex.nict.go.jp/pdf/library/lettice/261013-01.pdf"
+      - title: "OWASP API Security Top 10 2023 - API2:2023 Broken Authentication"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/"
+      - title: "IETF RFC 6749 - The OAuth 2.0 Authorization Framework（§2.1 ブラウザで動くアプリは公開クライアント）"
+        url: "https://www.rfc-editor.org/rfc/rfc6749"
+      - title: "IETF RFC 7636 - Proof Key for Code Exchange by OAuth Public Clients（PKCE）"
+        url: "https://www.rfc-editor.org/rfc/rfc7636"
+      - title: "IETF RFC 9700 - Best Current Practice for OAuth 2.0 Security"
+        url: "https://www.rfc-editor.org/rfc/rfc9700"
+      - title: "MITRE ATT&CK T1552.001 - Unsecured Credentials: Credentials In Files（配信された JavaScript からの秘密情報の取り出し）"
+        url: "https://attack.mitre.org/techniques/T1552/001/"
+
   # ── BACKEND_API / GATEWAY: 個人情報の大量取得の制限・検知の欠如（経路依存）──
   - id: api-bulk-data-harvesting-001
     canonicalId: api-bulk-data-harvesting
@@ -400,6 +465,58 @@ rules:
         url: "https://owasp.org/www-project-automated-threats-to-web-applications/"
       - title: "MITRE ATT&CK T1119 - Automated Collection（スクリプトによる個人情報の繰り返しの取得）"
         url: "https://attack.mitre.org/techniques/T1119/"
+
+  # ── FRONT_END_SERVER / BACKEND_API / GATEWAY / ADMIN_CONSOLE: 認証の入口への推測攻撃（経路依存）──
+  # IdP のログイン画面は identity.yaml の identity-idp-login-credential-guessing-001（同じ canonicalId）。
+  - id: api-login-credential-guessing-001
+    canonicalId: login-credential-guessing
+    framework: STRIDE
+    category: "Spoofing"
+    name: "ログイン・パスワード再設定の入口への総当たり・リスト型攻撃・パスワードスプレー"
+    severity: Medium
+    description: "{{nodeName}} はインターネットから利用者の端末に呼び出される。{{nodeName}} がログイン・パスワード再設定・MFA のコード入力・登録済みかどうかの確認を受け付ける場合、攻撃者は他のサービスから漏えいした ID とパスワードの組を順に試す（リスト型攻撃）、よく使われるパスワード 1 つを多数のアカウントに試す（パスワードスプレー）、1 つのアカウントに多数のパスワードを試す（総当たり）ことで、正規の利用者としてログインできる（Can）。試行を多数の送信元（乗っ取った端末・家庭用回線のプロキシ・クラウドの多数のアドレス）に分散させ、1 つの送信元やアカウントあたりの回数を少なく保つため、送信元 IP 単位の回数制限やアカウントごとのロックだけでは止まらない。乗っ取ったアカウントの個人情報・ポイント・決済手段が直接の被害になり、正規のログインのため不正利用との区別も難しい。一方、アカウント単位の失敗回数の制限に加えて、アカウントをまたいだ失敗率・同じパスワードの多数のアカウントへの試行・新しい送信元の急増を検知して止め、漏えい済みのパスワードを登録させず、MFA やパスキーを使える・必須にしていれば、推測による試行は成功しないか早期に止まる（Cannot）。{{nodeName}} にログインの機能が無い場合（認証を前段や IdP に任せている等）は、その入口の側で同じ確認をする。blast radius は推測が成功したアカウントの数と、それらのアカウントが {{nodeName}} で操作できる範囲。"
+    mitigation: "[Foundation] ログイン・パスワード再設定・MFA のコード入力・登録済みの確認の各入口で、アカウント単位の失敗回数の制限（段階的な遅延・一時的なロック）を設け、送信元 IP 単位の制限だけに頼らない。失敗時の応答をそろえ、アカウントの有無を返さない。漏えい済みのパスワード・よく使われるパスワードを登録させない。利用者が MFA を使えるようにする。 [Enterprise] アカウントをまたいだ失敗率、同じパスワードの多数のアカウントへの試行、新しい送信元・国からの急増を検知し、自動で追加の確認（CAPTCHA・MFA）や一時的な遮断を行う。Bot 管理や送信元の評価で機械的な試行を抑える。認証のログ（成功・失敗・ロック）を SIEM に送り、新しい端末・地域からのログインを利用者に通知する。 [Advanced] パスキー等のパスワードを使わない認証に移行し、推測の対象をなくす。端末・振る舞いにもとづくリスクベース認証で、正しいパスワードでも不審なログインを止める。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: FRONT_END_SERVER
+        - nodeType: BACKEND_API
+        - nodeType: GATEWAY
+        # 管理画面（2026-11-06 ユーザー判断）。必ずログインを持つため conditions で High にする。
+        - nodeType: ADMIN_CONSOLE
+      # インターネットに面している（攻撃面属性 hasGlobalIp。未入力は有り＝大方針どおり発火）。
+      attackSurface:
+        hasGlobalIp: true
+      # 利用者の端末から呼ばれる（inbound）ときだけ発火する。前段（RP・LB・WAF・CDN）を挟む構成もその背後で拾う。
+      # GATEWAY は peerType に入れない（ゲートウェイの背後の API に同じカードを重ねないため。入口のゲートウェイに 1 枚）。
+      connection:
+        direction: inbound
+        peerType: [USER, PC, SMARTPHONE, EXTERNAL_ENTITY, REVERSE_PROXY, LOAD_BALANCER, WAF, CDN]
+      conditions:
+        - when:
+            nodeType: [ADMIN_CONSOLE]
+          severity: High
+          description: "{{nodeName}}（管理画面）はインターネットから届き、管理者のログインを必ず受け付ける。攻撃者は他のサービスから漏えいした ID とパスワードの組を順に試す（リスト型攻撃）、よく使われるパスワードや製品の既定のパスワードを管理者アカウントに試す（パスワードスプレー・総当たり）ことで、管理者としてログインできる（Can）。試行を多数の送信元に分散させ、1 つのアカウントあたりの回数を少なく保つため、送信元 IP 単位の制限やアカウントごとのロックだけでは止まらない。管理者のアカウントは数が少なく名前も推測しやすい（admin 等）うえ、1 つ成功すれば会員・注文などの全データの閲覧・一括書き出し・設定の変更ができる。一方、管理画面を送信元を限った入口（管理用ネットワーク・VPN・IAP の背後）に置き、管理者全員に MFA（できればフィッシング耐性のあるもの）を必須にし、既定のアカウントを無効にし、失敗の連続とアカウントをまたいだ試行を検知して止めていれば、推測による試行は成功しないか早期に止まる（Cannot）。blast radius は {{nodeName}} の管理者権限で操作できるすべての機能とデータ。"
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-01"
+    references:
+      - title: "OWASP API Security Top 10 2023 - API2:2023 Broken Authentication（認証の入口の回数制限の欠如）"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/"
+      - title: "OWASP API Security Top 10 2023 - API4:2023 Unrestricted Resource Consumption"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/"
+      - title: "OWASP Credential Stuffing Prevention Cheat Sheet"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/Credential_Stuffing_Prevention_Cheat_Sheet.html"
+      - title: "NIST SP 800-63B-4 - Digital Identity Guidelines: Authentication and Authenticator Management（試行回数の制限・漏えい済みパスワードの拒否）"
+        url: "https://pages.nist.gov/800-63-4/sp800-63b.html"
+      - title: "MITRE ATT&CK T1110.001 - Brute Force: Password Guessing"
+        url: "https://attack.mitre.org/techniques/T1110/001/"
+      - title: "MITRE ATT&CK T1110.003 - Brute Force: Password Spraying"
+        url: "https://attack.mitre.org/techniques/T1110/003/"
+      - title: "MITRE ATT&CK T1110.004 - Brute Force: Credential Stuffing"
+        url: "https://attack.mitre.org/techniques/T1110/004/"
 
   # ── BACKEND_API: 機能単位の認可不備（API5 BFLA）──────────────────
   - id: api-backend-function-level-authorization-001

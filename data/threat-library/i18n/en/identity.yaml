@@ -74,6 +74,15 @@ rules:
       "2":
         title: "MITRE ATT&CK T1070 - Indicator Removal (erasing traces of authentication)"
 
+  identity-idp-login-credential-guessing-001:
+    category: "Spoofing"
+    name: "Brute force, credential stuffing, and password spraying against the IdP sign-in page"
+    description: "{{nodeName}} accepts logins, password resets, and MFA code entry from users' devices. An attacker can sign in as a legitimate user by trying one common password against many accounts (password spraying), trying ID and password pairs leaked from other services one after another (credential stuffing), or trying many passwords against one account (brute force) (Can). Because the attempts are spread across many sources and kept below the lockout threshold per account, per-source-IP limits and per-account lockout alone do not stop them. Legacy authentication methods exempted from MFA (basic authentication, app passwords, and the like) and accounts without MFA registered are the most frequent targets. {{nodeName}} is the single sign-on starting point for every service beneath it, so guessing a single account is enough to get into every service that account can use. If, instead, MFA (preferably phishing-resistant) is required for every account with legacy methods disabled, leaked passwords cannot be registered, and cross-account failure rates and the same password tried against many accounts are detected and stopped, guessing attempts either fail or are stopped early (Cannot). The blast radius is the accounts whose credentials were guessed and every service those accounts can use through single sign-on."
+    mitigation: "[Foundation] Require MFA for every account (including exceptions for administrators and service use), and disable legacy authentication methods that bypass MFA (basic authentication, app passwords, old protocols). Set per-account failure limits (progressive delays, temporary lockout), and do not allow leaked or commonly used passwords to be registered. [Enterprise] Detect cross-account failure rates, the same password tried against many accounts, and sudden surges from new sources or countries, and automatically add a challenge or block temporarily (the IdP's smart lockout, risk-based sign-in, and similar features). Send authentication logs to the SIEM and investigate combinations of lockouts and successes (a success after many failures). [Advanced] Move to passwordless authentication such as passkeys to remove the target of guessing. Use conditional access based on device state and user behavior to stop suspicious sign-ins even with the correct password."
+    references:
+      "0":
+        title: "NIST SP 800-63B-4 - Digital Identity Guidelines: Authentication and Authenticator Management (attempt limiting and rejecting compromised passwords)"
+
   identity-hybrid-idp-onprem-cloud-coupling-001:
     category: "Elevation of Privilege"
     name: "Trust coupling in a hybrid identity platform (an on-premises compromise reaching the cloud tenant directly)"

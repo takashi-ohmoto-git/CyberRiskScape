@@ -108,6 +108,11 @@
 #     Cracking"（2026-11-05 追加。パスワードの保管方式）。
 #     https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
 #     https://pages.nist.gov/800-63-4/sp800-63b.html
+#   - OWASP Credential Stuffing Prevention Cheat Sheet・MITRE ATT&CK (Enterprise) T1110.001 "Brute Force: Password
+#     Guessing"・T1110.003 "Brute Force: Password Spraying"・T1110.004 "Brute Force: Credential Stuffing"
+#     （2026-11-06 追加。IdP のログイン画面への推測攻撃）。
+#     https://cheatsheetseries.owasp.org/cheatsheets/Credential_Stuffing_Prevention_Cheat_Sheet.html
+#     https://attack.mitre.org/techniques/T1110/
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -260,6 +265,14 @@
 #   - 発火は「資格情報を内包するストア」に絞る（appliesTo の containsType）。図に内包を描かない
 #     ストアには出ない。全ストアに出すと、パスワードを持たないストアにも同じカードが並ぶため。
 #     IDENTITY_PROVIDER は内包を描けない型で、製品側が保管する場合が多いので対象外。
+#
+#   IdP のログイン画面への推測攻撃（identity-idp-login-credential-guessing-001、2026-11-06）について:
+#
+#   - api-platform.yaml の api-login-credential-guessing-001 と同じ脅威のため canonicalId: login-credential-guessing を
+#     共有する（subject のノード型が違い別カード）。IdP は攻撃面属性を入力できないため別ルールにした。
+#   - 線の認証方式（stride-edge-password-internet-001・zt-aitm-session-token-theft-001）は線が subject で、
+#     本ルールは入口の側の試行の制限・分散した試行の検知を問う。アカウント乗っ取り一般（stride-user-spoofing-001）は
+#     USER ノードが subject。いずれも併発しても重複しない。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する。
@@ -424,6 +437,41 @@ rules:
       # stride-external-entity-repudiation-001 が扱う（ノード型が異なる別 subject）。
       - title: "MITRE ATT&CK T1070 - Indicator Removal（認証の痕跡の消去）"
         url: "https://attack.mitre.org/techniques/T1070/"
+
+  # ── IDENTITY_PROVIDER: ログイン画面への推測攻撃（経路依存）────────────────
+  # 公開サーバー・API・ゲートウェイの入口は api-platform.yaml の api-login-credential-guessing-001（同じ canonicalId）。
+  - id: identity-idp-login-credential-guessing-001
+    canonicalId: login-credential-guessing
+    framework: STRIDE
+    category: "Spoofing"
+    name: "IdP のログイン画面への総当たり・リスト型攻撃・パスワードスプレー"
+    severity: High
+    description: "{{nodeName}} は利用者の端末からログイン・パスワード再設定・MFA のコード入力を受け付ける。攻撃者はよく使われるパスワード 1 つを多数のアカウントに試す（パスワードスプレー）、他のサービスから漏えいした ID とパスワードの組を順に試す（リスト型攻撃）、1 つのアカウントに多数のパスワードを試す（総当たり）ことで、正規の利用者としてサインインできる（Can）。試行を多数の送信元に分散させ、1 つのアカウントあたりの回数をロックの閾値より少なく保つため、送信元 IP 単位の制限やアカウントごとのロックだけでは止まらない。MFA の対象外にしている古い認証方式（基本認証・アプリパスワード等）や、MFA を登録していないアカウントが狙われやすい。{{nodeName}} は配下の全サービスへのシングルサインオンの起点のため、1 つのアカウントの推測が成功するだけで、そのアカウントが使えるすべてのサービスに入られる。一方、すべてのアカウントで MFA（できればフィッシング耐性のあるもの）を必須にして古い認証方式を無効にし、漏えい済みのパスワードを登録させず、アカウントをまたいだ失敗率や同じパスワードの多数のアカウントへの試行を検知して止めていれば、推測による試行は成功しないか早期に止まる（Cannot）。blast radius は推測が成功したアカウントと、そのアカウントがシングルサインオンで使える全サービス。"
+    mitigation: "[Foundation] すべてのアカウント（管理者・サービス用の例外を含む）で MFA を必須にし、MFA を経ない古い認証方式（基本認証・アプリパスワード・旧プロトコル）を無効にする。アカウント単位の失敗回数の制限（段階的な遅延・一時的なロック）を設け、漏えい済みのパスワード・よく使われるパスワードを登録させない。 [Enterprise] アカウントをまたいだ失敗率、同じパスワードの多数のアカウントへの試行、新しい送信元・国からの急増を検知し、自動で追加の確認や一時的な遮断を行う（IdP のスマートロック・リスクベースのサインイン等）。認証のログを SIEM に送り、ロックと成功の組み合わせ（多数の失敗の後の成功）を調べる。 [Advanced] パスキー等のパスワードを使わない認証に移行し、推測の対象をなくす。端末の状態と利用者の振る舞いにもとづく条件付きアクセスで、正しいパスワードでも不審なサインインを止める。"
+    appliesTo:
+      kind: node
+      nodeType: IDENTITY_PROVIDER
+      # 利用者の端末からログインを受ける（inbound）ときだけ発火する。IdP は攻撃面属性を入力できないため、
+      # インターネットに面しているかは問わない（社内の IdP へのパスワードスプレーも同じ問いになる）。
+      connection:
+        direction: inbound
+        peerType: [USER, PC, SMARTPHONE, EXTERNAL_ENTITY]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-01"
+    references:
+      - title: "NIST SP 800-63B-4 - Digital Identity Guidelines: Authentication and Authenticator Management（試行回数の制限・漏えい済みパスワードの拒否）"
+        url: "https://pages.nist.gov/800-63-4/sp800-63b.html"
+      - title: "OWASP Credential Stuffing Prevention Cheat Sheet"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/Credential_Stuffing_Prevention_Cheat_Sheet.html"
+      - title: "MITRE ATT&CK T1110.003 - Brute Force: Password Spraying"
+        url: "https://attack.mitre.org/techniques/T1110/003/"
+      - title: "MITRE ATT&CK T1110.004 - Brute Force: Credential Stuffing"
+        url: "https://attack.mitre.org/techniques/T1110/004/"
+      - title: "MITRE ATT&CK T1110.001 - Brute Force: Password Guessing"
+        url: "https://attack.mitre.org/techniques/T1110/001/"
 
   # ── IDENTITY_PROVIDER(Hybrid): オンプレ ⇄ クラウドの信頼結合（intrinsic）────
   - id: identity-hybrid-idp-onprem-cloud-coupling-001
