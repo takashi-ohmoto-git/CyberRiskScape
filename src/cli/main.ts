@@ -13,6 +13,7 @@ import {
   type ResolvedProject,
 } from './analyze';
 import { toSarif } from './sarif';
+import { evaluateSavedFindingsGate, formatGateFinding } from './findingsGate';
 import {
   diffProjects,
   diffToJson,
@@ -167,6 +168,7 @@ analyze のオプション:
   --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある全レイヤー）
   --framework <STRIDE|AI|AgenticAI|ALL>         対象フレームワーク（既定: ALL）
   --fail-on <Critical|High|Medium|Low>          指定した重大度以上の未抑制脅威があれば exit 1
+  --fail-on-findings <Critical|High|Medium|Low> 保存済みの指摘で、指定重大度以上（試行のみ・受容済みを除く）があれば exit 1
   --with-findings                               --format sarif のとき、プロジェクトに保存された外部製品の指摘（import-prowler で保存）を製品ごとの run として追加
   --locale <ja|en>                              表示言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
@@ -346,7 +348,7 @@ mcp のオプション（stdio の MCP サーバーとして起動。stdout は 
 共通:
   --help                                        このヘルプを表示
 
-終了コード: 0=成功 / 1=--fail-on / --fail-on-action によるゲート不合格 / 2=入力・引数エラー`;
+終了コード: 0=成功 / 1=--fail-on / --fail-on-findings / --fail-on-action によるゲート不合格 / 2=入力・引数エラー`;
 
 function fail(message: string): never {
   process.stderr.write(`${message}\n`);
@@ -423,6 +425,7 @@ function parseCliArgs() {
       framework: { type: 'string' },
       'fail-on': { type: 'string' },
       'fail-on-action': { type: 'boolean' },
+      'fail-on-findings': { type: 'string' },
       id: { type: 'string' },
       'as-of': { type: 'string' },
       triggers: { type: 'string' },
@@ -470,6 +473,7 @@ function runAnalyze(values: CliValues, positionals: string[]): void {
   const layer = parseEnum(values.layer, LAYER_KEYS, 'layer');
   const framework = parseEnum(values.framework, FRAMEWORKS, 'framework');
   const failOn = parseEnum(values['fail-on'], SEVERITIES, 'fail-on');
+  const failOnFindings = parseEnum(values['fail-on-findings'], SEVERITIES, 'fail-on-findings');
   const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
   if (values['with-findings'] && format !== 'sarif') fail('--with-findings は --format sarif のときだけ使えます。');
 
@@ -484,7 +488,7 @@ function runAnalyze(values: CliValues, positionals: string[]): void {
   try {
     const resolved = resolveProject(raw);
     results = analyzeResolvedProject(resolved, { layer, framework, locale });
-    if (values['with-findings']) findings = resolved.findings;
+    if (values['with-findings'] || failOnFindings) findings = resolved.findings;
   } catch (e) {
     fail(e instanceof Error ? e.message : String(e));
   }
@@ -492,7 +496,11 @@ function runAnalyze(values: CliValues, positionals: string[]): void {
   const artifactUri = file.replace(/\\/g, '/');
   let output: string;
   if (format === 'sarif') {
-    output = JSON.stringify(toSarif(results, { artifactUri, findings }), null, 2);
+    output = JSON.stringify(
+      toSarif(results, { artifactUri, findings: values['with-findings'] ? findings : undefined }),
+      null,
+      2,
+    );
   } else if (format === 'md') {
     const exportDate = formatLocalDate(new Date());
     output = results.map((r) => toDCRHThreatModelMarkdown(r.input, exportDate)).join('\n\n');
@@ -512,6 +520,19 @@ function runAnalyze(values: CliValues, positionals: string[]): void {
         process.stderr.write(`  - [${effectiveSeverity(t)}] ${t.category}: ${t.description}\n`);
       }
       // process.exit() はパイプ先への stdout 書き込みを打ち切り得るため、終了コードだけ設定する。
+      process.exitCode = 1;
+    }
+  }
+
+  if (failOnFindings) {
+    // --layer 指定時は、そのレイヤーの指摘と未結合の指摘だけを判定する（他レイヤーの受容を判定できないため）
+    const targets = (findings ?? []).filter((f) => !layer || !f.subject || f.subject.layer === layer);
+    const offenders = evaluateSavedFindingsGate(targets, results, failOnFindings);
+    if (offenders.length > 0) {
+      process.stderr.write(
+        `--fail-on-findings ${failOnFindings}: 保存済みの指摘が ${offenders.length} 件しきい値以上です（試行のみ・受容済みを除く）。\n`,
+      );
+      for (const f of offenders) process.stderr.write(`  - ${formatGateFinding(f, results)}\n`);
       process.exitCode = 1;
     }
   }

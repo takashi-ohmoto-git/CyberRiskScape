@@ -175,6 +175,29 @@ const LOST_IN_CONVERSION: Record<Finding['source']['format'], string[]> = {
   pentest: ['evidence and request/response details (kept in the source product)', 'summary and remediation text'],
 };
 
+/**
+ * 指摘と脅威の結び付け：同じノード かつ 脅威の canonicalId が指摘の canonicalIds に含まれるもの。
+ * ノードが消えている・未結合なら undefined（SARIF の linkedThreatIds とゲート判定で共有）。
+ */
+export function linkFindingToThreats(
+  f: Finding,
+  results: readonly LayerAnalysisResult[],
+): { layerResult: LayerAnalysisResult; node: DiagramNode; threats: ThreatView[] } | undefined {
+  if (!f.subject) return undefined;
+  const subject = f.subject;
+  const layerResult = results.find((r) => r.layer === subject.layer);
+  const node = layerResult?.input.nodes.find((n) => n.id === subject.nodeId);
+  if (!layerResult || !node) return undefined;
+  const threats = layerResult.threats.filter(
+    (t) =>
+      t.subject?.kind === 'node' &&
+      t.subject.id === subject.nodeId &&
+      t.canonicalId !== undefined &&
+      f.canonicalIds.includes(t.canonicalId),
+  );
+  return { layerResult, node, threats };
+}
+
 /** 外部製品の指摘を製品ごとの run にする（docs/architecture.md §8.3）。 */
 function findingRuns(results: LayerAnalysisResult[], findings: readonly Finding[], artifactUri: string): object[] {
   const byProduct = new Map<string, Finding[]>();
@@ -186,25 +209,14 @@ function findingRuns(results: LayerAnalysisResult[], findings: readonly Finding[
       const ruleId = f.identifiers[0]?.value ?? f.id;
       if (!rules.has(ruleId)) rules.set(ruleId, { id: ruleId, shortDescription: { text: f.title ?? ruleId } });
 
-      // ノードが消えていれば未結合として扱う
-      const layerResult = f.subject ? results.find((r) => r.layer === f.subject?.layer) : undefined;
-      const node = f.subject ? layerResult?.input.nodes.find((n) => n.id === f.subject?.nodeId) : undefined;
+      const link = linkFindingToThreats(f, results);
+      const layerResult = link?.layerResult;
+      const node = link?.node;
       const nodeLabel =
         layerResult && node && f.subject
           ? assetLabel({ kind: 'node', id: f.subject.nodeId }, layerResult.input.nodes, [], [])
           : '';
-      const linkedThreatIds =
-        layerResult && node && f.subject
-          ? layerResult.threats
-              .filter(
-                (t) =>
-                  t.subject?.kind === 'node' &&
-                  t.subject.id === f.subject?.nodeId &&
-                  t.canonicalId !== undefined &&
-                  f.canonicalIds.includes(t.canonicalId),
-              )
-              .map((t) => t.id)
-          : [];
+      const linkedThreatIds = (link?.threats ?? []).map((t) => t.id);
       const resourceLabel = f.resource?.label ?? '';
 
       return {
