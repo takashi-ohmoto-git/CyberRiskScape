@@ -129,7 +129,7 @@ export function evaluateChecklist(input: EvaluateChecklistInput): ChecklistResul
       if (t.suppression?.status === 'accepted') counts.accepted++;
       else if (t.controlStatus?.status === 'implemented') counts.implemented++;
       else {
-        const kind = t.assumptionFlags?.some((f) => f === 'attackSurface' || f === 'posture') ? 'unfilled' : 'action';
+        const kind = t.assumptionFlags?.some((f) => f === 'attackSurface' || f === 'posture' || f === 'userTrust') ? 'unfilled' : 'action';
         counts[kind]++;
         if (!checkNodeIds.includes(t.nodeId)) checkNodeIds.push(t.nodeId);
         const n = nodeById.get(t.nodeId);

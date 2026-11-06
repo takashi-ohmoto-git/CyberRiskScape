@@ -1,14 +1,15 @@
-import type {
-  AttackSurfaceAttribute,
-  DetectedThreat,
-  DetectionAssumptionFlag,
-  DiagramBoundary,
-  DiagramEdge,
-  DiagramNode,
-  FrameworkView,
-  PostureEnumKey,
-  Severity,
-  TrustLevel,
+import {
+  ATTACK_SURFACE_APPLICABLE,
+  type AttackSurfaceAttribute,
+  type DetectedThreat,
+  type DetectionAssumptionFlag,
+  type DiagramBoundary,
+  type DiagramEdge,
+  type DiagramNode,
+  type FrameworkView,
+  type PostureEnumKey,
+  type Severity,
+  type TrustLevel,
 } from '../model/types';
 import type { ThreatRule } from '../../threat-library/schema/threatRule';
 import { componentRegistry } from '../../component-library/defaultRegistry';
@@ -179,13 +180,20 @@ function usedAgentAttributesBaseline(node: DiagramNode, match: AgentAttributesMa
   return false;
 }
 
-/** ノードルール評価で使われた最悪仮定フラグを収集する（マッチ成立時のみ呼ぶ）。 */
+/**
+ * ノードルール評価で使われた最悪仮定フラグを収集する（マッチ成立時のみ呼ぶ）。
+ * `peerAssumed` は接続要件の相手（peerAttackSurface）を baseline で埋めて成立したか。
+ */
 function collectNodeAssumptionFlags(
   node: DiagramNode,
   nodeApplies: NodeAppliesTo,
+  peerAssumed: boolean,
 ): DetectionAssumptionFlag[] | undefined {
   const flags: DetectionAssumptionFlag[] = [];
-  if (nodeApplies.attackSurface && usedAttackSurfaceBaseline(node, nodeApplies.attackSurface)) {
+  if (
+    peerAssumed ||
+    (nodeApplies.attackSurface && usedAttackSurfaceBaseline(node, nodeApplies.attackSurface))
+  ) {
     flags.push('attackSurface');
   }
   if (nodeApplies.agentAttributes && usedAgentAttributesBaseline(node, nodeApplies.agentAttributes)) {
@@ -241,15 +249,9 @@ function matchEdgeWhen(
     if (!target.managedState) return false;
     if (!when.targetManagedState.includes(target.managedState)) return false;
   }
-  if (when.sourceUserTrust) {
-    // managedState と同じ「明示宣言時のみ発火」方式。USER 以外や未宣言ノードは不成立。
-    if (!source.userTrustAttribute) return false;
-    if (!when.sourceUserTrust.includes(source.userTrustAttribute)) return false;
-  }
-  if (when.targetUserTrust) {
-    if (!target.userTrustAttribute) return false;
-    if (!when.targetUserTrust.includes(target.userTrustAttribute)) return false;
-  }
+  // 未宣言は 'Unknown' として評価する（未入力＝悪い値と同じ扱い）。'Unknown' を含まない条件は従来どおり不成立。
+  if (when.sourceUserTrust && !when.sourceUserTrust.includes(source.userTrustAttribute ?? 'Unknown')) return false;
+  if (when.targetUserTrust && !when.targetUserTrust.includes(target.userTrustAttribute ?? 'Unknown')) return false;
   if (when.semantic) {
     // 未指定エッジは 'data_flow' を既定とする（§2.22 1.6d）。
     // agentAttributes のような「最悪を仮定」ではないため、`semantic: [tool_invocation]`
@@ -297,6 +299,26 @@ function matchEdgeApplies(
   if (applies.allOf) return applies.allOf.every((w) => matchEdgeWhen(w, edge, source, target, ends));
   if (applies.anyOf) return applies.anyOf.some((w) => matchEdgeWhen(w, edge, source, target, ends));
   return false;
+}
+
+/**
+ * エッジルール評価で使われた最悪仮定フラグ（マッチ成立時のみ呼ぶ）。
+ * 成立したリーフの信頼区分の条件が、未宣言のノードを `Unknown` として一致させたら `userTrust`。
+ */
+function collectEdgeAssumptionFlags(
+  applies: EdgeAppliesTo,
+  edge: DiagramEdge,
+  source: DiagramNode,
+  target: DiagramNode,
+  ends: EdgeEndpoints,
+): DetectionAssumptionFlag[] | undefined {
+  const leaves = applies.when
+    ? [applies.when]
+    : (applies.allOf ?? applies.anyOf?.filter((w) => matchEdgeWhen(w, edge, source, target, ends)) ?? []);
+  const assumed = leaves.some(
+    (w) => (w.sourceUserTrust && !source.userTrustAttribute) || (w.targetUserTrust && !target.userTrustAttribute),
+  );
+  return assumed ? ['userTrust'] : undefined;
 }
 
 /**
@@ -358,6 +380,9 @@ function matchNodeWhen(
  * - `required: false`：常に成立（内在的脅威）。
  * - それ以外：`direction` / `peerType` / `peerAttackSurface` をすべて満たすエッジが
  *   少なくとも 1 本必要（同一エッジで AND 評価）。
+ *
+ * 戻り値：不成立は `'none'`。`peerAttackSurface` を相手の未入力（baseline）で埋めた
+ * エッジでしか成立しなければ `'assumed'`、それ以外の成立は `'matched'`。
  */
 function matchNodeConnection(
   node: DiagramNode,
@@ -366,8 +391,8 @@ function matchNodeConnection(
   conn: ConnectionRequirement | undefined,
   closure: AuthProviderClosure,
   logSinkClosure: LogSinkClosure,
-): boolean {
-  if (conn?.required === false) return true;
+): 'none' | 'matched' | 'assumed' {
+  if (conn?.required === false) return 'matched';
   const direction = conn?.direction ?? 'any';
   const peerType = conn?.peerType;
   const peerAttackSurface = conn?.peerAttackSurface;
@@ -378,8 +403,9 @@ function matchNodeConnection(
   // `peerAttackSurface` を指定するルールは**実際のデータフローの形**を問うており、
   // 参照には向きも相手型も無いため、それらを参照で満たしたことにはしない。
   const isBareRequirement = direction === 'any' && !peerType && !peerAttackSurface;
-  if (isBareRequirement && isReferencedProvider(closure, node.id)) return true;
-  if (isBareRequirement && isReferencedLogSink(logSinkClosure, node.id)) return true;
+  if (isBareRequirement && isReferencedProvider(closure, node.id)) return 'matched';
+  if (isBareRequirement && isReferencedLogSink(logSinkClosure, node.id)) return 'matched';
+  let assumed = false;
   for (const edge of edges) {
     const isSource = edge.source === node.id;
     const isTarget = edge.target === node.id;
@@ -397,10 +423,20 @@ function matchNodeConnection(
       if (!peer) continue;
       if (peerType && !peerType.includes(peer.type)) continue;
       if (peerAttackSurface && !matchAttackSurface(peer, peerAttackSurface)) continue;
+      // 入力できる相手が未入力のまま baseline で成立したなら、入力済みの相手が他に無いか探し続ける。
+      // 入力できない型（CDN 等）は仮定の印を付けない（入力して消す手段が無いため）。
+      if (
+        peerAttackSurface &&
+        ATTACK_SURFACE_APPLICABLE.has(peer.type) &&
+        usedAttackSurfaceBaseline(peer, peerAttackSurface)
+      ) {
+        assumed = true;
+        continue;
+      }
     }
-    return true;
+    return 'matched';
   }
-  return false;
+  return assumed ? 'assumed' : 'none';
 }
 
 export function detectThreats({
@@ -437,8 +473,15 @@ export function detectThreats({
       const { conditions: nodeConditions } = nodeApplies;
       for (const node of nodes) {
         if (!matchNodeApplies(nodeApplies, node)) continue;
-        if (!matchNodeConnection(node, edges, nodeById, nodeApplies.connection, authProviderClosure, logSinkClosure))
-          continue;
+        const connection = matchNodeConnection(
+          node,
+          edges,
+          nodeById,
+          nodeApplies.connection,
+          authProviderClosure,
+          logSinkClosure,
+        );
+        if (connection === 'none') continue;
         const role = authProviderRoleOf(authProviderClosure, node.id);
         const segment = segmentByNodeId.get(node.id) ?? UNSEGMENTED;
         const childTypes = childTypesByParent.get(node.id) ?? NO_CHILD_TYPES;
@@ -475,7 +518,7 @@ export function detectThreats({
           mitigationTiers: rule.mitigationTiers,
           complianceRefs: rule.complianceRefs,
           references: rule.references,
-          assumptionFlags: collectNodeAssumptionFlags(node, nodeApplies),
+          assumptionFlags: collectNodeAssumptionFlags(node, nodeApplies, connection === 'assumed'),
         });
       }
       continue;
@@ -525,6 +568,7 @@ export function detectThreats({
         complianceRefs: rule.complianceRefs,
         references: rule.references,
         isDynamic: true,
+        assumptionFlags: collectEdgeAssumptionFlags(edgeApplies, edge, sourceNode, targetNode, ends),
       });
     }
   }

@@ -34,6 +34,7 @@ const ASSUMPTION_KEY: Record<DetectionAssumptionFlag, TranslationKey> = {
   attackSurface: 'threatCard.assumption.attackSurface',
   agentAttributes: 'threatCard.assumption.agentAttributes',
   posture: 'threatCard.assumption.posture',
+  userTrust: 'threatCard.assumption.userTrust',
 };
 
 /**

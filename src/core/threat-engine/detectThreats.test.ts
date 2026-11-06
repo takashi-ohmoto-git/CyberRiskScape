@@ -803,8 +803,8 @@ describe('detectThreats', () => {
     expect(out).toHaveLength(0);
   });
 
-  it('userTrustAttribute 未宣言のノードでは userTrust 軸を持つルールは発火しない', () => {
-    // managedState と同じ「明示宣言時のみ発火」方式（最悪仮定ではない）。
+  it('userTrustAttribute 未宣言のノードでは Unknown を含まない userTrust 軸のルールは発火しない', () => {
+    // 未宣言は 'Unknown' として評価する。条件が 'Unknown' を含まなければ不成立。
     const uNodes: DiagramNode[] = [
       { id: 'user', type: 'USER', x: 0, y: 0 }, // userTrustAttribute 未宣言
       { id: 'db', type: 'DB', x: 0, y: 0 },
@@ -822,6 +822,35 @@ describe('detectThreats', () => {
     };
     const out = detectThreats({ nodes: uNodes, edges: uEdges, framework: 'STRIDE', rules: [rule] });
     expect(out).toHaveLength(0);
+  });
+
+  it('sourceUserTrust: Unknown を含む条件は未宣言のノードで発火し、userTrust の仮定の印を付ける', () => {
+    const uNodes: DiagramNode[] = [
+      { id: 'u1', type: 'USER', x: 0, y: 0 }, // 未宣言
+      { id: 'u2', type: 'USER', x: 0, y: 0, userTrustAttribute: 'Contractor' },
+      { id: 'u3', type: 'USER', x: 0, y: 0, userTrustAttribute: 'Employee' },
+      { id: 'db', type: 'DB', x: 0, y: 0 },
+    ];
+    const uEdges: DiagramEdge[] = [
+      { id: 'e1', source: 'u1', target: 'db', auth: 'MFA', network: 'VPN', encryption: 'TLS' },
+      { id: 'e2', source: 'u2', target: 'db', auth: 'MFA', network: 'VPN', encryption: 'TLS' },
+      { id: 'e3', source: 'u3', target: 'db', auth: 'MFA', network: 'VPN', encryption: 'TLS' },
+    ];
+    const rule: ThreatRule = {
+      id: 'external-collab-unknown',
+      framework: 'STRIDE',
+      category: 'X',
+      severity: 'Medium',
+      description: 'x',
+      appliesTo: {
+        kind: 'edge',
+        when: { sourceType: ['USER'], sourceUserTrust: ['Guest', 'Contractor', 'Partner', 'Unknown'] },
+      },
+    };
+    const out = detectThreats({ nodes: uNodes, edges: uEdges, framework: 'STRIDE', rules: [rule] });
+    expect(out.map((t) => t.id)).toEqual(['external-collab-unknown-e1', 'external-collab-unknown-e2']);
+    expect(out[0].assumptionFlags).toEqual(['userTrust']);
+    expect(out[1].assumptionFlags).toBeUndefined();
   });
 
   it('conditions: targetUserTrust 軸で severity を段階分けできる', () => {
@@ -1170,6 +1199,44 @@ describe('detectThreats', () => {
       rules: [agentToPublicGw],
     });
     expect(out).toHaveLength(1);
+    // 入力できる相手（GATEWAY）が未入力のまま一致したので仮定の印が付く
+    expect(out[0].assumptionFlags).toEqual(['attackSurface']);
+  });
+
+  it('connection.peerAttackSurface: 入力済みの相手で一致すれば、未入力の相手が他にいても印を付けない', () => {
+    const mixedNodes: DiagramNode[] = [
+      { id: 'a', type: 'AGENT', x: 0, y: 0 },
+      { id: 'gw1', type: 'GATEWAY', x: 0, y: 0 },
+      { id: 'gw2', type: 'GATEWAY', x: 0, y: 0, attackSurface: { hasGlobalIp: true } },
+    ];
+    const mixedEdges: DiagramEdge[] = [
+      { id: 'e1', source: 'a', target: 'gw1', auth: 'None', network: 'Internet', encryption: 'TLS' },
+      { id: 'e2', source: 'a', target: 'gw2', auth: 'None', network: 'Internet', encryption: 'TLS' },
+    ];
+    const out = detectThreats({ nodes: mixedNodes, edges: mixedEdges, framework: 'AgenticAI', rules: [agentToPublicGw] });
+    expect(out).toHaveLength(1);
+    expect(out[0].assumptionFlags).toBeUndefined();
+  });
+
+  it('connection.peerAttackSurface: 攻撃面を入力できない相手（CDN）は baseline で一致しても印を付けない', () => {
+    const cdnNodes: DiagramNode[] = [
+      { id: 'a', type: 'AGENT', x: 0, y: 0 },
+      { id: 'cdn', type: 'CDN', x: 0, y: 0 },
+    ];
+    const cdnEdges: DiagramEdge[] = [
+      { id: 'e', source: 'a', target: 'cdn', auth: 'None', network: 'Internet', encryption: 'TLS' },
+    ];
+    const rule: ThreatRule = {
+      ...agentToPublicGw,
+      appliesTo: {
+        kind: 'node',
+        nodeType: 'AGENT',
+        connection: { direction: 'outbound', peerType: ['CDN'], peerAttackSurface: { hasGlobalIp: true } },
+      },
+    };
+    const out = detectThreats({ nodes: cdnNodes, edges: cdnEdges, framework: 'AgenticAI', rules: [rule] });
+    expect(out).toHaveLength(1);
+    expect(out[0].assumptionFlags).toBeUndefined();
   });
 
   it('connection.peerAttackSurface: peerType 不一致なら攻撃面が合っても発火しない', () => {

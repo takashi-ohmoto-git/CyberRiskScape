@@ -195,6 +195,7 @@ export const jaPanels = {
   'panels.posture.value.recordVolume.Under1M': '100万件未満',
   'panels.posture.value.recordVolume.Over1M': '100万件以上',
   'threatCard.assumption.posture': '運用状況が未入力のため、対策なしとして評価しています。NodePanel の「運用状況」を入力すると精度が上がります。',
+  'threatCard.assumption.userTrust': '利用者の信頼区分が未入力のため、社員と確認できない利用者として評価しています。NodePanel で信頼区分を入力すると精度が上がります。',
 
   'panels.node.agentAttrsToggle': 'エージェント属性',
   'panels.node.agentAttrsConfigured': '設定済み',

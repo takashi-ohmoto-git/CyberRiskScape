@@ -977,8 +977,9 @@ export interface DetectedThreat {
  * - attackSurface: 攻撃面フィールド未設定を baseline（開放寄り）で評価
  * - agentAttributes: agency/blastRadius/identityTier 未設定を最悪値で評価
  * - posture: 運用状況（ログ・暗号化等）の未入力を「対策なし」として評価
+ * - userTrust: 利用者の信頼区分の未入力を `Unknown`（社員と確認できない）として評価
  */
-export type DetectionAssumptionFlag = 'attackSurface' | 'agentAttributes' | 'posture';
+export type DetectionAssumptionFlag = 'attackSurface' | 'agentAttributes' | 'posture' | 'userTrust';
 
 /**
  * ユーザーが手動で追加する脅威シナリオ。自動検出（`DetectedThreat`）とは別系統の

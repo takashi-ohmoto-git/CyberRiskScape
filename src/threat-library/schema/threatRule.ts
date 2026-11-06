@@ -56,6 +56,8 @@ export const IdentityProviderKindSchema = z.enum([
 ]);
 export const ManagedStateSchema = z.enum(['Managed', 'Unmanaged']);
 export const UserTrustAttributeSchema = z.enum(['Guest', 'Employee', 'Contractor', 'Partner']);
+/** ルール側の信頼区分の条件。`Unknown` はノード側の未入力に一致する（未入力＝悪い値と同じ扱い）。 */
+export const UserTrustMatchSchema = z.enum([...UserTrustAttributeSchema.options, 'Unknown']);
 
 /**
  * エージェント特有属性の Zod スキーマ。
@@ -446,11 +448,11 @@ const EdgeWhenSchema = z
     targetManagedState: z.array(ManagedStateSchema).nonempty().optional(),
     /**
      * source ノードのユーザー信頼区分（USER のみ意味を持つ）。
-     * managedState と同じく、ノード側で未宣言なら不成立（明示宣言時のみ発火）。
+     * ノード側で未宣言なら `Unknown` として評価する（`Unknown` を含まない条件は不成立）。
      */
-    sourceUserTrust: z.array(UserTrustAttributeSchema).nonempty().optional(),
-    /** target ノードのユーザー信頼区分（USER のみ意味を持つ）。未宣言は不成立。 */
-    targetUserTrust: z.array(UserTrustAttributeSchema).nonempty().optional(),
+    sourceUserTrust: z.array(UserTrustMatchSchema).nonempty().optional(),
+    /** target ノードのユーザー信頼区分（USER のみ意味を持つ）。未宣言は `Unknown`。 */
+    targetUserTrust: z.array(UserTrustMatchSchema).nonempty().optional(),
     /**
      * エッジ意味論ラベルによる絞り込み。
      * 未指定エッジは `data_flow`（既定）として評価される。

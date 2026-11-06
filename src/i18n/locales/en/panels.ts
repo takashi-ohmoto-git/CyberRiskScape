@@ -194,6 +194,7 @@ export const enPanels: Partial<Record<TranslationKey, string>> = {
   'panels.posture.value.recordVolume.Under1M': 'Under 1 million records',
   'panels.posture.value.recordVolume.Over1M': '1 million records or more',
   'threatCard.assumption.posture': 'Operational posture is not filled in; evaluation assumed no countermeasure. Fill in "Operational posture" on the node for higher precision.',
+  'threatCard.assumption.userTrust': 'The user trust level is not filled in; evaluation treated the user as not confirmed to be an employee. Set the trust level on the node for higher precision.',
 
   'panels.node.agentAttrsToggle': 'Agent attributes',
   'panels.node.agentAttrsConfigured': 'Configured',
