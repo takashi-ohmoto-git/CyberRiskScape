@@ -87,7 +87,7 @@ export const EdgeSemanticSchema = z.enum([
  * 未指定の属性は不問。
  *
  * ノード側の値が undefined の場合は insecure baseline として扱う：
- *   hasGlobalIp = true・hasResponseCache = true、他はすべて false。
+ *   hasGlobalIp = true・hasResponseCache = true、他（hasRateLimit を含む）はすべて false。
  * これにより未設定の FRONT_END_SERVER でもベースラインリスクが検出される。
  *
  * 少なくとも 1 つの属性指定が必要（空オブジェクト拒否）。
@@ -102,6 +102,7 @@ export const AttackSurfaceMatchSchema = z
     hasWafProtection: z.boolean().optional(),
     hasDdosProtection: z.boolean().optional(),
     hasResponseCache: z.boolean().optional(),
+    hasRateLimit: z.boolean().optional(),
   })
   .refine(
     (a) =>
@@ -112,7 +113,8 @@ export const AttackSurfaceMatchSchema = z
       a.hasAccessLog !== undefined ||
       a.hasWafProtection !== undefined ||
       a.hasDdosProtection !== undefined ||
-      a.hasResponseCache !== undefined,
+      a.hasResponseCache !== undefined ||
+      a.hasRateLimit !== undefined,
     { message: 'attackSurface must include at least one condition' },
   );
 

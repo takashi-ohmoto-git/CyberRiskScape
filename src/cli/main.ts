@@ -35,6 +35,11 @@ import { parseVeracodeFindings } from '../features/findings-report/parseVeracode
 import { parseSkillScannerFindings } from '../features/findings-report/parseSkillScanner';
 import { parseMcpScannerFindings } from '../features/findings-report/parseMcpScanner';
 import { parseProwlerOcsf } from '../features/prowler-import/parseProwlerOcsf';
+import { importSarif, sarifReportToJson, sarifReportToMarkdown } from './importSarif';
+import { importKev, kevReportToJson, kevReportToMarkdown } from './importKev';
+import { parseKevCatalog } from '../features/kev-import/applyKev';
+import { findingsPriority, priorityToJson, priorityToMarkdown } from './findingsPriority';
+import { parseSarif } from '../features/sarif-import/parseSarif';
 import { importProwler, prowlerReportToJson, prowlerReportToMarkdown } from './importProwler';
 import {
   findingsReportToJson as importFindingsReportToJson,
@@ -51,6 +56,7 @@ import { version as APP_VERSION } from '../../package.json';
 import { buildSpdx } from '../features/bom-import/buildSpdx';
 import { listBomComponents } from '../features/bom-import/listBomComponents';
 import { bomReportToJson, bomReportToMarkdown, importBom } from './importBom';
+import { importAsmAssets } from './importAsmAssets';
 import { artexAssetsReportToJson, artexAssetsReportToMarkdown, importArtexAssets } from './importArtexAssets';
 import { MAX_FILE_BYTES } from './readEvidence';
 import { buildFindingsReport, evaluateFindingsGate } from '../features/findings-report/buildFindingsReport';
@@ -144,6 +150,9 @@ const USAGE = `使い方:
   import-prowler <project.json> --ocsf <file> [options]
   import-findings <project.json> --format <xccdf|arf|oval> --in <file> [options]
   import-pentest <project.json> --in <registry.yaml> [options]
+  import-sarif <project.json> --sarif <file> --scope <scope> [options]
+  import-kev <project.json> --kev <file> [options]
+  findings-priority <project.json> [options]
   import-artex-assets <project.json> --scope <scope> [--services <file>] [--endpoints <file>] [options]
   import-sbom <project.json> --sbom <file> --scope <scope> [options]
   import-conjur <policy.yml> [options]
@@ -239,7 +248,25 @@ import-artex-assets のオプション（ARTEX の資産 API の JSON から、�
   --report <md|json>                            報告の形式（既定: md。標準出力）
   -o, --out <file>                              資産を保存したプロジェクト JSON の出力先（指定しなければ報告のみ）
 
-import-sbom のオプション（CycloneDX または SPDX 2.x の JSON の部品を保存する。形式は中身で判定する。依存関係・ライセンス・鍵の値は保存しない）:
+import-sarif のオプション（汎用の SARIF 2.1.0（Semgrep・CodeQL 等の SAST）の結果を指摘として保存する。抑制済み・解消済み（absent）・合格／対象外／情報の結果は除く。message の本文・コード片・codeFlows は保存しない。場所は相対的な表記に落とす）:
+  --sarif <file>                                SARIF の JSON（必須）
+  --scope <scope>                               置き換えの範囲（必須。同じ製品・同じ scope の指摘を置き換える）
+  --node <C番号|ID>                             すべての指摘を結びつけるノード（任意。無ければ未結合）
+  --report <md|json>                            報告の形式（既定: md。標準出力）
+  -o, --out <file>                              指摘を保存したプロジェクト JSON の出力先（指定しなければ報告のみ）
+
+import-kev のオプション（CISA の KEV カタログ JSON（https://www.cisa.gov/known-exploited-vulnerabilities-catalog）を指摘の CVE と照合し、載っている指摘に kev の印を付ける。載っていない指摘からは印を外す＝取り込み直しで最新になる。カタログは同梱せず、ネットワークにも出ない。KEV に載っている＝CISA が悪用を確認した事実）:
+  --kev <file>                                  KEV カタログの JSON（必須）
+  --report <md|json>                            報告の形式（既定: md。標準出力）
+  -o, --out <file>                              印を付けたプロジェクト JSON の出力先（指定しなければ報告のみ）
+
+findings-priority のオプション（保存済みの指摘を攻撃経路に載せ、推奨の優先度 P1〜P4 と根拠（露出・届く標的・KEV・連鎖）を出す。推奨と根拠であり、判断は人。「悪用できる」とは言わない。元の深刻度は変えない）:
+  --attacker <C番号|ID>                         攻撃者（AI エージェント攻撃者）のノード（既定: 図の攻撃者ノードの先頭。無ければ露出を評価できない）
+  --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある全レイヤー。そのレイヤーの指摘と未結合の指摘だけ評価）
+  --format <md|json>                            出力形式（既定: md。json には SSVC との用語の対応を含む）
+  -o, --out <file>                              出力先ファイル（既定: 標準出力）
+
+import-sbom のオプション（CycloneDX または SPDX 2.x の JSON の部品を保存する。形式は中身で判定する。ライセンスは ID か式だけ保存し適否は判定しない。CycloneDX の vulnerabilities は指摘として保存し、VEX で not_affected・false_positive・resolved のものは除く。依存関係・鍵の値は保存しない）:
   --sbom <file>                                 BOM の JSON（必須）
   --scope <scope>                               置き換えの範囲（必須。同じ形式・同じ scope の部品を置き換える）
   --node <C番号|ID>                             すべての部品を結びつけるノード（任意。無ければ未対応）
@@ -254,6 +281,11 @@ import-conjur のオプション（Conjur / Secrets Manager のポリシーか�
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
 import-shodan のオプション（Shodan の書き出し（.json.gz または JSON）から外部露出サービスの図を L1 に作り、プロジェクト JSON を出力）:
+  --into <project.json>                         図の下書きの代わりに、観測したサービス（ip:port/transport）を資産として既存のプロジェクトに保存する。
+                                                製品が報告した CVE は識別子（cve・未検証・最大 10 件）として残す。指定しなければ従来どおり図の下書きを出す
+  --scope <scope>                               --into のとき必須。置き換えの範囲（同じ製品・同じ scope の資産を置き換える）
+  --map <file>                                  --into のとき、IP・ホスト名とノードの対応表（任意。JSON {"<IP|ホスト名>": "<C番号|ノード ID>"}。無ければ未対応）
+  --node <C番号|ID>                             --into のとき、対応表に無いサービスを結びつけるノード（任意）
   --locale <ja|en>                              ノード名の言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
@@ -262,6 +294,11 @@ import-scopesentry のオプション（ScopeSentry の書き出し JSON、ま�
                                                 API キーは環境変数 SCOPESENTRY_API_KEY で渡す（保存・出力しない）。許可された範囲にだけ使うこと
   --project <ObjectID>                          --api のとき、このプロジェクトの資産だけ取得する
   --search <expr>                               --api のとき、ScopeSentry の検索式で絞り込む
+  --into <project.json>                         図の下書きの代わりに、観測したサービス（ip:port/transport）を資産として既存のプロジェクトに保存する。
+                                                製品が報告した CVE は識別子（cve・未検証・最大 10 件）として残す。指定しなければ従来どおり図の下書きを出す
+  --scope <scope>                               --into のとき必須。置き換えの範囲（同じ製品・同じ scope の資産を置き換える）
+  --map <file>                                  --into のとき、IP・ホスト名とノードの対応表（任意。JSON {"<IP|ホスト名>": "<C番号|ノード ID>"}。無ければ未対応）
+  --node <C番号|ID>                             --into のとき、対応表に無いサービスを結びつけるノード（任意）
   --locale <ja|en>                              ノード名の言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
@@ -447,6 +484,9 @@ function parseCliArgs() {
       evidence: { type: 'string', multiple: true },
       hosts: { type: 'string' },
       sbom: { type: 'string' },
+      sarif: { type: 'string' },
+      kev: { type: 'string' },
+      attacker: { type: 'string' },
       node: { type: 'string' },
       'base-url': { type: 'string' },
       author: { type: 'string' },
@@ -456,6 +496,7 @@ function parseCliArgs() {
       project: { type: 'string' },
       search: { type: 'string' },
       scope: { type: 'string' },
+      into: { type: 'string' },
       help: { type: 'boolean' },
     },
   });
@@ -916,6 +957,75 @@ ${USAGE}`);
   );
 }
 
+/** `import-kev`：KEV カタログを指摘の CVE と照合して kev の印を付け外しする（docs/attack-tree-analysis.md §12）。 */
+function runImportKev(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  if (!values.kev) fail('--kev <file> を指定してください。');
+  const report = parseEnum(values.report, IMPORT_PROWLER_REPORTS, 'report') ?? 'md';
+
+  const parsed = parseKevCatalog(readJsonFile(values.kev));
+  if (!parsed.ok) fail(`${parsed.error}（${values.kev}）`);
+
+  let out: ReturnType<typeof importKev>;
+  try {
+    out = importKev(readJsonFile(file), parsed.catalog);
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  if (values.out) writeFileSync(values.out, JSON.stringify(out.project, null, 2), 'utf-8');
+  process.stdout.write(`${report === 'json' ? JSON.stringify(kevReportToJson(out), null, 2) : kevReportToMarkdown(out)}
+`);
+  process.stderr.write(`KEV と照合しました（対象 ${out.checked} / 印を付けた ${out.marked} / 外した ${out.cleared}）
+`);
+}
+
+/** `findings-priority`：保存済みの指摘を攻撃経路に載せて推奨の優先度を出す（docs/attack-tree-analysis.md §12）。 */
+function runFindingsPriority(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  const format = parseEnum(values.format, IMPORT_PROWLER_REPORTS, 'format') ?? 'md';
+  const layer = parseEnum(values.layer, LAYER_KEYS, 'layer');
+
+  let out: ReturnType<typeof findingsPriority>;
+  try {
+    out = findingsPriority(readJsonFile(file), { ...(values.attacker ? { attacker: values.attacker } : {}), ...(layer ? { layer } : {}) });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  writeOutput(format === 'json' ? JSON.stringify(priorityToJson(out), null, 2) : priorityToMarkdown(out), values.out);
+}
+
+/** `import-sarif`：汎用の SARIF 2.1.0 の結果を指摘としてプロジェクト JSON に保存する（docs/architecture.md §8.6）。 */
+function runImportSarif(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  if (!values.sarif) fail('--sarif <file> を指定してください。');
+  if (!values.scope) fail('--scope を指定してください。');
+  const report = parseEnum(values.report, IMPORT_PROWLER_REPORTS, 'report') ?? 'md';
+
+  const parsed = parseSarif(readJsonFile(values.sarif));
+  if (!parsed.ok) fail(`${parsed.error}（${values.sarif}）`);
+
+  let out: ReturnType<typeof importSarif>;
+  try {
+    out = importSarif(readJsonFile(file), parsed, { scope: values.scope, ...(values.node ? { node: values.node } : {}) });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  if (values.out) writeFileSync(values.out, JSON.stringify(out.project, null, 2), 'utf-8');
+  process.stdout.write(`${report === 'json' ? JSON.stringify(sarifReportToJson(out), null, 2) : sarifReportToMarkdown(out)}
+`);
+  process.stderr.write(`SARIF の結果を取り込みました（run ${out.runs.length} / 保存した指摘 ${out.stored} / 上限で除外 ${out.truncated}）
+`);
+}
+
 /** `import-sbom`：CycloneDX・SPDX の部品をプロジェクト JSON に保存する（docs/architecture.md §8.8）。 */
 function runImportSbom(values: CliValues, positionals: string[]): void {
   const file = positionals[1];
@@ -935,7 +1045,7 @@ function runImportSbom(values: CliValues, positionals: string[]): void {
   }
   if (values.out) writeFileSync(values.out, JSON.stringify(out.project, null, 2), 'utf-8');
   process.stdout.write(`${report === 'json' ? JSON.stringify(bomReportToJson(out), null, 2) : bomReportToMarkdown(out)}\n`);
-  process.stderr.write(`部品を取り込みました（保存 ${out.stored} / 上限で除外 ${out.truncated}）\n`);
+  process.stderr.write(`部品を取り込みました（保存 ${out.stored} / 上限で除外 ${out.truncated}、指摘 ${out.findings.stored} / VEX 等で除外 ${out.findings.excluded}）\n`);
 }
 
 /** `export-spdx`：部品を SPDX 2.3 JSON で出力する（docs/architecture.md §8.8）。 */
@@ -1031,6 +1141,38 @@ function runImportConjur(values: CliValues, positionals: string[]): void {
 }
 
 /**
+ * `import-shodan` / `import-scopesentry` の `--into`：観測サービスを資産として既存プロジェクトに保存する。
+ * ノードとの結合は `--map` / `--node` の明示だけ（推測しない）。
+ */
+function saveAsmAssets(
+  values: CliValues,
+  exposed: Parameters<typeof importAsmAssets>[1],
+  product: { format: 'shodan' | 'scopesentry'; product: string },
+): void {
+  if (!values.into) return;
+  if (!values.scope) fail('--into のときは --scope を指定してください（例: 2026-11）。');
+  let nodeMap: Record<string, string> = {};
+  if (values.map) {
+    const m = z.record(z.string(), z.string()).safeParse(readJsonFile(values.map));
+    if (!m.success) fail('--map は {"<IP|ホスト名>": "<C番号|ノード ID>"} の JSON にしてください。');
+    nodeMap = m.data;
+  }
+  let out: ReturnType<typeof importAsmAssets>;
+  try {
+    out = importAsmAssets(readJsonFile(values.into), exposed, { ...product, scope: values.scope, nodeMap, ...(values.node ? { node: values.node } : {}) });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  writeOutput(JSON.stringify(out.project, null, 2), values.out);
+  process.stderr.write(
+    `${product.product} のサービスを資産として保存しました（サービス ${out.services} / CVE の識別子 ${out.cves} / 未対応のホスト ${out.unlinkedHosts.length}）
+`,
+  );
+  if (out.badNodeRefs.length > 0) process.stderr.write(`図に無い、または特定できないノードの指定: ${out.badNodeRefs.join(', ')}
+`);
+}
+
+/**
  * `import-shodan`：Shodan の書き出し（gzip 圧縮の JSON Lines、または JSON）から、インターネットに露出した
  * サービスの構成図を作り、プロジェクト JSON を出力する。バナー本文・HTTP の内容は読まない（`shodanToLayer` 参照）。
  */
@@ -1054,6 +1196,10 @@ ${USAGE}`);
   const result = shodanToLayer(text);
   if (!result.ok) fail(result.error);
 
+  if (values.into) {
+    saveAsmAssets(values, result.exposed, { format: 'shodan', product: 'Shodan' });
+    return;
+  }
   writeOutput(JSON.stringify(layerToProject(result.layer), null, 2), values.out);
   const s = result.summary;
   process.stderr.write(
@@ -1106,6 +1252,10 @@ ${USAGE}`);
   }
   if (!result.ok) fail(result.error);
 
+  if (values.into) {
+    saveAsmAssets(values, result.exposed, { format: 'scopesentry', product: 'ScopeSentry' });
+    return;
+  }
   writeOutput(JSON.stringify(layerToProject(result.layer), null, 2), values.out);
   const s = result.summary;
   process.stderr.write(
@@ -1684,6 +1834,12 @@ function main(): void {
     runImportFindings(values, positionals);
   } else if (command === 'import-pentest') {
     runImportPentest(values, positionals);
+  } else if (command === 'import-kev') {
+    runImportKev(values, positionals);
+  } else if (command === 'findings-priority') {
+    runFindingsPriority(values, positionals);
+  } else if (command === 'import-sarif') {
+    runImportSarif(values, positionals);
   } else if (command === 'import-sbom') {
     runImportSbom(values, positionals);
   } else if (command === 'export-spdx') {

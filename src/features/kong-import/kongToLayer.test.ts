@@ -168,7 +168,10 @@ ${plugins.map((p) => `      - name: ${p}`).join('\n')}
 
   it('API ゲートウェイの攻撃面属性は設定で確認できた項目だけ埋める', () => {
     const { layer } = ok(KONG_YAML);
-    expect(layer.nodes.find((n) => n.id === 'kong-gw-api')?.attackSurface).toEqual({ hasUserAuthentication: true });
+    expect(layer.nodes.find((n) => n.id === 'kong-gw-api')?.attackSurface).toEqual({
+      hasUserAuthentication: true,
+      hasRateLimit: true,
+    });
     const withLog = ok(`
 services:
   - name: s
@@ -182,6 +185,39 @@ plugins:
       hasSourceIpRestriction: true,
       hasAccessLog: true,
     });
+  });
+
+  it('rate-limiting 系プラグインが全ルートで有効なら API ゲートウェイの hasRateLimit を true にし、報告に 1 行足す', () => {
+    const gw = (yaml: string) => ok(yaml).layer.nodes.find((n) => n.id === 'kong-gw-api')!;
+    const base = `
+services:
+  - name: s
+    url: https://s.internal
+    routes: [{ name: r }]
+`;
+    const global = gw(`${base}plugins:
+  - name: rate-limiting-advanced
+`);
+    expect(global.attackSurface).toEqual({ hasRateLimit: true });
+    expect(global.description).toContain('レート制限: 全ルートで有効');
+    const onRoute = gw(
+      `services:
+  - name: s
+    url: https://s.internal
+    routes:
+      - name: r
+        plugins: [{ name: rate-limiting }]
+`,
+    );
+    expect(onRoute.attackSurface).toEqual({ hasRateLimit: true });
+    const none = gw(base);
+    expect(none.attackSurface).toBeUndefined();
+    expect(none.description).toContain('レート制限: 確認できず');
+    const disabled = gw(`${base}plugins:
+  - name: rate-limiting
+    enabled: false
+`);
+    expect(disabled.attackSurface).toBeUndefined();
   });
 
   it('要素の ID はサービス名から決まり、サービスを足しても既存の ID は変わらない', () => {

@@ -10,7 +10,9 @@ import type { BomCryptoProperties, BomFormat, BomKind, FindingIdentifier } from 
  * - 許可した項目だけを読む。暗号の鍵の値（`relatedCryptoMaterialProperties.value`）は読まない
  * - purl の修飾子は取得元の URL が入ることがあるので除く
  * - 型違いの項目は落とすだけで、部品ごと捨てない
- * - 依存関係・ライセンス・提供元・証拠・外部参照は第 1 段では持たない
+ * - ライセンスは SPDX の ID か式だけを持つ（適否は判定しない）。CycloneDX の vulnerabilities（VEX を含む）は
+ *   本文を読まず、ID・別名・評価・影響部品・状態だけを返す（指摘への変換は vulnerabilitiesToFindings.ts）
+ * - 依存関係・提供元・証拠・外部参照は持たない
  */
 
 export interface ParsedBomItem {
@@ -20,11 +22,24 @@ export interface ParsedBomItem {
   sourceType?: string;
   name: string;
   version?: string;
+  licenses?: string[];
   crypto?: BomCryptoProperties;
 }
 
+/** CycloneDX の vulnerabilities[] の 1 件（本文類は読まない）。affects は bom-ref を部品に解決済み。 */
+export interface ParsedVulnerability {
+  id: string;
+  /** source.name */
+  source?: string;
+  references: { id: string; source?: string }[];
+  ratings: { score?: number; severity?: string }[];
+  /** analysis.state（VEX） */
+  state?: string;
+  affects: ParsedBomItem[];
+}
+
 export type ParsedBom =
-  | { ok: true; format: BomFormat; specVersion: string; product: string; productVersion?: string; observedAt?: string; items: ParsedBomItem[] }
+  | { ok: true; format: BomFormat; specVersion: string; product: string; productVersion?: string; observedAt?: string; items: ParsedBomItem[]; vulnerabilities?: ParsedVulnerability[] }
   | { ok: false; error: string };
 
 const str = z.string().max(2000).optional().catch(undefined);
@@ -37,8 +52,25 @@ const list = <T extends z.ZodTypeAny>(item: T) =>
     }),
   );
 
+const MAX_LICENSES = 10;
+/** NOASSERTION・NONE は捨て、重複を除いて最大 10 件にする。 */
+function normalizeLicenses(raw: readonly (string | undefined)[]): string[] {
+  const out = new Set<string>();
+  for (const r of raw) {
+    const v = r?.trim().slice(0, 200);
+    if (v && v !== 'NOASSERTION' && v !== 'NONE') out.add(v);
+  }
+  return [...out].slice(0, MAX_LICENSES);
+}
+
 const CycloneDxComponentSchema = z.object({
   type: str,
+  licenses: list(
+    z.object({
+      license: z.object({ id: str, name: str }).optional().catch(undefined),
+      expression: str,
+    }),
+  ),
   name: str,
   version: str,
   purl: str,
@@ -74,6 +106,16 @@ const CycloneDxSchema = z.object({
     .optional()
     .catch(undefined),
   components: z.array(z.unknown()).max(200_000).optional().catch(undefined),
+  vulnerabilities: z.array(z.unknown()).max(200_000).optional().catch(undefined),
+});
+
+const CycloneDxVulnerabilitySchema = z.object({
+  id: z.string().min(1).max(200),
+  source: z.object({ name: str }).optional().catch(undefined),
+  references: list(z.object({ id: z.string().min(1).max(200), source: z.object({ name: str }).optional().catch(undefined) })),
+  ratings: list(z.object({ score: num, severity: str })),
+  analysis: z.object({ state: str }).optional().catch(undefined),
+  affects: list(z.object({ ref: str })),
 });
 
 const ToolSchema = z.object({ name: str, version: str });
@@ -144,6 +186,7 @@ function parseCycloneDxBom(raw: unknown): ParsedBom {
   const bom = CycloneDxSchema.safeParse(raw);
   if (!bom.success) return { ok: false, error: 'CycloneDX の形が想定と異なります。' };
   const items: ParsedBomItem[] = [];
+  const byRef = new Map<string, ParsedBomItem>();
   const walk = (rows: readonly unknown[]) => {
     for (const row of rows) {
       const parsed = CycloneDxComponentSchema.safeParse(row);
@@ -153,20 +196,42 @@ function parseCycloneDxBom(raw: unknown): ParsedBom {
         const sha256 = c.hashes.find((h) => h.alg === 'SHA-256')?.content;
         const identifiers = identifiersOf(c.purl, c.cpe, sha256);
         const crypto = c.type === 'cryptographic-asset' ? cryptoOf(c) : undefined;
-        items.push({
+        const licenses = normalizeLicenses(c.licenses.flatMap((l) => [l.license?.id ?? l.license?.name, l.expression]));
+        const item: ParsedBomItem = {
           externalId: externalIdOf(identifiers, c['bom-ref'], c.name, c.version),
           identifiers,
           kind: CYCLONEDX_KINDS[c.type ?? ''] ?? 'other',
           ...(c.type ? { sourceType: c.type.slice(0, 50) } : {}),
           name: c.name.slice(0, 500),
           ...(c.version ? { version: c.version.slice(0, 200) } : {}),
+          ...(licenses.length > 0 ? { licenses } : {}),
           ...(crypto ? { crypto } : {}),
-        });
+        };
+        items.push(item);
+        if (c['bom-ref']) byRef.set(c['bom-ref'], item);
       }
       if (c.components) walk(c.components);
     }
   };
   walk(bom.data.components ?? []);
+  const vulnerabilities = (bom.data.vulnerabilities ?? []).flatMap((row): ParsedVulnerability[] => {
+    const v = CycloneDxVulnerabilitySchema.safeParse(row);
+    if (!v.success) return [];
+    const d = v.data;
+    return [
+      {
+        id: d.id,
+        ...(d.source?.name ? { source: d.source.name } : {}),
+        references: d.references.slice(0, 10).map((r) => ({ id: r.id, ...(r.source?.name ? { source: r.source.name } : {}) })),
+        ratings: d.ratings.slice(0, 20),
+        ...(d.analysis?.state ? { state: d.analysis.state } : {}),
+        affects: d.affects.flatMap((a) => {
+          const hit = a.ref ? byRef.get(a.ref) : undefined;
+          return hit ? [hit] : [];
+        }),
+      },
+    ];
+  });
   const tool = cycloneDxTool(bom.data.metadata?.tools);
   const observedAt = bom.data.metadata?.timestamp ? toIsoTimestamp(bom.data.metadata.timestamp) : undefined;
   return {
@@ -177,6 +242,7 @@ function parseCycloneDxBom(raw: unknown): ParsedBom {
     ...(tool.version ? { productVersion: tool.version.slice(0, 50) } : {}),
     ...(observedAt ? { observedAt } : {}),
     items,
+    vulnerabilities,
   };
 }
 
@@ -185,6 +251,8 @@ const SpdxPackageSchema = z.object({
   name: str,
   versionInfo: str,
   primaryPackagePurpose: str,
+  licenseConcluded: str,
+  licenseDeclared: str,
   checksums: list(z.object({ algorithm: str, checksumValue: str })),
   externalRefs: list(z.object({ referenceType: str, referenceLocator: str })),
 });
@@ -206,6 +274,9 @@ function spdxTool(creators: readonly string[] | undefined): { name?: string; ver
   return m ? { name: m[1], version: m[2] } : { name: tool };
 }
 
+/** concluded が NOASSERTION・NONE なら無いものとして declared に回す。 */
+const usableLicense = (v: string | undefined) => (v && v !== 'NOASSERTION' && v !== 'NONE' ? v : undefined);
+
 function parseSpdxBom(raw: unknown): ParsedBom {
   const doc = SpdxSchema.safeParse(raw);
   if (!doc.success) return { ok: false, error: 'SPDX 2.x の JSON ではありません（SPDX 3 は未対応です）。' };
@@ -217,6 +288,7 @@ function parseSpdxBom(raw: unknown): ParsedBom {
     const ref = (type: string) => p.externalRefs.find((r) => r.referenceType === type)?.referenceLocator;
     const sha256 = p.checksums.find((c) => c.algorithm === 'SHA256')?.checksumValue;
     const identifiers = identifiersOf(ref('purl'), ref('cpe23Type') ?? ref('cpe22Type'), sha256);
+    const licenses = normalizeLicenses([usableLicense(p.licenseConcluded) ?? p.licenseDeclared]);
     return [
       {
         externalId: externalIdOf(identifiers, p.SPDXID, name, p.versionInfo),
@@ -225,6 +297,7 @@ function parseSpdxBom(raw: unknown): ParsedBom {
         ...(p.primaryPackagePurpose ? { sourceType: p.primaryPackagePurpose.slice(0, 50) } : {}),
         name: name.slice(0, 500),
         ...(p.versionInfo && p.versionInfo !== 'NOASSERTION' ? { version: p.versionInfo.slice(0, 200) } : {}),
+        ...(licenses.length > 0 ? { licenses } : {}),
       },
     ];
   });

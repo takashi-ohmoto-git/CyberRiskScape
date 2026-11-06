@@ -72,6 +72,7 @@ const PersistedAttackSurfaceSchema = z.object({
   hasWafProtection: z.boolean().optional(),
   hasDdosProtection: z.boolean().optional(),
   hasResponseCache: z.boolean().optional(),
+  hasRateLimit: z.boolean().optional(),
 });
 
 /** エージェント特有属性。全フィールド optional、空オブジェクトも許容。 */
@@ -411,6 +412,14 @@ const PersistedFindingSchema = z.object({
     .optional(),
   observedAt: z.string().max(40).optional(),
   outcome: z.literal('attempted').optional(),
+  kev: z
+    .object({
+      dateAdded: z.string().max(40).optional(),
+      dueDate: z.string().max(40).optional(),
+      ransomware: z.boolean().optional(),
+      catalogVersion: z.string().max(50).optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -467,6 +476,7 @@ const PersistedBomComponentSchema = z.object({
   sourceType: z.string().max(50).optional(),
   name: z.string().min(1).max(500),
   version: z.string().max(200).optional(),
+  licenses: z.array(z.string().min(1).max(200)).max(10).optional(),
   crypto: z
     .object({
       assetType: z.enum(['algorithm', 'protocol', 'certificate', 'material', 'other']),

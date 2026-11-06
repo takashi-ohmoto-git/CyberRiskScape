@@ -173,6 +173,8 @@ const LOST_IN_CONVERSION: Record<Finding['source']['format'], string[]> = {
   arf: ['pass/notapplicable/notchecked results', 'rule descriptions and fix text', 'target facts'],
   oval: ['definitions evaluated as not vulnerable', 'test details and collected items'],
   pentest: ['evidence and request/response details (kept in the source product)', 'summary and remediation text'],
+  cyclonedx: ['vulnerability descriptions, details and recommendations', 'VEX not_affected/false_positive/resolved entries'],
+  sarif: ['message text, code snippets and code flows', 'suppressed, resolved (absent) and pass/notApplicable/informational results'],
 };
 
 /**

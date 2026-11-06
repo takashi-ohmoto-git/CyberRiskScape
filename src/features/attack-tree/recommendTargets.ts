@@ -90,7 +90,7 @@ export interface TargetRecommendation {
 const CATEGORY_ORDER: Record<TargetCategory, number> = { credential: 0, data: 1 };
 
 /** 無向隣接（図の線＋侵入候補の仮想の線）から攻撃者が到達できるノード集合を BFS で求める。 */
-function reachableFrom(attackerId: string, edges: readonly DiagramEdge[]): Set<string> {
+export function reachableFrom(attackerId: string, edges: readonly DiagramEdge[]): Set<string> {
   const adj = new Map<string, string[]>();
   const add = (a: string, b: string) => {
     const arr = adj.get(a);

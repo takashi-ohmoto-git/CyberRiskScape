@@ -138,6 +138,8 @@ export interface AttackSurfaceAttribute {
   hasDdosProtection?: boolean;
   /** 応答キャッシュ（CDN・リバースプロキシ等でレスポンスをキャッシュする）。true = 有り */
   hasResponseCache?: boolean;
+  /** レート制限（アカウント単位・送信元単位の試行や呼び出しの回数制限）。true = 有り */
+  hasRateLimit?: boolean;
 }
 
 export type AttackSurfaceKey = keyof AttackSurfaceAttribute;
@@ -169,9 +171,10 @@ export const ATTACK_SURFACE_KEYS_BY_TYPE: Partial<Record<ComponentTypeId, readon
     'hasAccessLog',
     'hasWafProtection',
     'hasDdosProtection',
+    'hasRateLimit',
   ],
   // リモート MCP サーバーの公開条件。WAF・DDoS は HTTP の前段の性質なので除く
-  MCP_SERVER: ['hasGlobalIp', 'hasSourceIpRestriction', 'hasUserAuthentication', 'hasAccessLog'],
+  MCP_SERVER: ['hasGlobalIp', 'hasSourceIpRestriction', 'hasUserAuthentication', 'hasAccessLog', 'hasRateLimit'],
   // 管理用 API・管理画面の公開条件
   API_CONTROL_PLANE: [
     'hasGlobalIp',
@@ -179,6 +182,7 @@ export const ATTACK_SURFACE_KEYS_BY_TYPE: Partial<Record<ComponentTypeId, readon
     'hasRemoteAccessRestriction',
     'hasUserAuthentication',
     'hasAccessLog',
+    'hasRateLimit',
   ],
   // 業務アプリの Web 管理画面の公開条件。DDoS は公開サイト側（前段）の性質なので除く
   ADMIN_CONSOLE: [
@@ -188,6 +192,7 @@ export const ATTACK_SURFACE_KEYS_BY_TYPE: Partial<Record<ComponentTypeId, readon
     'hasUserAuthentication',
     'hasAccessLog',
     'hasWafProtection',
+    'hasRateLimit',
   ],
 };
 
@@ -1056,7 +1061,7 @@ export interface ControlStatusState {
 }
 
 /** 指摘の入力形式（docs/architecture.md §8.6）。 */
-export const FINDING_FORMATS = ['ocsf', 'xccdf', 'arf', 'oval', 'pentest'] as const;
+export const FINDING_FORMATS = ['ocsf', 'xccdf', 'arf', 'oval', 'pentest', 'cyclonedx', 'sarif'] as const;
 export type FindingFormat = (typeof FINDING_FORMATS)[number];
 
 /**
@@ -1110,13 +1115,24 @@ export interface Finding {
   observedAt?: string;
   /** ペンテストで試行したが成立を確認していない指摘。無ければ成立を確認した指摘（実証）。 */
   outcome?: 'attempted';
+  /** CISA KEV カタログに載っている（悪用が確認された）事実。`import-kev` が付け外しする。 */
+  kev?: FindingKev;
+}
+
+/** CISA KEV カタログの 1 件分の事実（日付は YYYY-MM-DD のまま保持する）。 */
+export interface FindingKev {
+  dateAdded?: string;
+  dueDate?: string;
+  /** ランサムウェア攻撃での悪用が確認されているか（カタログの knownRansomwareCampaignUse が Known）。 */
+  ransomware?: boolean;
+  catalogVersion?: string;
 }
 
 /** 保持する指摘の上限（docs/architecture.md §8.2）。 */
 export const MAX_FINDINGS = 5000;
 
 /** 資産の入力の形式。 */
-export const ASSET_FORMATS = ['artex-assets'] as const;
+export const ASSET_FORMATS = ['artex-assets', 'shodan', 'scopesentry'] as const;
 export type AssetFormat = (typeof ASSET_FORMATS)[number];
 
 /** 資産の出どころ（docs/architecture.md §8.7）。 */
@@ -1203,6 +1219,8 @@ export interface BomComponent {
   sourceType?: string;
   name: string;
   version?: string;
+  /** ライセンス（SPDX の ID か式。重複除去・最大 10 件）。適否は判定しない。 */
+  licenses?: string[];
   crypto?: BomCryptoProperties;
   /** 結びついたノード。無ければ未対応。 */
   subject?: AssetSubject;

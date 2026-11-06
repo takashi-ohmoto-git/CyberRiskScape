@@ -5,6 +5,7 @@ import type { BomComponent } from '../../core/model/types';
  * 共通モデルの部品から SPDX 2.3 の JSON を作る純粋関数（docs/architecture.md §8.8）。
  * 暗号資産は SPDX 2.3 に載せる項目が無いので出さず、件数を返して文書のコメントにも書く
  * （§8.1「失うものを宣言する」）。依存関係は共通モデルに無いので出さない。
+ * ライセンスは licenseConcluded に入れる（複数あれば AND で結ぶ。無ければ NOASSERTION）。
  */
 
 export interface BuildSpdxOptions {
@@ -53,6 +54,12 @@ const KIND_COMMENT: Partial<Record<BomComponent['kind'], string>> = {
 const spdxIdOf = (index: number, name: string) =>
   `SPDXRef-Package-${index + 1}-${name.replace(/[^A-Za-z0-9.-]/g, '-').slice(0, 100)}`;
 
+/** 空白を含む式は括弧で包んでから AND で結ぶ。無ければ NOASSERTION。 */
+const licenseOf = (c: BomComponent): string =>
+  c.licenses && c.licenses.length > 0
+    ? c.licenses.map((l) => (c.licenses!.length > 1 && /\s/.test(l) ? `(${l})` : l)).join(' AND ')
+    : 'NOASSERTION';
+
 function externalRefsOf(c: BomComponent) {
   return c.identifiers.flatMap((id) => {
     if (id.scheme === 'purl') {
@@ -80,6 +87,7 @@ export function buildSpdx(components: readonly BomComponent[], opts: BuildSpdxOp
       name: c.name,
       ...(c.version ? { versionInfo: c.version } : {}),
       downloadLocation: 'NOASSERTION',
+      licenseConcluded: licenseOf(c),
       filesAnalyzed: false,
       primaryPackagePurpose: purposeOf(c),
       ...(comment ? { comment } : {}),
@@ -89,7 +97,7 @@ export function buildSpdx(components: readonly BomComponent[], opts: BuildSpdxOp
   });
 
   const notes = [
-    'Generated from a threat model. Dependency relationships, licenses and suppliers are not included.',
+    'Generated from a threat model. Dependency relationships and suppliers are not included.',
     ...(omittedCrypto > 0 ? [`${omittedCrypto} cryptographic asset(s) omitted: SPDX 2.3 has no field for them.`] : []),
   ];
 

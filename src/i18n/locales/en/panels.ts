@@ -97,6 +97,7 @@ export const enPanels: Partial<Record<TranslationKey, string>> = {
   'panels.node.attackSurface.wafProtection': 'WAF / WAP protection',
   'panels.node.attackSurface.ddosProtection': 'DoS / DDoS protection',
   'panels.node.attackSurface.responseCache': 'Response cache',
+  'panels.node.attackSurface.rateLimit': 'Rate limiting (per-account / per-source attempt or call limits)',
   'panels.node.attackSurface.yes': 'Yes',
   'panels.node.attackSurface.no': 'No',
   'panels.node.attackSurfaceNote':

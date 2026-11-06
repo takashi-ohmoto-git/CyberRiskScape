@@ -1,0 +1,37 @@
+{
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "ExampleQL",
+          "semanticVersion": "2.15.0",
+          "rules": [
+            { "id": "js/sql-injection", "shortDescription": { "text": "SQL query built from user-controlled sources" }, "properties": { "tags": ["security", "external/cwe/cwe-89"], "security-severity": "9.8" } },
+            { "id": "js/xss", "shortDescription": { "text": "Reflected cross-site scripting" }, "properties": { "tags": ["external/cwe/cwe-079"], "security-severity": "6.1" } },
+            { "id": "js/weak-thing", "shortDescription": { "text": "Weak thing" }, "properties": { "tags": ["external/cwe/cwe-9999"], "security-severity": "2.0" } },
+            { "id": "js/old", "shortDescription": { "text": "Already fixed" }, "properties": { "security-severity": "8.0" } },
+            { "id": "js/accepted", "shortDescription": { "text": "Accepted risk" }, "properties": { "security-severity": "8.0" } }
+          ]
+        }
+      },
+      "results": [
+        { "ruleId": "js/sql-injection", "ruleIndex": 0, "level": "error", "message": { "text": "secret-query-body must not be stored" }, "partialFingerprints": { "primaryLocationLineHash": "fp-sqli-1" }, "locations": [{ "physicalLocation": { "artifactLocation": { "uri": "file:///C:/Users/alice/work/app/src/db.js" }, "region": { "startLine": 42, "snippet": { "text": "SELECT * FROM t WHERE a = x" } } } }] },
+        { "ruleId": "js/xss", "ruleIndex": 1, "level": "warning", "message": { "text": "xss" }, "locations": [{ "physicalLocation": { "artifactLocation": { "uri": "src/web/render.js" }, "region": { "startLine": 7 } } }] },
+        { "ruleId": "js/weak-thing", "ruleIndex": 2, "level": "note", "message": { "text": "weak" }, "locations": [{ "physicalLocation": { "artifactLocation": { "uri": "src/util.js" }, "region": { "startLine": 3 } } }] },
+        { "ruleId": "js/old", "ruleIndex": 3, "level": "error", "message": { "text": "old" }, "baselineState": "absent", "locations": [{ "physicalLocation": { "artifactLocation": { "uri": "src/old.js" }, "region": { "startLine": 1 } } }] },
+        { "ruleId": "js/accepted", "ruleIndex": 4, "level": "error", "message": { "text": "accepted" }, "suppressions": [{ "kind": "inSource", "status": "accepted" }], "locations": [{ "physicalLocation": { "artifactLocation": { "uri": "src/acc.js" }, "region": { "startLine": 1 } } }] }
+      ]
+    },
+    {
+      "tool": { "driver": { "name": "ExampleGrep", "version": "1.50.0" } },
+      "results": [
+        { "ruleId": "python.flask.debug-enabled", "level": "error", "message": { "text": "Flask debug mode is enabled and exposes the debugger to anyone who can reach it, which allows remote code execution on the host." }, "locations": [{ "physicalLocation": { "artifactLocation": { "uri": "/home/bob/proj/app.py" }, "region": { "startLine": 12 } } }] },
+        { "ruleId": "python.lang.note", "level": "note", "message": { "text": "style" }, "locations": [{ "physicalLocation": { "artifactLocation": { "uri": "app.py" }, "region": { "startLine": 20 } } }] },
+        { "ruleId": "python.lang.pass", "kind": "pass", "message": { "text": "ok" } },
+        { "ruleId": "python.lang.rejected", "level": "warning", "message": { "text": "rejected suppression stays" }, "suppressions": [{ "kind": "external", "status": "rejected" }], "locations": [{ "physicalLocation": { "artifactLocation": { "uri": "app.py" }, "region": { "startLine": 30 } } }] },
+        { "ruleId": "python.lang.nostatus", "level": "error", "message": { "text": "suppressed without status" }, "suppressions": [{ "kind": "inSource" }] }
+      ]
+    }
+  ]
+}

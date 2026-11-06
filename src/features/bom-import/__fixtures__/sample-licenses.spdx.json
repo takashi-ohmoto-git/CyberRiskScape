@@ -1,0 +1,12 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "example",
+  "creationInfo": { "created": "2026-11-01T00:00:00Z", "creators": ["Tool: example-sbom-1.2.3"] },
+  "packages": [
+    { "SPDXID": "SPDXRef-a", "name": "concluded-lib", "versionInfo": "1.0.0", "licenseConcluded": "MIT", "licenseDeclared": "Apache-2.0" },
+    { "SPDXID": "SPDXRef-b", "name": "declared-lib", "versionInfo": "2.0.0", "licenseConcluded": "NOASSERTION", "licenseDeclared": "BSD-3-Clause" },
+    { "SPDXID": "SPDXRef-c", "name": "none-lib", "versionInfo": "3.0.0", "licenseConcluded": "NONE", "licenseDeclared": "NOASSERTION" },
+    { "SPDXID": "SPDXRef-d", "name": "expr-lib", "versionInfo": "4.0.0", "licenseConcluded": "MIT OR Apache-2.0" }
+  ]
+}

@@ -173,6 +173,7 @@ const ATTACK_SURFACE_DEFAULTS: Required<AttackSurfaceAttribute> = {
   hasWafProtection: false,
   hasDdosProtection: false,
   hasResponseCache: true,
+  hasRateLimit: false,
 };
 
 function getAttackSurfaceFields(t: TFunc): { key: AttackSurfaceKey; label: string }[] {
@@ -185,6 +186,7 @@ function getAttackSurfaceFields(t: TFunc): { key: AttackSurfaceKey; label: strin
     { key: 'hasWafProtection', label: t('panels.node.attackSurface.wafProtection') },
     { key: 'hasDdosProtection', label: t('panels.node.attackSurface.ddosProtection') },
     { key: 'hasResponseCache', label: t('panels.node.attackSurface.responseCache') },
+    { key: 'hasRateLimit', label: t('panels.node.attackSurface.rateLimit') },
   ];
 }
 

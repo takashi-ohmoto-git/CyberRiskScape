@@ -120,6 +120,8 @@ const GUARD_PLUGINS = new Set([
   'ai-custom-guardrail',
 ]);
 
+const RATE_LIMIT_PLUGINS = new Set(['rate-limiting', 'rate-limiting-advanced', 'ai-rate-limiting-advanced']);
+
 const LOG_PLUGINS = new Set([
   'file-log',
   'http-log',
@@ -381,20 +383,28 @@ export function kongToLayer(text: string): KongImportResult {
     }
 
     // 攻撃面属性は GATEWAY でだけ入力できる。設定から確認できた項目だけ true にし、
-    // 分からない項目（Global IP・管理面の制限・WAF・DDoS）は未入力（insecure baseline）のまま残す。
+    // 分からない項目（Global IP・管理面の制限・WAF・DDoS・確認できなかったレート制限）は未入力（insecure baseline）のまま残す。
+    let rateLimited = false;
     if (g.node.type === 'GATEWAY') {
+      rateLimited = everyRouted(RATE_LIMIT_PLUGINS);
       const surface = {
         ...(everyRouted(AUTH_PLUGINS) ? { hasUserAuthentication: true } : {}),
         ...(everyRouted(new Set(['ip-restriction'])) ? { hasSourceIpRestriction: true } : {}),
         ...(everyRouted(LOG_PLUGINS) ? { hasAccessLog: true } : {}),
+        ...(rateLimited ? { hasRateLimit: true } : {}),
       };
       if (Object.keys(surface).length > 0) g.node.attackSurface = surface;
     }
 
-    g.node.description = t('kong.desc.gateway', {
+    const gwDesc = t('kong.desc.gateway', {
       plugins: [...gwPlugins].sort().join(', ') || '-',
       auth: authLines.join(' / ') || '-',
     });
+    // レート制限の有無は API ゲートウェイでだけ報告する（AI ゲートウェイには属性が無い）。
+    g.node.description =
+      g.node.type === 'GATEWAY'
+        ? `${gwDesc} ${t(rateLimited ? 'kong.desc.rateLimitOn' : 'kong.desc.rateLimitOff')}`
+        : gwDesc;
     nodes.push(g.node);
     if (authLines.length > 0) {
       addEdge(client.id, g.node.id, weakest, 'Internet', plain ? 'Plain' : 'TLS', { dataFlow: 'bidirectional' });

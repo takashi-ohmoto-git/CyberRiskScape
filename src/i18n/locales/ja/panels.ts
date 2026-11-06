@@ -98,6 +98,7 @@ export const jaPanels = {
   'panels.node.attackSurface.wafProtection': 'WAF / WAP による保護',
   'panels.node.attackSurface.ddosProtection': 'DoS / DDoS 保護',
   'panels.node.attackSurface.responseCache': '応答キャッシュ',
+  'panels.node.attackSurface.rateLimit': 'レート制限（アカウント単位・送信元単位の試行や呼び出しの回数制限）',
   'panels.node.attackSurface.yes': '有り',
   'panels.node.attackSurface.no': '無し',
   'panels.node.attackSurfaceNote':

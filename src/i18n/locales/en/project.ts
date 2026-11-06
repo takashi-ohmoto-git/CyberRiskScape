@@ -218,6 +218,8 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'kong.desc.service': 'Kong Service: {name} (host: {host}) / Plugins: {plugins}',
   'kong.desc.gateway': 'Plugins: {plugins} / Route authentication: {auth}',
   'kong.desc.noAuth': 'no authentication',
+  'kong.desc.rateLimitOn': '/ Rate limiting: enabled on all routes (rate-limiting plugin)',
+  'kong.desc.rateLimitOff': '/ Rate limiting: not confirmed (treated as none)',
   // ── Kong AI Gateway 2.x (kongctl) import ──
   'kongctl.templateName': 'Kong AI Gateway 2.x (generated from kongctl)',
   'kongctl.error.parse': 'Could not read the file as YAML: {message}',
@@ -296,6 +298,7 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'project.assetView.col.kind': 'Kind',
   'project.assetView.col.identifier': 'Identifier',
   'project.assetView.col.source': 'Source',
+  'project.assetView.col.license': 'License',
   'project.assetView.kind.software': 'Software',
   'project.assetView.kind.crypto': 'Crypto',
   'project.assetView.kind.ai-model': 'AI model',

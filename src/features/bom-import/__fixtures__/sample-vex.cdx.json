@@ -1,0 +1,61 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "metadata": {
+    "timestamp": "2026-11-01T09:00:00+09:00",
+    "tools": { "components": [{ "type": "application", "name": "example-scanner", "version": "2.0" }] }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg-a",
+      "name": "example-lib",
+      "version": "1.2.3",
+      "purl": "pkg:npm/example-lib@1.2.3",
+      "licenses": [{ "license": { "id": "MIT" } }, { "expression": "(Apache-2.0 OR GPL-2.0-only)" }, { "license": { "id": "MIT" } }]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-b",
+      "name": "sample-util",
+      "version": "0.9.0",
+      "licenses": [{ "license": { "name": "Example Proprietary License" } }]
+    },
+    { "type": "library", "bom-ref": "pkg-c", "name": "other-lib", "version": "4.0.0", "purl": "pkg:pypi/other-lib@4.0.0" }
+  ],
+  "vulnerabilities": [
+    {
+      "id": "CVE-2026-0001",
+      "source": { "name": "NVD" },
+      "description": "この本文は保存しない",
+      "references": [{ "id": "GHSA-aaaa-bbbb-cccc", "source": { "name": "GitHub" } }],
+      "ratings": [
+        { "score": 5.0, "severity": "medium", "method": "CVSSv31" },
+        { "score": 9.1, "severity": "critical", "method": "CVSSv31" }
+      ],
+      "analysis": { "state": "exploitable" },
+      "affects": [{ "ref": "pkg-a" }, { "ref": "pkg-b" }]
+    },
+    {
+      "id": "EXMPL-2026-77",
+      "source": { "name": "Example DB" },
+      "ratings": [{ "score": 7.5 }],
+      "affects": [{ "ref": "pkg-c" }]
+    },
+    {
+      "id": "CVE-2026-0002",
+      "ratings": [{ "severity": "high" }],
+      "analysis": { "state": "not_affected" },
+      "affects": [{ "ref": "pkg-a" }]
+    },
+    {
+      "id": "CVE-2026-0003",
+      "ratings": [{ "severity": "unknown" }],
+      "analysis": { "state": "false_positive" },
+      "affects": [{ "ref": "pkg-b" }, { "ref": "pkg-c" }]
+    },
+    { "id": "CVE-2026-0004", "ratings": [{ "severity": "high" }], "analysis": { "state": "resolved" }, "affects": [{ "ref": "pkg-c" }] },
+    { "id": "CVE-2026-0005", "ratings": [{ "severity": "high" }] },
+    { "id": "CVE-2026-0006", "ratings": [{ "severity": "low" }], "affects": [{ "ref": "no-such-ref" }] }
+  ]
+}

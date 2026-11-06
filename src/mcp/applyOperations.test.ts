@@ -180,6 +180,17 @@ describe('正常系：ノード', () => {
     ).toThrow(/hasResponseCache/);
   });
 
+  it('add_node：hasRateLimit は BACKEND_API・MCP_SERVER・ADMIN_CONSOLE・API_CONTROL_PLANE で設定でき、AI_GATEWAY では拒否される', () => {
+    for (const type of ['BACKEND_API', 'MCP_SERVER', 'ADMIN_CONSOLE', 'API_CONTROL_PLANE'] as const) {
+      const { project, results } = apply([{ op: 'add_node', type, label: 'N', attackSurface: { hasRateLimit: true } }]);
+      const n = l1(project).nodes.find((x) => x.id === results[0].id)!;
+      expect(n.attackSurface).toEqual({ hasRateLimit: true });
+    }
+    expect(() =>
+      apply([{ op: 'add_node', type: 'AI_GATEWAY', label: 'AIGW', attackSurface: { hasRateLimit: true } }]),
+    ).toThrow(/hasRateLimit/);
+  });
+
   it('add_node：MCP_SERVER は WAF の項目を拒否する（入力できる項目は型ごとに決まる）', () => {
     expect(() =>
       apply([{ op: 'add_node', type: 'MCP_SERVER', label: 'MCP', attackSurface: { hasWafProtection: true } }]),

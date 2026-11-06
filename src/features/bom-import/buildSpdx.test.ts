@@ -61,6 +61,17 @@ describe('buildSpdx', () => {
     expect(JSON.stringify(out.document)).not.toContain('ML-KEM"');
     expect((out.document.creationInfo as { comment: string }).comment).toContain('1 cryptographic asset(s) omitted');
   });
+  it('ライセンスは licenseConcluded に入れ、無ければ NOASSERTION。スキーマに適合し、往復で保たれる', () => {
+    const { document } = buildSpdx(
+      [part('a', { licenses: ['MIT'] }), part('b', { licenses: ['MIT', 'Apache-2.0 OR GPL-2.0-only'] }), part('c')],
+      OPTS,
+    );
+    expect(validate(document).ok).toBe(true);
+    const pkgs = document.packages as { name: string; licenseConcluded: string }[];
+    expect(pkgs.map((p) => p.licenseConcluded)).toEqual(['MIT', 'MIT AND (Apache-2.0 OR GPL-2.0-only)', 'NOASSERTION']);
+    const parsed = parseBom(document);
+    expect(parsed.ok && parsed.items.map((i) => i.licenses)).toEqual([['MIT'], ['MIT AND (Apache-2.0 OR GPL-2.0-only)'], undefined]);
+  });
   it('AI モデルは用途 OTHER とコメントで示す', () => {
     const { document } = buildSpdx([part('model', { kind: 'ai-model' })], OPTS);
     expect((document.packages as object[])[0]).toMatchObject({ primaryPackagePurpose: 'OTHER', comment: 'AI model' });

@@ -1793,6 +1793,44 @@ describe('detectThreats - subject', () => {
   });
 });
 
+// ─── attackSurface.hasRateLimit（baseline = false） ──────────
+describe('detectThreats - attackSurface.hasRateLimit', () => {
+  const rateRule: ThreatRule = {
+    id: 'no-rate-limit',
+    framework: 'STRIDE',
+    category: 'X',
+    severity: 'High',
+    description: 'レート制限が無いノード',
+    appliesTo: {
+      kind: 'node',
+      nodeType: 'BACKEND_API',
+      attackSurface: { hasRateLimit: false },
+      connection: { required: false },
+    },
+  };
+  const run = (attackSurface?: { hasRateLimit?: boolean }) =>
+    detectThreats({
+      nodes: [{ id: 'a', type: 'BACKEND_API', x: 0, y: 0, ...(attackSurface ? { attackSurface } : {}) }],
+      edges: [],
+      framework: 'STRIDE',
+      rules: [rateRule],
+    });
+
+  it('未入力ノードは baseline（レート制限なし）で発火し、仮定の印 attackSurface が付く', () => {
+    const out = run();
+    expect(out).toHaveLength(1);
+    expect(out[0].assumptionFlags).toContain('attackSurface');
+  });
+
+  it('hasRateLimit: true を入力したノードでは発火しない', () => {
+    expect(run({ hasRateLimit: true })).toHaveLength(0);
+  });
+
+  it('hasRateLimit: false を入力したノードでは発火する', () => {
+    expect(run({ hasRateLimit: false })).toHaveLength(1);
+  });
+});
+
 // ─── attackSurface.hasResponseCache（baseline = true） ──────────
 describe('detectThreats - attackSurface.hasResponseCache', () => {
   const cacheRule: ThreatRule = {

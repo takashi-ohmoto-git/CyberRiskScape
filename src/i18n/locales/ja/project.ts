@@ -217,6 +217,8 @@ export const jaProject = {
   'kong.desc.service': 'Kong Service: {name}（host: {host}）／ プラグイン: {plugins}',
   'kong.desc.gateway': 'プラグイン: {plugins} ／ ルートの認証: {auth}',
   'kong.desc.noAuth': '認証なし',
+  'kong.desc.rateLimitOn': '／ レート制限: 全ルートで有効（rate-limiting 系プラグイン）',
+  'kong.desc.rateLimitOff': '／ レート制限: 確認できず（制限なしとして扱う）',
   // ── Kong AI Gateway 2.x (kongctl) 取り込み ──
   'kongctl.templateName': 'Kong AI Gateway 2.x（kongctl から生成）',
   'kongctl.error.parse': 'YAML として読み込めません: {message}',
@@ -295,6 +297,7 @@ export const jaProject = {
   'project.assetView.col.kind': '種類',
   'project.assetView.col.identifier': '識別子',
   'project.assetView.col.source': '出どころ',
+  'project.assetView.col.license': 'ライセンス',
   'project.assetView.kind.software': 'ソフトウェア',
   'project.assetView.kind.crypto': '暗号',
   'project.assetView.kind.ai-model': 'AI モデル',

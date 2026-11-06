@@ -140,6 +140,7 @@ function SbomTable({ rows, resolve, onOpen }: { rows: BomComponent[]; resolve: A
           <th className={TH}>{t('project.assetView.col.version')}</th>
           <th className={TH}>{t('project.assetView.col.kind')}</th>
           <th className={TH}>{t('project.assetView.col.identifier')}</th>
+          <th className={TH}>{t('project.assetView.col.license')}</th>
           <th className={TH}>{t('project.assetView.col.source')}</th>
           <th className={TH}>{t('project.assetView.col.node')}</th>
         </tr>
@@ -154,6 +155,7 @@ function SbomTable({ rows, resolve, onOpen }: { rows: BomComponent[]; resolve: A
               <td className={`${TD} font-mono`}>{c.version ?? ''}</td>
               <td className={TD}>{t(KIND_LABEL_KEYS[c.kind])}</td>
               <td className={`${TD} font-mono break-all`}>{id?.value ?? ''}</td>
+              <td className={`${TD} break-all`}>{(c.licenses ?? []).join(', ')}</td>
               <td className={TD}>{c.source.product}</td>
               <td className={TD}>
                 <NodeCell resolved={resolved} />

@@ -33,7 +33,7 @@ export interface ShodanImportSummary {
 }
 
 export type ShodanImportResult =
-  | { ok: true; name: string; layer: LayerData; summary: ShodanImportSummary }
+  | { ok: true; name: string; layer: LayerData; summary: ShodanImportSummary; exposed: ExposedService[] }
   | { ok: false; error: string };
 
 const str = z.string().optional().catch(undefined);
@@ -122,5 +122,6 @@ export function shodanToLayer(text: string): ShodanImportResult {
     name: t('shodan.templateName'),
     layer,
     summary: { banners, ...summary, skipped },
+    exposed: services,
   };
 }

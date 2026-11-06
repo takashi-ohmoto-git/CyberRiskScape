@@ -93,6 +93,7 @@ const ATTACK_SURFACE_DEFAULTS: Required<AttackSurfaceAttribute> = {
   hasWafProtection: false,
   hasDdosProtection: false,
   hasResponseCache: true,
+  hasRateLimit: false,
 };
 
 function resolveAttackSurface(node: DiagramNode): Required<AttackSurfaceAttribute> {

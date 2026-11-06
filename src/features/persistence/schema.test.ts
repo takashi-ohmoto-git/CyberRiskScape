@@ -753,6 +753,19 @@ describe('PersistedProjectSchema', () => {
     expect(r2.success).toBe(true);
   });
 
+  it('attackSurface の hasRateLimit を受理し、旧データ（無し）も受理する', () => {
+    const r = PersistedProjectSchema.safeParse({
+      ...VALID_PROJECT,
+      nodes: [{ id: 'n1', type: 'BACKEND_API', x: 0, y: 0, attackSurface: { hasRateLimit: true } }],
+    });
+    expect(r.success).toBe(true);
+    const bad = PersistedProjectSchema.safeParse({
+      ...VALID_PROJECT,
+      nodes: [{ id: 'n1', type: 'BACKEND_API', x: 0, y: 0, attackSurface: { hasRateLimit: 'yes' } }],
+    });
+    expect(bad.success).toBe(false);
+  });
+
   describe('ノードのインベントリ', () => {
     const NPM = {
       kind: 'npm',

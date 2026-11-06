@@ -67,3 +67,42 @@ describe('importBom', () => {
     expect(bomReportToJson(out)).toMatchObject({ kind: 'cyberriskscape-sbom-import-report', stored: 1 });
   });
 });
+
+describe('importBom（vulnerabilities・ライセンス）', () => {
+  const fixture = (name: string) => {
+    const parsed = parseBom(JSON.parse(readFileSync(new URL(`../features/bom-import/__fixtures__/${name}`, import.meta.url), 'utf-8')));
+    if (!parsed.ok) throw new Error(parsed.error);
+    return parsed;
+  };
+  it('CycloneDX の vulnerabilities を指摘として保存し、ライセンスは部品に残り、往復しても消えない', () => {
+    const out = importBom(project(), fixture('sample-vex.cdx.json'), { scope: 'app', node: 'C1', importedAt: AT });
+    expect(out.findings).toEqual({ stored: 3, excluded: 4, truncated: 0, withoutAffects: 2 });
+    const back = deserializeProject(roundTrip(out.project));
+    expect(back?.findings?.every((f) => f.source.product === 'CycloneDX' && f.source.scope === 'app' && f.subject !== undefined)).toBe(true);
+    expect(back?.bomComponents?.find((c) => c.name === 'example-lib')?.licenses).toEqual(['MIT', '(Apache-2.0 OR GPL-2.0-only)']);
+    expect(bomReportToMarkdown(out)).toContain('指摘 3 件（除外 4 件）');
+    expect(bomReportToJson(out)).toMatchObject({ findings: { stored: 3, excluded: 4 } });
+  });
+  it('--node が無ければ指摘も未結合', () => {
+    const out = importBom(project(), fixture('sample-vex.cdx.json'), { scope: 'app', importedAt: AT });
+    expect(out.project.findings?.every((f) => f.subject === undefined)).toBe(true);
+  });
+  it('取り込み直しは CycloneDX × scope の指摘だけを置き換え、他の指摘は残す', () => {
+    const first = importBom(project(), fixture('sample-vex.cdx.json'), { scope: 'app', importedAt: AT });
+    const other = importBom(roundTrip(first.project), fixture('sample-vex.cdx.json'), { scope: 'other', importedAt: AT });
+    expect(other.project.findings).toHaveLength(6);
+    // vulnerabilities の無い BOM で app を取り込み直すと app の指摘は空になり、other は残る
+    const empty = parseBom({ bomFormat: 'CycloneDX', specVersion: '1.6', components: [{ type: 'library', name: 'a' }] });
+    if (!empty.ok) throw new Error(empty.error);
+    const again = importBom(roundTrip(other.project), empty, { scope: 'app', importedAt: AT });
+    expect(again.project.findings).toHaveLength(3);
+    expect(again.project.findings?.every((f) => f.source.scope === 'other')).toBe(true);
+  });
+  it('SPDX は指摘に触れない', () => {
+    const first = importBom(project(), fixture('sample-vex.cdx.json'), { scope: 'app', importedAt: AT });
+    const spdx = importBom(roundTrip(first.project), fixture('sample-licenses.spdx.json'), { scope: 'app', importedAt: AT });
+    expect(spdx.project.findings).toHaveLength(3);
+    expect(spdx.findings.stored).toBe(0);
+    expect(spdx.project.bomComponents?.find((c) => c.name === 'declared-lib')?.licenses).toEqual(['BSD-3-Clause']);
+  });
+});

@@ -38,6 +38,7 @@ const FIELD_LABEL_KEYS: Record<string, TranslationKey> = {
   hasWafProtection: 'appliesToSummary.field.hasWafProtection',
   hasDdosProtection: 'appliesToSummary.field.hasDdosProtection',
   hasResponseCache: 'appliesToSummary.field.hasResponseCache',
+  hasRateLimit: 'appliesToSummary.field.hasRateLimit',
   auth: 'appliesToSummary.field.auth',
   network: 'appliesToSummary.field.network',
   encryption: 'appliesToSummary.field.encryption',

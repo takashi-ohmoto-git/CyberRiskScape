@@ -105,6 +105,11 @@ const CYCLONEDX_TYPES = new Set([
   'application', 'framework', 'library', 'container', 'platform', 'operating-system', 'device',
   'device-driver', 'firmware', 'file', 'machine-learning-model', 'data', 'cryptographic-asset',
 ]);
+/** ID らしい（空白・括弧なし）ものは license.id、式は expression で出す。 */
+function cycloneDxLicenseOf(l: string): Json {
+  return /^[A-Za-z0-9.+-]+$/.test(l) ? { license: { id: l } } : { expression: l };
+}
+
 function cycloneDxTypeOf(c: BomComponent): string {
   if (c.kind === 'crypto') return 'cryptographic-asset';
   if (c.kind === 'ai-model') return 'machine-learning-model';
@@ -393,6 +398,7 @@ export function buildSbomForAi(project: BuildThreatReportInput, opts: SbomForAiO
       ...(purl ? { purl } : {}),
       ...(cpe ? { cpe } : {}),
       ...(sha256 ? { hashes: [{ alg: 'SHA-256', content: sha256 }] } : {}),
+      ...(c.licenses && c.licenses.length > 0 ? { licenses: c.licenses.map(cycloneDxLicenseOf) } : {}),
       ...(cryptoProperties ? { cryptoProperties } : {}),
       properties: [{ name: `${NS}source`, value: `${c.source.format}:${c.source.product}` }],
     });

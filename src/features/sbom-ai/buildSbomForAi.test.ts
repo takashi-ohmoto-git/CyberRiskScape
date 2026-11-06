@@ -7,6 +7,7 @@ import { analyzeProject } from '../../cli/analyze';
 import type { BuildThreatReportInput } from '../export/threatReport';
 import {
   EMPTY_PROJECT_META,
+  type BomComponent,
   type DiagramBoundary,
   type DiagramEdge,
   type DiagramNode,
@@ -258,5 +259,25 @@ describe('buildSbomForAi', () => {
     expect(unknownOf(db)).toContain('Dataset provenance');
     expect(bom.compositions[0].aggregate).toBe('incomplete');
     expect(bom.compositions[0].assemblies).toEqual(expect.arrayContaining(['system', 'node:llm', 'node:db']));
+  });
+
+  it('取り込んだ部品のライセンスを components[].licenses に出し、スキーマに適合する', () => {
+    const part = (id: string, licenses?: string[]): BomComponent => ({
+      id,
+      source: { format: 'cyclonedx', product: 'x', importedAt: '2026-11-01T00:00:00.000Z' },
+      externalId: id,
+      identifiers: [],
+      kind: 'software',
+      name: id,
+      ...(licenses ? { licenses } : {}),
+    });
+    const bom = buildSbomForAi(sampleInput(), {
+      ...OPTS,
+      importedComponents: [part('a', ['MIT', '(Apache-2.0 OR GPL-2.0-only)']), part('b')],
+    }) as Obj;
+    const a = bom.components.find((c: Obj) => c.name === 'a');
+    expect(a.licenses).toEqual([{ license: { id: 'MIT' } }, { expression: '(Apache-2.0 OR GPL-2.0-only)' }]);
+    expect(bom.components.find((c: Obj) => c.name === 'b').licenses).toBeUndefined();
+    expectValid(bom);
   });
 });

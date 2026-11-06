@@ -128,6 +128,7 @@ const enCore: Partial<Record<TranslationKey, string>> = {
   'appliesToSummary.field.hasWafProtection': 'WAF protection',
   'appliesToSummary.field.hasDdosProtection': 'DDoS protection',
   'appliesToSummary.field.hasResponseCache': 'Response cache',
+  'appliesToSummary.field.hasRateLimit': 'Rate limiting',
   'appliesToSummary.field.auth': 'Authentication',
   'appliesToSummary.field.network': 'Network',
   'appliesToSummary.field.encryption': 'Encryption',

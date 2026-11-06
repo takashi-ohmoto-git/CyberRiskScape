@@ -150,6 +150,7 @@ const AttackSurfaceSchema = z
     hasWafProtection: z.boolean().optional(),
     hasDdosProtection: z.boolean().optional(),
     hasResponseCache: z.boolean().optional(),
+    hasRateLimit: z.boolean().optional(),
   })
   .strict();
 const AgentAttributesSchema = z

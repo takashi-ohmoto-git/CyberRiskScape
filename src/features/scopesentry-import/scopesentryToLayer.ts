@@ -41,7 +41,7 @@ export interface ScopesentryImportSummary {
 }
 
 export type ScopesentryImportResult =
-  | { ok: true; name: string; layer: LayerData; summary: ScopesentryImportSummary }
+  | { ok: true; name: string; layer: LayerData; summary: ScopesentryImportSummary; exposed: ExposedService[] }
   | { ok: false; error: string };
 
 const str = z.string().optional().catch(undefined);
@@ -286,6 +286,7 @@ export function scopesentryRecordsToLayer(records: unknown[]): ScopesentryImport
       skipped,
       truncated: summary.truncated,
     },
+    exposed: services,
   };
 }
 

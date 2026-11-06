@@ -88,6 +88,7 @@ export const jaRuleEditor = {
   'ruleEditor.attackSurface.field.hasWafProtection': 'WAF',
   'ruleEditor.attackSurface.field.hasDdosProtection': 'DDoS 防御',
   'ruleEditor.attackSurface.field.hasResponseCache': '応答キャッシュ',
+  'ruleEditor.attackSurface.field.hasRateLimit': 'レート制限',
   'ruleEditor.attackSurface.tristate.unspecified': '不問',
   'ruleEditor.attackSurface.tristate.yes': '有',
   'ruleEditor.attackSurface.tristate.no': '無',
