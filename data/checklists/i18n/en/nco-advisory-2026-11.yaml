@@ -1,0 +1,61 @@
+# English overlay for nco-advisory-2026-11.yaml (titles and how-to text only).
+# Source: National Cybersecurity Office (NCO), Cabinet Secretariat of Japan, 2026-11-05
+#   https://www.cyber.go.jp/pdf/press/261105_taiou.pdf
+# Paraphrased summary of the example measures; not a verbatim translation and not endorsed by the NCO.
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+checklist:
+  title: "NCO advisory (Nov 2026): basic measures for websites and mobile apps"
+  source:
+    publisher: "National Cybersecurity Office, Cabinet Secretariat of Japan"
+    title: "Measures against unauthorized access leading to personal data leakage: basic measures for websites and mobile apps (Japanese)"
+
+groups:
+  operation:
+    title: "Operation and management"
+    items:
+      nco-01:
+        title: "Know your software components and fix vulnerabilities"
+        howTo: "Record patch status under operations for servers and network devices reachable from the internet. Store SBOMs with import-sbom and link them to nodes. Prioritize vulnerabilities known to be exploited (CISA KEV, etc.)."
+      nco-02:
+        title: "Exposure of admin consoles and admin APIs, and front-end routing rules"
+        howTo: "Draw admin screens as an Admin Console or API control plane and fill in their attack surface attributes as they really are. If a line reaches an admin console from a reverse proxy or API gateway, check the path and host routing rules and the default forwarding for unexpected paths."
+      nco-03:
+        title: "Exposure of debug features, test environments and database admin tools"
+        howTo: "Check that internet-facing entry points do not include debug endpoints, development or test environments, or database admin screens. Draw any that remain as admin consoles or APIs so they are inventoried. Also use ASM results (import-shodan, import-scopesentry) to find public services missing from the diagram."
+      nco-04:
+        title: "Public settings of cloud storage and firewalls"
+        howTo: "Check public access and external sharing settings of storage. On AWS, importing Prowler results with import-prowler puts public-setting findings on the nodes. After fixing, confirm from the outside."
+      nco-05:
+        title: "Logging and monitoring for suspicious access"
+        howTo: "Fill in logging, retention and destination (SIEM) under operations for web servers, API gateways and identity infrastructure. Use the attack path 'detection gaps' to see where logs do not reach monitoring."
+  development:
+    title: "Design and development"
+    items:
+      nco-06:
+        title: "Broken API authorization (BOLA, BFLA)"
+        howTo: "Draw the backend APIs called from smartphone apps and the web. Use the test plan (export-test-plan) or the Postman export to check that other users' records and admin functions cannot be called."
+      nco-07:
+        title: "Credentials embedded in apps or source code"
+        howTo: "Check that API keys, tokens and private keys are not embedded in apps, and that the server side uses secret management with defined lifetimes and rotation."
+      nco-08:
+        title: "Brute force against login and password reset, and rate limiting"
+        howTo: "Check that public login and password reset endpoints limit attempts per account and per source, and detect distributed attempts from many IP addresses. The Postman export can check whether attempts are throttled."
+      nco-09:
+        title: "Vulnerability assessment before release (injection, code execution, SSRF)"
+        howTo: "Decide the scope and viewpoints with the test plan (export-test-plan) and import the assessment results. analyze --fail-on-findings stops the release if findings at or above the threshold remain."
+  supply-chain:
+    title: "Supply chain"
+    items:
+      nco-10:
+        title: "Connections from contractors and multi-factor authentication"
+        howTo: "Draw contractor users as USER and set their trust level (contractor, partner); unset is treated as a user not confirmed to be an employee. Set the authentication of VPN, remote desktop and maintenance lines, and review paths without MFA."
+      nco-11:
+        title: "Inventory of contractor accounts and admin privileges after the work ends"
+        howTo: "Record account review practice under operations. Check that contractor maintenance access is opened only during work and that accounts are disabled afterwards."
+      nco-12:
+        title: "Knowing OSS and external libraries, and first response"
+        howTo: "Draw dependencies (import-repo) and import SBOMs to link components to nodes. Fill in operations for version pinning, install scripts and vetting before adoption. Decide beforehand how to find which nodes are affected when a serious vulnerability is published."

@@ -1,0 +1,125 @@
+# 注意喚起チェックリスト：内閣官房 国家サイバー統括室「個人情報の漏えい等につながる不正アクセスへの対策について
+#   ～ウェブサイトやモバイルアプリに関する基本的な対策の徹底～」
+# 出典：内閣官房 国家サイバー統括室、2026-11-05
+#   https://www.cyber.go.jp/pdf/press/261105_taiou.pdf
+# 対策事項（1. 運用・管理段階／2. 設計・開発段階／3. サプライチェーン）の対策例を要約したもの（逐語転載ではない）。
+# 国家サイバー統括室が作成・認定・推奨するものではない。
+# 項目と脅威ルール・コンポーネント型の対応は本ツール側の解釈。判定の規則は src/checklist/evaluate.ts。
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+checklist:
+  id: nco-advisory-2026-11
+  title: "国家サイバー統括室 注意喚起（2026-11）ウェブサイト・モバイルアプリの基本対策"
+  source:
+    publisher: "内閣官房 国家サイバー統括室"
+    title: "個人情報の漏えい等につながる不正アクセスへの対策について ～ウェブサイトやモバイルアプリに関する基本的な対策の徹底～"
+    url: "https://www.cyber.go.jp/pdf/press/261105_taiou.pdf"
+    publishedAt: "2026-11-05"
+  staleDays: 30
+
+groups:
+  - id: operation
+    title: "運用・管理段階"
+    items:
+      - id: nco-01
+        title: "ソフトウェアの構成情報の把握と脆弱性の解消"
+        howTo: "インターネットから届くサーバー・ネットワーク機器の運用状況に、パッチの適用状況を入力する。SBOM は import-sbom でノードに結び付けて保存する。悪用が確認された脆弱性（CISA KEV 等）から優先して対処する。"
+        targetTypes: [FRONT_END_SERVER, BACKEND_API, GATEWAY, REVERSE_PROXY, VPN_GATEWAY, FIREWALL, LOAD_BALANCER, ADMIN_CONSOLE]
+        ruleIds:
+          - posture-patch-missing-001
+          - netinfra-edge-device-exploitation-001
+      - id: nco-02
+        title: "管理画面・管理用 API の外部公開と、前段の振り分けルール"
+        howTo: "管理画面を業務アプリの管理画面（ADMIN_CONSOLE）か API 管理プレーンで描き、攻撃面属性を実態どおりに入力する。リバースプロキシ・API ゲートウェイから管理画面へ線があれば、パス・ホスト名の振り分けルールと想定外のパスへの既定の転送を確かめる。"
+        targetTypes: [ADMIN_CONSOLE, API_CONTROL_PLANE, REVERSE_PROXY, GATEWAY]
+        ruleIds:
+          - stride-web-remote-mgmt-exposed-001
+          - api-control-plane-internet-exposure-001
+          - netinfra-front-proxy-management-path-exposure-001
+          - stride-web-global-ip-exposure-001
+      - id: nco-03
+        title: "デバッグ用機能・検証環境・データベース管理機能の公開"
+        howTo: "外部から届く入口に、デバッグ用のエンドポイント・開発や検証の環境・データベースの管理画面が含まれていないかを確かめる。残っているものは管理画面や API として図に描き、棚卸しの対象にする。ASM の結果（import-shodan・import-scopesentry）で、図に無い公開サービスが無いかも見る。"
+        targetTypes: [ADMIN_CONSOLE, API_CONTROL_PLANE, BACKEND_API, API_SPEC]
+        ruleIds:
+          - api-spec-improper-inventory-001
+          - zt-shadow-asset-governance-gap-001
+          - netinfra-front-proxy-management-path-exposure-001
+      - id: nco-04
+        title: "クラウドストレージ・ファイアウォールの公開設定"
+        howTo: "ストレージの公開・外部共有の設定を確かめる。AWS なら Prowler の結果を import-prowler で取り込むと、公開設定の指摘がノードに載る。是正したら外部からのアクセスで確かめる。"
+        targetTypes: [STORAGE, BACKUP_STORAGE, DATABASE, FIREWALL]
+        ruleIds:
+          - storage-public-access-misconfiguration-001
+      - id: nco-05
+        title: "ログの取得と不審なアクセスの監視"
+        howTo: "Web サーバー・API ゲートウェイ・認証基盤の運用状況に、ログの取得・保持期間・送信先（SIEM）を入力する。攻撃経路の「検知の空白」で、ログが監視先に届かない区間を確かめる。"
+        targetTypes: [FRONT_END_SERVER, BACKEND_API, GATEWAY, IDENTITY_PROVIDER]
+        ruleIds:
+          - posture-log-not-collected-001
+          - posture-log-retention-short-001
+          - api-bulk-data-harvesting-001
+  - id: development
+    title: "設計・開発段階"
+    items:
+      - id: nco-06
+        title: "API の認可不備（BOLA・BFLA）"
+        howTo: "スマートフォンのアプリや Web から呼ばれるバックエンド API を描く。テスト計画（export-test-plan）や Postman の書き出しで、他人のレコード・管理機能を呼べないかを確かめる。"
+        targetTypes: [BACKEND_API, GATEWAY]
+        ruleIds:
+          - api-backend-object-level-authorization-001
+          - api-backend-function-level-authorization-001
+          - api-token-session-validation-gap-001
+          - api-backend-gateway-bypass-001
+      - id: nco-07
+        title: "アプリ・ソースコードへの認証情報の埋め込み"
+        howTo: "アプリに API キー・トークン・秘密鍵を埋め込んでいないか、サーバー側ではシークレット管理を使い、有効期間とローテーションを決めているかを確かめる。"
+        targetTypes: [BACKEND_API, GATEWAY, SMARTPHONE]
+        ruleIds:
+          - api-mobile-embedded-secret-001
+          - api-web-client-embedded-secret-001
+          - zt-credential-sprawl-static-secret-001
+      - id: nco-08
+        title: "認証機能・パスワード再設定への総当たりとレート制限"
+        howTo: "公開しているログイン・パスワード再設定の入口に、アカウント単位と送信元単位の試行制限と、複数の IP からの分散した試行の検知があるかを確かめる。Postman の書き出しで、試行が制限されるかを確かめられる。"
+        targetTypes: [FRONT_END_SERVER, BACKEND_API, GATEWAY, ADMIN_CONSOLE, IDENTITY_PROVIDER]
+        ruleIds:
+          - api-login-credential-guessing-001
+          - identity-idp-login-credential-guessing-001
+      - id: nco-09
+        title: "公開前の脆弱性診断（注入・コード実行・SSRF）"
+        howTo: "テスト計画（export-test-plan）で診断の範囲と観点を決め、診断の結果を取り込む。analyze --fail-on-findings で、しきい値以上の指摘が残っていれば公開を止める。"
+        targetTypes: [BACKEND_API, FRONT_END_SERVER, WEB_FORM]
+        ruleIds:
+          - api-backend-query-injection-001
+          - api-backend-remote-code-execution-001
+          - api-backend-ssrf-001
+          - webserver-webshell-implant-001
+  - id: supply-chain
+    title: "サプライチェーン"
+    items:
+      - id: nco-10
+        title: "委託先からの接続経路と多要素認証"
+        howTo: "委託先の利用者を USER で描き、信頼区分（委託先・取引先）を入力する（未入力は社員と確認できない利用者として扱う）。VPN・リモートデスクトップ・保守回線の線に認証方式を入れ、多要素認証でない経路を見直す。"
+        targetTypes: [USER, VPN_GATEWAY, BASTION, GATEWAY]
+        ruleIds:
+          - zt-external-collaborator-broad-access-001
+          - zt-vpn-broad-network-access-001
+          - stride-edge-password-internet-001
+      - id: nco-11
+        title: "作業が終わった委託先のアカウントと管理者権限の棚卸し"
+        howTo: "アカウントの棚卸しの運用を、運用状況に入力する。委託先の保守接続は作業時だけ開け、作業後にアカウントを無効にしているかを確かめる。"
+        targetTypes: [IDENTITY_PROVIDER, DIRECTORY, ADMIN_CONSOLE, BASTION]
+        ruleIds:
+          - posture-account-review-missing-001
+          - zt-external-collaborator-broad-access-001
+      - id: nco-12
+        title: "OSS・外部ライブラリの把握と初動"
+        howTo: "依存パッケージを描き（import-repo）、SBOM を取り込んで部品とノードを結び付ける。版の固定・導入時スクリプト・導入前の確認の運用状況を入力する。深刻な脆弱性の公表時に、どのノードに影響するかを確かめる手順を決めておく。"
+        targetTypes: [PACKAGE_DEPENDENCIES]
+        ruleIds:
+          - dev-dependency-unlocked-001
+          - dev-dependency-install-scripts-001
+          - dev-dependency-unvetted-001

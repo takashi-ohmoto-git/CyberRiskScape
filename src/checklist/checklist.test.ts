@@ -17,6 +17,40 @@ import {
 } from '../core/model/types';
 
 const IPA = BUNDLED_CHECKLISTS.find((c) => c.checklist.id === 'ipa-alert-2026-10')!;
+const NCO = BUNDLED_CHECKLISTS.find((c) => c.checklist.id === 'nco-advisory-2026-11')!;
+
+describe('nco-advisory-2026-11.yaml', () => {
+  it('スキーマを通り、12 項目（5 / 4 / 3）を含み、項目 id が一意', () => {
+    expect(NCO).toBeDefined();
+    expect(NCO.groups.map((g) => g.items.length)).toEqual([5, 4, 3]);
+    const ids = NCO.groups.flatMap((g) => g.items.map((i) => i.id));
+    expect(new Set(ids).size).toBe(12);
+  });
+
+  it('targetTypes と ruleIds がすべて同梱のライブラリに存在する', () => {
+    const known = new Set(BUNDLED_THREAT_LIBRARY.rules.map((r) => r.id));
+    const missing = NCO.groups.flatMap((g) =>
+      g.items.flatMap((i) => [
+        ...i.targetTypes.filter((t) => !componentRegistry.has(t)).map((t) => `${i.id}:${t}`),
+        ...i.ruleIds.filter((r) => !known.has(r)).map((r) => `${i.id}:${r}`),
+      ]),
+    );
+    expect(missing).toEqual([]);
+  });
+
+  it('en オーバーレイが全項目のタイトルと確かめ方を訳している', () => {
+    const en = getChecklists('en').find((c) => c.checklist.id === NCO.checklist.id)!;
+    for (const g of NCO.groups) {
+      const eg = en.groups.find((x) => x.id === g.id)!;
+      expect(eg.title).not.toBe(g.title);
+      for (const i of g.items) {
+        const ei = eg.items.find((x) => x.id === i.id)!;
+        expect(ei.title).not.toBe(i.title);
+        expect(ei.howTo).not.toBe(i.howTo);
+      }
+    }
+  });
+});
 
 describe('ipa-alert-2026-10.yaml', () => {
   it('スキーマを通り、17 項目（7 / 6 / 4）を含む', () => {
