@@ -1,0 +1,4 @@
+[
+  {"template-id":"sqli-error-based","info":{"name":"Error-based SQL injection","severity":"high","classification":{"cwe-id":["CWE-89"]}},"type":"http","host":"app.example.com","matched-at":"https://app.example.com/search?q=1","request":"NUCLEI-SECRET-MARKER","matcher-status":true},
+  {"template-id":"tech-detect","info":{"name":"Technology detection","severity":"info"},"type":"http","host":"app.example.com","matched-at":"https://app.example.com/","curl-command":"NUCLEI-SECRET-MARKER"}
+]

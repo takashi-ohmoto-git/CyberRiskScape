@@ -55,6 +55,7 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | **Prowler** | 検査結果の取り込み（`import-prowler`。AWS の検査の OCSF 出力・CLI のみ） | 「未入力のため仮定」の運用状況・攻撃面属性を実測に置き換える・FAIL の検査を図の脅威と突き合わせる | [Prowler の検査結果を構成図に載せる](prowler.ja.md) |
 | **Trivy** | 結果の取り込み（脆弱性は CycloneDX を `import-sbom`、IaC の設定不備・シークレットは SARIF を `import-sarif`。CLI のみ） | 依存パッケージの脆弱性を部品としてノードに結び、KEV と攻撃経路で優先順位を付ける・設定不備とシークレットをノードの指摘として持つ | [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) |
 | **ZAP** | 診断結果の取り込み（Automation Framework の `sarif-json` を `import-sarif`。CLI のみ） | 動いているアプリの指摘を、CWE の対応表で図の脅威と対応づける | [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) §5 |
+| **Nuclei** | 結果の取り込み（`import-nuclei`。JSONL / JSON。CLI のみ） | CVE の指摘を KEV と攻撃経路で優先順位付けする・CWE の指摘を図の脅威と対応づける | [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) §6 |
 | **CyberStrikeAI** | 脆弱性の変換（`convert-cyberstrikeai`。API の応答を保存した JSON、または API（GET のみ・トークンは環境変数）→ ペンテストの台帳 YAML → `import-pentest`。CLI のみ） | AI 自律ペンテストで人が confirmed にした脆弱性を、脅威カードに「実証」として載せる。どの脅威・ノードかは人が台帳で決める | [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) §4 |
 | **CycloneDX・SPDX** | 部品の取り込み（`import-sbom`。CLI のみ）・書き出し（`export-spdx`・`export-sbom-ai`。画面からも可） | SBOM・CBOM・AI BOM の部品をノードに結びつけ、Asset タブで確かめて、標準形式で書き出す（[ガイド](sbom.ja.md)） |
 | **ARTEX** | 台帳 YAML の取り込み（`import-pentest`）・資産の取り込み（`import-artex-assets`。Asset タブに表示）。CLI のみ | 実際に実行して成立した攻撃手段を脅威カードに「実証」として表示する（開発者が検証した内容に限り網羅しない） | [ARTEX が実際に実行した攻撃手段を脅威カードで見る](artex.ja.md) |
@@ -80,7 +81,7 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | 脅威モデルを脆弱性診断に活かしたい | Anthropic `defending-code-reference-harness`・Snyk |
 | 脆弱性診断の指摘を AI で直す流れを作りたい | Veracode |
 | クラウドの検査結果（AWS）を図の属性に反映したい | Prowler |
-| OSS の診断ツールの結果を、攻撃経路の上で優先順位を付けて管理したい | Trivy・ZAP・CyberStrikeAI（[ガイド](oss-vulnerability-management.ja.md)） |
+| OSS の診断ツールの結果を、攻撃経路の上で優先順位を付けて管理したい | Trivy・ZAP・Nuclei・CyberStrikeAI（[ガイド](oss-vulnerability-management.ja.md)） |
 | ペンテストで実際に通った攻撃手段を脅威カードに載せたい | ARTEX |
 | エージェントスキル・MCP サーバーの検査結果を図と突き合わせたい | Cisco AI Defense（skill-scanner / mcp-scanner） |
 | 侵害が疑われるときに、調べる範囲を決めて結果を報告したい | Velociraptor・同梱のトリアージスクリプト（[ガイド](compromise-investigation.ja.md)） |

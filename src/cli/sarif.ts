@@ -177,6 +177,7 @@ const LOST_IN_CONVERSION: Record<Finding['source']['format'], string[]> = {
   pentest: ['evidence and request/response details (kept in the source product)', 'summary and remediation text'],
   cyclonedx: ['vulnerability descriptions, details and recommendations', 'VEX not_affected/false_positive/resolved entries'],
   sarif: ['message text, code snippets and code flows', 'suppressed, resolved (absent) and pass/notApplicable/informational results'],
+  nuclei: ['request/response, curl commands, extracted results and interaction data', 'info-severity results and results whose matchers did not match'],
   'security-audit': [
     'trace steps other than the entrypoint, evidence text, execution (payloads and instructions), remediation and code changes',
     'confidence, likelihood/impact and their reasons, intended behavior and root-cause text',

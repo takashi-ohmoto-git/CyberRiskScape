@@ -36,6 +36,8 @@ import { parseSkillScannerFindings } from '../features/findings-report/parseSkil
 import { parseMcpScannerFindings } from '../features/findings-report/parseMcpScanner';
 import { parseProwlerOcsf } from '../features/prowler-import/parseProwlerOcsf';
 import { importSarif, sarifReportToJson, sarifReportToMarkdown } from './importSarif';
+import { importNuclei, nucleiReportToJson, nucleiReportToMarkdown } from './importNuclei';
+import { parseNuclei } from '../features/nuclei-import/parseNuclei';
 import { importKev, kevReportToJson, kevReportToMarkdown } from './importKev';
 import { fillPatchStatusToMarkdown, runFillPatchStatus } from './fillPatchStatus';
 import { parseKevCatalog } from '../features/kev-import/applyKev';
@@ -184,6 +186,7 @@ const USAGE = `使い方:
   import-pentest <project.json> --in <registry.yaml> [options]
   convert-cyberstrikeai [<vulns.json>] [--api <base-url>] --scope <scope> [options]
   import-sarif <project.json> --sarif <file> --scope <scope> [options]
+  import-nuclei <project.json> --in <results.jsonl> --scope <scope> [options]
   import-security-audit <project.json> --in <findings.json> [options]
   import-kev <project.json> --kev <file> [options]
   fill-patch-status <project.json> [options]
@@ -296,6 +299,13 @@ convert-cyberstrikeai のオプション（CyberStrikeAI の脆弱性を import-
   --project-id <id>                             --api のとき、このプロジェクトの脆弱性だけ取得する
   --task-id <id>                                --api のとき、このタスクの脆弱性だけ取得する
   -o, --out <registry.yaml>                     台帳 YAML の出力先（既定: 標準出力）
+
+import-nuclei のオプション（Nuclei の JSONL（-j / -jle）または JSON（-je）の結果を指摘として保存する。info と一致しなかった結果は件数のみ。CVE を持つ指摘は「既知の脆弱性に対するパッチの未適用」に対応づけ、CVE が無い指摘は CWE の対応表で脅威に対応づける。要求・応答・curl・抽出値は保存しない。場所は URL のクエリを落とす）:
+  --in <file>                                   Nuclei の結果ファイル（必須）
+  --scope <scope>                               置き換えの範囲（必須。同じ製品・同じ scope の指摘を置き換える）
+  --node <C番号|ID>                             すべての指摘を結びつけるノード（任意。無ければ未結合）
+  --report <md|json>                            報告の形式（既定: md。標準出力）
+  -o, --out <file>                              指摘を保存したプロジェクト JSON の出力先（指定しなければ報告のみ）
 
 import-sarif のオプション（汎用の SARIF 2.1.0（Semgrep・CodeQL 等の SAST）の結果を指摘として保存する。抑制済み・解消済み（absent）・合格／対象外／情報の結果は除く。message の本文・コード片・codeFlows は保存しない。場所は相対的な表記に落とす）:
   --sarif <file>                                SARIF の JSON（必須）
@@ -1213,6 +1223,41 @@ ${USAGE}`);
   process.stdout.write(`${report === 'json' ? JSON.stringify(sarifReportToJson(out), null, 2) : sarifReportToMarkdown(out)}
 `);
   process.stderr.write(`SARIF の結果を取り込みました（run ${out.runs.length} / 保存した指摘 ${out.stored} / 上限で除外 ${out.truncated}）
+`);
+}
+
+/** `import-nuclei`：Nuclei の結果（JSONL / JSON）を指摘としてプロジェクト JSON に保存する（docs/architecture.md §8.6）。 */
+function runImportNuclei(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  if (!values.in) fail('--in <results.jsonl> を指定してください。');
+  if (!values.scope) fail('--scope を指定してください。');
+  const report = parseEnum(values.report, IMPORT_PROWLER_REPORTS, 'report') ?? 'md';
+
+  let text = '';
+  try {
+    if (statSync(values.in).size > MAX_FILE_BYTES) {
+      fail(`ファイルが大きすぎます（上限 ${MAX_FILE_BYTES / 1024 / 1024} MB）: ${values.in}`);
+    }
+    text = readFileSync(values.in, 'utf-8');
+  } catch (e) {
+    fail(`ファイルを読み込めません: ${values.in}（${e instanceof Error ? e.message : String(e)}）`);
+  }
+  const parsed = parseNuclei(text);
+  if (!parsed.ok) fail(`${parsed.error}（${values.in}）`);
+
+  let out: ReturnType<typeof importNuclei>;
+  try {
+    out = importNuclei(readJsonFile(file), parsed, { scope: values.scope, invalid: parsed.invalid, ...(values.node ? { node: values.node } : {}) });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  if (values.out) writeFileSync(values.out, JSON.stringify(out.project, null, 2), 'utf-8');
+  process.stdout.write(`${report === 'json' ? JSON.stringify(nucleiReportToJson(out), null, 2) : nucleiReportToMarkdown(out)}
+`);
+  process.stderr.write(`Nuclei の結果を取り込みました（結果 ${out.report.results} / 保存した指摘 ${out.stored} / 上限で除外 ${out.truncated}）
 `);
 }
 
@@ -2265,6 +2310,8 @@ function main(): void {
     runSbomReport(values, positionals);
   } else if (command === 'import-sarif') {
     runImportSarif(values, positionals);
+  } else if (command === 'import-nuclei') {
+    runImportNuclei(values, positionals);
   } else if (command === 'import-security-audit') {
     runImportSecurityAudit(values, positionals);
   } else if (command === 'import-sbom') {
