@@ -8,7 +8,12 @@
 #   - 構成図で表せる境界・権限・信頼・サプライチェーンの型だけを載せる。コードの局所的な欠陥の型
 #     （XSS・CSRF・パストラバーサル・メモリ安全性・業務ロジック・プロトタイプ汚染など）と、
 #     複数の欠陥を含む広い型（Injection・Resource and file handling など）は意図的に載せない。
+#     図の事実に対応するノード型・ルールが無い型（Tool-schema・Cookie・Admission・Precedence・Edge/runtime・
+#     Enumeration・Per-item・Native bridge・IPC peer・CORS 等）も載せない（2026-11-07 の仕分け）。
 #     載せない型は取り込み報告の「対応づけできない指摘」に出る（data/finding-maps/cwe.yaml と同じ方針）。
+#   - 近似の対応は canonicalId の名前だけで選ばず、そのルールの対象領域（ファイル・ノード型）を確かめて当てる
+#     （電話の caller-id-spoofing・車両の ota-update-compromise・OTA_SERVER 専用の software-signing-key-compromise は
+#     一般のアプリでは何も紐づかないため当てない）。厳密な一致でなく近い問いの型には、近い canonicalId を複数併記する。
 #   - 1 つの型は 1 つの mapping にだけ書く（重複は読み込み時にエラー）。1 つの型が複数の canonicalId に対応してよい。
 #
 # 出典:
@@ -30,6 +35,10 @@ mappings:
     canonicalIds: [indirect-prompt-injection]
     note: 取り込んだ内容経由の間接プロンプトインジェクション
 
+  - attackClass: ["AI-AND-LLM.md#Prompt role and provenance confusion"]
+    canonicalIds: [direct-prompt-injection, indirect-prompt-injection]
+    note: プロンプトの役割・出所の取り違え
+
   - attackClass: ["AI-AND-LLM.md#Cross-session or cross-tenant context bleed"]
     canonicalIds: [memory-cross-tenant-bleed]
     note: セッション・テナントをまたぐ文脈の漏れ
@@ -47,6 +56,10 @@ mappings:
   - attackClass: ["AI-AND-LLM.md#Excessive agency and confused-deputy authority"]
     canonicalIds: [excessive-agency, confused-deputy-delegation]
     note: 過剰な権限と代理人問題
+
+  - attackClass: ["AI-AND-LLM.md#Unbounded delegated action loops"]
+    canonicalIds: [agent-action-budget-gap, excessive-agency, llm-resource-exhaustion]
+    note: 上限のない委任された行動の繰り返し
 
   - attackClass: ["AI-AND-LLM.md#Action-confirmation and approval binding"]
     canonicalIds: [tool-approval-gate-gap, agent-high-risk-approval-gap]
@@ -77,6 +90,10 @@ mappings:
     canonicalIds: [workload-identity-federation-trust]
     note: アカウント・テナントをまたぐロールの取り違え
 
+  - attackClass: ["CLOUD-AND-DEPLOYMENT.md#Application authorization delegated to cloud metadata"]
+    canonicalIds: [forwarded-header-trust, ai-gateway-caller-identity-trust, api-gateway-bypass]
+    note: クラウドのメタデータへの認可の委任
+
   - attackClass: ["CLOUD-AND-DEPLOYMENT.md#Unexpected service or management-plane reachability"]
     canonicalIds: [internet-exposed-sensitive-component, web-remote-management-exposure]
     note: 想定外のサービス・管理面への到達
@@ -90,7 +107,7 @@ mappings:
     note: メタデータ・内部サービスへの到達
 
   - attackClass: ["CLOUD-AND-DEPLOYMENT.md#Secret exposure across workload boundaries"]
-    canonicalIds: [credential-sprawl]
+    canonicalIds: [credential-sprawl, nhi-reuse, nhi-environment-isolation]
     note: ワークロードの境界をまたぐ秘密情報の露出
 
   - attackClass:
@@ -99,24 +116,47 @@ mappings:
     canonicalIds: [storage-public-access-misconfiguration]
     note: オブジェクト・署名付き参照のポリシーの不備
 
+  - attackClass: ["CLOUD-AND-DEPLOYMENT.md#Credential renewal and outage fallback"]
+    canonicalIds: [client-certificate-lifecycle-gap, nhi-long-lived-secret]
+    note: 資格情報の更新・障害時の代替動作
+
+  - attackClass: ["CLOUD-AND-DEPLOYMENT.md#Host or control-plane capability exposure"]
+    canonicalIds: [container-host-capability-exposure]
+    note: ホスト・コントロールプレーンの権限へ踏み出せるワークロードの受け入れ
+
+  - attackClass: ["CLOUD-AND-DEPLOYMENT.md#Admission and policy path inconsistency"]
+    canonicalIds: [admission-policy-path-inconsistency]
+    note: 配備経路によって受け付けのポリシーが効かない
+
+  - attackClass: ["CLOUD-AND-DEPLOYMENT.md#Event-source identity confusion"]
+    canonicalIds: [webhook-signature-verification-gap]
+    note: イベントの送信元の取り違え
+
   # ── DATA-ISOLATION-AND-LIFECYCLE.md ──
   - attackClass: ["DATA-ISOLATION-AND-LIFECYCLE.md#Missing tenant or owner enforcement"]
     canonicalIds: [api-object-level-authorization]
     note: テナント・所有者の強制の欠如
+
+  - attackClass: ["DATA-ISOLATION-AND-LIFECYCLE.md#Search, cache, and index ACL drift"]
+    canonicalIds: [vector-embedding-weakness, memory-cross-tenant-bleed, ai-gateway-cache-cross-user-leak]
+    note: 検索・キャッシュ・索引の権限のずれ
 
   - attackClass: ["DATA-ISOLATION-AND-LIFECYCLE.md#Analytics, logs, traces, and diagnostics as alternate readers"]
     canonicalIds: [data-store-info-disclosure]
     note: 分析・ログ・診断経由の読み取り
 
   - attackClass: ["DATA-ISOLATION-AND-LIFECYCLE.md#Export and backup scope expansion"]
-    canonicalIds: [admin-bulk-export-unguarded, api-bulk-data-harvesting]
+    canonicalIds: [admin-bulk-export-unguarded, api-bulk-data-harvesting, data-store-info-disclosure]
     note: エクスポート・バックアップの範囲拡大
+
+  - attackClass: ["DATA-ISOLATION-AND-LIFECYCLE.md#Backup and replication boundary drift"]
+    canonicalIds: [data-store-info-disclosure, shared-management-scope-dev-prod]
+    note: バックアップ・複製の境界のずれ
 
   - attackClass: ["DATA-ISOLATION-AND-LIFECYCLE.md#Retention and queued-work overrun"]
     canonicalIds: [data-retention-unnecessary]
     note: 保持期間の超過
 
-  # ── WEB-PROTOCOL-AND-AUTH.md ──
   - attackClass: ["WEB-PROTOCOL-AND-AUTH.md#Request framing and desynchronization"]
     canonicalIds: [http-request-smuggling]
     note: リクエストの区切りのずれ
@@ -124,6 +164,10 @@ mappings:
   - attackClass: ["WEB-PROTOCOL-AND-AUTH.md#Web cache poisoning through unkeyed input"]
     canonicalIds: [web-cache-poisoning]
     note: キャッシュ汚染
+
+  - attackClass: ["WEB-PROTOCOL-AND-AUTH.md#Cache deception and private-response caching"]
+    canonicalIds: [web-cache-poisoning, ai-gateway-cache-cross-user-leak]
+    note: 非公開の応答のキャッシュ（キャッシュデセプション）
 
   - attackClass: ["WEB-PROTOCOL-AND-AUTH.md#Host and forwarded-header trust"]
     canonicalIds: [forwarded-header-trust]
@@ -143,10 +187,13 @@ mappings:
 
   - attackClass:
       - "WEB-PROTOCOL-AND-AUTH.md#MFA enrollment and assurance downgrade"
-      - "WEB-PROTOCOL-AND-AUTH.md#Account linking and identity collision"
       - "WEB-PROTOCOL-AND-AUTH.md#Password reset and broader recovery"
     canonicalIds: [user-account-takeover]
-    note: アカウント乗っ取りにつながる登録・連携・回復
+    note: アカウント乗っ取りにつながる登録・回復
+
+  - attackClass: ["WEB-PROTOCOL-AND-AUTH.md#Account linking and identity collision"]
+    canonicalIds: [user-account-takeover, social-idp-assurance-gap]
+    note: アカウント連携・ID の衝突（外部 IdP の保証水準を含む）
 
   - attackClass: ["WEB-PROTOCOL-AND-AUTH.md#API-key scope and resource binding"]
     canonicalIds: [nhi-overprivileged]
@@ -157,7 +204,7 @@ mappings:
     note: API キーの露出・安全でない転送
 
   - attackClass: ["WEB-PROTOCOL-AND-AUTH.md#mTLS peer and application-identity confusion"]
-    canonicalIds: [service-mesh-mtls-not-enforced]
+    canonicalIds: [service-mesh-mtls-not-enforced, forwarded-header-trust, ai-gateway-caller-identity-trust]
     note: mTLS の相手とアプリの ID の取り違え
 
   - attackClass: ["WEB-PROTOCOL-AND-AUTH.md#Certificate lifecycle fallback"]
@@ -168,8 +215,8 @@ mappings:
   - attackClass:
       - "SUPPLY-CHAIN-AND-RELEASE.md#Dependency source and namespace confusion"
       - "SUPPLY-CHAIN-AND-RELEASE.md#Mutable and unbound build inputs"
-    canonicalIds: [package-lookalike-name, package-registry-poisoning]
-    note: 依存の取得元・名前空間の取り違え
+    canonicalIds: [package-lookalike-name, package-registry-poisoning, tool-poisoning-rug-pull]
+    note: 依存の取得元・名前空間の取り違え、固定されない入力
 
   - attackClass:
       - "SUPPLY-CHAIN-AND-RELEASE.md#Untrusted code in a privileged workflow"
@@ -182,12 +229,20 @@ mappings:
     canonicalIds: [nhi-overprivileged]
     note: 自動化の ID の権限過大
 
+  - attackClass: ["SUPPLY-CHAIN-AND-RELEASE.md#Build-to-promotion substitution"]
+    canonicalIds: [ci-pipeline-poisoned-execution]
+    note: ビルドから昇格までの成果物の差し替え
+
   - attackClass: ["SUPPLY-CHAIN-AND-RELEASE.md#Release authorization and signing-policy gaps"]
-    canonicalIds: [software-signing-key-compromise]
+    canonicalIds: [ci-pipeline-poisoned-execution]
     note: リリースの承認・署名の方針の不備
 
+  - attackClass: ["SUPPLY-CHAIN-AND-RELEASE.md#Update metadata and rollback confusion"]
+    canonicalIds: [update-signature-verification-gap, update-rollback-confusion]
+    note: 更新の署名の未検証・版や対象の束縛と巻き戻し防止の欠如
+
   - attackClass: ["SUPPLY-CHAIN-AND-RELEASE.md#Plugin and extension trust expansion"]
-    canonicalIds: [third-party-extension-supply-chain]
+    canonicalIds: [third-party-extension-supply-chain, agent-skill-unvetted-install]
     note: プラグイン・拡張への信頼の拡大
 
   # ── PROTOCOLS-RPC-AND-MESSAGING.md ──
@@ -195,9 +250,21 @@ mappings:
     canonicalIds: [api-gateway-bypass, gateway-authorization-gap]
     note: 経路による検査の不一致
 
+  - attackClass: ["PROTOCOLS-RPC-AND-MESSAGING.md#Peer identity to application-principal confusion"]
+    canonicalIds: [service-mesh-mtls-not-enforced, forwarded-header-trust, ai-gateway-caller-identity-trust]
+    note: 通信相手の ID とアプリ上の主体の取り違え
+
+  - attackClass: ["PROTOCOLS-RPC-AND-MESSAGING.md#Untrusted producer treated as control plane"]
+    canonicalIds: [webhook-signature-verification-gap, inter-agent-comms-integrity]
+    note: 信頼できない送り手を制御面として扱う
+
+  - attackClass: ["PROTOCOLS-RPC-AND-MESSAGING.md#Topic, routing-key, and subscription scope gaps"]
+    canonicalIds: [broker-topic-scope-gap]
+    note: トピック・購読の権限の範囲の不備
+
   - attackClass: ["PROTOCOLS-RPC-AND-MESSAGING.md#Dead-letter, retry, and diagnostic disclosure"]
-    canonicalIds: [api-error-information-disclosure]
-    note: 再送・診断情報からの漏れ
+    canonicalIds: [dead-letter-content-disclosure, broker-topic-scope-gap]
+    note: 配信不能キュー・再送・失敗時のログへ写った本文からの漏れ（閲覧権限はトピックの権限）
 
   # ── RESOURCE-EXHAUSTION-AND-AVAILABILITY.md ──
   - attackClass:
@@ -206,14 +273,35 @@ mappings:
       - "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Pre-authentication work imbalance"
       - "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Quota-accounting scope and reset gaps"
       - "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Worker, pool, and priority starvation"
-    canonicalIds: [gateway-resource-exhaustion]
+    canonicalIds: [gateway-resource-exhaustion, api-downstream-cascading-failure]
     note: 資源の枯渇
 
   - attackClass: ["RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Retry storm and fail-open amplification"]
-    canonicalIds: [cascading-failures]
-    note: 再試行の連鎖
+    canonicalIds: [api-downstream-cascading-failure, cascading-failures]
+    note: 再試行の連鎖（API の下流・エージェント間）
 
   # ── DESKTOP-MOBILE-AND-LOCAL-IPC.md ──
   - attackClass: ["DESKTOP-MOBILE-AND-LOCAL-IPC.md#Privileged helper as confused deputy"]
     canonicalIds: [process-privilege-escalation]
     note: 特権ヘルパーの代理人問題
+
+  # ── 手順 3 の調査（2026-11-07）で既存の脅威で受けると判断した型の残り ──
+  - attackClass: ["WEB-PROTOCOL-AND-AUTH.md#Session fixation and invalidation"]
+    canonicalIds: [api-token-validation-gap]
+    note: セッションの固定・失効の確認の欠如（ログイン時の ID の再発行はコードの事実）
+
+  - attackClass: ["WEB-PROTOCOL-AND-AUTH.md#Step-up binding and bypass"]
+    canonicalIds: [user-account-takeover]
+    note: 追加認証（ステップアップ）の結びつけの欠如
+
+  - attackClass: ["WEB-PROTOCOL-AND-AUTH.md#WebAuthn and passkey verification"]
+    canonicalIds: [idp-relying-party-validation-gap]
+    note: パスキーの検証の不備（RP 側の検証という点だけが一致する近似）
+
+  - attackClass: ["SUPPLY-CHAIN-AND-RELEASE.md#Build-context inclusion"]
+    canonicalIds: [credential-sprawl]
+    note: ビルドの文脈への秘密情報の混入
+
+  - attackClass: ["DESKTOP-MOBILE-AND-LOCAL-IPC.md#Credential-store and local-secret boundary mismatch"]
+    canonicalIds: [endpoint-loss-credential-exposure, client-endpoint-info-disclosure]
+    note: 端末内の資格情報の保管の境界の不一致

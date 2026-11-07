@@ -13,7 +13,7 @@
 #
 # 発火条件:
 #   ルール 1〜3 は PACKAGE_DEPENDENCIES の運用状況（posture グループ `dependency`）、
-#   ルール 5・6 は AGENT の運用状況（posture グループ `agentPermission`）で発火する。未入力（Unknown）は
+#   ルール 5〜7 は AGENT の運用状況（posture グループ `agentPermission`）で発火する。未入力（Unknown）は
 #   対策なしと同じ扱いで発火し、利用者が実態を入力すれば消える。ルール 6 は 2 つの条件（agentSandbox と
 #   agentEgress）の AND で、どちらか一方でも対策済みなら発火しない（posture のフィールド間は AND、
 #   フィールド内の値は OR）。ルール 4 は運用状況に関係なく発火する（公開レジストリの仕組みそのものに由来）。
@@ -40,6 +40,15 @@
 #     「資格情報が散在する」保管の問いで、本ルールは「隔離も送信先の制限もない実行環境から秘密が出ていく」
 #     出口の問いのため再利用しない。agent-uncontrolled-egress は AGENT から公衆網への接続（edge）を
 #     扱い、本ルールは AGENT ノードの実行環境の設定（サンドボックス × 送信先の制限）を扱うため別。
+#   - 行動予算の強制の欠如（実行回数・送信件数・課金額・再帰の深さの上限） → 新グループ agent-action-budget-gap（既存の「権限過剰」カードにまとめず別カードにする）。
+#     owasp-llm06 系・ルール 5（excessive-agency）が問うのは「与えている権限・コマンドの範囲」、llm-resource-exhaustion は
+#     LLM ノードへの入力に対する計算資源の消費で、本ルールは「許された操作の範囲内での量・回数・再帰」を
+#     実行側が強制しているか（agentActionBudget）を問う。subject と問いが違うため別カードになり、
+#     権限を絞っても残る暴走（無限ループ・大量送信・課金の青天井）を拾う。
+#   - 配る更新の署名の未検証・版や対象の束縛と巻き戻し防止の欠如（UPDATE_SERVER。運用状況 update） →
+#     新グループ update-signature-verification-gap / update-rollback-confusion。車両の ota-update-compromise・
+#     firmware-downgrade-replay は車両の署名・配信の手順の侵害と ECU 側の版数検証で、対象の型と領域が違うため
+#     共有しない（以前の対応表で近似として当てて誤りになった経緯がある）。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を記述する。
@@ -181,3 +190,68 @@ rules:
         ref: "PR.DS-01"
       - standard: nist-csf-2.0
         ref: "PR.AA-05"
+
+  # ── エージェントの行動予算の欠如 ────────────────────────────────
+  # 未入力（Unknown）は上限なしとして発火し、Enforced で消える。canonicalId は新グループ agent-action-budget-gap。
+  - id: dev-agent-action-budget-001
+    canonicalId: agent-action-budget-gap
+    framework: AgenticAI
+    category: "Privilege Compromise"
+    name: "行動予算のないエージェント（実行回数・送信件数・課金額・再帰の深さに上限がない）"
+    severity: High
+    description: "{{nodeName}} の実行回数・外部への送信件数・課金の発生する呼び出しの総額・再帰や委譲の深さに、実行側で強制する上限がない場合、誤った判断や取り込んだ文章に埋め込まれた指示で動き出したエージェントは、許された操作の範囲内のまま止まらずに繰り返せる（Can）。同じ処理の無限ループ、メール・メッセージの大量送信、課金される API の呼び出しの青天井、他のエージェントを呼び出す委譲の連鎖は、1 回ごとの操作は正当で権限の範囲内のため、権限の制限や承認の仕組みでは止まらない。一方、1 つの作業あたりの実行回数・送信件数・課金額・再帰の深さに上限を設け、超えた時点で実行側が停止して人に通知する仕組みを強制していれば、暴走しても被害は上限までにとどまる（Cannot）。プロンプトでの「やりすぎないように」という指示は上限の強制にならない。blast radius は上限に達するまでに実行できるすべての操作（送信先への到達、課金額、下流のシステムへの負荷）。"
+    mitigation: "[Foundation] 1 つの作業あたりの実行回数・外部への送信件数・課金の上限・再帰や委譲の深さの上限を、エージェントの実行側（モデルへの指示ではなく実行基盤の設定）で定め、超えたら停止する。上限に達したことは人に通知する。 [Enterprise] 上限をツールや宛先ごとに分け、利用者・作業単位の予算を別に管理する。課金の発生する API には外部サービス側のクォータや利用上限も設定し、エージェントの設定だけに頼らない。上限の変更を承認の対象にし、実行回数と送信件数を監視する。 [Advanced] 異常な速度や回数の増加を検知して自動で停止し、人の承認なしには再開させない。作業ごとに予算を発行し、終了とともに失効させる。"
+    appliesTo:
+      kind: node
+      nodeType: AGENT
+      connection:
+        required: false
+      posture:
+        agentActionBudget: [None, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+
+  # ── 配る更新の署名を受け取り側が検証していない（更新の経路を握った攻撃者が任意のコードを配れる） ─────────────
+  - id: dev-update-signature-unverified-001
+    canonicalId: update-signature-verification-gap
+    framework: STRIDE
+    category: "Tampering"
+    name: "配る更新の署名を受け取り側が検証していない（更新の経路を握った攻撃者が任意のコードを配れる）"
+    severity: High
+    description: "{{nodeName}} が配る更新（パッケージ・メタデータ）の署名を、受け取り側のクライアントが検証していない（または署名の無い更新も受け付ける）場合、配信サーバー・ミラー・CDN・通信経路のいずれかを握った攻撃者は、更新を差し替えて、更新を受け取るすべての端末や機器で任意のコードを実行させられる（Can）。更新の仕組みは端末の高い権限で動くため、1 回の差し替えで広い範囲を支配できる。一方、クライアントが信頼の起点に紐づく署名を検証し、検証に失敗した更新を適用しなければ、経路や配信基盤が侵害されても不正な更新は受け付けられない（Cannot）。署名の API を呼んでいるだけで、対象の製品・版・チャネルへの束縛がなければ不十分である。blast radius は {{nodeName}} から更新を受けるすべての端末や機器。"
+    mitigation: "[Foundation] クライアントが、配布元とは別に保管した信頼の起点（公開鍵）で更新とメタデータの署名を検証し、検証に失敗した更新は適用しない。署名の無い更新を受け付ける設定を無効にする。 [Enterprise] 署名鍵を配信サーバーと別の保護された場所（HSM）で管理し、署名の操作を記録する。署名の検証失敗を集めて監視する。 [Advanced] 署名を役割ごとの別の鍵で行い（ルート・ターゲット・タイムスタンプ等）、鍵の漏えいを想定した入れ替えの手順を訓練する。更新のビルドの来歴を検証可能にする。"
+    appliesTo:
+      kind: node
+      nodeType: UPDATE_SERVER
+      # 更新の署名の検証は配る側の仕組みの性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+      posture:
+        updateSigning: [None, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-02"
+      - standard: nist-csf-2.0
+        ref: "GV.SC-07"
+
+  # ── 更新の版・対象・チャネル・期限の束縛と巻き戻しの防止がなく、古い正規の更新や別の更新のメタデータを受け付ける ─────────────
+  - id: dev-update-rollback-binding-001
+    canonicalId: update-rollback-confusion
+    framework: STRIDE
+    category: "Tampering"
+    name: "更新の版・対象・チャネル・期限の束縛と巻き戻しの防止がなく、古い正規の更新や別の更新のメタデータを受け付ける"
+    severity: High
+    description: "{{nodeName}} が配る更新で、受け取り側が更新のバイト列の署名だけを確かめ、版・製品・プラットフォーム・チャネル・対象のパス・有効期限・巻き戻しの状態を確かめていない場合、攻撃者は過去に正規に署名された古い版（既知の脆弱性を含む）を再び配って適用させる、期限切れのメタデータを見せ続けて新しい更新を隠す、別の取引の正規のメタデータとペイロードを組み合わせて受け付けさせる、ことができる（Can）。署名は正しいため検証を通り、修正済みの脆弱性が再び悪用できるようになる。一方、受け取り側が版の単調な増加・製品とチャネルの束縛・有効期限・メタデータとペイロードの対応を検証し、インストールを途中で失敗しても一貫した状態に戻れるようにしていれば、正規の署名を持つ古い更新でも受け付けられない（Cannot）。blast radius は {{nodeName}} から更新を受けるすべての端末や機器の、過去の版に含まれる全脆弱性。"
+    mitigation: "[Foundation] クライアントが、更新の版の単調な増加（現在より古い版を拒否）、製品・プラットフォーム・チャネルの一致、メタデータの有効期限を確認する。 [Enterprise] メタデータとペイロードが同じ取引のものであることを（ハッシュの束縛で）確認し、インストールを原子的に行って失敗時に一貫した状態へ戻す。最小の版を改ざんできない領域に保持する。 [Advanced] 脆弱性の修正を含む版を出したら最小の版を引き上げ、古い版で動く端末を監視して検出する。署名の失効と部分的な公開の失敗時の挙動（失敗したら拒否に倒す）を訓練する。"
+    appliesTo:
+      kind: node
+      nodeType: UPDATE_SERVER
+      # 版・チャネルの束縛は配る側とクライアントの設計の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+      posture:
+        updateRollbackProtection: [None, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-02"

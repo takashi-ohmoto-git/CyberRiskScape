@@ -390,7 +390,9 @@ rules:
     mitigation: "メッセージ署名・MAC、シーケンス番号と重複検知、コネクタの最小権限化、構成変更の監査ログ。"
     appliesTo:
       kind: node
-      nodeType: CONNECTOR
+      anyOf:
+        - nodeType: CONNECTOR
+        - nodeType: MESSAGE_BROKER
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.DS-02"

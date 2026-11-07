@@ -2,6 +2,10 @@
 #
 # 対象は data/component-library/api-platform.yaml の 6 型
 # （BACKEND_API / API_CONTROL_PLANE / SECRETS_VAULT / API_DEV_WORKSPACE / CI_PIPELINE / API_SPEC）。
+# MESSAGE_BROKER（メッセージブローカー。運用状況 broker）のトピックの権限の範囲と送信者の真正性のルールも本ファイルに置く。
+# 配信不能キューの閲覧権限はトピックの権限のルールで扱う。配信不能キュー・再送・失敗時のログへ写った本文の流出は
+# 専用のルール（canonicalId dead-letter-content-disclosure）で扱う。呼び出し元へのエラー応答で漏れる
+# api-error-information-disclosure とは漏れ方も防ぎ方も違うため分けている。
 # 型名は特定製品に寄せない汎用名で、API ゲートウェイ製品（Admin API を持つもの）や
 # API 開発・テストツール（コレクション・環境変数をクラウドで共有するもの）の構成を表す。
 #
@@ -134,6 +138,13 @@
 #     データの取得量を扱い別。IdP のログイン画面は identity.yaml の identity-idp-login-credential-guessing-001 が同じ
 #     canonicalId で扱う。管理画面（ADMIN_CONSOLE）も同じルールの対象にし、必ずログインを持つため conditions で High に
 #     する（2026-11-06 ユーザー判断）。管理面の露出そのもの（web-remote-management-exposure）とは問いが異なり併発する。
+#   - SaaS・外部サービスからのイベントの受け口（api-webhook-source-authenticity-001、canonicalId:
+#     webhook-signature-verification-gap を再利用、2026-11-07）は、voice-contact-center.yaml の LINE 専用ルール
+#     （voice-line-webhook-signature-001、LINE ノードが subject）と同じ脅威を、API 側の受け口（エッジ）から一般化したもの。
+#     subject が違うため別カードになる。エッジの認証が None（未入力の既定も None）のとき発火し、署名・トークン等を
+#     宣言すれば消える。エッジのルールは描いた向き（source→target）で判定するため、送り元から受け口へ線を引いた図が対象。
+#     API の認可（api-function-level-authorization）や弱いサービス認証（weak-service-auth）とは、呼び出し元の真正性を
+#     検証しているか（受け口が送信元を確かめるか）を問う点で異なる。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する。
@@ -757,3 +768,102 @@ rules:
       - title: "OWASP API Security Top 10 2023 - API4:2023 Unrestricted Resource Consumption（実行のタイムアウト等）"
         url: "https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/"
       # 入口での量の制限は gateway-resource-exhaustion、AI エージェント間の波及は cascading-failures が扱う（別 canonicalId）。
+
+  # ── SaaS・外部サービスからのイベントの受け口（Webhook の送信元の真正性）──────
+  # 描いた向き（source→target）で判定する。認証 None（未入力の既定も None）で発火し、署名・トークンの宣言で消える。
+  - id: api-webhook-source-authenticity-001
+    canonicalId: webhook-signature-verification-gap
+    framework: STRIDE
+    category: "Spoofing"
+    name: "SaaS・外部サービスからのイベントの送信元を確かめていない受け口（偽イベントの投入）"
+    severity: High
+    description: "{{sourceName}} と {{targetName}} の間でイベントや通知（Webhook・コールバック）を受け渡す経路に認証がない場合、受け口の URL を知った（または推測した）攻撃者は、送り手（SaaS・外部サービス）を装った偽のイベントを直接送り込み、受け口側（API・ゲートウェイ等）の処理を意図しない入力で動かせる（Can）。受け口は送られてきた内容を正規のイベントとして扱うため、他の利用者の操作の偽装、注文・決済・在庫などの状態の書き換え、後段の処理やエージェントの起動まで成立する。送信元 IP の制限だけでは、送信元が IP を公開していない場合や共有基盤の場合に防げない。一方、受け口がリクエスト本文の署名（共有秘密を鍵とする HMAC 等）やトークンを検証し、不一致のリクエストを処理前に破棄していれば、鍵を持たない攻撃者はイベントを偽造できない（Cannot）。署名の検証は受け口の実装の責務で、エッジの認証方式に署名検証の有無は表れないため、署名を検証している場合はエッジの認証方式に実態を入力する。blast radius は受け口側がイベントを起点に実行するすべての処理と、そこから参照できるデータ。"
+    mitigation: "[Foundation] 受け口でリクエスト本文の署名（HMAC 等）または送信元が発行したトークンを検証し、一致しないリクエストは処理しない。署名は加工前の本文と共有秘密で検証し、秘密は秘密管理サービスに置く。 [Enterprise] 署名の比較を定数時間で行い、検証の失敗を監視する。タイムスタンプを署名に含めて再送（リプレイ）を拒否し、イベント ID で重複を排除する。受け口の URL を推測しにくいものにし、可能なら送信元の IP の許可リストも併用する。 [Advanced] イベントの受信を専用のコンポーネントに分離し、署名検証を通過したイベントだけを後段の業務処理・エージェントへ渡す構成にする。共有秘密を定期的に更新し、更新中は新旧を並行して受け付ける。"
+    appliesTo:
+      kind: edge
+      # データの流れの向きで 2 つの枝に分ける。イベントの送り手（SaaS・外部サービス）から受け口へデータが流れる経路だけを拾う。
+      # dataFlow 未入力は outbound（source → target）として評価されるため、逆向きに描かれた線（API → SaaS）は
+      # dataFlow が inbound のときだけ当たる。
+      anyOf:
+        - sourceType: [SAAS, EXTERNAL_ENTITY, CRM, CHAT, MAIL, OTHER_APP]
+          targetType: [BACKEND_API, PROCESS, OTHER_APP, GATEWAY]
+          auth: [None]
+          dataFlow: [outbound, bidirectional]
+        - sourceType: [BACKEND_API, PROCESS, OTHER_APP, GATEWAY]
+          targetType: [SAAS, EXTERNAL_ENTITY, CRM, CHAT, MAIL, OTHER_APP]
+          auth: [None]
+          dataFlow: [inbound, bidirectional]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+
+  # ── トピック・キュー・購読の権限が広く、他者のトピックの読み書きや購読ができる ─────────────
+  - id: api-broker-topic-scope-001
+    canonicalId: broker-topic-scope-gap
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "トピック・キュー・購読の権限が広く、他者のトピックの読み書きや購読ができる"
+    severity: High
+    description: "{{nodeName}} で、送信者・受信者ごとにトピック・キュー・購読の権限を限定していない（ワイルドカードの購読、全トピックへの書き込み、共有のコンシューマーグループ、他の利用者の応答用キューや配信不能キューへの到達が許される）場合、低い権限のクライアントやテナントは、他者のトピックを購読してメッセージを読み、他者のトピックへ書き込んで処理を起動し、他者の応答キューのメッセージを横取りできる（Can）。メッセージの本文に書かれたテナントの名前は隔離にならず、トピック名をアプリケーション側で組み立てているだけでは、名前を指定できる相手に突破される。一方、ブローカー自身が送信者・受信者ごとに必要なトピックだけを許可し、ワイルドカードと共有グループを制限していれば、他者のメッセージには触れない（Cannot）。blast radius は、広い権限を持つクライアントが到達できる {{nodeName}} 上のすべてのトピックのメッセージ（個人情報・認証情報を含みうる）と、そのメッセージで起動される処理。"
+    mitigation: "[Foundation] 送信者・受信者ごとに、必要なトピック・キューだけを許可する権限（ACL・IAM ポリシー）をブローカー側で設定する。ワイルドカードの購読と全トピックへの書き込みを与えない。 [Enterprise] テナントごとにトピック・キューの名前空間とコンシューマーグループを分け、アプリ側の文字列の組み立てに頼らずブローカーが強制する。応答用キューと配信不能キューを、所有者だけが読める設定にする。権限の一覧を定期的に棚卸しする。 [Advanced] 実際の購読・書き込みの記録から使われていない権限を見つけて削り、想定外のトピックへのアクセスを検知して通知する。"
+    appliesTo:
+      kind: node
+      nodeType: MESSAGE_BROKER
+      # トピックの権限の範囲はブローカーの構成の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+      posture:
+        topicAccessScope: [Broad, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+
+  # ── 送信者を認証しないブローカーで、メッセージ本文が管理イベントやコールバックを名乗れる ─────────────
+  - id: api-broker-producer-authenticity-001
+    canonicalId: webhook-signature-verification-gap
+    framework: STRIDE
+    category: "Spoofing"
+    name: "送信者を認証しないブローカーで、メッセージ本文が管理イベントやコールバックを名乗れる"
+    severity: High
+    description: "{{nodeName}} が送信者の認証とメッセージの真正性の確認（署名・送信元のアカウントや対象の束縛）を強制していない場合、トピックへ書き込める攻撃者は、メッセージの本文に管理イベント・外部サービスからのコールバック・複製の記録・移行の指示であると書くだけで、受け取った側に特権を持つ処理として扱わせられる（Can）。受け手は本文の自己申告しか手がかりがなく、正規の送り手と区別できない。一方、送信者を認証し、特権のある処理に回すメッセージは署名と送信元（アカウント・対象）の束縛を検証していれば、本文が何を名乗っても受け付けられない（Cannot）。blast radius は {{nodeName}} のメッセージを特権処理として扱うすべての受け手の、管理操作・設定変更・データ更新。"
+    mitigation: "[Foundation] 書き込む側のクライアントを認証し（クライアント証明書・IAM 等）、匿名や共有の資格情報での書き込みを許さない。 [Enterprise] 管理イベント・外部サービスのコールバック・複製や移行の指示は、送信元を検証できる署名と、送信元のアカウント・対象・イベントの種類の束縛を受け手が確認してから処理する。特権のある処理用のトピックは書き込める主体を専用にする。 [Advanced] メッセージに送信者の署名を付ける仕組みを標準化し、署名の失敗と想定外の送信元からの特権イベントを監視して通知する。"
+    appliesTo:
+      kind: node
+      nodeType: MESSAGE_BROKER
+      # 送信者の認証の強制はブローカーの構成の性質で、接続関係に依存しない内在リスク。canonicalId は他のイベントの送信元の真正性のルールと同じ。
+      connection:
+        required: false
+      posture:
+        producerAuthentication: [None, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"
+
+  # ── 処理に失敗したメッセージの本文が配信不能キュー・再送・失敗時のログへそのまま写り、秘密が漏れる ─────────────
+  - id: api-broker-dead-letter-disclosure-001
+    canonicalId: dead-letter-content-disclosure
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "失敗したメッセージの本文が配信不能キューや失敗時のログへそのまま写り、秘密が漏れる"
+    severity: Medium
+    description: "{{nodeName}} で処理に失敗したメッセージの本文を保護していない（配信不能キュー・再送用のキュー・失敗時のエラーログ・監視の画面へ本文をそのまま写し、伏せ字も閲覧の限定も保存期間もない）場合、元のトピックを読めない運用担当・監視の利用者・ログ基盤に入れる者は、写った先から本文に含まれるトークン・認証情報・個人情報を読める（Can）。写った先は元のトピックより閲覧者が多く、保存期間も長いのが普通で、トピックの権限を絞っても漏れ方が残る。配信不能キューから再送すれば、古いメッセージで処理がもう一度動く。一方、本文に秘密を入れず参照（ID）だけを渡し、失敗時に写す本文を伏せ字にし、配信不能キューを所有者だけが読める設定にして保存期間を決めていれば、写った先から秘密は読めない（Cannot）。blast radius は {{nodeName}} を通るメッセージの本文のうち、失敗して写った分に含まれる秘密と個人情報、およびそれを使える範囲。"
+    mitigation: "[Foundation] メッセージの本文に秘密を入れず、参照（ID）を渡して受け手が取りに行く形にする。配信不能キューは所有者だけが読める設定にし、保存期間を決めて超えたら消す。 [Enterprise] 失敗時のエラーログと監視の画面に本文を書かず、配信不能キューへ移すときに秘密と個人情報を伏せ字にする。配信不能キューからの再送は承認を通し、誰がいつ再送したかを記録する。 [Advanced] 配信不能キューとログに秘密が入っていないかを定期的に走査し、見つかったら通知して資格情報を入れ替える。"
+    appliesTo:
+      kind: node
+      nodeType: MESSAGE_BROKER
+      # 失敗したメッセージの扱いはブローカーの構成の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+      posture:
+        deadLetterProtection: [None, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-02"

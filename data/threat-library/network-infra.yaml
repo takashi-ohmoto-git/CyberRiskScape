@@ -6,7 +6,9 @@
 # 前段のプロキシ（リバースプロキシ・ロードバランサー・WAF・CDN・API ゲートウェイ）の要求の解釈のずれ
 # （リクエストスマグリング）・転送ヘッダーの信用・キャッシュの悪用と、リバースプロキシの迂回、
 # 仮想化基盤の管理面の奪取と VM エスケープ、SIEM / ログ基盤のログの改ざん・資格情報の集中・収集の停止、
-# EDR / DFIR サーバーの一斉実行・検知の無効化・証拠の集中を扱う。
+# EDR / DFIR サーバーの一斉実行・検知の無効化・証拠の集中、コンテナ基盤（CONTAINER_PLATFORM。運用状況 container）の
+# ホスト権限を得られるワークロードの受け入れ・配備経路ごとの受け付けのポリシーの抜けを扱う。名前空間・ラベルへの信頼の
+# 混同は、対応する属性が図に無いためルール化していない。
 # PQC 移行に直結するもの（受動復号・HSM・VPN トンネルの HNDL）は pqc.yaml に置く。
 #
 # 出典（一般的な基準のみを根拠とする。個別の事故報告は出典・事例に用いない）:
@@ -1135,3 +1137,49 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/92/final"
       - title: "MITRE ATT&CK T1552 - Unsecured Credentials（集めた証拠に含まれる資格情報の窃取）"
         url: "https://attack.mitre.org/techniques/T1552/"
+
+  # ── ホスト権限を得られるワークロード（特権モード・ホストのパス・ランタイムのソケット）を受け付ける ─────────────
+  - id: netinfra-container-privileged-workload-001
+    canonicalId: container-host-capability-exposure
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "ホスト権限を得られるワークロード（特権モード・ホストのパス・ランタイムのソケット）を受け付ける"
+    severity: High
+    description: "{{nodeName}} が、特権モード・ホストのパスのマウント・コンテナのランタイムのソケット・ホストの名前空間の共有・過大な権限（capability）を持つワークロードを受け付け時に拒否していない場合、クラスタ上にワークロードを配備できる（または上で動くアプリの脆弱性を突いて制御を得た）攻撃者は、そのワークロードからノードの権限へ踏み出せる（Can）。ノードに出れば、同じノード上の他のワークロードの秘密情報（サービスアカウントのトークン・マウントされたシークレット）を読み、コントロールプレーンの権限にまで広げられる。単にハードニング設定が無いだけでは成立せず、境界を越える操作が実際に許されていることが条件になる。一方、特権・ホストのパス・ソケットのマウントを受け付け時に拒否し、ワークロードの権限を最小にしていれば、侵害はそのワークロードの中にとどまる（Cannot）。blast radius は {{nodeName}} 上の同じノードのすべてのワークロードと、ノードが持つ資格情報、そこから到達できるコントロールプレーン。"
+    mitigation: "[Foundation] 特権モード・ホストのパス・コンテナのランタイムのソケット・ホストの名前空間の共有・不要な capability を、受け付け時のポリシー（Pod Security の Restricted 相当）で拒否する。ワークロードごとのサービスアカウントのトークンを必要なものだけに限る。 [Enterprise] 例外（特権が必要な基盤ワークロード）は専用の名前空間とノードに隔離し、例外の追加を承認の対象にする。ノードの権限で動くワークロードの配備を記録して監視する。 [Advanced] ワークロードごとにカーネルの隔離を強める（サンドボックス化したランタイム）と、ノードに出る経路自体を減らす。ポリシーの回帰を配備前の検査で継続して確かめる。"
+    appliesTo:
+      kind: node
+      nodeType: CONTAINER_PLATFORM
+      # 特権ワークロードの受け入れは基盤の設定の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+      posture:
+        workloadPrivilegeLimit: [None, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+
+  # ── 配備経路によって受け付けのポリシーが効かない経路がある（コントローラー・ジョブ・アップグレード・復元） ─────────────
+  - id: netinfra-container-admission-path-gap-001
+    canonicalId: admission-policy-path-inconsistency
+    framework: STRIDE
+    category: "Tampering"
+    name: "配備経路によって受け付けのポリシーが効かない経路がある（コントローラー・ジョブ・アップグレード・復元）"
+    severity: High
+    description: "{{nodeName}} の受け付けのポリシー（イメージの出所・名前空間・リソース・シークレット・特権の制限）が、ある配備経路（kubectl や CI からの適用）には効いていても、別の経路（コントローラーやオペレーターが作るオブジェクト、ジョブ、アップグレードや復元の処理、互換用の API）には効いていない場合、攻撃者はポリシーが効く経路で拒否される内容を、効かない経路から配備できる（Can）。結果として配備されたオブジェクトは、ポリシーが禁じているはずの未検証のイメージ・特権・過大なリソースを持ち、検査を通ったという見かけだけが残る。一方、すべての配備経路（作成・更新・サブリソース・コントローラーが生成するもの）に同じ受け付けのポリシーが効き、実際に配備されたオブジェクトで結果を確かめていれば、経路の違いによるすり抜けは起きない（Cannot）。blast radius は、ポリシーが守っているはずの全項目（イメージの信頼・名前空間の隔離・特権の制限）が破られうる {{nodeName}} 上のすべての配備。"
+    mitigation: "[Foundation] 受け付けのポリシーを、作成だけでなく更新・サブリソース・コントローラーが生成するオブジェクトにも適用する。ポリシーを外す設定（除外する名前空間・ラベル・ユーザー）を最小にし、一覧で確認する。 [Enterprise] 配備経路ごと（直接の適用・CI・オペレーター・ジョブ・復元・アップグレード）に、ポリシーが禁じる内容を実際に配備して拒否されることを継続して試す。受け付けのウェブフックが止まったときに許可に倒れない（失敗時は拒否）設定にする。 [Advanced] 実行中のオブジェクトを定期的に走査してポリシー違反を検出し、受け付けをすり抜けたものを見つけて是正する。"
+    appliesTo:
+      kind: node
+      nodeType: CONTAINER_PLATFORM
+      # 配備経路ごとのポリシーの効き方は基盤の構成の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+      posture:
+        admissionCoverage: [Partial, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-02"
