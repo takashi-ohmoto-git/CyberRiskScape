@@ -113,3 +113,44 @@ describe('importSarif', () => {
     expect(sarifReportToJson(out)).toMatchObject({ kind: 'cyberriskscape-sarif-import-report', stored: 6, scope: 'repo-a' });
   });
 });
+
+describe('importSarif（Trivy の SARIF）', () => {
+  const trivy = (() => {
+    const r = parseSarif(read('sarif-import', 'trivy.sarif.json'));
+    if (!r.ok) throw new Error(r.error);
+    return r;
+  })();
+  const out = importSarif(project, trivy, { scope: 'img-a', importedAt: AT });
+  const findings = out.project.findings ?? [];
+
+  it('3 件を保存し、製品名と版は tool.driver から読む', () => {
+    expect(out.stored).toBe(3);
+    expect(out.runs[0]).toMatchObject({ product: 'Trivy', productVersion: '0.76.2', results: 3, stored: 3, cweUnmapped: 0 });
+  });
+
+  it('security-severity の帯で深刻度を決める（7.5→High・5.5→Medium・9.5→Critical）', () => {
+    const sev = (rule: string) => findings.find((f) => f.identifiers.some((i) => i.value === rule))?.severity;
+    expect(sev('CVE-2026-0101')).toBe('High');
+    expect(sev('AVD-EXMPL-0001')).toBe('Medium');
+    expect(sev('example-access-key-id')).toBe('Critical');
+  });
+
+  it('CWE を持たないため、識別子は rule だけで canonicalIds も空', () => {
+    for (const f of findings) {
+      expect(f.identifiers).toHaveLength(1);
+      expect(f.identifiers[0].scheme).toBe('rule');
+      expect(f.identifiers.some((i) => i.scheme === 'cwe')).toBe(false);
+      expect(f.canonicalIds).toEqual([]);
+    }
+    expect(findings.map((f) => f.identifiers[0].value).sort()).toEqual(['AVD-EXMPL-0001', 'CVE-2026-0101', 'example-access-key-id']);
+  });
+
+  it('場所は相対的な表記（ROOTPATH の uriBaseId は読まない）で、message 本文は保存しない', () => {
+    const labels = findings.map((f) => f.resource?.label).sort();
+    expect(labels).toEqual(['.env.example:3', 'infra/main.tf:12', 'package-lock.json:1']);
+    const text = JSON.stringify(out.project);
+    expect(text).not.toContain('fictitious-misconfig-message-body');
+    expect(text).not.toContain('fictitious-vuln-body-text');
+    expect(text).not.toContain('EXAMPLE_KEY_ID');
+  });
+});

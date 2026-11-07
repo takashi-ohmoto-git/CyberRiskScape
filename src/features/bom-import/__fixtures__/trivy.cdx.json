@@ -1,0 +1,66 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:00000000-0000-4000-8000-000000000001",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-11-07T00:00:00+00:00",
+    "tools": {
+      "components": [{ "type": "application", "group": "aquasecurity", "name": "trivy", "version": "0.76.2" }]
+    },
+    "component": {
+      "bom-ref": "00000000-0000-4000-8000-0000000000a1",
+      "type": "container",
+      "name": "registry.example.com/example/app"
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:npm/example-lib@1.2.3",
+      "type": "library",
+      "name": "example-lib",
+      "version": "1.2.3",
+      "purl": "pkg:npm/example-lib@1.2.3"
+    },
+    {
+      "bom-ref": "pkg:apk/alpine/example-os-pkg@2.0.1-r0?distro=3.20.0",
+      "type": "library",
+      "name": "example-os-pkg",
+      "version": "2.0.1-r0",
+      "purl": "pkg:apk/alpine/example-os-pkg@2.0.1-r0?distro=3.20.0"
+    }
+  ],
+  "vulnerabilities": [
+    {
+      "id": "CVE-2026-0101",
+      "source": { "name": "ghsa", "url": "https://example.com/advisories" },
+      "ratings": [
+        { "source": { "name": "ghsa" }, "score": 7.5, "severity": "high", "method": "CVSSv31", "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H" }
+      ],
+      "cwes": [89],
+      "description": "fictitious-vuln-description-body",
+      "recommendation": "Upgrade example-lib to version 1.2.4",
+      "advisories": [{ "url": "https://example.com/vuln/CVE-2026-0101" }],
+      "published": "2026-10-01T00:00:00+00:00",
+      "updated": "2026-10-02T00:00:00+00:00",
+      "affects": [
+        { "ref": "pkg:npm/example-lib@1.2.3", "versions": [{ "version": "1.2.3", "status": "affected" }] }
+      ]
+    },
+    {
+      "id": "CVE-2026-0102",
+      "source": { "name": "nvd", "url": "https://example.com/nvd" },
+      "ratings": [
+        { "source": { "name": "nvd" }, "score": 5.3, "severity": "medium", "method": "CVSSv31", "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N" },
+        { "source": { "name": "redhat" }, "score": 4.0, "severity": "low", "method": "CVSSv31", "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:N/A:N" }
+      ],
+      "description": "fictitious-shared-vuln-description-body",
+      "advisories": [{ "url": "https://example.com/vuln/CVE-2026-0102" }],
+      "affects": [
+        { "ref": "pkg:npm/example-lib@1.2.3", "versions": [{ "version": "1.2.3", "status": "affected" }] },
+        { "ref": "pkg:apk/alpine/example-os-pkg@2.0.1-r0?distro=3.20.0", "versions": [{ "version": "2.0.1-r0", "status": "affected" }] }
+      ]
+    }
+  ]
+}

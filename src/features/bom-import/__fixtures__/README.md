@@ -7,3 +7,7 @@ JSON はファイル冒頭にコメントを書けないため、出典と取得
 - 取得日：2026-11-05
 - ライセンス：Creative Commons Attribution 3.0 Unported（SPDX specification）
 - 無改変。ファイル名だけ `spdx-2.3.schema.json` に変えた。
+
+# 他のフィクスチャ
+
+- `trivy.cdx.json`：Trivy の `--format cyclonedx` を模した架空の CycloneDX 1.6（部品 2・脆弱性 2）。すべて架空のデータ。
