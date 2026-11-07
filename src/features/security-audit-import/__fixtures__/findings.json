@@ -1,0 +1,93 @@
+[
+  {
+    "verdict": "confirmed",
+    "fingerprint": "fp-authz-001",
+    "title": "Order lookup does not check the owner",
+    "description": "DESCRIPTION-TEXT",
+    "root_cause": "ROOTCAUSE-TEXT",
+    "intended_behavior": "INTENDED-TEXT",
+    "trace": [
+      { "kind": "propagation", "file": "src/api/service.ts", "line": 10, "scope": "SCOPE-TEXT", "description": "TRACE-DESC-TEXT" },
+      { "kind": "entrypoint", "file": "C:/Users/alice/repo/src/api/orders.ts", "line": 42, "scope": "SCOPE-TEXT", "description": "TRACE-DESC-TEXT" },
+      { "kind": "sink", "file": "src/db/orders.ts", "line": 7, "scope": "SCOPE-TEXT", "description": "TRACE-DESC-TEXT" }
+    ],
+    "evidence": [{ "file": "src/api/orders.ts", "line": 42, "description": "EVIDENCE-TEXT" }],
+    "conditions": [
+      { "kind": "network_routing", "description": "The endpoint is reachable from the public internet." },
+      { "kind": "authentication_level", "description": "Any logged-in user." },
+      { "kind": "authorization_role", "description": "No special role." },
+      { "kind": "system_configuration", "description": "Feature flag orders_v2 is on." },
+      { "kind": "user_interaction", "description": "None." },
+      { "kind": "timing_dependency", "description": "Within the token lifetime." }
+    ],
+    "execution": {
+      "attacker_perspective": "ATTACKER-TEXT",
+      "payloads": ["PAYLOAD-SECRET-xyz"],
+      "instructions": ["INSTRUCTION-TEXT"],
+      "observed_result": "OBSERVED-TEXT"
+    },
+    "remediation": {
+      "strategy": "REMEDIATION-STRATEGY-TEXT",
+      "code_changes": [{ "file_name": "src/api/orders.ts", "fixed_code": "FIXED-CODE-SECRET" }]
+    },
+    "severity": {
+      "likelihood": { "score": "high", "reason": "LIKELIHOOD-REASON" },
+      "impact": { "score": "high", "reason": "IMPACT-REASON" },
+      "overall_severity": "high"
+    },
+    "confidence": { "score": "high", "reason": "CONFIDENCE-REASON" },
+    "unknown_extra_key": "ignored"
+  },
+  {
+    "verdict": "confirmed",
+    "fingerprint": "fp-dom-002",
+    "title": "Informational DOM sink",
+    "description": "d",
+    "root_cause": "r",
+    "intended_behavior": "i",
+    "trace": [{ "kind": "sink", "file": "web/app.js", "line": 3, "scope": "s", "description": "d" }],
+    "evidence": [{ "file": "web/app.js", "line": 3, "description": "e" }],
+    "conditions": [],
+    "execution": { "attacker_perspective": "a", "payloads": ["p"], "instructions": ["i"], "observed_result": "o" },
+    "remediation": { "strategy": "s" },
+    "severity": {
+      "likelihood": { "score": "low", "reason": "r" },
+      "impact": { "score": "low", "reason": "r" },
+      "overall_severity": "informational"
+    },
+    "confidence": { "score": "low", "reason": "r" }
+  },
+  {
+    "verdict": "needs_validation",
+    "fingerprint": "fp-nv-003",
+    "title": "Retrieved page text may steer the assistant tools",
+    "description": "d",
+    "claimed_root_cause": "CLAIMED-ROOTCAUSE-TEXT",
+    "trace": [{ "kind": "propagation", "file": "src/agent/loop.ts", "line": 88, "scope": "s", "description": "d" }],
+    "evidence": [{ "file": "src/agent/loop.ts", "line": 88, "description": "e" }],
+    "blockers": [
+      "Whether the deployed model follows tool instructions found in retrieved text is unknown.",
+      "Blocker 2",
+      "Blocker 3",
+      "Blocker 4",
+      "Blocker 5",
+      "Blocker 6 is dropped by the limit",
+      "Blocker 7 is dropped by the limit"
+    ],
+    "validation_plan": {
+      "local": "LOCAL-PLAN-SECRET",
+      "deployment": "Ask the owner to send a crafted page through the staging assistant and watch the tool log."
+    }
+  },
+  {
+    "verdict": "rejected",
+    "fingerprint": "fp-rej-004",
+    "title": "REJECTED-TITLE-SECRET",
+    "description": "d",
+    "claimed_root_cause": "c",
+    "trace": [{ "kind": "sink", "file": "src/x.ts", "line": 1, "scope": "s", "description": "d" }],
+    "evidence": [{ "file": "src/x.ts", "line": 1, "description": "e" }],
+    "reason": "REJECT-REASON-TEXT"
+  },
+  { "verdict": "bogus", "fingerprint": "fp-bogus-005" }
+]

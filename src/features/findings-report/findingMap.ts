@@ -110,3 +110,50 @@ const aitechSources = import.meta.glob<string>('../../../data/finding-maps/aitec
 export const BUNDLED_AITECH_MAP: AitechMapping[] = loadAitechMap(
   Object.values(aitechSources)[0] ?? 'schemaVersion: 1\nmappings: []\n',
 );
+
+// ── AI によるソース監査の攻撃クラス対応表（`data/finding-maps/security-audit.yaml`。`FILE.md#型名` で引く）──
+
+const AttackClassRef = z.string().regex(/^[A-Za-z0-9_-]+\.md#\S.*$/);
+
+const SecurityAuditMapSchema = z.object({
+  schemaVersion: z.literal(1),
+  mappings: z.array(
+    z.object({
+      attackClass: z.array(AttackClassRef).nonempty(),
+      canonicalIds: z.array(z.string().min(1)).nonempty(),
+      note: z.string().optional(),
+    }),
+  ),
+});
+
+export type SecurityAuditMapping = z.infer<typeof SecurityAuditMapSchema>['mappings'][number];
+
+export function loadSecurityAuditMap(text: string): SecurityAuditMapping[] {
+  const mappings = SecurityAuditMapSchema.parse(parseYaml(text)).mappings;
+  const seen = new Set<string>();
+  for (const m of mappings) {
+    for (const c of m.attackClass) {
+      if (seen.has(c)) throw new Error(`[finding-map] ${c} が複数の mapping に載っています`);
+      seen.add(c);
+    }
+  }
+  return mappings;
+}
+
+/** 攻撃クラスの参照（`FILE.md#型名`）→ canonicalId 一覧。載っていない型は undefined。 */
+export function attackClassToCanonicalIds(
+  mappings: readonly SecurityAuditMapping[],
+  attackClass: string,
+): readonly string[] | undefined {
+  return mappings.find((m) => m.attackClass.includes(attackClass))?.canonicalIds;
+}
+
+const securityAuditSources = import.meta.glob<string>('../../../data/finding-maps/security-audit.yaml', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
+
+export const BUNDLED_SECURITY_AUDIT_MAP: SecurityAuditMapping[] = loadSecurityAuditMap(
+  Object.values(securityAuditSources)[0] ?? 'schemaVersion: 1\nmappings: []\n',
+);

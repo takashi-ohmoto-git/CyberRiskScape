@@ -1,0 +1,38 @@
+[
+  {
+    "coverage_id": "unit-1",
+    "canonical_refs": {
+      "surface": "src/api/orders.ts#GET /orders/:id",
+      "boundary": "src/authz.ts#requireOwner",
+      "subsystem": "packages/api",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "status": "candidate",
+    "result_fingerprints": ["fp-authz-001"],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "unit-2",
+    "canonical_refs": {
+      "surface": "web/app.js#render",
+      "boundary": "web/app.js#sanitize",
+      "subsystem": "web",
+      "attack_class": "CLIENT-SIDE.md#DOM-based XSS"
+    },
+    "status": "candidate",
+    "result_fingerprints": ["fp-dom-002"]
+  },
+  {
+    "coverage_id": "unit-3",
+    "canonical_refs": {
+      "surface": "src/agent/loop.ts#run",
+      "boundary": "none",
+      "subsystem": "packages/agent",
+      "attack_class": "AI-AND-LLM.md#Indirect injection through retrieved or ingested content"
+    },
+    "status": "candidate",
+    "result_fingerprints": ["fp-nv-003", "fp-authz-001"]
+  },
+  { "coverage_id": "unit-4", "status": "planned", "result_fingerprints": [] },
+  "not-a-unit"
+]

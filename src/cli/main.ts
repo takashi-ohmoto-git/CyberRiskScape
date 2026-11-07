@@ -53,6 +53,12 @@ import {
 import { parseScap } from '../features/scap-import/parseScap';
 import { importPentest, pentestReportToJson, pentestReportToMarkdown } from './importPentest';
 import { parseRegistry } from '../features/pentest-import/parseRegistry';
+import { importSecurityAudit, securityAuditReportToJson, securityAuditReportToMarkdown } from './importSecurityAudit';
+import {
+  SECURITY_AUDIT_MAX_BYTES,
+  parseCoverageLedger,
+  parseSecurityAudit,
+} from '../features/security-audit-import/parseSecurityAudit';
 import { parseArtexEndpoints, parseArtexServices } from '../features/asset-import/artexAssets';
 import { parseBom } from '../features/bom-import/parseBom';
 import { deserializeProject } from '../features/persistence/serialize';
@@ -175,6 +181,7 @@ const USAGE = `使い方:
   import-findings <project.json> --format <xccdf|arf|oval> --in <file> [options]
   import-pentest <project.json> --in <registry.yaml> [options]
   import-sarif <project.json> --sarif <file> --scope <scope> [options]
+  import-security-audit <project.json> --in <findings.json> [options]
   import-kev <project.json> --kev <file> [options]
   fill-patch-status <project.json> [options]
   findings-priority <project.json> [options]
@@ -282,6 +289,14 @@ import-artex-assets のオプション（ARTEX の資産 API の JSON から、�
 import-sarif のオプション（汎用の SARIF 2.1.0（Semgrep・CodeQL 等の SAST）の結果を指摘として保存する。抑制済み・解消済み（absent）・合格／対象外／情報の結果は除く。message の本文・コード片・codeFlows は保存しない。場所は相対的な表記に落とす）:
   --sarif <file>                                SARIF の JSON（必須）
   --scope <scope>                               置き換えの範囲（必須。同じ製品・同じ scope の指摘を置き換える）
+  --node <C番号|ID>                             すべての指摘を結びつけるノード（任意。無ければ未結合）
+  --report <md|json>                            報告の形式（既定: md。標準出力）
+  -o, --out <file>                              指摘を保存したプロジェクト JSON の出力先（指定しなければ報告のみ）
+
+import-security-audit のオプション（AI によるソース監査（Cloudflare security-audit スキル）の findings.json を指摘として保存する。confirmed は成立を確認した指摘、needs_validation は重大度なしの要確認として保存し、rejected は保存しない。payloads・修正コード・evidence・root_cause の本文は保存しない）:
+  --in <findings.json>                          findings.json（必須。16 MB まで）
+  --ledger <coverage-ledger.json>               coverage-ledger.json（任意。攻撃クラスから脅威へ対応づける。16 MB まで）
+  --scope <scope>                               置き換えの範囲（既定: default。同じ製品・同じ scope の指摘を置き換える）
   --node <C番号|ID>                             すべての指摘を結びつけるノード（任意。無ければ未結合）
   --report <md|json>                            報告の形式（既定: md。標準出力）
   -o, --out <file>                              指摘を保存したプロジェクト JSON の出力先（指定しなければ報告のみ）
@@ -560,6 +575,7 @@ function parseCliArgs() {
       hosts: { type: 'string' },
       sbom: { type: 'string' },
       sarif: { type: 'string' },
+      ledger: { type: 'string' },
       kev: { type: 'string' },
       'dry-run': { type: 'boolean' },
       previous: { type: 'string' },
@@ -1184,6 +1200,51 @@ ${USAGE}`);
   process.stdout.write(`${report === 'json' ? JSON.stringify(sarifReportToJson(out), null, 2) : sarifReportToMarkdown(out)}
 `);
   process.stderr.write(`SARIF の結果を取り込みました（run ${out.runs.length} / 保存した指摘 ${out.stored} / 上限で除外 ${out.truncated}）
+`);
+}
+
+/** `import-security-audit`：ソース監査（Cloudflare security-audit スキル）の指摘を保存する（docs/architecture.md §8.9）。 */
+function runImportSecurityAudit(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  if (!values.in) fail('--in <findings.json> を指定してください。');
+  const report = parseEnum(values.report, IMPORT_PROWLER_REPORTS, 'report') ?? 'md';
+
+  const readCapped = (path: string): unknown => {
+    try {
+      if (statSync(path).size > SECURITY_AUDIT_MAX_BYTES) {
+        fail(`ファイルが大きすぎます（上限 ${SECURITY_AUDIT_MAX_BYTES / 1024 / 1024} MB）: ${path}`);
+      }
+    } catch (e) {
+      fail(`ファイルを読み込めません: ${path}（${e instanceof Error ? e.message : String(e)}）`);
+    }
+    return readJsonFile(path);
+  };
+  const parsed = parseSecurityAudit(readCapped(values.in));
+  if (!parsed.ok) fail(`${parsed.error}（${values.in}）`);
+  let ledger: ReturnType<typeof parseCoverageLedger> | undefined;
+  if (values.ledger) {
+    ledger = parseCoverageLedger(readCapped(values.ledger));
+    if (!ledger.ok) fail(`${ledger.error}（${values.ledger}）`);
+  }
+
+  let out: ReturnType<typeof importSecurityAudit>;
+  try {
+    out = importSecurityAudit(readJsonFile(file), parsed.items, {
+      ...(values.scope ? { scope: values.scope } : {}),
+      ...(values.node ? { node: values.node } : {}),
+      ...(ledger?.ok ? { ledger: ledger.units } : {}),
+      invalid: parsed.invalid,
+    });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  if (values.out) writeFileSync(values.out, JSON.stringify(out.project, null, 2), 'utf-8');
+  process.stdout.write(`${report === 'json' ? JSON.stringify(securityAuditReportToJson(out), null, 2) : securityAuditReportToMarkdown(out)}
+`);
+  process.stderr.write(`ソース監査の指摘を取り込みました（保存 ${out.stored} / 要確認 ${out.report.unverified} / 反証 ${out.report.rejected}）
 `);
 }
 
@@ -2138,6 +2199,8 @@ function main(): void {
     runSbomReport(values, positionals);
   } else if (command === 'import-sarif') {
     runImportSarif(values, positionals);
+  } else if (command === 'import-security-audit') {
+    runImportSecurityAudit(values, positionals);
   } else if (command === 'import-sbom') {
     runImportSbom(values, positionals);
   } else if (command === 'export-spdx') {

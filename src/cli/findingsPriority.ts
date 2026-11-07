@@ -1,5 +1,5 @@
 import { analyzeResolvedProject, resolveProject } from './analyze';
-import { LAYER_KEYS, type DiagramNode, type LayerKey } from '../core/model/types';
+import { LAYER_KEYS, type DiagramNode, type Finding, type LayerKey } from '../core/model/types';
 import { formatElementalId } from '../core/model/elementalId';
 import { lookupNode } from '../features/findings-import/resolveNode';
 import { ENTRY_SEARCH_APPLICABLE } from '../features/attack-tree/findEntryPoints';
@@ -23,6 +23,8 @@ export interface FindingsPriorityOptions {
 
 export interface FindingsPriorityOutput {
   result: PrioritizeResult;
+  /** 要確認の指摘（outcome 'unverified'。重大度がないので優先度づけの対象外）。 */
+  unverified: Finding[];
   /** ノード id（レイヤー付き）→ 表示名。 */
   names: Map<string, string>;
   /** 攻撃者を評価に使えたレイヤーが 1 つも無い。 */
@@ -54,7 +56,9 @@ export function findingsPriority(rawProject: unknown, options: FindingsPriorityO
   }
 
   // --layer 指定時は、そのレイヤーの指摘と未結合の指摘だけを評価する。
-  const findings = (resolved.findings ?? []).filter((f) => !options.layer || !f.subject || f.subject.layer === options.layer);
+  const inScope = (resolved.findings ?? []).filter((f) => !options.layer || !f.subject || f.subject.layer === options.layer);
+  const unverified = inScope.filter((f) => f.outcome === 'unverified');
+  const findings = inScope.filter((f) => f.outcome !== 'unverified');
   const result = prioritizeFindings(
     results.map((r) => ({ ...r.input, layer: r.layer, threats: r.threats })),
     findings,
@@ -63,7 +67,7 @@ export function findingsPriority(rawProject: unknown, options: FindingsPriorityO
 
   const names = new Map<string, string>();
   for (const r of results) for (const n of r.input.nodes) names.set(nameKey(r.layer, n.id), nodeName(n));
-  return { result, names, noAttacker: Object.keys(result.attackers).length === 0 };
+  return { result, unverified, names, noAttacker: Object.keys(result.attackers).length === 0 };
 }
 
 const EXPOSURE_TEXT: Record<FindingExposure, string> = {
@@ -120,6 +124,16 @@ export function priorityToMarkdown(out: FindingsPriorityOutput): string {
     lines.push('');
   }
 
+  if (out.unverified.length > 0) {
+    lines.push(`## 要確認（重大度なし）（${out.unverified.length} 件）`, '');
+    lines.push('- 根拠はあるが決め手の事実が未解決の指摘。重大度は付いておらず、優先度づけと連鎖の対象外。', '');
+    lines.push('| 指摘 | 製品 | ノード |', '| --- | --- | --- |');
+    for (const f of out.unverified) {
+      lines.push(`| ${cell(f.title ?? f.identifiers[0]?.value ?? f.id)} | ${cell(f.source.product)} | ${cell(name(f.subject?.layer, f.subject?.nodeId))} |`);
+    }
+    lines.push('');
+  }
+
   const low = result.chains.filter((c) => c.allMediumOrBelow);
   lines.push('## 組み合わさると標的に届く連鎖', '');
   if (result.chains.length === 0) {
@@ -162,6 +176,13 @@ export function priorityToJson(out: FindingsPriorityOutput): Record<string, unkn
       reachesTargets: 'material for Mission Impact',
     },
     evaluated: !out.noAttacker,
+    unverified: out.unverified.map((f) => ({
+      id: f.id,
+      title: f.title ?? null,
+      product: f.source.product,
+      layer: f.subject?.layer ?? null,
+      node: f.subject ? name(f.subject.layer, f.subject.nodeId) : null,
+    })),
     attackers: result.attackers,
     truncated: result.truncated,
     findings: result.items.map((i) => ({

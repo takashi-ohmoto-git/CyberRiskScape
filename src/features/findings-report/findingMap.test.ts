@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   BUNDLED_AITECH_MAP,
   BUNDLED_FINDING_MAP,
+  BUNDLED_SECURITY_AUDIT_MAP,
+  attackClassToCanonicalIds,
+  loadSecurityAuditMap,
   aitechToCanonicalIds,
   cweToCanonicalIds,
   loadAitechMap,
@@ -79,5 +82,35 @@ describe('AITech 対応表（aitech.yaml）', () => {
     const none = ['schemaVersion: 1', 'mappings:', '  - canonicalIds: [a]', ''].join('\n');
     expect(() => loadAitechMap(both)).toThrow();
     expect(() => loadAitechMap(none)).toThrow();
+  });
+});
+
+describe('ソース監査の攻撃クラス対応表（security-audit.yaml）', () => {
+  it('同梱の対応表を読め、型の名前で引ける', () => {
+    expect(BUNDLED_SECURITY_AUDIT_MAP.length).toBeGreaterThan(0);
+    expect(attackClassToCanonicalIds(BUNDLED_SECURITY_AUDIT_MAP, 'ATTACK-CLASSES.md#Access control')).toContain(
+      'api-object-level-authorization',
+    );
+    expect(attackClassToCanonicalIds(BUNDLED_SECURITY_AUDIT_MAP, 'CLIENT-SIDE.md#DOM-based XSS')).toBeUndefined();
+  });
+
+  it('対応表の canonicalId はすべて同梱の脅威ライブラリに実在する', () => {
+    const known = new Set(BUNDLED_THREAT_LIBRARY.rules.map((r) => r.canonicalId));
+    for (const m of BUNDLED_SECURITY_AUDIT_MAP) {
+      for (const c of m.canonicalIds) expect(known.has(c), `${m.attackClass.join(',')}: ${c}`).toBe(true);
+    }
+  });
+
+  it('コードの局所的な欠陥の型（XSS・メモリ安全性・CSRF）は載せない', () => {
+    const refs = BUNDLED_SECURITY_AUDIT_MAP.flatMap((m) => m.attackClass);
+    expect(refs.some((r) => r.startsWith('CLIENT-SIDE.md#') || r.startsWith('MEMORY-SAFETY-AND-BINARY.md#'))).toBe(false);
+    expect(refs).not.toContain('WEB-PROTOCOL-AND-AUTH.md#Ordinary CSRF');
+  });
+
+  it('型が複数の mapping に載るとエラー・参照の形が不正でもエラー', () => {
+    const dup = ['schemaVersion: 1', 'mappings:', '  - attackClass: ["A.md#x"]', '    canonicalIds: [a]', '  - attackClass: ["A.md#x"]', '    canonicalIds: [b]', ''].join('\n');
+    expect(() => loadSecurityAuditMap(dup)).toThrow(/A\.md#x/);
+    const bad = ['schemaVersion: 1', 'mappings:', '  - attackClass: ["no-file-ref"]', '    canonicalIds: [a]', ''].join('\n');
+    expect(() => loadSecurityAuditMap(bad)).toThrow();
   });
 });

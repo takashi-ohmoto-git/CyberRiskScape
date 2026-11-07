@@ -36,6 +36,28 @@ describe('findingsPriority', () => {
     expect(j.chains[0].allMediumOrBelow).toBe(true);
   });
 
+  it('outcome unverified → 優先度の表に入れず「要確認（重大度なし）」に分ける。attempted は従来どおり表に入る', () => {
+    const unverified = cveFinding('f9', 'web', 'Low', 'CVE-2099-0009', { outcome: 'unverified', title: '要確認の指摘' });
+    const attempted = cveFinding('f8', 'web', 'Low', 'CVE-2099-0008', { outcome: 'attempted' });
+    const out = findingsPriority(makeProject([...findings, unverified, attempted]));
+    expect(out.unverified.map((f) => f.id)).toEqual(['f9']);
+    expect(out.result.items.map((i) => i.finding.id)).not.toContain('f9');
+    expect(out.result.items.map((i) => i.finding.id)).toContain('f8');
+    const md = priorityToMarkdown(out);
+    expect(md).toContain('## 要確認（重大度なし）（1 件）');
+    expect(md).toContain('| 要確認の指摘 | example-scanner | C2 公開サーバー |');
+    // 優先度の表には出ない（要確認の節より前の部分）
+    expect(md.split('## 要確認（重大度なし）')[0]).not.toContain('要確認の指摘');
+    expect(md).not.toContain('## 要確認（重大度なし）（0');
+    const j = priorityToJson(out) as { unverified: { id: string; node: string }[]; findings: { id: string }[] };
+    expect(j.unverified).toMatchObject([{ id: 'f9', node: 'C2 公開サーバー' }]);
+    expect(j.findings.map((f) => f.id)).not.toContain('f9');
+  });
+
+  it('要確認が無ければ節を出さない', () => {
+    expect(priorityToMarkdown(findingsPriority(makeProject(findings)))).not.toContain('要確認（重大度なし）');
+  });
+
   it('攻撃者が図に無ければ評価できない旨を出し、--attacker の不正な指定は拒否する', () => {
     const out = findingsPriority(makeProject(findings, { attacker: false }));
     expect(out.noAttacker).toBe(true);
