@@ -88,3 +88,39 @@ describe('findingsPriority（EPSS）', () => {
     expect(j.findings[0]).toMatchObject({ priority: 'P2', exploitation: 'unknown' });
   });
 });
+
+describe('findingsPriority（SSVC）', () => {
+  const findings = [
+    cveFinding('f1', 'web', 'Medium', 'CVE-2099-0001'),
+    cveFinding('f3', 'mid', 'Low', 'CVE-2099-0003', { kev: { dateAdded: '2099-01-01' } }),
+  ];
+
+  it('md：SSVC 列・※・凡例・内訳を出す', () => {
+    const md = priorityToMarkdown(findingsPriority(makeProject(findings)));
+    expect(md).toContain('| KEV | EPSS | SSVC |');
+    expect(md).toMatch(/\| (Track\*?|Attend|Act)※ \|/);
+    expect(md).toContain('Track＝標準の更新期間で対応する');
+    expect(md).toContain('Act＝できるだけ早く対応し');
+    expect(md).toContain('Technical Impact は深刻度からの仮置き');
+    expect(md).toMatch(/SSVC の内訳：Track \d+ 件 \/ Track\* \d+ 件 \/ Attend \d+ 件 \/ Act \d+ 件/);
+  });
+
+  it('json：指摘ごとの ssvcDecision（判定・判定点・仮定・理由）と ssvcCounts', () => {
+    const j = priorityToJson(findingsPriority(makeProject(findings))) as {
+      ssvcCounts: Record<string, number>;
+      findings: {
+        id: string;
+        ssvcDecision: { decision: string; points: Record<string, string>; assumed: Record<string, boolean>; reasons: string[] };
+      }[];
+    };
+    const f1 = j.findings.find((x) => x.id === 'f1')!.ssvcDecision;
+    // 入口・標的に届く（medium）・Medium → partial・KEV なし → none/yes/partial/medium
+    expect(f1.points).toEqual({ exploitation: 'none', automatable: 'yes', technicalImpact: 'partial', missionWellbeing: 'medium' });
+    expect(f1.decision).toBe('Track');
+    expect(f1.assumed).toEqual({ automatable: false, technicalImpact: true, missionWellbeing: false });
+    expect(f1.reasons.length).toBeGreaterThanOrEqual(4);
+    const f3 = j.findings.find((x) => x.id === 'f3')!.ssvcDecision;
+    expect(f3.points.exploitation).toBe('active');
+    expect(Object.values(j.ssvcCounts).reduce((a, b) => a + b, 0)).toBe(2);
+  });
+});

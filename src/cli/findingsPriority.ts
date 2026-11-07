@@ -10,6 +10,7 @@ import {
   type FindingPriority,
   type PrioritizeResult,
 } from '../features/attack-tree/prioritizeFindings';
+import { BUNDLED_SSVC, SSVC_DECISIONS, type SsvcAssessment } from '../features/attack-tree/ssvc';
 
 /**
  * CLI `findings-priority`：保存済みの指摘を攻撃経路に載せ、推奨の優先度（P1〜P4）と根拠を出す
@@ -92,6 +93,9 @@ const PRIORITY_TEXT: Record<FindingPriority, string> = {
   P4: 'P4（経路上の根拠なし）',
 };
 
+/** SSVC の判定を表に出す文字列。仮定の値が 1 つでもあれば ※ を付ける（Technical Impact は常に仮置きなので常に付く）。 */
+const ssvcCell = (s: SsvcAssessment) => `${s.decision}${Object.values(s.assumed).some(Boolean) ? '※' : ''}`;
+
 /** 表のセルに入れる文字列の無害化（改行・縦線）。 */
 const cell = (s: string) => s.replace(/[\r\n]+/g, ' ').replace(/\|/g, '\\|');
 
@@ -115,12 +119,21 @@ export function priorityToMarkdown(out: FindingsPriorityOutput): string {
   );
   if (result.truncated) lines.push('- 経路の列挙が上限に達したため、連鎖に漏れがありうる。', '');
   lines.push(`- 指摘 ${result.items.length} 件 / 連鎖 ${result.chains.length} 件`, '');
+  lines.push(
+    '- SSVC：CISA の判定（Track / Track* / Attend / Act）を P1〜P4 とは別の物差しとして併記する。' +
+      SSVC_DECISIONS.map((d) => `${d}＝${BUNDLED_SSVC.descriptions[d].replace(/。$/, '')}`).join('、') +
+      '。',
+    '- SSVC の `※` は仮定を含む。未入力・図から決まらない値は悪い側に置いている。Technical Impact は深刻度からの仮置きなので、人が確かめる。',
+    '',
+  );
+  const counts = SSVC_DECISIONS.map((d) => `${d} ${result.items.filter((i) => i.ssvc.decision === d).length} 件`).join(' / ');
+  lines.push(`- SSVC の内訳：${counts}`, '');
 
   for (const p of ['P1', 'P2', 'P3', 'P4'] as const) {
     const items = result.items.filter((i) => i.priority === p);
     if (items.length === 0) continue;
     lines.push(`## ${PRIORITY_TEXT[p]}（${items.length} 件）`, '');
-    lines.push('| 指摘 | 製品 | 元の深刻度 | ノード | 露出 | 届く標的 | KEV | EPSS |', '| --- | --- | --- | --- | --- | --- | --- | --- |');
+    lines.push('| 指摘 | 製品 | 元の深刻度 | ノード | 露出 | 届く標的 | KEV | EPSS | SSVC |', '| --- | --- | --- | --- | --- | --- | --- | --- | --- |');
     for (const i of items) {
       const f = i.finding;
       const title = f.title ?? f.identifiers[0]?.value ?? f.id;
@@ -130,7 +143,7 @@ export function priorityToMarkdown(out: FindingsPriorityOutput): string {
       const kev = f.kev ? `あり${f.kev.dateAdded ? `（${f.kev.dateAdded}）` : ''}${f.kev.ransomware ? '・ランサムウェア利用' : ''}` : '—';
       const epss = f.epss ? f.epss.score.toFixed(2) : '—';
       lines.push(
-        `| ${cell(title)} | ${cell(f.source.product)} | ${f.severity} | ${cell(i.nodeId ? name(i.layer, i.nodeId) : '（未結合）')} | ${exposure} | ${cell(targets)} | ${kev} | ${epss} |`,
+        `| ${cell(title)} | ${cell(f.source.product)} | ${f.severity} | ${cell(i.nodeId ? name(i.layer, i.nodeId) : '（未結合）')} | ${exposure} | ${cell(targets)} | ${kev} | ${epss} | ${ssvcCell(i.ssvc)} |`,
       );
     }
     lines.push('');
@@ -174,7 +187,7 @@ const SSVC_EXPOSURE: Partial<Record<FindingExposure, 'open' | 'controlled' | 'sm
   unreachable: 'small',
 };
 
-/** 機械処理用の JSON オブジェクト（キーは英語固定）。SSVC は用語の対応であり、SSVC の判定はしない。 */
+/** 機械処理用の JSON オブジェクト（キーは英語固定）。`ssvcDecision` は CISA SSVC の判定（推奨。仮定の印つき）、`ssvc` は用語の対応。 */
 export function priorityToJson(out: FindingsPriorityOutput): Record<string, unknown> {
   const { result, names } = out;
   const name = (layer: LayerKey | undefined, id: string) => (layer ? names.get(nameKey(layer, id)) ?? null : null);
@@ -187,6 +200,7 @@ export function priorityToJson(out: FindingsPriorityOutput): Record<string, unkn
       systemExposure: 'System Exposure (entry = open, reachable = controlled, unreachable = small)',
       reachesTargets: 'material for Mission Impact',
     },
+    ssvcCounts: Object.fromEntries(SSVC_DECISIONS.map((d) => [d, result.items.filter((i) => i.ssvc.decision === d).length])),
     evaluated: !out.noAttacker,
     epssThreshold: out.epssThreshold,
     unverified: out.unverified.map((f) => ({
@@ -213,6 +227,12 @@ export function priorityToJson(out: FindingsPriorityOutput): Record<string, unkn
       epss: i.finding.epss ?? null,
       reachesTargets: i.reachesTargets.map((t) => ({ nodeId: t.nodeId, node: name(i.layer, t.nodeId), hops: t.hops })),
       chains: i.chainIndexes,
+      ssvcDecision: {
+        decision: i.ssvc.decision,
+        points: i.ssvc.points,
+        assumed: i.ssvc.assumed,
+        reasons: i.ssvc.reasons,
+      },
       ssvc: {
         exploitation: i.exploitation === 'active' ? 'active' : 'none-or-unknown',
         systemExposure: SSVC_EXPOSURE[i.exposure] ?? null,

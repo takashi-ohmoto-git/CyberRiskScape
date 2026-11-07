@@ -1,0 +1,60 @@
+# CISA SSVC（Stakeholder-Specific Vulnerability Categorization）の判定表。
+#
+# 出典: CISA, "Stakeholder-Specific Vulnerability Categorization (SSVC) Guide", 2022-11
+#   https://www.cisa.gov/resources-tools/resources/stakeholder-specific-vulnerability-categorization-ssvc
+#   （米国政府の刊行物。本ファイルは判定表の組み合わせと結果の意味を要約したもので、本文の転載ではない）
+#
+# 判定点: exploitation(none|poc|active) / automatable(no|yes) / technicalImpact(partial|total) /
+#         missionWellbeing(low|medium|high)。3x2x2x3 = 36 通りがちょうど 1 回ずつ載ること（読み込み時に検査）。
+# decision 名は固有名詞のため翻訳しない。説明は日本語のみ（英語の翻訳オーバーレイは持たない）。
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+decisions:
+  - id: Track
+    description: 標準の更新期間で対応する。
+  - id: 'Track*'
+    description: 標準の期間で対応しつつ、状況の変化を注視する。
+  - id: Attend
+    description: 標準より早く対応し、組織内で注意を向ける。
+  - id: Act
+    description: できるだけ早く対応し、経営層を含めて判断する。
+
+rows:
+  - { exploitation: none, automatable: no, technicalImpact: partial, missionWellbeing: low, decision: Track }
+  - { exploitation: none, automatable: no, technicalImpact: partial, missionWellbeing: medium, decision: Track }
+  - { exploitation: none, automatable: no, technicalImpact: partial, missionWellbeing: high, decision: Track }
+  - { exploitation: none, automatable: no, technicalImpact: total, missionWellbeing: low, decision: Track }
+  - { exploitation: none, automatable: no, technicalImpact: total, missionWellbeing: medium, decision: Track }
+  - { exploitation: none, automatable: no, technicalImpact: total, missionWellbeing: high, decision: 'Track*' }
+  - { exploitation: none, automatable: yes, technicalImpact: partial, missionWellbeing: low, decision: Track }
+  - { exploitation: none, automatable: yes, technicalImpact: partial, missionWellbeing: medium, decision: Track }
+  - { exploitation: none, automatable: yes, technicalImpact: partial, missionWellbeing: high, decision: Attend }
+  - { exploitation: none, automatable: yes, technicalImpact: total, missionWellbeing: low, decision: Track }
+  - { exploitation: none, automatable: yes, technicalImpact: total, missionWellbeing: medium, decision: Track }
+  - { exploitation: none, automatable: yes, technicalImpact: total, missionWellbeing: high, decision: Attend }
+  - { exploitation: poc, automatable: no, technicalImpact: partial, missionWellbeing: low, decision: Track }
+  - { exploitation: poc, automatable: no, technicalImpact: partial, missionWellbeing: medium, decision: Track }
+  - { exploitation: poc, automatable: no, technicalImpact: partial, missionWellbeing: high, decision: 'Track*' }
+  - { exploitation: poc, automatable: no, technicalImpact: total, missionWellbeing: low, decision: Track }
+  - { exploitation: poc, automatable: no, technicalImpact: total, missionWellbeing: medium, decision: 'Track*' }
+  - { exploitation: poc, automatable: no, technicalImpact: total, missionWellbeing: high, decision: Attend }
+  - { exploitation: poc, automatable: yes, technicalImpact: partial, missionWellbeing: low, decision: Track }
+  - { exploitation: poc, automatable: yes, technicalImpact: partial, missionWellbeing: medium, decision: Track }
+  - { exploitation: poc, automatable: yes, technicalImpact: partial, missionWellbeing: high, decision: Attend }
+  - { exploitation: poc, automatable: yes, technicalImpact: total, missionWellbeing: low, decision: Track }
+  - { exploitation: poc, automatable: yes, technicalImpact: total, missionWellbeing: medium, decision: 'Track*' }
+  - { exploitation: poc, automatable: yes, technicalImpact: total, missionWellbeing: high, decision: Attend }
+  - { exploitation: active, automatable: no, technicalImpact: partial, missionWellbeing: low, decision: Track }
+  - { exploitation: active, automatable: no, technicalImpact: partial, missionWellbeing: medium, decision: Track }
+  - { exploitation: active, automatable: no, technicalImpact: partial, missionWellbeing: high, decision: Attend }
+  - { exploitation: active, automatable: no, technicalImpact: total, missionWellbeing: low, decision: Track }
+  - { exploitation: active, automatable: no, technicalImpact: total, missionWellbeing: medium, decision: Attend }
+  - { exploitation: active, automatable: no, technicalImpact: total, missionWellbeing: high, decision: Act }
+  - { exploitation: active, automatable: yes, technicalImpact: partial, missionWellbeing: low, decision: Attend }
+  - { exploitation: active, automatable: yes, technicalImpact: partial, missionWellbeing: medium, decision: Attend }
+  - { exploitation: active, automatable: yes, technicalImpact: partial, missionWellbeing: high, decision: Act }
+  - { exploitation: active, automatable: yes, technicalImpact: total, missionWellbeing: low, decision: Attend }
+  - { exploitation: active, automatable: yes, technicalImpact: total, missionWellbeing: medium, decision: Act }
+  - { exploitation: active, automatable: yes, technicalImpact: total, missionWellbeing: high, decision: Act }

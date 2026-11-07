@@ -10,6 +10,7 @@ import type {
 import { buildAttackGraph } from './buildAttackGraph';
 import { buildEntryEdges, ENTRY_SEARCH_APPLICABLE, findEntryPoints } from './findEntryPoints';
 import { reachableFrom, recommendTargets } from './recommendTargets';
+import { ssvcPointsFor, type SsvcAssessment } from './ssvc';
 
 /**
  * 指摘の文脈と推奨の優先度（docs/attack-tree-analysis.md §12）。
@@ -64,6 +65,8 @@ export interface PrioritizedFinding {
   /** この指摘を含む連鎖（PrioritizeResult.chains の添字）。 */
   chainIndexes: number[];
   priority: FindingPriority;
+  /** CISA SSVC の判定（P1〜P4 とは別の物差し。仮定の印つき）。 */
+  ssvc: SsvcAssessment;
 }
 
 export interface PrioritizeResult {
@@ -134,7 +137,7 @@ export function prioritizeFindings(
   const attackers: Partial<Record<LayerKey, string>> = {};
   let truncated = false;
 
-  const base = (f: Finding): Omit<PrioritizedFinding, 'exposure' | 'priority'> => ({
+  const base = (f: Finding): Omit<PrioritizedFinding, 'exposure' | 'priority' | 'ssvc'> => ({
     finding: f,
     ...(f.subject ? { nodeId: f.subject.nodeId, layer: f.subject.layer } : {}),
     exposureAssumed: false,
@@ -142,11 +145,10 @@ export function prioritizeFindings(
     exploitation: f.kev ? 'active' : 'unknown',
     chainIndexes: [],
   });
-  const flat = (f: Finding, exposure: 'unbound' | 'unevaluated'): PrioritizedFinding => ({
-    ...base(f),
-    exposure,
-    priority: f.kev ? 'P1' : 'P4',
-  });
+  const flat = (f: Finding, exposure: 'unbound' | 'unevaluated'): PrioritizedFinding => {
+    const b = base(f);
+    return { ...b, exposure, priority: f.kev ? 'P1' : 'P4', ssvc: ssvcPointsFor({ ...b, exposure, isTarget: false }) };
+  };
 
   const handled = new Set<string>();
   for (const ctx of layers) {
@@ -173,6 +175,7 @@ export function prioritizeFindings(
       ...buildEntryEdges(attacker, entries.filter((c) => !c.assumed)),
     ]);
     const targets = recommendTargets(ctx.nodes, ctx.edges, ctx.boundaries, ctx.threats, attacker).filter((t) => t.reachable);
+    const targetIds = new Set(targets.map((t) => t.nodeId));
 
     const findingsByNode = new Map<string, Finding[]>();
     for (const f of here) {
@@ -225,7 +228,7 @@ export function prioritizeFindings(
               .flatMap((t) => (dist.has(t.nodeId) ? [{ nodeId: t.nodeId, hops: dist.get(t.nodeId)! }] : []))
               .sort((a, b) => a.hops - b.hops);
       const chainIndexes = layerChains.flatMap((c, i) => (c.findingIds.includes(f.id) ? [chainOffset + i] : []));
-      const exploitation = f.kev ? 'active' : f.epss && f.epss.score >= epssThreshold ? 'likely' : 'unknown';
+      const exploitation: PrioritizedFinding['exploitation'] = f.kev ? 'active' : f.epss && f.epss.score >= epssThreshold ? 'likely' : 'unknown';
       const hasTarget = reachesTargets.length > 0;
       const computed: FindingPriority =
         exploitation === 'active' || (exposure === 'entry' && hasTarget)
@@ -237,7 +240,8 @@ export function prioritizeFindings(
               : 'P4';
       const priority: FindingPriority =
         exploitation === 'likely' && (exposure === 'entry' || exposure === 'reachable') ? RAISED[computed] : computed;
-      items.push({ ...base(f), exposure, exposureAssumed, reachesTargets, exploitation, chainIndexes, priority });
+      const b = { ...base(f), exposureAssumed, reachesTargets, exploitation, chainIndexes };
+      items.push({ ...b, exposure, priority, ssvc: ssvcPointsFor({ ...b, exposure, isTarget: targetIds.has(top) }) });
     }
   }
 

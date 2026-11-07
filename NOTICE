@@ -159,6 +159,10 @@ verbatim.
    - Shifting the Balance of Cybersecurity Risk: Principles and Approaches for
      Secure by Design Software (October 2023, with NSA, FBI and international
      partners) — summarized in guide/secure-by-design.md
+   - Stakeholder-Specific Vulnerability Categorization (SSVC) Guide
+     (November 2022) — the decision points and the decision table (Track /
+     Track* / Attend / Act) are summarized in data/ssvc/cisa-ssvc.yaml and
+     used by the CLI findings-priority
    https://www.cisa.gov/
 
    U.S. National Security Agency (NSA)
@@ -536,6 +540,13 @@ verbatim.
    descriptively, and this project is not affiliated with or endorsed by them.
 
    Referenced by: data/threat-library/identity.yaml
+
+--------------------------------------------------------------------------------
+28. FIRST — Exploit Prediction Scoring System (EPSS)
+   https://www.first.org/epss/
+   The CLI import-epss reads the daily EPSS scores file that the user
+   downloads from FIRST. No EPSS data is bundled in this repository. See
+   FIRST's site for the terms of use of EPSS data.
 
 ================================================================================
 Runtime dependencies
