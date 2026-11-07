@@ -26,6 +26,7 @@ describe('nucleiToFindings', () => {
       { scheme: 'cwe', value: '94' },
       { scheme: 'epss', value: '0.91' },
     ]);
+    expect(f?.epss).toEqual({ score: 0.91, percentile: 0.99 });
     expect(f).toMatchObject({ severity: 'Critical', sourceSeverity: 'critical', title: 'Example Framework RCE', observedAt: '2026-11-07T01:00:00Z', source: { format: 'nuclei', product: 'Nuclei', scope: 'dast' } });
   });
 

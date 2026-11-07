@@ -52,10 +52,28 @@ describe('parseBom・vulnerabilitiesToFindings（Grype の CycloneDX）', () => 
     expect(ghsa.every((f) => f.identifiers.some((i) => i.scheme === 'ghsa'))).toBe(true);
   });
 
-  it('深刻度は ratings の最大（CVSS high と EPSS → High、medium → Medium）', () => {
+  it('深刻度は ratings の最大（CVSS high → High、medium → Medium。EPSS は含めない）', () => {
     const sev = (id: string) => out.findings.find((f) => f.externalId.startsWith(id))?.severity;
     expect(sev('CVE-2026-0301')).toBe('High');
     expect(sev('GHSA-')).toBe('Medium');
+  });
+
+  it('method が EPSS の rating は深刻度に使わず、epss に確率として保存する', () => {
+    const cve = out.findings.find((f) => f.externalId.startsWith('CVE-2026-0301'));
+    expect(cve?.epss).toEqual({ score: 0.12 });
+    expect(cve?.severity).toBe('High');
+    expect(out.findings.filter((f) => f.externalId.startsWith('GHSA-')).every((f) => f.epss === undefined)).toBe(true);
+  });
+
+  it('EPSS の rating しか無い脆弱性は、深刻度が rating なしの既定（Low）で epss が付く。範囲外の score は無視', () => {
+    const part = parsed.items[0];
+    const base = { id: 'CVE-2026-0999', references: [], affects: [part] };
+    const only = vulnerabilitiesToFindings([{ ...base, ratings: [{ score: 0.8, method: 'epss' }] }], SOURCE, undefined, undefined);
+    expect(only.findings[0]).toMatchObject({ severity: 'Low', epss: { score: 0.8 } });
+    expect(only.findings[0].sourceSeverity).toBeUndefined();
+    const bad = vulnerabilitiesToFindings([{ ...base, ratings: [{ score: 7.5, method: 'EPSS' }] }], SOURCE, undefined, undefined);
+    expect(bad.findings[0].epss).toBeUndefined();
+    expect(bad.findings[0].severity).toBe('Low');
   });
 
   it('description の本文は保存しない', () => {

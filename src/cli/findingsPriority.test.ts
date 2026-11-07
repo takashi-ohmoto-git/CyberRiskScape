@@ -67,3 +67,24 @@ describe('findingsPriority', () => {
     expect(findingsPriority(makeProject(findings), { attacker: 'C1' }).noAttacker).toBe(false);
   });
 });
+
+describe('findingsPriority（EPSS）', () => {
+  const findings = [cveFinding('m', 'mid', 'Low', 'CVE-2099-0002', { epss: { score: 0.42 } })];
+
+  it('既定のしきい値 0.1 で入口の奥の P2 が P1 に上がる。md に EPSS 列と説明、json に epss と exploitation', () => {
+    const out = findingsPriority(makeProject(findings));
+    expect(out.epssThreshold).toBe(0.1);
+    const md = priorityToMarkdown(out);
+    expect(md).toContain('| 届く標的 | KEV | EPSS |');
+    expect(md).toContain('| 0.42 |');
+    expect(md).toContain('EPSS が 0.1 以上');
+    const j = priorityToJson(out) as { epssThreshold: number; findings: { priority: string; exploitation: string; epss: { score: number } | null }[] };
+    expect(j.epssThreshold).toBe(0.1);
+    expect(j.findings[0]).toMatchObject({ priority: 'P1', exploitation: 'likely', epss: { score: 0.42 } });
+  });
+
+  it('しきい値を上げると上げない（P2・unknown）', () => {
+    const j = priorityToJson(findingsPriority(makeProject(findings), { epssThreshold: 0.5 })) as { findings: { priority: string; exploitation: string }[] };
+    expect(j.findings[0]).toMatchObject({ priority: 'P2', exploitation: 'unknown' });
+  });
+});

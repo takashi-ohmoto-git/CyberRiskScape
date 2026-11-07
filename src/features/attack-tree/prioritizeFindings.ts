@@ -59,8 +59,8 @@ export interface PrioritizedFinding {
   exposureAssumed: boolean;
   /** 届く推奨標的と最短ホップ数（短い順）。 */
   reachesTargets: { nodeId: string; hops: number }[];
-  /** KEV の印があれば active、無ければ unknown。 */
-  exploitation: 'active' | 'unknown';
+  /** KEV の印があれば active、KEV が無く EPSS がしきい値以上なら likely、どちらも無ければ unknown。 */
+  exploitation: 'active' | 'likely' | 'unknown';
   /** この指摘を含む連鎖（PrioritizeResult.chains の添字）。 */
   chainIndexes: number[];
   priority: FindingPriority;
@@ -76,8 +76,14 @@ export interface PrioritizeResult {
   truncated: boolean;
 }
 
+/** EPSS による優先度の引き上げのしきい値の既定（FIRST の目安に沿った 10%）。 */
+export const DEFAULT_EPSS_THRESHOLD = 0.1;
+
 const SEVERITY_RANK: Record<Severity, number> = { Low: 0, Medium: 1, High: 2, Critical: 3 };
 const PRIORITY_RANK: Record<FindingPriority, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
+
+/** EPSS による引き上げ（1 段上。P1 はそのまま）。 */
+const RAISED: Record<FindingPriority, FindingPriority> = { P1: 'P1', P2: 'P1', P3: 'P2', P4: 'P3' };
 
 /** 無向の最短ホップ数（攻撃者ノードは経由しない）。 */
 function hopsFrom(start: string, edges: readonly DiagramEdge[], attackerId: string): Map<string, number> {
@@ -114,12 +120,15 @@ function pickAttacker(ctx: LayerContext, attackerId: string | undefined): string
  * 指摘を攻撃経路に載せて優先度を付ける純粋関数。レイヤーごとに評価する。
  * 攻撃者は `attackerId`、無ければ各レイヤーの図の攻撃者ノードの先頭。攻撃者の無いレイヤーの指摘は
  * `unevaluated`（KEV の印があれば P1、それ以外は P4）。
+ * KEV が無く EPSS がしきい値以上（exploitation 'likely'）で、露出が入口・入口の奥の指摘は 1 段上げる（下げはしない）。
  */
 export function prioritizeFindings(
   layers: readonly LayerContext[],
   findings: readonly Finding[],
   attackerId?: string,
+  options: { epssThreshold?: number } = {},
 ): PrioritizeResult {
+  const epssThreshold = options.epssThreshold ?? DEFAULT_EPSS_THRESHOLD;
   const items: PrioritizedFinding[] = [];
   const chains: FindingChain[] = [];
   const attackers: Partial<Record<LayerKey, string>> = {};
@@ -216,9 +225,9 @@ export function prioritizeFindings(
               .flatMap((t) => (dist.has(t.nodeId) ? [{ nodeId: t.nodeId, hops: dist.get(t.nodeId)! }] : []))
               .sort((a, b) => a.hops - b.hops);
       const chainIndexes = layerChains.flatMap((c, i) => (c.findingIds.includes(f.id) ? [chainOffset + i] : []));
-      const exploitation = f.kev ? 'active' : 'unknown';
+      const exploitation = f.kev ? 'active' : f.epss && f.epss.score >= epssThreshold ? 'likely' : 'unknown';
       const hasTarget = reachesTargets.length > 0;
-      const priority: FindingPriority =
+      const computed: FindingPriority =
         exploitation === 'active' || (exposure === 'entry' && hasTarget)
           ? 'P1'
           : (exposure === 'reachable' && hasTarget) || chainIndexes.length > 0
@@ -226,6 +235,8 @@ export function prioritizeFindings(
             : exposure === 'entry' || exposure === 'reachable'
               ? 'P3'
               : 'P4';
+      const priority: FindingPriority =
+        exploitation === 'likely' && (exposure === 'entry' || exposure === 'reachable') ? RAISED[computed] : computed;
       items.push({ ...base(f), exposure, exposureAssumed, reachesTargets, exploitation, chainIndexes, priority });
     }
   }

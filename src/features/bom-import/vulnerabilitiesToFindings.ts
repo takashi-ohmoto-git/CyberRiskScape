@@ -34,11 +34,20 @@ function idScheme(id: string, sourceName?: string): string {
   return name || 'vuln';
 }
 
+const isEpssRating = (r: ParsedVulnerability['ratings'][number]) => r.method?.toLowerCase() === 'epss';
+
+/** method が EPSS の rating の確率（0〜1 の score のみ。複数あれば最大）。 */
+function epssOf(ratings: ParsedVulnerability['ratings']): number | undefined {
+  const s = ratings.filter((r) => isEpssRating(r) && r.score !== undefined && r.score >= 0 && r.score <= 1).map((r) => r.score as number);
+  return s.length > 0 ? Math.max(...s) : undefined;
+}
+
 /** ratings の最大。score しか無ければ CVSS の帯で分ける。none・info・unknown は Low。 */
 function severityOf(ratings: ParsedVulnerability['ratings']): { severity: Severity; sourceSeverity?: string } {
   let best: { severity: Severity; sourceSeverity?: string } = { severity: 'Low' };
   let bestRank = -1;
   for (const r of ratings) {
+    if (isEpssRating(r)) continue; // EPSS は確率であり深刻度ではない
     const fromScore = (s: number): Severity => (s >= 9 ? 'Critical' : s >= 7 ? 'High' : s >= 4 ? 'Medium' : 'Low');
     const severity = r.severity ? normalizeSeverity(r.severity) : r.score !== undefined ? fromScore(r.score) : undefined;
     if (!severity || SEVERITY_RANK[severity] <= bestRank) continue;
@@ -74,6 +83,7 @@ export function vulnerabilitiesToFindings(
       continue;
     }
     const sev = severityOf(v.ratings);
+    const epss = epssOf(v.ratings);
     for (const part of v.affects as ParsedBomItem[]) {
       const purl = part.identifiers.find((i) => i.scheme === 'purl')?.value;
       const label = `${part.name}${part.version ? `@${part.version}` : ''}`;
@@ -93,6 +103,7 @@ export function vulnerabilitiesToFindings(
         severity: sev.severity,
         ...(sev.sourceSeverity ? { sourceSeverity: sev.sourceSeverity } : {}),
         canonicalIds: [UNPATCHED_CANONICAL_ID],
+        ...(epss !== undefined ? { epss: { score: epss } } : {}),
         ...(subject ? { subject } : {}),
         ...(observedAt ? { observedAt } : {}),
       });

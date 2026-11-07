@@ -128,6 +128,8 @@ export function nucleiToFindings(input: NucleiToFindingsInput): { findings: Find
     ];
     const epss = cls?.['epss-score'];
     if (typeof epss === 'number' && Number.isFinite(epss)) identifiers.push({ scheme: 'epss', value: String(epss) });
+    const inUnit = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 1;
+    const pct = cls?.['epss-percentile'];
 
     const label = nucleiLabel(r['matched-at'], r.host);
     const externalId = `${r['template-id']}:${label ?? ''}:${r['matcher-name'] ?? ''}`.slice(0, EXTERNAL_ID_MAX);
@@ -143,6 +145,7 @@ export function nucleiToFindings(input: NucleiToFindingsInput): { findings: Find
       severity: severityOf(sevRaw),
       ...(sevRaw ? { sourceSeverity: sevRaw.slice(0, 50) } : {}),
       canonicalIds,
+      ...(inUnit(epss) ? { epss: { score: epss, ...(inUnit(pct) ? { percentile: pct } : {}) } } : {}),
       ...(input.subject ? { subject: input.subject } : {}),
       ...(label ? { resource: { label } } : {}),
       ...(r.timestamp ? { observedAt: r.timestamp.slice(0, 40) } : {}),

@@ -1163,6 +1163,8 @@ export interface Finding {
   validationPlan?: string;
   /** CISA KEV カタログに載っている（悪用が確認された）事実。`import-kev` が付け外しする。 */
   kev?: FindingKev;
+  /** FIRST EPSS：今後 30 日以内に悪用の動きが観測される確率（0〜1）。kev と同じく事実の欄で、深刻度は変えない。 */
+  epss?: FindingEpss;
 }
 
 /** 指摘の確からしさ（Finding.outcome）。 */
@@ -1185,6 +1187,13 @@ export interface FindingCondition {
 /** 指摘の自由記述の上限（§8.9）。 */
 export const MAX_FINDING_CONDITIONS = 10;
 export const MAX_FINDING_OPEN_QUESTIONS = 5;
+
+/** EPSS の 1 件分（score・percentile は 0〜1。date は score_date を文字列のまま保持する）。 */
+export interface FindingEpss {
+  score: number;
+  percentile?: number;
+  date?: string;
+}
 
 /** CISA KEV カタログの 1 件分の事実（日付は YYYY-MM-DD のまま保持する）。 */
 export interface FindingKev {

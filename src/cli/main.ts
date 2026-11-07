@@ -41,6 +41,8 @@ import { parseNuclei } from '../features/nuclei-import/parseNuclei';
 import { importKev, kevReportToJson, kevReportToMarkdown } from './importKev';
 import { fillPatchStatusToMarkdown, runFillPatchStatus } from './fillPatchStatus';
 import { parseKevCatalog } from '../features/kev-import/applyKev';
+import { importEpss, epssReportToJson, epssReportToMarkdown } from './importEpss';
+import { parseEpssCsv } from '../features/epss-import/applyEpss';
 import { findingsPriority, priorityToJson, priorityToMarkdown } from './findingsPriority';
 import { asmReconcile, reconcileToJson, reconcileToMarkdown } from './asmReconcile';
 import { sbomReport, sbomReportToJson, sbomReportToMarkdown } from './sbomReport';
@@ -191,6 +193,7 @@ const USAGE = `使い方:
   import-nuclei <project.json> --in <results.jsonl> --scope <scope> [options]
   import-security-audit <project.json> --in <findings.json> [options]
   import-kev <project.json> --kev <file> [options]
+  import-epss <project.json> --epss <epss_scores.csv[.gz]> [options]
   fill-patch-status <project.json> [options]
   findings-priority <project.json> [options]
   asm-reconcile <project.json> [options]
@@ -357,9 +360,15 @@ sbom-report のオプション（保存済みの SBOM の検収レポート。�
   --format <md|json>                            出力形式（既定: md）
   -o, --out <file>                              出力先ファイル（既定: 標準出力）
 
-findings-priority のオプション（保存済みの指摘を攻撃経路に載せ、推奨の優先度 P1〜P4 と根拠（露出・届く標的・KEV・連鎖）を出す。推奨と根拠であり、判断は人。「悪用できる」とは言わない。元の深刻度は変えない）:
+import-epss のオプション（FIRST の EPSS（https://www.first.org/epss/）の日次 CSV を指摘の CVE と照合して epss を付ける。一覧に無い CVE の指摘からは外す。ネットワークに出ない。EPSS は 30 日以内に悪用が観測される確率の推定で、悪用の事実ではない）:
+  --epss <file>                                 epss_scores の CSV（.csv または .csv.gz。必須）
+  --report <md|json>                            レポート形式（既定: md）
+  -o, --out <file>                              更新したプロジェクト JSON の出力先
+
+findings-priority のオプション（保存済みの指摘を攻撃経路に載せ、推奨の優先度 P1〜P4 と根拠（露出・届く標的・KEV・EPSS・連鎖）を出す。推奨と根拠であり、判断は人。「悪用できる」とは言わない。元の深刻度は変えない）:
   --attacker <C番号|ID>                         攻撃者（AI エージェント攻撃者）のノード（既定: 図の攻撃者ノードの先頭。無ければ露出を評価できない）
   --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある全レイヤー。そのレイヤーの指摘と未結合の指摘だけ評価）
+  --epss-threshold <0-1>                        EPSS がこの値以上の指摘は、入口・入口の奥にあれば優先度を 1 段上げる（既定: 0.1。KEV の指摘・届かない指摘は対象外）
   --format <md|json>                            出力形式（既定: md。json には SSVC との用語の対応を含む）
   -o, --out <file>                              出力先ファイル（既定: 標準出力）
 
@@ -605,6 +614,8 @@ function parseCliArgs() {
       sarif: { type: 'string' },
       ledger: { type: 'string' },
       kev: { type: 'string' },
+      epss: { type: 'string' },
+      'epss-threshold': { type: 'string' },
       'dry-run': { type: 'boolean' },
       previous: { type: 'string' },
       'max-age-days': { type: 'string' },
@@ -1109,6 +1120,42 @@ ${USAGE}`);
 `);
 }
 
+/** `import-epss`：FIRST の EPSS の CSV を指摘の CVE と照合して epss を付け外しする（docs/architecture.md §8.11）。 */
+function runImportEpss(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  if (!values.epss) fail('--epss <file> を指定してください。');
+  const report = parseEnum(values.report, IMPORT_PROWLER_REPORTS, 'report') ?? 'md';
+
+  let text: string;
+  try {
+    if (statSync(values.epss).size > MAX_FILE_BYTES) {
+      fail(`ファイルが大きすぎます（上限 ${MAX_FILE_BYTES / 1024 / 1024} MB）: ${values.epss}`);
+    }
+    const buf = readFileSync(values.epss);
+    // 展開後の上限も MAX_FILE_BYTES（超えると例外）。
+    text = (buf[0] === 0x1f && buf[1] === 0x8b ? gunzipSync(buf, { maxOutputLength: MAX_FILE_BYTES }) : buf).toString('utf-8');
+  } catch (e) {
+    fail(`ファイルを読み込めません: ${values.epss}（${e instanceof Error ? e.message : String(e)}）`);
+  }
+  const parsed = parseEpssCsv(text);
+  if (!parsed.ok) fail(`${parsed.error}（${values.epss}）`);
+
+  let out: ReturnType<typeof importEpss>;
+  try {
+    out = importEpss(readJsonFile(file), parsed);
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  if (values.out) writeFileSync(values.out, JSON.stringify(out.project, null, 2), 'utf-8');
+  process.stdout.write(`${report === 'json' ? JSON.stringify(epssReportToJson(out), null, 2) : epssReportToMarkdown(out)}
+`);
+  process.stderr.write(`EPSS と照合しました（対象 ${out.checked} / 付けた ${out.matched} / 外した ${out.removed} / 読めなかった行 ${out.invalid}）
+`);
+}
+
 /** `fill-patch-status`：CVE 付きの保存済み指摘があるノードの patchStatus 未入力を Missing で埋める。 */
 function runFillPatchStatusCommand(values: CliValues, positionals: string[]): void {
   const file = positionals[1];
@@ -1140,10 +1187,21 @@ function runFindingsPriority(values: CliValues, positionals: string[]): void {
 ${USAGE}`);
   const format = parseEnum(values.format, IMPORT_PROWLER_REPORTS, 'format') ?? 'md';
   const layer = parseEnum(values.layer, LAYER_KEYS, 'layer');
+  let epssThreshold: number | undefined;
+  if (values['epss-threshold'] !== undefined) {
+    epssThreshold = Number(values['epss-threshold']);
+    if (values['epss-threshold'].trim() === '' || !Number.isFinite(epssThreshold) || epssThreshold < 0 || epssThreshold > 1) {
+      fail(`--epss-threshold は 0 以上 1 以下の数値で指定してください: ${values['epss-threshold']}`);
+    }
+  }
 
   let out: ReturnType<typeof findingsPriority>;
   try {
-    out = findingsPriority(readJsonFile(file), { ...(values.attacker ? { attacker: values.attacker } : {}), ...(layer ? { layer } : {}) });
+    out = findingsPriority(readJsonFile(file), {
+      ...(values.attacker ? { attacker: values.attacker } : {}),
+      ...(layer ? { layer } : {}),
+      ...(epssThreshold !== undefined ? { epssThreshold } : {}),
+    });
   } catch (e) {
     fail(e instanceof Error ? e.message : String(e));
   }
@@ -2337,6 +2395,8 @@ function main(): void {
     runFillPatchStatusCommand(values, positionals);
   } else if (command === 'context') {
     runContext(values, positionals);
+  } else if (command === 'import-epss') {
+    runImportEpss(values, positionals);
   } else if (command === 'findings-priority') {
     runFindingsPriority(values, positionals);
   } else if (command === 'asm-reconcile') {

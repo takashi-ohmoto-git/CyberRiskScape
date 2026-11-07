@@ -90,6 +90,57 @@ describe('prioritizeFindings', () => {
     expect(byId(r, 'n').priority).toBe('P4');
   });
 
+  describe('EPSS による引き上げ', () => {
+    // web2(入口)は標的に届かない → 通常 P3。mid は入口の奥で標的に届く → 通常 P2。
+    const extra = [...nodes, node('web2', 'FRONT_END_SERVER', { attackSurface: FIRM }), node('side', 'DB')];
+    const extraEdges = [...edges, edge('e3', 'web2', 'side')];
+    const run = (nodeId: string, score: number | undefined, threshold?: number, more: Partial<Finding> = {}) =>
+      byId(
+        prioritizeFindings(
+          ctx(extra, extraEdges),
+          [finding('f', nodeId, 'Low', { ...(score !== undefined ? { epss: { score } } : {}), ...more })],
+          undefined,
+          threshold === undefined ? {} : { epssThreshold: threshold },
+        ),
+        'f',
+      );
+
+    it.each([
+      ['mid', 0.5, 'P1'], // 入口の奥・標的に届く P2 → P1
+      ['web2', 0.5, 'P2'], // 入口・標的なし P3 → P2
+      ['side', 0.5, 'P2'], // 入口の奥・標的なし P3 → P2
+      ['web', 0.5, 'P1'], // P1 はそのまま
+    ])('%s の指摘で EPSS %s（しきい値以上）→ %s、exploitation: likely', (nodeId, score, priority) => {
+      expect(run(nodeId, score)).toMatchObject({ priority, exploitation: 'likely' });
+    });
+
+    it.each([
+      ['EPSS が無い', undefined, 'P2', 'unknown'],
+      ['EPSS がしきい値未満', 0.0999, 'P2', 'unknown'],
+      ['EPSS がしきい値と同じ（以上なので上げる）', 0.1, 'P1', 'likely'],
+    ])('mid：%s → %s・%s', (_label, score, priority, exploitation) => {
+      expect(run('mid', score)).toMatchObject({ priority, exploitation });
+    });
+
+    it('しきい値は引数で変えられる（0.5 なら 0.3 は上げず、0.5 は上げる）', () => {
+      expect(run('mid', 0.3, 0.5).priority).toBe('P2');
+      expect(run('mid', 0.5, 0.5).priority).toBe('P1');
+    });
+
+    it('届かない・未結合の指摘は EPSS が高くても上げない（exploitation は likely）', () => {
+      expect(run('iso', 0.9)).toMatchObject({ exposure: 'unreachable', priority: 'P4', exploitation: 'likely' });
+      const r = prioritizeFindings(ctx(extra, extraEdges), [finding('u', undefined, 'Low', { epss: { score: 0.9 } })]);
+      expect(byId(r, 'u')).toMatchObject({ exposure: 'unbound', priority: 'P4' });
+    });
+
+    it('KEV の指摘は active のまま P1。攻撃者が図に無いときは EPSS で上げない', () => {
+      expect(run('mid', 0.9, undefined, { kev: {} })).toMatchObject({ priority: 'P1', exploitation: 'active' });
+      const noAtk = extra.filter((n) => n.id !== 'atk');
+      const r = prioritizeFindings(ctx(noAtk, extraEdges), [finding('f', 'web', 'Low', { epss: { score: 0.9 } })]);
+      expect(byId(r, 'f')).toMatchObject({ exposure: 'unevaluated', priority: 'P4' });
+    });
+  });
+
   it('入口と奥の指摘が同じ経路に並ぶと連鎖になり、Medium 以下だけなら強調の対象になる', () => {
     // web は標的に届くので Low でも P1。奥の mid は連鎖で P2 以上。
     const r = prioritizeFindings(ctx(nodes, edges), [finding('a', 'web', 'Medium'), finding('b', 'mid', 'Low')]);

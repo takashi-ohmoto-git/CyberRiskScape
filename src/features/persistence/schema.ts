@@ -433,6 +433,13 @@ const PersistedFindingSchema = z.object({
       catalogVersion: z.string().max(50).optional(),
     })
     .optional(),
+  epss: z
+    .object({
+      score: z.number().min(0).max(1),
+      percentile: z.number().min(0).max(1).optional(),
+      date: z.string().max(40).optional(),
+    })
+    .optional(),
 });
 
 /**
