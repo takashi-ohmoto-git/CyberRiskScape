@@ -1,6 +1,6 @@
 import { readFileSync, statSync, writeFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
-import { basename } from 'node:path';
+import { basename, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { parseArgs } from 'node:util';
 import { z } from 'zod';
@@ -97,6 +97,7 @@ import { scopesentryRecordsToLayer, scopesentryToLayer, type ScopesentryImportRe
 import { apiKeyFromEnv, fetchViaMcp, MAX_RECORDS } from '../features/scopesentry-import/fetchViaMcp';
 import { cyberStrikeToRegistry, parseCyberStrikeVulns, registryToYaml } from '../features/pentest-import/cyberStrikeToRegistry';
 import { fetchCyberStrikeVulns, tokenFromEnv } from '../features/pentest-import/fetchCyberStrike';
+import { strixToRegistry, strixToYaml } from '../features/pentest-import/strixToRegistry';
 import { toPostmanCollection } from '../features/postman-export/toPostmanCollection';
 import { buildSbomForAi } from '../features/sbom-ai/buildSbomForAi';
 import { VarsFileSchema, applyVariableValues, filterByBaseUrl } from '../features/postman-export/dastOptions';
@@ -185,6 +186,7 @@ const USAGE = `使い方:
   import-findings <project.json> --format <xccdf|arf|oval> --in <file> [options]
   import-pentest <project.json> --in <registry.yaml> [options]
   convert-cyberstrikeai [<vulns.json>] [--api <base-url>] --scope <scope> [options]
+  convert-strix <findings.sarif | strix_runs/<run>> --scope <scope> [options]
   import-sarif <project.json> --sarif <file> --scope <scope> [options]
   import-nuclei <project.json> --in <results.jsonl> --scope <scope> [options]
   import-security-audit <project.json> --in <findings.json> [options]
@@ -298,6 +300,11 @@ convert-cyberstrikeai のオプション（CyberStrikeAI の脆弱性を import-
   --scope <scope>                               台帳の範囲（必須。import-pentest の置き換え単位）
   --project-id <id>                             --api のとき、このプロジェクトの脆弱性だけ取得する
   --task-id <id>                                --api のとき、このタスクの脆弱性だけ取得する
+  -o, --out <registry.yaml>                     台帳 YAML の出力先（既定: 標準出力）
+
+convert-strix のオプション（Strix の findings.sarif を import-pentest の台帳 YAML に変換する。確信度 high だけ実証、それ以外は試行のみ。カバレッジ（pass / open 等）は除く。CVE があれば「既知の脆弱性に対するパッチの未適用」、無ければ CWE の対応表で canonicalIds を入れる（要確認）。PoC・証跡・分析・修正の本文は写さない。エンドポイントは URL のクエリを落としてコメントにだけ残す）:
+  --scope <scope>                               台帳の範囲（必須。import-pentest の置き換え単位）
+  --node <C番号|ID>                             すべての指摘を結びつけるノード（任意。無ければ人が埋める）
   -o, --out <registry.yaml>                     台帳 YAML の出力先（既定: 標準出力）
 
 import-nuclei のオプション（Nuclei の JSONL（-j / -jle）または JSON（-je）の結果を指摘として保存する。info と一致しなかった結果は件数のみ。CVE を持つ指摘は「既知の脆弱性に対するパッチの未適用」に対応づけ、CVE が無い指摘は CWE の対応表で脅威に対応づける。要求・応答・curl・抽出値は保存しない。場所は URL のクエリを落とす）:
@@ -1542,6 +1549,34 @@ ${capped ? `取得件数が上限（${MAX_FINDINGS} 件）に達したため打�
 }
 
 /**
+ * `convert-strix`：Strix の findings.sarif（ファイル、または strix_runs/<run> ディレクトリ）を import-pentest の台帳 YAML に変換する。
+ * 説明・PoC・証跡は読まない。
+ */
+function runConvertStrix(values: CliValues, positionals: string[]): void {
+  let file = positionals[1];
+  if (!file) fail(`findings.sarif（または strix_runs/<run> ディレクトリ）を指定してください。
+
+${USAGE}`);
+  if (!values.scope) fail('--scope <scope> を指定してください（import-pentest の置き換えの範囲）。');
+  try {
+    if (statSync(file).isDirectory()) file = join(file, 'findings.sarif');
+    if (statSync(file).size > MAX_FILE_BYTES) {
+      fail(`ファイルが大きすぎます（上限 ${MAX_FILE_BYTES / 1024 / 1024} MB）: ${file}`);
+    }
+  } catch (e) {
+    fail(`ファイルを読み込めません: ${file}（${e instanceof Error ? e.message : String(e)}）`);
+  }
+  const result = strixToRegistry(readJsonFile(file), { scope: values.scope, node: values.node });
+  if (!result.ok) fail(result.error);
+  writeOutput(strixToYaml(result).trimEnd(), values.out);
+  const s = result.summary;
+  process.stderr.write(
+    `Strix の指摘を台帳に変換しました（変換 ${s.converted} / カバレッジ除外 ${s.coverage} / 実証 ${s.byOutcome.verified} / 試行のみ ${s.byOutcome.attempted} / 脅威に対応づけ ${s.mapped} / CWE が辞書に無い ${s.cweUnmapped} / 読めなかった結果 ${s.invalid}）。node と canonicalIds を確認してから import-pentest に渡してください。
+`,
+  );
+}
+
+/**
  * `import-scopesentry`：ScopeSentry の書き出し JSON、または `--api` で MCP（読み取り専用の list_assets のみ）から取得した
  * レコードから、外部露出サービスの構成図を作り、プロジェクト JSON を出力する。本文・リクエスト等は読まない（`scopesentryToLayer` 参照）。
  */
@@ -2328,6 +2363,8 @@ function main(): void {
     runConvertCyberstrikeai(values, positionals).catch((e: unknown) => {
       fail(`CyberStrikeAI の変換に失敗しました: ${e instanceof Error ? e.message : String(e)}`);
     });
+  } else if (command === 'convert-strix') {
+    runConvertStrix(values, positionals);
   } else if (command === 'import-scopesentry') {
     runImportScopesentry(values, positionals).catch((e: unknown) => {
       fail(`ScopeSentry の取り込みに失敗しました: ${e instanceof Error ? e.message : String(e)}`);
