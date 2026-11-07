@@ -34,6 +34,12 @@ export const BOUNDARY_TYPES: Record<BoundaryTypeId, BoundaryTypeConfig> = {
     dash: 'coarse',
     rounded: true,
   },
+  MANAGEMENT: {
+    id: 'MANAGEMENT',
+    nameKey: 'canvas.boundaryType.management',
+    dash: 'coarse',
+    rounded: false,
+  },
 };
 
 /**

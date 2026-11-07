@@ -19,6 +19,7 @@ import {
   getThreat,
   listChangeTriggers,
   listComponentTypes,
+  lookupContextTool,
   lookupThreatRules,
   MAX_THREATS,
 } from './tools';
@@ -365,6 +366,32 @@ export function createCrsMcpServer(opts: CrsMcpServerOptions): McpServer {
     handler((args: { nodeType?: string; framework?: z.infer<typeof FrameworkArg>; query?: string }) =>
       lookupThreatRules({ ...args, locale }),
     ),
+  );
+
+  server.registerTool(
+    'lookup_context',
+    {
+      description: `アラートの IP・ホスト名（FQDN）・purl から、図のどのノードか、前段（リバースプロキシ・ゲートウェイ・CDN・WAF・ロードバランサ）、そのノードの脅威と指摘（推奨の優先度・露出・届く標的・KEV・連鎖）、ノードの露出を返す。ip・host・purl のうち 1 つだけ指定する。優先度は推奨であり、判断は人が行う。読み取り専用。一致が無ければ matches は空。${PATH_NOTE}${DATA_NOTE}`,
+      inputSchema: {
+        path: PathArg,
+        ip: z.string().min(1).max(100).optional(),
+        host: z.string().min(1).max(300).optional(),
+        purl: z.string().min(1).max(500).optional(),
+        attacker: z.string().min(1).max(100).optional(),
+      },
+      annotations: { readOnlyHint: true },
+    },
+    handler(async ({ path: rel, ...rest }: { path: string; ip?: string; host?: string; purl?: string; attacker?: string }) => {
+      if ([rest.ip, rest.host, rest.purl].filter((v) => v !== undefined).length !== 1) {
+        throw new ToolError('ip・host・purl のうち 1 つだけを指定してください。');
+      }
+      const m = await load(rel);
+      try {
+        return { path: rel, revision: m.revision, ...lookupContextTool(m.raw, rest) };
+      } catch (e) {
+        throw new ToolError(e instanceof Error ? e.message : String(e));
+      }
+    }),
   );
 
   server.registerTool(

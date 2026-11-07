@@ -696,9 +696,9 @@ export function toDCRHThreatModelMarkdown(
     );
   }
   for (const b of boundaries) {
-    // BLAST_RADIUS は侵害時の影響範囲を示す注記であって信頼境界でもアセットでもないため除外
-    // （src/core/model/types.ts の TRUST_BEARING_BOUNDARY_TYPES 付近のコメント参照）。
-    if (b.type === 'BLAST_RADIUS') continue;
+    // BLAST_RADIUS は侵害時の影響範囲を示す注記、MANAGEMENT は管理の単位であって、信頼境界でも
+    // アセットでもないため除外（src/core/model/types.ts の TRUST_BEARING_BOUNDARY_TYPES 付近のコメント参照）。
+    if (b.type === 'BLAST_RADIUS' || b.type === 'MANAGEMENT') continue;
     out.push(mdRow([elementLabel(index, 'boundary', b.id), b.type, sensitivityOf('boundary', b.id)]));
   }
 

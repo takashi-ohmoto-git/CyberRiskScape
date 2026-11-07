@@ -16,12 +16,19 @@ export function investigationPlanToMarkdown(plan: InvestigationPlan): string {
   out.push(`- ${t('investigation.system', { system: plan.system })}`);
   out.push(`- ${t('investigation.generated', { date: plan.generatedAt, product: plan.product })}`);
   out.push(`- ${plan.pathBased ? t('investigation.scope.path') : t('investigation.scope.all')}`);
-  out.push(`- ${t('investigation.howTo')}`, '');
+  out.push(`- ${t('investigation.howTo')}`);
+  const kevNodes = plan.nodes.filter((n) => n.kev.length > 0);
+  if (kevNodes.length > 0) out.push(`- ${t('investigation.kev.start', { nodes: kevNodes.map((n) => n.id).join(', ') })}`);
+  out.push('');
 
   out.push(`## ${t('investigation.h.nodes')}`, '');
   if (plan.nodes.length === 0) out.push(t('investigation.nodes.none'), '');
   for (const n of plan.nodes) {
     out.push(`### ${`${n.id} ${n.label}`.trim()}（${n.type}）`, '');
+    if (n.kev.length > 0) {
+      const cves = n.kev.map((k) => `${k.cve}${k.ransomware ? t('investigation.kev.ransomware') : ''}`).join(', ');
+      out.push(`- ${t('investigation.kev.node', { cves })}`, '');
+    }
     if (n.routeHits !== null) out.push(`- ${t('investigation.routeHits', { hits: n.routeHits })}`, '');
     if (n.viewpoints.length === 0) out.push(`_${t('investigation.noViewpoint')}_`, '');
     for (const v of n.viewpoints) {

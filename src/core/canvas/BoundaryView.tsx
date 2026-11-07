@@ -41,24 +41,31 @@ export function BoundaryView({
 }: BoundaryViewProps) {
   const t = useT();
   const config = BOUNDARY_TYPES[boundary.type];
-  // BLAST_RADIUS は信頼境界ではないので trustLevel の色体系（emerald/orange/blue）に載せない。
+  // BLAST_RADIUS・MANAGEMENT は信頼境界ではないので trustLevel の色体系（emerald/orange/blue）に載せない。
   const isBlastRadius = boundary.type === 'BLAST_RADIUS';
+  const isManagement = boundary.type === 'MANAGEMENT';
   const frameColor = isBlastRadius
     ? 'border-fuchsia-500/60 text-fuchsia-400'
-    : boundary.trustLevel === 'Internal'
-      ? 'border-emerald-500/50 text-emerald-500'
-      : boundary.trustLevel === 'Partner'
-        ? 'border-orange-500/50 text-orange-500'
-        : 'border-blue-500/50 text-blue-500';
+    : isManagement
+      ? 'border-amber-400/60 text-amber-300'
+      : boundary.trustLevel === 'Internal'
+        ? 'border-emerald-500/50 text-emerald-500'
+        : boundary.trustLevel === 'Partner'
+          ? 'border-orange-500/50 text-orange-500'
+          : 'border-blue-500/50 text-blue-500';
   const blastLabel = boundary.blastRadiusLabel?.trim();
   // 信頼境界は「trustLevel: 型名」、BLAST_RADIUS は「型名: 自由記述ラベル」。
   const caption = isBlastRadius
     ? blastLabel
       ? `${t(config.nameKey)}: ${blastLabel}`
       : t(config.nameKey)
-    : boundary.label?.trim()
-      ? `${boundary.trustLevel}: ${t(config.nameKey)}: ${boundary.label.trim()}`
-      : `${boundary.trustLevel}: ${t(config.nameKey)}`;
+    : isManagement
+      ? boundary.label?.trim()
+        ? `${t(config.nameKey)}: ${boundary.label.trim()}`
+        : t(config.nameKey)
+      : boundary.label?.trim()
+        ? `${boundary.trustLevel}: ${t(config.nameKey)}: ${boundary.label.trim()}`
+        : `${boundary.trustLevel}: ${t(config.nameKey)}`;
 
   return (
     <div

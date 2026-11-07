@@ -1,4 +1,5 @@
 import { analyzeResolvedProject, resolveProject, SEVERITY_RANK } from '../cli/analyze';
+import { contextLookup } from '../cli/context';
 import { diffProjects, diffToJsonObject } from '../cli/diff';
 import { triggersToJsonObject } from '../cli/triggers';
 import { getComponentRegistry } from '../component-library/defaultRegistry';
@@ -492,4 +493,20 @@ export interface ListChangeTriggersOptions {
 export function listChangeTriggers(opts: ListChangeTriggersOptions): Record<string, unknown> {
   if (opts.locale) setLocale(opts.locale);
   return triggersToJsonObject(opts.triggers);
+}
+
+// ─────────────────────────────────────────────── 8. lookup_context
+
+export interface LookupContextOptions {
+  ip?: string;
+  host?: string;
+  purl?: string;
+  /** C 番号またはノード ID（AI エージェント攻撃者）。 */
+  attacker?: string;
+}
+
+/** IP・ホスト名・purl から図のノード・前段・脅威・指摘・露出を引く（読み取り専用。件数は lookupContext 側で上限あり）。 */
+export function lookupContextTool(raw: unknown, opts: LookupContextOptions): Record<string, unknown> {
+  const { attacker, ...query } = opts;
+  return { ...contextLookup(raw, query, attacker !== undefined ? { attacker } : {}) };
 }

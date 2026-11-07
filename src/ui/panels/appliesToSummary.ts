@@ -62,6 +62,9 @@ const FIELD_LABEL_KEYS: Record<string, TranslationKey> = {
   sourceSegment: 'appliesToSummary.field.sourceSegment',
   targetSegment: 'appliesToSummary.field.targetSegment',
   segmentRelation: 'appliesToSummary.field.segmentRelation',
+  selfEnvironment: 'appliesToSummary.field.selfEnvironment',
+  cohabitantType: 'appliesToSummary.field.cohabitantType',
+  cohabitantEnvironment: 'appliesToSummary.field.cohabitantEnvironment',
   status: 'appliesToSummary.field.status',
   environment: 'appliesToSummary.field.environment',
   sensitiveData: 'appliesToSummary.field.sensitiveData',
@@ -224,6 +227,14 @@ function summarizeNode(appliesTo: Extract<AppliesTo, { kind: 'node' }>, locale: 
     parts.push(
       translate('appliesToSummary.node.segment', locale, {
         conditions: formatArrayMap(appliesTo.segment as unknown as EdgeWhenLike, locale),
+      }),
+    );
+  }
+
+  if (appliesTo.managementBoundary) {
+    parts.push(
+      translate('appliesToSummary.node.managementBoundary', locale, {
+        conditions: formatArrayMap(appliesTo.managementBoundary as unknown as EdgeWhenLike, locale, ['cohabitantType']),
       }),
     );
   }

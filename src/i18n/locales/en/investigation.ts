@@ -13,6 +13,10 @@ export const enInvestigation: Partial<Record<TranslationKey, string>> = {
     'Scope: all nodes. The diagram has no route connecting an attacker to an objective, so no priority is given.',
   'investigation.howTo':
     'Start from each node’s checks and logs to review. For nodes with a risk of not being able to investigate, first confirm the state of logging.',
+  'investigation.kev.start':
+    'Nodes with findings listed in the KEV (CISA-confirmed exploited vulnerabilities) are listed first: {nodes}. This does not mean they are compromised; it is a starting point for investigation.',
+  'investigation.kev.node': 'KEV (exploitation confirmed in the wild): {cves}',
+  'investigation.kev.ransomware': ' (known ransomware campaign use)',
   'investigation.h.nodes': 'Nodes to investigate',
   'investigation.nodes.none': 'There are no nodes to investigate.',
   'investigation.routeHits': 'Attack routes passing through: {hits}',

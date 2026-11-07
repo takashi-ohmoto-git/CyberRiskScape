@@ -22,6 +22,11 @@
 #     T1486 "Data Encrypted for Impact"、T1039 "Data from Network Shared Drive"、
 #     T1557.001 "Adversary-in-the-Middle: Name Resolution Poisoning and SMB Relay"。
 #     https://attack.mitre.org/techniques/
+#   - 管理境界（2026-11-07）：AWS "Organizing Your AWS Environment Using Multiple Accounts"（本番と開発・CI の
+#     アカウントの分離）、Microsoft Cloud Adoption Framework のランディングゾーン（サブスクリプションの分離）、
+#     NIST SP 800-53 Rev.5（CM-4(1) Separate Test Environments、AC-6 Least Privilege）、
+#     内閣官房 国家サイバー統括室「個人情報の漏えい等につながる不正アクセスへの対策について」（2026-11-05、
+#     クラウドのアカウント・サブスクリプションの分離）。
 #   本文は逐語転載せず日本語要約のみ。
 #
 #   SPDX-License-Identifier: Apache-2.0
@@ -293,3 +298,41 @@ rules:
         url: "https://www.rfc-editor.org/rfc/rfc7530"
       - title: "MITRE ATT&CK T1557.001 - Adversary-in-the-Middle: Name Resolution Poisoning and SMB Relay（NTLM 認証の誘い出しと中継）"
         url: "https://attack.mitre.org/techniques/T1557/001/"
+
+  # ── 管理境界（クラウドのアカウント・サブスクリプション等）に本番のデータと開発・CI が同居 ──
+  # 管理境界を描かない図では出ない（境界外は不成立）。描かない図の全データストアに出るのを避けるため
+  #（区画の Unsegmented と同じ考え方）。自ノードの環境は区画外＝本番とみなす（Unknown）。
+  - id: storage-shared-management-scope-dev-prod-001
+    canonicalId: shared-management-scope-dev-prod
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "本番のデータと開発・CI が同じ管理境界（アカウント・サブスクリプション）に同居"
+    severity: High
+    description: "{{nodeName}} が、開発環境・CI のパイプライン・開発用の作業環境と同じクラウドのアカウント・サブスクリプション・プロジェクト（管理境界）に置かれている場合、管理境界の中の権限（IAM のロール・ポリシー）は境界全体に効くため、守りの弱い開発側の資格情報・CI のトークン・開発者の端末が奪われると、攻撃者はその権限のまま {{nodeName}} の本番のデータを読み出し、書き換え、削除できる（Can）。開発側では検証のために広い権限が与えられやすく、本番より監視も緩い。一方、本番と開発・CI を別のアカウント・サブスクリプションに分け、境界をまたぐ操作は限られたロールの引き受け（承認と記録付き）だけにしていれば、開発側の侵害は本番のデータに及ばない（Cannot）。blast radius は管理境界の中の本番のデータすべて。"
+    mitigation: "[Foundation] 本番と開発・検証・CI を別のアカウント・サブスクリプション・プロジェクトに分ける。開発側の資格情報・CI のトークンに本番のデータへの権限を与えない。 [Enterprise] 組織の管理機能（AWS Organizations・Azure の管理グループ等）でアカウントを用途ごとに束ね、本番のアカウントには変更を制限するポリシー（SCP 等）を掛ける。本番への配備は CI から限られたロールを引き受ける形にし、承認と記録を付ける。 [Advanced] 本番のデータへのアクセスを一時的な権限の払い出し（申請・承認・期限付き）に限り、管理境界をまたぐロールの引き受けを継続的に監視する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: DATABASE
+        - nodeType: STORAGE
+        - nodeType: FILE_SERVER
+        - nodeType: BACKUP_STORAGE
+      # 同居は管理境界の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+      managementBoundary:
+        selfEnvironment: [Production, Unknown]
+        cohabitantType: [CI_PIPELINE, API_DEV_WORKSPACE]
+        cohabitantEnvironment: [Development, Staging]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "AWS Whitepaper - Organizing Your AWS Environment Using Multiple Accounts（本番と開発・CI のアカウントの分離）"
+        url: "https://docs.aws.amazon.com/whitepapers/latest/organizing-your-aws-environment/organizing-your-aws-environment.html"
+      - title: "Microsoft Cloud Adoption Framework - Landing zone design areas: resource organization（サブスクリプションの分離）"
+        url: "https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/landing-zone/design-area/resource-org"
+      - title: "NIST SP 800-53 Rev.5 - Security and Privacy Controls for Information Systems and Organizations（CM-4(1) Separate Test Environments / AC-6 Least Privilege）"
+        url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"

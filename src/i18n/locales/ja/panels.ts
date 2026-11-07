@@ -301,6 +301,8 @@ export const jaPanels = {
   'panels.boundary.blastRadiusPlaceholder': '例: 決済系の侵害範囲',
   'panels.boundary.blastRadiusNote':
     'この枠は侵害時の影響範囲を示す注記です。信頼境界ではないため、囲んだコンポーネントの信頼レベル・脅威検出・越境マーカーには影響しません。',
+  'panels.boundary.managementNote':
+    'この枠は管理の単位（クラウドのアカウント・サブスクリプション・プロジェクト・テナント等）を示します。信頼境界ではないため、信頼レベルと越境マーカーには影響しません。同じ枠に本番のデータと開発・CI が同居していると脅威を出します。ラベルにアカウント名等を書いてください。',
 
   // ── AnnotationPanel ──
   'panels.annotation.textLabel': '本文',

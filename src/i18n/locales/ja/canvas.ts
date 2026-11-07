@@ -20,6 +20,7 @@ export const jaCanvas = {
   'canvas.boundaryType.macro': 'マクロセグメンテーション',
   'canvas.boundaryType.micro': 'マイクロセグメンテーション',
   'canvas.boundaryType.blastRadius': '影響範囲 (Blast Radius)',
+  'canvas.boundaryType.management': '管理境界（アカウント等）',
 
   'canvas.edgeNotation.plain': '平文（暗号化なし）',
   'canvas.edgeNotation.encrypted': '暗号化あり（TLS / E2EE）',

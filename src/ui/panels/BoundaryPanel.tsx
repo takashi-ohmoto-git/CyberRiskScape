@@ -212,6 +212,10 @@ export function BoundaryPanel({ boundary }: BoundaryPanelProps) {
           <BlastRadiusSection boundary={boundary} onUpdateField={onUpdate} />
         )}
 
+        {boundary.type === 'MANAGEMENT' && (
+          <p className="text-xs text-slate-500 leading-relaxed">{t('panels.boundary.managementNote')}</p>
+        )}
+
         <section>
           <label className="text-xs font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
             <Layers size={12} className="text-emerald-500" /> {t('panels.boundary.arrangeLabel')}

@@ -240,6 +240,7 @@ const BoundaryTypeSchema = z.enum([
   'ROUNDED',
   'ROUNDED_DASHED',
   'BLAST_RADIUS',
+  'MANAGEMENT',
 ]);
 
 /** 境界の型別属性（add / update で共通）。 */
@@ -697,6 +698,7 @@ const BOUNDARY_ATTRS_BY_TYPE: Record<BoundaryTypeId, readonly string[]> = {
   ROUNDED: ['label', 'macroTrust', 'vlanName', 'vlanId', 'networkAddress'],
   ROUNDED_DASHED: ['label', 'microTrust', 'microSegmentationStatus', 'sensitiveData'],
   BLAST_RADIUS: ['blastRadiusLabel'],
+  MANAGEMENT: ['label'],
 };
 const ALL_BOUNDARY_ATTRS = Object.values(BOUNDARY_ATTRS_BY_TYPE).flat();
 

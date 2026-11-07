@@ -17,6 +17,8 @@ import {
   type FrameworkView,
   type LayerData,
   type LayerKey,
+  type Asset,
+  type BomComponent,
   type Finding,
   type ManualThreat,
   type ProjectMeta,
@@ -58,6 +60,10 @@ export interface ResolvedProject {
   projectMeta: ProjectMeta;
   /** 外部製品の指摘（`analyze --with-findings` の SARIF 書き出し用）。 */
   findings: Finding[] | undefined;
+  /** 製品が観測した資産（ASM・ARTEX 等）。 */
+  assets: Asset[] | undefined;
+  /** SBOM 等から取り込んだ部品。 */
+  bomComponents: BomComponent[] | undefined;
 }
 
 /**
@@ -85,6 +91,8 @@ export function resolveProject(raw: unknown): ResolvedProject {
     controlStatuses: loaded.controlStatuses,
     projectMeta: loaded.projectMeta ?? EMPTY_PROJECT_META,
     findings: loaded.findings,
+    assets: loaded.assets,
+    bomComponents: loaded.bomComponents,
   };
 }
 

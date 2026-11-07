@@ -207,3 +207,44 @@ describe('buildInvestigationPlan', () => {
     );
   });
 });
+
+const kevFinding = (id: string, nodeId: string, cve: string, kev: object | null = { dateAdded: '2099-01-01', ransomware: true }) =>
+  ({
+    id,
+    source: { format: 'cyclonedx', product: 'example-scanner', importedAt: '2026-11-01T00:00:00Z' },
+    externalId: id,
+    identifiers: [{ scheme: 'cve', value: cve }],
+    severity: 'High',
+    canonicalIds: [],
+    subject: { layer: 'L1', nodeId },
+    ...(kev ? { kev } : {}),
+  }) as unknown as NonNullable<InvestigationPlanInput['findings']>[number];
+
+describe('buildInvestigationPlan（KEV）', () => {
+  it('findings なし → 全ノードの kev は空で従来と同じ対象', () => {
+    const plan = buildInvestigationPlan(handInput(), NOW, 'ja');
+    expect(plan.nodes.every((n) => n.kev.length === 0)).toBe(true);
+    expect(plan.nodes.map((n) => n.id).sort()).toEqual(['C2', 'C3', 'C4']);
+  });
+
+  it('経路外ノードに KEV の指摘 → 対象に含まれ先頭に並ぶ。KEV なしの指摘は無視', () => {
+    const plan = buildInvestigationPlan(
+      { ...handInput(), findings: [kevFinding('f1', 'iot', 'cve-2099-0001'), kevFinding('f2', 'db', 'CVE-2099-0002', null)] },
+      NOW,
+      'ja',
+    );
+    expect(plan.nodes.map((n) => n.id)).toContain('C5');
+    expect(plan.nodes[0]).toMatchObject({ id: 'C5', kev: [{ cve: 'CVE-2099-0001', dateAdded: '2099-01-01', ransomware: true }] });
+    expect(plan.nodes.find((n) => n.id === 'C4')?.kev).toEqual([]);
+  });
+
+  it('Markdown → 起点ノードの一覧と CVE を出し、侵害とは言わない。英語でも出る', () => {
+    const input = { ...handInput(), findings: [kevFinding('f1', 'api', 'CVE-2099-0001')] };
+    const ja = investigationPlanToMarkdown(buildInvestigationPlan(input, NOW, 'ja'));
+    expect(ja).toContain('KEV（悪用が確認された脆弱性）: CVE-2099-0001');
+    expect(ja).toContain('侵害を意味するものではなく');
+    const en = investigationPlanToMarkdown(buildInvestigationPlan(input, NOW, 'en'));
+    expect(en).toContain('KEV (exploitation confirmed in the wild): CVE-2099-0001');
+    expect(JSON.parse(investigationPlanToJson(buildInvestigationPlan(input, NOW, 'ja'))).nodes[0].kev[0].cve).toBe('CVE-2099-0001');
+  });
+});

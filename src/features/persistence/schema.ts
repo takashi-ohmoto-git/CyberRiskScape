@@ -43,6 +43,7 @@ const BoundaryTypeIdSchema = z.enum([
   'ROUNDED',
   'ROUNDED_DASHED',
   'BLAST_RADIUS',
+  'MANAGEMENT',
 ]);
 
 /**

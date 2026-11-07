@@ -2,6 +2,7 @@ import {
   ATTACK_OBJECTIVE_APPLICABLE,
   type DiagramEdge,
   type DiagramNode,
+  type Finding,
   type LayerKey,
   type ProjectMeta,
   type ThreatView,
@@ -33,6 +34,8 @@ export interface InvestigationPlanInput {
   edges: DiagramEdge[];
   projectMeta: ProjectMeta;
   layer: LayerKey;
+  /** 保存済みの指摘。KEV の印が付いた指摘のあるノードを調査の起点として必ず含める（省略可）。 */
+  findings?: readonly Finding[];
 }
 
 export type InvestigationTool = 'velociraptor';
@@ -70,6 +73,8 @@ export interface InvestigationNode {
   routeHits: number | null;
   viewpoints: InvestigationViewpointEntry[];
   limitations: InvestigationLimitation[];
+  /** KEV（CISA が悪用を確認した脆弱性）の指摘が結びついている CVE。侵害を意味しない。 */
+  kev: { cve: string; dateAdded?: string; ransomware?: boolean }[];
 }
 
 export interface InvestigationPlan {
@@ -116,7 +121,30 @@ export function buildInvestigationPlan(
     if (!n || isAttacker(n)) hits.delete(id);
   }
   const pathBased = hits.size > 0;
-  const targets = pathBased ? input.nodes.filter((n) => hits.has(n.id)) : input.nodes.filter((n) => !isAttacker(n));
+
+  // ── KEV の指摘が結びついたノード（経路外でも対象に含め、先頭に並べる）──
+  const kevByNode = new Map<string, InvestigationNode['kev']>();
+  for (const f of input.findings ?? []) {
+    if (!f.kev || !f.subject || f.subject.layer !== input.layer) continue;
+    const n = nodeById.get(f.subject.nodeId);
+    if (!n || isAttacker(n)) continue;
+    const list = kevByNode.get(n.id) ?? [];
+    for (const i of f.identifiers) {
+      if (i.scheme.toLowerCase() !== 'cve') continue;
+      const cve = i.value.trim().toUpperCase();
+      if (list.some((k) => k.cve === cve)) continue;
+      list.push({
+        cve,
+        ...(f.kev.dateAdded ? { dateAdded: f.kev.dateAdded } : {}),
+        ...(f.kev.ransomware !== undefined ? { ransomware: f.kev.ransomware } : {}),
+      });
+    }
+    if (list.length > 0) kevByNode.set(n.id, list);
+  }
+
+  const targets = pathBased
+    ? input.nodes.filter((n) => hits.has(n.id) || kevByNode.has(n.id))
+    : input.nodes.filter((n) => !isAttacker(n));
 
   // ── ノードごとの観点（検出された脅威の canonicalId で引く。誤検知は除く）──
   const viewpointsByNode = new Map<string, InvestigationViewpointEntry[]>();
@@ -171,9 +199,15 @@ export function buildInvestigationPlan(
     routeHits: pathBased ? (hits.get(n.id) ?? 0) : null,
     viewpoints: viewpointsByNode.get(n.id) ?? [],
     limitations: limitationsOf(n),
+    kev: kevByNode.get(n.id) ?? [],
   }));
-  // 通る経路の多いノードから。同数は ElementalID の番号順。
-  nodes.sort((a, b) => (b.routeHits ?? 0) - (a.routeHits ?? 0) || a.id.localeCompare(b.id, undefined, { numeric: true }));
+  // KEV のあるノードを先頭に。次に通る経路の多いノードから。同数は ElementalID の番号順。
+  nodes.sort(
+    (a, b) =>
+      Number(b.kev.length > 0) - Number(a.kev.length > 0) ||
+      (b.routeHits ?? 0) - (a.routeHits ?? 0) ||
+      a.id.localeCompare(b.id, undefined, { numeric: true }),
+  );
 
   return {
     locale,

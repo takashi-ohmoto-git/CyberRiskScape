@@ -379,8 +379,8 @@ describe('正常系：境界・注釈', () => {
     expect(owningIds(removed.project, 'n-llm')).toEqual([]);
   });
 
-  it('境界の label：4 型で set/unset でき、BLAST_RADIUS には設定できない', () => {
-    for (const type of ['RECT', 'RECT_DASHED', 'ROUNDED', 'ROUNDED_DASHED'] as const) {
+  it('境界の label：5 型で set/unset でき、BLAST_RADIUS には設定できない', () => {
+    for (const type of ['RECT', 'RECT_DASHED', 'ROUNDED', 'ROUNDED_DASHED', 'MANAGEMENT'] as const) {
       const added = apply([{ op: 'add_boundary', type, ref: 'bx', label: '区画A' }]);
       const b = l1(added.project).boundaries.find((x) => x.type === type && x.label === '区画A');
       expect(b).toBeDefined();

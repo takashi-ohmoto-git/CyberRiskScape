@@ -37,8 +37,12 @@ import { parseMcpScannerFindings } from '../features/findings-report/parseMcpSca
 import { parseProwlerOcsf } from '../features/prowler-import/parseProwlerOcsf';
 import { importSarif, sarifReportToJson, sarifReportToMarkdown } from './importSarif';
 import { importKev, kevReportToJson, kevReportToMarkdown } from './importKev';
+import { fillPatchStatusToMarkdown, runFillPatchStatus } from './fillPatchStatus';
 import { parseKevCatalog } from '../features/kev-import/applyKev';
 import { findingsPriority, priorityToJson, priorityToMarkdown } from './findingsPriority';
+import { asmReconcile, reconcileToJson, reconcileToMarkdown } from './asmReconcile';
+import { sbomReport, sbomReportToJson, sbomReportToMarkdown } from './sbomReport';
+import { contextLookup, contextToMarkdown } from './context';
 import { parseSarif } from '../features/sarif-import/parseSarif';
 import { importProwler, prowlerReportToJson, prowlerReportToMarkdown } from './importProwler';
 import {
@@ -152,7 +156,11 @@ const USAGE = `使い方:
   import-pentest <project.json> --in <registry.yaml> [options]
   import-sarif <project.json> --sarif <file> --scope <scope> [options]
   import-kev <project.json> --kev <file> [options]
+  fill-patch-status <project.json> [options]
   findings-priority <project.json> [options]
+  asm-reconcile <project.json> [options]
+  sbom-report <project.json> [options]
+  context <project.json> (--ip <ip> | --host <name> | --purl <purl>) [options]
   import-artex-assets <project.json> --scope <scope> [--services <file>] [--endpoints <file>] [options]
   import-sbom <project.json> --sbom <file> --scope <scope> [options]
   import-conjur <policy.yml> [options]
@@ -259,6 +267,29 @@ import-kev のオプション（CISA の KEV カタログ JSON（https://www.cis
   --kev <file>                                  KEV カタログの JSON（必須）
   --report <md|json>                            報告の形式（既定: md。標準出力）
   -o, --out <file>                              印を付けたプロジェクト JSON の出力先（指定しなければ報告のみ）
+
+fill-patch-status のオプション（CVE を持つ保存済みの指摘（試行のみは除く）があるノードのうち、型がパッチ状況を持ち patchStatus が未入力のものを「未適用（Missing）」にする。入力済みは上書きしない。「更新済み」は書かない）:
+  --report <md|json>                            報告の形式（既定: md。標準出力）
+  -o, --out <file>                              補完したプロジェクト JSON の出力先（指定しなければ報告のみ）
+  --dry-run                                     出力先を指定しても保存しない
+
+context のオプション（アラートの IP・ホスト名・purl から、図のノード・前段・脅威・指摘・露出・届く標的を引く。読み取り専用で、プロジェクトは書き換えない。優先度は推奨であり、判断は人。「悪用できる」とは言わない。--ip / --host / --purl のうち 1 つだけ指定する）:
+  --ip <ip>                                     資産の IP アドレスで引く
+  --host <name>                                 資産のホスト名・FQDN、またはノードのラベルで引く（大文字小文字を区別しない）
+  --purl <purl>                                 部品の purl で引く（版を省くと版違いも含む）
+  --attacker <C番号|ID>                         攻撃者（AI エージェント攻撃者）のノード（既定: 図の攻撃者ノードの先頭）
+  --format <md|json>                            出力形式（既定: md）
+  -o, --out <file>                              出力先ファイル（既定: 標準出力）
+
+asm-reconcile のオプション（ASM（Shodan・ScopeSentry）が観測した資産と、図の「外部公開」（Global IP）の入力の食い違いを並べる読み取り専用の報告。判定はしない。終了コードは常に 0）:
+  --previous <old-project.json>                 前回のプロジェクト JSON（新しく見えた・見えなくなった観測を比較。保存はしない）
+  --format <md|json>                            出力形式（既定: md）
+  -o, --out <file>                              出力先ファイル（既定: 標準出力）
+
+sbom-report のオプション（保存済みの SBOM の検収レポート。図との結びつき・新しさ・指摘の件数・ライセンス欄の空を並べる読み取り専用の報告。合否・ライセンスの適否は判定しない。終了コードは常に 0）:
+  --max-age-days <n>                            BOM 作成時刻がこの日数より古いものに印を付ける（既定: 90）
+  --format <md|json>                            出力形式（既定: md）
+  -o, --out <file>                              出力先ファイル（既定: 標準出力）
 
 findings-priority のオプション（保存済みの指摘を攻撃経路に載せ、推奨の優先度 P1〜P4 と根拠（露出・届く標的・KEV・連鎖）を出す。推奨と根拠であり、判断は人。「悪用できる」とは言わない。元の深刻度は変えない）:
   --attacker <C番号|ID>                         攻撃者（AI エージェント攻撃者）のノード（既定: 図の攻撃者ノードの先頭。無ければ露出を評価できない）
@@ -486,7 +517,13 @@ function parseCliArgs() {
       sbom: { type: 'string' },
       sarif: { type: 'string' },
       kev: { type: 'string' },
+      'dry-run': { type: 'boolean' },
+      previous: { type: 'string' },
+      'max-age-days': { type: 'string' },
       attacker: { type: 'string' },
+      ip: { type: 'string' },
+      host: { type: 'string' },
+      purl: { type: 'string' },
       node: { type: 'string' },
       'base-url': { type: 'string' },
       author: { type: 'string' },
@@ -982,6 +1019,29 @@ ${USAGE}`);
 `);
 }
 
+/** `fill-patch-status`：CVE 付きの保存済み指摘があるノードの patchStatus 未入力を Missing で埋める。 */
+function runFillPatchStatusCommand(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  const report = parseEnum(values.report, IMPORT_PROWLER_REPORTS, 'report') ?? 'md';
+  const dryRun = values['dry-run'] === true;
+
+  let out: ReturnType<typeof runFillPatchStatus>;
+  try {
+    out = runFillPatchStatus(readJsonFile(file));
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  if (values.out && !dryRun) writeFileSync(values.out, JSON.stringify(out.project, null, 2), 'utf-8');
+  const json = { schemaVersion: 1, kind: 'cyberriskscape-fill-patch-status-report', dryRun, filled: out.filled, skipped: out.skipped };
+  process.stdout.write(`${report === 'json' ? JSON.stringify(json, null, 2) : fillPatchStatusToMarkdown(out, dryRun)}
+`);
+  process.stderr.write(`パッチ状況を補完しました（${dryRun ? '対象' : '補完'} ${out.filled.length} 件）
+`);
+}
+
 /** `findings-priority`：保存済みの指摘を攻撃経路に載せて推奨の優先度を出す（docs/attack-tree-analysis.md §12）。 */
 function runFindingsPriority(values: CliValues, positionals: string[]): void {
   const file = positionals[1];
@@ -998,6 +1058,63 @@ ${USAGE}`);
     fail(e instanceof Error ? e.message : String(e));
   }
   writeOutput(format === 'json' ? JSON.stringify(priorityToJson(out), null, 2) : priorityToMarkdown(out), values.out);
+}
+
+/** `context`：IP・ホスト名・purl から図の文脈を引く（読み取り専用）。 */
+function runContext(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  const given = [values.ip, values.host, values.purl].filter((v) => v !== undefined);
+  if (given.length !== 1) fail('--ip / --host / --purl のうち 1 つだけを指定してください。');
+  const format = parseEnum(values.format, IMPORT_PROWLER_REPORTS, 'format') ?? 'md';
+
+  let out: ReturnType<typeof contextLookup>;
+  try {
+    out = contextLookup(
+      readJsonFile(file),
+      { ...(values.ip ? { ip: values.ip } : {}), ...(values.host ? { host: values.host } : {}), ...(values.purl ? { purl: values.purl } : {}) },
+      values.attacker ? { attacker: values.attacker } : {},
+    );
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  writeOutput(format === 'json' ? JSON.stringify(out, null, 2) : contextToMarkdown(out), values.out);
+}
+
+/** `asm-reconcile`：ASM の観測と図の「外部公開」の入力の食い違いを並べる（読み取り専用）。 */
+function runAsmReconcile(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  const format = parseEnum(values.format, IMPORT_PROWLER_REPORTS, 'format') ?? 'md';
+  let out: ReturnType<typeof asmReconcile>;
+  try {
+    out = asmReconcile(readJsonFile(file), values.previous ? readJsonFile(values.previous) : undefined);
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  writeOutput(format === 'json' ? JSON.stringify(reconcileToJson(out), null, 2) : reconcileToMarkdown(out), values.out);
+}
+
+/** `sbom-report`：保存済みの SBOM の検収レポート（読み取り専用）。 */
+function runSbomReport(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  const format = parseEnum(values.format, IMPORT_PROWLER_REPORTS, 'format') ?? 'md';
+  const maxAgeDays = values['max-age-days'] === undefined ? undefined : Number(values['max-age-days']);
+  if (maxAgeDays !== undefined && (!Number.isFinite(maxAgeDays) || maxAgeDays < 0)) fail('--max-age-days は 0 以上の数で指定してください。');
+  let out: ReturnType<typeof sbomReport>;
+  try {
+    out = sbomReport(readJsonFile(file), maxAgeDays === undefined ? {} : { maxAgeDays });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  writeOutput(format === 'json' ? JSON.stringify(sbomReportToJson(out), null, 2) : sbomReportToMarkdown(out), values.out);
 }
 
 /** `import-sarif`：汎用の SARIF 2.1.0 の結果を指摘としてプロジェクト JSON に保存する（docs/architecture.md §8.6）。 */
@@ -1395,7 +1512,12 @@ ${USAGE}`);
   const target = results[0];
   if (!target) fail('ノードのあるレイヤーがありません。');
 
-  const plan = buildInvestigationPlan(target.input, new Date(), locale, tool);
+  const plan = buildInvestigationPlan(
+    { ...target.input, findings: resolveProject(readJsonFile(file)).findings },
+    new Date(),
+    locale,
+    tool,
+  );
   writeOutput(format === 'json' ? investigationPlanToJson(plan) : investigationPlanToMarkdown(plan), values.out);
   const viewpoints = plan.nodes.reduce((n, x) => n + x.viewpoints.length, 0);
   process.stderr.write(
@@ -1836,8 +1958,16 @@ function main(): void {
     runImportPentest(values, positionals);
   } else if (command === 'import-kev') {
     runImportKev(values, positionals);
+  } else if (command === 'fill-patch-status') {
+    runFillPatchStatusCommand(values, positionals);
+  } else if (command === 'context') {
+    runContext(values, positionals);
   } else if (command === 'findings-priority') {
     runFindingsPriority(values, positionals);
+  } else if (command === 'asm-reconcile') {
+    runAsmReconcile(values, positionals);
+  } else if (command === 'sbom-report') {
+    runSbomReport(values, positionals);
   } else if (command === 'import-sarif') {
     runImportSarif(values, positionals);
   } else if (command === 'import-sbom') {

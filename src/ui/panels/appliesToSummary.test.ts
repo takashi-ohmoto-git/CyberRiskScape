@@ -143,6 +143,18 @@ describe('summarizeAppliesTo - kind: node', () => {
     expect(summarizeAppliesTo(appliesTo, 'ja')).toContain('所属区画の条件: 適用状態=NotEnforced');
   });
 
+  it('managementBoundary が発火条件文に出る', () => {
+    const appliesTo: AppliesTo = {
+      kind: 'node',
+      nodeType: 'DATABASE',
+      managementBoundary: { selfEnvironment: ['Production', 'Unknown'], cohabitantEnvironment: ['Development'] },
+    };
+    const text = summarizeAppliesTo(appliesTo, 'ja');
+    expect(text).toContain('管理境界の条件');
+    expect(text).toContain('自分の環境（Unknown＝区画外）=Production/Unknown');
+    expect(text).toContain('同居する区画の環境=Development');
+  });
+
   it('conditions（severity 段階分け）は発火条件文に出さない', () => {
     const appliesTo: AppliesTo = {
       kind: 'node',

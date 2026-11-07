@@ -299,6 +299,8 @@ export const enPanels: Partial<Record<TranslationKey, string>> = {
   'panels.boundary.blastRadiusPlaceholder': 'e.g. Payment systems impact scope',
   'panels.boundary.blastRadiusNote':
     'This frame annotates the impact scope of a compromise. It is not a trust boundary, so it does not affect the trust level of the components it encloses, threat detection, or crossing markers.',
+  'panels.boundary.managementNote':
+    'This frame shows a unit of administration (cloud account, subscription, project, tenant, etc.). It is not a trust boundary, so it does not affect trust levels or crossing markers. A threat is raised when production data shares the frame with development or CI. Put the account name etc. in the label.',
   'panels.boundary.networkAddressInvalid': 'Enter CIDR notation (e.g. 10.0.0.0/24)',
 
   // ── AnnotationPanel ──

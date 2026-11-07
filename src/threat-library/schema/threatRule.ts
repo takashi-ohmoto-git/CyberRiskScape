@@ -271,6 +271,28 @@ export const SegmentMatchSchema = z
     { message: 'segment match must include at least one of status / environment / sensitiveData' },
   );
 
+/** 管理境界の条件での自ノードの環境。`Unknown` は区画外（環境が未入力）＝本番とみなす側で書く。 */
+export const ManagementSelfEnvironmentSchema = z.enum([...SegmentEnvironmentSchema.options, 'Unknown']);
+
+/**
+ * 管理境界（`MANAGEMENT` の境界。クラウドのアカウント・サブスクリプション等）での同居の条件。
+ * ノードの中心を含む最内側の `MANAGEMENT` を所属とし、**管理境界の外のノードでは不成立**
+ * （管理境界を描かない図の全ノードに出ないように。区画の `Unsegmented` と同じ考え方）。
+ *
+ * - `selfEnvironment`：自ノードの所属区画の環境（OR）。区画外は `Unknown`
+ * - `cohabitantType` / `cohabitantEnvironment`：同じ管理境界にいる他のノードの型・所属区画の環境。
+ *   **どちらか一方にでも当たるノードが 1 つあれば成立**（2 つの間は OR）
+ */
+export const ManagementBoundaryMatchSchema = z
+  .object({
+    selfEnvironment: z.array(ManagementSelfEnvironmentSchema).nonempty().optional(),
+    cohabitantType: z.array(ComponentTypeIdSchema).nonempty().optional(),
+    cohabitantEnvironment: z.array(SegmentEnvironmentSchema).nonempty().optional(),
+  })
+  .refine((m) => m.cohabitantType !== undefined || m.cohabitantEnvironment !== undefined, {
+    message: 'managementBoundary match must include cohabitantType or cohabitantEnvironment',
+  });
+
 export const ConnectionDirectionSchema = z.enum(['any', 'inbound', 'outbound']);
 
 /**
@@ -414,6 +436,8 @@ const NodeAppliesToSchema = z.object({
   authProviderRole: z.array(AuthProviderRoleSchema).nonempty().optional(),
   /** 所属区画（マイクロセグメンテーション境界）による絞り込み。詳細は `SegmentMatchSchema`。 */
   segment: SegmentMatchSchema.optional(),
+  /** 管理境界での同居による絞り込み。詳細は `ManagementBoundaryMatchSchema`。 */
+  managementBoundary: ManagementBoundaryMatchSchema.optional(),
   /** 運用状況による絞り込み。詳細は `PostureMatchSchema`。未入力は対策なしとして扱う。 */
   posture: PostureMatchSchema.optional(),
   /** 子ノード（`parentId` がこのノード）の型による絞り込み。例：個人情報を格納した DB。 */

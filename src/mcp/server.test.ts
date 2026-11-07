@@ -55,7 +55,7 @@ const ADD_DB = { op: 'add_node', type: 'DB', label: 'キャッシュ', ref: 'c' 
 const ADD_EDGE = { op: 'add_edge', source: 'n-llm', target: '@c', auth: 'None', network: 'VPC', encryption: 'Plain' };
 
 describe('MCP サーバー', () => {
-  it('ツールを 8 本公開する', async () => {
+  it('ツールを 9 本公開する', async () => {
     const client = await connect();
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(
@@ -67,6 +67,7 @@ describe('MCP サーバー', () => {
         'get_threat',
         'list_change_triggers',
         'list_component_types',
+        'lookup_context',
         'lookup_threat_rules',
       ].sort(),
     );

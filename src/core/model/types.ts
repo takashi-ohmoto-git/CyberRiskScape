@@ -17,7 +17,9 @@ export type BoundaryTypeId =
   | 'RECT_DASHED'
   | 'ROUNDED'
   | 'ROUNDED_DASHED'
-  | 'BLAST_RADIUS';
+  | 'BLAST_RADIUS'
+  /** 管理境界（クラウドのアカウント・サブスクリプション・プロジェクト・テナント等）。信頼境界ではない。 */
+  | 'MANAGEMENT';
 
 /**
  * 信頼レベルを持つ境界型（`resolveNodeTrust` / `resolveNodeBoundaries` の判定対象）。

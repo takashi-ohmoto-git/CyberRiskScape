@@ -98,3 +98,15 @@ rules:
         title: "IETF RFC 7530 - Network File System (NFS) Version 4 Protocol (RPCSEC_GSS and Kerberos authentication)"
       "4":
         title: "MITRE ATT&CK T1557.001 - Adversary-in-the-Middle: Name Resolution Poisoning and SMB Relay (luring and relaying NTLM authentication)"
+
+  storage-shared-management-scope-dev-prod-001:
+    category: "Elevation of Privilege"
+    name: "Production data sharing a management boundary (account, subscription) with development and CI"
+    description: "When {{nodeName}} sits in the same cloud account, subscription, or project (management boundary) as development environments, CI pipelines, or development workspaces, permissions inside the boundary (IAM roles and policies) apply across the whole boundary, so if a weakly protected development credential, CI token, or developer device is taken, the attacker can read, modify, and delete the production data in {{nodeName}} with those same permissions (Can). Development tends to get broad permissions for testing and is monitored less than production. On the other hand, if production is separated from development and CI into different accounts or subscriptions, and cross-boundary operations are limited to assuming specific roles (with approval and logging), a compromise on the development side does not reach production data (Cannot). The blast radius is all production data inside the management boundary."
+    mitigation: "[Foundation] Separate production from development, test, and CI into different accounts, subscriptions, or projects. Do not give development credentials or CI tokens access to production data. [Enterprise] Group accounts by purpose with organization-level management (AWS Organizations, Azure management groups, etc.) and apply change-restricting policies (SCPs, etc.) to production accounts. Deploy to production by having CI assume a limited role, with approval and logging. [Advanced] Limit access to production data to just-in-time grants (request, approval, expiry), and continuously monitor role assumptions across management boundaries."
+    references:
+      "0":
+        title: "AWS Whitepaper - Organizing Your AWS Environment Using Multiple Accounts (separating production from development and CI accounts)"
+      "1":
+        title: "Microsoft Cloud Adoption Framework - Landing zone design areas: resource organization (separating subscriptions)"
+

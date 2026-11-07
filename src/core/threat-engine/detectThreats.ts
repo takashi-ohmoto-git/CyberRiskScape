@@ -15,6 +15,7 @@ import type { ThreatRule } from '../../threat-library/schema/threatRule';
 import { componentRegistry } from '../../component-library/defaultRegistry';
 import { renderEdgeTemplate, renderNodeTemplate } from './renderTemplate';
 import { resolveNodeTrust } from './resolveNodeTrust';
+import { resolveNodeManagement } from './resolveNodeManagement';
 import {
   resolveNodeSegment,
   segmentRelationOf,
@@ -68,6 +69,27 @@ type AttackSurfaceMatch = NonNullable<NodeAppliesTo['attackSurface']>;
 type AgentAttributesMatch = NonNullable<NodeAppliesTo['agentAttributes']>;
 type SegmentMatch = NonNullable<NodeAppliesTo['segment']>;
 type PostureMatch = NonNullable<NodeAppliesTo['posture']>;
+type ManagementMatch = NonNullable<NodeAppliesTo['managementBoundary']>;
+
+/** 管理境界での同居の条件（`ManagementBoundaryMatchSchema`）。管理境界の外のノードでは不成立。 */
+function matchManagementBoundary(
+  node: DiagramNode,
+  match: ManagementMatch,
+  managementByNodeId: ReadonlyMap<string, string>,
+  nodes: readonly DiagramNode[],
+  segmentByNodeId: ReadonlyMap<string, ResolvedSegment>,
+): boolean {
+  const scope = managementByNodeId.get(node.id);
+  if (scope === undefined) return false;
+  const own = segmentByNodeId.get(node.id)?.environment ?? 'Unknown';
+  if (match.selfEnvironment && !match.selfEnvironment.includes(own)) return false;
+  return nodes.some((o) => {
+    if (o.id === node.id || managementByNodeId.get(o.id) !== scope) return false;
+    if (match.cohabitantType?.includes(o.type)) return true;
+    const env = segmentByNodeId.get(o.id)?.environment;
+    return env !== undefined && (match.cohabitantEnvironment?.includes(env) ?? false);
+  });
+}
 
 /**
  * `agentAttributes` 未指定ノードのベースライン値。
@@ -451,6 +473,7 @@ export function detectThreats({
   const nodeById = new Map(nodes.map((n) => [n.id, n] as const));
   const trustByNodeId = resolveNodeTrust(nodes, boundaries ?? []);
   const segmentByNodeId = resolveNodeSegment(nodes, boundaries ?? []);
+  const managementByNodeId = resolveNodeManagement(nodes, boundaries ?? []);
   // 発行元ごとの依存コンポーネント。説明文の `{{dependentCount}}` /
   // `{{dependentNames}}` 展開に使う。境界と同じく図全体から 1 回だけ導出する。
   const authProviderClosure = buildAuthProviderClosure(nodes, edges);
@@ -487,6 +510,11 @@ export function detectThreats({
         const segment = segmentByNodeId.get(node.id) ?? UNSEGMENTED;
         const childTypes = childTypesByParent.get(node.id) ?? NO_CHILD_TYPES;
         if (!matchNodeAxes(nodeApplies, node, role, segment, childTypes)) continue;
+        if (
+          nodeApplies.managementBoundary &&
+          !matchManagementBoundary(node, nodeApplies.managementBoundary, managementByNodeId, nodes, segmentByNodeId)
+        )
+          continue;
 
         let severity: Severity = rule.severity;
         let description: string = rule.description;
