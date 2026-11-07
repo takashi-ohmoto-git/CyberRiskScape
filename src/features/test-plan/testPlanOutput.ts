@@ -13,6 +13,25 @@ export function testPlanToMarkdown(plan: TestPlan): string {
 
   out.push(`# ${t('testPlan.title', { system: plan.system, layer: plan.layer })}`, '');
 
+  // 0. 再診断の範囲（前回のモデルからの変更）
+  if (plan.retest) {
+    out.push(`## ${t('testPlan.h.retest')}`, '', t('testPlan.retest.intro'), '');
+    if (plan.retest.triggers.length === 0 && plan.retest.nodes.length === 0) {
+      out.push(t('testPlan.retest.none'), '');
+    } else {
+      out.push(`**${t('testPlan.retest.triggers')}**`, '');
+      if (plan.retest.triggers.length === 0) out.push(`- ${t('testPlan.retest.noTrigger')}`);
+      for (const tr of plan.retest.triggers) {
+        for (const e of tr.elements) {
+          out.push(`- ${tr.id} ${tr.title}: ${e.label}${e.detail ? ` (${e.detail})` : ''}`);
+        }
+      }
+      out.push('', `**${t('testPlan.retest.nodes')}**`, '');
+      for (const n of plan.retest.nodes) out.push(`- ${el(n)}`);
+      out.push('');
+    }
+  }
+
   // 1. 概要と前提
   out.push(`## ${t('testPlan.h.overview')}`, '');
   out.push(`- ${t('testPlan.overview.system', { system: plan.system })}`);

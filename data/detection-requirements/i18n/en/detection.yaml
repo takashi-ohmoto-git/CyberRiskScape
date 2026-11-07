@@ -1,0 +1,211 @@
+# English overlay for `data/detection-requirements/detection.yaml`.
+#
+# The Japanese file is the source of truth: only `title`, `watch` and `logs` are translated here,
+# keyed by requirement id. `watch` and `logs` must have the same number of items as the original.
+# Anything omitted falls back to the original text.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+
+requirements:
+  web-exploit-and-shell:
+    title: "Exploitation of public-facing services and unexpected code execution"
+    watch:
+      - "Shells or child processes started from web server or application processes"
+      - "New or modified executable files under web roots and application directories"
+      - "Surges of server errors (5xx) or abnormal worker exits from the same source"
+      - "Outbound connections to unexpected destinations"
+    logs: ["Web server access and error logs", "EDR / OS process creation logs", "File integrity monitoring logs"]
+  edge-management-exposure:
+    title: "External access to management surfaces and sensitive components"
+    watch:
+      - "Connections to admin consoles or management ports from unexpected sources (country / ASN)"
+      - "Consecutive authentication failures on management paths"
+      - "Changes to the exposed surface (new rules, opened ports)"
+    logs: ["Perimeter firewall and WAF logs", "Admin console authentication and operation logs", "Cloud configuration-change audit logs"]
+  credential-guessing:
+    title: "Brute force and password spraying against authentication"
+    watch:
+      - "Repeated failures on one account, and a few failures across many accounts (spraying)"
+      - "A successful login right after failures"
+      - "Logins from unusual sources, times or devices"
+    logs: ["Authentication logs of the IdP / directory", "Application login logs", "WAF / bot-protection logs"]
+  account-takeover:
+    title: "Account and session takeover"
+    watch:
+      - "Reuse of a session or token from another source or device (including impossible travel)"
+      - "Added MFA methods, password resets, recovery-method changes"
+      - "High-privilege operations or mail-forwarding rules created right after login"
+    logs: ["IdP authentication and session logs", "Application audit logs", "Mail / messaging configuration-change logs"]
+  credential-store-access:
+    title: "Reading of credentials and secrets"
+    watch:
+      - "Secret-vault reads by unusual principals, volumes or times"
+      - "Access to config files, environment variables and key files in workspaces"
+      - "Use of credentials that left the vault (use from unexpected sources)"
+    logs: ["Secret vault audit logs", "EDR file access logs", "Authentication logs of services that accept the credentials"]
+  non-human-identity:
+    title: "Use of non-human identities (service accounts, API keys)"
+    watch:
+      - "Sudden use of a dormant identity or key"
+      - "Use of a service account from a human operator device"
+      - "API calls beyond the scope of the identity, or across environments"
+    logs: ["Cloud API audit logs", "IdP / federation token issuance logs", "Access logs of the target services"]
+  privileged-access:
+    title: "Use of privileges and privilege escalation"
+    watch:
+      - "Direct use of privileged accounts without approval or checkout"
+      - "Privilege added to a role or group, and its use right afterwards"
+      - "Bulk data reads or configuration changes in privileged sessions"
+    logs: ["Privileged access management session logs", "Directory / IAM change audit logs", "OS privilege escalation logs (sudo, event 4672, etc.)"]
+  identity-provider-integrity:
+    title: "Tampering with IdP and federation trust settings"
+    watch:
+      - "Changes to federation trust, signing certificates or redirect URIs"
+      - "Tokens whose issuer and consumer disagree (signature / audience mismatch)"
+      - "IdP administrator operations and relaxed authentication policies"
+    logs: ["IdP administrative audit logs", "IdP authentication and token issuance logs", "Token validation logs of relying parties"]
+  directory-compromise:
+    title: "Extraction of credentials from and tampering with the directory (e.g. AD)"
+    watch:
+      - "Directory replication requests from hosts other than domain controllers"
+      - "Changes to policy objects such as group policy"
+      - "Changes to sync accounts or delegation, and unusual use of sync accounts"
+    logs: ["Domain controller security event logs", "Directory change audit logs", "Sync service logs"]
+  lateral-movement-network:
+    title: "Lateral movement (network and management plane)"
+    watch:
+      - "New connections between segments that normally do not talk (management protocols, file sharing)"
+      - "Broad access from VPN / ZTNA sources to assets they do not normally touch"
+      - "Operations spanning the development and production management planes"
+    logs: ["Network device and firewall flow logs", "VPN / ZTNA access logs", "File server access audit logs", "EDR network connection logs"]
+  data-store-access:
+    title: "Bulk reads, tampering and exfiltration of data stores"
+    watch:
+      - "Reads or exports beyond the usual record count or volume"
+      - "Bulk dumps with admin rights, surges of updates or deletions"
+      - "Changes to the public setting or access permissions of the data store"
+      - "Large outbound transfers from the data store"
+    logs: ["Database audit logs", "Storage access logs", "Cloud configuration-change audit logs", "Outbound flow logs"]
+  api-abuse:
+    title: "API authorization bypass, injection and SSRF"
+    watch:
+      - "One caller sequentially reading other users' object IDs"
+      - "Ordinary users calling administrative functions or paths"
+      - "Direct access to the backend that bypasses the gateway"
+      - "Unexpected requests from the server side to metadata or internal addresses"
+    logs: ["API gateway access logs", "Backend application logs", "WAF logs", "Cloud metadata access logs"]
+  web-input-attacks:
+    title: "Attacks on web input and the proxy layer"
+    watch:
+      - "Injection-like input patterns and malformed requests (inconsistent headers, etc.)"
+      - "Attempts to reach sensitive files or hidden paths"
+      - "Consecutive webhooks that fail signature verification"
+    logs: ["WAF logs", "Reverse proxy / CDN access logs", "Application error logs"]
+  supply-chain-pipeline:
+    title: "Tampering with builds, dependencies and signing"
+    watch:
+      - "Unexpected changes to pipeline definitions or dependencies"
+      - "Outbound connections and secret reads from the build environment"
+      - "Use of signing keys (unexpected builds or times)"
+      - "Changes in the name or source of newly pulled dependencies"
+    logs: ["CI/CD execution and audit logs", "Source repository audit logs", "Package registry download logs", "Signing service usage logs"]
+  log-and-detection-tampering:
+    title: "Stopping or tampering with logging and detection"
+    watch:
+      - "Stopped log forwarding or agents, and sudden drops in log volume"
+      - "Configuration changes to the log platform or EDR, new exclusions, deleted logs"
+      - "Administrator operations and authentication on the monitoring platform"
+    logs: ["Management operation logs of the log platform and EDR", "Log-forwarding liveness (heartbeat)", "OS / cloud configuration-change audit logs"]
+  ransomware-backup:
+    title: "Mass encryption and destruction of backups"
+    watch:
+      - "Bulk file updates, extension changes or renames in a short time"
+      - "Backup deletion, shortened retention or changed lock settings"
+      - "Unusual authentication to the backup management plane"
+    logs: ["File server access audit logs", "Backup platform operation logs", "EDR file operation logs"]
+  virtualization-management:
+    title: "Mass operations from management platforms (virtualization, endpoint management, automation)"
+    watch:
+      - "Mass execution or distribution to many assets from a management console"
+      - "Unusual authentication to a management platform followed by configuration changes"
+      - "Changes to playbooks or automated-response definitions"
+    logs: ["Management platform operation audit logs", "Hypervisor / endpoint management execution logs", "SOAR execution and change logs"]
+  dns-tls-trust:
+    title: "Broken trust in DNS, certificates and transport protection"
+    watch:
+      - "DNS record changes, and records pointing at resources that no longer exist"
+      - "Unexpected certificate issuance, missed revocation, or use of CA keys"
+      - "Connections that are unencrypted or downgraded"
+    logs: ["DNS zone change audit logs", "Certificate issuance (CA / CT) logs", "TLS termination device and mesh logs"]
+  indirect-injection-and-ingress:
+    title: "Instruction injection into AI (prompt injection)"
+    watch:
+      - "Instruction-like text in inputs or retrieved data, and changes in tool calls right after"
+      - "Unusual tool choices or arguments (including sends to external destinations)"
+      - "Content from untrusted sources flowing into a context that holds sensitive privileges"
+    logs: ["Prompt and response logs of the LLM gateway / agent", "Tool call logs", "RAG retrieval source (document ID) logs"]
+  agent-action-scope:
+    title: "AI agent actions beyond its authority"
+    watch:
+      - "High-risk operations (delete, transfer, permission change) executed without approval"
+      - "Use of tools or scopes that were not granted, or changes to its own permissions or settings"
+      - "Reading sensitive data and sending data externally within the same session"
+    logs: ["Agent execution traces (tool calls and arguments)", "Approval gate records", "Audit logs of the services the tools call"]
+  agent-egress-and-exec:
+    title: "Outbound traffic and code execution from AI agents"
+    watch:
+      - "Connections to destinations outside the allowlist, and access to external URLs in outputs"
+      - "Shell or code execution in the agent runtime"
+      - "New installation or changes of agent settings, skills or extensions"
+    logs: ["Agent runtime process and network logs", "Proxy / firewall egress logs", "Change history of settings and skills"]
+  mcp-tool-integrity:
+    title: "Tampering with and impersonation of MCP, tool definitions and connectors"
+    watch:
+      - "Changes to tool descriptions, schemas or versions after approval"
+      - "Connections to MCP servers or endpoints that are not registered"
+      - "Delegation messages between agents whose sender or signature does not match"
+    logs: ["MCP / tool registry change logs", "Inter-agent communication logs", "Connector configuration-change audit logs"]
+  agent-memory-and-model:
+    title: "Poisoning of memory, vector stores and training data"
+    watch:
+      - "Unexpected changes in the writers or contents of memory / vector stores"
+      - "Signs that another tenant or user memory is being read"
+      - "Changes in the sources of training or fine-tuning data"
+    logs: ["Memory / vector store access and write logs", "Data pipeline execution logs"]
+  model-extraction-and-leak:
+    title: "Extraction of models, prompts and sensitive information"
+    watch:
+      - "Large, systematic inference requests from one principal (suspected model copying or probing)"
+      - "Consecutive inputs that try to elicit the system prompt or internal information"
+      - "Access to model artifacts and weights"
+    logs: ["Inference API access logs", "LLM gateway prompt logs", "Model repository access logs"]
+  llm-abuse:
+    title: "LLM abuse, guardrail evasion and resource exhaustion"
+    watch:
+      - "Surges of guardrail refusals or detections, and a success right after"
+      - "Surges of token usage or request counts"
+      - "Sensitive data entered into unapproved AI services"
+    logs: ["Guardrail decision logs of the LLM gateway", "Usage and billing metrics", "Proxy (e.g. CASB) egress logs"]
+  service-availability:
+    title: "Denial of service and cascading failures"
+    watch:
+      - "Surges of request volume, connection counts or error rates"
+      - "Chains of timeouts and retries in downstream services"
+    logs: ["Load balancer / CDN metrics", "Application error logs", "Firewall flow logs"]
+  external-entity-and-fraud:
+    title: "External parties, consent grants and fraud"
+    watch:
+      - "Broad permissions granted to external users or connected apps (including OAuth consent)"
+      - "Changes to scripts or external load sources on payment and input pages"
+      - "Abnormal call volume or authentication patterns in telephony / voice authentication"
+    logs: ["Consent and sharing-setting audit logs of the IdP / SaaS", "Web page integrity monitoring (e.g. CSP reports)", "Carrier / PBX call records"]
+  embedded-and-vehicle:
+    title: "Unauthorized commands to embedded devices and in-vehicle networks"
+    watch:
+      - "Unapproved firmware updates or downgrade attempts"
+      - "Diagnostic session starts and authentication failures, abnormal message rates on the bus"
+      - "Remote (telematics) connections from unexpected sources"
+    logs: ["Device management / OTA distribution records", "Gateway ECU / in-vehicle IDS logs", "Telematics server connection logs"]

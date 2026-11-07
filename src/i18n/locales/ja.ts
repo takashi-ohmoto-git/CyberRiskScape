@@ -19,13 +19,16 @@ import { jaRuleEditor } from './ja/ruleEditor';
 import { jaProject } from './ja/project';
 import { jaThreats } from './ja/threats';
 import { jaReport } from './ja/report';
+import { jaDetection } from './ja/detection';
 import { jaDiff } from './ja/diff';
 import { jaCliTriggers } from './ja/cliTriggers';
 import { jaFindingsReport } from './ja/findingsReport';
 import { jaChecklist } from './ja/checklist';
 import { jaTestPlan } from './ja/testPlan';
+import { jaContractor } from './ja/contractor';
 import { jaInvestigation } from './ja/investigation';
 import { jaInvestigationReport } from './ja/investigationReport';
+import { jaRequirements } from './ja/requirements';
 import { jaSbomCrypto } from './ja/sbomCrypto';
 import { jaRoe } from './ja/roe';
 import { jaRepoDashboard } from './ja/repoDashboard';
@@ -240,13 +243,16 @@ export const ja = {
   ...jaProject,
   ...jaThreats,
   ...jaReport,
+  ...jaDetection,
   ...jaDiff,
   ...jaCliTriggers,
   ...jaFindingsReport,
   ...jaChecklist,
   ...jaTestPlan,
+  ...jaContractor,
   ...jaInvestigation,
   ...jaInvestigationReport,
+  ...jaRequirements,
   ...jaSbomCrypto,
   ...jaRoe,
   ...jaRepoDashboard,

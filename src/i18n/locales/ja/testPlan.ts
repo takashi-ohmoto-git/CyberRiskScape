@@ -40,4 +40,10 @@ export const jaTestPlan = {
   'testPlan.outOfScope.noNote': '注記なし',
   'testPlan.status.accepted': 'リスク受容',
   'testPlan.status.false-positive': '誤検知',
+  'testPlan.h.retest': '再診断の範囲（前回のモデルからの変更）',
+  'testPlan.retest.intro': '前回のモデルと比べて発火した実行トリガーの対象と、新しく追加された要素だけに絞った計画書です。重要な変更（認証・認可、API、個人データの扱い等）の後の継続的な脆弱性診断に使います。',
+  'testPlan.retest.none': '前回のモデルから、再診断が必要な変更（実行トリガーの発火・ノードの追加）はありません。範囲は空です。',
+  'testPlan.retest.triggers': '発火した実行トリガー',
+  'testPlan.retest.noTrigger': '発火したトリガーはありません（追加されたノードのみ）。',
+  'testPlan.retest.nodes': '再診断の対象ノード',
 } as const;

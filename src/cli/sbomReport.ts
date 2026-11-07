@@ -22,7 +22,7 @@ export function sbomReportToMarkdown(r: SbomAcceptanceResult): string {
     '',
     '> 検収の補助として事実を並べる。合否は判定しない。ライセンスの適否も判定しない。',
     '',
-    `- 保存済みの部品 ${r.componentCount} 件（CycloneDX・SPDX）/ SBOM の無いノード ${r.nodesWithoutSbom.length} 件 / ライセンス欄が空の部品 ${r.licensesMissing} 件`,
+    `- 保存済みの部品 ${r.componentCount} 件（CycloneDX・SPDX から取り込んだもの）/ SBOM の無いノード ${r.nodesWithoutSbom.length} 件 / ライセンス欄が空の部品 ${r.licensesMissing} 件`,
     '',
     `## SBOM の無いノード（${r.nodesWithoutSbom.length} 件）`,
     '',

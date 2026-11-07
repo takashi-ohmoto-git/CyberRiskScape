@@ -39,4 +39,10 @@ export const enTestPlan: Partial<Record<TranslationKey, string>> = {
   'testPlan.outOfScope.noNote': 'No note',
   'testPlan.status.accepted': 'Risk accepted',
   'testPlan.status.false-positive': 'False positive',
+  'testPlan.h.retest': 'Re-test scope (changes since the previous model)',
+  'testPlan.retest.intro': 'This plan is limited to the elements of fired change triggers and newly added elements, compared with the previous model. Use it for continuous vulnerability testing after important changes (authn/authz, APIs, personal-data handling).',
+  'testPlan.retest.none': 'No change since the previous model requires re-testing (no trigger fired and no node was added). The scope is empty.',
+  'testPlan.retest.triggers': 'Fired change triggers',
+  'testPlan.retest.noTrigger': 'No trigger fired (added nodes only).',
+  'testPlan.retest.nodes': 'Nodes to re-test',
 };

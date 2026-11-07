@@ -1,0 +1,336 @@
+# 検出した脅威 → 攻撃経路上のノードで「継続的に監視すべき振る舞い」と「必要なログ」の対応表。
+#
+# 検出した脅威の canonicalId がここに載っていれば、攻撃経路上のノードに、その要件
+# （何を監視すべきか・どのログが要るか）を添える。同じノードに同じ要件が複数の脅威から当たる場合は 1 回だけ載せる。
+#
+# 方針:
+#   - **平時から監視すべき振る舞いと、それに要るログ**を書く。侵害後の調査（investigation-templates）とは別物。
+#   - ここに書いた内容は「監視すべきこと」であり、CRS や利用者が実際に検知できることを意味しない。
+#     ログが監視先に届くかは図の入力（logSinkId・hasAccessLog・logCollection）で別に示す。
+#   - 攻撃手順・エクスプロイトのコードは置かない。被害企業の事例は書かない。
+#   - 本文は日本語の要約。英語は i18n/en/detection.yaml の翻訳オーバーレイ（title / watch / logs）。
+#   - attack は参考の ATT&CK テクニック ID（任意）。
+#
+# 出典（考え方）:
+#   - MITRE ATT&CK Data Sources / Techniques（テクニック ID）
+#     https://attack.mitre.org/datasources/
+#   - NIST SP 800-92 Guide to Computer Security Log Management
+#     https://csrc.nist.gov/pubs/sp/800/92/final
+#   - CISA Best Practices for Event Logging and Threat Detection
+#     https://www.cisa.gov/resources-tools/resources/best-practices-event-logging-and-threat-detection
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+requirements:
+  - id: web-exploit-and-shell
+    match:
+      canonicalIds: [web-shell-implant, api-server-code-execution, known-vulnerability-unpatched, network-edge-device-exploitation, process-tampering]
+    title: "公開面での悪用と想定外のコード実行"
+    watch:
+      - "Web サーバー・アプリのプロセスからのシェルや子プロセスの起動"
+      - "Web ルート・アプリ配置先での実行可能ファイルの新規作成・変更"
+      - "同一の送信元からの異常なエラー応答（5xx）やワーカー異常終了の急増"
+      - "想定外の宛先への外向き通信"
+    logs: ["Web サーバーのアクセスログ・エラーログ", "EDR・OS のプロセス生成ログ", "ファイル整合性監視のログ"]
+    attack: [T1190, T1505.003]
+
+  - id: edge-management-exposure
+    match:
+      canonicalIds: [web-remote-management-exposure, internet-exposed-sensitive-component, web-global-ip-exposure, web-no-source-ip-restriction, web-public-unmonitored]
+    title: "管理面・機微な部品への外部からのアクセス"
+    watch:
+      - "管理画面・管理ポートへの、想定外の送信元（国・ASN）からの接続"
+      - "管理系パスへの認証失敗の連続"
+      - "公開面の設定変更（ルール追加・ポート開放）"
+    logs: ["境界の FW・WAF のログ", "管理画面の認証・操作ログ", "クラウドの構成変更の監査ログ"]
+    attack: [T1133, T1190]
+
+  - id: credential-guessing
+    match:
+      canonicalIds: [login-credential-guessing, password-only-internet-channel, web-missing-authentication, weak-service-auth, web-form-automated-abuse]
+    title: "認証への総当たり・パスワードスプレー"
+    watch:
+      - "同一アカウントへの認証失敗の連続、および多数アカウントへの少数回の失敗（スプレー）"
+      - "失敗の直後に成功したログイン"
+      - "通常と異なる送信元・時間帯・端末からのログイン"
+    logs: ["認証基盤（IdP・ディレクトリ）の認証ログ", "アプリのログインログ", "WAF・ボット対策のログ"]
+    attack: [T1110, T1078]
+
+  - id: account-takeover
+    match:
+      canonicalIds: [user-account-takeover, aitm-session-token-theft, bearer-token-replay, messaging-channel-account-takeover, phone-social-engineering-credential-reset]
+    title: "アカウント・セッションの乗っ取り"
+    watch:
+      - "セッションやトークンの、別の送信元・端末からの再利用（不可能な移動を含む）"
+      - "MFA 登録の追加・パスワードリセット・回復手段の変更"
+      - "ログイン直後の権限の高い操作やメール転送ルールの作成"
+    logs: ["IdP の認証・セッションログ", "アプリの監査ログ", "メール・メッセージ基盤の設定変更ログ"]
+    attack: [T1539, T1556, T1550.001]
+
+  - id: credential-store-access
+    match:
+      canonicalIds: [credential-sprawl, local-credential-outside-idp, secrets-vault-concentration, token-vault-delegated-exchange, mcp-token-custody, api-workspace-secret-exposure, agent-workspace-secret-exfiltration]
+    title: "資格情報・シークレットの読み出し"
+    watch:
+      - "シークレット保管庫への、通常と異なる主体・量・時間帯の読み出し"
+      - "設定ファイル・環境変数・ワークスペースの鍵ファイルへのアクセス"
+      - "保管庫の外に出た資格情報の利用（想定外の送信元からの使用）"
+    logs: ["シークレット保管庫の監査ログ", "EDR のファイルアクセスログ", "資格情報を使うサービスの認証ログ"]
+    attack: [T1552, T1555]
+
+  - id: non-human-identity
+    match:
+      canonicalIds: [nhi-long-lived-secret, nhi-overprivileged, nhi-reuse, nhi-human-use, nhi-improper-offboarding, nhi-environment-isolation, ai-asset-dormant-access, workload-identity-federation-trust]
+    title: "サービスアカウント・API キー等の非人間 ID の利用"
+    watch:
+      - "休眠していた ID・鍵の突然の利用"
+      - "人間の操作端末からのサービスアカウントの使用"
+      - "ID の権限範囲を超える API 呼び出し・環境をまたぐ利用"
+    logs: ["クラウドの API 監査ログ", "IdP・フェデレーションのトークン発行ログ", "対象サービスのアクセスログ"]
+    attack: [T1078.004]
+
+  - id: privileged-access
+    match:
+      canonicalIds: [pam-privileged-concentration, pam-bypass-path, process-privilege-escalation, insider-legitimate-access-abuse, account-review-gap, iga-connector-privilege]
+    title: "特権の利用と権限昇格"
+    watch:
+      - "特権アカウントの、承認・払い出しを経ない直接の利用"
+      - "ロール・グループへの権限の追加と、その直後の利用"
+      - "特権セッションでの大量のデータ参照・設定変更"
+    logs: ["特権アクセス管理のセッションログ", "ディレクトリ・IAM の変更監査ログ", "OS の特権昇格ログ（sudo・イベント 4672 等）"]
+    attack: [T1068, T1098, T1078]
+
+  - id: identity-provider-integrity
+    match:
+      canonicalIds: [idp-token-forgery, idp-federation-trust-tampering, idp-relying-party-validation-gap, idp-single-point-of-failure, idp-delegation-policy-overgrant, idp-authentication-log-gap, social-idp-assurance-gap, hybrid-identity-onprem-cloud-coupling]
+    title: "IdP・フェデレーションの信頼設定の改変"
+    watch:
+      - "フェデレーション信頼・署名証明書・リダイレクト先の変更"
+      - "発行元と受け手で食い違うトークン（署名・audience の不一致）"
+      - "IdP 管理者の操作と認証ポリシーの緩和"
+    logs: ["IdP の管理操作の監査ログ", "IdP の認証・トークン発行ログ", "受け手（RP）のトークン検証ログ"]
+    attack: [T1606, T1484.002]
+
+  - id: directory-compromise
+    match:
+      canonicalIds: [directory-replication-credential-dump, directory-offline-credential-cracking, directory-policy-object-tampering, directory-sync-object-tampering, directory-sync-privileged-bridge, directory-delegation-abuse, weak-password-hash]
+    title: "ディレクトリ（AD 等）の資格情報の抽出と改変"
+    watch:
+      - "ドメインコントローラー以外からのディレクトリ複製要求"
+      - "グループポリシーなどポリシーオブジェクトの変更"
+      - "同期アカウント・委任設定の変更や、同期アカウントの異常な利用"
+    logs: ["ドメインコントローラーのセキュリティイベントログ", "ディレクトリの変更監査ログ", "同期サービスのログ"]
+    attack: [T1003.006, T1484.001]
+
+  - id: lateral-movement-network
+    match:
+      canonicalIds: [implicit-trust-network-location, l2-spoofing-lateral-movement, vpn-broad-network-access, ztna-proxy-access-concentration, file-share-legacy-protocol, unmanaged-device-sensitive-access, shared-management-scope-dev-prod]
+    title: "内部での横展開（ネットワーク・管理面）"
+    watch:
+      - "通常つながらないセグメント間の新規接続（管理プロトコル・ファイル共有）"
+      - "VPN・ZTNA の接続元から、普段触れない資産への広範なアクセス"
+      - "開発環境と本番の管理面をまたぐ操作"
+    logs: ["ネットワーク機器・FW のフローログ", "VPN・ZTNA のアクセスログ", "ファイルサーバーのアクセス監査ログ", "EDR のネットワーク接続ログ"]
+    attack: [T1021, T1570]
+
+  - id: data-store-access
+    match:
+      canonicalIds: [data-store-tampering, data-store-info-disclosure, data-store-repudiation, admin-bulk-export-unguarded, api-bulk-data-harvesting, private-endpoint-data-exfiltration, storage-public-access-misconfiguration, data-at-rest-unencrypted]
+    title: "データストアへの大量参照・改ざん・持ち出し"
+    watch:
+      - "通常を超える件数・容量の参照・エクスポート"
+      - "管理者権限での一括ダンプ、更新・削除の急増"
+      - "データストアの公開設定・アクセス権限の変更"
+      - "データストアから外部への大量の外向き通信"
+    logs: ["DB の監査ログ", "ストレージのアクセスログ", "クラウドの構成変更の監査ログ", "外向き通信のフローログ"]
+    attack: [T1530, T1567, T1565]
+
+  - id: api-abuse
+    match:
+      canonicalIds: [api-object-level-authorization, api-function-level-authorization, api-gateway-bypass, api-token-validation-gap, api-query-injection, api-server-side-request-forgery, api-improper-inventory, gateway-authorization-gap, caller-id-spoofing]
+    title: "API の認可回避・インジェクション・SSRF"
+    watch:
+      - "同一の呼び出し元による、他者のオブジェクト ID の連続的な参照"
+      - "一般ユーザーによる管理用の関数・パスの呼び出し"
+      - "ゲートウェイを経由しない直接のバックエンドへの到達"
+      - "サーバー側からメタデータ・内部アドレスへの想定外のリクエスト"
+    logs: ["API ゲートウェイのアクセスログ", "バックエンドのアプリケーションログ", "WAF のログ", "クラウドのメタデータ参照ログ"]
+    attack: [T1190, T1212]
+
+  - id: web-input-attacks
+    match:
+      canonicalIds: [web-form-input-injection, web-cache-poisoning, http-request-smuggling, forwarded-header-trust, webhook-signature-verification-gap, web-public-dir-sensitive-file-exposure, web-content-credential-hint]
+    title: "Web 入力・プロキシ層への攻撃"
+    watch:
+      - "インジェクションを示す入力パターンや異常なリクエスト形式（不整合なヘッダー等）"
+      - "機微なファイル・隠しパスへのアクセス試行"
+      - "署名検証に失敗した Webhook の連続"
+    logs: ["WAF のログ", "リバースプロキシ・CDN のアクセスログ", "アプリのエラーログ"]
+    attack: [T1190, T1659]
+
+  - id: supply-chain-pipeline
+    match:
+      canonicalIds: [ci-pipeline-poisoned-execution, package-registry-poisoning, package-lookalike-name, package-install-script-execution, software-signing-key-compromise, third-party-extension-supply-chain, partner-tool-supply-chain, supply-chain-model]
+    title: "ビルド・依存パッケージ・署名の改変"
+    watch:
+      - "ビルドパイプライン定義・依存関係の想定外の変更"
+      - "ビルド環境からの外向き通信、シークレットの読み出し"
+      - "署名鍵の使用（想定外のビルド・時間帯）"
+      - "新規に取り込まれた依存の名前・入手元の変化"
+    logs: ["CI/CD の実行ログ・監査ログ", "ソースリポジトリの監査ログ", "パッケージレジストリの取得ログ", "署名サービスの利用ログ"]
+    attack: [T1195, T1553.002]
+
+  - id: log-and-detection-tampering
+    match:
+      canonicalIds: [log-collection-blinding, log-platform-tampering, log-not-collected, log-retention-insufficient, edr-detection-blinding, siem-data-credential-concentration, web-missing-access-log, ai-gateway-log-concentration]
+    title: "ログ・検知機構の停止と改ざん"
+    watch:
+      - "ログの転送停止・エージェントの停止・ログ量の急減"
+      - "ログ基盤・EDR の設定変更、除外ルールの追加、ログの削除"
+      - "監視基盤の管理者操作と認証"
+    logs: ["ログ基盤・EDR 自身の管理操作ログ", "ログ転送の死活（ハートビート）", "OS・クラウドの構成変更の監査ログ"]
+    attack: [T1562, T1070]
+
+  - id: ransomware-backup
+    match:
+      canonicalIds: [file-share-mass-encryption, backup-ransomware-destruction, immutable-retention-lock-bypass, file-share-permission-overgrant, backup-restore-untested]
+    title: "大量暗号化・バックアップの破壊"
+    watch:
+      - "短時間での大量のファイル更新・拡張子変更・名前変更"
+      - "バックアップの削除・保持期間の短縮・ロック設定の変更"
+      - "バックアップ管理面への通常と異なる認証"
+    logs: ["ファイルサーバーのアクセス監査ログ", "バックアップ基盤の操作ログ", "EDR のファイル操作ログ"]
+    attack: [T1486, T1490]
+
+  - id: virtualization-management
+    match:
+      canonicalIds: [hypervisor-management-takeover, hypervisor-vm-escape, endpoint-fleet-mass-execution, endpoint-command-unmanaged-target, soar-playbook-tampering, soar-response-authority-concentration, forensic-evidence-concentration]
+    title: "管理基盤（仮想化・端末管理・自動化）からの一斉操作"
+    watch:
+      - "管理コンソールからの、多数の資産への一斉実行・一斉配布"
+      - "管理基盤への通常と異なる認証と、その直後の設定変更"
+      - "プレイブック・自動応答の定義の変更"
+    logs: ["管理基盤の操作監査ログ", "ハイパーバイザー・端末管理の実行ログ", "SOAR の実行・変更ログ"]
+    attack: [T1072, T1651]
+
+  - id: dns-tls-trust
+    match:
+      canonicalIds: [subdomain-takeover, tls-inspection-ca-key-compromise, service-mesh-ca-key-compromise, service-mesh-mtls-not-enforced, plaintext-transmission, smtp-starttls-downgrade, client-certificate-lifecycle-gap, cdn-third-party-tls-termination]
+    title: "DNS・証明書・通信保護の信頼の崩れ"
+    watch:
+      - "DNS レコードの変更と、参照先が存在しないレコードの発生"
+      - "想定外の証明書の発行・失効漏れ・CA 鍵の使用"
+      - "暗号化なし・ダウングレードされた接続の発生"
+    logs: ["DNS ゾーンの変更監査ログ", "証明書発行（CA・CT）のログ", "TLS 終端装置・メッシュのログ"]
+    attack: [T1584.001, T1557]
+
+  - id: indirect-injection-and-ingress
+    match:
+      canonicalIds: [indirect-prompt-injection, direct-prompt-injection, agent-untrusted-prompt-ingress, agent-untrusted-response, tool-output-trust-boundary, rag-retrieval-provenance-gap, shared-context-poisoning, untrusted-input-sandbox-gap]
+    title: "AI への指示混入（プロンプトインジェクション）"
+    watch:
+      - "入力・取得データに含まれる指示的な文言、およびその直後のツール呼び出しの変化"
+      - "通常と異なるツールの選択・引数（外部宛て送信を含む）"
+      - "信頼できない取得元からの内容が、機微な権限のある文脈に入る流れ"
+    logs: ["LLM ゲートウェイ・エージェントのプロンプトとレスポンスのログ", "ツール呼び出しのログ", "RAG の取得元（ドキュメント ID）のログ"]
+    attack: [T1059]
+
+  - id: agent-action-scope
+    match:
+      canonicalIds: [excessive-agency, agent-action-scope-escape, agent-high-risk-approval-gap, tool-approval-gate-gap, tool-chaining-abuse, agent-runtime-privilege-scope, agent-self-capability-expansion, goal-misalignment, rogue-agent-drift, lethal-trifecta]
+    title: "AI エージェントの権限範囲を超える行動"
+    watch:
+      - "承認を経ない高リスクな操作（削除・送金・権限変更）の実行"
+      - "付与されていないツール・スコープの利用、自身の権限・設定の変更"
+      - "同一セッションでの、機微データの読み取りと外部送信の組み合わせ"
+    logs: ["エージェントの実行トレース（ツール呼び出しと引数）", "承認ゲートの記録", "ツール先サービスの監査ログ"]
+    attack: [T1078, T1059]
+
+  - id: agent-egress-and-exec
+    match:
+      canonicalIds: [agent-uncontrolled-egress, output-url-allowlist-exfiltration, agent-code-execution-rce, agent-command-and-control, improper-output-handling, agent-config-integrity, agent-skill-unvetted-install]
+    title: "AI エージェントからの外向き通信・コード実行"
+    watch:
+      - "許可リスト外の宛先への通信、出力に含まれる外部 URL へのアクセス"
+      - "エージェントの実行環境でのシェル・コード実行"
+      - "エージェントの設定・スキル・拡張の新規導入や変更"
+    logs: ["エージェント実行環境のプロセス・ネットワークログ", "プロキシ・FW の外向きログ", "設定・スキルの変更履歴"]
+    attack: [T1071, T1059]
+
+  - id: mcp-tool-integrity
+    match:
+      canonicalIds: [tool-poisoning-rug-pull, tool-descriptor-poisoning, mcp-server-impersonation, connector-tampering, confused-deputy-delegation, inter-agent-comms-integrity, delegation-message-integrity, multi-agent-collusion]
+    title: "MCP・ツール定義・連携先の改変となりすまし"
+    watch:
+      - "ツールの説明・スキーマ・バージョンの、承認後の変化"
+      - "登録外の MCP サーバー・接続先への接続"
+      - "エージェント間の委任メッセージの発信元・署名の不一致"
+    logs: ["MCP・ツールレジストリの変更ログ", "エージェント間通信のログ", "コネクタの設定変更の監査ログ"]
+    attack: [T1195, T1036]
+
+  - id: agent-memory-and-model
+    match:
+      canonicalIds: [agent-memory-poisoning, memory-store-tampering, memory-write-untrusted-persistence, memory-read-unverified-ingestion, memory-cross-tenant-bleed, vector-embedding-weakness, training-data-poisoning]
+    title: "記憶・ベクトルストア・学習データの汚染"
+    watch:
+      - "記憶・ベクトルストアへの書き込み元と内容の想定外の変化"
+      - "他のテナント・利用者の記憶が参照される兆候"
+      - "学習・微調整データの取り込み元の変化"
+    logs: ["記憶・ベクトルストアのアクセス・書き込みログ", "データパイプラインの実行ログ"]
+    attack: [T1565]
+
+  - id: model-extraction-and-leak
+    match:
+      canonicalIds: [model-theft, model-inversion, membership-inference, inference-api-reconnaissance, full-model-access, system-prompt-leakage, llm-sensitive-info-disclosure, supplier-model-input-log-leak]
+    title: "モデル・プロンプト・機微情報の抜き取り"
+    watch:
+      - "同一の主体からの大量・体系的な推論リクエスト（モデルの複製・探索の疑い）"
+      - "システムプロンプトや内部情報を引き出す入力の連続"
+      - "モデル成果物・重みへのアクセス"
+    logs: ["推論 API のアクセスログ", "LLM ゲートウェイのプロンプトログ", "モデル保管庫のアクセスログ"]
+    attack: [T1530, T1592]
+
+  - id: llm-abuse
+    match:
+      canonicalIds: [llm-jailbreak, guardrail-probabilistic-bypass, adversarial-evasion, llm-resource-exhaustion, gateway-resource-exhaustion, ai-gateway-caller-identity-trust, ai-gateway-cache-cross-user-leak, shadow-service-sensitive-input]
+    title: "LLM の濫用・ガードレール回避・資源枯渇"
+    watch:
+      - "ガードレールの拒否・検知の急増と、その直後の成功"
+      - "トークン使用量・リクエスト数の急増"
+      - "未承認の AI サービスへの機微データの入力"
+    logs: ["LLM ゲートウェイのガードレール判定ログ", "利用量・課金のメトリクス", "プロキシ（CASB 等）の外向きログ"]
+    attack: [T1499]
+
+  - id: service-availability
+    match:
+      canonicalIds: [web-missing-ddos-protection, process-denial-of-service, cascading-failures, api-downstream-cascading-failure, web-missing-waf]
+    title: "サービス妨害・連鎖障害"
+    watch:
+      - "リクエスト量・接続数・エラー率の急増"
+      - "下流サービスのタイムアウト・再試行の連鎖"
+    logs: ["ロードバランサー・CDN のメトリクス", "アプリのエラーログ", "FW のフローログ"]
+    attack: [T1498, T1499]
+
+  - id: external-entity-and-fraud
+    match:
+      canonicalIds: [external-entity-spoofing, external-collaborator-broad-access, oauth-consent-grant-sprawl, synthetic-media-impersonation, voiceprint-synthetic-voice-bypass, payment-page-skimming, payment-page-integrity-monitoring-gap, pbx-toll-fraud]
+    title: "外部主体・同意付与・不正利用"
+    watch:
+      - "外部ユーザー・連携アプリへの広範な権限の付与（OAuth 同意を含む）"
+      - "決済・入力ページのスクリプト・外部読み込み先の変更"
+      - "通話・音声認証の異常な発信量や認証パターン"
+    logs: ["IdP・SaaS の同意・共有設定の監査ログ", "Web ページの整合性監視（CSP レポート等）", "通信事業・PBX の通話記録"]
+    attack: [T1528, T1185]
+
+  - id: embedded-and-vehicle
+    match:
+      canonicalIds: [ota-update-compromise, firmware-downgrade-replay, in-vehicle-message-injection, in-vehicle-bus-flooding, telematics-remote-attack, obd-port-diagnostic-access-abuse, diagnostic-session-auth-gap, iot-default-credentials-unpatchable]
+    title: "組込み機器・車載ネットワークへの不正な指示"
+    watch:
+      - "未承認のファームウェア更新・ダウングレードの試行"
+      - "診断セッションの開始と認証失敗、バス上の異常なメッセージ頻度"
+      - "遠隔接続（テレマティクス）の想定外の送信元"
+    logs: ["機器管理・OTA 配信の記録", "ゲートウェイ ECU・侵入検知（車載 IDS）のログ", "テレマティクスサーバーの接続ログ"]
+    attack: [T0830]

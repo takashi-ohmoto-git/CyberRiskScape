@@ -47,6 +47,10 @@ import { roeToMarkdown } from '../features/roe-export/roeOutput';
 import { buildNavigatorLayer, navigatorLayerToJson } from '../features/attack-navigator/buildNavigatorLayer';
 import { buildInvestigationPlan } from '../features/investigation-plan/buildInvestigationPlan';
 import { investigationPlanToMarkdown } from '../features/investigation-plan/investigationPlanOutput';
+import { buildContractorPaths } from '../features/contractor-paths/buildContractorPaths';
+import { contractorPathsToMarkdown } from '../features/contractor-paths/contractorPathsOutput';
+import { buildRequirements } from '../features/requirements-export/buildRequirements';
+import { requirementsToMarkdown } from '../features/requirements-export/requirementsOutput';
 import { reportFilename } from '../features/export/exportFiles';
 import { buildPqcReport, toPqcCsv } from '../features/pqc-path/pqcReport';
 import { BUNDLED_ALGORITHM_TABLE, getTerminationBehaviors } from '../crypto-behavior/bundled';
@@ -125,7 +129,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
     }
   };
 
-  const handleExportReport = (format: 'csv' | 'json' | 'DCRH-threat-model' | 'postman' | 'test-plan' | 'investigation-plan' | 'roe' | 'attack-navigator' | 'sbom-ai' | 'spdx') => {
+  const handleExportReport = (format: 'csv' | 'json' | 'DCRH-threat-model' | 'postman' | 'test-plan' | 'investigation-plan' | 'contractor-paths' | 'requirements' | 'roe' | 'attack-navigator' | 'sbom-ai' | 'spdx') => {
     const s = useDiagramStore.getState();
     const input = {
       threats,
@@ -179,6 +183,18 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
       triggerDownload(
         `${base.replace(/^threat-report/, 'investigation-plan')}.md`,
         investigationPlanToMarkdown(buildInvestigationPlan(input, new Date())),
+        'text/markdown;charset=utf-8',
+      );
+    } else if (format === 'requirements') {
+      triggerDownload(
+        `${base.replace(/^threat-report/, 'security-requirements')}.md`,
+        requirementsToMarkdown(buildRequirements(input, new Date())),
+        'text/markdown;charset=utf-8',
+      );
+    } else if (format === 'contractor-paths') {
+      triggerDownload(
+        `${base.replace(/^threat-report/, 'contractor-paths')}.md`,
+        contractorPathsToMarkdown(buildContractorPaths(input, new Date(), locale)),
         'text/markdown;charset=utf-8',
       );
     } else if (format === 'roe') {
@@ -408,6 +424,20 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                   >
                     <Download size={12} className="text-emerald-400 shrink-0" />
                     {t('project.sidebar.exportInvestigationPlan')}
+                  </button>
+                  <button
+                    onClick={() => handleExportReport('contractor-paths')}
+                    className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
+                  >
+                    <Download size={12} className="text-emerald-400 shrink-0" />
+                    {t('contractor.sidebar.export')}
+                  </button>
+                  <button
+                    onClick={() => handleExportReport('requirements')}
+                    className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
+                  >
+                    <Download size={12} className="text-emerald-400 shrink-0" />
+                    {t('project.sidebar.exportRequirements')}
                   </button>
                   <button
                     onClick={() => handleExportReport('roe')}

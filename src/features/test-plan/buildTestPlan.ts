@@ -18,6 +18,7 @@ import { buildAttackGraph } from '../attack-tree/buildAttackGraph';
 import { analyzeAttackGraph } from '../attack-tree/analyzeAttackGraph';
 import { buildHopEvidence, NEUTRAL_EVIDENCE } from '../attack-tree/hopEvidence';
 import { getViewpoints, type PentestViewpoint } from './viewpoints';
+import type { RetestScope } from './retestScope';
 
 /**
  * 脅威モデルから、ペネトレーションテスト計画書（ベンダー中立）の構造を作る純粋関数。
@@ -111,6 +112,12 @@ export interface PlanSuppressed {
   note: string;
 }
 
+/** 再診断の範囲（`--changed-from` 指定時のみ）。 */
+export interface PlanRetest {
+  triggers: { id: string; title: string; elements: { label: string; detail?: string }[] }[];
+  nodes: PlanElement[];
+}
+
 export interface TestPlan {
   locale: Locale;
   product: string;
@@ -123,6 +130,8 @@ export interface TestPlan {
   scenarios: PlanScenario[];
   focusGroups: PlanFocusGroup[];
   suppressed: PlanSuppressed[];
+  /** 前回のモデルからの変更に絞ったときだけ入る。 */
+  retest?: PlanRetest;
 }
 
 const SEVERITY_ORDER: Severity[] = ['Critical', 'High', 'Medium', 'Low'];
@@ -140,7 +149,13 @@ function shortDescription(text: string): string {
   return sentence.length > DESCRIPTION_MAX ? `${sentence.slice(0, DESCRIPTION_MAX)}…` : sentence;
 }
 
-export function buildTestPlan(input: TestPlanInput, now: Date, locale: Locale = getLocale()): TestPlan {
+export function buildTestPlan(
+  input: TestPlanInput,
+  now: Date,
+  locale: Locale = getLocale(),
+  /** 指定すると、範囲に入る要素だけに絞る（未指定なら従来どおり全件）。 */
+  retest?: RetestScope,
+): TestPlan {
   const viewpointByCanonical = new Map<string, PentestViewpoint>();
   for (const v of getViewpoints(locale)) for (const c of v.match.canonicalIds) viewpointByCanonical.set(c, v);
 
@@ -189,7 +204,9 @@ export function buildTestPlan(input: TestPlanInput, now: Date, locale: Locale = 
       entryMap.set(recv.id, entry);
     }
   }
-  const entryPoints = [...entryMap.values()];
+  const entryPoints = [...entryMap.entries()]
+    .filter(([id]) => !retest || retest.nodeIds.has(id))
+    .map(([, ep]) => ep);
 
   // ── 3. 攻撃シナリオ（objective を持つ攻撃者ごと）──
   const evidence = buildHopEvidence(input.threats);
@@ -201,7 +218,11 @@ export function buildTestPlan(input: TestPlanInput, now: Date, locale: Locale = 
     if (!target) continue;
     const graph = buildAttackGraph(input.nodes, input.edges, attacker.id, target.id);
     const analysis = analyzeAttackGraph(graph, getEvidence);
-    const routes: PlanRoute[] = analysis.routes.slice(0, TOP_ROUTES).map((r) => {
+    const keptRoutes = retest
+      ? analysis.routes.filter((r) => r.route.nodeIds.some((id) => retest.nodeIds.has(id)))
+      : analysis.routes;
+    if (retest && keptRoutes.length === 0) continue;
+    const routes: PlanRoute[] = keptRoutes.slice(0, TOP_ROUTES).map((r) => {
       const i = r.route.hopKeys.indexOf(r.weakestHopKey);
       return {
         path: r.route.nodeIds.map(nodeElById),
@@ -238,7 +259,17 @@ export function buildTestPlan(input: TestPlanInput, now: Date, locale: Locale = 
 
   const groups = new Map<string, PlanFocusGroup>();
   const suppressed: PlanSuppressed[] = [];
-  for (const t of [...input.threats].sort((a, b) => sevRank(effectiveSeverity(a)) - sevRank(effectiveSeverity(b)))) {
+  // 範囲指定時は、範囲内の要素に付く脅威だけを対象にする（エッジは両端が範囲内、または変更されたエッジ）。
+  const inRetest = (t: ThreatView): boolean => {
+    if (!retest) return true;
+    const kind: ElementKind = t.subject?.kind ?? 'node';
+    const id = t.subject?.id ?? t.nodeId;
+    if (kind === 'node') return retest.nodeIds.has(id);
+    if (kind === 'boundary') return retest.boundaryIds.has(id);
+    const e = edgeById.get(id);
+    return retest.edgeIds.has(id) || (!!e && retest.nodeIds.has(e.source) && retest.nodeIds.has(e.target));
+  };
+  for (const t of input.threats.filter(inRetest).sort((a, b) => sevRank(effectiveSeverity(a)) - sevRank(effectiveSeverity(b)))) {
     const target = elementOf(t);
     const severity = effectiveSeverity(t);
     const name = t.name ?? t.category;
@@ -294,5 +325,20 @@ export function buildTestPlan(input: TestPlanInput, now: Date, locale: Locale = 
     scenarios,
     focusGroups,
     suppressed,
+    ...(retest
+      ? {
+          retest: {
+            triggers: retest.hits.map((h) => ({
+              id: h.triggerId,
+              title: h.title,
+              elements: h.evidence.map((ev) => ({
+                label: ev.element.label,
+                ...(ev.detail ? { detail: ev.detail } : {}),
+              })),
+            })),
+            nodes: input.nodes.filter((n) => retest.nodeIds.has(n.id)).map(nodeEl),
+          },
+        }
+      : {}),
   };
 }

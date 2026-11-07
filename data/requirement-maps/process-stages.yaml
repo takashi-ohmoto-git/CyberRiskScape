@@ -1,0 +1,158 @@
+# 脅威モデルから導く「セキュリティ要件一覧」の補助表。
+#   1. 要件が主に効く工程（設計・実装・検証・運用）。canonicalId ごとに指定し、載っていなければ default。
+#   2. 委託先へ求める要件（contractorRequirements）。トリガーの canonicalId の脅威が図に 1 件でもあるときだけ載せる。
+#
+# 方針:
+#   - 工程の分け方は「どの工程で要件として確定・確認されるか」の目安。1 つの脅威に複数の工程があってよい。
+#   - 要件一覧は脅威モデルから作ったたたき台。採否・優先度・委託先への依頼は人間が決める。
+#   - 本文は日本語の要約。英語は i18n/en/process-stages.yaml の翻訳オーバーレイ
+#     （stageLabels / contractorRequirements の text）。
+#   - 被害企業の事例は書かない。一般的な要件だけを書く。
+#
+# 出典（考え方のみ。逐語転載はしない）:
+#   - 国家サイバー統括室（NCO）の注意喚起（2026-11-05）：設計段階でのセキュリティ要件の明確化、委託先への要件提示
+#   - NIST SP 800-218 Secure Software Development Framework (SSDF) v1.1
+#     https://csrc.nist.gov/pubs/sp/800/218/final
+#   - IPA「セキュリティ・バイ・デザイン導入指南書」 https://www.ipa.go.jp/
+#   - 経済産業省「ソフトウェア管理に向けたSBOM（Software Bill of Materials）の導入に関する手引」
+#     https://www.meti.go.jp/
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+stageLabels:
+  design: "設計"
+  implementation: "実装"
+  verification: "検証"
+  operation: "運用"
+
+# マッピングに載っていない canonicalId（および canonicalId の無い脅威）の工程。
+default: [design, verification]
+
+stages:
+  # ── 実装（コードの書き方で決まるもの）──
+  web-form-input-injection: [implementation, verification]
+  api-query-injection: [implementation, verification]
+  api-server-side-request-forgery: [implementation, verification]
+  api-server-code-execution: [implementation, verification]
+  improper-output-handling: [implementation, verification]
+  api-error-information-disclosure: [implementation]
+  api-object-level-authorization: [design, implementation, verification]
+  api-function-level-authorization: [design, implementation, verification]
+  api-token-validation-gap: [implementation, verification]
+  idp-relying-party-validation-gap: [implementation, verification]
+  webhook-signature-verification-gap: [implementation]
+  http-request-smuggling: [implementation, verification]
+  api-mobile-embedded-client-secret: [implementation]
+  api-workspace-secret-exposure: [implementation, operation]
+  agent-workspace-secret-exfiltration: [implementation, operation]
+  web-content-credential-hint: [implementation]
+  web-public-dir-sensitive-file-exposure: [implementation, verification]
+  payment-page-skimming: [implementation, operation]
+  weak-password-hash: [implementation]
+  package-install-script-execution: [implementation]
+  package-lookalike-name: [implementation]
+  package-registry-poisoning: [implementation, operation]
+  untrusted-input-sandbox-gap: [design, implementation]
+  # ── 検証（試験・診断で確かめるもの）──
+  web-missing-waf: [design, verification]
+  web-form-automated-abuse: [implementation, verification]
+  guardrail-probabilistic-bypass: [verification]
+  direct-prompt-injection: [design, verification]
+  indirect-prompt-injection: [design, verification]
+  llm-jailbreak: [verification]
+  adversarial-evasion: [verification]
+  system-prompt-leakage: [verification]
+  api-improper-inventory: [verification, operation]
+  # ── 運用（稼働後に回し続けるもの）──
+  known-vulnerability-unpatched: [operation]
+  network-edge-device-exploitation: [operation]
+  iot-default-credentials-unpatchable: [operation]
+  account-review-gap: [operation]
+  iga-certification-gap: [operation]
+  nhi-improper-offboarding: [operation]
+  nhi-long-lived-secret: [operation]
+  credential-sprawl: [operation]
+  client-certificate-lifecycle-gap: [operation]
+  log-not-collected: [design, operation]
+  log-retention-insufficient: [design, operation]
+  log-collection-blinding: [operation]
+  web-missing-access-log: [design, operation]
+  idp-authentication-log-gap: [operation]
+  agent-observability-gap: [design, operation]
+  backup-restore-untested: [operation]
+  backup-ransomware-destruction: [design, operation]
+  immutable-retention-lock-bypass: [operation]
+  shadow-asset-governance-gap: [operation]
+  data-retention-unnecessary: [design, operation]
+  crypto-inventory-gap: [operation]
+  crypto-agility-gap: [design, operation]
+  agent-recovery-gap: [design, operation]
+  vehicle-ownership-change-data-residue: [operation]
+  # ── 設計（構成・境界・認証方式を決めるもの）──
+  password-only-internet-channel: [design]
+  unauthenticated-internet-channel: [design]
+  plaintext-transmission: [design]
+  internet-exposed-sensitive-component: [design]
+  web-remote-management-exposure: [design, operation]
+  vpn-broad-network-access: [design]
+  implicit-trust-network-location: [design]
+  data-at-rest-unencrypted: [design]
+  storage-public-access-misconfiguration: [design, operation]
+  external-collaborator-broad-access: [design, operation]
+
+# 委託先（開発・保守・運用の受託者）へ求める要件の例。
+# triggers に挙げた canonicalId の脅威が図に 1 件でもあるときだけ、一覧に載せる。
+contractorRequirements:
+  - id: sbom-submission
+    triggers:
+      - known-vulnerability-unpatched
+      - package-registry-poisoning
+      - package-lookalike-name
+      - package-install-script-execution
+      - third-party-extension-supply-chain
+      - partner-tool-supply-chain
+      - supply-chain-model
+    text: "納品物に使うソフトウェア部品の一覧（SBOM）を納品時に提出し、更新時にも最新版を提出すること。"
+  - id: vulnerability-test-results
+    triggers:
+      - web-form-input-injection
+      - api-query-injection
+      - api-server-side-request-forgery
+      - api-server-code-execution
+      - api-object-level-authorization
+      - api-function-level-authorization
+      - known-vulnerability-unpatched
+    text: "納品前に脆弱性診断（またはペネトレーションテスト）を実施し、結果と是正状況を提出すること。"
+  - id: maintenance-account-removal
+    triggers:
+      - nhi-improper-offboarding
+      - account-review-gap
+      - iga-certification-gap
+      - credential-sprawl
+      - external-collaborator-broad-access
+    text: "作業用・保守用のアカウントと認証情報は、作業の完了時に削除または無効化し、その結果を報告すること。"
+  - id: remote-maintenance-mfa
+    triggers:
+      - web-remote-management-exposure
+      - vpn-broad-network-access
+      - password-only-internet-channel
+      - network-edge-device-exploitation
+      - login-credential-guessing
+    text: "遠隔保守の経路には多要素認証を使い、接続元の制限と作業ログの保管を行うこと。"
+  - id: change-notification
+    triggers:
+      - shadow-asset-governance-gap
+      - api-improper-inventory
+      - hybrid-identity-onprem-cloud-coupling
+      - shared-management-scope-dev-prod
+    text: "構成・接続先・利用するサービスを変更するときは、事前に発注者へ通知し、承認を得ること。"
+  - id: incident-reporting
+    triggers:
+      - log-not-collected
+      - log-retention-insufficient
+      - log-collection-blinding
+      - web-missing-access-log
+      - edr-detection-blinding
+    text: "インシデントまたはその疑いを把握したときは、定めた連絡先へ速やかに報告し、調査のためのログを提供すること。"

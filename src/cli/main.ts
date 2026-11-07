@@ -91,6 +91,8 @@ import { toPostmanCollection } from '../features/postman-export/toPostmanCollect
 import { buildSbomForAi } from '../features/sbom-ai/buildSbomForAi';
 import { VarsFileSchema, applyVariableValues, filterByBaseUrl } from '../features/postman-export/dastOptions';
 import { buildTestPlan } from '../features/test-plan/buildTestPlan';
+import { computeRetestScope } from '../features/test-plan/retestScope';
+import { detectTriggers } from '../change-triggers/detectTriggers';
 import { parseSbomText } from '../features/sbom-crypto/parseCycloneDx';
 import {
   buildSbomCryptoReport,
@@ -104,6 +106,23 @@ import { buildRoe } from '../features/roe-export/buildRoe';
 import { roeToJson, roeToMarkdown } from '../features/roe-export/roeOutput';
 import { buildNavigatorLayer, navigatorLayerToJson } from '../features/attack-navigator/buildNavigatorLayer';
 import { buildInvestigationPlan } from '../features/investigation-plan/buildInvestigationPlan';
+import { buildDetectionRequirements } from '../features/detection-requirements/buildDetectionRequirements';
+import {
+  detectionRequirementsToJson,
+  detectionRequirementsToMarkdown,
+} from '../features/detection-requirements/detectionRequirementsOutput';
+import { buildContractorPaths } from '../features/contractor-paths/buildContractorPaths';
+import {
+  contractorPathsToCsv,
+  contractorPathsToJson,
+  contractorPathsToMarkdown,
+} from '../features/contractor-paths/contractorPathsOutput';
+import { buildRequirements } from '../features/requirements-export/buildRequirements';
+import {
+  requirementsToCsv,
+  requirementsToJson,
+  requirementsToMarkdown,
+} from '../features/requirements-export/requirementsOutput';
 import { buildInvestigationReport, parseHostMap } from '../features/investigation-report/buildInvestigationReport';
 import {
   investigationReportToJson,
@@ -136,6 +155,7 @@ const FINDINGS_REPORT_FORMATS = ['md', 'json'] as const;
 const IMPORT_PROWLER_REPORTS = ['md', 'json'] as const;
 const IMPORT_FINDINGS_FORMATS = ['xccdf', 'arf', 'oval'] as const;
 const TEST_PLAN_FORMATS = ['md', 'json'] as const;
+const REQUIREMENTS_FORMATS = ['md', 'csv', 'json'] as const;
 const INVESTIGATION_TOOLS = ['velociraptor'] as const;
 const SBOM_CRYPTO_FORMATS = ['md', 'json'] as const;
 
@@ -174,6 +194,9 @@ const USAGE = `使い方:
   export-roe <project.json> [options]
   export-attack-navigator <project.json> [options]
   export-investigation-plan <project.json> [options]
+  export-detection-requirements <project.json> [options]
+  export-contractor-paths <project.json> [options]
+  export-requirements <project.json> [options]
   export-triage-patterns [options]
   investigation-report <project.json> --evidence <dir|file> --hosts <hosts.json> [options]
   findings-report <project.json> (--veracode <file> | --skill-scanner <file> | --mcp-scanner <file>) [options]
@@ -352,6 +375,8 @@ export-test-plan のオプション（脅威モデルからペネトレーショ
   --format <md|json>                            出力形式（既定: md）
   --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある最初のレイヤー）
   --framework <STRIDE|AI|AgenticAI|ALL>         対象フレームワーク（既定: ALL）
+  --changed-from <old-project.json>             前回のモデルとの差分で発火した実行トリガーの対象と追加ノードだけに絞った再診断計画にする
+  --triggers <file>                             --changed-from で使う実行トリガー定義 YAML（既定: 同梱の T1〜T8）
   --locale <ja|en>                              表示言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
@@ -373,6 +398,24 @@ export-investigation-plan のオプション（侵害の疑いがあるとき、
   --format <md|json>                            出力形式（既定: md）
   --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある最初のレイヤー）
   --tool <velociraptor>                         指定したツールでの確認の手がかり（アーティファクト名など）も載せる（既定: 載せない）
+  --locale <ja|en>                              表示言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+export-contractor-paths のオプション（委託先の接続経路の一覧を MFA 切り替えの優先順に出力。判別はヒューリスティックで各行は確認すべき候補。委託先の評価はしない）:
+  --format <md|csv|json>                        出力形式（既定: md）
+  --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある最初のレイヤー）
+  --locale <ja|en>                              表示言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+export-requirements のオプション（脅威モデルから、設計段階で明確にするセキュリティ要件の一覧（たたき台）を出力。緩和策の段階・対象ノード・工程・NIST CSF・委託先への要求を載せる。採否は人間が決める）:
+  --format <md|csv|json>                        出力形式（既定: md）
+  --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある最初のレイヤー）
+  --locale <ja|en>                              表示言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+export-detection-requirements のオプション（攻撃経路上のノードごとに「監視すべき振る舞い」「必要なログ」と、ログが監視先に届かない区間をまとめる。検知できることは示さない）:
+  --format <md|json>                            出力形式（既定: md）
+  --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある最初のレイヤー）
   --locale <ja|en>                              表示言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
@@ -494,6 +537,7 @@ function parseCliArgs() {
       'fail-on': { type: 'string' },
       'fail-on-action': { type: 'boolean' },
       'fail-on-findings': { type: 'string' },
+      'changed-from': { type: 'string' },
       id: { type: 'string' },
       'as-of': { type: 'string' },
       triggers: { type: 'string' },
@@ -1487,6 +1531,40 @@ ${USAGE}`);
 }
 
 /**
+ * `export-detection-requirements`：脅威モデルから、攻撃経路上のノードごとの「監視すべき振る舞い」「必要なログ」と
+ * ログが監視先に届かない区間を Markdown または JSON で出力する。検知できることは示さない。
+ */
+function runExportDetectionRequirements(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  const format = parseEnum(values.format, TEST_PLAN_FORMATS, 'format') ?? 'md';
+  const layer = parseEnum(values.layer, LAYER_KEYS, 'layer');
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+
+  let results: LayerAnalysisResult[];
+  try {
+    results = analyzeProject(readJsonFile(file), { layer, locale });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  const target = results[0];
+  if (!target) fail('ノードのあるレイヤーがありません。');
+
+  const d = buildDetectionRequirements(target.input, new Date(), locale);
+  writeOutput(format === 'json' ? detectionRequirementsToJson(d) : detectionRequirementsToMarkdown(d), values.out);
+  const reqs = d.nodes.reduce((n, x) => n + x.requirements.length, 0);
+  process.stderr.write(
+    `検知要件を出力しました（${target.layer}・対象ノード ${d.nodes.length} 件・監視要件 ${reqs} 件・経路 ${d.routes.length} 本${d.pathBased ? '' : '・攻撃経路なし＝全ノード'}）
+`,
+  );
+}
+
+/**
  * `export-investigation-plan`：脅威モデルから、侵害の疑いがあるときの調査計画（対象ノード・調査観点・
  * 調べられない恐れ）を Markdown または JSON で出力する。
  */
@@ -1522,6 +1600,78 @@ ${USAGE}`);
   const viewpoints = plan.nodes.reduce((n, x) => n + x.viewpoints.length, 0);
   process.stderr.write(
     `調査計画を出力しました（${target.layer}・対象ノード ${plan.nodes.length} 件・調査観点 ${viewpoints} 件${plan.pathBased ? '' : '・攻撃経路なし＝全ノード'}）
+`,
+  );
+}
+
+/**
+ * `export-contractor-paths`：委託先の接続経路を MFA 切り替えの優先順に Markdown / CSV / JSON で出力する。
+ */
+function runExportContractorPaths(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  const format = parseEnum(values.format, REQUIREMENTS_FORMATS, 'format') ?? 'md';
+  const layer = parseEnum(values.layer, LAYER_KEYS, 'layer');
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+
+  let results: LayerAnalysisResult[];
+  try {
+    results = analyzeProject(readJsonFile(file), { layer, locale });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  const target = results[0];
+  if (!target) fail('ノードのあるレイヤーがありません。');
+
+  const paths = buildContractorPaths(target.input, new Date(), locale);
+  writeOutput(
+    format === 'json'
+      ? contractorPathsToJson(paths)
+      : format === 'csv'
+        ? contractorPathsToCsv(paths)
+        : contractorPathsToMarkdown(paths),
+    values.out,
+  );
+  process.stderr.write(`委託先の接続経路を出力しました（${target.layer}・${paths.rows.length} 件）
+`);
+}
+
+/**
+ * `export-requirements`：脅威モデルから、セキュリティ要件の一覧（たたき台）を Markdown / CSV / JSON で出力する。
+ */
+function runExportRequirements(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  const format = parseEnum(values.format, REQUIREMENTS_FORMATS, 'format') ?? 'md';
+  const layer = parseEnum(values.layer, LAYER_KEYS, 'layer');
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+
+  let results: LayerAnalysisResult[];
+  try {
+    results = analyzeProject(readJsonFile(file), { layer, locale });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  const target = results[0];
+  if (!target) fail('ノードのあるレイヤーがありません。');
+
+  const list = buildRequirements(target.input, new Date(), locale);
+  writeOutput(
+    format === 'json' ? requirementsToJson(list) : format === 'csv' ? requirementsToCsv(list) : requirementsToMarkdown(list),
+    values.out,
+  );
+  process.stderr.write(
+    `セキュリティ要件一覧を出力しました（${target.layer}・要件 ${list.requirements.length} 件・委託先への要件 ${list.contractorRequirements.length} 件）
 `,
   );
 }
@@ -1616,7 +1766,19 @@ ${USAGE}`);
   const target = results[0];
   if (!target) fail('ノードのあるレイヤーがありません。');
 
-  const plan = buildTestPlan(target.input, new Date(), locale);
+  let retest: ReturnType<typeof computeRetestScope> | undefined;
+  if (values['changed-from']) {
+    try {
+      const base = resolveProject(readJsonFile(values['changed-from']));
+      const head = resolveProject(readJsonFile(file));
+      const hits = detectTriggers(base.layers, head.layers, resolveTriggers(values, locale));
+      retest = computeRetestScope(target.layer, base.layers[target.layer], head.layers[target.layer], hits);
+    } catch (e) {
+      fail(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  const plan = buildTestPlan(target.input, new Date(), locale, retest);
   writeOutput(format === 'json' ? testPlanToJson(plan) : testPlanToMarkdown(plan), values.out);
   const focusThreats = plan.focusGroups.reduce((n, g) => n + g.threats.length, 0);
   process.stderr.write(
@@ -1940,6 +2102,12 @@ function main(): void {
     runExportNavigator(values, positionals);
   } else if (command === 'export-investigation-plan') {
     runExportInvestigationPlan(values, positionals);
+  } else if (command === 'export-detection-requirements') {
+    runExportDetectionRequirements(values, positionals);
+  } else if (command === 'export-contractor-paths') {
+    runExportContractorPaths(values, positionals);
+  } else if (command === 'export-requirements') {
+    runExportRequirements(values, positionals);
   } else if (command === 'investigation-report') {
     runInvestigationReport(values, positionals);
   } else if (command === 'export-triage-patterns') {

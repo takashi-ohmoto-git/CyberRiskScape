@@ -7,13 +7,16 @@ import { enRuleEditor } from './en/ruleEditor';
 import { enProject } from './en/project';
 import { enThreats } from './en/threats';
 import { enReport } from './en/report';
+import { enDetection } from './en/detection';
 import { enDiff } from './en/diff';
 import { enCliTriggers } from './en/cliTriggers';
 import { enFindingsReport } from './en/findingsReport';
 import { enChecklist } from './en/checklist';
 import { enTestPlan } from './en/testPlan';
+import { enContractor } from './en/contractor';
 import { enInvestigation } from './en/investigation';
 import { enInvestigationReport } from './en/investigationReport';
+import { enRequirements } from './en/requirements';
 import { enSbomCrypto } from './en/sbomCrypto';
 import { enRoe } from './en/roe';
 import { enRepoDashboard } from './en/repoDashboard';
@@ -215,13 +218,16 @@ export const en: Partial<Record<TranslationKey, string>> = {
   ...enProject,
   ...enThreats,
   ...enReport,
+  ...enDetection,
   ...enDiff,
   ...enCliTriggers,
   ...enFindingsReport,
   ...enChecklist,
   ...enTestPlan,
+  ...enContractor,
   ...enInvestigation,
   ...enInvestigationReport,
+  ...enRequirements,
   ...enSbomCrypto,
   ...enRoe,
   ...enRepoDashboard,

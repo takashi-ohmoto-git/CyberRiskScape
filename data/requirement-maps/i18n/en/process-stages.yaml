@@ -1,0 +1,22 @@
+# English overlay for data/requirement-maps/process-stages.yaml (stage labels and contractor requirement texts only).
+# SPDX-License-Identifier: Apache-2.0
+schemaVersion: 1
+locale: en
+stageLabels:
+  design: "Design"
+  implementation: "Implementation"
+  verification: "Verification"
+  operation: "Operation"
+contractorRequirements:
+  sbom-submission:
+    text: "Submit a Software Bill of Materials (SBOM) for the deliverable at delivery and again with every update."
+  vulnerability-test-results:
+    text: "Run a vulnerability assessment (or penetration test) before delivery and submit the results and remediation status."
+  maintenance-account-removal:
+    text: "Delete or disable work and maintenance accounts and credentials when the work ends, and report the result."
+  remote-maintenance-mfa:
+    text: "Use multi-factor authentication on remote maintenance paths, restrict source addresses, and retain work logs."
+  change-notification:
+    text: "Notify the client in advance and obtain approval before changing the configuration, connections, or services in use."
+  incident-reporting:
+    text: "Report an incident, or a suspected one, to the designated contact promptly and provide logs for investigation."

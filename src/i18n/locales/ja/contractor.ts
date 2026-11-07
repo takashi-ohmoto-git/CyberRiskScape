@@ -1,0 +1,45 @@
+/**
+ * 委託先の接続経路一覧（Markdown / CSV）の文言（日本語 = 真実）。
+ * 集約は ../ja.ts。
+ */
+export const jaContractor = {
+  'contractor.title': '委託先の接続経路の一覧: {system}（{layer}）',
+  'contractor.disclaimer':
+    '委託先の判別はヒューリスティック（図の属性・線・型からの推定）で、各行は「確認すべき候補」です。委託先の評価（信頼性・体制の良否）はしません。',
+  'contractor.system': '対象システム: {system}',
+  'contractor.generated': '{date} に {product} が生成',
+  'contractor.howTo':
+    '順位は MFA 切り替えの優先順（MFA 相当でない → 到達できるデータが多い → 対策なし・未入力が多い）。MFA を入れられない経路は、送信元 IP 制限・作業時だけの開放・操作ログの取得で代替します。',
+  'contractor.noRows': '委託先と判別できる接続経路は見つかりませんでした（USER の信頼区分・外部組織からの線・管理面への線を確認してください）。',
+  'contractor.col.rank': '順位',
+  'contractor.col.basis': '識別の根拠',
+  'contractor.col.from': '接続元',
+  'contractor.col.via': '経由（接続口）',
+  'contractor.col.to': '接続先',
+  'contractor.col.network': '回線',
+  'contractor.col.auth': '認証',
+  'contractor.col.mfa': 'MFA 相当',
+  'contractor.col.sourceIp': '送信元 IP 制限',
+  'contractor.col.remote': 'リモートアクセス制限',
+  'contractor.col.log': 'アクセスログ',
+  'contractor.col.logSink': 'ログ転送先',
+  'contractor.col.data': '到達できるデータ',
+  'contractor.col.threats': '関連する脅威',
+  'contractor.col.reason': '順位の理由',
+  'contractor.basis.userAttr': 'USER の信頼区分（委託先・取引先）',
+  'contractor.basis.externalToGateway': '外部組織から接続口への線',
+  'contractor.basis.remoteMaintenance': '外部から管理面（リモート保守）への線',
+  'contractor.state.yes': '有り',
+  'contractor.state.no': '無し',
+  'contractor.state.unset': '未入力（無しとして扱う）',
+  'contractor.state.na': '対象外',
+  'contractor.mfa.yes': 'はい',
+  'contractor.mfa.no': 'いいえ',
+  'contractor.none': '—',
+  'contractor.threats.more': ' ほか {count} 件（全件は JSON）',
+  'contractor.reason.notMfa': 'MFA 相当でない',
+  'contractor.reason.sensitiveReach': '到達できるデータ {count} 件',
+  'contractor.reason.weakRestrictions': '対策なし・未入力 {count} 項目',
+  'contractor.reason.none': '優先度を上げる要因なし',
+  'contractor.sidebar.export': '委託先の接続経路一覧（MFA 切り替え順）',
+} as const;
