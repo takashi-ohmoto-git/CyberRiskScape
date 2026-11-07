@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MetasploitV5>
+  <generated time="2026-11-05 03:10:00 UTC" user="tester" project="example-project" product="framework"/>
+  <hosts>
+    <host>
+      <id>1</id>
+      <created-at>2026-11-05 03:00:00 UTC</created-at>
+      <address>192.0.2.10</address>
+      <mac>00:00:5E:00:53:01</mac>
+      <comm/>
+      <name>web01.example.test</name>
+      <state>alive</state>
+      <os-name>Windows 7</os-name>
+      <os-flavor>Professional</os-flavor>
+      <os-sp>SP1</os-sp>
+      <updated-at>2026-11-05 03:05:00 UTC</updated-at>
+      <info>MSF-SECRET-MARKER host info</info>
+      <comments>MSF-SECRET-MARKER host comments</comments>
+      <host_details>
+        <host_detail>
+          <id>1</id>
+          <source-name>MSF-SECRET-MARKER host detail</source-name>
+        </host_detail>
+      </host_details>
+      <exploit_attempts>
+        <exploit_attempt>
+          <id>1</id>
+          <username>MSF-SECRET-MARKER</username>
+        </exploit_attempt>
+      </exploit_attempts>
+      <services>
+        <service>
+          <id>11</id>
+          <host-id>1</host-id>
+          <port>445</port>
+          <proto>tcp</proto>
+          <state>open</state>
+          <name>smb</name>
+          <info>MSF-SECRET-MARKER service banner</info>
+          <resource>BAh7BjoLbWFya2VyIhxNU0YtU0VDUkVULU1BUktFUi1NU0YtU0VDUkVU</resource>
+        </service>
+        <service>
+          <id>12</id>
+          <host-id>1</host-id>
+          <port>80</port>
+          <proto>tcp</proto>
+          <state>open</state>
+          <name>http</name>
+          <info>MSF-SECRET-MARKER</info>
+        </service>
+      </services>
+      <notes>
+        <note>
+          <id>1</id>
+          <ntype>MSF-SECRET-MARKER</ntype>
+          <data>MSF-SECRET-MARKER note data</data>
+        </note>
+      </notes>
+      <vulns>
+        <vuln>
+          <id>21</id>
+          <host-id>1</host-id>
+          <service-id>11</service-id>
+          <created-at>2026-11-05 03:01:00 UTC</created-at>
+          <name>MS17-010 EternalBlue SMB Remote Windows Kernel Pool Corruption</name>
+          <updated-at>2026-11-05 03:04:05 UTC</updated-at>
+          <info>MSF-SECRET-MARKER vuln info</info>
+          <exploited-at/>
+          <resource>BAh7BjoLbWFya2VyIhxNU0YtU0VDUkVULU1BUktFUi1NU0YtU0VDUkVU</resource>
+          <notes>
+            <note><data>MSF-SECRET-MARKER vuln note</data></note>
+          </notes>
+          <refs>
+            <ref>CVE-2017-0144</ref>
+            <ref>MSB-MS17-010</ref>
+            <ref>URL-https://example.test/advisory?token=MSF-URL-REF</ref>
+          </refs>
+          <vuln_details>
+            <vuln_detail><id>1</id><proto>MSF-SECRET-MARKER</proto></vuln_detail>
+          </vuln_details>
+          <vuln_attempts>
+            <vuln_attempt>
+              <id>31</id>
+              <vuln-id>21</vuln-id>
+              <attempted-at>2026-11-05 03:04:00 UTC</attempted-at>
+              <exploited>true</exploited>
+              <fail-reason/>
+              <username>MSF-SECRET-MARKER</username>
+              <module>exploit/windows/smb/ms17_010_eternalblue</module>
+              <session-id>7</session-id>
+              <loot-id>8</loot-id>
+              <fail-detail>MSF-SECRET-MARKER</fail-detail>
+              <check-code>vulnerable</check-code>
+              <check-detail>MSF-SECRET-MARKER</check-detail>
+            </vuln_attempt>
+          </vuln_attempts>
+        </vuln>
+        <vuln>
+          <id>22</id>
+          <host-id>1</host-id>
+          <service-id>12</service-id>
+          <created-at>2026-11-05 03:02:00 UTC</created-at>
+          <name>HTTP TRACE enabled</name>
+          <updated-at>2026-11-05 03:03:00 UTC</updated-at>
+          <info>MSF-SECRET-MARKER</info>
+          <exploited-at></exploited-at>
+          <refs>
+            <ref>URL-https://example.test/trace</ref>
+          </refs>
+          <vuln_attempts>
+            <vuln_attempt>
+              <id>32</id>
+              <vuln-id>22</vuln-id>
+              <attempted-at>2026-11-05 03:03:00 UTC</attempted-at>
+              <exploited>false</exploited>
+              <module>auxiliary/scanner/http/trace</module>
+              <fail-detail>MSF-SECRET-MARKER</fail-detail>
+            </vuln_attempt>
+          </vuln_attempts>
+        </vuln>
+      </vulns>
+    </host>
+    <host>
+      <id>2</id>
+      <address>192.0.2.20</address>
+      <name>db01.example.test</name>
+      <state>alive</state>
+      <os-name>Linux</os-name>
+      <os-flavor>Ubuntu</os-flavor>
+      <updated-at>2026-11-05 03:06:00 UTC</updated-at>
+      <comments>MSF-SECRET-MARKER</comments>
+      <services>
+        <service>
+          <id>13</id>
+          <host-id>2</host-id>
+          <port>3306</port>
+          <proto>tcp</proto>
+          <state>closed</state>
+          <name>mysql</name>
+        </service>
+      </services>
+      <vulns>
+        <vuln>
+          <id>23</id>
+          <host-id>2</host-id>
+          <service-id>13</service-id>
+          <name>Example Database Authentication Bypass</name>
+          <created-at>2026-11-05 03:05:30 UTC</created-at>
+          <updated-at>2026-11-05 03:05:40 UTC</updated-at>
+          <exploited-at>2026-11-05 03:05:35 UTC</exploited-at>
+          <info>MSF-SECRET-MARKER</info>
+          <refs>
+            <ref>CVE-2012-2122</ref>
+          </refs>
+        </vuln>
+      </vulns>
+    </host>
+    <host>
+      <id>3</id>
+      <address>192.0.2.30</address>
+      <state>alive</state>
+    </host>
+  </hosts>
+  <events>
+    <event><name>MSF-SECRET-MARKER</name></event>
+  </events>
+  <services>
+    <service><id>11</id><port>445</port><proto>tcp</proto><state>open</state><name>smb</name></service>
+  </services>
+  <web_sites><web_site><vhost>MSF-SECRET-MARKER</vhost></web_site></web_sites>
+  <module_details><module_detail><description>MSF-SECRET-MARKER</description></module_detail></module_details>
+</MetasploitV5>

@@ -58,6 +58,7 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | **ZAP** | 診断結果の取り込み（Automation Framework の `sarif-json` を `import-sarif`。CLI のみ） | 動いているアプリの指摘を、CWE の対応表で図の脅威と対応づける | [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) §5 |
 | **Nuclei** | 結果の取り込み（`import-nuclei`。JSONL / JSON。CLI のみ） | CVE の指摘を KEV と攻撃経路で優先順位付けする・CWE の指摘を図の脅威と対応づける | [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) §6 |
 | **Strix** | 結果の変換（`convert-strix`。findings.sarif → ペンテストの台帳 YAML → `import-pentest`。CLI のみ）・文脈の受け渡し（RoE・THREAT_MODEL.md を `--instruction-file`、CRS の MCP サーバーを読み取りのツールだけ許可して登録） | PoC で確かめた結果を脅威カードに「Strix で実証」として載せる・診断中に脅威モデルを引かせる | [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) §7 |
+| **Metasploit** | 書き出しの変換・取り込み（`db_export -f xml` を `convert-metasploit` → `import-pentest`、ホストとサービスは `import-metasploit-assets`。CLI のみ） | 攻撃が通った脆弱性を脅威カードに「実証」として載せる・ホストとサービスを Asset タブに載せる | [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) §9 |
 | **CyberStrikeAI** | 脆弱性の変換（`convert-cyberstrikeai`。API の応答を保存した JSON、または API（GET のみ・トークンは環境変数）→ ペンテストの台帳 YAML → `import-pentest`。CLI のみ） | AI 自律ペンテストで人が confirmed にした脆弱性を、脅威カードに「実証」として載せる。どの脅威・ノードかは人が台帳で決める | [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) §4 |
 | **CycloneDX・SPDX** | 部品の取り込み（`import-sbom`。CLI のみ）・書き出し（`export-spdx`・`export-sbom-ai`。画面からも可） | SBOM・CBOM・AI BOM の部品をノードに結びつけ、Asset タブで確かめて、標準形式で書き出す（[ガイド](sbom.ja.md)） |
 | **ARTEX** | 台帳 YAML の取り込み（`import-pentest`）・資産の取り込み（`import-artex-assets`。Asset タブに表示）。CLI のみ | 実際に実行して成立した攻撃手段を脅威カードに「実証」として表示する（開発者が検証した内容に限り網羅しない） | [ARTEX が実際に実行した攻撃手段を脅威カードで見る](artex.ja.md) |
@@ -83,7 +84,7 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | 脅威モデルを脆弱性診断に活かしたい | Anthropic `defending-code-reference-harness`・Snyk |
 | 脆弱性診断の指摘を AI で直す流れを作りたい | Veracode |
 | クラウドの検査結果（AWS）を図の属性に反映したい | Prowler |
-| OSS の診断ツールの結果を、攻撃経路の上で優先順位を付けて管理したい | Trivy・Syft / Grype・ZAP・Nuclei・CyberStrikeAI・Strix（[ガイド](oss-vulnerability-management.ja.md)） |
+| OSS の診断ツールの結果を、攻撃経路の上で優先順位を付けて管理したい | Trivy・Syft / Grype・ZAP・Nuclei・CyberStrikeAI・Strix・Metasploit（[ガイド](oss-vulnerability-management.ja.md)） |
 | ペンテストで実際に通った攻撃手段を脅威カードに載せたい | ARTEX |
 | エージェントスキル・MCP サーバーの検査結果を図と突き合わせたい | Cisco AI Defense（skill-scanner / mcp-scanner） |
 | 侵害が疑われるときに、調べる範囲を決めて結果を報告したい | Velociraptor・同梱のトリアージスクリプト（[ガイド](compromise-investigation.ja.md)） |

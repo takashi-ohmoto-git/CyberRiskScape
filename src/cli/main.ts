@@ -100,6 +100,9 @@ import { apiKeyFromEnv, fetchViaMcp, MAX_RECORDS } from '../features/scopesentry
 import { cyberStrikeToRegistry, parseCyberStrikeVulns, registryToYaml } from '../features/pentest-import/cyberStrikeToRegistry';
 import { fetchCyberStrikeVulns, tokenFromEnv } from '../features/pentest-import/fetchCyberStrike';
 import { strixToRegistry, strixToYaml } from '../features/pentest-import/strixToRegistry';
+import { metasploitToRegistry, metasploitToYaml } from '../features/pentest-import/metasploitToRegistry';
+import { parseHostNodeArgs, parseMetasploit } from '../features/metasploit-import/parseMetasploit';
+import { importMetasploitAssets, metasploitAssetsReportToJson, metasploitAssetsReportToMarkdown } from './importMetasploitAssets';
 import { toPostmanCollection } from '../features/postman-export/toPostmanCollection';
 import { buildSbomForAi } from '../features/sbom-ai/buildSbomForAi';
 import { VarsFileSchema, applyVariableValues, filterByBaseUrl } from '../features/postman-export/dastOptions';
@@ -189,6 +192,7 @@ const USAGE = `使い方:
   import-pentest <project.json> --in <registry.yaml> [options]
   convert-cyberstrikeai [<vulns.json>] [--api <base-url>] --scope <scope> [options]
   convert-strix <findings.sarif | strix_runs/<run>> --scope <scope> [options]
+  convert-metasploit <export.xml> --scope <scope> [--host-node <IP>=<C番号|ID> ...] [options]
   import-sarif <project.json> --sarif <file> --scope <scope> [options]
   import-nuclei <project.json> --in <results.jsonl> --scope <scope> [options]
   import-security-audit <project.json> --in <findings.json> [options]
@@ -200,6 +204,7 @@ const USAGE = `使い方:
   sbom-report <project.json> [options]
   context <project.json> (--ip <ip> | --host <name> | --purl <purl>) [options]
   import-artex-assets <project.json> --scope <scope> [--services <file>] [--endpoints <file>] [options]
+  import-metasploit-assets <project.json> --xml <export.xml> --scope <scope> [--host-node <IP>=<C番号|ID> ...] [options]
   import-sbom <project.json> --sbom <file> --scope <scope> [options]
   import-conjur <policy.yml> [options]
   import-shodan <export.json[.gz]> [options]
@@ -294,6 +299,18 @@ import-artex-assets のオプション（ARTEX の資産 API の JSON から、�
   --scope <scope>                               置き換えの範囲（必須。例: task-3）
   --map <file>                                  ホストとノードの対応表（任意。JSON {"<IP|ドメイン>": "<C番号|ノード ID>"}）
   --node <C番号|ID>                             対応表に無いホストを結びつけるノード（任意。無ければ未対応）
+  --report <md|json>                            報告の形式（既定: md。標準出力）
+  -o, --out <file>                              資産を保存したプロジェクト JSON の出力先（指定しなければ報告のみ）
+
+convert-metasploit のオプション（Metasploit の db_export -f xml を import-pentest の台帳 YAML に変換する。重大度は Metasploit に無いので、実証（exploited-at あり、または試行が成功）は High、試行のみは Medium とする（人が直す）。CVE の参照があれば「既知の脆弱性に対するパッチの未適用」を入れる（要確認）。資格情報・loot・session・notes・各種詳細・info は読まず写さない）:
+  --scope <scope>                               台帳の範囲（必須。import-pentest の置き換え単位）
+  --host-node <IP>=<C番号|ID>                   そのホストの指摘を結びつけるノード（任意。繰り返し可。無ければ人が埋める）
+  -o, --out <registry.yaml>                     台帳 YAML の出力先（既定: 標準出力）
+
+import-metasploit-assets のオプション（Metasploit の db_export -f xml のホストのサービス（state が open）を Asset タブ用に保存する。同じ scope の Metasploit の資産は置き換える）:
+  --xml <export.xml>                            db_export -f xml のファイル（必須）
+  --scope <scope>                               置き換えの範囲（必須）
+  --host-node <IP>=<C番号|ID>                   そのホストを結びつけるノード（任意。繰り返し可。無ければ未対応）
   --report <md|json>                            報告の形式（既定: md。標準出力）
   -o, --out <file>                              資産を保存したプロジェクト JSON の出力先（指定しなければ報告のみ）
 
@@ -624,6 +641,8 @@ function parseCliArgs() {
       host: { type: 'string' },
       purl: { type: 'string' },
       node: { type: 'string' },
+      xml: { type: 'string' },
+      'host-node': { type: 'string', multiple: true },
       'base-url': { type: 'string' },
       author: { type: 'string' },
       'include-threats': { type: 'boolean' },
@@ -1634,6 +1653,68 @@ ${USAGE}`);
   );
 }
 
+/** Metasploit の XML を読む（--host-node の検証つき）。convert-metasploit / import-metasploit-assets が共有する。 */
+function readMetasploit(file: string, values: CliValues) {
+  try {
+    if (statSync(file).size > MAX_FILE_BYTES) {
+      fail(`ファイルが大きすぎます（上限 ${MAX_FILE_BYTES / 1024 / 1024} MB）: ${file}`);
+    }
+  } catch (e) {
+    fail(`ファイルを読み込めません: ${file}（${e instanceof Error ? e.message : String(e)}）`);
+  }
+  const xml = readFileSync(file, 'utf-8');
+  const parsed = parseMetasploit(xml);
+  if (!parsed.ok) fail(`${parsed.error}（${file}）`);
+  const nodes = parseHostNodeArgs(values['host-node'] ?? []);
+  if (!nodes.ok) fail(nodes.error);
+  return { hosts: parsed.hosts, skippedHosts: parsed.skippedHosts, hostNodes: nodes.map };
+}
+
+/**
+ * `convert-metasploit`：Metasploit の db_export -f xml を import-pentest の台帳 YAML に変換する。
+ * 資格情報・loot・notes・詳細・info は読まない（`parseMetasploit` 参照）。
+ */
+function runConvertMetasploit(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) fail(`db_export -f xml のファイルを指定してください。
+
+${USAGE}`);
+  if (!values.scope) fail('--scope <scope> を指定してください（import-pentest の置き換えの範囲）。');
+  const { hosts, skippedHosts, hostNodes } = readMetasploit(file, values);
+  const result = metasploitToRegistry(hosts, { scope: values.scope, hostNodes });
+  writeOutput(metasploitToYaml(result).trimEnd(), values.out);
+  const s = result.summary;
+  process.stderr.write(
+    `Metasploit の指摘を台帳に変換しました（ホスト ${s.hosts} / サービス ${s.services} / 脆弱性 ${s.vulns} / 実証 ${s.verified} / 試行のみ ${s.attempted} / CVE あり ${s.withCve} / ノード未指定のホスト ${s.unmappedHosts} / 読めなかったホスト ${skippedHosts}）。node と canonicalIds と重大度を確認してから import-pentest に渡してください。
+`,
+  );
+}
+
+/**
+ * `import-metasploit-assets`：Metasploit の db_export -f xml のサービス（open）をプロジェクト JSON に Asset として保存する。
+ */
+function runImportMetasploitAssets(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) fail(`入力ファイル（プロジェクト JSON）を指定してください。
+
+${USAGE}`);
+  if (!values.xml) fail('--xml <export.xml> を指定してください。');
+  if (!values.scope) fail('--scope を指定してください。');
+  const report = parseEnum(values.report, IMPORT_PROWLER_REPORTS, 'report') ?? 'md';
+  const { hosts, hostNodes } = readMetasploit(values.xml, values);
+  let out: ReturnType<typeof importMetasploitAssets>;
+  try {
+    out = importMetasploitAssets(readJsonFile(file), hosts, { scope: values.scope, hostNodes });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  if (values.out) writeFileSync(values.out, JSON.stringify(out.project, null, 2), 'utf-8');
+  process.stdout.write(`${report === 'json' ? JSON.stringify(metasploitAssetsReportToJson(out), null, 2) : metasploitAssetsReportToMarkdown(out)}
+`);
+  process.stderr.write(`資産を取り込みました（ホスト ${out.hosts} / サービス ${out.services} / 未対応のホスト ${out.unlinkedHosts.length}）
+`);
+}
+
 /**
  * `import-scopesentry`：ScopeSentry の書き出し JSON、または `--api` で MCP（読み取り専用の list_assets のみ）から取得した
  * レコードから、外部露出サービスの構成図を作り、プロジェクト JSON を出力する。本文・リクエスト等は読まない（`scopesentryToLayer` 参照）。
@@ -2425,6 +2506,10 @@ function main(): void {
     });
   } else if (command === 'convert-strix') {
     runConvertStrix(values, positionals);
+  } else if (command === 'convert-metasploit') {
+    runConvertMetasploit(values, positionals);
+  } else if (command === 'import-metasploit-assets') {
+    runImportMetasploitAssets(values, positionals);
   } else if (command === 'import-scopesentry') {
     runImportScopesentry(values, positionals).catch((e: unknown) => {
       fail(`ScopeSentry の取り込みに失敗しました: ${e instanceof Error ? e.message : String(e)}`);
