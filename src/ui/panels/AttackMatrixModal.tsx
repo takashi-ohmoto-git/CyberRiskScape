@@ -5,11 +5,13 @@ import { getNodeDisplayName } from '../../core/model/nodeDisplay';
 import { SEVERITY_DOT } from '../../core/model/severityColors';
 import type { AttackGraphResult } from '../../features/attack-tree/buildAttackGraph';
 import type { AnalyzeGraphResult } from '../../features/attack-tree/analyzeAttackGraph';
-import { ATTACK_MATRIX, localizedName } from '../../features/attack-matrix/attackMatrix';
-import { collectPathTechniques, type PathTechnique } from '../../features/attack-matrix/collectPathTechniques';
+import { ATTACK_MATRIX, F3_MATRIX, localizedName as localizedNameIn, type AttackMatrix } from '../../features/attack-matrix/attackMatrix';
+import { collectPathTechniques, type MatrixFramework, type PathTechnique } from '../../features/attack-matrix/collectPathTechniques';
 import { useLocale, useT } from '../../i18n';
 
 interface AttackMatrixModalProps {
+  /** 表示するマトリクス。省略時は ATT&CK Enterprise。f3 は MITRE Fight Fraud Framework。 */
+  framework?: MatrixFramework;
   attackerId: string;
   allThreats: ThreatView[];
   /** AttackTreeModal が表示中の graph / analysis（再計算せず画面と一致させる）。 */
@@ -26,12 +28,13 @@ const stepText = (steps: number[]) => steps.map((s) => STEP_MARK[s - 1] ?? Strin
 const SEVERITIES: Severity[] = ['Critical', 'High', 'Medium', 'Low'];
 
 /** 該当のあるサブテクニック ID（親の「サブが該当」判定用）。 */
-function subHitIds(parentId: string, hits: Map<string, PathTechnique>): string[] {
-  const tech = ATTACK_MATRIX.techniques.get(parentId);
+function subHitIds(matrix: AttackMatrix, parentId: string, hits: Map<string, PathTechnique>): string[] {
+  const tech = matrix.techniques.get(parentId);
   return (tech?.subtechniques ?? []).filter((s) => hits.has(s.id)).map((s) => s.id);
 }
 
 export function AttackMatrixModal({
+  framework = 'attack',
   attackerId,
   allThreats,
   graph,
@@ -42,16 +45,19 @@ export function AttackMatrixModal({
 }: AttackMatrixModalProps) {
   const t = useT();
   const [locale] = useLocale();
+  const isF3 = framework === 'f3';
+  const matrix = isF3 ? F3_MATRIX : ATTACK_MATRIX;
+  const localizedName = (id: string, loc: Parameters<typeof localizedNameIn>[1]) => localizedNameIn(id, loc, matrix);
 
   const hits = useMemo(
-    () => collectPathTechniques(allThreats, graph, analysis, attackerId),
-    [allThreats, graph, analysis, attackerId],
+    () => collectPathTechniques(allThreats, graph, analysis, attackerId, framework),
+    [allThreats, graph, analysis, attackerId, framework],
   );
 
   // 該当サブがあるテクニックは既定で展開
   const [expanded, setExpanded] = useState<Set<string>>(() => {
     const s = new Set<string>();
-    for (const id of ATTACK_MATRIX.techniques.keys()) if (subHitIds(id, hits).length > 0) s.add(id);
+    for (const id of matrix.techniques.keys()) if (subHitIds(matrix, id, hits).length > 0) s.add(id);
     return s;
   });
   const [selected, setSelected] = useState<string | null>(null);
@@ -71,7 +77,7 @@ export function AttackMatrixModal({
       else next.add(id);
       return next;
     });
-  const withSubs = [...ATTACK_MATRIX.techniques.values()].filter((x) => x.subtechniques.length > 0);
+  const withSubs = [...matrix.techniques.values()].filter((x) => x.subtechniques.length > 0);
 
   const nodeById = useMemo(() => new Map(nodes.map((n) => [n.id, n] as const)), [nodes]);
   const edgeById = useMemo(() => new Map(edges.map((e) => [e.id, e] as const)), [edges]);
@@ -95,13 +101,13 @@ export function AttackMatrixModal({
     else offPathCount += 1;
   }
 
-  const selectedSubHits = selected ? subHitIds(selected, hits) : [];
+  const selectedSubHits = selected ? subHitIds(matrix, selected, hits) : [];
   const detailIds = selected ? [selected, ...selectedSubHits] : [];
 
   /** 1 セル（テクニックまたはサブ）。 */
   const cell = (id: string, isSub: boolean) => {
     const hit = hits.get(id);
-    const subHit = isSub ? [] : subHitIds(id, hits);
+    const subHit = isSub ? [] : subHitIds(matrix, id, hits);
     const tone = hit?.onPath
       ? 'bg-rose-600/80 text-white border-rose-400'
       : hit
@@ -149,7 +155,7 @@ export function AttackMatrixModal({
       >
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold uppercase tracking-widest text-slate-300">
-            {t('panels.attackMatrix.title')}
+            {t(isF3 ? 'panels.f3Matrix.title' : 'panels.attackMatrix.title')}
           </h2>
           <button
             onClick={onClose}
@@ -206,7 +212,7 @@ export function AttackMatrixModal({
         <div className="flex gap-3 min-h-0 flex-1">
           <div className="overflow-auto flex-1 min-w-0 bg-slate-800/40 border border-slate-700 rounded-xl p-2">
             <div className="flex gap-2 items-start w-max">
-              {ATTACK_MATRIX.tactics.map((tactic) => (
+              {matrix.tactics.map((tactic) => (
                 <div key={tactic.id} className="w-44 shrink-0 flex flex-col gap-1">
                   <div className="rounded bg-slate-700 px-1.5 py-1 text-xs" title={tactic.name}>
                     <div className="font-black text-slate-100">{localizedName(tactic.id, locale)}</div>
@@ -288,8 +294,25 @@ export function AttackMatrixModal({
         </div>
 
         <div className="text-xs text-slate-500">
-          {t('panels.attackMatrix.footer', { version: ATTACK_MATRIX.version })}
-          {locale === 'ja' && ` ／ ${t('panels.attackMatrix.unofficialJa')}`}
+          {isF3 ? (
+            <>
+              {t('panels.f3Matrix.footer', { version: matrix.version })}{' '}
+              <a
+                href="https://ctid.mitre.org/fightfraud/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-slate-300"
+              >
+                ctid.mitre.org/fightfraud
+              </a>
+              {` ／ ${t('panels.f3Matrix.englishNames')}`}
+            </>
+          ) : (
+            <>
+              {t('panels.attackMatrix.footer', { version: matrix.version })}
+              {locale === 'ja' && ` ／ ${t('panels.attackMatrix.unofficialJa')}`}
+            </>
+          )}
         </div>
       </div>
     </div>

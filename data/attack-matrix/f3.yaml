@@ -1,0 +1,443 @@
+# MITRE Fight Fraud Framework™ (F3™) マトリクス（v1.2、2026-09-29 更新）
+# 出典: https://ctid.mitre.org/fightfraud/ ／ https://github.com/center-for-threat-informed-defense/fight-fraud-framework
+# © 2026 MITRE. Licensed under Apache-2.0 (https://www.apache.org/licenses/LICENSE-2.0). PR_25-02691-6
+# 戦術・テクニック・サブテクニックの ID と名前だけを抜き出したもの（説明文は含まない）。
+# F3 は ATT&CK の ID（T で始まる）を一部そのまま再利用している。
+# 生成: node tools/attack-matrix/build-f3-matrix.mjs <f3-vX.json> — 手で編集しない。
+#
+# SPDX-License-Identifier: Apache-2.0
+
+version: "1.2"
+modified: 2026-09-29
+tactics:
+  - id: TA0043
+    name: Reconnaissance
+    techniques:
+      - F1011
+      - F1029
+      - F1034
+      - F1035
+      - F1040
+      - F1041
+      - F1055
+      - T1056
+      - T1555
+      - T1593
+      - T1598
+  - id: TA0042
+    name: Resource Development
+    techniques:
+      - F1019
+      - F1020
+      - F1021
+      - F1027
+      - F1038
+      - F1050
+      - F1058
+      - T1583
+      - T1585
+      - T1586
+      - T1608
+      - T1650
+  - id: TA0001
+    name: Initial Access
+    techniques:
+      - F1002
+      - F1004
+      - F1006
+      - F1007
+      - F1016
+      - F1031
+      - F1032
+      - F1033
+      - F1040
+      - F1041
+      - F1042
+      - F1050
+      - F1053
+      - F1054
+      - F1056
+      - F1059
+      - T1110
+      - T1111
+      - T1185
+      - T1189
+      - T1195
+      - T1451
+      - T1539
+      - T1550
+      - T1557
+      - T1621
+      - T1660
+  - id: TA0005
+    name: Stealth
+    techniques:
+      - F1001
+      - F1022
+      - F1023
+      - F1030
+      - F1031
+      - F1032
+      - F1036
+      - F1039
+      - F1040
+      - F1045
+      - F1048
+      - F1049
+      - F1054
+      - F1056
+      - T1070
+      - T1672
+  - id: TA0112
+    name: Defense Impairment
+    techniques:
+      - F1005
+      - T1667
+  - id: FA0001
+    name: Positioning
+    techniques:
+      - F1002
+      - F1005
+      - F1007
+      - F1009
+      - F1011
+      - F1012
+      - F1013
+      - F1035
+      - F1036
+      - F1042
+      - F1046
+      - F1049
+      - F1059
+      - T1113
+      - T1185
+      - T1219
+      - T1453
+      - T1531
+      - T1539
+      - T1557
+  - id: TA0002
+    name: Execution
+    techniques:
+      - F1002
+      - F1003
+      - F1007
+      - F1008
+      - F1009
+      - F1014
+      - F1015
+      - F1024
+      - F1028
+      - F1037
+      - F1043
+      - F1044
+      - F1053
+      - F1059
+      - T1557
+  - id: FA0002
+    name: Monetization
+    techniques:
+      - F1017
+      - F1018
+      - F1025
+      - F1026
+      - F1028
+      - F1047
+      - F1057
+techniques:
+  - id: F1001
+    name: 3DS Bypass
+  - id: F1002
+    name: Abuse of Public-Facing API
+    subtechniques:
+      - id: F1002.001
+        name: Mobile API Abuse
+      - id: F1002.002
+        name: Web API Abuse
+  - id: F1003
+    name: Abuse SMS verification
+  - id: F1004
+    name: Access with Stolen Session Cookie
+  - id: F1005
+    name: Account Manipulation
+    subtechniques:
+      - id: F1005.001
+        name: Account Linking
+      - id: F1005.002
+        name: Add Authorized User
+      - id: F1005.003
+        name: Add Beneficiary
+      - id: F1005.004
+        name: Change Account Details
+      - id: F1005.005
+        name: Change E-Delivery or Notification Settings
+      - id: F1005.006
+        name: Change of Payment Details
+      - id: F1005.007
+        name: Enable Account Features
+      - id: F1005.008
+        name: Update Call Receiving Device
+  - id: F1006
+    name: Account Takeover
+    subtechniques:
+      - id: F1006.001
+        name: Exposed API Key
+      - id: F1006.002
+        name: Exposed Login Credential
+      - id: F1006.003
+        name: Password Reset
+  - id: F1007
+    name: Adversary-in-the-Browser
+    subtechniques:
+      - id: F1007.001
+        name: DLL Injection
+      - id: F1007.002
+        name: Malicious Browser Extension
+      - id: F1007.003
+        name: Malicious JavaScript Injection
+  - id: F1008
+    name: ATM Manipulation
+    subtechniques:
+      - id: F1008.001
+        name: ATM Hardware Manipulation
+      - id: F1008.002
+        name: ATM Software Manipulation
+  - id: F1009
+    name: Bank Deposit
+    subtechniques:
+      - id: F1009.001
+        name: ATM Deposit
+      - id: F1009.002
+        name: Mobile Deposit
+      - id: F1009.003
+        name: Night Deposit
+      - id: F1009.004
+        name: Test Deposit
+  - id: F1011
+    name: Card Dump Capture
+  - id: F1012
+    name: Card Testing
+  - id: F1013
+    name: Change Payroll Details
+  - id: F1014
+    name: Check Fraud
+  - id: F1015
+    name: Churning
+  - id: F1016
+    name: Compromise Payment Gateway
+  - id: F1017
+    name: Conversion to Physical Monetary Instruments
+    subtechniques:
+      - id: F1017.001
+        name: Cash
+      - id: F1017.002
+        name: Cashier's Check
+      - id: F1017.003
+        name: Money Order
+  - id: F1018
+    name: Convert to Cryptocurrency
+  - id: F1019
+    name: Create Counterfeit Card
+  - id: F1020
+    name: Create Fake Materials
+    subtechniques:
+      - id: F1020.001
+        name: Fake Documents
+      - id: F1020.002
+        name: Fake Website
+      - id: F1020.003
+        name: Synthetic Media
+      - id: F1020.004
+        name: Spoofed Application
+  - id: F1021
+    name: Create Fraudulent Merchant Account
+  - id: F1022
+    name: Delete Relevant Emails
+  - id: F1023
+    name: Device Fingerprint Spoofing
+  - id: F1024
+    name: Dispute Legitimate Transaction
+  - id: F1025
+    name: Electronic Funds Transfer
+    subtechniques:
+      - id: F1025.001
+        name: Peer-to-Peer Transfer
+      - id: F1025.002
+        name: Regional Payment Rail
+      - id: F1025.003
+        name: Wire Transfer
+  - id: F1026
+    name: Exploitation of Gambling Platforms
+  - id: F1027
+    name: Falsify Business Documents
+  - id: F1028
+    name: Fradulent Purchasing
+  - id: F1029
+    name: Gather Customer Information
+  - id: F1030
+    name: Geolocation Spoofing
+  - id: F1031
+    name: Impersonate Account Holder
+  - id: F1032
+    name: Impersonate Official
+  - id: F1033
+    name: Insider Access Abuse
+  - id: F1034
+    name: Interactive Voice Response Mapping
+  - id: F1035
+    name: Mail Theft
+  - id: F1036
+    name: New Vendor Setup
+  - id: F1037
+    name: NFC Payment
+  - id: F1038
+    name: PAN/CVV Generation
+  - id: F1039
+    name: PaReq Manipulation
+  - id: F1040
+    name: Phone Number Spoofing
+    subtechniques:
+      - id: F1040.001
+        name: Customer Phone Number Spoofing
+      - id: F1040.002
+        name: Official Phone Number Spoofing
+  - id: F1041
+    name: PIN-code Peeking
+  - id: F1042
+    name: Reactivate Account
+  - id: F1043
+    name: Reversal of Transaction
+  - id: F1044
+    name: Scheduled Transfer
+  - id: F1045
+    name: Structuring
+  - id: F1046
+    name: Test Payment Thresholds
+  - id: F1047
+    name: Transfer of Funds
+    subtechniques:
+      - id: F1047.001
+        name: Victim-Authorized Transfer
+      - id: F1047.002
+        name: Unauthorized Transfer
+  - id: F1048
+    name: Use Virtual Cards
+  - id: F1049
+    name: Use Money Mule
+  - id: F1050
+    name: Operate Fraudulent Call Centers
+  - id: F1053
+    name: Compromise Point-of-Sale Systems
+  - id: F1054
+    name: Clone Victim Device
+  - id: F1055
+    name: Search Dark Web
+  - id: F1056
+    name: Impersonate Trusted Person
+  - id: F1057
+    name: Payment via Gift Card
+  - id: F1058
+    name: Train AI Model
+  - id: F1059
+    name: Coercion
+  - id: T1056
+    name: Input Capture
+    subtechniques:
+      - id: T1056.001
+        name: Keylogging
+  - id: T1070
+    name: Indicator Removal
+  - id: T1110
+    name: Brute Force
+    subtechniques:
+      - id: T1110.001
+        name: Password Guessing
+      - id: T1110.002
+        name: Password Cracking
+      - id: T1110.003
+        name: Password Spraying
+      - id: T1110.004
+        name: " Credential Stuffing"
+  - id: T1111
+    name: Multi-Factor Authentication Interception
+  - id: T1113
+    name: Screen Capture
+  - id: T1185
+    name: Browser Session Hijacking
+  - id: T1189
+    name: Drive-by Compromise
+  - id: T1195
+    name: Supply Chain Compromise
+  - id: T1219
+    name: Remote Access Tools
+  - id: T1451
+    name: SIM Card Swap
+  - id: T1453
+    name: Abuse Accessibility Features
+  - id: T1531
+    name: Account Access Removal
+  - id: T1539
+    name: Steal Web Session Cookie
+  - id: T1550
+    name: Use Alternate Authentication Material
+    subtechniques:
+      - id: T1550.001
+        name: Application Access Token
+  - id: T1555
+    name: Credentials from Password Stores
+    subtechniques:
+      - id: T1555.003
+        name: Credentials from Web Browsers
+      - id: T1555.005
+        name: Password Managers
+  - id: T1557
+    name: Adversary-in-the-Middle
+  - id: T1583
+    name: Acquire Infrastructure
+    subtechniques:
+      - id: T1583.001
+        name: Domains
+      - id: T1583.003
+        name: Virtual Private Network or Server
+      - id: T1583.008
+        name: Malvertising
+  - id: T1585
+    name: Establish Accounts
+    subtechniques:
+      - id: T1585.004
+        name: Dating App Accounts
+  - id: T1586
+    name: Compromise Accounts
+    subtechniques:
+      - id: T1586.001
+        name: Social Media Accounts
+      - id: T1586.002
+        name: Email Accounts
+      - id: T1586.003
+        name: Cloud Accounts
+      - id: T1586.004
+        name: Corporate Accounts
+  - id: T1593
+    name: Search Open Websites/Domains
+    subtechniques:
+      - id: T1593.001
+        name: Social Media
+      - id: T1593.002
+        name: Search Engines
+  - id: T1598
+    name: Phishing for Information
+  - id: T1608
+    name: Stage Capabilities
+    subtechniques:
+      - id: T1608.006
+        name: SEO Poisoning
+  - id: T1621
+    name: Multi-Factor Authentication Request Generation
+  - id: T1650
+    name: Acquire Access
+  - id: T1660
+    name: Phishing
+  - id: T1667
+    name: Email Bombing
+  - id: T1672
+    name: Email Spoofing

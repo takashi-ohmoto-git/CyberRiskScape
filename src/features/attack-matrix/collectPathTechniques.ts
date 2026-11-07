@@ -4,7 +4,13 @@ import type { AttackGraphResult } from '../attack-tree/buildAttackGraph';
 import type { AnalyzeGraphResult } from '../attack-tree/analyzeAttackGraph';
 import { edgeElementKey, nodeElementKey } from '../attack-tree/hopEvidence';
 import { extractAttackTechniqueIds, threatElementKey } from '../attack-navigator/buildNavigatorLayer';
-import { ATTACK_MATRIX } from './attackMatrix';
+import { ATTACK_MATRIX, F3_MATRIX } from './attackMatrix';
+
+/** 対象のマトリクス。f3 は MITRE Fight Fraud Framework。 */
+export type MatrixFramework = 'attack' | 'f3';
+
+/** 脅威の complianceRefs で F3 テクニックを示す standard ID（対応表側と一致させる）。 */
+export const F3_STANDARD_ID = 'mitre-f3';
 
 /** test-plan・Navigator と同じ上位経路の本数。 */
 const TOP_ROUTES = 3;
@@ -34,12 +40,15 @@ export interface PathTechnique {
  * graph / analysis は画面が表示中のものをそのまま受け取る（再計算しない）。
  * 戻りは ID そのまま（サブテクニックは親に畳まない。親の判定は UI 側）。マトリクスに無い ID は含めない。
  * attackerId は経路の先頭ノード（0 歩目）として除外するために使う。
+ * framework='f3' のときは complianceRefs（standard=mitre-f3）の ref と、references の ATT&CK ID のうち
+ * F3 マトリクスに存在するもの（F3 は ATT&CK の ID を再利用している）を対象にする。
  */
 export function collectPathTechniques(
   threats: readonly ThreatView[],
   graph: AttackGraphResult,
   analysis: AnalyzeGraphResult,
   attackerId: string,
+  framework: MatrixFramework = 'attack',
 ): Map<string, PathTechnique> {
   // 要素キー → 歩数の集合
   const stepsByElement = new Map<string, Set<number>>();
@@ -57,13 +66,15 @@ export function collectPathTechniques(
     });
   }
 
+  const matrix = framework === 'f3' ? F3_MATRIX : ATTACK_MATRIX;
   const out = new Map<string, PathTechnique>();
   for (const threat of threats) {
     if (isSuppressed(threat)) continue;
     const refs = threat.references ?? [];
-    if (refs.length === 0) continue;
-    const ids = extractAttackTechniqueIds(refs).filter(
-      (id) => ATTACK_MATRIX.techniques.has(id) || ATTACK_MATRIX.subToParent.has(id),
+    const f3Refs = framework === 'f3' ? (threat.complianceRefs ?? []).filter((c) => c.standard === F3_STANDARD_ID) : [];
+    if (refs.length === 0 && f3Refs.length === 0) continue;
+    const ids = [...new Set([...f3Refs.map((c) => c.ref.trim()), ...extractAttackTechniqueIds(refs)])].filter(
+      (id) => matrix.techniques.has(id) || matrix.subToParent.has(id),
     );
     if (ids.length === 0) continue;
 

@@ -548,6 +548,22 @@ verbatim.
    downloads from FIRST. No EPSS data is bundled in this repository. See
    FIRST's site for the terms of use of EPSS data.
 
+--------------------------------------------------------------------------------
+29. MITRE Fight Fraud Framework (F3) v1.2
+   https://ctid.mitre.org/fightfraud/
+   https://github.com/center-for-threat-informed-defense/fight-fraud-framework
+   © 2026 MITRE. PR_25-02691-6. Licensed under the Apache License 2.0.
+   Technique IDs (Fxxxx) are referenced with attribution, together with this
+   project's own Japanese adaptations of the technique names and its own
+   one-line summaries; no F3 description text is reproduced.
+
+   Referenced by: data/compliance/mitre-f3.yaml,
+                  data/compliance/i18n/en/mitre-f3.yaml,
+                  data/threat-library/zero-trust-access.yaml,
+                  data/threat-library/voice-contact-center.yaml,
+                  data/threat-library/payment-page.yaml,
+                  data/threat-library/api-platform.yaml
+
 ================================================================================
 Runtime dependencies
 ================================================================================

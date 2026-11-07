@@ -1,0 +1,51 @@
+# MITRE Fight Fraud Framework (F3) v1.2 のマッピング表（詐欺の手口 ID の対応づけ。試行）。
+# 出典: The MITRE Corporation, MITRE Fight Fraud Framework (F3) v1.2
+#   https://ctid.mitre.org/fightfraud/
+#   https://github.com/center-for-threat-informed-defense/fight-fraud-framework
+#   © 2026 MITRE. PR_25-02691-6.
+# ライセンス: 公式のデータは center-for-threat-informed-defense/fight-fraud-framework リポジトリで
+#   Apache License 2.0 として公開されている。
+# title は F3 の手口名（Technique）を翻案、summary は独自要約（1〜2 行。定義文の転載はしない）。
+# 脅威ルール側 `complianceRefs.ref`（Fxxxx）と一致するキーは `ref:` フィールド。
+# 脅威ルール単位で対応づける。対策（mitigation）単位の対応づけは行わない。
+# 収録するのは、脅威ルールから実際に参照している手口だけ。
+#
+# SPDX-License-Identifier: Apache-2.0
+#   本ファイル（マッピングと独自要約）は Apache License 2.0。
+#   参照先のフレームワークそのもののライセンスは上記および standard.license を参照。
+
+schemaVersion: 1
+
+standard:
+  id: mitre-f3
+  title: "MITRE Fight Fraud Framework (F3)"
+  version: "1.2"
+  url: "https://ctid.mitre.org/fightfraud/"
+  license: "Apache License 2.0 (center-for-threat-informed-defense/fight-fraud-framework)"
+  disclaimer: "title / summary は F3 v1.2 の手口名の翻案と独自要約。定義の原文は出典 URL を参照。"
+
+items:
+  - ref: "F1002"
+    title: "公開 API の悪用"
+    summary: "利用者や取引先向けに公開した API を、スクリプトや大量のアカウントで呼び出し、情報の収集や不正な取引に使う。"
+  - ref: "F1002.001"
+    title: "公開 API の悪用：モバイル API の悪用"
+    summary: "改造したアプリやエミュレーター、スクリプトからモバイル向け API を呼び出し、アプリ側を前提にした制限をすり抜ける。"
+  - ref: "F1004"
+    title: "盗んだセッション Cookie によるアクセス"
+    summary: "認証済みのセッション Cookie を盗んで再利用し、パスワードや多要素認証を経ずに本人のアカウントを操作する。"
+  - ref: "F1011"
+    title: "カード情報の窃取"
+    summary: "読み取り装置・決済の仕組みの侵害・入力値の盗み取りなどでカード情報を集め、偽造カードや非対面の不正利用、転売に使う。"
+  - ref: "F1031"
+    title: "口座名義人へのなりすまし"
+    summary: "盗んだ個人情報や偽装した声で本人を装い、金融機関や事業者の本人確認を通過して手続きや取引をさせる。"
+  - ref: "F1032"
+    title: "公的な立場へのなりすまし"
+    summary: "金融機関の担当者・警察・行政機関などを装い、その権威を利用して情報の提供や送金を承諾させる。"
+  - ref: "F1033"
+    title: "内部者によるアクセス権の悪用"
+    summary: "内部者が自分に与えられた正規の権限で不正を行う。外部からの攻撃より正規の操作と見分けにくい。"
+  - ref: "F1056"
+    title: "信頼する人物へのなりすまし"
+    summary: "同僚・家族・取引先など相手がよく知る人物を装い、情報の提供や支払先の変更、送金を依頼する。"

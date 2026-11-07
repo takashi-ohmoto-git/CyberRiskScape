@@ -448,4 +448,9 @@ export const jaPanels = {
   'panels.attackMatrix.detail.subHit': 'サブテクニック側に該当があります',
   'panels.attackMatrix.footer': 'MITRE ATT&CK® Enterprise v{version} © The MITRE Corporation, CC BY 4.0',
   'panels.attackMatrix.unofficialJa': '日本語名は非公式訳です',
+  'panels.f3Matrix.open': 'MITRE F3',
+  'panels.f3Matrix.openTitle': '上位経路が使う MITRE F3（Fight Fraud Framework）のテクニックをマトリクスで表示',
+  'panels.f3Matrix.title': 'MITRE F3 マトリクス（攻撃経路）',
+  'panels.f3Matrix.footer': 'MITRE Fight Fraud Framework™ (F3™) v{version} — © 2026 MITRE, Apache-2.0',
+  'panels.f3Matrix.englishNames': '名称は原文（英語）のまま表示しています',
 } as const;

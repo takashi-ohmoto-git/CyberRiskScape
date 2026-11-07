@@ -63,6 +63,11 @@ const matrixModules = import.meta.glob<string>('../../../data/attack-matrix/ente
   import: 'default',
   eager: true,
 });
+const f3Modules = import.meta.glob<string>('../../../data/attack-matrix/f3.yaml', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
 const jaModules = import.meta.glob<string>('../../../data/attack-matrix/i18n/ja/enterprise-attack.yaml', {
   query: '?raw',
   import: 'default',
@@ -102,13 +107,18 @@ if (!matrixText) throw new Error('data/attack-matrix/enterprise-attack.yaml が�
 
 export const ATTACK_MATRIX: AttackMatrix = parseAttackMatrix(matrixText);
 
+const f3Text = firstText(f3Modules);
+if (!f3Text) throw new Error('data/attack-matrix/f3.yaml が見つかりません');
+
+/** MITRE Fight Fraud Framework (F3) のマトリクス。同じ形で ATT&CK 再利用 ID（T…）も含む。和訳は無い（英語名のみ）。 */
+export const F3_MATRIX: AttackMatrix = parseAttackMatrix(f3Text);
+
 const jaText = firstText(jaModules);
 /** 日本語名（ID 鍵）。訳ファイルが無い場合は空。 */
 export const ATTACK_NAMES_JA: Map<string, string> = jaText ? parseNamesOverlay(jaText) : new Map();
 
 /** マトリクス内のすべての ID（戦術・テクニック・サブ）の英語名。 */
-export function englishName(id: string): string | undefined {
-  const m = ATTACK_MATRIX;
+export function englishName(id: string, m: AttackMatrix = ATTACK_MATRIX): string | undefined {
   const tactic = m.tactics.find((t) => t.id === id);
   if (tactic) return tactic.name;
   const tech = m.techniques.get(id);
@@ -117,11 +127,14 @@ export function englishName(id: string): string | undefined {
   return parent ? m.techniques.get(parent)?.subtechniques.find((s) => s.id === id)?.name : undefined;
 }
 
-/** 表示名。ja は訳、なければ英語。en は英語。ID が不明なら ID をそのまま返す。 */
-export function localizedName(id: string, locale: Locale): string {
-  if (locale === 'ja') {
+/**
+ * 表示名。ja は訳、なければ英語。en は英語。ID が不明なら ID をそのまま返す。
+ * 和訳は ATT&CK マトリクス専用（F3 の戦術 ID は ATT&CK と重なるため、F3 には当てない）。
+ */
+export function localizedName(id: string, locale: Locale, m: AttackMatrix = ATTACK_MATRIX): string {
+  if (locale === 'ja' && m === ATTACK_MATRIX) {
     const ja = ATTACK_NAMES_JA.get(id);
     if (ja) return ja;
   }
-  return englishName(id) ?? id;
+  return englishName(id, m) ?? id;
 }

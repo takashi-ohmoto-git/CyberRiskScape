@@ -19,6 +19,7 @@ export const StandardIdSchema = z.enum([
   'nist-csf-2.0',
   'nist-csf-2.0-examples',
   'd3fend',
+  'mitre-f3',
 ]);
 
 /**

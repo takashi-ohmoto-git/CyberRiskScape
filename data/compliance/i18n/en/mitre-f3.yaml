@@ -1,0 +1,43 @@
+# English overlay for `data/compliance/mitre-f3.yaml`.
+#
+# The Japanese file is the source of truth: only `title` and `summary` are translated
+# here, keyed by the item's `ref`. Anything omitted falls back to the original text.
+#
+# Conventions:
+#   - `title` uses the official F3 technique name (MITRE Fight Fraud Framework v1.2) as published.
+#   - `summary` is this project's own one-to-two line summary,
+#     never a verbatim reproduction of the F3 description text.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+locale: en
+standard: mitre-f3
+
+disclaimer: "title / summary are this project's own adaptation and summary of MITRE Fight Fraud Framework (F3) v1.2 technique names. See the source URL for the original descriptions."
+
+items:
+  "F1002":
+    title: "Abuse of Public-Facing API"
+    summary: "Call APIs published for customers or partners with scripts or many accounts to collect data or run fraudulent transactions."
+  "F1002.001":
+    title: "Abuse of Public-Facing API: Mobile API Abuse"
+    summary: "Call mobile-facing APIs from modified apps, emulators, or scripts to get around restrictions that assume the genuine app."
+  "F1004":
+    title: "Access with Stolen Session Cookie"
+    summary: "Replay a stolen authenticated session cookie to operate the victim's account without a password or MFA."
+  "F1011":
+    title: "Card Dump Capture"
+    summary: "Collect card data via skimming devices, compromised payment systems, or captured input, for counterfeit cards, card-not-present fraud, or resale."
+  "F1031":
+    title: "Impersonate Account Holder"
+    summary: "Pose as the customer using stolen personal data or a faked voice to pass an institution's identity checks and get actions performed."
+  "F1032":
+    title: "Impersonate Official"
+    summary: "Pose as a bank representative, police, or government official and use that authority to obtain information or payments."
+  "F1033":
+    title: "Insider Access Abuse"
+    summary: "An insider commits fraud with legitimately granted privileges, which is harder to tell apart from normal work than an outside attack."
+  "F1056":
+    title: "Impersonate Trusted Person"
+    summary: "Pose as a co-worker, family member, or business partner the victim knows to request information, payee changes, or transfers."

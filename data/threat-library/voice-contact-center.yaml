@@ -85,6 +85,8 @@ rules:
         ref: "PR.AA-03"
       - standard: nist-csf-2.0
         ref: "PR.AA-01"
+      - standard: mitre-f3
+        ref: "F1031"
     references:
       - title: "NIST SP 800-63B-4 - Digital Identity Guidelines: Authentication and Authenticator Management（§3.2.3 生体認証の利用）"
         url: "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-63B-4.pdf"
@@ -150,6 +152,10 @@ rules:
         ref: "PR.AT-01"
       - standard: nist-csf-2.0
         ref: "PR.AA-05"
+      - standard: mitre-f3
+        ref: "F1056"
+      - standard: mitre-f3
+        ref: "F1032"
     references:
       - title: "MITRE ATLAS AML.T0052.001 Deepfake-Assisted Phishing"
         url: "https://atlas.mitre.org/techniques/AML.T0052.001"
@@ -186,6 +192,8 @@ rules:
         ref: "PR.AA-02"
       - standard: nist-csf-2.0
         ref: "PR.AA-03"
+      - standard: mitre-f3
+        ref: "F1031"
     references:
       - title: "CISA / FBI Cybersecurity Advisory AA23-320A - Scattered Spider"
         url: "https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-320a"

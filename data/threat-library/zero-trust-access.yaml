@@ -227,6 +227,8 @@ rules:
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.AA-03"
+      - standard: mitre-f3
+        ref: "F1004"
     references:
       - title: "NIST SP 800-63B - Digital Identity Guidelines（verifier impersonation resistance）"
         url: "https://pages.nist.gov/800-63-3/sp800-63b.html"
@@ -395,6 +397,8 @@ rules:
         ref: "PR.AA-05"
       - standard: nist-csf-2.0
         ref: "DE.CM-03"
+      - standard: mitre-f3
+        ref: "F1033"
     references:
       - title: "CISA - Insider Threat Mitigation Guide"
         url: "https://www.cisa.gov/resources-tools/resources/insider-threat-mitigation-guide"

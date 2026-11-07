@@ -390,6 +390,8 @@ rules:
         ref: "PR.AA-01"
       - standard: nist-csf-2.0
         ref: "PR.AA-03"
+      - standard: mitre-f3
+        ref: "F1002.001"
     references:
       - title: "IETF RFC 8252 - OAuth 2.0 for Native Apps（ネイティブアプリは公開クライアント）"
         url: "https://www.rfc-editor.org/rfc/rfc8252"
@@ -470,6 +472,8 @@ rules:
         ref: "DE.CM-01"
       - standard: nist-csf-2.0
         ref: "PR.DS-01"
+      - standard: mitre-f3
+        ref: "F1002"
     references:
       - title: "OWASP API Security Top 10 2023 - API6:2023 Unrestricted Access to Sensitive Business Flows"
         url: "https://owasp.org/API-Security/editions/2023/en/0xa6-unrestricted-access-to-sensitive-business-flows/"

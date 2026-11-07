@@ -110,4 +110,35 @@ describe('collectPathTechniques', () => {
     );
     expect(r.size).toBe(0);
   });
+
+  describe('framework=f3', () => {
+    const f3 = (t: Partial<ThreatView>) => collectPathTechniques([threat(t)], graph, analysis, 'A', 'f3');
+
+    it('complianceRefs の mitre-f3 の ref を数え、歩数も持つ', () => {
+      const r = f3({ complianceRefs: [{ standard: 'mitre-f3', ref: 'F1006' }] });
+      expect(r.get('F1006')).toMatchObject({ onPath: true, steps: [1] });
+    });
+
+    it('別 standard の ref と、F3 に無い ID は数えない', () => {
+      expect(f3({ complianceRefs: [{ standard: 'nist-csf', ref: 'F1006' }] }).size).toBe(0);
+      expect(f3({ complianceRefs: [{ standard: 'mitre-f3', ref: 'F9999' }] }).size).toBe(0);
+    });
+
+    it('references の ATT&CK ID は F3 に存在するものだけ数える', () => {
+      // T1110 は F3 が再利用、T1078 は F3 に無い
+      const r = f3({ references: ref('T1110 and T1078') });
+      expect(r.has('T1110')).toBe(true);
+      expect(r.has('T1078')).toBe(false);
+    });
+
+    it('ATT&CK ビューは complianceRefs の影響を受けない', () => {
+      const r = collectPathTechniques(
+        [threat({ complianceRefs: [{ standard: 'mitre-f3', ref: 'F1006' }], references: ref('T1078') })],
+        graph,
+        analysis,
+        'A',
+      );
+      expect([...r.keys()]).toEqual(['T1078']);
+    });
+  });
 });

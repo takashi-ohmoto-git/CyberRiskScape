@@ -447,4 +447,9 @@ export const enPanels: Partial<Record<TranslationKey, string>> = {
   'panels.attackMatrix.detail.subHit': 'A sub-technique is matched',
   'panels.attackMatrix.footer': 'MITRE ATT&CK® Enterprise v{version} © The MITRE Corporation, CC BY 4.0',
   'panels.attackMatrix.unofficialJa': 'Japanese names are unofficial translations',
+  'panels.f3Matrix.open': 'MITRE F3',
+  'panels.f3Matrix.openTitle': 'Show the MITRE F3 (Fight Fraud Framework) techniques used by the top routes as a matrix',
+  'panels.f3Matrix.title': 'MITRE F3 Matrix (attack paths)',
+  'panels.f3Matrix.footer': 'MITRE Fight Fraud Framework™ (F3™) v{version} — © 2026 MITRE, Apache-2.0',
+  'panels.f3Matrix.englishNames': 'Names are shown in the original English',
 };

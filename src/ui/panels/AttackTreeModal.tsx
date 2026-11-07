@@ -602,16 +602,17 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
   const [selection, setSelection] = useState<Selection>(null);
   const [hoveredRouteIndex, setHoveredRouteIndex] = useState<number | null>(null);
   const [matrixOpen, setMatrixOpen] = useState(false);
+  const [f3Open, setF3Open] = useState(false);
   const t = useT();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       // ATT&CK マトリクス（子モーダル）が開いている間は子だけが閉じる
-      if (e.key === 'Escape' && !matrixOpen) onClose();
+      if (e.key === 'Escape' && !matrixOpen && !f3Open) onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose, matrixOpen]);
+  }, [onClose, matrixOpen, f3Open]);
 
   const targetId = attacker.attackObjectiveId ?? '';
   const target = nodes.find((n) => n.id === targetId);
@@ -748,6 +749,15 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
               className="px-2 py-1 rounded border border-slate-700 text-xs font-bold text-slate-300 hover:border-rose-500 disabled:opacity-40 disabled:hover:border-slate-700"
             >
               {t('panels.attackMatrix.open')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setF3Open(true)}
+              disabled={!hasPath}
+              title={t('panels.f3Matrix.openTitle')}
+              className="px-2 py-1 rounded border border-slate-700 text-xs font-bold text-slate-300 hover:border-rose-500 disabled:opacity-40 disabled:hover:border-slate-700"
+            >
+              {t('panels.f3Matrix.open')}
             </button>
             <button
               onClick={onClose}
@@ -1062,6 +1072,18 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
           nodes={nodes}
           edges={edges}
           onClose={() => setMatrixOpen(false)}
+        />
+      )}
+      {f3Open && (
+        <AttackMatrixModal
+          framework="f3"
+          attackerId={attacker.id}
+          allThreats={allThreats}
+          graph={graph}
+          analysis={analysis}
+          nodes={nodes}
+          edges={edges}
+          onClose={() => setF3Open(false)}
         />
       )}
     </div>

@@ -53,6 +53,8 @@ rules:
         ref: "GV.SC-07"
       - standard: nist-csf-2.0
         ref: "DE.CM-09"
+      - standard: mitre-f3
+        ref: "F1011"
     references:
       - title: "PCI DSS v4.0（要件 6.4.3 決済ページのスクリプト管理、11.6.1 決済ページの改ざん検知）"
         url: "https://www.pcisecuritystandards.org/document_library/"
@@ -82,6 +84,8 @@ rules:
         ref: "DE.CM-09"
       - standard: nist-csf-2.0
         ref: "PR.AA-03"
+      - standard: mitre-f3
+        ref: "F1011"
     references:
       - title: "PCI DSS v4.0（要件 6.4.3 決済ページのスクリプト管理、11.6.1 決済ページの改ざん検知）"
         url: "https://www.pcisecuritystandards.org/document_library/"
