@@ -74,7 +74,7 @@ import { BUNDLED_AITECH_MAP, BUNDLED_FINDING_MAP } from '../features/findings-re
 import { buildThreatReport, toDCRHThreatModelMarkdown, toJsonObject } from '../features/export/threatReport';
 import { effectiveSeverity } from '../core/model/risk';
 import { setLocale, translate, type Locale } from '../i18n';
-import { ATTACK_OBJECTIVE_APPLICABLE, LAYER_KEYS, type Finding, type FrameworkView, type Severity } from '../core/model/types';
+import { ATTACK_OBJECTIVE_APPLICABLE, LAYER_KEYS, MAX_FINDINGS, type Finding, type FrameworkView, type Severity } from '../core/model/types';
 import { formatElementalId } from '../core/model/elementalId';
 import { getChangeTriggers } from '../change-triggers/loader/bundledChangeTriggers';
 import { loadChangeTriggers } from '../change-triggers/loader/loadChangeTriggers';
@@ -93,6 +93,8 @@ import { conjurToLayer } from '../features/conjur-import/conjurToLayer';
 import { shodanToLayer } from '../features/shodan-import/shodanToLayer';
 import { scopesentryRecordsToLayer, scopesentryToLayer, type ScopesentryImportResult } from '../features/scopesentry-import/scopesentryToLayer';
 import { apiKeyFromEnv, fetchViaMcp, MAX_RECORDS } from '../features/scopesentry-import/fetchViaMcp';
+import { cyberStrikeToRegistry, parseCyberStrikeVulns, registryToYaml } from '../features/pentest-import/cyberStrikeToRegistry';
+import { fetchCyberStrikeVulns, tokenFromEnv } from '../features/pentest-import/fetchCyberStrike';
 import { toPostmanCollection } from '../features/postman-export/toPostmanCollection';
 import { buildSbomForAi } from '../features/sbom-ai/buildSbomForAi';
 import { VarsFileSchema, applyVariableValues, filterByBaseUrl } from '../features/postman-export/dastOptions';
@@ -180,6 +182,7 @@ const USAGE = `使い方:
   import-prowler <project.json> --ocsf <file> [options]
   import-findings <project.json> --format <xccdf|arf|oval> --in <file> [options]
   import-pentest <project.json> --in <registry.yaml> [options]
+  convert-cyberstrikeai [<vulns.json>] [--api <base-url>] --scope <scope> [options]
   import-sarif <project.json> --sarif <file> --scope <scope> [options]
   import-security-audit <project.json> --in <findings.json> [options]
   import-kev <project.json> --kev <file> [options]
@@ -285,6 +288,14 @@ import-artex-assets のオプション（ARTEX の資産 API の JSON から、�
   --node <C番号|ID>                             対応表に無いホストを結びつけるノード（任意。無ければ未対応）
   --report <md|json>                            報告の形式（既定: md。標準出力）
   -o, --out <file>                              資産を保存したプロジェクト JSON の出力先（指定しなければ報告のみ）
+
+convert-cyberstrikeai のオプション（CyberStrikeAI の脆弱性を import-pentest の台帳 YAML に変換する。confirmed は実証、open は試行のみ、ignored は出さない。証跡・再現手順・説明は写さない。target は URL のクエリを落としてコメントにだけ残す。node と canonicalIds は人が埋めてから import-pentest に渡す）:
+  --api <base-url>                              ファイルの代わりに <base-url>/api/vulnerabilities から取得する（GET のみ）。
+                                                トークンは環境変数 CYBERSTRIKEAI_TOKEN で渡す（保存・出力しない）。https のみ（localhost は http 可）
+  --scope <scope>                               台帳の範囲（必須。import-pentest の置き換え単位）
+  --project-id <id>                             --api のとき、このプロジェクトの脆弱性だけ取得する
+  --task-id <id>                                --api のとき、このタスクの脆弱性だけ取得する
+  -o, --out <registry.yaml>                     台帳 YAML の出力先（既定: 標準出力）
 
 import-sarif のオプション（汎用の SARIF 2.1.0（Semgrep・CodeQL 等の SAST）の結果を指摘として保存する。抑制済み・解消済み（absent）・合格／対象外／情報の結果は除く。message の本文・コード片・codeFlows は保存しない。場所は相対的な表記に落とす）:
   --sarif <file>                                SARIF の JSON（必須）
@@ -591,6 +602,8 @@ function parseCliArgs() {
       'with-findings': { type: 'boolean' },
       api: { type: 'string' },
       project: { type: 'string' },
+      'project-id': { type: 'string' },
+      'task-id': { type: 'string' },
       search: { type: 'string' },
       scope: { type: 'string' },
       into: { type: 'string' },
@@ -1431,6 +1444,59 @@ ${USAGE}`);
 }
 
 /**
+ * `convert-cyberstrikeai`：CyberStrikeAI の脆弱性（JSON ファイル、または `--api` の GET）を import-pentest の台帳 YAML に変換する。
+ * 説明・証跡・再現手順は読まない。node と canonicalIds は人が埋める。
+ */
+async function runConvertCyberstrikeai(values: CliValues, positionals: string[]): Promise<void> {
+  const file = positionals[1];
+  if (!file && !values.api) fail(`入力ファイルまたは --api を指定してください。
+
+${USAGE}`);
+  if (file && values.api) fail('入力ファイルと --api は同時に指定できません。');
+  if (!values.scope) fail('--scope <scope> を指定してください（import-pentest の置き換えの範囲）。');
+  if (!values.api && (values['project-id'] || values['task-id'])) fail('--project-id / --task-id は --api と一緒に指定してください。');
+
+  let raw: unknown;
+  let capped = false;
+  if (values.api) {
+    let token: string;
+    try {
+      token = tokenFromEnv(process.env);
+    } catch (e) {
+      fail(e instanceof Error ? e.message : String(e));
+    }
+    try {
+      const r = await fetchCyberStrikeVulns(values.api, token, { projectId: values['project-id'], taskId: values['task-id'] });
+      raw = r.pages;
+      capped = r.capped;
+    } catch (e) {
+      fail(`CyberStrikeAI から取得できません: ${(e instanceof Error ? e.message : String(e)).split(token).join('***')}`);
+    }
+  } else {
+    try {
+      if (statSync(file as string).size > MAX_FILE_BYTES) {
+        fail(`ファイルが大きすぎます（上限 ${MAX_FILE_BYTES / 1024 / 1024} MB）: ${file}`);
+      }
+    } catch (e) {
+      fail(`ファイルを読み込めません: ${file}（${e instanceof Error ? e.message : String(e)}）`);
+    }
+    raw = readJsonFile(file as string);
+  }
+  const parsed = parseCyberStrikeVulns(raw);
+  if (!parsed.ok) fail(parsed.error);
+
+  const result = cyberStrikeToRegistry(parsed.vulns, { scope: values.scope });
+  result.summary.invalid = parsed.invalid;
+  writeOutput(registryToYaml(result).trimEnd(), values.out);
+  const s = result.summary;
+  process.stderr.write(
+    `CyberStrikeAI の脆弱性を台帳に変換しました（変換 ${s.converted} / 除外(ignored) ${s.ignored} / 不正 ${s.invalid ?? 0} / 状態不明 ${s.unknownStatus} / 実証 ${s.byOutcome.verified} / 試行のみ ${s.byOutcome.attempted}）。node と canonicalIds を確認してから import-pentest に渡してください。
+${capped ? `取得件数が上限（${MAX_FINDINGS} 件）に達したため打ち切りました。--project-id / --task-id で絞り込んでください。
+` : ''}`,
+  );
+}
+
+/**
  * `import-scopesentry`：ScopeSentry の書き出し JSON、または `--api` で MCP（読み取り専用の list_assets のみ）から取得した
  * レコードから、外部露出サービスの構成図を作り、プロジェクト JSON を出力する。本文・リクエスト等は読まない（`scopesentryToLayer` 参照）。
  */
@@ -2211,6 +2277,10 @@ function main(): void {
     runImportConjur(values, positionals);
   } else if (command === 'import-shodan') {
     runImportShodan(values, positionals);
+  } else if (command === 'convert-cyberstrikeai') {
+    runConvertCyberstrikeai(values, positionals).catch((e: unknown) => {
+      fail(`CyberStrikeAI の変換に失敗しました: ${e instanceof Error ? e.message : String(e)}`);
+    });
   } else if (command === 'import-scopesentry') {
     runImportScopesentry(values, positionals).catch((e: unknown) => {
       fail(`ScopeSentry の取り込みに失敗しました: ${e instanceof Error ? e.message : String(e)}`);
