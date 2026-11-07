@@ -114,6 +114,7 @@ export const enRuleEditor: Partial<Record<TranslationKey, string>> = {
   'ruleEditor.edgeLeaf.axis.sourceUserTrust': 'source user trust',
   'ruleEditor.edgeLeaf.axis.targetUserTrust': 'target user trust',
   'ruleEditor.edgeLeaf.axis.semantic': 'Edge semantic',
+  'ruleEditor.edgeLeaf.axis.dataFlow': 'Data flow direction',
   'ruleEditor.edgeLeaf.axis.sourceIdentityProviderKind': 'Source IdP kind',
   'ruleEditor.edgeLeaf.axis.targetIdentityProviderKind': 'Target IdP kind',
   'ruleEditor.edgeLeaf.axis.authProvider': 'Credential issuer',

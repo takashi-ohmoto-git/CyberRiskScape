@@ -283,6 +283,8 @@ function matchEdgeWhen(
     const value = edge.semantic ?? 'data_flow';
     if (!when.semantic.includes(value)) return false;
   }
+  // 未指定は outbound（描いた向きに流れる）。ノードのルールの direction 判定と同じ既定
+  if (when.dataFlow && !when.dataFlow.includes(edge.dataFlow ?? 'outbound')) return false;
   if (when.sourceIdentityProviderKind) {
     // managedState / userTrust と同じ「明示宣言時のみ発火」方式。
     if (!source.identityProviderKind) return false;

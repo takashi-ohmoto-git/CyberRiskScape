@@ -146,6 +146,7 @@ const enCore: Partial<Record<TranslationKey, string>> = {
   'appliesToSummary.field.sourceUserTrust': 'Source user trust',
   'appliesToSummary.field.targetUserTrust': 'Target user trust',
   'appliesToSummary.field.semantic': 'Edge semantics',
+  'appliesToSummary.field.dataFlow': 'Data flow direction',
   'appliesToSummary.field.sourceIdentityProviderKind': 'Source IdP kind',
   'appliesToSummary.field.targetIdentityProviderKind': 'Target IdP kind',
   'appliesToSummary.field.authProvider': 'Credential issuer',

@@ -92,6 +92,7 @@ const jaCore = {
   'appliesToSummary.field.sourceUserTrust': '送信元ユーザー信頼区分',
   'appliesToSummary.field.targetUserTrust': '宛先ユーザー信頼区分',
   'appliesToSummary.field.semantic': 'エッジ意味論',
+  'appliesToSummary.field.dataFlow': 'データの流れの向き',
   'appliesToSummary.field.sourceIdentityProviderKind': '発信元の IdP 種別',
   'appliesToSummary.field.targetIdentityProviderKind': '宛先の IdP 種別',
   'appliesToSummary.field.authProvider': '資格情報の発行元',

@@ -116,6 +116,7 @@ export const jaRuleEditor = {
   'ruleEditor.edgeLeaf.axis.sourceUserTrust': 'source ユーザー信頼',
   'ruleEditor.edgeLeaf.axis.targetUserTrust': 'target ユーザー信頼',
   'ruleEditor.edgeLeaf.axis.semantic': 'エッジ意味論',
+  'ruleEditor.edgeLeaf.axis.dataFlow': 'データの流れの向き',
   'ruleEditor.edgeLeaf.axis.sourceIdentityProviderKind': '発信元の IdP 種別',
   'ruleEditor.edgeLeaf.axis.targetIdentityProviderKind': '宛先の IdP 種別',
   'ruleEditor.edgeLeaf.axis.authProvider': '資格情報の発行元',

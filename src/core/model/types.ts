@@ -239,6 +239,22 @@ export const POSTURE_FIELD_VALUES = {
   agentSandbox: ['Enforced', 'None'],
   /** エージェントの外部への通信の許可リストによる制限 */
   agentEgress: ['Restricted', 'Unrestricted'],
+  /** エージェントの行動予算（実行回数・送信件数・課金額・再帰の深さの上限）の強制 */
+  agentActionBudget: ['Enforced', 'None'],
+  /** コンテナ基盤：特権・ホストのパス・ランタイムのソケットを使うワークロードを受け付け時に拒否するか */
+  workloadPrivilegeLimit: ['Enforced', 'None'],
+  /** コンテナ基盤：すべての配備経路（直接の適用・CI・オペレーター等）に受け付けのポリシーが効くか */
+  admissionCoverage: ['AllPaths', 'Partial'],
+  /** メッセージブローカー：送信者・受信者ごとにトピック・キューの権限を限定しているか */
+  topicAccessScope: ['Restricted', 'Broad'],
+  /** メッセージブローカー：送信者の認証・メッセージの真正性の確認を強制しているか */
+  producerAuthentication: ['Enforced', 'None'],
+  /** メッセージブローカー：配信不能キュー・再送・失敗時のログへ写る本文を保護しているか（伏せ字・閲覧の限定・保存期間） */
+  deadLetterProtection: ['Protected', 'None'],
+  /** 更新サーバー：配る更新の署名を受け取り側が検証するか */
+  updateSigning: ['Verified', 'None'],
+  /** 更新サーバー：版・対象・チャネル・期限の束縛と巻き戻しの防止を強制しているか */
+  updateRollbackProtection: ['Enforced', 'None'],
   /** データ資産の保有の必要性 */
   dataNecessity: ['Required', 'UnderReview', 'NotRequired'],
   /** データ資産の件数規模 */
@@ -264,6 +280,9 @@ export const POSTURE_GROUPS = [
   'dependency',
   'agentPermission',
   'dataAsset',
+  'container',
+  'broker',
+  'update',
 ] as const;
 export type PostureGroup = (typeof POSTURE_GROUPS)[number];
 
@@ -278,8 +297,11 @@ export const POSTURE_GROUP_FIELDS: Readonly<Record<PostureGroup, readonly Postur
   aiUsageReview: ['aiUsageReview'],
   skill: ['skillVetting', 'skillVersionPinning', 'skillPermissionLimit', 'skillExternalContent'],
   dependency: ['dependencyLockfile', 'installScripts', 'dependencyVetting'],
-  agentPermission: ['commandAllowScope', 'agentSandbox', 'agentEgress'],
+  agentPermission: ['commandAllowScope', 'agentSandbox', 'agentEgress', 'agentActionBudget'],
   dataAsset: ['dataNecessity', 'recordVolume'],
+  container: ['workloadPrivilegeLimit', 'admissionCoverage'],
+  broker: ['topicAccessScope', 'producerAuthentication', 'deadLetterProtection'],
+  update: ['updateSigning', 'updateRollbackProtection'],
 };
 
 /** 運用状況。すべて optional。未設定は `Unknown`＝対策なしとして脅威を評価する。 */
@@ -302,6 +324,14 @@ export interface NodePosture {
   commandAllowScope?: (typeof POSTURE_FIELD_VALUES.commandAllowScope)[number];
   agentSandbox?: (typeof POSTURE_FIELD_VALUES.agentSandbox)[number];
   agentEgress?: (typeof POSTURE_FIELD_VALUES.agentEgress)[number];
+  agentActionBudget?: (typeof POSTURE_FIELD_VALUES.agentActionBudget)[number];
+  workloadPrivilegeLimit?: (typeof POSTURE_FIELD_VALUES.workloadPrivilegeLimit)[number];
+  admissionCoverage?: (typeof POSTURE_FIELD_VALUES.admissionCoverage)[number];
+  topicAccessScope?: (typeof POSTURE_FIELD_VALUES.topicAccessScope)[number];
+  producerAuthentication?: (typeof POSTURE_FIELD_VALUES.producerAuthentication)[number];
+  deadLetterProtection?: (typeof POSTURE_FIELD_VALUES.deadLetterProtection)[number];
+  updateSigning?: (typeof POSTURE_FIELD_VALUES.updateSigning)[number];
+  updateRollbackProtection?: (typeof POSTURE_FIELD_VALUES.updateRollbackProtection)[number];
   dataNecessity?: (typeof POSTURE_FIELD_VALUES.dataNecessity)[number];
   recordVolume?: (typeof POSTURE_FIELD_VALUES.recordVolume)[number];
   /** 最終点検日（YYYY-MM-DD）。記録用で脅威の判定には使わない。全型で入力可。 */

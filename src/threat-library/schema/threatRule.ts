@@ -152,6 +152,14 @@ export const NodePostureSchema = z.object({
   commandAllowScope: z.enum(POSTURE_FIELD_VALUES.commandAllowScope).optional(),
   agentSandbox: z.enum(POSTURE_FIELD_VALUES.agentSandbox).optional(),
   agentEgress: z.enum(POSTURE_FIELD_VALUES.agentEgress).optional(),
+  agentActionBudget: z.enum(POSTURE_FIELD_VALUES.agentActionBudget).optional(),
+  workloadPrivilegeLimit: z.enum(POSTURE_FIELD_VALUES.workloadPrivilegeLimit).optional(),
+  admissionCoverage: z.enum(POSTURE_FIELD_VALUES.admissionCoverage).optional(),
+  topicAccessScope: z.enum(POSTURE_FIELD_VALUES.topicAccessScope).optional(),
+  producerAuthentication: z.enum(POSTURE_FIELD_VALUES.producerAuthentication).optional(),
+  deadLetterProtection: z.enum(POSTURE_FIELD_VALUES.deadLetterProtection).optional(),
+  updateSigning: z.enum(POSTURE_FIELD_VALUES.updateSigning).optional(),
+  updateRollbackProtection: z.enum(POSTURE_FIELD_VALUES.updateRollbackProtection).optional(),
   dataNecessity: z.enum(POSTURE_FIELD_VALUES.dataNecessity).optional(),
   recordVolume: z.enum(POSTURE_FIELD_VALUES.recordVolume).optional(),
   lastReviewedAt: PostureDateSchema.optional(),
@@ -191,6 +199,14 @@ export const PostureMatchSchema = z
     commandAllowScope: postureValues(POSTURE_FIELD_VALUES.commandAllowScope),
     agentSandbox: postureValues(POSTURE_FIELD_VALUES.agentSandbox),
     agentEgress: postureValues(POSTURE_FIELD_VALUES.agentEgress),
+    agentActionBudget: postureValues(POSTURE_FIELD_VALUES.agentActionBudget),
+    workloadPrivilegeLimit: postureValues(POSTURE_FIELD_VALUES.workloadPrivilegeLimit),
+    admissionCoverage: postureValues(POSTURE_FIELD_VALUES.admissionCoverage),
+    topicAccessScope: postureValues(POSTURE_FIELD_VALUES.topicAccessScope),
+    producerAuthentication: postureValues(POSTURE_FIELD_VALUES.producerAuthentication),
+    deadLetterProtection: postureValues(POSTURE_FIELD_VALUES.deadLetterProtection),
+    updateSigning: postureValues(POSTURE_FIELD_VALUES.updateSigning),
+    updateRollbackProtection: postureValues(POSTURE_FIELD_VALUES.updateRollbackProtection),
     dataNecessity: postureValues(POSTURE_FIELD_VALUES.dataNecessity),
     recordVolume: postureValues(POSTURE_FIELD_VALUES.recordVolume),
   })
@@ -485,6 +501,12 @@ const EdgeWhenSchema = z
      */
     semantic: z.array(EdgeSemanticSchema).nonempty().optional(),
     /**
+     * データの流れの向き（edge.dataFlow）。未指定エッジは `outbound`（既定）として評価する。
+     * source/target は描いた向きなので、「送り元 → 受け口」を問うルールは
+     * `anyOf` で「描いた向き × outbound/bidirectional」と「逆向き × inbound/bidirectional」を並べる。
+     */
+    dataFlow: z.array(DataFlowSchema).nonempty().optional(),
+    /**
      * source ノードの IdP 種別（IDENTITY_PROVIDER 系のみ意味を持つ）。未宣言は不成立。
      * 例：Directory → IDaaS の ID 同期を捕まえる。
      */
@@ -524,6 +546,7 @@ const EdgeWhenSchema = z
       w.sourceUserTrust !== undefined ||
       w.targetUserTrust !== undefined ||
       w.semantic !== undefined ||
+      w.dataFlow !== undefined ||
       w.sourceIdentityProviderKind !== undefined ||
       w.targetIdentityProviderKind !== undefined ||
       w.authProvider !== undefined ||
