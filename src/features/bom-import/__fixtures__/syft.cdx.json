@@ -1,0 +1,100 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.7.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "serialNumber": "urn:uuid:00000000-0000-4000-8000-0000000000b1",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-11-07T00:00:00+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "author": "anchore",
+          "name": "syft",
+          "version": "1.57.0"
+        }
+      ]
+    },
+    "component": {
+      "bom-ref": "00000000-0000-4000-8000-0000000000c1",
+      "type": "container",
+      "name": "registry.example.com/example/app",
+      "version": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:npm/example-lib@1.2.3?package-id=a1b2c3d4e5f60718",
+      "type": "library",
+      "name": "example-lib",
+      "version": "1.2.3",
+      "cpe": "cpe:2.3:a:example-lib:example-lib:1.2.3:*:*:*:*:*:*:*",
+      "purl": "pkg:npm/example-lib@1.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "javascript-lock-cataloger"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/app/package-lock.json"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/example-util@0.9.1?package-id=b2c3d4e5f6071829",
+      "type": "library",
+      "name": "example-util",
+      "version": "0.9.1",
+      "purl": "pkg:npm/example-util@0.9.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "javascript-lock-cataloger"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/app/package-lock.json"
+        }
+      ]
+    },
+    {
+      "bom-ref": "os:alpine@3.20.3",
+      "type": "operating-system",
+      "name": "alpine",
+      "version": "3.20.3",
+      "properties": [
+        {
+          "name": "syft:distro:id",
+          "value": "alpine"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:npm/example-lib@1.2.3?package-id=a1b2c3d4e5f60718",
+      "dependsOn": [
+        "pkg:npm/example-util@0.9.1?package-id=b2c3d4e5f6071829"
+      ]
+    },
+    {
+      "ref": "pkg:npm/example-util@0.9.1?package-id=b2c3d4e5f6071829"
+    }
+  ]
+}

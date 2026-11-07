@@ -11,3 +11,5 @@ JSON はファイル冒頭にコメントを書けないため、出典と取得
 # 他のフィクスチャ
 
 - `trivy.cdx.json`：Trivy の `--format cyclonedx` を模した架空の CycloneDX 1.6（部品 2・脆弱性 2）。すべて架空のデータ。
+- `syft.cdx.json`：Syft の `-o cyclonedx-json` を模した架空の CycloneDX 1.7（部品 3、OS 部品を含む、脆弱性なし）。すべて架空のデータ。
+- `grype.cdx.json`：Grype の `-o cyclonedx-json` を模した架空の CycloneDX 1.7（部品 3・脆弱性 2。部品は bom-ref で解決される）。すべて架空のデータ。
