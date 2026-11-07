@@ -23,12 +23,21 @@ items:
   "F1002.001":
     title: "Abuse of Public-Facing API: Mobile API Abuse"
     summary: "Call mobile-facing APIs from modified apps, emulators, or scripts to get around restrictions that assume the genuine app."
+  "F1002.002":
+    title: "Abuse of Public-Facing API: Web API Abuse"
+    summary: "Call the APIs behind a website or web app directly from scripts or bots, skipping the UI and getting around controls that assume the genuine front end."
   "F1004":
     title: "Access with Stolen Session Cookie"
     summary: "Replay a stolen authenticated session cookie to operate the victim's account without a password or MFA."
+  "F1007.003":
+    title: "Adversary-in-the-Browser: Malicious JavaScript Injection"
+    summary: "Plant malicious JavaScript in a legitimate web page so it steals entered credentials or card data, or alters transactions, with the site's own privileges."
   "F1011":
     title: "Card Dump Capture"
     summary: "Collect card data via skimming devices, compromised payment systems, or captured input, for counterfeit cards, card-not-present fraud, or resale."
+  "F1020.003":
+    title: "Create Fake Materials: Synthetic Media"
+    summary: "Synthesize or alter a real person's voice, face, or video for impersonation calls and meetings, or to defeat biometric and identity checks."
   "F1031":
     title: "Impersonate Account Holder"
     summary: "Pose as the customer using stolen personal data or a faked voice to pass an institution's identity checks and get actions performed."
@@ -38,6 +47,9 @@ items:
   "F1033":
     title: "Insider Access Abuse"
     summary: "An insider commits fraud with legitimately granted privileges, which is harder to tell apart from normal work than an outside attack."
+  "F1040.001":
+    title: "Phone Number Spoofing: Customer Phone Number Spoofing"
+    summary: "Call an institution with a caller ID that looks like a customer's personal number, using the number match to pass identity checks or change account details."
   "F1056":
     title: "Impersonate Trusted Person"
     summary: "Pose as a co-worker, family member, or business partner the victim knows to request information, payee changes, or transfers."

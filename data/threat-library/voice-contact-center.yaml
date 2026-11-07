@@ -87,6 +87,8 @@ rules:
         ref: "PR.AA-01"
       - standard: mitre-f3
         ref: "F1031"
+      - standard: mitre-f3
+        ref: "F1020.003"
     references:
       - title: "NIST SP 800-63B-4 - Digital Identity Guidelines: Authentication and Authenticator Management（§3.2.3 生体認証の利用）"
         url: "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-63B-4.pdf"
@@ -156,6 +158,8 @@ rules:
         ref: "F1056"
       - standard: mitre-f3
         ref: "F1032"
+      - standard: mitre-f3
+        ref: "F1020.003"
     references:
       - title: "MITRE ATLAS AML.T0052.001 Deepfake-Assisted Phishing"
         url: "https://atlas.mitre.org/techniques/AML.T0052.001"
@@ -343,6 +347,8 @@ rules:
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.AA-03"
+      - standard: mitre-f3
+        ref: "F1040.001"
     references:
       - title: "FCC - Call Authentication Trust Anchor（STIR/SHAKEN）"
         url: "https://www.fcc.gov/call-authentication"

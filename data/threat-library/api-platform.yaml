@@ -431,6 +431,8 @@ rules:
         ref: "PR.AA-01"
       - standard: nist-csf-2.0
         ref: "PR.AA-03"
+      - standard: mitre-f3
+        ref: "F1002.002"
     references:
       - title: "NICT CYNEX（LETTICE）注意喚起「相次ぐ情報漏洩、その原因の一つは『アプリ解析からのサーバ攻撃』」（2026-10-13、A2B 攻撃）"
         url: "https://cynex.nict.go.jp/pdf/library/lettice/261013-01.pdf"
