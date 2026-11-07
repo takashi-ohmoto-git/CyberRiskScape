@@ -45,6 +45,11 @@ app and approve them on the PR.
 
 ## 3. What you can do at each stage of development
 
+Combined with OSS assessment tools (SCA, SAST, DAST, AI pentesting), you can collect the results of each stage in CyberRiskScape and
+prioritize them on attack paths. See [Vulnerability Management with OSS Scanners](oss-vulnerability-management.md) for the steps for each tool.
+
+![Overview of OSS assessment tools at each stage and how CyberRiskScape imports, prioritizes, and hands over context](../assets/guide/en/oss-vulnerability-management/pipeline.svg)
+
 ### 3.1 Planning and requirements — look up threats without a diagram
 
 | What you can do | Feature | Guide |

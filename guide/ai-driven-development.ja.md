@@ -41,6 +41,11 @@ CyberRiskScape は、脅威モデルを次の 3 つの役割で回す前提で�
 
 ## 3. 開発の工程ごとに、何ができるか
 
+OSS の診断ツール（SCA・SAST・DAST・AI ペンテスト）と組み合わせると、工程ごとの診断の結果を CyberRiskScape に集め、
+攻撃経路の上で優先順位を付けられます。ツールごとの手順は [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) を参照してください。
+
+![工程ごとの OSS の診断ツールと、CyberRiskScape による取り込み・優先順位付け・受け渡しの全体図](../assets/guide/oss-vulnerability-management/pipeline.svg)
+
 ### 3.1 企画・要件 — 図が無くても脅威を調べる
 
 | できること | 使う機能 | ガイド |
