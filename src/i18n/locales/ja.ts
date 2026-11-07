@@ -18,6 +18,7 @@ import { jaAnalytics } from './ja/analytics';
 import { jaRuleEditor } from './ja/ruleEditor';
 import { jaProject } from './ja/project';
 import { jaThreats } from './ja/threats';
+import { jaFindings } from './ja/findings';
 import { jaReport } from './ja/report';
 import { jaDetection } from './ja/detection';
 import { jaDiff } from './ja/diff';
@@ -242,6 +243,7 @@ export const ja = {
   ...jaRuleEditor,
   ...jaProject,
   ...jaThreats,
+  ...jaFindings,
   ...jaReport,
   ...jaDetection,
   ...jaDiff,

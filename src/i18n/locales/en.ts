@@ -6,6 +6,7 @@ import { enAnalytics } from './en/analytics';
 import { enRuleEditor } from './en/ruleEditor';
 import { enProject } from './en/project';
 import { enThreats } from './en/threats';
+import { enFindings } from './en/findings';
 import { enReport } from './en/report';
 import { enDetection } from './en/detection';
 import { enDiff } from './en/diff';
@@ -217,6 +218,7 @@ export const en: Partial<Record<TranslationKey, string>> = {
   ...enRuleEditor,
   ...enProject,
   ...enThreats,
+  ...enFindings,
   ...enReport,
   ...enDetection,
   ...enDiff,

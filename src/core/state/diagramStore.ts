@@ -560,6 +560,8 @@ interface DiagramState {
   // ---- actions: project metadata ----
   updateProjectMeta: <K extends keyof ProjectMeta>(field: K, value: ProjectMeta[K]) => void;
   setProjectMeta: (meta: ProjectMeta) => void;
+  /** 指摘を丸ごと差し替える（画面からの取り込み用）。Undo/Redo の対象外（§8.2）。保存対象なので dirty になる。 */
+  setFindings: (findings: Finding[]) => void;
   openProjectEdit: () => void;
   closeProjectEdit: () => void;
   openComplianceMap: () => void;
@@ -1316,6 +1318,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     set((s) => ({ projectMeta: { ...s.projectMeta, [field]: value } })),
 
   setProjectMeta: (meta) => set({ projectMeta: meta }),
+  setFindings: (findings) => set({ findings }),
 
   openProjectEdit: () => set({ isProjectEditOpen: true }),
   closeProjectEdit: () => set({ isProjectEditOpen: false }),

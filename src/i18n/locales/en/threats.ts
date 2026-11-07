@@ -16,6 +16,12 @@ export const enThreats: Partial<Record<TranslationKey, string>> = {
   'threats.threatCard.pentestAttemptedHint':
     'A record that this tool tried this attack technique. Success was not confirmed. Techniques not tried are not necessarily safe.',
   'threats.threatCard.pentestAttemptedTag': 'attempted',
+  'threats.threatCard.securityAuditVerified': 'Verified by source audit (local)',
+  'threats.threatCard.securityAuditVerifiedHint':
+    'An AI source audit confirmed this on the local source code. Not confirmed in a live environment.',
+  'threats.threatCard.securityAuditUnverified': 'Source audit: needs confirmation',
+  'threats.threatCard.securityAuditUnverifiedHint':
+    'An AI source audit gave grounds, but a deciding fact is unresolved. No severity is assigned.',
   'threats.threatCard.mitigationHeadingTiered': 'Mitigations (3-tier maturity)',
   'threats.threatCard.mitigationHeading': 'Mitigations',
   'threats.threatCard.complianceHeading': 'Compliance',

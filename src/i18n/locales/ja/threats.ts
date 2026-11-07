@@ -18,6 +18,12 @@ export const jaThreats = {
   'threats.threatCard.pentestAttemptedHint':
     'このツールが攻撃手段として試行した記録です。成立は確認されていません。試行していない手段が安全という意味でもありません。',
   'threats.threatCard.pentestAttemptedTag': '試行',
+  'threats.threatCard.securityAuditVerified': 'ソース監査で実証（ローカル）',
+  'threats.threatCard.securityAuditVerifiedHint':
+    'AI によるソース監査が、手元のソースコードの上で成立を確かめた指摘です。実環境での確認ではありません。',
+  'threats.threatCard.securityAuditUnverified': 'ソース監査で要確認',
+  'threats.threatCard.securityAuditUnverifiedHint':
+    'AI によるソース監査が根拠を示したものの、決め手の事実が未解決の指摘です。重大度は付いていません。',
   'threats.threatCard.mitigationHeadingTiered': '緩和策（3 段階成熟度）',
   'threats.threatCard.mitigationHeading': '緩和策',
   'threats.threatCard.complianceHeading': 'コンプライアンス',

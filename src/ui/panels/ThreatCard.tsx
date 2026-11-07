@@ -26,6 +26,8 @@ import { makeComplianceKey } from '../../compliance/loader/loadComplianceMap';
 import type { StandardId } from '../../compliance/schema/complianceItem';
 import { summarizeAppliesTo } from './appliesToSummary';
 import { findingsForThreat } from '../../features/pentest-import/matchFindings';
+import { securityAuditFindingsForThreat } from '../../features/security-audit-import/matchSecurityAudit';
+import { SecurityAuditMarks } from '../../features/security-audit-import/SecurityAuditMarks';
 import { useRuleLookup } from './useRuleLookup';
 import { threatCardDomId } from './threatCardDomId';
 import { useLocale, useT, type Locale, type TranslationKey } from '../../i18n';
@@ -93,6 +95,10 @@ export function ThreatCard({ threat, targetName, collapsible }: ThreatCardProps)
   const pentestFindings = useMemo(() => findingsForThreat(findings, threat), [findings, threat]);
   const pentestProducts = [...new Set(pentestFindings.filter((f) => f.outcome !== 'attempted').map((f) => f.source.product))];
   const attemptedProducts = [...new Set(pentestFindings.filter((f) => f.outcome === 'attempted').map((f) => f.source.product))];
+  // ソース監査の指摘（ペンテストとは別の印）
+  const auditFindings = useMemo(() => securityAuditFindingsForThreat(findings, threat), [findings, threat]);
+  const auditConfirmed = auditFindings.some((f) => f.outcome !== 'unverified');
+  const auditUnverified = auditFindings.some((f) => f.outcome === 'unverified');
 
   const isManual = threat.origin === 'manual';
   // 「抑制」（淡色化）扱いは受容/誤検知のみ。回避/低減/移転は表示維持。
@@ -149,6 +155,7 @@ export function ThreatCard({ threat, targetName, collapsible }: ThreatCardProps)
             {t('threats.threatCard.pentestAttempted', { product: attemptedProducts.join(', ') })}
           </span>
         )}
+        <SecurityAuditMarks confirmed={auditConfirmed} unverified={auditUnverified} />
         {hasAssumption && (
           <span title={t('threatCard.assumption.badge')} className="shrink-0 text-amber-300">
             <AlertTriangle size={12} />
@@ -255,6 +262,7 @@ export function ThreatCard({ threat, targetName, collapsible }: ThreatCardProps)
               {t('threats.threatCard.pentestAttempted', { product: attemptedProducts.join(', ') })}
             </span>
           )}
+          <SecurityAuditMarks confirmed={auditConfirmed} unverified={auditUnverified} />
           {!isManual && threat.suppression && (
             <span
               className={`text-xs px-2 py-0.5 rounded border font-bold ${RISK_TREATMENT_BADGE[threat.suppression.status]}`}
