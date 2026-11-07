@@ -154,3 +154,53 @@ describe('importSarif（Trivy の SARIF）', () => {
     expect(text).not.toContain('EXAMPLE_KEY_ID');
   });
 });
+
+describe('importSarif（ZAP の SARIF）', () => {
+  const zap = (() => {
+    const r = parseSarif(read('sarif-import', 'zap.sarif.json'));
+    if (!r.ok) throw new Error(r.error);
+    return r;
+  })();
+  const out = importSarif(project, zap, { scope: 'app-a', importedAt: AT });
+  const findings = out.project.findings ?? [];
+  const byRule = (rule: string) => findings.find((f) => f.identifiers.some((i) => i.value === rule));
+
+  it('3 件を保存し、製品名と版は tool.driver から読む', () => {
+    expect(out.stored).toBe(3);
+    expect(out.runs[0]).toMatchObject({ product: 'ZAP', productVersion: '2.17.0', results: 3, stored: 3 });
+  });
+
+  it('level で深刻度を決める（error→High・warning→Medium）', () => {
+    expect(byRule('40018')).toMatchObject({ severity: 'High', sourceSeverity: 'error' });
+    expect(byRule('40012')).toMatchObject({ severity: 'High', sourceSeverity: 'error' });
+    expect(byRule('10038')).toMatchObject({ severity: 'Medium', sourceSeverity: 'warning' });
+  });
+
+  it('CWE は relationships（toolComponent が CWE の数値 id）から読む', () => {
+    expect(byRule('40018')?.identifiers).toContainEqual({ scheme: 'cwe', value: '89' });
+    expect(byRule('10038')?.identifiers).toContainEqual({ scheme: 'cwe', value: '693' });
+    expect(byRule('40012')?.identifiers).toContainEqual({ scheme: 'cwe', value: '79' });
+  });
+
+  it('canonicalId は cwe.yaml の対応どおり（89 は対応あり・693 と 79 は対応なしで未対応として数える）', () => {
+    expect(byRule('40018')?.canonicalIds).toEqual(expect.arrayContaining(['api-query-injection']));
+    expect(byRule('10038')?.canonicalIds).toEqual([]);
+    expect(byRule('40012')?.canonicalIds).toEqual([]);
+    expect(out.runs[0].cweUnmapped).toBe(2);
+  });
+
+  it('title は rule の shortDescription（message ではない）', () => {
+    expect(byRule('40018')?.title).toBe('SQL Injection');
+    expect(byRule('10038')?.title).toBe('Content Security Policy (CSP) Header Not Set');
+  });
+
+  it('リクエスト・レスポンス・snippet・攻撃文字列・message 本文は保存しない', () => {
+    expect(JSON.stringify(out.project)).not.toContain('ZAP-SECRET-MARKER');
+  });
+
+  it('resource.label は URL（スキーム・ホスト・クエリを含む）に行番号を付けた表記', () => {
+    // クエリは保存される（2026-11-07 ユーザー決定で変更しない）
+    expect(byRule('40018')?.resource?.label).toBe("https://app.example.com/search?q=1'+OR+'1'='1:1");
+    expect(byRule('10038')?.resource?.label).toBe('https://app.example.com/:1');
+  });
+});

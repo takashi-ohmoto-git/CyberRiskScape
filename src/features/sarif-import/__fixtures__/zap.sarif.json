@@ -1,0 +1,309 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "ZAP",
+          "version": "2.17.0",
+          "semanticVersion": "2.17.0",
+          "informationUri": "https://www.zaproxy.org/",
+          "rules": [
+            {
+              "id": "40018",
+              "name": "SQL Injection",
+              "shortDescription": {
+                "text": "SQL Injection"
+              },
+              "fullDescription": {
+                "text": "fictitious description"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "references": [
+                  "https://www.zaproxy.org/docs/alerts/40018/"
+                ],
+                "solution": {
+                  "text": "fictitious solution"
+                },
+                "confidence": "medium"
+              },
+              "relationships": [
+                {
+                  "target": {
+                    "id": "89",
+                    "guid": "00000000-0000-0000-0000-000000000089",
+                    "toolComponent": {
+                      "name": "CWE",
+                      "guid": "11111111-1111-1111-1111-111111111111"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "10038",
+              "name": "Content Security Policy (CSP) Header Not Set",
+              "shortDescription": {
+                "text": "Content Security Policy (CSP) Header Not Set"
+              },
+              "fullDescription": {
+                "text": "fictitious description"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "references": [
+                  "https://www.zaproxy.org/docs/alerts/10038/"
+                ],
+                "solution": {
+                  "text": "fictitious solution"
+                },
+                "confidence": "medium"
+              },
+              "relationships": [
+                {
+                  "target": {
+                    "id": "693",
+                    "guid": "00000000-0000-0000-0000-000000000069",
+                    "toolComponent": {
+                      "name": "CWE",
+                      "guid": "11111111-1111-1111-1111-111111111111"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "40012",
+              "name": "Cross Site Scripting (Reflected)",
+              "shortDescription": {
+                "text": "Cross Site Scripting (Reflected)"
+              },
+              "fullDescription": {
+                "text": "fictitious description"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "references": [
+                  "https://www.zaproxy.org/docs/alerts/40012/"
+                ],
+                "solution": {
+                  "text": "fictitious solution"
+                },
+                "confidence": "medium"
+              },
+              "relationships": [
+                {
+                  "target": {
+                    "id": "79",
+                    "guid": "00000000-0000-0000-0000-000000000079",
+                    "toolComponent": {
+                      "name": "CWE",
+                      "guid": "11111111-1111-1111-1111-111111111111"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "taxonomies": [
+        {
+          "name": "CWE",
+          "version": "4.14",
+          "guid": "11111111-1111-1111-1111-111111111111",
+          "informationUri": "https://cwe.mitre.org/",
+          "taxa": [
+            {
+              "id": "89",
+              "guid": "00000000-0000-0000-0000-000000000089",
+              "helpUri": "https://cwe.mitre.org/data/definitions/89.html"
+            },
+            {
+              "id": "693",
+              "guid": "00000000-0000-0000-0000-000000000069",
+              "helpUri": "https://cwe.mitre.org/data/definitions/693.html"
+            },
+            {
+              "id": "79",
+              "guid": "00000000-0000-0000-0000-000000000079",
+              "helpUri": "https://cwe.mitre.org/data/definitions/79.html"
+            }
+          ]
+        }
+      ],
+      "results": [
+        {
+          "level": "error",
+          "ruleId": "40018",
+          "message": {
+            "text": "fictitious sqli ZAP-SECRET-MARKER"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "https://app.example.com/search?q=1%27+OR+%271%27%3D%271"
+                },
+                "region": {
+                  "startLine": 1,
+                  "snippet": {
+                    "text": "evidence ZAP-SECRET-MARKER"
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "attack": "' OR '1'='1 ZAP-SECRET-MARKER"
+          },
+          "webRequest": {
+            "protocol": "HTTP",
+            "version": "1.1",
+            "target": "",
+            "method": "GET",
+            "headers": {
+              "Cookie": "session=ZAP-SECRET-MARKER",
+              "Authorization": "Bearer ZAP-SECRET-MARKER"
+            },
+            "body": {
+              "text": ""
+            }
+          },
+          "webResponse": {
+            "protocol": "HTTP",
+            "version": "1.1",
+            "statusCode": 200,
+            "reasonPhrase": "OK",
+            "headers": {
+              "Content-Type": "text/html"
+            },
+            "body": {
+              "text": "<html>ZAP-SECRET-MARKER</html>"
+            },
+            "noResponseReceived": false
+          }
+        },
+        {
+          "level": "warning",
+          "ruleId": "10038",
+          "message": {
+            "text": "fictitious csp ZAP-SECRET-MARKER"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "https://app.example.com/"
+                },
+                "region": {
+                  "startLine": 1,
+                  "snippet": {
+                    "text": "evidence ZAP-SECRET-MARKER"
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "attack": " ZAP-SECRET-MARKER"
+          },
+          "webRequest": {
+            "protocol": "HTTP",
+            "version": "1.1",
+            "target": "",
+            "method": "GET",
+            "headers": {
+              "Cookie": "session=ZAP-SECRET-MARKER",
+              "Authorization": "Bearer ZAP-SECRET-MARKER"
+            },
+            "body": {
+              "text": ""
+            }
+          },
+          "webResponse": {
+            "protocol": "HTTP",
+            "version": "1.1",
+            "statusCode": 200,
+            "reasonPhrase": "OK",
+            "headers": {
+              "Content-Type": "text/html"
+            },
+            "body": {
+              "text": "<html>ZAP-SECRET-MARKER</html>"
+            },
+            "noResponseReceived": false
+          }
+        },
+        {
+          "level": "error",
+          "ruleId": "40012",
+          "message": {
+            "text": "fictitious xss ZAP-SECRET-MARKER"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "https://app.example.com/view?name=%3Cscript%3Ealert(1)%3C%2Fscript%3E"
+                },
+                "region": {
+                  "startLine": 1,
+                  "snippet": {
+                    "text": "evidence ZAP-SECRET-MARKER"
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "attack": "<script>alert(1)</script> ZAP-SECRET-MARKER"
+          },
+          "webRequest": {
+            "protocol": "HTTP",
+            "version": "1.1",
+            "target": "",
+            "method": "GET",
+            "headers": {
+              "Cookie": "session=ZAP-SECRET-MARKER",
+              "Authorization": "Bearer ZAP-SECRET-MARKER"
+            },
+            "body": {
+              "text": ""
+            }
+          },
+          "webResponse": {
+            "protocol": "HTTP",
+            "version": "1.1",
+            "statusCode": 200,
+            "reasonPhrase": "OK",
+            "headers": {
+              "Content-Type": "text/html"
+            },
+            "body": {
+              "text": "<html>ZAP-SECRET-MARKER</html>"
+            },
+            "noResponseReceived": false
+          }
+        }
+      ]
+    }
+  ]
+}
