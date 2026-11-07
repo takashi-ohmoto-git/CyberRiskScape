@@ -79,6 +79,8 @@ You can load the following templates as they are (loading works as in [the templ
 **What is in the diagram:** 12 components, 10 data flows, 3 trust boundaries (loading it detects **79 threats**: Critical 7, High 47,
 Medium 25). The node numbers (C1...) and flow numbers (DF1...) are the same in the tables below.
 
+> **About the counts (added 2026-11-07):** the counts in this guide were measured in October 2026. Rules added since then (such as login credential guessing `api-login-credential-guessing-001`) increase the counts when you load the template in the current version. The way of reading §6, what disappears and what remains before and after the countermeasures, does not change.
+
 | Where | What is drawn (type) |
 |---|---|
 | Internet side (external boundary) | C1 User (`User`, containing C2 the user's smartphone (`Smartphone`, with the member app)); C3 Attacker (`Agentic Attacker`, analyzing the app with AI) |
@@ -131,6 +133,7 @@ the CSV. Counts are measured on the "before" diagram.
   - Direct access to a backend API that bypasses the gateway `api-backend-gateway-bypass-001` (DF3, High): the smartphone has a line straight to the old API. **It does not fire on a line from an attacker node (DF4)**, because the rule looks at legitimate callers' routes
   - Unauthenticated line over a public network `stride-edge-unauth-internet-001` (DF4, Critical); direct exposure across a trust boundary `stride-edge-internet-exposed-sensitive-001` (DF10, Critical)
   - No limit or detection for bulk retrieval of personal data through the API `api-bulk-data-harvesting-001` (C4, C5, High)
+  - Brute force, credential stuffing, and password spraying against login and password-reset entry points `api-login-credential-guessing-001` (C4, C5, Medium; added 2026-11). The attacker tries large numbers of leaked ID and password pairs against the APIs it has identified. Entering the gateway's attack surface attribute "Rate limiting" removes it
   - Missing defenses at the gateway's public entry point: direct global IP exposure `stride-web-global-ip-exposure-001`, unrestricted source IPs `stride-web-no-source-ip-restriction-001`, remote management exposed `stride-web-remote-mgmt-exposed-001` (Critical), no WAF `stride-web-no-waf-001`, no DDoS protection `stride-web-no-ddos-protection-001`, no access log `stride-web-no-access-log-001`, and blind perimeter `stride-web-blind-perimeter-001`
 - **Way of thinking:** attackers look first for **unused APIs, old versions, and test environments**. Have you drawn the old API and test environment on the diagram, and does the list (API specification) match the hosts actually exposed? That is where inspection starts
 

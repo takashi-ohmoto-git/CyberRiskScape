@@ -1,0 +1,80 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "metadata": {
+    "timestamp": "2026-10-15T09:00:00+09:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "example-sbom-generator",
+          "version": "1.0"
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg-web",
+      "name": "example-web-framework",
+      "version": "4.2.1",
+      "purl": "pkg:npm/example-web-framework@4.2.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg-log",
+      "name": "example-logger",
+      "version": "2.3.0",
+      "purl": "pkg:npm/example-logger@2.3.0"
+    }
+  ],
+  "vulnerabilities": [
+    {
+      "id": "CVE-2099-0001",
+      "source": {
+        "name": "Example DB"
+      },
+      "ratings": [
+        {
+          "score": 6.1,
+          "severity": "medium",
+          "method": "CVSSv31"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg-web"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2099-0003",
+      "source": {
+        "name": "Example DB"
+      },
+      "ratings": [
+        {
+          "score": 7.5,
+          "severity": "high",
+          "method": "CVSSv31"
+        }
+      ],
+      "analysis": {
+        "state": "not_affected"
+      },
+      "affects": [
+        {
+          "ref": "pkg-log"
+        }
+      ]
+    }
+  ]
+}

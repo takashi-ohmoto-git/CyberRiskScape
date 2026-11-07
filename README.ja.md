@@ -4,7 +4,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Threat rules](https://img.shields.io/badge/threat%20rules-281-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-1972%20passing-brightgreen.svg)](#開発)
+[![Tests](https://img.shields.io/badge/tests-2005%20passing-brightgreen.svg)](#開発)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 [English](README.md) | **日本語**
@@ -86,10 +86,11 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 - **運用状況の記録** — 図だけでは分からないことをノードごとに記録：ログ（取得・保持期間・確認できる主体）、
   保管時の暗号化、パッチの適用状況、アカウント棚卸し、保有データの必要性と件数規模、最終点検日。
   未入力は「対策なし」として評価（[ガイド](guide/ipa-alert-2026-10.ja.md)）
-- **注意喚起チェックリスト** — 公表された注意喚起の対策（同梱：IPA 注意喚起 2026-10-09 の 17 項目）を
+- **注意喚起チェックリスト** — 公表された注意喚起の対策（同梱：IPA 注意喚起 2026-10-09 の 17 項目、
+  国家サイバー統括室の注意喚起 2026-11-05 の 12 項目）を
   図に当てはめ、項目ごとに「要対応・未入力・リスク受容・問題なし・対象なし」と関係ノードを一覧。
   点検が古いノードの一覧、CSV 出力、CI 用の `checklist --fail-on-action` に対応
-  （[ガイド](guide/ipa-alert-2026-10.ja.md)）
+  （[ガイド](guide/ipa-alert-2026-10.ja.md)・[ガイド（国家サイバー統括室）](guide/nco-advisory-2026-11.ja.md)）
 - **コンプライアンスマッピング** — 検出脅威を NIST CSF 2.0（128 項目）/
   NIST AI RMF（72 項目）/ AI 事業者ガイドライン（34 項目）に紐付け
 - **リスク評価** — Impact × Likelihood スコアリング、リスク対応方針（低減・受容・移転・回避）の記録
@@ -178,7 +179,7 @@ npm run test:watch   # テスト watch モード
 npx tsc --noEmit     # 型チェック（strict）
 ```
 
-変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 1,972 件の
+変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 2,005 件の
 テストが通ります。
 
 ---

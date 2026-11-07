@@ -1,0 +1,52 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "metadata": {
+    "timestamp": "2026-10-15T09:00:00+09:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "example-sbom-generator",
+          "version": "1.0"
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg-img",
+      "name": "example-image-lib",
+      "version": "1.0.5",
+      "purl": "pkg:npm/example-image-lib@1.0.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ]
+    }
+  ],
+  "vulnerabilities": [
+    {
+      "id": "CVE-2099-0002",
+      "source": {
+        "name": "Example DB"
+      },
+      "ratings": [
+        {
+          "score": 5.3,
+          "severity": "medium",
+          "method": "CVSSv31"
+        }
+      ],
+      "affects": [
+        {
+          "ref": "pkg-img"
+        }
+      ]
+    }
+  ]
+}

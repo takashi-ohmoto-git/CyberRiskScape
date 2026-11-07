@@ -4,7 +4,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Threat rules](https://img.shields.io/badge/threat%20rules-281-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-1972%20passing-brightgreen.svg)](#development)
+[![Tests](https://img.shields.io/badge/tests-2005%20passing-brightgreen.svg)](#development)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 **English** | [日本語](README.ja.md)
@@ -101,10 +101,10 @@ For the full list of products and how they connect, see [Integrations](guide/int
   review, whether held data is still needed and how many records, and the last review date.
   Blank fields are evaluated as "no countermeasure" ([guide](guide/ipa-alert-2026-10.md))
 - **Alert checklist** — apply a published alert's measures (bundled: the IPA alert of
-  2026-10-09, 17 items) to your diagram. Each item shows action needed / not entered / risk
+  2026-10-09, 17 items, and Japan's National Cybersecurity Office advisory of 2026-11-05, 12 items) to your diagram. Each item shows action needed / not entered / risk
   accepted / no issue / not applicable with the related nodes, plus the nodes whose review
   record is old. Export CSV or run it in CI with `checklist --fail-on-action`
-  ([guide](guide/ipa-alert-2026-10.md))
+  ([guide](guide/ipa-alert-2026-10.md), [NCO advisory guide](guide/nco-advisory-2026-11.md))
 - **Compliance mapping** — maps detected threats to NIST CSF 2.0 (128 items), NIST AI RMF
   (72 items), and Japan's AI Business Operator Guidelines (34 items)
 - **Risk assessment** — Impact × Likelihood scoring and risk treatment decisions (mitigate / accept /
@@ -192,7 +192,7 @@ npm run test:watch   # watch mode
 npx tsc --noEmit     # type check (strict)
 ```
 
-The standard check after a change is `npx tsc --noEmit` plus the test suite. 1,972 tests
+The standard check after a change is `npx tsc --noEmit` plus the test suite. 2,005 tests
 currently pass.
 
 ---

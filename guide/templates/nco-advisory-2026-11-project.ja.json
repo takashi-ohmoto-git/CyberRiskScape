@@ -1,0 +1,480 @@
+{
+  "schemaVersion": 1,
+  "layers": {
+    "L0": {
+      "nodes": [],
+      "edges": [],
+      "boundaries": [],
+      "annotations": []
+    },
+    "L1": {
+      "annotations": [],
+      "nodes": [
+        {
+          "seq": 1,
+          "id": "nc_user",
+          "type": "USER",
+          "x": 60,
+          "y": 60,
+          "label": "会員",
+          "userTrustAttribute": "Guest"
+        },
+        {
+          "seq": 2,
+          "id": "nc_phone",
+          "type": "SMARTPHONE",
+          "x": 0,
+          "y": 0,
+          "label": "会員のスマートフォン（会員アプリ入り）",
+          "parentId": "nc_user",
+          "managedState": "Unmanaged"
+        },
+        {
+          "seq": 3,
+          "id": "nc_ctr",
+          "type": "USER",
+          "x": 60,
+          "y": 360,
+          "label": "保守委託先の担当者",
+          "userTrustAttribute": "Contractor"
+        },
+        {
+          "seq": 4,
+          "id": "nc_att",
+          "type": "AGENTIC_ATTACKER",
+          "x": 60,
+          "y": 700,
+          "label": "攻撃者（AI で組み合わせを探す）",
+          "attackObjectiveId": "nc_db"
+        },
+        {
+          "seq": 5,
+          "id": "nc_rp",
+          "type": "REVERSE_PROXY",
+          "x": 420,
+          "y": 60,
+          "label": "前段のリバースプロキシ・CDN",
+          "attackSurface": {
+            "hasGlobalIp": true,
+            "hasWafProtection": true
+          }
+        },
+        {
+          "seq": 6,
+          "id": "nc_web",
+          "type": "FRONT_END_SERVER",
+          "x": 420,
+          "y": 240,
+          "label": "会員サイト",
+          "attackSurface": {
+            "hasGlobalIp": true,
+            "hasUserAuthentication": true,
+            "hasAccessLog": true
+          },
+          "posture": {
+            "lastReviewedAt": "2026-09-30"
+          }
+        },
+        {
+          "seq": 7,
+          "id": "nc_gw",
+          "type": "GATEWAY",
+          "x": 420,
+          "y": 420,
+          "label": "API ゲートウェイ",
+          "attackSurface": {
+            "hasGlobalIp": true,
+            "hasUserAuthentication": true
+          }
+        },
+        {
+          "seq": 8,
+          "id": "nc_idp",
+          "type": "IDENTITY_PROVIDER",
+          "x": 420,
+          "y": 600,
+          "label": "会員・従業員の IdP",
+          "attackSurface": {
+            "hasGlobalIp": true
+          }
+        },
+        {
+          "seq": 9,
+          "id": "nc_vpn",
+          "type": "VPN_GATEWAY",
+          "x": 420,
+          "y": 780,
+          "label": "保守用 VPN 装置"
+        },
+        {
+          "seq": 10,
+          "id": "nc_admin",
+          "type": "ADMIN_CONSOLE",
+          "x": 820,
+          "y": 60,
+          "label": "管理画面",
+          "attackSurface": {
+            "hasGlobalIp": false,
+            "hasUserAuthentication": true
+          }
+        },
+        {
+          "seq": 11,
+          "id": "nc_api",
+          "type": "BACKEND_API",
+          "x": 820,
+          "y": 240,
+          "label": "会員 API",
+          "posture": {
+            "logCollection": "Collected",
+            "logRetention": "OneYearOrMore",
+            "logReviewer": "Self",
+            "patchStatus": "UpToDate",
+            "lastReviewedAt": "2026-10-20"
+          }
+        },
+        {
+          "seq": 12,
+          "id": "nc_bas",
+          "type": "BASTION",
+          "x": 820,
+          "y": 420,
+          "label": "踏み台"
+        },
+        {
+          "seq": 13,
+          "id": "nc_db",
+          "type": "DATABASE",
+          "x": 1140,
+          "y": 330,
+          "label": "会員 DB",
+          "posture": {
+            "logCollection": "NotCollected",
+            "encryptionAtRest": "None",
+            "accountReview": "Irregular",
+            "lastReviewedAt": "2026-08-15"
+          }
+        },
+        {
+          "seq": 14,
+          "id": "nc_pii",
+          "type": "PERSONAL_INFO",
+          "x": 0,
+          "y": 0,
+          "label": "会員の個人情報",
+          "parentId": "nc_db",
+          "posture": {
+            "dataNecessity": "UnderReview",
+            "recordVolume": "Under100K"
+          }
+        },
+        {
+          "seq": 15,
+          "id": "nc_st",
+          "type": "STORAGE",
+          "x": 1340,
+          "y": 330,
+          "label": "帳票・画像の保管"
+        },
+        {
+          "seq": 16,
+          "id": "nc_ci",
+          "type": "CI_PIPELINE",
+          "x": 1180,
+          "y": 640,
+          "label": "CI パイプライン"
+        }
+      ],
+      "edges": [
+        {
+          "seq": 1,
+          "id": "ec_01",
+          "source": "nc_user",
+          "target": "nc_rp",
+          "auth": "Password",
+          "network": "Internet",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "ブラウザでの閲覧"
+        },
+        {
+          "seq": 2,
+          "id": "ec_02",
+          "source": "nc_rp",
+          "target": "nc_web",
+          "auth": "None",
+          "network": "Internet",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "前段から会員サイトへ"
+        },
+        {
+          "seq": 3,
+          "id": "ec_03",
+          "source": "nc_phone",
+          "target": "nc_gw",
+          "auth": "Token",
+          "network": "Internet",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "アプリの API 呼び出し"
+        },
+        {
+          "seq": 4,
+          "id": "ec_04",
+          "source": "nc_user",
+          "target": "nc_gw",
+          "auth": "Token",
+          "network": "Internet",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "ブラウザの API 呼び出し"
+        },
+        {
+          "seq": 5,
+          "id": "ec_05",
+          "source": "nc_rp",
+          "target": "nc_admin",
+          "auth": "Password",
+          "network": "Internet",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "前段から管理画面へ（パスで振り分け）"
+        },
+        {
+          "seq": 6,
+          "id": "ec_06",
+          "source": "nc_user",
+          "target": "nc_idp",
+          "auth": "Password",
+          "network": "Internet",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "会員の認証"
+        },
+        {
+          "seq": 7,
+          "id": "ec_07",
+          "source": "nc_ctr",
+          "target": "nc_vpn",
+          "auth": "Password",
+          "network": "Internet",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "保守の接続"
+        },
+        {
+          "seq": 8,
+          "id": "ec_08",
+          "source": "nc_vpn",
+          "target": "nc_bas",
+          "auth": "Password",
+          "network": "VPC",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "踏み台へ"
+        },
+        {
+          "seq": 9,
+          "id": "ec_09",
+          "source": "nc_bas",
+          "target": "nc_admin",
+          "auth": "Password",
+          "network": "VPC",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "踏み台から管理画面へ"
+        },
+        {
+          "seq": 10,
+          "id": "ec_10",
+          "source": "nc_bas",
+          "target": "nc_api",
+          "auth": "Password",
+          "network": "VPC",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "踏み台から会員 API へ"
+        },
+        {
+          "seq": 11,
+          "id": "ec_11",
+          "source": "nc_bas",
+          "target": "nc_db",
+          "auth": "Password",
+          "network": "VPC",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "踏み台から会員 DB へ"
+        },
+        {
+          "seq": 12,
+          "id": "ec_12",
+          "source": "nc_gw",
+          "target": "nc_api",
+          "auth": "Token",
+          "network": "VPC",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "ゲートウェイから会員 API へ"
+        },
+        {
+          "seq": 13,
+          "id": "ec_13",
+          "source": "nc_api",
+          "target": "nc_db",
+          "auth": "Password",
+          "network": "VPC",
+          "encryption": "TLS",
+          "dataFlow": "bidirectional",
+          "dataFlowName": "会員 API と会員 DB"
+        },
+        {
+          "seq": 14,
+          "id": "ec_14",
+          "source": "nc_api",
+          "target": "nc_st",
+          "auth": "ApiKey",
+          "network": "VPC",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "帳票・画像の保存"
+        },
+        {
+          "seq": 15,
+          "id": "ec_15",
+          "source": "nc_admin",
+          "target": "nc_api",
+          "auth": "Password",
+          "network": "VPC",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "管理画面から会員 API へ"
+        },
+        {
+          "seq": 16,
+          "id": "ec_16",
+          "source": "nc_ci",
+          "target": "nc_api",
+          "auth": "Token",
+          "network": "VPC",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "CI から会員 API への配備"
+        },
+        {
+          "seq": 17,
+          "id": "ec_17",
+          "source": "nc_att",
+          "target": "nc_rp",
+          "auth": "None",
+          "network": "Internet",
+          "encryption": "TLS",
+          "dataFlow": "outbound",
+          "dataFlowName": "攻撃の要求"
+        }
+      ],
+      "boundaries": [
+        {
+          "seq": 1,
+          "id": "bc_net",
+          "type": "RECT",
+          "x": 20,
+          "y": 20,
+          "width": 300,
+          "height": 880,
+          "trustLevel": "Internet"
+        },
+        {
+          "seq": 2,
+          "id": "bc_dmz",
+          "type": "ROUNDED",
+          "x": 380,
+          "y": 20,
+          "width": 340,
+          "height": 880,
+          "trustLevel": "Internet",
+          "macroTrust": "Public Area"
+        },
+        {
+          "seq": 3,
+          "id": "bc_int",
+          "type": "ROUNDED",
+          "x": 780,
+          "y": 20,
+          "width": 780,
+          "height": 880,
+          "trustLevel": "Internal",
+          "macroTrust": "Security Zone"
+        },
+        {
+          "seq": 4,
+          "id": "bc_mgmt",
+          "type": "MANAGEMENT",
+          "x": 1100,
+          "y": 280,
+          "width": 440,
+          "height": 560,
+          "trustLevel": "Internal",
+          "label": "本番・開発の共用アカウント"
+        },
+        {
+          "seq": 5,
+          "id": "bc_dev",
+          "type": "ROUNDED_DASHED",
+          "x": 1130,
+          "y": 600,
+          "width": 380,
+          "height": 200,
+          "trustLevel": "Internal",
+          "microTrust": "Development",
+          "label": "開発・CI"
+        }
+      ]
+    },
+    "L2": {
+      "nodes": [],
+      "edges": [],
+      "boundaries": [],
+      "annotations": []
+    },
+    "L3": {
+      "nodes": [],
+      "edges": [],
+      "boundaries": [],
+      "annotations": []
+    }
+  },
+  "activeLayer": "L1",
+  "idCounters": {
+    "L0": {
+      "node": 0,
+      "edge": 0,
+      "boundary": 0
+    },
+    "L1": {
+      "node": 16,
+      "edge": 17,
+      "boundary": 5
+    },
+    "L2": {
+      "node": 0,
+      "edge": 0,
+      "boundary": 0
+    },
+    "L3": {
+      "node": 0,
+      "edge": 0,
+      "boundary": 0
+    }
+  },
+  "activeFramework": "ALL",
+  "projectMeta": {
+    "name": "会員サイトとアプリ（国家サイバー統括室の注意喚起の確認用）",
+    "systemName": "会員サイト・会員アプリ（架空）",
+    "purpose": "会員が閲覧・手続きをする Web サイトとスマートフォンアプリ。架空の例。",
+    "businessImpact": "会員の個人情報の漏えい",
+    "securityObjectives": "個人情報の機密性"
+  },
+  "updatedAt": 0
+}

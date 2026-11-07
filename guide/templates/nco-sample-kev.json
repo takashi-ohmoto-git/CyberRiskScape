@@ -1,0 +1,12 @@
+{
+  "title": "Fictional KEV catalog for the CyberRiskScape guide (not real data)",
+  "catalogVersion": "2099.01.01",
+  "vulnerabilities": [
+    {
+      "cveID": "CVE-2099-0001",
+      "dateAdded": "2099-01-01",
+      "dueDate": "2099-01-22",
+      "knownRansomwareCampaignUse": "Unknown"
+    }
+  ]
+}

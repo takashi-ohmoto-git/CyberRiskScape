@@ -69,6 +69,8 @@ CyberRiskScape は**設計（構成図）から脅威を洗い出す**ツール�
 **図の中身：** コンポーネント 12・データフロー 10・トラスト境界 3（読み込むと **79 件**の脅威が検出されます。Critical 7・High 47・Medium 25）。
 ノードの番号（C1〜）と線の番号（DF1〜）は、以降の表と同じです。
 
+> **件数について（2026-11-07 追記）：** このガイドの件数は 2026-10 時点の実測です。その後に足したルール（ログインへの総当たり `api-login-credential-guessing-001` など）により、いまのバージョンで読み込むと件数は増えます。§6 の「対策の前後で何が消え、何が残るか」の考え方は変わりません。
+
 | 場所 | 描いたもの（型） |
 |---|---|
 | インターネット側（外部境界） | C1 利用者（`ユーザー`。C2 利用者のスマートフォン（`スマートフォン`。会員アプリ入り）を内包）、C3 攻撃者（`AIエージェント攻撃者`。AI でアプリを解析） |
@@ -118,6 +120,7 @@ CyberRiskScape は**設計（構成図）から脅威を洗い出す**ツール�
   - ゲートウェイを経由しないバックエンド API への直接アクセス `api-backend-gateway-bypass-001`（DF3。High）。スマホから旧版 API へ直接線がある、ということです。**攻撃者ノードからの線（DF4）では出ません**（正規の呼び出し元の経路を見るルールです）
   - 認証のない公衆網の線 `stride-edge-unauth-internet-001`（DF4。Critical）、トラスト境界を跨ぐ直接暴露 `stride-edge-internet-exposed-sensitive-001`（DF10。Critical）
   - API を使った個人情報の大量取得の制限・検知の欠如 `api-bulk-data-harvesting-001`（C4・C5。High）
+  - ログイン・パスワード再設定の入口への総当たり・リスト型攻撃・パスワードスプレー `api-login-credential-guessing-001`（C4・C5。Medium。2026-11 追加）。特定した API に、流出した ID とパスワードの組を大量に試す攻撃です。ゲートウェイの攻撃面属性「レート制限」を入力すると消えます
   - ゲートウェイの公開の入口に足りない防御：グローバル IP 直接公開 `stride-web-global-ip-exposure-001`・送信元 IP 無制限 `stride-web-no-source-ip-restriction-001`・管理面リモートアクセス `stride-web-remote-mgmt-exposed-001`（Critical）・WAF 欠如 `stride-web-no-waf-001`・DDoS 保護欠如 `stride-web-no-ddos-protection-001`・アクセスログ欠如 `stride-web-no-access-log-001`・盲点境界 `stride-web-blind-perimeter-001`
 - **ここでの考え方：** 攻撃者は、**使われていない API・古い版・検証環境**を先に探します。図に「旧版 API」「検証環境」を描けているか、一覧（API 仕様書）と実際の公開ホストが一致しているか、が点検の入口です
 
