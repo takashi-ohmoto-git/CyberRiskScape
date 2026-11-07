@@ -23,6 +23,7 @@ const CASES: ReadonlyArray<{
 }> = [
   { id: 'netinfra-container-privileged-workload-001', type: 'CONTAINER_PLATFORM', canonicalId: 'container-host-capability-exposure', bad: { workloadPrivilegeLimit: 'None' }, good: { workloadPrivilegeLimit: 'Enforced' } },
   { id: 'netinfra-container-admission-path-gap-001', type: 'CONTAINER_PLATFORM', canonicalId: 'admission-policy-path-inconsistency', bad: { admissionCoverage: 'Partial' }, good: { admissionCoverage: 'AllPaths' } },
+  { id: 'netinfra-container-selector-trust-001', type: 'CONTAINER_PLATFORM', canonicalId: 'selector-trust-confusion', bad: { selectorControl: 'Open' }, good: { selectorControl: 'Restricted' } },
   { id: 'api-broker-topic-scope-001', type: 'MESSAGE_BROKER', canonicalId: 'broker-topic-scope-gap', bad: { topicAccessScope: 'Broad' }, good: { topicAccessScope: 'Restricted' } },
   { id: 'api-broker-producer-authenticity-001', type: 'MESSAGE_BROKER', canonicalId: 'webhook-signature-verification-gap', bad: { producerAuthentication: 'None' }, good: { producerAuthentication: 'Enforced' } },
   { id: 'api-broker-dead-letter-disclosure-001', type: 'MESSAGE_BROKER', canonicalId: 'dead-letter-content-disclosure', bad: { deadLetterProtection: 'None' }, good: { deadLetterProtection: 'Protected' } },

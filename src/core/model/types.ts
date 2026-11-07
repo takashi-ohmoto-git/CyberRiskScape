@@ -245,6 +245,8 @@ export const POSTURE_FIELD_VALUES = {
   workloadPrivilegeLimit: ['Enforced', 'None'],
   /** コンテナ基盤：すべての配備経路（直接の適用・CI・オペレーター等）に受け付けのポリシーが効くか */
   admissionCoverage: ['AllPaths', 'Partial'],
+  /** コンテナ基盤：ポリシーが選ぶラベル・名前空間を付けられる主体を制限しているか */
+  selectorControl: ['Restricted', 'Open'],
   /** メッセージブローカー：送信者・受信者ごとにトピック・キューの権限を限定しているか */
   topicAccessScope: ['Restricted', 'Broad'],
   /** メッセージブローカー：送信者の認証・メッセージの真正性の確認を強制しているか */
@@ -299,7 +301,7 @@ export const POSTURE_GROUP_FIELDS: Readonly<Record<PostureGroup, readonly Postur
   dependency: ['dependencyLockfile', 'installScripts', 'dependencyVetting'],
   agentPermission: ['commandAllowScope', 'agentSandbox', 'agentEgress', 'agentActionBudget'],
   dataAsset: ['dataNecessity', 'recordVolume'],
-  container: ['workloadPrivilegeLimit', 'admissionCoverage'],
+  container: ['workloadPrivilegeLimit', 'admissionCoverage', 'selectorControl'],
   broker: ['topicAccessScope', 'producerAuthentication', 'deadLetterProtection'],
   update: ['updateSigning', 'updateRollbackProtection'],
 };
@@ -327,6 +329,7 @@ export interface NodePosture {
   agentActionBudget?: (typeof POSTURE_FIELD_VALUES.agentActionBudget)[number];
   workloadPrivilegeLimit?: (typeof POSTURE_FIELD_VALUES.workloadPrivilegeLimit)[number];
   admissionCoverage?: (typeof POSTURE_FIELD_VALUES.admissionCoverage)[number];
+  selectorControl?: (typeof POSTURE_FIELD_VALUES.selectorControl)[number];
   topicAccessScope?: (typeof POSTURE_FIELD_VALUES.topicAccessScope)[number];
   producerAuthentication?: (typeof POSTURE_FIELD_VALUES.producerAuthentication)[number];
   deadLetterProtection?: (typeof POSTURE_FIELD_VALUES.deadLetterProtection)[number];

@@ -128,6 +128,10 @@ mappings:
     canonicalIds: [admission-policy-path-inconsistency]
     note: 配備経路によって受け付けのポリシーが効かない
 
+  - attackClass: ["CLOUD-AND-DEPLOYMENT.md#Namespace and label trust confusion"]
+    canonicalIds: [selector-trust-confusion]
+    note: ポリシーが選ぶラベル・名前空間を信頼の低い主体が付けられる
+
   - attackClass: ["CLOUD-AND-DEPLOYMENT.md#Event-source identity confusion"]
     canonicalIds: [webhook-signature-verification-gap]
     note: イベントの送信元の取り違え

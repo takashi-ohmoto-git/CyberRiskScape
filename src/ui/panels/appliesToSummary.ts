@@ -90,6 +90,7 @@ const FIELD_LABEL_KEYS: Record<string, TranslationKey> = {
   agentActionBudget: 'panels.posture.field.agentActionBudget',
   workloadPrivilegeLimit: 'panels.posture.field.workloadPrivilegeLimit',
   admissionCoverage: 'panels.posture.field.admissionCoverage',
+  selectorControl: 'panels.posture.field.selectorControl',
   topicAccessScope: 'panels.posture.field.topicAccessScope',
   producerAuthentication: 'panels.posture.field.producerAuthentication',
   deadLetterProtection: 'panels.posture.field.deadLetterProtection',
