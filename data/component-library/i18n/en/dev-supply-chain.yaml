@@ -16,3 +16,7 @@ components:
   PACKAGE_REGISTRY:
     label: "Package registry"
     description: "A public or internal registry that serves dependency packages, such as the npm registry or PyPI. It represents how trustworthy the source is (public, internal, or mirror). The fetched libraries themselves are PACKAGE_DEPENDENCIES; external services you use are SaaS."
+
+  UPDATE_SERVER:
+    label: "Software update server"
+    description: "A server that distributes software updates (packages and metadata for apps, agents and firmware) to client devices and machines. The signing of what it distributes and the control of versions, targets and expiry are the key points. The client that receives and applies updates is not a separate type; express it with attributes of the node it runs on. Use OTA_SERVER for over-the-air updates to vehicles and PACKAGE_REGISTRY for the source of dependency packages."

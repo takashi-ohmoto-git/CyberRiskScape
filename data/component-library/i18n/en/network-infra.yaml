@@ -86,6 +86,10 @@ components:
     label: "Virtualization platform"
     description: "A hypervisor and its management server (VMware ESXi and vCenter, Hyper-V, Proxmox and similar). It manages the virtual machines running on it as a group. It is not a container platform. In the cloud this includes customer-managed virtualization such as VMware Cloud on AWS, Azure VMware Solution, Google Cloud VMware Engine and OCI Cloud VMware Solution."
 
+  CONTAINER_PLATFORM:
+    label: "Container platform"
+    description: "A container orchestration cluster (Kubernetes and similar), with the control plane and worker nodes drawn as one node. Do not include the applications and workloads running on it; draw them as separate nodes (such as an app). Use HYPERVISOR for a platform that manages virtual machines, and PAAS for a managed runtime used as a PaaS. In the cloud this includes Amazon EKS and ECS, Azure AKS, Google GKE and OCI OKE clusters."
+
   SIEM:
     label: "SIEM / log platform"
     description: "A system that collects logs from other systems and stores, correlates and detects on them (SIEM, log collection platform, syslog server). To draw the stored logs themselves, put the Log document inside it. In the cloud this includes Microsoft Sentinel, Amazon Security Lake, Google Security Operations and OCI Logging Analytics."

@@ -84,7 +84,7 @@ components:
 
   CONNECTOR:
     label: "Connector"
-    description: "A relay node (a message broker, an iPaaS, a sidecar proxy). In the cloud this includes Amazon SQS, SNS, EventBridge and MSK, Azure Service Bus and Event Hubs, Google Cloud Pub/Sub, OCI Streaming, and, as a database proxy, Amazon RDS Proxy."
+    description: "A relay node (an iPaaS, a sidecar proxy). In the cloud this includes, as a database proxy, Amazon RDS Proxy. Message brokers (Amazon SQS, SNS, EventBridge and MSK, Azure Service Bus and Event Hubs, Google Cloud Pub/Sub, OCI Streaming and similar) use Message broker (MESSAGE_BROKER)."
 
   IDENTITY_PROVIDER:
     description: "An identity provider (IdP). Handles SSO, federation, and token issuance, and is the core of authentication and authorization. Under Zero Trust it is where policy decisions begin."

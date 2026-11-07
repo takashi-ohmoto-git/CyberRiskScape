@@ -30,6 +30,10 @@ components:
     label: "API dev tool"
     description: "A workspace in an API development and testing tool. Holds request collections, environment variables, and mocks, and is often shared in the cloud."
 
+  MESSAGE_BROKER:
+    label: "Message broker"
+    description: "A broker that relays asynchronous messages (queues, topics, event buses, streams). It decouples senders from receivers and holds messages temporarily. In the cloud this includes Amazon SQS, SNS, EventBridge and MSK, Azure Service Bus and Event Hubs, Google Cloud Pub/Sub and OCI Streaming; on premises, Kafka, RabbitMQ and similar. Use CONNECTOR for iPaaS, sidecar proxies and database proxies, and GATEWAY for relaying APIs synchronously."
+
   API_SPEC:
     label: "API specification"
     description: "A machine-readable API definition such as OpenAPI, describing endpoints, authentication, and data structures."

@@ -143,6 +143,9 @@ rules:
         - nodeType: IMMUTABLE_BACKUP
         - nodeType: PBX
         - nodeType: IVR
+        - nodeType: CONTAINER_PLATFORM
+        - nodeType: MESSAGE_BROKER
+        - nodeType: UPDATE_SERVER
       connection:
         required: false
       posture:
@@ -226,6 +229,9 @@ rules:
         - nodeType: IMMUTABLE_BACKUP
         - nodeType: PBX
         - nodeType: IVR
+        - nodeType: CONTAINER_PLATFORM
+        - nodeType: MESSAGE_BROKER
+        - nodeType: UPDATE_SERVER
       connection:
         required: false
       posture:
@@ -360,6 +366,7 @@ rules:
         - nodeType: STORAGE
         - nodeType: BACKUP_STORAGE
         - nodeType: IMMUTABLE_BACKUP
+        - nodeType: MESSAGE_BROKER
       connection:
         required: false
       posture:
@@ -445,6 +452,9 @@ rules:
         - nodeType: BACKUP_STORAGE
         - nodeType: PBX
         - nodeType: IVR
+        - nodeType: CONTAINER_PLATFORM
+        - nodeType: MESSAGE_BROKER
+        - nodeType: UPDATE_SERVER
       connection:
         required: false
       posture:
@@ -514,6 +524,8 @@ rules:
         - nodeType: IGA
         - nodeType: DATABASE
         - nodeType: PBX
+        - nodeType: CONTAINER_PLATFORM
+        - nodeType: MESSAGE_BROKER
       connection:
         required: false
       posture:

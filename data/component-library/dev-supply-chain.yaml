@@ -47,3 +47,13 @@ components:
     shape: rounded
     color: "bg-transparent"
     description: "npm レジストリ・PyPI など、依存パッケージを取得する公開／社内のレジストリ。取得元の信頼性（公開か社内か、ミラーか）を表す。取得したライブラリ自体は PACKAGE_DEPENDENCIES、利用する外部サービスは SaaS を使う。"
+
+  - id: UPDATE_SERVER
+    label: "ソフトウェア更新サーバー"
+    category: SERVICES
+    icon: { kind: builtin, name: "refresh-cw" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "ソフトウェアの更新（アプリ・エージェント・ファームウェアのパッケージとメタデータ）を、クライアントの端末や機器へ配るサーバー。配る更新の署名と、版・対象・期限の管理が要点。更新を受け取って適用するクライアントは専用の型にせず、それが動くノードの属性で表す。車両への無線更新（OTA）は OTA_SERVER、依存パッケージの取得元は PACKAGE_REGISTRY を使う。"
+    canContain: [SOURCE_CODE, CREDENTIAL, LOG, OTHER_DOCUMENT]
+    posture: [log, patch, update]

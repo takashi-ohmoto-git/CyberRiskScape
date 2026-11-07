@@ -78,6 +78,10 @@ behaviors:
     default: terminate
     alternatives: []
     note: "管理サーバー（vCenter 等）や管理画面が管理者からの TLS を終端する。上で動く仮想マシンの通信は透過する。管理 API の証明書と、ホスト間の移行・ストレージ通信の暗号化の有無を確認する。"
+  - componentType: CONTAINER_PLATFORM
+    default: terminate
+    alternatives: []
+    note: "コントロールプレーンの API サーバーが管理者・CI からの TLS を終端し、ノード間・コントロールプレーン内部の通信は別の証明書で再接続する。上で動くワークロードの通信は、別途サービスメッシュ等で暗号化しない限り透過する。API サーバーとコントロールプレーン内部の証明書の鍵種別・有効期限と、ノード間の暗号化の有無を確認する。"
   - componentType: SIEM
     default: terminate
     alternatives: []

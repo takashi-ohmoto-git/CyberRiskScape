@@ -1,13 +1,13 @@
 # Network & Security Infrastructure コンポーネントライブラリ。
 #
 # PQC 移行支援で「経路上で暗号が変わる箇所（終端・復号・トンネル化）」を描くための
-# ネットワーク機器・セキュリティ製品の 24 型：
+# ネットワーク機器・セキュリティ製品の 25 型：
 #   NETWORK        : L2_SWITCH / ROUTER / LOAD_BALANCER / REVERSE_PROXY / CDN / DNS_ZONE / VPN_GATEWAY /
 #                    WIRELESS_AP / SERVICE_MESH
 #   PROTECT        : FIREWALL / WAF / IDS_IPS / SECURE_WEB_GATEWAY / SASE / EMAIL_GATEWAY /
 #                    ZTNA_PROXY / SIEM / EDR_DFIR_SERVER / SOAR（ラベルは Security Controls）
 #   CONTACT_CENTER : SBC
-#   CLOUD          : PRIVATE_ENDPOINT
+#   CLOUD          : PRIVATE_ENDPOINT / CONTAINER_PLATFORM
 #   SERVERS        : BASTION / HYPERVISOR
 #   CRYPTO_KEYS    : HSM
 #
@@ -208,6 +208,16 @@ components:
     color: "bg-transparent"
     description: "ハイパーバイザーとその管理サーバー（VMware ESXi・vCenter、Hyper-V、Proxmox 等）。上で動く仮想マシンをまとめて管理する。コンテナ基盤ではない。クラウドでは VMware Cloud on AWS / Azure VMware Solution / Google Cloud VMware Engine / OCI Cloud VMware Solution 等の利用者が管理する仮想化基盤が該当する。"
     posture: [log, patch, accountReview]
+
+  - id: CONTAINER_PLATFORM
+    label: "コンテナ基盤"
+    category: CLOUD
+    icon: { kind: builtin, name: "container" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "コンテナオーケストレーション基盤のクラスタ（Kubernetes 等のコントロールプレーンとワーカーノードを 1 ノードで表す）。上で動くアプリケーション・ワークロードは含めず、別ノード（アプリ等）で描く。仮想マシンを管理する基盤は HYPERVISOR、PaaS として使うマネージドの実行環境は PAAS を使う。クラウドでは Amazon EKS・ECS / Azure AKS / Google GKE / OCI OKE 等のクラスタが該当する。"
+    canContain: [CREDENTIAL, LOG, SOURCE_CODE]
+    posture: [log, patch, accountReview, container]
 
   - id: SIEM
     label: "SIEM / ログ基盤"

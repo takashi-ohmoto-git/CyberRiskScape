@@ -41,6 +41,8 @@ behaviors:
     note: "Terminates the administrator's TLS and reconnects to the target over SSH / RDP. Confirm the cipher setup of each leg."
   HYPERVISOR:
     note: "The management server (vCenter or similar) and its console terminate the administrator's TLS. Traffic of the virtual machines running on it passes through. Confirm the management API certificates and whether host-to-host migration and storage traffic are encrypted."
+  CONTAINER_PLATFORM:
+    note: "The control plane API server terminates TLS from administrators and CI, and the control plane internals and node-to-node traffic reconnect with separate certificates. Traffic of the workloads running on it passes through unless it is encrypted separately, for example by a service mesh. Check the key types and expiry of the API server and control plane certificates and whether node-to-node traffic is encrypted."
   SIEM:
     note: "Terminates TLS from log sources (syslog over TLS, HTTPS collection APIs) and from the viewing console. Check whether plaintext syslog (UDP/TCP) is accepted and how each source leg is encrypted."
   EDR_DFIR_SERVER:
