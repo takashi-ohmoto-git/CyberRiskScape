@@ -18,6 +18,8 @@ Draw a data flow diagram in your browser, and CyberRiskScape enumerates the thre
 apply to your architecture — including the ones classical threat modeling tools have no
 vocabulary for: goal hijacking, tool misuse, privilege carry-over, memory poisoning.
 
+![CyberRiskScape overview: existing integrations, capabilities and the common data model](assets/architecture-overview.en.png)
+
 It runs entirely in the browser. No server, no account, no telemetry — your design never
 leaves your machine.
 
