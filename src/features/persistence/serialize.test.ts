@@ -477,6 +477,19 @@ describe('serializeProject / deserializeProject', () => {
     expect(restored?.findings).toEqual([FINDING]);
   });
 
+  it('findings: 要確認と成立条件（§8.9）も round-trip で保持され、条件の種類が未知なら読み込まない', () => {
+    const f = {
+      ...FINDING,
+      outcome: 'unverified' as const,
+      conditions: [{ kind: 'reachability' as const, text: 'インターネットから届く', sourceKind: 'network_routing' }],
+      openQuestions: ['本番で認証プロキシが前段にあるか'],
+      validationPlan: '配置先の設定を確認する',
+    };
+    expect(deserializeProject(serializeProject({ ...STATE, findings: [f] }))?.findings).toEqual([f]);
+    const bad = { ...f, conditions: [{ kind: 'network_routing', text: 'x' }] };
+    expect(deserializeProject(serializeProject({ ...STATE, findings: [bad as never] }))).toBeNull();
+  });
+
   it('findings: 上限を超えると読み込まない', () => {
     const out = JSON.parse(JSON.stringify(serializeProject({ ...STATE, findings: [FINDING] })));
     out.findings = Array.from({ length: MAX_FINDINGS + 1 }, (_, i) => ({ ...FINDING, id: `p:${i}` }));

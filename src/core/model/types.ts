@@ -1063,7 +1063,7 @@ export interface ControlStatusState {
 }
 
 /** 指摘の入力形式（docs/architecture.md §8.6）。 */
-export const FINDING_FORMATS = ['ocsf', 'xccdf', 'arf', 'oval', 'pentest', 'cyclonedx', 'sarif'] as const;
+export const FINDING_FORMATS = ['ocsf', 'xccdf', 'arf', 'oval', 'pentest', 'cyclonedx', 'sarif', 'security-audit'] as const;
 export type FindingFormat = (typeof FINDING_FORMATS)[number];
 
 /**
@@ -1115,11 +1115,43 @@ export interface Finding {
   resource?: { label: string; type?: string; region?: string };
   /** 製品が観測した時刻（ISO 8601）。 */
   observedAt?: string;
-  /** ペンテストで試行したが成立を確認していない指摘。無ければ成立を確認した指摘（実証）。 */
-  outcome?: 'attempted';
+  /**
+   * 無ければ成立を確認した指摘（実証）。
+   * - 'attempted'：ペンテストで試行したが成立を確認していない
+   * - 'unverified'：根拠はあるが決め手の事実が未解決（ソース監査の要確認。§8.9）。出し手は重大度を付けないので、
+   *   severity は内部値 'Low'・sourceSeverity なしとし、表示は「重大度なし（要確認）」。ゲート・優先度づけ・SARIF の level から外す
+   */
+  outcome?: FindingOutcome;
+  /** 指摘が成立する前提（出し手が構造化して示したもの）。図の事実と並べる材料（§8.9）。 */
+  conditions?: FindingCondition[];
+  /** 決め手として未解決の事実（出し手の自由記述）。outcome 'unverified' のとき（§8.9）。 */
+  openQuestions?: string[];
+  /** 配置の側で確かめる手順（出し手の自由記述。§8.9）。 */
+  validationPlan?: string;
   /** CISA KEV カタログに載っている（悪用が確認された）事実。`import-kev` が付け外しする。 */
   kev?: FindingKev;
 }
+
+/** 指摘の確からしさ（Finding.outcome）。 */
+export const FINDING_OUTCOMES = ['attempted', 'unverified'] as const;
+export type FindingOutcome = (typeof FINDING_OUTCOMES)[number];
+
+/** 成立条件の種類（CRS の語彙。図のどの事実と並べるかを決める。§8.9）。 */
+export const FINDING_CONDITION_KINDS = ['reachability', 'authentication', 'authorization', 'configuration', 'user-interaction', 'other'] as const;
+export type FindingConditionKind = (typeof FINDING_CONDITION_KINDS)[number];
+
+/** 指摘が成立する前提 1 件（§8.9）。 */
+export interface FindingCondition {
+  kind: FindingConditionKind;
+  /** 出し手の説明（200 文字まで）。 */
+  text: string;
+  /** 出し手の元の種類名（例: 'network_routing'）。 */
+  sourceKind?: string;
+}
+
+/** 指摘の自由記述の上限（§8.9）。 */
+export const MAX_FINDING_CONDITIONS = 10;
+export const MAX_FINDING_OPEN_QUESTIONS = 5;
 
 /** CISA KEV カタログの 1 件分の事実（日付は YYYY-MM-DD のまま保持する）。 */
 export interface FindingKev {

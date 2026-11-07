@@ -65,6 +65,10 @@ describe('evaluateSavedFindingsGate', () => {
     expect(evaluateSavedFindingsGate([finding({ outcome: 'attempted' })], results([]), 'Low')).toEqual([]);
   });
 
+  it('outcome が unverified（要確認）の指摘は数えない', () => {
+    expect(evaluateSavedFindingsGate([finding({ outcome: 'unverified' })], results([]), 'Low')).toEqual([]);
+  });
+
   it('結び付く脅威がすべて抑制されていれば除外する', () => {
     const r = results([threat('t1', true), threat('t2', true)]);
     expect(evaluateSavedFindingsGate([finding({})], r, 'High')).toEqual([]);

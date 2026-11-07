@@ -7,7 +7,7 @@ import type { PersistedProject } from '../persistence/schema';
  * 保存済みの指摘（CVE 付き）から、運用状況 `patchStatus` の未入力を 'Missing' で埋める。
  * - 人の入力は上書きしない。'UpToDate' は書かない（指摘が無いことは更新済みの証明にならない）。
  * - 型が運用状況のグループ 'patch' を宣言していないノードには書かない。
- * - 試行のみ（outcome: 'attempted'）の指摘は根拠にしない。
+ * - 試行のみ（outcome: 'attempted'）と要確認（outcome: 'unverified'）の指摘は根拠にしない。
  * 置き場所は KEV 照合（kev-import）と同じ「保存済みの指摘 → プロジェクト JSON」の後処理だから。
  */
 
@@ -41,7 +41,7 @@ export function fillPatchStatus(project: PersistedProject): FillPatchStatusResul
   for (const layer of LAYER_KEYS) for (const n of project.layers?.[layer]?.nodes ?? []) existingNodeKeys.add(`${layer}:${n.id}`);
 
   for (const f of findings) {
-    if (f.outcome === 'attempted') continue;
+    if (f.outcome !== undefined) continue;
     const cves = f.identifiers.filter((i) => i.scheme.toLowerCase() === 'cve').map((i) => i.value.trim().toUpperCase());
     if (cves.length === 0) continue;
     const key = f.subject ? `${f.subject.layer}:${f.subject.nodeId}` : null;

@@ -174,6 +174,15 @@ describe('toSarif（指摘 run）', () => {
     expect(r.properties).toMatchObject({ layer: 'L1', node: 'C1 GPT', linkedThreatIds: ['rule-a-n1'], canonicalIds: ['canon-a'] });
   });
 
+  it('要確認（outcome unverified）は level none・kind review で出す（内部値の重大度を出さない）', () => {
+    const sarif = toSarif(results([linked]), { artifactUri: 'x.json', findings: [finding({ outcome: 'unverified' })] }) as {
+      runs: { results: { level: string; kind?: string }[] }[];
+    };
+    expect(sarif.runs[1].results[0]).toMatchObject({ level: 'none', kind: 'review' });
+    const normal = toSarif(results([linked]), { artifactUri: 'x.json', findings: [finding({})] }) as { runs: { results: { kind?: string }[] }[] };
+    expect(normal.runs[1].results[0].kind).toBeUndefined();
+  });
+
   it('未結合・ノード消失・canonicalId 不一致では linkedThreatIds が空', () => {
     const list = [
       finding({ id: 'p:1', subject: undefined }),

@@ -5,7 +5,7 @@ import { linkFindingToThreats } from './sarif';
 /**
  * 保存済み指摘のゲート判定（CLI の `analyze --fail-on-findings`）。
  * 重大度が `failOn` 以上の指摘を返す。ただし次は数えない。
- * - 試行のみで未実証の指摘（outcome === 'attempted'）
+ * - 試行のみで未実証の指摘（outcome === 'attempted'）と、決め手が未解決の要確認（outcome === 'unverified'。重大度は内部値）
  * - 受容済み：結び付く脅威が 1 件以上あり、そのすべてが抑制（受容・誤検知）されている指摘
  *   結び付く脅威が無い指摘（未結合・ノード消失を含む）は受容できないので数える。
  */
@@ -16,7 +16,7 @@ export function evaluateSavedFindingsGate(
 ): Finding[] {
   const threshold = SEVERITY_RANK[failOn];
   return findings.filter((f) => {
-    if (f.outcome === 'attempted') return false;
+    if (f.outcome !== undefined) return false;
     if (SEVERITY_RANK[f.severity] < threshold) return false;
     const threats = linkFindingToThreats(f, results)?.threats ?? [];
     return !(threats.length > 0 && threats.every(isSuppressed));

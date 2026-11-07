@@ -69,7 +69,9 @@ interface SarifRule {
 
 interface SarifResult {
   ruleId: string;
-  level: 'error' | 'warning' | 'note';
+  level: 'error' | 'warning' | 'note' | 'none';
+  /** 'review'＝調べる必要がある（SARIF 2.1.0 §3.27.9）。要確認の指摘（outcome 'unverified'）だけに付ける。 */
+  kind?: 'review';
   message: { text: string };
   locations: [
     {
@@ -175,6 +177,11 @@ const LOST_IN_CONVERSION: Record<Finding['source']['format'], string[]> = {
   pentest: ['evidence and request/response details (kept in the source product)', 'summary and remediation text'],
   cyclonedx: ['vulnerability descriptions, details and recommendations', 'VEX not_affected/false_positive/resolved entries'],
   sarif: ['message text, code snippets and code flows', 'suppressed, resolved (absent) and pass/notApplicable/informational results'],
+  'security-audit': [
+    'trace steps other than the entrypoint, evidence text, execution (payloads and instructions), remediation and code changes',
+    'confidence, likelihood/impact and their reasons, intended behavior and root-cause text',
+    'rejected records and coverage-ledger status',
+  ],
 };
 
 /**
@@ -223,7 +230,8 @@ function findingRuns(results: LayerAnalysisResult[], findings: readonly Finding[
 
       return {
         ruleId,
-        level: sarifLevel(f.severity),
+        // 要確認は出し手が重大度を付けない（§8.9）。内部値の 'Low' を level に出さない
+        ...(f.outcome === 'unverified' ? { level: 'none' as const, kind: 'review' as const } : { level: sarifLevel(f.severity) }),
         message: { text: [nodeLabel, f.title ?? '', resourceLabel].filter((s) => s !== '').join(' - ') },
         locations: [{ physicalLocation: { artifactLocation: { uri: artifactUri } } }],
         logicalLocations: [{ name: nodeLabel || resourceLabel, kind: 'element' }],
