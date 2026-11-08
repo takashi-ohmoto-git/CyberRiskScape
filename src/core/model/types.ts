@@ -264,6 +264,13 @@ export const POSTURE_FIELD_VALUES = {
   meteredCalls: ['Yes', 'No'],
   /** 料金が発生する呼び出しの上限（回数・宛先・金額）の強制。meteredCalls が Yes のときに意味を持つ */
   meteredCallLimit: ['Enforced', 'None'],
+  /**
+   * 機微な業務フロー（購入・予約・応募・投稿・ポイントやクーポンの付与等。大量に使われると事業に損害が出るもの）を持つか。
+   * 未入力では脅威を出さない（明示宣言時のみ発火。2026-11-08 ユーザー承認の例外）。
+   */
+  sensitiveBusinessFlow: ['Yes', 'No'],
+  /** 機微な業務フローの自動化への対策（Bot 対策・利用者ごとの上限・人の操作の確認）の強制。sensitiveBusinessFlow が Yes のときに意味を持つ */
+  businessFlowProtection: ['Enforced', 'None'],
   /** データ資産の保有の必要性 */
   dataNecessity: ['Required', 'UnderReview', 'NotRequired'],
   /** データ資産の件数規模 */
@@ -293,6 +300,7 @@ export const POSTURE_GROUPS = [
   'broker',
   'update',
   'meteredCalls',
+  'businessFlow',
 ] as const;
 export type PostureGroup = (typeof POSTURE_GROUPS)[number];
 
@@ -313,6 +321,7 @@ export const POSTURE_GROUP_FIELDS: Readonly<Record<PostureGroup, readonly Postur
   broker: ['topicAccessScope', 'producerAuthentication', 'deadLetterProtection'],
   update: ['updateSigning', 'updateRollbackProtection'],
   meteredCalls: ['meteredCalls', 'meteredCallLimit'],
+  businessFlow: ['sensitiveBusinessFlow', 'businessFlowProtection'],
 };
 
 /** 運用状況。すべて optional。未設定は `Unknown`＝対策なしとして脅威を評価する。 */
@@ -346,6 +355,8 @@ export interface NodePosture {
   updateRollbackProtection?: (typeof POSTURE_FIELD_VALUES.updateRollbackProtection)[number];
   meteredCalls?: (typeof POSTURE_FIELD_VALUES.meteredCalls)[number];
   meteredCallLimit?: (typeof POSTURE_FIELD_VALUES.meteredCallLimit)[number];
+  sensitiveBusinessFlow?: (typeof POSTURE_FIELD_VALUES.sensitiveBusinessFlow)[number];
+  businessFlowProtection?: (typeof POSTURE_FIELD_VALUES.businessFlowProtection)[number];
   dataNecessity?:(typeof POSTURE_FIELD_VALUES.dataNecessity)[number];
   recordVolume?: (typeof POSTURE_FIELD_VALUES.recordVolume)[number];
   /** 最終点検日（YYYY-MM-DD）。記録用で脅威の判定には使わない。全型で入力可。 */

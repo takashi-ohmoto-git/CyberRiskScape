@@ -54,7 +54,7 @@ components:
     color: "bg-transparent"
     description: "ゲートウェイの背後にあるバックエンド API・マイクロサービス。業務データへの認可を最終的に担う。ゲートウェイを置かずに直接公開している場合も含め、attackSurface 属性で公開条件・防御策の有無を表現する。"
     canContain: [CREDENTIAL, LOG]
-    posture: [logRetention, patch, meteredCalls]
+    posture: [logRetention, patch, meteredCalls, businessFlow]
 
   - id: API_CONTROL_PLANE
     label: "API管理プレーン"

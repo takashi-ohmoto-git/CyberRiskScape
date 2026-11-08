@@ -179,7 +179,7 @@ components:
     shape: rounded
     color: "bg-transparent"
     description: "Web サーバー等、アプリやコンテンツを自身で提供する外部公開ポイント。中継だけを行うものはリバースプロキシを使う。attackSurface 属性で公開条件・防御策の有無を表現する。"
-    posture: [logRetention, patch, meteredCalls]
+    posture: [logRetention, patch, meteredCalls, businessFlow]
 
   - id: ADMIN_CONSOLE
     label: "管理画面"

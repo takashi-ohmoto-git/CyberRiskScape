@@ -154,6 +154,30 @@
 #     運用状況 meteredCalls を「呼ぶ（Yes）」と入力したときだけ発火する（未入力では出さない。
 #     2026-11-08 ユーザー承認の「明示宣言時のみ発火」の例外。API の大半で発火して誤検知になるため）。
 #     呼ぶと宣言したうえで上限（meteredCallLimit）が未入力なら、大方針どおり上限なしと同じ扱いで発火する。
+#   - 外部 API の応答を検証せずに使う（api-third-party-response-trust-001、canonicalId: third-party-api-response-trust、
+#     2026-11-08 新設。OWASP API10:2023）。SaaS からのイベントの受け口（webhook-signature-verification-gap）は
+#     「送り手が本物か」、本ルールは「本物の相手から来た内容でも、検証・無害化してから使うか・リダイレクトに従うか」を問う。
+#     AI エージェントのツール出力の扱い（tool-output-trust-boundary）は subject が AI で別。下流のタイムアウト
+#     （api-downstream-cascading-failure）・平文の線（edge の暗号化のルール）は別の問いで、本ルールでは扱わない。
+#     LLM・決済ページは専用のルールがあるため peerType に入れない。
+#   - 機微なアカウント操作の前の再認証の欠如（api-sensitive-account-change-reauth-001、canonicalId:
+#     sensitive-account-change-without-reauth、2026-11-08 新設。OWASP API2:2023）。認証の入口への推測
+#     （login-credential-guessing）は乗っ取りの入口、本ルールは乗っ取ったセッションで連絡先・パスワード・MFA を
+#     書き換えて持ち主を締め出す段階を問う。一括の書き出しへの再認証（web-form.yaml）は操作が違い別。
+#     ゲートウェイはアカウントを持たないため対象外。ゲートウェイの背後の API で拾うよう peerType に GATEWAY を入れる。
+#   - CORS の設定不備（api-cors-misconfiguration-001、canonicalId: api-cors-misconfiguration、2026-11-08 新設。
+#     OWASP API8:2023）。ブラウザの JavaScript への秘密情報の埋め込み（api-web-client-embedded-secret-001）と同じ線で
+#     発火するが、あちらは呼び出し元の確認、こちらは他のサイトから利用者の権限で呼ばれる問題で、問いが違う。
+#     CORS はブラウザの仕組みのため、PC・利用者からの公衆網の線だけを対象にする（社員も被害者になりうるので除かない）。
+#   - 機微な業務フローの自動化による悪用（api-sensitive-business-flow-abuse-001、canonicalId:
+#     sensitive-business-flow-automation、2026-11-08 新設。OWASP API6:2023）。Web フォームの Bot 投稿
+#     （web-form-automated-abuse、WEB_FORM が subject）は問い合わせフォームのスパムと自動返信メールの踏み台化、
+#     個人情報の大量取得（api-bulk-data-harvesting）はデータの取得量、費用（metered-function-cost-exhaustion）は
+#     有料の外部機能の呼び出しを問う。本ルールは購入・予約・応募・投稿・ポイントやクーポンの付与といった業務の流れを
+#     機械的に使い尽くす悪用（買い占め・予約枠の占有・不正な特典の取得）を問う。
+#     運用状況 sensitiveBusinessFlow を「持つ（Yes）」と入力したときだけ発火する（未入力では出さない。2026-11-08
+#     ユーザー承認の「明示宣言時のみ発火」の例外。業務フローの機微さは図から決まらず、すべての API で出すと誤検知になるため）。
+#     持つと宣言したうえで対策（businessFlowProtection）が未入力なら、大方針どおり対策なしと同じ扱いで発火する。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する。
@@ -914,3 +938,120 @@ rules:
     references:
       - title: "OWASP API Security Top 10 2023 - API4:2023 Unrestricted Resource Consumption"
         url: "https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/"
+
+  # ── BACKEND_API / FRONT_END_SERVER: 外部 API の応答を検証せずに使う（経路依存）──
+  - id: api-third-party-response-trust-001
+    canonicalId: third-party-api-response-trust
+    framework: STRIDE
+    category: "Tampering"
+    name: "外部の API・サービスの応答を、検証・無害化せずに処理や下流へ渡す"
+    severity: Medium
+    description: "{{nodeName}} は外部の事業者の API・サービスを呼び出し、その応答を処理に使っている。応答を利用者の入力より信用し、型・長さ・値の範囲を検証せずにデータベースの問い合わせ・画面・下流のシステムへ渡したり、応答が示すリダイレクト先にそのまま従ったりしている場合、相手のサービスが侵害されたとき、または通信の途中や設定の不備で応答を差し替えられたとき、攻撃者は細工した応答を返すだけで {{nodeName}} にインジェクションを起こさせ、内部の宛先へ通信させ、誤った値（価格・在庫・本人確認の結果等）で処理を進めさせられる（Can）。{{nodeName}} 自身に欠陥が無くても、相手の侵害がそのまま自分の侵害になる。一方、外部の応答を利用者の入力と同じく信用せずに扱い、受け取る形と値を許可リストで検証し、問い合わせ・表示の前に無害化し、リダイレクトには従わないか宛先を許可リストで限り、応答の大きさと処理時間に上限を設けていれば、細工した応答を受け取っても処理には使われない（Cannot）。blast radius は外部の応答を使う {{nodeName}} の処理と、その結果を受け取る下流のシステム・データ。"
+    mitigation: "[Foundation] 外部の API・サービスの応答を、利用者の入力と同じく信用できない入力として扱う。受け取る項目・型・長さ・値の範囲をスキーマで検証し、データベースへの問い合わせはパラメーター化し、画面に出す前にエスケープする。外部との通信は TLS で行い、証明書を検証する。 [Enterprise] リダイレクトには自動で従わず、従う場合は宛先を許可リストで限る。応答の大きさと処理時間に上限を設ける。使っている外部の API の一覧と、それぞれから受け取るデータの種類を台帳にし、相手の侵害の公表時に影響を確かめられるようにする。 [Advanced] 外部の応答を受け取る処理を、内部のネットワークや機微なデータに直接触れない区画に分ける。応答の形が想定から外れたことを検知して通知し、相手の侵害を早く知れるようにする。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: BACKEND_API
+        - nodeType: FRONT_END_SERVER
+      # 外部の事業者の API・サービスとつながっているときだけ発火する（向きは問わない。呼び出しの応答も、送られてくるデータも対象）。
+      connection:
+        peerType: [SAAS, EXTERNAL_ENTITY, CRM]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-06"
+      - standard: nist-csf-2.0
+        ref: "GV.SC-07"
+    references:
+      - title: "OWASP API Security Top 10 2023 - API10:2023 Unsafe Consumption of APIs"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xaa-unsafe-consumption-of-apis/"
+
+  # ── BACKEND_API / FRONT_END_SERVER: 機微なアカウント操作の前の再認証の欠如（経路依存）──
+  - id: api-sensitive-account-change-reauth-001
+    canonicalId: sensitive-account-change-without-reauth
+    framework: STRIDE
+    category: "Spoofing"
+    name: "メールアドレス・パスワード・多要素認証の変更に、再認証を求めない"
+    severity: Medium
+    description: "{{nodeName}} は利用者の端末から呼ばれ、利用者のアカウントを扱う。メールアドレス・電話番号・パスワード・多要素認証の設定の変更や、アカウントの削除といった機微な操作を、ログイン中のセッションやトークンだけで受け付け、その場でのパスワードの再入力や多要素認証を求めていない場合、盗んだセッション・トークン、利用者が離れた端末、他の脆弱性で一時的に得た権限を持つ攻撃者は、連絡先と認証の手段を自分のものに書き換えて持ち主を締め出し、アカウントを恒久的に乗っ取れる（Can）。書き換えた後は、パスワードの再設定の通知も攻撃者に届く。一方、機微な操作の前に必ず再認証を求め、変更を元の連絡先に通知し、一定期間は元の連絡先から取り消せるようにしていれば、セッションを盗まれても持ち主を締め出すことはできない（Cannot）。{{nodeName}} がアカウントを扱わない場合は、アカウントを扱う側で同じことを確かめる。blast radius は乗っ取られたアカウントと、そのアカウントで扱える個人情報・ポイント・支払い手段。"
+    mitigation: "[Foundation] メールアドレス・電話番号・パスワード・多要素認証の変更とアカウントの削除の前に、パスワードの再入力か多要素認証を求める。変更したことを、変更前の連絡先にも通知する。 [Enterprise] 連絡先の変更は、新しい連絡先での確認が済むまで反映しない。変更前の連絡先から一定期間は取り消せるようにする。変更の後に、他の端末のセッションとトークンを失効させる。 [Advanced] 端末・場所・時間帯がふだんと違う変更に、追加の確認や待ち時間を設ける。機微な操作を短時間に繰り返すアカウントを検知して止める。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: FRONT_END_SERVER
+        - nodeType: BACKEND_API
+      # 利用者の端末から（前段・ゲートウェイを挟む構成を含めて）呼ばれるときだけ発火する。
+      # GATEWAY は対象にせず peerType に入れる（アカウントを扱うのはゲートウェイの背後の API のため）。
+      connection:
+        direction: inbound
+        peerType: [USER, PC, SMARTPHONE, EXTERNAL_ENTITY, REVERSE_PROXY, LOAD_BALANCER, WAF, CDN, GATEWAY]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "OWASP API Security Top 10 2023 - API2:2023 Broken Authentication"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/"
+      - title: "NIST SP 800-63B - Digital Identity Guidelines: Authentication and Lifecycle Management（再認証）"
+        url: "https://pages.nist.gov/800-63-4/sp800-63b.html"
+
+  # ── PC / USER → BACKEND_API / GATEWAY（公衆網）: CORS の設定不備 ──
+  - id: api-cors-misconfiguration-001
+    canonicalId: api-cors-misconfiguration
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "CORS の設定不備（任意のオリジンを許し、資格情報つきの呼び出しを受け付ける）"
+    severity: Medium
+    description: "{{targetName}} は、{{sourceName}} のブラウザから公衆網経由で呼ばれる。CORS の設定で、要求の Origin をそのまま許可として返したり、null や似た名前のドメインを許したりしたうえで、Cookie 等の資格情報つきの呼び出しを許している場合、攻撃者は利用者に自分のサイトを開かせるだけで、そのサイトの JavaScript から利用者のログイン状態のまま {{targetName}} を呼び、応答（個人情報・トークン等）を読み取れる（Can）。利用者には何も表示されず、{{targetName}} のログには本人の正規の呼び出しとして残る。一方、許可するオリジンを自組織のサイトの完全一致の一覧に限り、資格情報つきの呼び出しはその一覧にだけ許し、Origin を検証せずに返す実装をしていなければ、他のサイトから呼ばれても応答は読めない（Cannot）。blast radius は {{sourceName}} の権限で {{targetName}} から読める情報と、書き換えを許す API なら実行できる操作。"
+    mitigation: "[Foundation] 許可するオリジンを、自組織のサイトの完全一致の一覧で定める。要求の Origin をそのまま返す実装・null の許可・部分一致での判定をやめる。資格情報つきの呼び出し（Access-Control-Allow-Credentials）は、一覧に載ったオリジンにだけ許す。 [Enterprise] CORS の設定をゲートウェイか共通の部品に集約し、API ごとの実装に任せない。Cookie に SameSite を付ける。他のオリジンからの呼び出しを試すテストを CI で毎回実行する。 [Advanced] ブラウザから呼ぶ API と、サーバー間で呼ぶ API の入口を分け、ブラウザ向けでない API では CORS を許さない。許可していないオリジンからの呼び出しを記録し、監視する。"
+    appliesTo:
+      kind: edge
+      # CORS はブラウザの仕組みのため、ブラウザを使う PC・利用者から公衆網経由で API・ゲートウェイを呼ぶ線を対象にする。
+      # 社員もブラウザで攻撃者のサイトを開けば被害者になるため、利用者区分では除かない。
+      when:
+        sourceType: [PC, USER]
+        targetType: [BACKEND_API, GATEWAY]
+        network: [Internet]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "OWASP API Security Top 10 2023 - API8:2023 Security Misconfiguration"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/"
+      - title: "OWASP HTML5 Security Cheat Sheet（Cross Origin Resource Sharing）"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html"
+
+  # ── BACKEND_API / FRONT_END_SERVER: 機微な業務フローの自動化による悪用（明示宣言時のみ）──
+  - id: api-sensitive-business-flow-abuse-001
+    canonicalId: sensitive-business-flow-automation
+    framework: STRIDE
+    category: "Denial of Service"
+    name: "購入・予約・応募・特典の付与などの業務フローを、自動化で使い尽くされる（買い占め・予約枠の占有・不正な特典の取得）"
+    severity: High
+    description: "{{nodeName}} は、大量に使われると事業に損害が出る業務フロー（数量限定の商品の購入、予約枠の確保、抽選・キャンペーンへの応募、投稿・レビュー、ポイントやクーポンの付与等）を提供している。利用者・端末ごとの上限、Bot の判別、人の操作の確認といった自動化への対策が無い場合、攻撃者は多数のアカウントと送信元を用意したスクリプトで、正規の手順どおりにその流れを高速に繰り返し、限定品を買い占めて転売し、予約枠を押さえて他の利用者が使えないようにし、特典やポイントを大量に取得できる（Can）。一つずつの操作は正規の利用と同じ形で、脆弱性もエラーも無いため、通常の監視では気づけない。生成 AI を使えば、人の操作に似せた入力や、多数のアカウントの作成も容易になる。一方、業務フローごとに、利用者・端末・支払い手段あたりの上限を設け、Bot の判別や人の操作の確認を通し、短時間の集中や同じ支払い手段・配送先の使い回しを検知して止めていれば、自動化しても取れる量は上限の範囲にとどまり、早く止められる（Cannot）。送信元 IP ごとの回数制限だけでは、多数の送信元に分散した自動化は止まらない。blast radius は {{nodeName}} の業務フローで扱う在庫・予約枠・特典と、正規の利用者が使えなくなることによる売上と信頼の損失。"
+    mitigation: "[Foundation] 機微な業務フローを洗い出し、フローごとに利用者・端末・支払い手段・配送先あたりの上限（購入数・予約数・応募数・付与の回数）を設ける。アカウントの作成と、機微なフローの実行の前に、Bot の判別（CAPTCHA 等）を置く。 [Enterprise] 端末の指紋・操作の速さ・同じ支払い手段や配送先の使い回しから自動化を検知し、自動で止める。販売や受付の開始直後のように集中しやすい時間帯に、待合室（順番待ち）や抽選を使う。業務フローごとの利用の状況を監視し、ふだんと違う偏りを通知する。 [Advanced] 機微なフローを、本人確認の済んだアカウントや、利用の実績があるアカウントに限る。自動化の検知の結果を、取り消し（注文・予約・付与の取り消し）とアカウント停止までつなげる手順を整える。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: BACKEND_API
+        - nodeType: FRONT_END_SERVER
+      # 呼び出し元から受け取る線があるときだけ（攻撃者が業務フローを繰り返し呼ぶ前提）。
+      connection:
+        direction: inbound
+      # 「持つ（Yes）」と入力したときだけ発火する（未入力では出さない。2026-11-08 ユーザー承認の例外）。
+      # 持つと宣言したうえで対策が未入力なら、対策なしと同じ扱い（大方針）。
+      posture:
+        sensitiveBusinessFlow: [Yes]
+        businessFlowProtection: [None, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-04"
+    references:
+      - title: "OWASP API Security Top 10 2023 - API6:2023 Unrestricted Access to Sensitive Business Flows"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa6-unrestricted-access-to-sensitive-business-flows/"
+      - title: "OWASP Automated Threats to Web Applications（OAT-005 Scalping・OAT-021 Denial of Inventory 等）"
+        url: "https://owasp.org/www-project-automated-threats-to-web-applications/"

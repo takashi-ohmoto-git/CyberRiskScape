@@ -89,6 +89,8 @@ components:
     shape: rounded
     color: "bg-transparent"
     description: "CRM（顧客管理）アプリ。認可状況・所有状況を属性で設定する。"
+    # CRM が保管するもの（顧客の個人情報・商談や契約の機密情報・添付文書）だけを内包できる（2026-11-08）。
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, OTHER_DOCUMENT]
     posture: [log, encryptionAtRest, accountReview]
 
   - id: OTHER_APP

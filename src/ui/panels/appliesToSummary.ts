@@ -98,6 +98,8 @@ const FIELD_LABEL_KEYS: Record<string, TranslationKey> = {
   updateRollbackProtection: 'panels.posture.field.updateRollbackProtection',
   meteredCalls: 'panels.posture.field.meteredCalls',
   meteredCallLimit: 'panels.posture.field.meteredCallLimit',
+  sensitiveBusinessFlow: 'panels.posture.field.sensitiveBusinessFlow',
+  businessFlowProtection: 'panels.posture.field.businessFlowProtection',
   dataNecessity: 'panels.posture.field.dataNecessity',
   recordVolume: 'panels.posture.field.recordVolume',
 };

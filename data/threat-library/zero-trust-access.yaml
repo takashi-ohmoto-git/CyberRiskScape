@@ -125,6 +125,15 @@
 #     （VPN_GATEWAY / BASTION）と管理面（ADMIN_CONSOLE / API_CONTROL_PLANE）を対象に足し、保守の入口・管理面・仮想化基盤への
 #     線では保守接続向けの description を出す。VPN の到達範囲（zt-vpn-broad-network-access-001）・踏み台への特権の集中
 #     （pam-privileged-concentration）とは subject と問いが異なる。
+#   - SaaS・委託先に預けたデータの、委託先の侵害による漏えい（zt-saas-third-party-data-exposure-001、canonicalId:
+#     third-party-held-data-exposure、2026-11-08 新設。OWASP API9:2023 のデータフローの死角、NIST SP 800-161 の C-SCRM、
+#     個人情報保護委員会のガイドラインの委託先の監督）。既存に同義のルールは無い。外部協働者のアクセス
+#     （external-collaborator-broad-access）は委託先の人が自組織のシステムに入る経路、OAuth の付与の散在
+#     （oauth-consent-grant-sprawl）は IdP から見えない委任、本ルールは「自組織の外に置いたデータそのもの」を問う。
+#     保管時暗号化（data-at-rest-unencrypted）・ログ（log-not-collected）は同じ SAAS で併発しうるが、問いが違う。
+#     発火は個人情報・機密情報・通話録音・ソースコードを内包する SAAS・CRM に絞る（containsType）。CRM は同日に
+#     canContain を足して内包を描けるようにした（ユーザー判断）。自社で運用する CRM には当てはまらないため、
+#     その旨を description に書き、カードの状態で非該当にしてもらう。委託先の担当者のアクセスは外部協働者のルールが扱う。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する。
@@ -762,3 +771,38 @@ rules:
         url: "https://attack.mitre.org/techniques/T1133/"
       - title: "NIST SP 800-53 Rev.5 AC-17 Remote Access / AC-2 Account Management（保守の接続の限定と作業後のアカウントの無効化）"
         url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"
+
+  # ── SAAS / CRM（個人情報・機密情報を内包）: 委託先の侵害による、預けたデータの漏えい ──
+  - id: zt-saas-third-party-data-exposure-001
+    canonicalId: third-party-held-data-exposure
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "SaaS・委託先に預けた個人情報・機密情報が、委託先の侵害で漏れる（渡すデータの最小化・台帳・連携の管理の欠如）"
+    severity: High
+    description: "{{nodeName}} は外部の事業者が運用する SaaS・委託先のシステムで、自組織の個人情報・機密情報を預けている。預けたデータの安全は、事業者の対策と、その事業者が使う別の SaaS・連携先の対策に依存し、自組織からは直接守れない。攻撃者は AI を使って多数の事業者を並行して偵察し、対策の弱い事業者、その従業員へのフィッシング、連携に使う OAuth トークン・API キーを足がかりに、複数の利用組織のデータをまとめて持ち出せる（Can）。渡すデータが業務に必要な範囲を超えている、どの事業者に何を渡したかの台帳が無い、連携に広い権限のトークンを長く持たせている、のいずれかの場合、1 社の侵害がそのまま自組織の大量の漏えいになり、事業者からの通知が来るまで気づけない。一方、渡す項目を業務に必要な最小限にして仮名化し、事業者ごとに渡したデータの種類・件数・連携の権限を台帳に記録し、契約で安全管理・侵害時の通知の期限・委託終了時の削除を定めて定期的に確かめ、連携のトークンの権限と有効期間を絞って取得量を監視していれば、事業者が侵害されても漏れる範囲は限られ、早く気づいて連携を止められる（Cannot）。{{nodeName}} を自組織のサーバーで運用している場合は当てはまらない。blast radius は {{nodeName}} に預けた全データと、連携のトークンで {{nodeName}} から到達できる自組織のシステム。"
+    mitigation: "[Foundation] SaaS・委託先ごとに、渡しているデータの種類・件数・渡し方（API・ファイル・画面での入力）を台帳にする。渡す項目を業務に必要な最小限にし、不要な個人情報は渡さないか仮名化する。契約で、安全管理措置・侵害時の通知の期限・委託終了時のデータの削除を定める。 [Enterprise] 連携に使う OAuth トークン・API キーの権限（スコープ）と有効期間を絞り、使っていない連携を止める。事業者の安全管理の状況を年に 1 回以上確かめる（質問票・第三者認証・監査報告書）。連携のトークンによるデータの取得量を監視し、ふだんと違う大量の取得を検知する。事業者が侵害を公表したときに、台帳から影響するデータと本人を特定し、連携を止める手順を決めておく。 [Advanced] 機微なデータは、自組織が管理する鍵で暗号化してから預ける。事業者の侵害を想定した演習（連携の停止・トークンの失効・本人への通知）を行う。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: SAAS
+        - nodeType: CRM
+      # 預けたデータの漏えいは接続関係に依存しない内在リスク。預けるデータを内包として描いた SAAS・CRM だけで発火する。
+      connection:
+        required: false
+      containsType: [PERSONAL_INFO, CONFIDENTIAL_INFO, VOICE_RECORDING, SOURCE_CODE]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "GV.SC-05"
+      - standard: nist-csf-2.0
+        ref: "GV.SC-07"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+    references:
+      - title: "OWASP API Security Top 10 2023 - API9:2023 Improper Inventory Management（データフローの死角）"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa9-improper-inventory-management/"
+      - title: "NIST SP 800-161 Rev.1 - Cybersecurity Supply Chain Risk Management Practices for Systems and Organizations"
+        url: "https://csrc.nist.gov/pubs/sp/800/161/r1/upd1/final"
+      - title: "個人情報保護委員会 - 個人情報の保護に関する法律についてのガイドライン（通則編）（委託先の監督）"
+        url: "https://www.ppc.go.jp/personalinfo/legal/guidelines_tsusoku/"
+      - title: "MITRE ATT&CK T1199 - Trusted Relationship（委託先・連携先を足がかりにした侵入）"
+        url: "https://attack.mitre.org/techniques/T1199/"
