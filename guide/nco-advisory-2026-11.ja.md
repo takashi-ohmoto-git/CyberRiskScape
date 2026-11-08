@@ -7,7 +7,7 @@
 > （2026 年 11 月 5 日。[出典 1](#参考リンク)）が挙げる対策を、CyberRiskScape の構成図・取り込み・書き出し・チェックリストで
 > どう確かめるかを、架空の会員サイトとアプリを例にまとめたものです。
 > 国家サイバー統括室が作成・認定・推奨するものではありません。注意喚起の内容は日本語で要約しており、原文の転載ではありません。
-> 対策の正確な内容と最新の情報は、必ず原文を確認してください。件数・出力は執筆時点（2026 年 11 月）の実測値です。
+> 対策の正確な内容と最新の情報は、必ず原文を確認してください。件数・出力は執筆時点（2026 年 11 月）の実測値です（11 月 8 日に、EPSS・SSVC と OSS の診断ツールの取り込みを反映して測り直しました）。
 > 例に出てくる組織名・ホスト名・CVE 番号はすべて架空です（IP アドレスは文書用の範囲、CVE は `CVE-2099-` で始まる架空の番号）。
 
 ---
@@ -103,9 +103,9 @@ CyberRiskScape は**未入力を悪い値と同じ扱い**で脅威を出しま�
 
 | 要求 | CyberRiskScape でどこを見るか・何をするか | 出るもの | しないこと |
 |---|---|---|---|
-| **1-(1)** 資産（ソフトウェアの構成情報）の把握と脆弱性の解消 | 手元の SBOM を `import-sbom` でノードに結びつける。KEV カタログを `import-kev` で照合し、`fill-patch-status` で運用状況のパッチを補い、`findings-priority` で P1〜P4 を見る。納品された SBOM は `sbom-report` で検収 | 指摘ごとの優先度と根拠（露出・届く標的・KEV・連鎖）、SBOM の無いノード・ライセンス欄が空の部品 | 脆弱性の検出、脆弱性・サポート終了の情報の保有、ライセンスの適否の判定 |
+| **1-(1)** 資産（ソフトウェアの構成情報）の把握と脆弱性の解消 | 手元の SBOM を `import-sbom` でノードに結びつける。KEV カタログを `import-kev` で照合し、`import-epss` で EPSS（悪用の見込み）を付け、`fill-patch-status` で運用状況のパッチを補い、`findings-priority` で P1〜P4 と CISA の SSVC の判定を見る。納品された SBOM は `sbom-report` で検収 | 指摘ごとの優先度と根拠（露出・届く標的・KEV・EPSS・連鎖）と SSVC の判定、SBOM の無いノード・ライセンス欄が空の部品 | 脆弱性の検出、脆弱性・サポート終了の情報の保有、ライセンスの適否の判定 |
 | **1-(2)** 攻撃面の継続的な把握と最小化（管理画面・デバッグ用・テスト用・DB 管理を出さない） | 外部から見える資産を `import-shodan --into` か `import-scopesentry --into` で保存し、`asm-reconcile` で図の「外部公開」と突き合わせる。管理画面は `管理画面` 型で描く。アラートの IP・ホスト名は `context` で図に引く | 「図に無いのに外から見える」「非公開と入力したのに外から見える」の一覧、前段経由の管理面への到達 | ASM の実行。見えていないものは一覧に載らない（観測の範囲外） |
-| **1-(3)** 継続的なテスト・監視（AI の活用を含む） | `export-test-plan --changed-from` で、変更した部分だけの再診断計画を作る。`export-detection-requirements` で、攻撃経路上の「監視すべき振る舞い」と、ログが監視先に届かない区間を見る | 再診断の対象ノード、監視要件、ログが届かない区間 | テストの実行、監視の実施。「検知できる」とは言わない |
+| **1-(3)** 継続的なテスト・監視（AI の活用を含む） | `export-test-plan --changed-from` で、変更した部分だけの再診断計画を作る。`export-detection-requirements` で、攻撃経路上の「監視すべき振る舞い」と、ログが監視先に届かない区間を見る。AI を使った診断（AI 自律ペンテストの Strix・CyberStrikeAI、AI によるソース監査の security-audit）の結果も図に取り込める（[OSS で組む脆弱性管理](oss-vulnerability-management.ja.md)・[AI によるソース監査](security-audit.ja.md)） | 再診断の対象ノード、監視要件、ログが届かない区間、AI の診断で実証・要確認とされた指摘 | テストの実行、監視の実施。「検知できる」とは言わない |
 
 ### 3.2 設計・開発段階
 
@@ -113,7 +113,7 @@ CyberRiskScape は**未入力を悪い値と同じ扱い**で脅威を出しま�
 |---|---|---|---|
 | **2-(1)** セキュアバイデザイン（脅威モデリング、要件定義、管理画面を公開しない、ゼロトラスト、クラウドアカウントの分離） | 図を描いて脅威を出すこと自体が脅威モデリング。`export-requirements`（左サイドバーからも出せる）で、設計段階で決める要件のたたき台を作る。本番と開発・CI が同じ管理境界にいないかは、管理境界を描いて確かめる | 緩和策の段階（Foundation / Enterprise / Advanced）つきの要件一覧、管理境界の同居の脅威 | 要件の採否の決定（人が決める）、クラウドの実設定の確認 |
 | **2-(2)** API のセキュリティ（認証・認可、レート制限、クレデンシャルスタッフィング） | 公開の入口の攻撃面属性に**レート制限**を入力する。API は `バックエンドAPI`・`APIゲートウェイ` で描く。認可の不備（BOLA・BFLA）は脅威カードの確認観点で | 総当たり・リスト型攻撃（API と IdP）、認可不備、ブラウザ・アプリへの秘密情報の埋め込み | 認可の実装の検証（API のテストで確かめる） |
-| **2-(3)** 公開前の脆弱性診断（範囲と観点、ASVS） | `export-test-plan` で診断の範囲と観点を決める。観点には OWASP ASVS 5.0 の要件 ID が参照として付く。診断結果の SARIF は `import-sarif` で取り込み、`analyze --fail-on-findings` で、しきい値以上が残る間は公開を止める | 診断の範囲・観点・ASVS の参照、残っている指摘の件数 | 診断の実行 |
+| **2-(3)** 公開前の脆弱性診断（範囲と観点、ASVS） | `export-test-plan` で診断の範囲と観点を決める。観点には OWASP ASVS 5.0 の要件 ID が参照として付く。診断結果は、SARIF（ZAP・Trivy・SAST）を `import-sarif`、Nuclei を `import-nuclei`、ペンテストの台帳を `import-pentest` で取り込み（[OSS で組む脆弱性管理](oss-vulnerability-management.ja.md)）、`analyze --fail-on-findings` で、しきい値以上が残る間は公開を止める | 診断の範囲・観点・ASVS の参照、残っている指摘の件数 | 診断の実行 |
 
 ### 3.3 サプライチェーン
 
@@ -242,6 +242,14 @@ node dist-cli/main.js fill-patch-status step3.json -o step4.json
 パッチ状況を補完しました（補完 1 件）        （終了コード 0）
 ```
 
+**EPSS を付ける（任意）。** `import-epss` は、FIRST が毎日公開する EPSS（30 日以内に悪用が観測される確率の推定）を、指摘の CVE に付けます。
+EPSS の一覧も自分で取得して渡します（同梱せず、ネットワークにも出ません）。このページの CVE は架空なので EPSS が無く、手順だけを示します。
+
+```bash
+# 一覧は https://www.first.org/epss/ から取得（epss_scores-YYYY-MM-DD.csv.gz）
+node dist-cli/main.js import-epss step4.json --epss epss_scores-2026-11-07.csv.gz -o step4.json
+```
+
 ### 5.3 指摘の優先度を見る — 低い評価の組み合わせ（1-(1)）
 
 `findings-priority` は、保存済みの指摘を攻撃経路に載せ、推奨の優先度（P1〜P4）と根拠を出します。
@@ -253,11 +261,12 @@ node dist-cli/main.js findings-priority step4.json
 
 ```text
 - 指摘 2 件 / 連鎖 3 件
+- SSVC の内訳：Track 1 件 / Track* 0 件 / Attend 1 件 / Act 0 件
 
 ## P1（先に確認）（2 件）
-| 指摘 | 製品 | 元の深刻度 | ノード | 露出 | 届く標的 | KEV |
-| CVE-2099-0002 example-image-lib@1.0.5 | CycloneDX | Medium | C11 会員 API | 入口（仮定） | C16 CI パイプライン（1 ホップ）、C13 会員 DB（1 ホップ）、… | — |
-| CVE-2099-0001 example-web-framework@4.2.1 | CycloneDX | Medium | C6 会員サイト | 入口（仮定） | C8 会員・従業員の IdP（3 ホップ）、…、C13 会員 DB（4 ホップ） | あり（2099-01-01） |
+| 指摘 | 製品 | 元の深刻度 | ノード | 露出 | 届く標的 | KEV | EPSS | SSVC |
+| CVE-2099-0002 example-image-lib@1.0.5 | CycloneDX | Medium | C11 会員 API | 入口（仮定） | C16 CI パイプライン（1 ホップ）、C13 会員 DB（1 ホップ）、… | — | — | Track※ |
+| CVE-2099-0001 example-web-framework@4.2.1 | CycloneDX | Medium | C6 会員サイト | 入口（仮定） | C8 会員・従業員の IdP（3 ホップ）、…、C13 会員 DB（4 ホップ） | あり（2099-01-01） | — | Attend※ |
 
 ## 組み合わさると標的に届く連鎖
 - 経路上で指摘が 2 つ以上のノードに並ぶ連鎖 3 件のうち、個々の指摘はすべて Medium 以下 3 件。
@@ -269,6 +278,11 @@ node dist-cli/main.js findings-priority step4.json
 攻撃者から会員サイト → 会員 API → 会員 DB と続く経路の上に並ぶので、連鎖として示されます。KEV に載る指摘は先に確認する候補です。
 
 - 「入口（仮定）」は、攻撃面属性が未入力のために、悪い値と仮定して露出を判定したという印です
+- **EPSS** は `import-epss` で付けた値です。この例では「—」です。EPSS が 0.1 以上で、攻撃者から届くノードにある指摘は、優先度が 1 段上がります（低くても下がりません）
+- **SSVC** は、CISA の SSVC の判定（Track・Track\*・Attend・Act）を、P1〜P4 とは別の物差しとして並べたものです。
+  KEV に載る CVE-2099-0001 は Attend（標準より早く対応する）、載らない CVE-2099-0002 は Track（標準の更新期間で対応する）になりました。
+  `※` は、未入力や図から決まらない値を悪い側に仮定した印です（この例は CVSS ベクターが無いので、技術的な影響を深刻度から仮置きしています）。
+  決め方は [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) §2 を見てください
 - 出力には「経路の列挙が上限に達したため、連鎖に漏れがありうる」の注記が出ることがあります。この図でも出ました。連鎖は「少なくともこれだけ」と読みます
 
 ### 5.4 外から見える資産を重ね、図と突き合わせる（1-(2)）
@@ -323,6 +337,7 @@ node dist-cli/main.js context step5.json --host admin.example.com
 - 露出: 入口／届く標的: C16 CI パイプライン（2 ホップ）、C13 会員 DB（2 ホップ）、C8 会員・従業員の IdP（3 ホップ）
 ### 脅威（8 件）
 - High 前段の振り分けルールを経由した管理面への到達 [web-remote-management-exposure]
+- High 既知の脆弱性に対するパッチの未適用 [known-vulnerability-unpatched]
 - High パスワード・API キー単独の認証 / 公衆網 [password-only-internet-channel]
 …                                                                              （終了コード 0）
 ```
@@ -475,7 +490,7 @@ CI の組み込み方は [AI駆動開発のCIに組み込む](ci-integration.ja.
 - **CyberRiskScape は診断・ASM・EDR ではありません。** 取り込んだ結果に文脈をつけるだけです。見えていないものは出ません
 - **脆弱性・サポート終了のデータベースは持ちません。** 指摘は、取り込んだ SBOM や診断結果の中身です。KEV は自分で用意したファイルとの照合です
 - **ライセンスの適否・委託先の評価・導入の合否は判定しません。** 事実の一覧です
-- **「悪用できる」「検知できる」とは言いません。** 優先度は推奨と根拠で、判断は人が行います。KEV に載る＝CISA が悪用を確認した事実で、載らない＝悪用されていない、ではありません
+- **「悪用できる」「検知できる」とは言いません。** 優先度は推奨と根拠で、判断は人が行います。KEV に載る＝CISA が悪用を確認した事実で、載らない＝悪用されていない、ではありません。EPSS は確率の推定で、SSVC の判定も図と取り込んだ記録からの推奨です
 - **LLM は呼びません。** 書き出しはルールとデータから機械的に作ります
 - **経路の列挙は上限に達すると漏れます。** 連鎖は「少なくともこれだけ」と読みます
 - チェックリストの項目と脅威ルール・型の対応は、**CyberRiskScape 側の解釈**です。国家サイバー統括室が定めたものではありません
@@ -489,12 +504,15 @@ CI の組み込み方は [AI駆動開発のCIに組み込む](ci-integration.ja.
 2. CISA「Known Exploited Vulnerabilities Catalog」 <https://www.cisa.gov/known-exploited-vulnerabilities-catalog>
 3. OWASP「Application Security Verification Standard」 <https://owasp.org/www-project-application-security-verification-standard/>
 4. CycloneDX 仕様 <https://cyclonedx.org/specification/overview/>
+5. FIRST「Exploit Prediction Scoring System (EPSS)」 <https://www.first.org/epss/>
+6. CISA「Stakeholder-Specific Vulnerability Categorization (SSVC)」 <https://www.cisa.gov/stakeholder-specific-vulnerability-categorization-ssvc>
 
 ## 次に読むもの
 
 - [IPA の注意喚起（2026 年 10 月）の対策を、会員サイトの図で確かめる](ipa-alert-2026-10.ja.md) — チェックリストの読み方と、更新し続ける運用
 - [NICT の注意喚起「A2B 攻撃」を、会員アプリの図で確かめる](a2b-attack-2026-10.ja.md) — アプリを解析してバックエンド API を狙う攻撃
 - [SBOM を取り込む](sbom.ja.md) — SBOM の形式と取り込み
+- [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) — Trivy・ZAP・Nuclei・Strix などの結果を取り込み、KEV・EPSS・SSVC で優先順位を付ける
 - [インターネット露出を減らす](exposure-reduction.ja.md) — 外部公開の資産の洗い出しと削減
 - [ペンテスト計画書](pentest-plan.ja.md) — 診断事業者と範囲を合意する
 - [Security Context Layer](security-context.ja.md) — 取り込んだ結果を図に重ねる考え方

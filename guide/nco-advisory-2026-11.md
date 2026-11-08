@@ -7,7 +7,7 @@
 > (published 5 November 2026; [reference 1](#references)) using CyberRiskScape diagrams, imports, exports and the checklist,
 > with a fictional member website and mobile app as the example.
 > The National Cybersecurity Office did not write, certify or endorse this page. The advisory is summarized here, not reproduced.
-> Always read the original for the exact measures and the latest information. Counts and outputs are measured values at the time of writing (November 2026).
+> Always read the original for the exact measures and the latest information. Counts and outputs are measured values at the time of writing (November 2026; re-measured on 8 November to reflect EPSS, SSVC and the imports from OSS assessment tools).
 > All organization names, host names and CVE numbers in the examples are fictional (IP addresses are from the documentation ranges; CVEs start with `CVE-2099-`).
 > The original advisory is in Japanese. This page is the English translation of the Japanese guide.
 
@@ -105,9 +105,9 @@ CyberRiskScape treats **unset the same as a bad value** when deriving threats. T
 
 | Requirement | Where to look in CyberRiskScape / what to do | Output | Does not do |
 |---|---|---|---|
-| **1-(1)** Know your assets (software composition) and fix vulnerabilities | Attach your SBOM to nodes with `import-sbom`. Match the KEV catalog with `import-kev`, fill patch posture with `fill-patch-status`, and read P1 to P4 with `findings-priority`. Accept delivered SBOMs with `sbom-report` | Per-finding priority with reasons (exposure, reachable targets, KEV, chains); nodes without an SBOM; parts with an empty license field | Detecting vulnerabilities, keeping vulnerability or end-of-support data, judging license compliance |
+| **1-(1)** Know your assets (software composition) and fix vulnerabilities | Attach your SBOM to nodes with `import-sbom`. Match the KEV catalog with `import-kev`, add EPSS (likelihood of exploitation) with `import-epss`, fill patch posture with `fill-patch-status`, and read P1 to P4 and the CISA SSVC decision with `findings-priority`. Accept delivered SBOMs with `sbom-report` | Per-finding priority with reasons (exposure, reachable targets, KEV, EPSS, chains) and the SSVC decision; nodes without an SBOM; parts with an empty license field | Detecting vulnerabilities, keeping vulnerability or end-of-support data, judging license compliance |
 | **1-(2)** Continuously know and minimize the attack surface (do not expose admin, debug, test or DB-admin) | Save externally visible assets with `import-shodan --into` or `import-scopesentry --into`, and reconcile them with the diagram's "externally exposed" input using `asm-reconcile`. Draw admin consoles with the `Admin Console` type. Look up an alert's IP or host with `context` | "Visible from outside but not in the diagram" and "entered as not exposed but visible" lists; reaching the management plane through the front proxy | Running ASM. Anything not observed is not listed (out of observation range) |
-| **1-(3)** Continuous testing and monitoring (including AI) | `export-test-plan --changed-from` makes a re-test plan for only what changed. `export-detection-requirements` lists behaviors to monitor on attack paths and the segments where logs do not reach monitoring | Re-test target nodes, monitoring requirements, segments where logs do not arrive | Running tests or monitoring. It never says "can detect" |
+| **1-(3)** Continuous testing and monitoring (including AI) | `export-test-plan --changed-from` makes a re-test plan for only what changed. `export-detection-requirements` lists behaviors to monitor on attack paths and the segments where logs do not reach monitoring. Results of AI-assisted testing (autonomous AI pentesting with Strix or CyberStrikeAI, AI source audit with security-audit) can also be imported onto the diagram ([Vulnerability Management with OSS Scanners](oss-vulnerability-management.md), [AI source audit](security-audit.md)) | Re-test target nodes, monitoring requirements, segments where logs do not arrive, findings that AI-assisted testing marked as verified or needing confirmation | Running tests or monitoring. It never says "can detect" |
 
 ### 3.2 Design and development
 
@@ -115,7 +115,7 @@ CyberRiskScape treats **unset the same as a bad value** when deriving threats. T
 |---|---|---|---|
 | **2-(1)** Security by design (threat modeling, requirements, no public admin, zero trust, cloud account separation) | Drawing the diagram and deriving threats is the threat modeling. `export-requirements` (also in the left sidebar) drafts the requirements to decide at design time. Draw management boundaries to check that production and dev/CI do not share one | A requirement list with tiers (Foundation / Enterprise / Advanced); the shared-management-boundary threat | Deciding which requirements to adopt (people decide); checking real cloud settings |
 | **2-(2)** API security (authn/z, rate limiting, credential stuffing) | Enter the **rate limit** attack-surface attribute on public entry points. Draw APIs as `Backend API` / `API Gateway`. Use the threat cards' check points for authorization flaws (BOLA, BFLA) | Brute-force / credential-stuffing threats (API and IdP), authorization flaws, secrets embedded in browsers and apps | Verifying the authorization implementation (use API tests) |
-| **2-(3)** Pre-release vulnerability testing (scope, ASVS) | `export-test-plan` fixes the scope and test points; each point carries OWASP ASVS 5.0 requirement IDs as references. Import SARIF results with `import-sarif`, and stop the release with `analyze --fail-on-findings` while findings at or above the threshold remain | Test scope, points and ASVS references; the number of remaining findings | Running the tests |
+| **2-(3)** Pre-release vulnerability testing (scope, ASVS) | `export-test-plan` fixes the scope and test points; each point carries OWASP ASVS 5.0 requirement IDs as references. Import results with `import-sarif` (SARIF from ZAP, Trivy or SAST), `import-nuclei` (Nuclei) or `import-pentest` (pentest registries) ([Vulnerability Management with OSS Scanners](oss-vulnerability-management.md)), and stop the release with `analyze --fail-on-findings` while findings at or above the threshold remain | Test scope, points and ASVS references; the number of remaining findings | Running the tests |
 
 ### 3.3 Supply chain
 
@@ -246,6 +246,14 @@ node dist-cli/main.js fill-patch-status step3.json -o step4.json
 パッチ状況を補完しました（補完 1 件）        (exit code 0)
 ```
 
+**Add EPSS (optional).** `import-epss` adds EPSS, which FIRST publishes daily (an estimate of the probability that exploitation is observed within 30 days), to findings' CVEs.
+You download the EPSS list yourself too (not bundled, no network access). The CVEs on this page are fictional and have no EPSS, so only the step is shown.
+
+```bash
+# Download the list from https://www.first.org/epss/ (epss_scores-YYYY-MM-DD.csv.gz)
+node dist-cli/main.js import-epss step4.json --epss epss_scores-2026-11-07.csv.gz -o step4.json
+```
+
 ### 5.3 Read finding priority: combinations of low ratings (1-(1))
 
 `findings-priority` overlays stored findings on attack paths and outputs a recommended priority (P1 to P4) with reasons.
@@ -257,10 +265,12 @@ node dist-cli/main.js findings-priority step4.json
 
 ```text
 - 指摘 2 件 / 連鎖 3 件   (2 findings / 3 chains)
+- SSVC の内訳：Track 1 件 / Track* 0 件 / Attend 1 件 / Act 0 件   (SSVC breakdown)
 
 ## P1（先に確認）（2 件）  (P1: check first, 2)
-| CVE-2099-0002 example-image-lib@1.0.5 | CycloneDX | Medium | C11 会員 API | 入口（仮定） | C16 CI パイプライン（1 ホップ）、C13 会員 DB（1 ホップ）、… | — |
-| CVE-2099-0001 example-web-framework@4.2.1 | CycloneDX | Medium | C6 会員サイト | 入口（仮定） | C8 IdP（3 ホップ）、…、C13 会員 DB（4 ホップ） | あり（2099-01-01） |
+| CVE-2099-0002 example-image-lib@1.0.5 | CycloneDX | Medium | C11 会員 API | 入口（仮定） | C16 CI パイプライン（1 ホップ）、C13 会員 DB（1 ホップ）、… | — | — | Track※ |
+| CVE-2099-0001 example-web-framework@4.2.1 | CycloneDX | Medium | C6 会員サイト | 入口（仮定） | C8 IdP（3 ホップ）、…、C13 会員 DB（4 ホップ） | あり（2099-01-01） | — | Attend※ |
+  (columns: finding, product, original severity, node, exposure, reachable targets, KEV, EPSS, SSVC)
 
 ## 組み合わさると標的に届く連鎖  (chains that reach a target when combined)
 - 経路上で指摘が 2 つ以上のノードに並ぶ連鎖 3 件のうち、個々の指摘はすべて Medium 以下 3 件。
@@ -274,6 +284,11 @@ This is the advisory's central idea. **Both findings are Medium.** Alone, that r
 But they sit on one path (attacker to member site to member API to member DB), so they are shown as a chain. A finding listed in KEV is a candidate to check first.
 
 - "入口（仮定） (entry point, assumed)" means exposure was judged by assuming a bad value for unset attack-surface attributes
+- **EPSS** is the value added by `import-epss`; "—" in this example. A finding with EPSS of 0.1 or more on a node the attacker can reach is raised one level (a low EPSS never lowers it)
+- **SSVC** shows the CISA SSVC decision (Track, Track\*, Attend, Act) as a separate yardstick next to P1 to P4.
+  CVE-2099-0001, listed in KEV, is Attend (act sooner than the standard update timeline); CVE-2099-0002, not listed, is Track (handle within the standard update timeline).
+  `※` marks that unset values, or values the diagram cannot decide, were assumed to be the bad side (this example has no CVSS vector, so technical impact is provisionally taken from severity).
+  See section 2 of [Vulnerability Management with OSS Scanners](oss-vulnerability-management.md) for how it is decided
 - The output may carry the note "path enumeration hit its limit, so chains may be missing". It did for this diagram. Read chains as "at least these"
 
 ### 5.4 Overlay externally visible assets and reconcile (1-(2))
@@ -330,6 +345,7 @@ node dist-cli/main.js context step5.json --host admin.example.com
 - 露出: 入口／届く標的: C16 CI pipeline（2 ホップ）、C13 Member DB（2 ホップ）、C8 IdP…（3 ホップ）  (exposure: entry point / reachable targets)
 ### 脅威（8 件）  (8 threats)
 - High 前段の振り分けルールを経由した管理面への到達 [web-remote-management-exposure]  (reaching the management plane via front-proxy routing)
+- High 既知の脆弱性に対するパッチの未適用 [known-vulnerability-unpatched]  (missing patches for known vulnerabilities)
 - High パスワード・API キー単独の認証 / 公衆網 [password-only-internet-channel]
 …                                                                              (exit code 0)
 ```
@@ -483,7 +499,7 @@ We recommend first printing the list without stopping, and adding the stop once 
 - **CyberRiskScape is not a scanner, ASM or EDR.** It only adds context to imported results. What is not observed does not appear
 - **It keeps no vulnerability or end-of-support database.** Findings are the content of the SBOMs and test results you import. KEV is a match against a file you prepare
 - **It does not judge license compliance, evaluate contractors or accept deliveries.** It lists facts
-- **It never says "exploitable" or "can detect".** Priority is a recommendation with reasons; people decide. Listed in KEV means CISA confirmed exploitation; not listed does not mean not exploited
+- **It never says "exploitable" or "can detect".** Priority is a recommendation with reasons; people decide. Listed in KEV means CISA confirmed exploitation; not listed does not mean not exploited. EPSS is a probability estimate, and the SSVC decision is also a recommendation from the diagram and imported records
 - **It calls no LLM.** Exports are generated mechanically from rules and data
 - **Path enumeration can be incomplete when it hits its limit.** Read chains as "at least these"
 - The mapping between checklist items and threat rules or types is **CyberRiskScape's own interpretation**, not defined by the National Cybersecurity Office
@@ -497,12 +513,15 @@ We recommend first printing the list without stopping, and adding the stop once 
 2. CISA, "Known Exploited Vulnerabilities Catalog" <https://www.cisa.gov/known-exploited-vulnerabilities-catalog>
 3. OWASP, "Application Security Verification Standard" <https://owasp.org/www-project-application-security-verification-standard/>
 4. CycloneDX specification <https://cyclonedx.org/specification/overview/>
+5. FIRST, "Exploit Prediction Scoring System (EPSS)" <https://www.first.org/epss/>
+6. CISA, "Stakeholder-Specific Vulnerability Categorization (SSVC)" <https://www.cisa.gov/stakeholder-specific-vulnerability-categorization-ssvc>
 
 ## Next reads
 
 - [Checking IPA's October 2026 Alert with a Membership-Site Diagram](ipa-alert-2026-10.md): reading the checklist, and keeping it up to date
 - [Checking NICT's October 2026 A2B Attack Alert with a Member-App Diagram](a2b-attack-2026-10.md): attacks that analyze the app and target backend APIs
 - [Importing an SBOM](sbom.md): SBOM formats and import
+- [Vulnerability Management with OSS Scanners](oss-vulnerability-management.md): import results from Trivy, ZAP, Nuclei, Strix and others, and prioritize with KEV, EPSS and SSVC
 - [Reducing Internet Exposure](exposure-reduction.md): inventorying and reducing public assets
 - [Penetration Test Plan](pentest-plan.md): agree scope with the test provider
 - [Security Context Layer](security-context.md): the idea of overlaying imported results on the diagram
