@@ -1238,7 +1238,8 @@ export interface FindingKev {
 export const MAX_FINDINGS = 5000;
 
 /** 資産の入力の形式。 */
-export const ASSET_FORMATS = ['artex-assets', 'shodan', 'scopesentry', 'metasploit', 'cyberstrikeai-assets'] as const;
+/** `manual` は NodePanel の資産ポップアップから人が手で登録したもの（docs/node-address-asset-panel.md §3.2）。 */
+export const ASSET_FORMATS = ['artex-assets', 'shodan', 'scopesentry', 'metasploit', 'cyberstrikeai-assets', 'manual'] as const;
 export type AssetFormat = (typeof ASSET_FORMATS)[number];
 
 /** 資産の出どころ（docs/architecture.md §8.7）。 */

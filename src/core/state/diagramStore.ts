@@ -562,6 +562,8 @@ interface DiagramState {
   setProjectMeta: (meta: ProjectMeta) => void;
   /** 指摘を丸ごと差し替える（画面からの取り込み用）。Undo/Redo の対象外（§8.2）。保存対象なので dirty になる。 */
   setFindings: (findings: Finding[]) => void;
+  /** 資産を丸ごと差し替える（資産ポップアップの手入力用）。指摘と同じく Undo/Redo の対象外。保存対象なので dirty になる。 */
+  setAssets: (assets: Asset[]) => void;
   openProjectEdit: () => void;
   closeProjectEdit: () => void;
   openComplianceMap: () => void;
@@ -1319,6 +1321,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
   setProjectMeta: (meta) => set({ projectMeta: meta }),
   setFindings: (findings) => set({ findings }),
+  setAssets: (assets) => set({ assets }),
 
   openProjectEdit: () => set({ isProjectEditOpen: true }),
   closeProjectEdit: () => set({ isProjectEditOpen: false }),
