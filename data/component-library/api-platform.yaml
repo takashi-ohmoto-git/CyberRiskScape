@@ -101,7 +101,7 @@ components:
   - id: MESSAGE_BROKER
     label: "メッセージブローカー"
     category: CLOUD
-    icon: { kind: builtin, name: "send" }
+    icon: { kind: builtin, name: "inbox" }
     shape: rounded
     color: "bg-transparent"
     description: "非同期メッセージを中継するブローカー（キュー・トピック・イベントバス・ストリーム）。送信者と受信者を切り離し、メッセージを一時保管する。クラウドでは Amazon SQS・SNS・EventBridge・MSK / Azure Service Bus・Event Hubs / Google Cloud Pub/Sub / OCI Streaming、オンプレミスでは Kafka・RabbitMQ 等が該当する。iPaaS・サイドカープロキシ・DB プロキシは CONNECTOR、同期的に API を中継するものは GATEWAY を使う。"
