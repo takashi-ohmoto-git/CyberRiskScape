@@ -64,6 +64,7 @@ Importing configuration files, exporting verification requests, and diff checks 
 | **CycloneDX and SPDX** | Component import (`import-sbom`; CLI only) and export (`export-spdx` and `export-sbom-ai`; also from the screen) | Link SBOM, CBOM, and AI BOM components to nodes, check them in the Asset tab, and export them in standard formats ([guide](sbom.md)) |
 | **ARTEX** | Registry YAML import (`import-pentest`) and asset import (`import-artex-assets`, shown in the Asset tab); CLI only | Show attack techniques that were actually executed and succeeded as "verified" on threat cards (limited to what the developer verified; not exhaustive) | [Seeing the Attack Techniques ARTEX Actually Executed on Threat Cards](artex.md) |
 | **Cisco AI Defense** (skill-scanner / mcp-scanner) | Findings cross-reference (`findings-report --skill-scanner / --mcp-scanner`; result files, CLI only) | Cross-reference agent skill and MCP server scan results with the diagram's threats through an AITech mapping table; find what is left undrawn | [Cross-Reference Agent Skill and MCP Server Scan Results with the Threat Model](ai-scanners.md) |
+| **Cloudflare security-audit** (skill) | Findings import (`findings.json` and `coverage-ledger.json`; screen and CLI `import-security-audit`) | Show findings confirmed in the source and needs-confirmation findings that depend on the deployment on threat cards, and line up their preconditions with the diagram's facts | [Putting AI Source-Audit Findings on the Diagram](security-audit.md) |
 | **Velociraptor** | Importing collections (extracted folders), artifact hints in the investigation plan, and the EDR / DFIR server stencil and threat rules | When you suspect a compromise, decide which artifacts to collect on the nodes along the attack routes, and overlay the collections on the nodes as a report | [Scoping and reporting a suspected-compromise investigation](compromise-investigation.md) |
 
 ---
@@ -88,6 +89,7 @@ Importing configuration files, exporting verification requests, and diff checks 
 | Manage the results of OSS assessment tools with priorities based on attack paths | Trivy, Syft / Grype, ZAP, Nuclei, CyberStrikeAI, Strix, Metasploit ([guide](oss-vulnerability-management.md)) |
 | Put attack techniques that actually worked in a penetration test on threat cards | ARTEX |
 | Cross-reference agent skill / MCP server scan results with the diagram | Cisco AI Defense (skill-scanner / mcp-scanner) |
+| Put AI source-audit findings on the diagram, separating verified from needs-confirmation | Cloudflare security-audit |
 | Decide where to look and report the results when you suspect a compromise | Velociraptor and the bundled triage script ([guide](compromise-investigation.md)) |
 
 ---

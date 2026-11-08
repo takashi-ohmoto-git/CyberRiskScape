@@ -1,0 +1,24 @@
+[
+  {
+    "coverage_id": "unit-orders",
+    "canonical_refs": {
+      "surface": "src/api/orders.ts#GET /orders/:id",
+      "boundary": "src/authz.ts#requireOwner",
+      "subsystem": "api",
+      "attack_class": "DATA-ISOLATION-AND-LIFECYCLE.md#Missing tenant or owner enforcement"
+    },
+    "status": "covered",
+    "result_fingerprints": ["sample-authz-order-owner"]
+  },
+  {
+    "coverage_id": "unit-admin",
+    "canonical_refs": {
+      "surface": "src/admin/routes.ts#/admin",
+      "boundary": "proxy#path-routing",
+      "subsystem": "admin",
+      "attack_class": "CLOUD-AND-DEPLOYMENT.md#Unexpected service or management-plane reachability"
+    },
+    "status": "candidate",
+    "result_fingerprints": ["sample-admin-path-reachability"]
+  }
+]

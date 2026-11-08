@@ -51,6 +51,7 @@ CyberRiskScape を使う人のための、機能の使い方の一覧です。
 | **[OSS で組む脆弱性管理](oss-vulnerability-management.ja.md)** | OSS の診断ツールの結果を CLI で構成図に取り込み、KEV との照合・攻撃経路の上の優先順位（findings-priority）・CI のしきい値で回す共通の流れ。Trivy の脆弱性（CycloneDX）と IaC の設定不備・シークレット（SARIF）・Syft / Grype の SBOM と脆弱性の取り込み、ZAP（DAST）の SARIF と Nuclei の JSONL の取り込み、CyberStrikeAI・Strix（AI 自律ペンテスト）・Metasploit の結果の台帳への変換と Strix への文脈の受け渡し、保存しないもの、限界（架空のサンプルでのみ確認）。対応ツールは順次追加 |
 | **[SBOM・CBOM・AI BOM を取り込み、SPDX・CycloneDX で書き出す](sbom.ja.md)** | CycloneDX・SPDX の部品をプロジェクトに保存し、ノードに結びつけて Asset タブで確かめ、SPDX 2.3・CycloneDX 1.7 で書き出す方法。書き出しで失う情報も説明します。 |
 | **[ARTEX が実際に実行した攻撃手段を脅威カードで見る](artex.ja.md)** | ARTEX（AI 自律ペネトレーションテスト）が実際に実行して成立した攻撃手段を、脅威カードに「実証」として表示する方法、デモで見る手順、台帳 YAML と `import-pentest` による取り込み、限界（開発者が検証した内容に限り網羅しない・サンプルは架空の構成） |
+| **[AI によるソース監査の指摘を構成図に載せる](security-audit.ja.md)** | Cloudflare security-audit スキル（コーディングエージェントによるソース監査）の findings.json を画面か CLI でノードに取り込み、脅威カードに「ソース監査で実証（ローカル）／要確認」を出す。要確認の前提を図の事実と並べる |
 | **[エージェントスキル・MCP サーバーの検査結果を脅威モデルと突き合わせる](ai-scanners.ja.md)** | Cisco AI Defense の skill-scanner / mcp-scanner の結果を、図から検出した脅威と CLI で突き合わせる方法（確認された・描き漏れ候補・対応づけできない・検査が完了していない項目）、ノードへの絞り込み、AITech 対応表、秘密情報の扱い、CI での重大度ゲート、限界（架空のサンプルでのみ確認） |
 | **[AI駆動開発における Secure by Design と脅威モデリング](ai-driven-development.ja.md)** | AI が設計・実装・レビューを担う開発で、脅威モデルを「AI が読み書きし、人が判断する正本」として回す考え方と、企画・設計・実装・レビュー・検証・評価・運用の工程ごとに CyberRiskScape でできること、AI そのものの脅威モデル化、AI と人の境界、段階的な導入。各ガイドへの地図 |
 | **[Secure by Design 入門](secure-by-design.ja.md)** | 背景にある考え方。Secure by Design とは何か、なぜ今求められるのか、脅威モデリングが担う 4 つの役割、そして経営層・企画・セキュリティ・監査・CI が 1 つの脅威モデルを共有する Security Context Layer としての CyberRiskScape の役割。CISA 主導の国際共同ガイダンスに基づく |
@@ -93,6 +94,7 @@ CyberRiskScape を使う人のための、機能の使い方の一覧です。
 - **Prowler（AWS）の実測で「未入力のため仮定」を置き換えたい・Prowler の FAIL を図の脅威と突き合わせたい** — [Prowler の検査結果を構成図に載せる](prowler.ja.md) へ。
 - **OSS の診断ツール（Trivy 等）の結果を、攻撃経路の上で優先順位を付けて管理したい** — [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) へ。
 - **ARTEX が実際に実行した攻撃手段を脅威カードで見たい・自分のペンテスト結果を取り込みたい** — [ARTEX が実際に実行した攻撃手段を脅威カードで見る](artex.ja.md) へ。
+- **AI にソースを監査させた指摘を図に載せ、実証と要確認を見分けたい** — [AI によるソース監査の指摘を構成図に載せる](security-audit.ja.md)
 - **エージェントスキル・MCP サーバーの検査ツール（skill-scanner / mcp-scanner）の結果を、図と脅威モデルに突き合わせたい** — [エージェントスキル・MCP サーバーの検査結果を脅威モデルと突き合わせる](ai-scanners.ja.md) へ。
 - **AI駆動開発で脅威モデリングをどう続けるか、全体像を知りたい** — [AI駆動開発における Secure by Design と脅威モデリング](ai-driven-development.ja.md) へ。
 - **この取り組みの意義を誰かに説明したい** — [Secure by Design 入門](secure-by-design.ja.md) は

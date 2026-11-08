@@ -1,0 +1,28 @@
+[
+  {
+    "verdict": "confirmed",
+    "fingerprint": "sample-authz-order-owner",
+    "title": "Order lookup does not check the owner",
+    "trace": [
+      { "kind": "entrypoint", "file": "src/api/orders.ts", "line": 42 },
+      { "kind": "sink", "file": "src/db/orders.ts", "line": 18 }
+    ],
+    "conditions": [
+      { "kind": "authentication_level", "description": "Any signed-in member" },
+      { "kind": "network_routing", "description": "The member API is reachable from the Internet" }
+    ],
+    "severity": { "overall_severity": "high" }
+  },
+  {
+    "verdict": "needs_validation",
+    "fingerprint": "sample-admin-path-reachability",
+    "title": "Admin routes may be reachable without the front proxy",
+    "trace": [{ "kind": "entrypoint", "file": "src/admin/routes.ts", "line": 7 }],
+    "blockers": ["Whether production blocks /admin before it reaches the API cannot be read from the source"],
+    "validation_plan": { "deployment": "Check the reverse proxy rules for /admin in production" }
+  },
+  {
+    "verdict": "rejected",
+    "fingerprint": "sample-rejected-csrf"
+  }
+]

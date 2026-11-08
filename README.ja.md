@@ -66,6 +66,7 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 | **クラウドの検査**（Prowler） | Prowler の AWS の検査結果（OCSF）で、図のノードの未入力の運用状況・攻撃面属性を埋め、FAIL の検査を図の脅威と突き合わせる（[ガイド](guide/prowler.ja.md)） |
 | **ペンテストの実証**（ARTEX） | ARTEX が実際に実行して成立した攻撃手段を、台帳 YAML から取り込んで脅威カードに「実証」と表示する（開発者が検証した内容に限り網羅しない。[ガイド](guide/artex.ja.md)） |
 | **AI 部品の検査**（Cisco AI Defense skill-scanner / mcp-scanner） | エージェントスキル・MCP サーバーの検査結果を、AITech 対応表を介して図の脅威と突き合わせ、描き漏れを見つける（[ガイド](guide/ai-scanners.ja.md)） |
+| **AI によるソース監査**（Cloudflare security-audit スキル） | 指摘を画面か CLI でノードに取り込み、脅威カードに「ソース監査で実証（ローカル）／要確認」を出し、要確認の前提を図の事実と並べる（[ガイド](guide/security-audit.ja.md)） |
 | **OSS の脆弱性管理**（Trivy・Syft / Grype・ZAP・Nuclei・Metasploit・Strix・CyberStrikeAI） | SAST・SCA・DAST・AI ペンテストの結果を取り込み、部品・指摘としてノードに結びつけ、KEV・EPSS・CISA SSVC と攻撃経路で優先順位を付ける（CLI のみ。[ガイド](guide/oss-vulnerability-management.ja.md)） |
 
 連携できる製品と方法の一覧は [連携ガイド](guide/integrations.ja.md) を参照してください。
