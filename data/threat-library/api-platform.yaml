@@ -193,8 +193,9 @@ rules:
     appliesTo:
       kind: edge
       # TCU（sdv ライブラリ）は車両からバックエンドを呼ぶ外部の呼び出し元のため加える（車両バックエンドは BACKEND_API で描く）。
+      # CRM・SAAS は SaaS がサーバー間でバックエンドを代行して呼ぶ構成のため加える（bulk・token のルールの peerType と揃える）。
       when:
-        sourceType: [USER, PC, SMARTPHONE, IOT, EXTERNAL_ENTITY, OTHER_APP, API_DEV_WORKSPACE, TCU]
+        sourceType: [USER, PC, SMARTPHONE, IOT, EXTERNAL_ENTITY, OTHER_APP, CRM, SAAS, API_DEV_WORKSPACE, TCU]
         targetType: [BACKEND_API]
     complianceRefs:
       - standard: nist-csf-2.0

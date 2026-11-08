@@ -187,7 +187,7 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'shodan.desc.observed': 'Observed: {date}',
   'shodan.desc.cves': 'CVEs reported by Shodan (unverified): {ids}',
   'shodan.desc.more': '{n} more',
-  'shodan.desc.ics': 'OT/ICS device (CyberRiskScape stencils do not cover OT/ICS yet, so it is drawn as IoT)',
+  'shodan.desc.ics': 'OT/ICS device (this tool has no OT/ICS stencils yet, so it is drawn as IoT)',
   // ── ScopeSentry export import ──
   'scopesentry.templateName': 'External exposure observed by ScopeSentry',
   'scopesentry.error.noRecords': 'No ScopeSentry records (exported JSON of asset, vulnerability or SubdomainTakerResult) found. Choose JSON in the Export dialog.',

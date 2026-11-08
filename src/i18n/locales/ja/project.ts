@@ -186,7 +186,7 @@ export const jaProject = {
   'shodan.desc.observed': '観測日: {date}',
   'shodan.desc.cves': 'Shodan が報告した CVE（未検証）: {ids}',
   'shodan.desc.more': '他 {n} 件',
-  'shodan.desc.ics': 'OT/ICS 機器（CyberRiskScape のステンシルは OT/ICS に未対応のため IoT として描いています）',
+  'shodan.desc.ics': 'OT/ICS 機器（本ツールのステンシルは OT/ICS に未対応のため IoT として描いています）',
   // ── ScopeSentry 書き出し取り込み ──
   'scopesentry.templateName': 'ScopeSentry で観測した外部露出',
   'scopesentry.error.noRecords': 'ScopeSentry のレコード（asset・vulnerability・SubdomainTakerResult の書き出し JSON）が見つかりません。画面の Export で JSON を選択してください。',

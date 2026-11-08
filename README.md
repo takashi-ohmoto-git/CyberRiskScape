@@ -3,7 +3,7 @@
 **An open-source Security Context Layer built on threat modeling — for AI, LLM, agentic systems, and post-quantum cryptography**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-281-orange.svg)](data/threat-library)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-291-orange.svg)](data/threat-library)
 [![Tests](https://img.shields.io/badge/tests-2005%20passing-brightgreen.svg)](#development)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
@@ -31,7 +31,7 @@ For the thinking behind it, see [An Introduction to Secure by Design](guide/secu
 For the feature list, see [here](guide/README.md).
 
 > **Interface language.** English and Japanese are both supported — use the JA / EN switch
-> in the top bar, and your choice is remembered. The interface, all 281 threat rules
+> in the top bar, and your choice is remembered. The interface, all 291 threat rules
 > (name, category, description, mitigations) and every component type label are
 > translated. Help is welcome.
 
@@ -46,9 +46,9 @@ long-term memory** as first-class component types, with a rule set to match.
 
 | Framework | Rules | Covers |
 |---|---:|---|
-| `STRIDE` | 175 | Spoofing, tampering, repudiation, information disclosure, DoS, elevation of privilege |
+| `STRIDE` | 196 | Spoofing, tampering, repudiation, information disclosure, DoS, elevation of privilege |
 | `AI` | 35 | Adversarial ML, model extraction, training data poisoning |
-| `AgenticAI` | 56 | Goal hijacking, tool misuse, privilege carry-over, memory poisoning |
+| `AgenticAI` | 60 | Goal hijacking, tool misuse, privilege carry-over, memory poisoning |
 
 This is where the project invests. Most threat modeling tools have zero rules in the third row.
 
@@ -77,19 +77,21 @@ platforms, and AI agent platforms. It makes no outbound calls, so it also works 
 | **Cloud security scanning** (Prowler) | Fill the operational posture and attack surface attributes still unset on diagram nodes from Prowler's OCSF findings for AWS, and cross-check FAIL checks against the diagram's threats ([guide](guide/prowler.md)) |
 | **Penetration test verification** (ARTEX) | Import the attack techniques ARTEX actually executed and that succeeded from a registry YAML and show them as "verified" on threat cards (limited to what the developer verified; not exhaustive; [guide](guide/artex.md)) |
 | **AI component scanning** (Cisco AI Defense skill-scanner / mcp-scanner) | Cross-reference agent skill and MCP server scan results with the diagram's threats through an AITech mapping table, and find what is left undrawn ([guide](guide/ai-scanners.md)) |
+| **OSS vulnerability management** (Trivy, Syft / Grype, ZAP, Nuclei, Metasploit, Strix, CyberStrikeAI) | Import SAST, SCA, DAST and AI pentest results, attach them to nodes as components and findings, and prioritise with KEV, EPSS, CISA SSVC and attack paths (CLI only; [guide](guide/oss-vulnerability-management.md)) |
 
 For the full list of products and how they connect, see [Integrations](guide/integrations.md).
 
 ### Features
 
-- **Visual DFD editor** — 113 component types across 14 libraries and 16 categories, trust
+- **Visual DFD editor** — 148 component types across 14 libraries and 16 categories, trust
   boundaries, and data flows carrying encryption, authentication, and semantic attributes.
   The library covers network and security appliances (with examples of the equivalent cloud
   services), Storage & Databases, and Basic Shapes (DFD) drawn in the classic Yourdon notation
 - **Automatic threat detection** — distinguishes *inherent* threats (a component fires them
   just by existing) from *path-dependent* ones (they need a specific connection to exist)
 - **Attack path analysis** — maps routes from attacker to asset and identifies choke points
-  where several routes converge on one defensible node
+  where several routes converge on one defensible node. The techniques on the top routes can be
+  viewed as an ATT&CK or MITRE F3 matrix ([guide](guide/attack-paths.md))
 - **PQC migration support** — draw a design on a PQC layer, separate from the depth layers,
   and trace a route from sender to destination, split into segments at each node that
   terminates or decrypts the encryption. Each segment gets a termination verdict, a likelihood,
@@ -194,7 +196,7 @@ npm run test:watch   # watch mode
 npx tsc --noEmit     # type check (strict)
 ```
 
-The standard check after a change is `npx tsc --noEmit` plus the test suite. 2,005 tests
+The standard check after a change is `npx tsc --noEmit` plus the test suite. 2,354 tests
 currently pass.
 
 ---
@@ -295,7 +297,7 @@ Near-term priorities, in order:
    detection confidence stated explicitly
 
 Done recently: an English UI with a language switcher, plus English translation overlays
-for all 281 threat rules and every component type label, all leaving the existing schemas
+for all 291 threat rules and every component type label, all leaving the existing schemas
 unchanged.
 
 ---

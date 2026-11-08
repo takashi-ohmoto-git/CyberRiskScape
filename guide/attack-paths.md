@@ -187,7 +187,32 @@ actually bought you.
 
 ---
 
-## 9. Assumptions and limits
+## 9. Viewing the routes as an ATT&CK or MITRE F3 matrix
+
+The **ATT&CK** and **MITRE F3** buttons at the top right show the techniques used by the threats
+detected on the top 3 routes, laid out as a matrix with one column per tactic (the buttons are
+disabled when there is no route).
+
+| Matrix | What it shows |
+|---|---|
+| **ATT&CK** | MITRE ATT&CK Enterprise (v20.0) |
+| **MITRE F3** | MITRE Fight Fraud Framework (a catalogue of fraud techniques). Names are shown as in the original |
+
+- **Coloured cells** are matching techniques, coloured by threat severity. Techniques on a route
+  carry the **step number** at which they appear; those detected only on elements off the routes are
+  marked "Detected off path".
+- When only a sub-technique matches, the cell shows "Sub matched". **Expand all** opens every one at once.
+- **Click a cell** to list the matching threats on the right.
+- Techniques come only from the references (`complianceRefs`) written in the threat rules, so
+  **rules without an ATT&CK or F3 ID do not appear**. F3 in particular has been mapped to only some
+  rules as a trial; an empty cell does not mean the technique is absent.
+
+The same top routes can also be exported as an ATT&CK Navigator layer (JSON), from **Report** in the
+left sidebar or with the CLI's `export-attack-navigator`.
+
+---
+
+## 10. Assumptions and limits
 
 The analysis rests on the following. **Check them before drawing conclusions.**
 

@@ -3,7 +3,7 @@
 **脅威モデリングを中核とした、OSS の Security Context Layer — AI・LLM・エージェントシステム・PQC に対応**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-281-orange.svg)](data/threat-library)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-291-orange.svg)](data/threat-library)
 [![Tests](https://img.shields.io/badge/tests-2005%20passing-brightgreen.svg)](#開発)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
@@ -37,9 +37,9 @@ ASM・クラウドの検査・脆弱性管理・ID 基盤・AI セキュリテ�
 
 | フレームワーク区分 | ルール数 | 内容 |
 |---|---:|---|
-| `STRIDE` | 175 | 古典的な脅威（なりすまし・改ざん・情報漏えい 等） |
+| `STRIDE` | 196 | 古典的な脅威（なりすまし・改ざん・情報漏えい 等） |
 | `AI` | 35 | 敵対的 ML、モデル抽出、学習データ汚染 等 |
-| `AgenticAI` | 56 | 目標乗っ取り、ツール誤用、権限の持ち越し、メモリ汚染 等 |
+| `AgenticAI` | 60 | 目標乗っ取り、ツール誤用、権限の持ち越し、メモリ汚染 等 |
 
 ### エコシステム — 開発・API・ID 基盤とつながる
 
@@ -66,19 +66,20 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 | **クラウドの検査**（Prowler） | Prowler の AWS の検査結果（OCSF）で、図のノードの未入力の運用状況・攻撃面属性を埋め、FAIL の検査を図の脅威と突き合わせる（[ガイド](guide/prowler.ja.md)） |
 | **ペンテストの実証**（ARTEX） | ARTEX が実際に実行して成立した攻撃手段を、台帳 YAML から取り込んで脅威カードに「実証」と表示する（開発者が検証した内容に限り網羅しない。[ガイド](guide/artex.ja.md)） |
 | **AI 部品の検査**（Cisco AI Defense skill-scanner / mcp-scanner） | エージェントスキル・MCP サーバーの検査結果を、AITech 対応表を介して図の脅威と突き合わせ、描き漏れを見つける（[ガイド](guide/ai-scanners.ja.md)） |
+| **OSS の脆弱性管理**（Trivy・Syft / Grype・ZAP・Nuclei・Metasploit・Strix・CyberStrikeAI） | SAST・SCA・DAST・AI ペンテストの結果を取り込み、部品・指摘としてノードに結びつけ、KEV・EPSS・CISA SSVC と攻撃経路で優先順位を付ける（CLI のみ。[ガイド](guide/oss-vulnerability-management.ja.md)） |
 
 連携できる製品と方法の一覧は [連携ガイド](guide/integrations.ja.md) を参照してください。
 
 ### 主な機能
 
-- **ビジュアル DFD エディタ** — 113 種のコンポーネント型（14 ライブラリ・16 カテゴリ）、
+- **ビジュアル DFD エディタ** — 148 種のコンポーネント型（14 ライブラリ・16 カテゴリ）、
   トラスト境界、データフローの暗号化区分・認証状態の表現。ネットワーク・セキュリティ機器
   （クラウドの同等サービスの例つき）、Storage & Databases、DFD 標準記法（Yourdon 法）で
   表示する Basic Shapes (DFD) を収録
 - **脅威の自動検出** — 配置しただけで発火する内在脅威と、接続条件つきで発火する
   経路依存脅威を区別して検出
 - **攻撃経路グラフ分析** — 攻撃者から資産に至る経路を可視化し、チョークポイント
-  （複数経路が集中する防御点）を特定
+  （複数経路が集中する防御点）を特定。上位経路の手口を ATT&CK・MITRE F3 のマトリクスで表示（[ガイド](guide/attack-paths.ja.md)）
 - **PQC 移行支援** — 深度レイヤーとは別の PQC レイヤーに構成を描き、送信元から送信先までの経路を、
   暗号を終端・復号するノードで区間に分けて分析。区間ごとに終端判定・蓋然性・PQC 判定
   （CRYPTREC 暗号リスト表 2・NIST FIPS 203/204/205 に基づく）を出し、簡易レポート（CSV）を
@@ -181,7 +182,7 @@ npm run test:watch   # テスト watch モード
 npx tsc --noEmit     # 型チェック（strict）
 ```
 
-変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 2,005 件の
+変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 2,354 件の
 テストが通ります。
 
 ---

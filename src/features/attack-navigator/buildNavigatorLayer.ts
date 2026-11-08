@@ -272,7 +272,7 @@ export function buildNavigatorLayer(
     name: scenario
       ? t('navigator.layerNameScenario', { product: BRANDING.name, system, scenario: scenario.label })
       : t('navigator.layerName', { product: BRANDING.name, system }),
-    versions: { attack: '15', navigator: '4.9.0', layer: '4.5' },
+    versions: { attack: '20', navigator: '4.9.0', layer: '4.5' },
     domain: 'enterprise-attack',
     description: `${t('navigator.description.main', { system, product: BRANDING.name, date })}${scenarioNote}${atlasNote}`,
     techniques,
