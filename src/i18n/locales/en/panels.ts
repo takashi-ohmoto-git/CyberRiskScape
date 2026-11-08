@@ -66,6 +66,7 @@ export const enPanels: Partial<Record<TranslationKey, string>> = {
   'panels.node.entryReason.internetEdge': 'Receives a line over the Internet',
   'panels.node.entryReason.internetZone': 'Inside an Internet boundary',
   'panels.node.entryReason.attackerEdge': 'Line from the attacker',
+  'panels.node.entryReason.externalEndpoint': 'External endpoint that connects to a remote-access device (endpoint compromise)',
   'panels.node.entryWeakness.noUserAuth': 'No user authentication',
   'panels.node.entryWeakness.noSourceIpRestriction': 'No source IP access restriction',
   'panels.node.entryWeakness.noRemoteAccessRestriction': 'No remote access restriction',

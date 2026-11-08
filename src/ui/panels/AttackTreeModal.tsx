@@ -15,6 +15,7 @@ import { buildAttackGraph, type AttackGraphResult, type LogicalHop } from '../..
 import {
   aggregateLogicalHopEvidence,
   buildHopEvidence,
+  inboundEdgeThreatRefs,
   edgeElementKey,
   nodeElementKey,
   NEUTRAL_EVIDENCE,
@@ -33,6 +34,7 @@ import {
   ENTRY_SEARCH_APPLICABLE,
   findEntryPoints,
   isEntryEdgeId,
+  withEntryEdgeThreats,
 } from '../../features/attack-tree/findEntryPoints';
 import { ENTRY_PROBE } from '../../core/notation/edgeNotation';
 import { SEVERITY_BADGE_SOLID } from '../../core/model/severityColors';
@@ -639,7 +641,11 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
     [nodes, analysisEdges, attacker.id, targetId],
   );
 
-  const evidenceMap = useMemo(() => buildHopEvidence(allThreats), [allThreats]);
+  // 侵入候補の仮想の線は、入口がインターネットから受ける線の脅威を引き継ぐ（重み付けと根拠の表示用）。
+  const evidenceMap = useMemo(
+    () => buildHopEvidence(useEntries ? withEntryEdgeThreats(allThreats, edges, entryEdges) : allThreats),
+    [allThreats, useEntries, edges, entryEdges],
+  );
   const getEvidence = useCallback(
     (key: string): HopEvidence => evidenceMap.get(key) ?? NEUTRAL_EVIDENCE,
     [evidenceMap],
@@ -1039,6 +1045,7 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
               nodeById={nodeById}
               edgeById={edgeById}
               getEvidence={getEvidence}
+              allThreats={allThreats}
               onClose={() => setSelection(null)}
               t={t}
             />
@@ -1098,6 +1105,7 @@ function DetailPanel({
   nodeById,
   edgeById,
   getEvidence,
+  allThreats,
   onClose,
   t,
 }: {
@@ -1107,6 +1115,7 @@ function DetailPanel({
   nodeById: Map<string, DiagramNode>;
   edgeById: Map<string, DiagramEdge>;
   getEvidence: (key: string) => HopEvidence;
+  allThreats: readonly ThreatView[];
   onClose: () => void;
   t: TFunc;
 }) {
@@ -1117,16 +1126,29 @@ function DetailPanel({
     const node = nodeById.get(selection.nodeId);
     const evidence = getEvidence(nodeElementKey(selection.nodeId));
     heading = t('attackTree.detail.nodeHeading', { name: node ? getNodeDisplayName(node) : selection.nodeId });
-    body =
-      evidence.threats.length === 0 ? (
-        <p className="text-xs text-slate-500">{t('attackTree.detail.noThreats')}</p>
-      ) : (
-        <div className="space-y-1.5">
-          {sortThreatsBySeverity(evidence.threats).map((th) => (
-            <ThreatRefRow key={th.threatId} threat={th} />
-          ))}
-        </div>
-      );
+    // キャンバスのノードパネルと同じく、このノードへ入る線の脅威（届く側がこのノード）も並べる。経路のコストは線の側で数える。
+    const inbound = inboundEdgeThreatRefs(allThreats, selection.nodeId);
+    body = (
+      <div className="space-y-3">
+        {evidence.threats.length === 0 ? (
+          <p className="text-xs text-slate-500">{t('attackTree.detail.noThreats')}</p>
+        ) : (
+          <div className="space-y-1.5">
+            {sortThreatsBySeverity(evidence.threats).map((th) => (
+              <ThreatRefRow key={th.threatId} threat={th} />
+            ))}
+          </div>
+        )}
+        {inbound.length > 0 && (
+          <div className="space-y-1.5 border-t border-white/5 pt-2">
+            <p className="text-xs font-bold text-slate-400">{t('attackTree.detail.inboundEdgeThreats')}</p>
+            {sortThreatsBySeverity(inbound).map((th) => (
+              <ThreatRefRow key={th.threatId} threat={th} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
   } else {
     const hop: LogicalHop | undefined = graph.hops.get(selection.hopKey);
     heading = t('attackTree.detail.hopHeading');

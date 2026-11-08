@@ -183,7 +183,8 @@ const jaCore = {
   'attackTree.detail.travelDirection': '最脆弱経路上の通過方向: {from} → {to}',
   'attackTree.detail.noThreats': 'この要素で検出された脅威はありません',
   'attackTree.detail.chosenChannel': '採用チャネル',
-  'attackTree.detail.entryEdge': '侵入候補（仮想の線・保存されません）',
+  'attackTree.detail.entryEdge': '侵入候補（仮想の線・保存されません。入口がインターネットから受ける線の脅威を引き継ぎます）',
+  'attackTree.detail.inboundEdgeThreats': 'このノードへ入る線の脅威（経路のコストは線の側で数えます）',
   'attackTree.detail.close': '選択解除',
   'attackTree.detail.formula':
     '難易度 = 4 − max(リスク評価の Exploitability)。脅威あり・リスク評価未評価は severity 転用の暫定難易度（Critical/High→1、Medium→2、Low→3）。脅威なしは中立 2。一部対策 +1 / 対策済 +8（残存経路モードでは遮断）。',

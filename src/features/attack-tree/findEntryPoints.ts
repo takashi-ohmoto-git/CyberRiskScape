@@ -29,13 +29,19 @@ function acceptsSurfaceKey(type: ComponentTypeId, key: AttackSurfaceKey): boolea
   return !keys || keys.includes(key);
 }
 
-/** 入口の候補にしない型（攻撃する側・利用者の端末・図の外の主体）。 */
+/** 入口の候補にしない型（攻撃する側・利用者の端末・図の外の主体）。端末は下の例外のときだけ候補にする。 */
 const NON_ENTRY_TYPES: ReadonlySet<ComponentTypeId> = new Set([
   'USER',
   'PC',
   'SMARTPHONE',
   'EXTERNAL_ENTITY',
 ]);
+
+/** 利用者の端末の型。侵害されて踏み台にされる外部の端末として、条件つきで候補にする。 */
+const ENDPOINT_TYPES: ReadonlySet<ComponentTypeId> = new Set(['USER', 'PC', 'SMARTPHONE']);
+
+/** 遠隔接続の装置の型。外部の端末からここへ線があれば、その端末の侵害（資格情報の窃取）が入口になる。 */
+const REMOTE_ACCESS_TYPES: ReadonlySet<ComponentTypeId> = new Set(['VPN_GATEWAY', 'ZTNA_PROXY', 'BASTION', 'ADMIN_CONSOLE']);
 
 /** 入口とみなした理由。 */
 export type EntryReason =
@@ -46,7 +52,9 @@ export type EntryReason =
   /** インターネット境界の中にある。 */
   | 'internetZone'
   /** 攻撃者から線が引かれている。 */
-  | 'attackerEdge';
+  | 'attackerEdge'
+  /** 外部の端末で、遠隔接続の装置へ線がある（端末の侵害で正規の接続を使われる）。 */
+  | 'externalEndpoint';
 
 /** 入口の弱点。順位付けと一覧の表示に使う。 */
 export type EntryWeakness =
@@ -106,10 +114,40 @@ export function findEntryPoints(
   const owning = resolveNodeBoundaries(nodes, boundaries);
   const ids = new Set(nodes.map((n) => n.id));
   const candidates: Omit<EntryCandidate, 'rank'>[] = [];
+  const threatSummary = (nodeId: string): Pick<EntryCandidate, 'threatCount' | 'maxSeverity'> => {
+    const childIds = new Set(nodes.filter((c) => c.parentId === nodeId).map((c) => c.id));
+    const active = threats.filter((t) => !isSuppressed(t) && (t.nodeId === nodeId || childIds.has(t.nodeId)));
+    const maxSeverity = active.reduce<Severity | undefined>(
+      (max, t) => (!max || SEVERITY_ORDER[t.severity] > SEVERITY_ORDER[max] ? t.severity : max),
+      undefined,
+    );
+    return { threatCount: active.length, maxSeverity };
+  };
 
+  const typeOf = new Map(nodes.map((x) => [x.id, x.type] as const));
   for (const n of nodes) {
     if (n.parentId && ids.has(n.parentId)) continue;
-    if (ATTACK_OBJECTIVE_APPLICABLE.has(n.type) || NON_ENTRY_TYPES.has(n.type)) continue;
+    if (ATTACK_OBJECTIVE_APPLICABLE.has(n.type)) continue;
+
+    const attackerEdge = edges.some(
+      (e) => (e.source === attackerId && e.target === n.id) || (e.target === attackerId && e.source === n.id),
+    );
+    if (NON_ENTRY_TYPES.has(n.type)) {
+      // 端末は、攻撃者から線が引かれている（利用者アカウントの乗っ取り等を利用者が描いた）か、
+      // インターネット側にあって遠隔接続の装置へ線がある（外部の端末の侵害）ときだけ候補にする。
+      if (!ENDPOINT_TYPES.has(n.type)) continue;
+      const toRemote = edges.some((e) => {
+        const peer = e.source === n.id ? e.target : e.target === n.id ? e.source : undefined;
+        return peer !== undefined && REMOTE_ACCESS_TYPES.has(typeOf.get(peer) as ComponentTypeId);
+      });
+      const external = toRemote && owning.get(n.id)?.[0]?.trustLevel === 'Internet';
+      if (!attackerEdge && !external) continue;
+      const reasons: EntryReason[] = [];
+      if (external) reasons.push('externalEndpoint');
+      if (attackerEdge) reasons.push('attackerEdge');
+      candidates.push({ nodeId: n.id, reasons, weaknesses: [], assumed: false, ...threatSummary(n.id) });
+      continue;
+    }
 
     const reasons: EntryReason[] = [];
     const weaknesses: EntryWeakness[] = [];
@@ -144,19 +182,11 @@ export function findEntryPoints(
 
     if (owning.get(n.id)?.[0]?.trustLevel === 'Internet') reasons.push('internetZone');
 
-    if (edges.some((e) => (e.source === attackerId && e.target === n.id) || (e.target === attackerId && e.source === n.id))) {
-      reasons.push('attackerEdge');
-    }
+    if (attackerEdge) reasons.push('attackerEdge');
 
     if (reasons.length === 0) continue;
 
-    const childIds = new Set(nodes.filter((c) => c.parentId === n.id).map((c) => c.id));
-    const active = threats.filter((t) => !isSuppressed(t) && (t.nodeId === n.id || childIds.has(t.nodeId)));
-    const maxSeverity = active.reduce<Severity | undefined>(
-      (max, t) => (!max || SEVERITY_ORDER[t.severity] > SEVERITY_ORDER[max] ? t.severity : max),
-      undefined,
-    );
-    candidates.push({ nodeId: n.id, reasons, weaknesses, assumed, threatCount: active.length, maxSeverity });
+    candidates.push({ nodeId: n.id, reasons, weaknesses, assumed, ...threatSummary(n.id) });
   }
 
   const seqOf = new Map(nodes.map((n) => [n.id, n.seq ?? Number.MAX_SAFE_INTEGER]));
@@ -193,4 +223,28 @@ export function buildEntryEdges(attackerId: string, candidates: readonly EntryCa
       network: 'Internet',
       encryption: 'Plain',
     }));
+}
+
+/**
+ * 侵入候補の仮想の線に、入口がインターネットから受ける線（図の線）の脅威を引き継がせる。
+ * 攻撃者が入口を外から直接攻めるとき、その入口が外から受けている線の弱点（露出した境界機器の脆弱性・
+ * 単独のパスワード等）を使えるため、入口の段の重み付けに使う。返すのは複製を足した一覧で、
+ * `buildHopEvidence` に渡す用途に限る（脅威の件数や一覧の表示に使うと二重に数える）。
+ */
+export function withEntryEdgeThreats(
+  threats: readonly ThreatView[],
+  edges: readonly DiagramEdge[],
+  entryEdges: readonly DiagramEdge[],
+): ThreatView[] {
+  const out = [...threats];
+  for (const entry of entryEdges) {
+    const inbound = new Set(
+      edges.filter((e) => !isEntryEdgeId(e.id) && e.network === 'Internet' && receives(e, entry.target)).map((e) => e.id),
+    );
+    if (inbound.size === 0) continue;
+    for (const t of threats) {
+      if (t.subject?.kind === 'edge' && inbound.has(t.subject.id)) out.push({ ...t, subject: { kind: 'edge', id: entry.id } });
+    }
+  }
+  return out;
 }

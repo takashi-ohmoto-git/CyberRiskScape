@@ -67,6 +67,7 @@ export const jaPanels = {
   'panels.node.entryReason.internetEdge': 'インターネット経由で受ける線',
   'panels.node.entryReason.internetZone': 'インターネット境界の中',
   'panels.node.entryReason.attackerEdge': '攻撃者からの線',
+  'panels.node.entryReason.externalEndpoint': '遠隔接続の装置へつなぐ外部の端末（端末の侵害）',
   'panels.node.entryWeakness.noUserAuth': 'ユーザー認証なし',
   'panels.node.entryWeakness.noSourceIpRestriction': '送信元 IP アクセス制限なし',
   'panels.node.entryWeakness.noRemoteAccessRestriction': 'リモートアクセス制限なし',

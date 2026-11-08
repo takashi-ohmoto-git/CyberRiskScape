@@ -66,7 +66,8 @@ const enCore: Partial<Record<TranslationKey, string>> = {
   'attackTree.detail.travelDirection': 'Travel on weakest route: {from} → {to}',
   'attackTree.detail.noThreats': 'No threats detected on this element',
   'attackTree.detail.chosenChannel': 'Chosen channel',
-  'attackTree.detail.entryEdge': 'Entry candidate (virtual line, not saved)',
+  'attackTree.detail.entryEdge': 'Entry candidate (virtual line, not saved; inherits the threats on the lines the entry receives from the Internet)',
+  'attackTree.detail.inboundEdgeThreats': 'Threats on lines into this node (counted on the line for route cost)',
   'attackTree.detail.close': 'Clear selection',
   'attackTree.detail.formula':
     'Difficulty = 4 − max(risk-scored Exploitability). With threats but no risk score, severity-based provisional difficulty (Critical/High→1, Medium→2, Low→3). No threats → neutral 2. Partial +1 / full +8 (blocked in residual-route mode).',

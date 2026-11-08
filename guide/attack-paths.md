@@ -54,6 +54,28 @@ route to draw until you have said who is coming and what they want.
 
 Delete the component you named as the target and the objective is cleared automatically.
 
+### 2.3 Entry candidates for an AI agent attacker
+
+When the attacker is an **AI agent attacker**, the tool looks for nodes that could be entered from
+outside without you drawing a line, and adds them to the routes as **entry candidates** through
+virtual lines from the attacker (purple dotted lines, not saved). Toggle this with "Include entry
+candidates in routes" in the analysis. These nodes become entry candidates:
+
+| Entry candidate | Technique assumed |
+|---|---|
+| Public servers with a global IP, nodes that receive a line over the Internet, and nodes inside an Internet boundary | Attacking externally visible assets directly |
+| User endpoints (user, PC, smartphone) inside an Internet boundary that have a line to a remote-access device (VPN gateway, ZTNA proxy, bastion, admin console) | Compromising an external endpoint such as a maintenance contractor's (phishing, infostealer malware) and entering with its credentials over the legitimate connection |
+| Nodes the attacker has a line to (user endpoints included) | A technique you drew yourself. For example, a member account takeover enters the routes when you draw a line from the attacker to the member |
+
+Users who only use a public site, such as members, do not become entry candidates automatically
+(there would be too many). To include an account takeover in the routes, draw a line from the
+attacker to that user.
+
+The virtual line from the attacker to an entry **inherits the threats on the lines the entry receives
+from the Internet**. For example, if a maintenance VPN device carries "known vulnerabilities in an
+Internet-exposed boundary device" on the line from the maintenance contractor, that threat also
+counts toward the difficulty of the step where the attacker attacks the VPN device directly.
+
 ---
 
 ## 3. Reading the result
@@ -136,6 +158,10 @@ Click a card or a hop in the graph and you get **the threats that fired there**.
 
 This is where you see **which threats support the claim that a hop is passable**. It follows the same
 idea as "Why this fired" in the threat panel: you never have to take a number on faith.
+
+The evidence for a component lists its own threats and also **the threats on lines into this node**
+(the same list you see when you select the component on the canvas). For route cost, a line's
+threats are counted on the line (the hop).
 
 An element with no threats at all is greyed out as "no known threats". **That does not mean it is
 safe.** The tool assumes worst-case lateral movement, so it treats such an element as passable

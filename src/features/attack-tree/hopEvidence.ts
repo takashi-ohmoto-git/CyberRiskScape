@@ -1,4 +1,4 @@
-import type { ControlStatusValue, RiskValue, Severity, ThreatView } from '../../core/model/types';
+import { isSuppressed, type ControlStatusValue, type RiskValue, type Severity, type ThreatView } from '../../core/model/types';
 import type { LogicalHop } from './buildAttackGraph';
 
 /** その要素上の脅威の対策被覆度。`full` は残存経路モードで遮断扱い。 */
@@ -109,6 +109,24 @@ export function resolveDifficulty(
   };
 }
 
+function toThreatRef(t: ThreatView): ThreatRef {
+  return {
+    threatId: t.id,
+    name: t.name ?? t.category,
+    severity: t.severity,
+    exploitability: t.risk?.exploitability,
+    controlStatus: t.controlStatus?.status,
+  };
+}
+
+/**
+ * このノードへ入る線の脅威（線のルールで、届く側＝nodeId がこのノードのもの）。抑制済みは除く。
+ * キャンバスのノードパネルと同じ集め方で、攻撃経路分析の検出根拠に並べる表示用（経路のコストは線の側で数える）。
+ */
+export function inboundEdgeThreatRefs(threats: readonly ThreatView[], nodeId: string): ThreatRef[] {
+  return threats.filter((t) => t.nodeId === nodeId && t.subject?.kind === 'edge' && !isSuppressed(t)).map(toThreatRef);
+}
+
 /**
  * 全 ThreatView を要素キー（`node:<id>` / `edge:<id>`）単位に集約し、
  * 攻撃経路分析用の HopEvidence（重み＋根拠）を構築する純粋関数。
@@ -133,13 +151,7 @@ export function buildHopEvidence(threats: readonly ThreatView[]): Map<string, Ho
     cur.total += 1;
     if (t.risk && t.risk.exploitability > cur.maxExpl) cur.maxExpl = t.risk.exploitability;
     if (t.controlStatus && COVERED_STATUS.has(t.controlStatus.status)) cur.covered += 1;
-    cur.refs.push({
-      threatId: t.id,
-      name: t.name ?? t.category,
-      severity: t.severity,
-      exploitability: t.risk?.exploitability,
-      controlStatus: t.controlStatus?.status,
-    });
+    cur.refs.push(toThreatRef(t));
     agg.set(key, cur);
   }
 

@@ -12,7 +12,7 @@ import { useT } from '../../i18n';
 import { buildAttackGraph } from './buildAttackGraph';
 import { analyzeAttackGraph } from './analyzeAttackGraph';
 import { buildHopEvidence, NEUTRAL_EVIDENCE, type HopEvidence } from './hopEvidence';
-import { buildEntryEdges, findEntryPoints } from './findEntryPoints';
+import { buildEntryEdges, findEntryPoints, withEntryEdgeThreats } from './findEntryPoints';
 
 interface EntryProbeLayerProps {
   threats: ThreatView[];
@@ -55,7 +55,7 @@ export function EntryProbeLayer({ threats }: EntryProbeLayerProps) {
     );
     const graph = buildAttackGraph(nodes, [...edges, ...entryEdges], attackerId, targetNode.id);
     if (graph.routes.length === 0) return null;
-    const evidence = buildHopEvidence(threats);
+    const evidence = buildHopEvidence(withEntryEdgeThreats(threats, edges, entryEdges));
     const getEvidence = (key: string): HopEvidence => evidence.get(key) ?? NEUTRAL_EVIDENCE;
     const analysis = analyzeAttackGraph(graph, getEvidence);
     return analysis.routes[0]?.route.nodeIds ?? null;

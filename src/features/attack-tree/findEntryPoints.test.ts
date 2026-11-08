@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildEntryEdges, findEntryPoints, isEntryEdgeId } from './findEntryPoints';
+import { buildEntryEdges, findEntryPoints, isEntryEdgeId, withEntryEdgeThreats } from './findEntryPoints';
 import type { DiagramBoundary, DiagramEdge, DiagramNode, ThreatView } from '../../core/model/types';
 
 function node(id: string, type: string, extra: Partial<DiagramNode> = {}): DiagramNode {
@@ -111,7 +111,7 @@ describe('findEntryPoints', () => {
     expect(r[0].reasons).toEqual(['internetZone']);
   });
 
-  it('攻撃者から線が引かれているノードは候補にする。利用者・端末・攻撃者・内包されたデータ資産は候補にしない', () => {
+  it('攻撃者から線が引かれているノードは候補にする（利用者も＝アカウントの乗っ取り）。攻撃者・内包されたデータ資産は候補にしない', () => {
     const r = findEntryPoints(
       [
         attacker,
@@ -125,8 +125,48 @@ describe('findEntryPoints', () => {
       [],
       'atk',
     );
-    expect(ids(r)).toEqual(['db']);
-    expect(r[0].reasons).toEqual(['attackerEdge']);
+    expect(ids(r)).toEqual(['db', 'user']);
+    expect(r.map((c) => c.reasons)).toEqual([['attackerEdge'], ['attackerEdge']]);
+  });
+
+  it.each(['VPN_GATEWAY', 'ZTNA_PROXY', 'BASTION', 'ADMIN_CONSOLE'])(
+    'インターネット境界の端末が遠隔接続の装置（%s）へ線を持つ → externalEndpoint（攻撃者の線なしでも）',
+    (remote) => {
+      const r = findEntryPoints(
+        [attacker, node('pc', 'USER'), node('ra', remote, { x: 900 })],
+        [edge('e1', 'pc', 'ra', { network: 'Internet' })],
+        [boundary('z1', 'Internet', -50)],
+        [],
+        'atk',
+      );
+      const pc = r.find((c) => c.nodeId === 'pc');
+      expect(pc).toMatchObject({ reasons: ['externalEndpoint'], weaknesses: [], assumed: false });
+      expect(buildEntryEdges('atk', r).map((e) => e.target)).toContain('pc');
+    },
+  );
+
+  it('端末でも、遠隔接続の装置へ線が無い（会員がサイトを使うだけ）・インターネット境界の外・EXTERNAL_ENTITY は候補にしない', () => {
+    const r = findEntryPoints(
+      [
+        attacker,
+        node('member', 'USER'),
+        node('web', 'FRONT_END_SERVER', { x: 900 }),
+        node('insider', 'PC', { x: 2000 }),
+        node('ext', 'EXTERNAL_ENTITY'),
+        node('vpn', 'VPN_GATEWAY', { x: 900, y: 300 }),
+      ],
+      [
+        edge('e1', 'member', 'web', { network: 'Internet' }),
+        edge('e2', 'insider', 'vpn'),
+        edge('e3', 'ext', 'vpn', { network: 'Internet' }),
+      ],
+      [boundary('z1', 'Internet', -50)],
+      [],
+      'atk',
+    );
+    expect(ids(r)).not.toContain('member');
+    expect(ids(r)).not.toContain('insider');
+    expect(ids(r)).not.toContain('ext');
   });
 
   it('順位は弱点の数 → 脅威の最大重大度 → 件数。抑制した脅威と内包するデータ資産の脅威の扱い', () => {
@@ -177,5 +217,28 @@ describe('buildEntryEdges', () => {
     const after = buildAttackGraph(nodes, [...edges, ...entryEdges], 'atk', 'db');
     expect(before.routes.map((r) => r.nodeIds.join('>'))).toEqual(['atk>gw>db']);
     expect(after.routes.map((r) => r.nodeIds.join('>')).sort()).toEqual(['atk>gw>db', 'atk>web>db']);
+  });
+});
+
+describe('withEntryEdgeThreats', () => {
+  const edgeThreat = (id: string, edgeId: string, nodeId: string) =>
+    threat(nodeId, 'High', { id, subject: { kind: 'edge', id: edgeId } });
+
+  it('侵入候補の線に、入口がインターネットから受ける線の脅威を複製して付ける', () => {
+    const edges = [
+      edge('df7', 'contractor', 'vpn', { network: 'Internet' }),
+      edge('df8', 'vpn', 'jump', { network: 'Internet' }),
+      edge('lan', 'jump', 'vpn'),
+    ];
+    const threats = [edgeThreat('t7', 'df7', 'vpn'), edgeThreat('t8', 'df8', 'jump'), edgeThreat('tl', 'lan', 'vpn'), threat('vpn', 'Low')];
+    const entry = buildEntryEdges('atk', [{ nodeId: 'vpn', rank: 1, reasons: ['internetEdge'], weaknesses: [], assumed: false, threatCount: 0 }]);
+    const out = withEntryEdgeThreats(threats, edges, entry);
+    const added = out.slice(threats.length);
+    expect(added.map((t) => [t.id, t.subject])).toEqual([['t7', { kind: 'edge', id: 'entry:vpn' }]]);
+  });
+
+  it('仮想の線が無ければ元の一覧のまま', () => {
+    const threats = [edgeThreat('t7', 'df7', 'vpn')];
+    expect(withEntryEdgeThreats(threats, [edge('df7', 'c', 'vpn', { network: 'Internet' })], [])).toEqual(threats);
   });
 });

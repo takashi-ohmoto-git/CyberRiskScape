@@ -11,7 +11,7 @@ import { ATTACK_OBJECTIVE_APPLICABLE, isSuppressed } from '../../core/model/type
 import { buildAttackGraph } from './buildAttackGraph';
 import { analyzeAttackGraph } from './analyzeAttackGraph';
 import { buildHopEvidence, NEUTRAL_EVIDENCE, type HopCoverage, type HopEvidence } from './hopEvidence';
-import { buildEntryEdges, ENTRY_SEARCH_APPLICABLE, findEntryPoints } from './findEntryPoints';
+import { buildEntryEdges, ENTRY_SEARCH_APPLICABLE, findEntryPoints, withEntryEdgeThreats } from './findEntryPoints';
 
 /**
  * 守る側が優先して保護する標的の推奨。エージェント型の攻撃ツールの悪用を前提に、
@@ -234,7 +234,7 @@ export function aggregatePriorityDefenses(
 
   const entryEdges = buildEntryEdges(attackerId, findEntryPoints(nodes, edges, boundaries, threats, attackerId));
   const analysisEdges = [...edges, ...entryEdges];
-  const evidenceMap = buildHopEvidence(threats);
+  const evidenceMap = buildHopEvidence(withEntryEdgeThreats(threats, edges, entryEdges));
   const getEvidence = (key: string): HopEvidence => evidenceMap.get(key) ?? NEUTRAL_EVIDENCE;
 
   const targetHits = new Map<string, number>();

@@ -3,6 +3,7 @@ import {
   aggregateLogicalHopEvidence,
   buildHopEvidence,
   edgeElementKey,
+  inboundEdgeThreatRefs,
   nodeElementKey,
   NEUTRAL_EVIDENCE,
   resolveDifficulty,
@@ -223,5 +224,19 @@ describe('threatEvidenceScore', () => {
     expect(
       threatEvidenceScore([{ threatId: 't', name: 'x', severity: 'High', exploitability: 3 }]),
     ).toBe(1 + 2 + 3);
+  });
+});
+
+describe('inboundEdgeThreatRefs', () => {
+  it('届く側がこのノードの線の脅威だけを返す（ノードの脅威・他ノードへの線・抑制済みは除く）', () => {
+    const threats = [
+      threat('in', { nodeId: 'vpn', subject: { kind: 'edge', id: 'df7' }, severity: 'High', name: '露出' }),
+      threat('own', { nodeId: 'vpn', subject: { kind: 'node', id: 'vpn' } }),
+      threat('out', { nodeId: 'jump', subject: { kind: 'edge', id: 'df8' } }),
+      { ...threat('sup', { nodeId: 'vpn', subject: { kind: 'edge', id: 'df7' } }), suppression: { status: 'accepted', at: 0 } } as ThreatView,
+    ];
+    expect(inboundEdgeThreatRefs(threats, 'vpn')).toEqual([
+      { threatId: 'in', name: '露出', severity: 'High', exploitability: undefined, controlStatus: undefined },
+    ]);
   });
 });
