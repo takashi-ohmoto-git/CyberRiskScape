@@ -100,7 +100,7 @@ components:
 
   - id: MESSAGE_BROKER
     label: "メッセージブローカー"
-    category: SERVICES
+    category: CLOUD
     icon: { kind: builtin, name: "send" }
     shape: rounded
     color: "bg-transparent"

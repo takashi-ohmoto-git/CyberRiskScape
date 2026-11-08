@@ -50,7 +50,7 @@ components:
 
   - id: UPDATE_SERVER
     label: "ソフトウェア更新サーバー"
-    category: SERVICES
+    category: SERVERS
     icon: { kind: builtin, name: "refresh-cw" }
     shape: rounded
     color: "bg-transparent"
