@@ -571,7 +571,7 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
   const [hoveredRouteIndex, setHoveredRouteIndex] = useState<number | null>(null);
   const [matrixOpen, setMatrixOpen] = useState(false);
   const [f3Open, setF3Open] = useState(false);
-  const [maximized, setMaximized] = useState(false);
+  const [maximized, setMaximized] = useState(true); // 既定は最大化（状態は保存しない）
   const [bottomTab, setBottomTab] = useState<BottomTab>('route');
   const t = useT();
 
@@ -858,7 +858,8 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
           </div>
         )}
 
-        <div className="flex gap-3 min-h-[240px] flex-1">
+        {/* タブがあるときはグラフを約 300px に固定し、残りをタブに回す。無ければグラフが残りを使う */}
+        <div className={`flex gap-3 ${availableTabs.length > 0 && activeTab ? 'h-[300px] shrink-0' : 'min-h-[240px] flex-1'}`}>
           {hasPath ? (
             <div className="bg-slate-800/40 border border-slate-700 rounded-xl p-2 overflow-auto flex-1 min-w-0 min-h-0">
               <svg width={layout.width} height={layout.height} className="block">
@@ -1043,7 +1044,7 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
         </div>
 
         {availableTabs.length > 0 && activeTab && (
-          <div className="shrink-0 bg-slate-800/40 border border-slate-700 rounded-xl">
+          <div className="flex-1 min-h-[160px] flex flex-col bg-slate-800/40 border border-slate-700 rounded-xl">
             <div role="tablist" className="flex items-center gap-1 px-2 border-b border-slate-700">
               {availableTabs.map((tab) => (
                 <button
@@ -1062,7 +1063,7 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
                 </button>
               ))}
             </div>
-            <div role="tabpanel" className={`${maximized ? 'h-64' : 'h-48'} overflow-auto px-3 py-2`}>
+            <div role="tabpanel" className="flex-1 min-h-0 overflow-auto px-3 py-2">
               {activeTab === 'route' && (
                 <RouteTable
                   analysis={analysis}

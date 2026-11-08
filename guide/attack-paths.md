@@ -81,7 +81,7 @@ counts toward the difficulty of the step where the attacker attacks the VPN devi
 ## 3. Reading the result
 
 Press "Attack path analysis" and the analysis opens. From the top: the summary and toggles, the graph (with the evidence on its right), and the tabs at the bottom.
-The maximize button at the top right expands it to fill the screen (it returns to the normal size when closed).
+It opens filling the screen. The button at the top right makes it smaller (it opens full-screen again next time).
 
 ![Attack path analysis](../assets/guide/en/attack-path/03-graph.png)
 
@@ -91,7 +91,7 @@ The maximize button at the top right expands it to fill the screen (it returns t
   in parentheses counts combinations of parallel data flows and is **informational only**: routes
   through the same sequence of components count as **one route**, however many channels connect them.
   The round-trip flows make 24 combinations here, but there are still two routes.
-- **Min cost 12** — the cost of the easiest route. Lower means easier for the attacker.
+- **Min cost 11** — the cost of the easiest route. Lower means easier for the attacker.
 - **Risk not scored…** — the note shown while no risk assessment exists (see below).
 
 ### The graph
@@ -147,8 +147,8 @@ The leaked-info chain and blind spots are shown as evidence only and do not chan
 | Weakest hop | The easiest step on that route — **the first candidate for a control** |
 | Status | Reachable or blocked |
 
-Work from the cheapest row down. Above, `C6 → C2 → C3 → C4 → C5` (cost 12) is the easiest route,
-which the attacker would prefer over the one through the user (cost 14).
+Work from the cheapest row down. Above, `C6 → C2 → C3 → C4 → C5` (cost 11) is the easiest route,
+which the attacker would prefer over the one through the user (cost 13).
 
 ---
 
