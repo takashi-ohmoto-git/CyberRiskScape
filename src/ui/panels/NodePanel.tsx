@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Cloud,
   Crosshair,
+  Globe,
   LayoutDashboard,
   GitBranch,
   Link as LinkIcon,
@@ -64,6 +65,7 @@ import { useLocale, useT } from '../../i18n';
 import { ThreatCard } from './ThreatCard';
 import { sortThreatsBySeverity } from './sortThreatsBySeverity';
 import { AttackTreeModal } from './AttackTreeModal';
+import { NodeAssetModal, countAssetViews, useNodeAssetViews } from './NodeAssetModal';
 import { EntrySearchSection } from './EntrySearchSection';
 import { RecommendTargetsSection } from './RecommendTargetsSection';
 import { ENTRY_SEARCH_APPLICABLE } from '../../features/attack-tree/findEntryPoints';
@@ -311,6 +313,9 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
   // agency / identityTier は適用対象ノード型のみ表示する。
   const [agentAttrsOpen, setAgentAttrsOpen] = useState(false);
   const [attackTreeOpen, setAttackTreeOpen] = useState(false);
+  const [assetModalOpen, setAssetModalOpen] = useState(false);
+  const assetCounts = countAssetViews(useNodeAssetViews(node.id));
+  const assetTotal = assetCounts.hosts + assetCounts.requests + assetCounts.apis + assetCounts.sbom;
   const [repoDashboardOpen, setRepoDashboardOpen] = useState(false);
 
   /** エージェント属性 1 フィールドだけを更新（他フィールドは保持）。空文字選択で undefined に戻す。 */
@@ -427,6 +432,14 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
             />
           </div>
         </div>
+
+        <button
+          onClick={() => setAssetModalOpen(true)}
+          className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 py-3 rounded-xl font-bold text-xs transition-colors"
+        >
+          <Globe size={14} /> {t('panels.node.assets.button')}
+          <span className="px-2 py-0.5 rounded-full bg-slate-900 text-xs tabular-nums">{assetTotal}</span>
+        </button>
 
         <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
           <h3 className="text-xs font-bold text-slate-300 mb-4 flex items-center gap-2">
@@ -1071,6 +1084,8 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
           onClose={() => setRepoDashboardOpen(false)}
         />
       )}
+
+      {assetModalOpen && <NodeAssetModal node={node} onClose={() => setAssetModalOpen(false)} />}
 
       {attackTreeOpen && showAttacker && (
         <AttackTreeModal

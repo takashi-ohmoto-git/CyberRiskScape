@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Asset, BomComponent } from '../../core/model/types';
-import { buildAssetViews, type AssetViewNode } from './buildAssetViews';
+import { buildAssetViews, buildNodeAssetViews, type AssetViewNode } from './buildAssetViews';
 
 const source = { format: 'artex-assets', product: 'Example', scope: 's', importedAt: '2026-11-04T00:00:00Z' } as const;
 const nodes: AssetViewNode[] = [
@@ -93,5 +93,44 @@ describe('buildAssetViews', () => {
     const v = buildAssetViews([ep('b', { subject }), ep('a', { subject })], nodes);
     expect(v.apis).toHaveLength(1);
     expect(v.apis[0].endpoints.map((e) => e.id)).toEqual(['a', 'b']);
+  });
+});
+
+describe('buildNodeAssetViews', () => {
+  const part = (name: string, over: Partial<BomComponent> = {}): BomComponent => ({
+    id: name,
+    source: { format: 'spdx', product: 'x', importedAt: '2026-11-05T00:00:00Z' },
+    externalId: name,
+    identifiers: [],
+    kind: 'software',
+    name,
+    ...over,
+  });
+
+  it('指定ノードに結びつく資産・部品だけを返す（他ノード・未対応は除く）', () => {
+    const toWeb = { layer: 'L1', nodeId: 'web' } as const;
+    const toApi = { layer: 'L1', nodeId: 'api' } as const;
+    const v = buildNodeAssetViews(
+      'web',
+      [
+        svc('h-web', { subject: toWeb }),
+        svc('h-api', { ip: '203.0.113.20', subject: toApi }),
+        svc('h-none'),
+        ep('e-web', { subject: toWeb }),
+      ],
+      nodes,
+      [part('bom-web', { subject: toWeb }), part('bom-api', { subject: toApi }), part('bom-none')],
+    );
+    expect(v.hosts.map((h) => h.host)).toEqual(['203.0.113.10']);
+    expect(v.requests.map((e) => e.id)).toEqual(['e-web']);
+    expect(v.sbom.map((c) => c.name)).toEqual(['bom-web']);
+  });
+
+  it('結びつく資産が無ければ全て空', () => {
+    const v = buildNodeAssetViews('web', [svc('a')], nodes, [part('b')]);
+    expect(v.hosts).toEqual([]);
+    expect(v.requests).toEqual([]);
+    expect(v.apis).toEqual([]);
+    expect(v.sbom).toEqual([]);
   });
 });

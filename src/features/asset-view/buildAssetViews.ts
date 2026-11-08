@@ -86,6 +86,25 @@ function buildHosts(services: readonly Asset[]): HostRow[] {
 const endpointOrder = (a: Asset, b: Asset) =>
   (a.url ?? '').localeCompare(b.url ?? '') || (a.method ?? '').localeCompare(b.method ?? '');
 
+/**
+ * 1 つのノードに結びつく資産・BOM だけに絞った見方を返す（NodePanel のアドレス／資産ポップアップ用）。
+ * `subject.nodeId` が一致する Asset・BomComponent だけを `buildAssetViews` に渡す。
+ * API 判定にはノード型が要るため `nodes` はそのまま渡す（絞らない）。
+ * DOM にも Node にも依存しない純粋関数（docs/node-address-asset-panel.md）。
+ */
+export function buildNodeAssetViews(
+  nodeId: string,
+  assets: readonly Asset[],
+  nodes: readonly AssetViewNode[],
+  bomComponents: readonly BomComponent[] = [],
+): AssetViews {
+  return buildAssetViews(
+    assets.filter((a) => a.subject?.nodeId === nodeId),
+    nodes,
+    bomComponents.filter((c) => c.subject?.nodeId === nodeId),
+  );
+}
+
 export function buildAssetViews(
   assets: readonly Asset[],
   nodes: readonly AssetViewNode[],

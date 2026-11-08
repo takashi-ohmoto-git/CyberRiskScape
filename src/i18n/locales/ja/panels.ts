@@ -52,6 +52,11 @@ export const jaPanels = {
   'panels.node.unset': '— 未設定 —',
   'panels.node.objectiveLabel': 'Objective（標的コンポーネント）',
   'panels.node.attackTreeButton': '攻撃経路分析',
+  'panels.node.assets.button': 'アドレス・資産',
+  'panels.node.assets.modalTitle': 'ノードの資産',
+  'panels.node.assets.empty': 'このノードに結びついた資産はありません',
+  'panels.node.assets.mode.aibom': 'AI BOM',
+  'panels.node.assets.mode.cbom': 'CBOM',
   'panels.node.attackTreeTitleDisabled': 'Objective（標的）を設定すると攻撃経路分析を表示できます',
   'panels.node.attackTreeTitleEnabled': '攻撃者から標的までの攻撃経路分析を表示',
   'panels.node.attackerNote':

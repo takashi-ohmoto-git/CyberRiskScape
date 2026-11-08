@@ -51,6 +51,11 @@ export const enPanels: Partial<Record<TranslationKey, string>> = {
   'panels.node.unset': '— Unset —',
   'panels.node.objectiveLabel': 'Objective (target component)',
   'panels.node.attackTreeButton': 'Attack path analysis',
+  'panels.node.assets.button': 'Addresses and assets',
+  'panels.node.assets.modalTitle': 'Node assets',
+  'panels.node.assets.empty': 'No assets are linked to this node',
+  'panels.node.assets.mode.aibom': 'AI BOM',
+  'panels.node.assets.mode.cbom': 'CBOM',
   'panels.node.attackTreeTitleDisabled': 'Set an Objective (target) to view attack path analysis',
   'panels.node.attackTreeTitleEnabled': 'View attack path analysis from attacker to target',
   'panels.node.attackerNote':

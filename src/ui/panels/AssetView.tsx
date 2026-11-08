@@ -247,8 +247,8 @@ export function AssetViewBody({ views, mode, resolve, onOpen }: AssetViewBodyPro
   );
 }
 
-const MODES: AssetMode[] = ['hosts', 'requests', 'apis', 'sbom'];
-const MODE_LABEL_KEYS = {
+export const MODES: AssetMode[] = ['hosts', 'requests', 'apis', 'sbom'];
+export const MODE_LABEL_KEYS = {
   hosts: 'project.assetView.mode.hosts',
   requests: 'project.assetView.mode.requests',
   apis: 'project.assetView.mode.apis',
