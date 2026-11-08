@@ -316,7 +316,7 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'project.assetView.col.params': 'Parameters',
   'project.assetView.unmapped': 'Unmapped',
   'project.assetView.apiFromDefinition': '{product} (from API definition)',
-  'project.assetView.emptyAll': 'No assets have been imported. Use the CLI command import-artex-assets to import hosts, domains, requests and APIs found by an external product.',
+  'project.assetView.emptyAll': 'No assets have been imported. Use CLI commands such as import-aipentest-assets, import-metasploit-assets and import-shodan to import hosts, domains, requests and APIs found by an external product.',
   'project.assetView.emptyMode': 'No assets in this view',
   'project.assetView.privacyNote': 'This project contains internal IP addresses and URLs. Check before sharing or exporting.',
 };

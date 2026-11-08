@@ -243,7 +243,7 @@ Besides `analyze`, the CLI has the following subcommands (run `node dist-cli/mai
 | Purpose | Subcommands |
 |---|---|
 | Build a diagram | `import-kong`, `import-kongctl`, `import-repo`, `import-conjur`, `import-shodan`, `import-scopesentry` |
-| Import product results | `import-sarif`, `import-nuclei`, `import-sbom`, `import-prowler`, `import-findings` (SCAP), `import-security-audit`, `import-pentest` (convert to a registry with `convert-strix`, `convert-cyberstrikeai`, `convert-metasploit`), `import-artex-assets`, `import-metasploit-assets` |
+| Import product results | `import-sarif`, `import-nuclei`, `import-sbom`, `import-prowler`, `import-findings` (SCAP), `import-security-audit`, `import-pentest` (convert to a registry with `convert-strix`, `convert-cyberstrikeai`, `convert-metasploit`), `import-aipentest-assets`, `import-metasploit-assets` |
 | Exploitation facts, likelihood and priority | `import-kev`, `import-epss`, `fill-patch-status`, `findings-priority` (P1–P4 and CISA SSVC) |
 | Reconcile and look up context | `asm-reconcile`, `sbom-report`, `context`, `checklist`, `findings-report`, `investigation-report`, `pqc-sbom-report` |
 | Export | `export-requirements`, `export-test-plan`, `export-roe`, `export-detection-requirements`, `export-contractor-paths`, `export-postman`, `export-attack-navigator`, `export-investigation-plan`, `export-spdx`, `export-sbom-ai`, `export-triage-patterns` |

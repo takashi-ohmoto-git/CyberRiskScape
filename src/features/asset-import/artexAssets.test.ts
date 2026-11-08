@@ -47,7 +47,7 @@ describe('parseArtexServices', () => {
   });
   it('観測時刻を ISO 8601 にし、ARTEX の ID を残す', () => {
     const r = parseArtexServices({ assets: [service({ id: 62, last_seen: '2026-11-04 06:58:29.773049+00' })] });
-    expect(r.ok && r.records[0]).toMatchObject({ artexId: '62', observedAt: '2026-11-04T06:58:29.773Z' });
+    expect(r.ok && r.records[0]).toMatchObject({ assetId: '62', observedAt: '2026-11-04T06:58:29.773Z' });
   });
   it('解釈できない時刻は持たない', () => {
     const r = parseArtexServices({ assets: [service({ last_seen: '不明' })] });

@@ -64,6 +64,8 @@ import {
   parseSecurityAudit,
 } from '../features/security-audit-import/parseSecurityAudit';
 import { parseArtexEndpoints, parseArtexServices } from '../features/asset-import/artexAssets';
+import { parseCyberStrikeAiAssets } from '../features/asset-import/cyberstrikeaiAssets';
+import type { PentestEndpointRecord, PentestServiceRecord } from '../features/asset-import/pentestAssetRecord';
 import { parseBom } from '../features/bom-import/parseBom';
 import { deserializeProject } from '../features/persistence/serialize';
 import { version as APP_VERSION } from '../../package.json';
@@ -71,7 +73,12 @@ import { buildSpdx } from '../features/bom-import/buildSpdx';
 import { listBomComponents } from '../features/bom-import/listBomComponents';
 import { bomReportToJson, bomReportToMarkdown, importBom } from './importBom';
 import { importAsmAssets } from './importAsmAssets';
-import { artexAssetsReportToJson, artexAssetsReportToMarkdown, importArtexAssets } from './importArtexAssets';
+import {
+  AIPENTEST_ASSET_TOOL_KEYS,
+  aipentestAssetsReportToJson,
+  aipentestAssetsReportToMarkdown,
+  importAipentestAssets,
+} from './importAipentestAssets';
 import { MAX_FILE_BYTES } from './readEvidence';
 import { buildFindingsReport, evaluateFindingsGate } from '../features/findings-report/buildFindingsReport';
 import { BUNDLED_AITECH_MAP, BUNDLED_FINDING_MAP } from '../features/findings-report/findingMap';
@@ -203,7 +210,7 @@ const USAGE = `使い方:
   asm-reconcile <project.json> [options]
   sbom-report <project.json> [options]
   context <project.json> (--ip <ip> | --host <name> | --purl <purl>) [options]
-  import-artex-assets <project.json> --scope <scope> [--services <file>] [--endpoints <file>] [options]
+  import-aipentest-assets <project.json> --format <artex|cyberstrikeai> --scope <scope> [--services <file>] [--endpoints <file>] [--assets <file> ...] [options]
   import-metasploit-assets <project.json> --xml <export.xml> --scope <scope> [--host-node <IP>=<C番号|ID> ...] [options]
   import-sbom <project.json> --sbom <file> --scope <scope> [options]
   import-conjur <policy.yml> [options]
@@ -293,9 +300,11 @@ import-pentest のオプション（ペンテストの指摘の台帳 YAML の�
   --report <md|json>                            報告の形式（既定: md。標準出力）
   -o, --out <file>                              指摘を保存したプロジェクト JSON の出力先（指定しなければ書き出さない）
 
-import-artex-assets のオプション（ARTEX の資産 API の JSON から、サービスとエンドポイントを Asset タブ用に保存する。パラメータの値は保存しない）:
-  --services <file>                             GET /api/assets?type=service&task_id=N の JSON（--endpoints とどちらか必須）
-  --endpoints <file>                            GET /api/assets?type=endpoint&task_id=N の JSON
+import-aipentest-assets のオプション（AI ペンテストのツールが観測した資産の JSON から、サービスとエンドポイントを Asset タブ用に保存する。パラメータの値・担当者や部署は保存しない）:
+  --format <artex|cyberstrikeai>                入力の形（必須）
+  --assets <file>                               cyberstrikeai: GET /api/assets?page=N&page_size=100 の JSON（必須。ページごとに繰り返し可）。手で登録した資産（manual）と inactive は読まない
+  --services <file>                             artex: GET /api/assets?type=service&task_id=N の JSON（--endpoints とどちらか必須）
+  --endpoints <file>                            artex: GET /api/assets?type=endpoint&task_id=N の JSON
   --scope <scope>                               置き換えの範囲（必須。例: task-3）
   --map <file>                                  ホストとノードの対応表（任意。JSON {"<IP|ドメイン>": "<C番号|ノード ID>"}）
   --node <C番号|ID>                             対応表に無いホストを結びつけるノード（任意。無ければ未対応）
@@ -619,6 +628,7 @@ function parseCliArgs() {
       map: { type: 'string' },
       services: { type: 'string' },
       endpoints: { type: 'string' },
+      assets: { type: 'string', multiple: true },
       report: { type: 'string' },
       root: { type: 'string' },
       vars: { type: 'string' },
@@ -1436,19 +1446,43 @@ function runExportSpdx(values: CliValues, positionals: string[]): void {
 }
 
 /**
- * `import-artex-assets`：ARTEX の資産 API の JSON をプロジェクト JSON に保存する（docs/architecture.md §8.7）。
+ * `import-aipentest-assets`：AI ペンテストのツール（ARTEX・CyberStrikeAI）が観測した資産の JSON をプロジェクト JSON に保存する
+ * （docs/architecture.md §8.7）。
  */
-function runImportArtexAssets(values: CliValues, positionals: string[]): void {
+function runImportAipentestAssets(values: CliValues, positionals: string[]): void {
   const file = positionals[1];
   if (!file) fail(`入力ファイルを指定してください。\n\n${USAGE}`);
-  if (!values.services && !values.endpoints) fail('--services か --endpoints のどちらかを指定してください。');
+  const tool = parseEnum(values.format, AIPENTEST_ASSET_TOOL_KEYS, 'format');
+  if (!tool) fail('--format を指定してください（artex か cyberstrikeai）。');
   if (!values.scope) fail('--scope を指定してください（例: task-3）。');
   const report = parseEnum(values.report, IMPORT_PROWLER_REPORTS, 'report') ?? 'md';
 
-  const services = values.services ? parseArtexServices(readJsonFile(values.services)) : ({ ok: true, records: [], skippedBySource: 0 } as const);
-  if (!services.ok) fail(`${services.error}（${values.services}）`);
-  const endpoints = values.endpoints ? parseArtexEndpoints(readJsonFile(values.endpoints)) : ({ ok: true, records: [], skippedBySource: 0 } as const);
-  if (!endpoints.ok) fail(`${endpoints.error}（${values.endpoints}）`);
+  const services: PentestServiceRecord[] = [];
+  const endpoints: PentestEndpointRecord[] = [];
+  let skippedBySource = 0;
+  if (tool === 'artex') {
+    if (!values.services && !values.endpoints) fail('--services か --endpoints のどちらかを指定してください。');
+    if (values.services) {
+      const parsed = parseArtexServices(readJsonFile(values.services));
+      if (!parsed.ok) fail(`${parsed.error}（${values.services}）`);
+      services.push(...parsed.records);
+      skippedBySource += parsed.skippedBySource;
+    }
+    if (values.endpoints) {
+      const parsed = parseArtexEndpoints(readJsonFile(values.endpoints));
+      if (!parsed.ok) fail(`${parsed.error}（${values.endpoints}）`);
+      endpoints.push(...parsed.records);
+      skippedBySource += parsed.skippedBySource;
+    }
+  } else {
+    if (!values.assets || values.assets.length === 0) fail('--assets を指定してください（ページごとに繰り返し可）。');
+    for (const f of values.assets) {
+      const parsed = parseCyberStrikeAiAssets(readJsonFile(f));
+      if (!parsed.ok) fail(`${parsed.error}（${f}）`);
+      services.push(...parsed.records);
+      skippedBySource += parsed.skippedBySource;
+    }
+  }
 
   let nodeMap: Record<string, string> = {};
   if (values.map) {
@@ -1457,22 +1491,18 @@ function runImportArtexAssets(values: CliValues, positionals: string[]): void {
     nodeMap = m.data;
   }
 
-  let out: ReturnType<typeof importArtexAssets>;
+  let out: ReturnType<typeof importAipentestAssets>;
   try {
-    out = importArtexAssets(
+    out = importAipentestAssets(
       readJsonFile(file),
-      {
-        services: services.records,
-        endpoints: endpoints.records,
-        skippedBySource: services.skippedBySource + endpoints.skippedBySource,
-      },
-      { scope: values.scope, nodeMap, ...(values.node ? { node: values.node } : {}) },
+      { services, endpoints, skippedBySource },
+      { tool, scope: values.scope, nodeMap, ...(values.node ? { node: values.node } : {}) },
     );
   } catch (e) {
     fail(e instanceof Error ? e.message : String(e));
   }
   if (values.out) writeFileSync(values.out, JSON.stringify(out.project, null, 2), 'utf-8');
-  process.stdout.write(`${report === 'json' ? JSON.stringify(artexAssetsReportToJson(out), null, 2) : artexAssetsReportToMarkdown(out)}\n`);
+  process.stdout.write(`${report === 'json' ? JSON.stringify(aipentestAssetsReportToJson(out), null, 2) : aipentestAssetsReportToMarkdown(out)}\n`);
   process.stderr.write(`資産を取り込みました（サービス ${out.services} / エンドポイント ${out.endpoints} / 未対応のホスト ${out.unlinkedHosts.length}）\n`);
 }
 
@@ -2494,8 +2524,8 @@ function main(): void {
     runImportSbom(values, positionals);
   } else if (command === 'export-spdx') {
     runExportSpdx(values, positionals);
-  } else if (command === 'import-artex-assets') {
-    runImportArtexAssets(values, positionals);
+  } else if (command === 'import-aipentest-assets') {
+    runImportAipentestAssets(values, positionals);
   } else if (command === 'import-conjur') {
     runImportConjur(values, positionals);
   } else if (command === 'import-shodan') {

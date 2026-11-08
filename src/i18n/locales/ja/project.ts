@@ -315,7 +315,7 @@ export const jaProject = {
   'project.assetView.col.params': 'パラメータ',
   'project.assetView.unmapped': '未対応',
   'project.assetView.apiFromDefinition': '{product}（API 定義より）',
-  'project.assetView.emptyAll': '取り込まれた資産はありません。CLI の import-artex-assets で、外部製品が見つけたホスト・ドメイン・リクエスト・API を取り込めます。',
+  'project.assetView.emptyAll': '取り込まれた資産はありません。CLI の import-aipentest-assets・import-metasploit-assets・import-shodan などで、外部製品が見つけたホスト・ドメイン・リクエスト・API を取り込めます。',
   'project.assetView.emptyMode': 'この見方に該当する資産はありません',
   'project.assetView.privacyNote': 'このプロジェクトには内部の IP アドレスや URL が含まれます。共有・書き出しの前に確認してください。',
 } as const;

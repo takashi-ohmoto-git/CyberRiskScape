@@ -1238,7 +1238,7 @@ export interface FindingKev {
 export const MAX_FINDINGS = 5000;
 
 /** 資産の入力の形式。 */
-export const ASSET_FORMATS = ['artex-assets', 'shodan', 'scopesentry', 'metasploit'] as const;
+export const ASSET_FORMATS = ['artex-assets', 'shodan', 'scopesentry', 'metasploit', 'cyberstrikeai-assets'] as const;
 export type AssetFormat = (typeof ASSET_FORMATS)[number];
 
 /** 資産の出どころ（docs/architecture.md §8.7）。 */

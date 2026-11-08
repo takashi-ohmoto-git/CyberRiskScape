@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { toIsoTimestamp } from '../../core/model/assetIdentity';
-import type { AssetParam } from '../../core/model/types';
+import type { ParsePentestAssetsResult, PentestEndpointRecord, PentestServiceRecord } from './pentestAssetRecord';
 
 /**
  * ARTEX の資産 API（`GET /api/assets?type=service|endpoint&task_id=N`）の応答を、取り込みに必要な項目だけに読む。
@@ -32,33 +32,6 @@ const RecordSchema = z.object({
 
 const ResponseSchema = z.object({ assets: z.array(RecordSchema).max(100_000) });
 
-export interface ArtexServiceRecord {
-  /** ARTEX 側の資産 ID。 */
-  artexId?: string;
-  host: string;
-  ip?: string;
-  domain?: string;
-  port?: number;
-  serviceName?: string;
-  technologies: string[];
-  observedAt?: string;
-}
-
-export interface ArtexEndpointRecord {
-  /** ARTEX 側の資産 ID。 */
-  artexId?: string;
-  host: string;
-  method: string;
-  url: string;
-  port?: number;
-  params: AssetParam[];
-  observedAt?: string;
-}
-
-export type ParseArtexResult<T> =
-  | { ok: true; records: T[]; skippedBySource: number }
-  | { ok: false; error: string };
-
 const SECRET_NAME = /pass|pwd|secret|token|key|auth|session|sid|cookie|credential/i;
 
 /** URL の資格情報を除き、名前が秘密に見えるクエリの値を伏せる。`<page>` のようなひな形を壊さないよう文字列で処理する。 */
@@ -80,7 +53,7 @@ export function sanitizeUrl(raw: string): string {
 function common(a: { id?: number; last_seen?: string }) {
   const observedAt = a.last_seen ? toIsoTimestamp(a.last_seen) : undefined;
   return {
-    ...(a.id !== undefined ? { artexId: String(a.id) } : {}),
+    ...(a.id !== undefined ? { assetId: String(a.id) } : {}),
     ...(observedAt ? { observedAt } : {}),
   };
 }
@@ -101,10 +74,10 @@ function parseResponse(raw: unknown, type: 'service' | 'endpoint') {
   return { ok: true as const, records, skippedBySource: checked.data.assets.length - records.length };
 }
 
-export function parseArtexServices(raw: unknown): ParseArtexResult<ArtexServiceRecord> {
+export function parseArtexServices(raw: unknown): ParsePentestAssetsResult<PentestServiceRecord> {
   const parsed = parseResponse(raw, 'service');
   if (!parsed.ok) return parsed;
-  const records = parsed.records.flatMap((a): ArtexServiceRecord[] => {
+  const records = parsed.records.flatMap((a): PentestServiceRecord[] => {
     const host = a.ip || a.domain || hostFromUrl(a.url);
     if (!host) return [];
     return [
@@ -122,10 +95,10 @@ export function parseArtexServices(raw: unknown): ParseArtexResult<ArtexServiceR
   return { ok: true, records, skippedBySource: parsed.skippedBySource };
 }
 
-export function parseArtexEndpoints(raw: unknown): ParseArtexResult<ArtexEndpointRecord> {
+export function parseArtexEndpoints(raw: unknown): ParsePentestAssetsResult<PentestEndpointRecord> {
   const parsed = parseResponse(raw, 'endpoint');
   if (!parsed.ok) return parsed;
-  const records = parsed.records.flatMap((a): ArtexEndpointRecord[] => {
+  const records = parsed.records.flatMap((a): PentestEndpointRecord[] => {
     if (!a.url || !a.method) return [];
     const host = hostFromUrl(a.url) || a.domain;
     if (!host) return [];
