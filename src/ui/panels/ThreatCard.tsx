@@ -126,7 +126,7 @@ export function ThreatCard({ threat, targetName, collapsible }: ThreatCardProps)
         <span className={`shrink-0 text-xs font-black px-2 py-0.5 rounded-md ${badgeClass}`}>
           {threat.severity}
         </span>
-        <span className="flex-1 min-w-0">
+        <span className="flex-1 min-w-[6rem]">
           <span className="block text-xs font-bold text-slate-100 line-clamp-2">
             {threat.name ?? threat.category}
           </span>

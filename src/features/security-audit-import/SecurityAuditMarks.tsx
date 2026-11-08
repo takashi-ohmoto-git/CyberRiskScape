@@ -12,7 +12,7 @@ export function SecurityAuditMarks({ confirmed, unverified }: { confirmed: boole
       {confirmed && (
         <span
           title={t('threats.threatCard.securityAuditVerifiedHint')}
-          className="shrink-0 text-xs font-bold px-2 py-0.5 rounded bg-slate-700/60 text-slate-200 border border-slate-400 inline-flex items-center gap-1 whitespace-nowrap"
+          className="text-xs font-bold px-2 py-0.5 rounded bg-slate-700/60 text-slate-200 border border-slate-400 inline-flex items-center gap-1"
         >
           <FileSearch size={12} />
           {t('threats.threatCard.securityAuditVerified')}
@@ -21,7 +21,7 @@ export function SecurityAuditMarks({ confirmed, unverified }: { confirmed: boole
       {unverified && (
         <span
           title={t('threats.threatCard.securityAuditUnverifiedHint')}
-          className="shrink-0 text-xs font-bold px-2 py-0.5 rounded bg-slate-800/60 text-slate-300 border border-dotted border-slate-500 inline-flex items-center gap-1 whitespace-nowrap"
+          className="text-xs font-bold px-2 py-0.5 rounded bg-slate-800/60 text-slate-300 border border-dotted border-slate-500 inline-flex items-center gap-1"
         >
           <FileSearch size={12} />
           {t('threats.threatCard.securityAuditUnverified')}
