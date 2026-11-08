@@ -23,7 +23,25 @@ vocabulary for: goal hijacking, tool misuse, privilege carry-over, memory poison
 It runs entirely in the browser. No server, no account, no telemetry — your design never
 leaves your machine.
 
-**▶ Live demo: https://takashi-ohmoto-git.github.io/CyberRiskScape/** (nothing to install)
+### ▶ Try it in 30 seconds
+
+**In the browser (nothing to install)** — open the [live demo](https://takashi-ohmoto-git.github.io/CyberRiskScape/).
+
+1. It starts with a sample diagram loaded, and the detected threats are listed in **Threat Analysis** on the right
+2. Click a component or a line on the canvas to edit its attributes (authentication, encryption, external exposure and so on). Change the input and the threats change with it
+3. Drag a component from the palette on the left onto the canvas and connect it, and the threats for that architecture are added
+
+**With the CLI on your machine** (Node.js 20 or later; a few minutes to set up) — analyze the bundled membership-site diagram.
+
+```bash
+git clone https://github.com/takashi-ohmoto-git/CyberRiskScape.git
+cd CyberRiskScape && npm ci && npm run build:cli
+
+# Write the threat list as Markdown
+node dist-cli/main.js analyze guide/templates/nco-advisory-2026-11-project.en.json --format md --locale en --out threats.md
+# Apply the checklist for Japan's National Cybersecurity Office advisory (November 2026) to the same diagram
+node dist-cli/main.js checklist guide/templates/nco-advisory-2026-11-project.en.json --id nco-advisory-2026-11 --locale en
+```
 
 New here? Start with **[Getting Started](guide/getting-started.md)** — what the tool is for,
 how the screen is laid out, and how to work on the canvas, with screenshots.

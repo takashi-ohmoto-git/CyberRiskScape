@@ -18,8 +18,25 @@ ASM・クラウドの検査・脆弱性管理・ID 基盤・AI セキュリテ�
 ブラウザ上でシステム構成図（DFD）を描くと、構成に応じた脅威が自動で列挙されます。
 サーバ不要・完全ローカル動作で、設計データが外部に送信されることはありません。
 
-**▶ オンラインデモ： https://takashi-ohmoto-git.github.io/CyberRiskScape/**
-（インストール不要。ブラウザだけで試せます）
+### ▶ 30 秒で試す
+
+**ブラウザで（インストール不要）** — [オンラインデモ](https://takashi-ohmoto-git.github.io/CyberRiskScape/)を開きます。
+
+1. サンプルの構成図が入った状態で立ち上がり、右の **Threat Analysis** に検出された脅威が並びます
+2. キャンバスの部品や線をクリックすると、属性（認証・暗号化・外部公開の有無など）を編集できます。入力を変えると脅威が増減します
+3. 左のパレットから部品をキャンバスへ置き、線をつなぐと、構成に応じた脅威が加わります
+
+**手元の CLI で**（Node.js 20 以上。準備に数分）— 同梱の会員サイトの図を分析します。
+
+```bash
+git clone https://github.com/takashi-ohmoto-git/CyberRiskScape.git
+cd CyberRiskScape && npm ci && npm run build:cli
+
+# 脅威の一覧を Markdown で書き出す
+node dist-cli/main.js analyze guide/templates/nco-advisory-2026-11-project.ja.json --format md --out threats.md
+# 同じ図に、国家サイバー統括室の注意喚起（2026 年 11 月）のチェックリストを当てはめる
+node dist-cli/main.js checklist guide/templates/nco-advisory-2026-11-project.ja.json --id nco-advisory-2026-11
+```
 
 はじめて使う方は **[はじめに — CyberRiskScape 入門](guide/getting-started.ja.md)** をご覧ください。
 ツールの目的・画面構成・キャンバス操作を画面付きで説明しています。
