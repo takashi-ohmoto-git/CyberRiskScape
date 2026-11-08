@@ -3,8 +3,8 @@
 **脅威モデリングを中核とした、OSS の Security Context Layer — AI・LLM・エージェントシステム・PQC に対応**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-291-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-2005%20passing-brightgreen.svg)](#開発)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-297-orange.svg)](data/threat-library)
+[![Tests](https://img.shields.io/badge/tests-2418%20passing-brightgreen.svg)](#開発)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 [English](README.md) | **日本語**
@@ -37,9 +37,12 @@ ASM・クラウドの検査・脆弱性管理・ID 基盤・AI セキュリテ�
 
 | フレームワーク区分 | ルール数 | 内容 |
 |---|---:|---|
-| `STRIDE` | 196 | 古典的な脅威（なりすまし・改ざん・情報漏えい 等） |
+| `STRIDE` | 202 | 古典的な脅威（なりすまし・改ざん・情報漏えい 等） |
 | `AI` | 35 | 敵対的 ML、モデル抽出、学習データ汚染 等 |
 | `AgenticAI` | 60 | 目標乗っ取り、ツール誤用、権限の持ち越し、メモリ汚染 等 |
+
+API については、OWASP API Security Top 10 2023 の 10 項目すべてに対応するルールを収録しています
+（認可の不備・認証の不備・費用の青天井・機微な業務フローの自動化・CORS・外部 API の応答の信用・SaaS や委託先に預けたデータ 等）。
 
 ### エコシステム — 開発・API・ID 基盤とつながる
 
@@ -55,6 +58,7 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 | **コーディングエージェント**（Claude Code の作業ディレクトリ） | package.json・requirements.txt・.env・.mcp.json・`.claude/` の設定から、開発環境と依存パッケージの構成図を自動生成する。.env の値は記録しない（[ガイド](guide/repo-import.ja.md)） |
 | **API テスト**（Postman・Postman CLI・Newman） | 検出した脅威を確かめる検証用リクエストを書き出す（[ガイド](guide/postman.ja.md)） |
 | **ペネトレーションテスト**（社内・外部のテスト業者） | 入口・攻撃経路・重点テスト項目と確認観点をまとめた、業者に依存しないテスト計画書を書き出す（[ガイド](guide/pentest-plan.ja.md)） |
+| **AI ペンテストの実証**（Strix・CyberStrikeAI） | AI 自律ペネトレーションテストが PoC で成立を確かめた結果を台帳 YAML に変換して取り込み、脅威カードに「実証」と表示する。Strix には脅威モデルと診断してよい範囲（RoE）を指示ファイルと MCP で渡せる。Metasploit の攻撃結果も同じ台帳で取り込める（CLI のみ。[ガイド](guide/oss-vulnerability-management.ja.md) §4・§7・§9・§10） |
 | **侵害の調査**（Velociraptor・同梱のトリアージスクリプト） | 侵害が疑われるときに、脅威モデルから調査計画書を書き出し、集めた証拠を図のノードに重ねて「痕跡あり・否定できない・未調査・痕跡なし」を報告する。侵害の有無は判定しない（[ガイド](guide/compromise-investigation.ja.md)） |
 | **ID 基盤・NHI**（Okta・SailPoint・CyberArk（Idira）・Microsoft Entra ID・Active Directory / LDAP） | IdP・ディレクトリ・NHI・PAM・IGA をモデル化して評価し、Conjur のポリシーから図を自動生成、各社の MCP サーバーと組み合わせて実際の ID の状態と突き合わせる（[ガイド](guide/nhi-identity.ja.md)） |
 | **ASM・サブドメイン乗っ取り**（ScopeSentry） | ScopeSentry の書き出しまたは API（MCP）から露出サービスと DNS ゾーンの図を自動生成し、サブドメイン乗っ取りを評価、定期の取り込みの差分で新しい露出を検知する（[ガイド](guide/scopesentry.ja.md)） |
@@ -64,10 +68,9 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 | **AI による脆弱性診断**（Anthropic `defending-code-reference-harness`） | 脅威モデルを `THREAT_MODEL.md` 互換で書き出し、診断の入力にする（[ガイド](guide/security-context.ja.md)） |
 | **脆弱性の修正**（Veracode） | SAST・DAST の指摘を AI で修正する流れに、脅威モデルを前提知識・優先順位・回帰テストとして組み込む構成例（[ガイド](guide/veracode-remediation.ja.md)） |
 | **クラウドの検査**（Prowler） | Prowler の AWS の検査結果（OCSF）で、図のノードの未入力の運用状況・攻撃面属性を埋め、FAIL の検査を図の脅威と突き合わせる（[ガイド](guide/prowler.ja.md)） |
-| **ペンテストの実証**（ARTEX） | ARTEX が実際に実行して成立した攻撃手段を、台帳 YAML から取り込んで脅威カードに「実証」と表示する（開発者が検証した内容に限り網羅しない。[ガイド](guide/artex.ja.md)） |
 | **AI 部品の検査**（Cisco AI Defense skill-scanner / mcp-scanner） | エージェントスキル・MCP サーバーの検査結果を、AITech 対応表を介して図の脅威と突き合わせ、描き漏れを見つける（[ガイド](guide/ai-scanners.ja.md)） |
 | **AI によるソース監査**（Cloudflare security-audit スキル） | 指摘を画面か CLI でノードに取り込み、脅威カードに「ソース監査で実証（ローカル）／要確認」を出し、要確認の前提を図の事実と並べる（[ガイド](guide/security-audit.ja.md)） |
-| **OSS の脆弱性管理**（Trivy・Syft / Grype・ZAP・Nuclei・Metasploit・Strix・CyberStrikeAI） | SAST・SCA・DAST・AI ペンテストの結果を取り込み、部品・指摘としてノードに結びつけ、KEV・EPSS・CISA SSVC と攻撃経路で優先順位を付ける（CLI のみ。[ガイド](guide/oss-vulnerability-management.ja.md)） |
+| **OSS の脆弱性管理**（Trivy・Syft / Grype・ZAP・Nuclei） | SAST・SCA・DAST の結果を取り込み、部品・指摘としてノードに結びつけ、KEV・EPSS・CISA SSVC と攻撃経路で優先順位を付ける（CLI のみ。[ガイド](guide/oss-vulnerability-management.ja.md)） |
 
 連携できる製品と方法の一覧は [連携ガイド](guide/integrations.ja.md) を参照してください。
 
@@ -88,15 +91,20 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 - **部品（BOM）の取り込みと書き出し** — CycloneDX・SPDX の SBOM／CBOM／AI BOM の部品を保存してノードに結びつけ、Asset タブで確認し、SPDX 2.3・CycloneDX 1.7 で書き出す（[ガイド](guide/sbom.ja.md)）
 - **レイヤー間の複製** — 深度レイヤーと PQC レイヤーの間で、下書きとして図を複製
 - **運用状況の記録** — 図だけでは分からないことをノードごとに記録：ログ（取得・保持期間・確認できる主体）、
-  保管時の暗号化、パッチの適用状況、アカウント棚卸し、保有データの必要性と件数規模、最終点検日。
+  保管時の暗号化、パッチの適用状況、アカウント棚卸し、保有データの必要性と件数規模、
+  エージェントの権限（コマンド・サンドボックス・外部通信・行動予算）、依存パッケージ・スキルの管理、
+  コンテナ基盤・メッセージブローカー・更新サーバーの設定、料金が発生する外部機能の上限、機微な業務フローの自動化への対策、最終点検日。
   未入力は「対策なし」として評価（[ガイド](guide/ipa-alert-2026-10.ja.md)）
+- **指摘の取り込みと優先度づけ** — SAST・SCA・DAST・ペンテスト・クラウドの検査などの指摘をノードと部品に結びつけ、
+  CISA KEV・FIRST の EPSS・攻撃経路の露出と連鎖から推奨の優先度（P1〜P4）と CISA SSVC の判定を根拠つきで出す。
+  CI では `analyze --fail-on-findings` で、しきい値以上の指摘が残る間は止める（[ガイド](guide/oss-vulnerability-management.ja.md)）
 - **注意喚起チェックリスト** — 公表された注意喚起の対策（同梱：IPA 注意喚起 2026-10-09 の 17 項目、
   国家サイバー統括室の注意喚起 2026-11-05 の 12 項目）を
   図に当てはめ、項目ごとに「要対応・未入力・リスク受容・問題なし・対象なし」と関係ノードを一覧。
   点検が古いノードの一覧、CSV 出力、CI 用の `checklist --fail-on-action` に対応
   （[ガイド](guide/ipa-alert-2026-10.ja.md)・[ガイド（国家サイバー統括室）](guide/nco-advisory-2026-11.ja.md)）
 - **コンプライアンスマッピング** — 検出脅威を NIST CSF 2.0（128 項目）/
-  NIST AI RMF（72 項目）/ AI 事業者ガイドライン（34 項目）に紐付け
+  NIST AI RMF（72 項目）/ AI 事業者ガイドライン（34 項目）に紐付け。MITRE D3FEND・MITRE F3 への対応づけも一部のルールで試行
 - **リスク評価** — Impact × Likelihood スコアリング、リスク対応方針（低減・受容・移転・回避）の記録
 - **カスタムルール** — UI 上のエディタから独自の脅威ルールを追加
 - **脅威ライブラリ・インスペクタ** — どのルールがどの条件で発火するかを読み取り専用で確認
@@ -183,12 +191,12 @@ npm run test:watch   # テスト watch モード
 npx tsc --noEmit     # 型チェック（strict）
 ```
 
-変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 2,380 件の
+変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 2,418 件の
 テストが通ります。
 
 ---
 
-## CLI（プレビュー）
+## CLI
 
 ブラウザなしで保存済みプロジェクト JSON を解析するヘッドレス CLI です。CI でのゲート
 判定等に使えます。評価対象は同梱の脅威ルールのみです（IndexedDB に保存するカスタム
@@ -202,13 +210,26 @@ node dist-cli/main.js analyze <project.json> [options]
 | オプション | 値 | 既定 |
 |---|---|---|
 | `--format` | `json` \| `sarif` \| `md` | `json` |
-| `--layer` | `L0` \| `L1` \| `L2` \| `L3` | ノードがある全レイヤー |
+| `--layer` | `L0` \| `L1` \| `L2` \| `L3` \| `PQC` | ノードがある全レイヤー |
 | `--framework` | `STRIDE` \| `AI` \| `AgenticAI` \| `ALL` | `ALL` |
 | `--fail-on` | `Critical` \| `High` \| `Medium` \| `Low` | 指定なし（ゲート判定なし） |
+| `--fail-on-findings` | `Critical` \| `High` \| `Medium` \| `Low` | 指定なし（取り込んだ指摘のゲート判定なし） |
 | `--locale` | `ja` \| `en` | `ja` |
 | `--out` | 出力先ファイルパス | 標準出力 |
 
-終了コード：`0` 成功 ／ `1` `--fail-on` によるゲート不合格 ／ `2` 入力・引数エラー。
+終了コード：`0` 成功 ／ `1` `--fail-on`・`--fail-on-findings` によるゲート不合格 ／ `2` 入力・引数エラー。
+
+`analyze` のほかに、次のサブコマンドがあります（一覧と各オプションは `node dist-cli/main.js --help`）。
+
+| 用途 | サブコマンド |
+|---|---|
+| 構成図を作る | `import-kong`・`import-kongctl`・`import-repo`・`import-conjur`・`import-shodan`・`import-scopesentry` |
+| 製品の結果を取り込む | `import-sarif`・`import-nuclei`・`import-sbom`・`import-prowler`・`import-findings`（SCAP）・`import-security-audit`・`import-pentest`（`convert-strix`・`convert-cyberstrikeai`・`convert-metasploit` で台帳に変換）・`import-artex-assets`・`import-metasploit-assets` |
+| 悪用の事実・見込みと優先度 | `import-kev`・`import-epss`・`fill-patch-status`・`findings-priority`（P1〜P4 と CISA SSVC） |
+| 突き合わせ・文脈 | `asm-reconcile`・`sbom-report`・`context`・`checklist`・`findings-report`・`investigation-report`・`pqc-sbom-report` |
+| 書き出す | `export-requirements`・`export-test-plan`・`export-roe`・`export-detection-requirements`・`export-contractor-paths`・`export-postman`・`export-attack-navigator`・`export-investigation-plan`・`export-spdx`・`export-sbom-ai`・`export-triage-patterns` |
+
+使い方は [OSS で組む脆弱性管理](guide/oss-vulnerability-management.ja.md)・[連携ガイド](guide/integrations.ja.md) と各ガイドを参照してください。
 
 ### モデル差分ゲート（`diff`）
 

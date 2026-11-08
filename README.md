@@ -3,8 +3,8 @@
 **An open-source Security Context Layer built on threat modeling — for AI, LLM, agentic systems, and post-quantum cryptography**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-291-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-2005%20passing-brightgreen.svg)](#development)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-297-orange.svg)](data/threat-library)
+[![Tests](https://img.shields.io/badge/tests-2418%20passing-brightgreen.svg)](#development)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 **English** | [日本語](README.ja.md)
@@ -31,7 +31,7 @@ For the thinking behind it, see [An Introduction to Secure by Design](guide/secu
 For the feature list, see [here](guide/README.md).
 
 > **Interface language.** English and Japanese are both supported — use the JA / EN switch
-> in the top bar, and your choice is remembered. The interface, all 291 threat rules
+> in the top bar, and your choice is remembered. The interface, all 297 threat rules
 > (name, category, description, mitigations) and every component type label are
 > translated. Help is welcome.
 
@@ -46,9 +46,13 @@ long-term memory** as first-class component types, with a rule set to match.
 
 | Framework | Rules | Covers |
 |---|---:|---|
-| `STRIDE` | 196 | Spoofing, tampering, repudiation, information disclosure, DoS, elevation of privilege |
+| `STRIDE` | 202 | Spoofing, tampering, repudiation, information disclosure, DoS, elevation of privilege |
 | `AI` | 35 | Adversarial ML, model extraction, training data poisoning |
 | `AgenticAI` | 60 | Goal hijacking, tool misuse, privilege carry-over, memory poisoning |
+
+For APIs, the library has rules for all ten items of the OWASP API Security Top 10 2023
+(broken authorization and authentication, runaway costs, automation of sensitive business flows, CORS, trusting external API
+responses, data entrusted to SaaS providers and contractors, and more).
 
 This is where the project invests. Most threat modeling tools have zero rules in the third row.
 
@@ -67,6 +71,7 @@ platforms, and AI agent platforms. It makes no outbound calls, so it also works 
 | **API testing** (Postman, Postman CLI, Newman) | Export verification requests that check the detected threats ([guide](guide/postman.md)) |
 | **Compromise investigation** (Velociraptor and the bundled triage script) | When you suspect a compromise, export an investigation plan from the threat model and overlay the collected evidence on the diagram's nodes as "traces found", "cannot rule out", "not investigated" or "no traces". It does not determine whether a compromise occurred ([guide](guide/compromise-investigation.md)) |
 | **Penetration testing** (in-house or external testers) | Export a vendor-neutral test plan with entry points, attack paths, focus test items, and check viewpoints ([guide](guide/pentest-plan.md)) |
+| **AI pentest verification** (Strix, CyberStrikeAI) | Convert the results that autonomous AI penetration testing confirmed with a PoC into a registry YAML, import them, and show them as "verified" on threat cards. Strix can be given the threat model and the scope it may test (RoE) through an instruction file and MCP. Metasploit exploitation results are imported through the same registry (CLI only; [guide](guide/oss-vulnerability-management.md) sections 4, 7, 9 and 10) |
 | **Identity platforms and NHIs** (Okta, SailPoint, CyberArk (Idira), Microsoft Entra ID, Active Directory / LDAP) | Model and assess IdPs, directories, NHIs, PAM and IGA, generate the diagram from a Conjur policy, and pair with each vendor's MCP server to cross-check against the real state of your identities ([guide](guide/nhi-identity.md)) |
 | **ASM and external exposure** (Shodan) | Generate a diagram of exposed services from a `shodan download` export, assess and reduce exposure along CISA's four steps, and catch new exposure by diffing against the previous import ([guide](guide/exposure-reduction.md)) |
 | **ASM and subdomain takeover** (ScopeSentry) | Generate a diagram of exposed services and DNS zones from a ScopeSentry export or its API (MCP), assess subdomain takeover, and catch new exposure by diffing periodic imports ([guide](guide/scopesentry.md)) |
@@ -75,10 +80,9 @@ platforms, and AI agent platforms. It makes no outbound calls, so it also works 
 | **AI-driven vulnerability review** (Anthropic `defending-code-reference-harness`) | Export the threat model as `THREAT_MODEL.md`-compatible input for the review ([guide](guide/security-context.md)) |
 | **Vulnerability remediation** (Veracode) | An example setup that builds the threat model into a flow fixing SAST and DAST findings with AI, as context, prioritization, and regression tests ([guide](guide/veracode-remediation.md)) |
 | **Cloud security scanning** (Prowler) | Fill the operational posture and attack surface attributes still unset on diagram nodes from Prowler's OCSF findings for AWS, and cross-check FAIL checks against the diagram's threats ([guide](guide/prowler.md)) |
-| **Penetration test verification** (ARTEX) | Import the attack techniques ARTEX actually executed and that succeeded from a registry YAML and show them as "verified" on threat cards (limited to what the developer verified; not exhaustive; [guide](guide/artex.md)) |
 | **AI component scanning** (Cisco AI Defense skill-scanner / mcp-scanner) | Cross-reference agent skill and MCP server scan results with the diagram's threats through an AITech mapping table, and find what is left undrawn ([guide](guide/ai-scanners.md)) |
 | **AI source audit** (Cloudflare security-audit skill) | Import findings onto a node from the screen or the CLI, mark threat cards as "verified by source audit (local)" or "needs confirmation", and line up the preconditions of needs-confirmation findings with the diagram's facts ([guide](guide/security-audit.md)) |
-| **OSS vulnerability management** (Trivy, Syft / Grype, ZAP, Nuclei, Metasploit, Strix, CyberStrikeAI) | Import SAST, SCA, DAST and AI pentest results, attach them to nodes as components and findings, and prioritise with KEV, EPSS, CISA SSVC and attack paths (CLI only; [guide](guide/oss-vulnerability-management.md)) |
+| **OSS vulnerability management** (Trivy, Syft / Grype, ZAP, Nuclei) | Import SAST, SCA and DAST results, attach them to nodes as components and findings, and prioritise with KEV, EPSS, CISA SSVC and attack paths (CLI only; [guide](guide/oss-vulnerability-management.md)) |
 
 For the full list of products and how they connect, see [Integrations](guide/integrations.md).
 
@@ -103,15 +107,24 @@ For the full list of products and how they connect, see [Integrations](guide/int
 - **Layer copy** — copy a depth layer to the PQC layer (or back) as a draft
 - **Operational posture record** — record per node what a diagram cannot show on its own:
   logging (collection, retention, who can review), encryption at rest, patch status, account
-  review, whether held data is still needed and how many records, and the last review date.
+  review, whether held data is still needed and how many records, agent permissions (commands,
+  sandbox, egress, action budget), dependency and skill management, container platform, message broker
+  and update server settings, limits on paid external functions, protection of sensitive business flows
+  against automation, and the last review date.
   Blank fields are evaluated as "no countermeasure" ([guide](guide/ipa-alert-2026-10.md))
+- **Finding import and prioritization** — link findings from SAST, SCA, DAST, pentests, cloud scanning and
+  more to nodes and components, and output a recommended priority (P1–P4) and the CISA SSVC decision with
+  reasons, from CISA KEV, FIRST EPSS, and exposure and chains on attack paths. In CI,
+  `analyze --fail-on-findings` blocks while findings at or above the threshold remain
+  ([guide](guide/oss-vulnerability-management.md))
 - **Alert checklist** — apply a published alert's measures (bundled: the IPA alert of
   2026-10-09, 17 items, and Japan's National Cybersecurity Office advisory of 2026-11-05, 12 items) to your diagram. Each item shows action needed / not entered / risk
   accepted / no issue / not applicable with the related nodes, plus the nodes whose review
   record is old. Export CSV or run it in CI with `checklist --fail-on-action`
   ([guide](guide/ipa-alert-2026-10.md), [NCO advisory guide](guide/nco-advisory-2026-11.md))
 - **Compliance mapping** — maps detected threats to NIST CSF 2.0 (128 items), NIST AI RMF
-  (72 items), and Japan's AI Business Operator Guidelines (34 items)
+  (72 items), and Japan's AI Business Operator Guidelines (34 items). Mappings to MITRE D3FEND and MITRE F3
+  are being trialled on some rules
 - **Risk assessment** — Impact × Likelihood scoring and risk treatment decisions (mitigate / accept /
   transfer / avoid)
 - **Custom rules** — add your own detection rules from an in-app editor
@@ -197,12 +210,12 @@ npm run test:watch   # watch mode
 npx tsc --noEmit     # type check (strict)
 ```
 
-The standard check after a change is `npx tsc --noEmit` plus the test suite. 2,380 tests
+The standard check after a change is `npx tsc --noEmit` plus the test suite. 2,418 tests
 currently pass.
 
 ---
 
-## CLI (preview)
+## CLI
 
 A headless CLI can analyze a saved project file without a browser — useful for CI gates.
 It evaluates only the bundled threat rules (custom rules stored in IndexedDB are not
@@ -216,13 +229,26 @@ node dist-cli/main.js analyze <project.json> [options]
 | Option | Values | Default |
 |---|---|---|
 | `--format` | `json` \| `sarif` \| `md` | `json` |
-| `--layer` | `L0` \| `L1` \| `L2` \| `L3` | every layer that has nodes |
+| `--layer` | `L0` \| `L1` \| `L2` \| `L3` \| `PQC` | every layer that has nodes |
 | `--framework` | `STRIDE` \| `AI` \| `AgenticAI` \| `ALL` | `ALL` |
 | `--fail-on` | `Critical` \| `High` \| `Medium` \| `Low` | no gate |
+| `--fail-on-findings` | `Critical` \| `High` \| `Medium` \| `Low` | no gate on imported findings |
 | `--locale` | `ja` \| `en` | `ja` |
 | `--out` | output file path | stdout |
 
-Exit codes: `0` success, `1` `--fail-on` gate failed, `2` input/argument error.
+Exit codes: `0` success, `1` `--fail-on` or `--fail-on-findings` gate failed, `2` input/argument error.
+
+Besides `analyze`, the CLI has the following subcommands (run `node dist-cli/main.js --help` for the list and options).
+
+| Purpose | Subcommands |
+|---|---|
+| Build a diagram | `import-kong`, `import-kongctl`, `import-repo`, `import-conjur`, `import-shodan`, `import-scopesentry` |
+| Import product results | `import-sarif`, `import-nuclei`, `import-sbom`, `import-prowler`, `import-findings` (SCAP), `import-security-audit`, `import-pentest` (convert to a registry with `convert-strix`, `convert-cyberstrikeai`, `convert-metasploit`), `import-artex-assets`, `import-metasploit-assets` |
+| Exploitation facts, likelihood and priority | `import-kev`, `import-epss`, `fill-patch-status`, `findings-priority` (P1–P4 and CISA SSVC) |
+| Reconcile and look up context | `asm-reconcile`, `sbom-report`, `context`, `checklist`, `findings-report`, `investigation-report`, `pqc-sbom-report` |
+| Export | `export-requirements`, `export-test-plan`, `export-roe`, `export-detection-requirements`, `export-contractor-paths`, `export-postman`, `export-attack-navigator`, `export-investigation-plan`, `export-spdx`, `export-sbom-ai`, `export-triage-patterns` |
+
+See [Vulnerability Management with OSS Scanners](guide/oss-vulnerability-management.md), the [integration guide](guide/integrations.md) and each guide for usage.
 
 ### Model diff gate (`diff`)
 
@@ -298,7 +324,7 @@ Near-term priorities, in order:
    detection confidence stated explicitly
 
 Done recently: an English UI with a language switcher, plus English translation overlays
-for all 291 threat rules and every component type label, all leaving the existing schemas
+for all 297 threat rules and every component type label, all leaving the existing schemas
 unchanged.
 
 ---
