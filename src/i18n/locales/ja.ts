@@ -193,7 +193,10 @@ const jaCore = {
   'attackTree.chokePoint.heading': 'チョークポイント（対策の投資対効果が高い要素）',
   'attackTree.chokePoint.hits': '{total} 経路中 {hits} 本が通過',
   'attackTree.routeTable.heading': '経路テーブル',
-  'attackTree.foothold.heading': '手がかりの連鎖（{count} 件）',
+  'attackTree.tab.foothold': '漏えい情報の連鎖 {count}',
+  'attackTree.tab.detectionGap': '監視の死角 {count}',
+  'attackTree.maximize': '最大化',
+  'attackTree.restore': '元の大きさに戻す',
   'attackTree.foothold.body':
     '攻撃者から届くノードで、拾った値が次の段の鍵になる脅威です。どのノードを開けるかは図から分からないため、同じゾーン（最も内側の信頼境界）の経路上のノードを弱めると近似しています。経路のコストと順位には含めていません。',
   'attackTree.foothold.yields': '渡すもの',
@@ -201,9 +204,9 @@ const jaCore = {
   'attackTree.foothold.kind.credential': '認証情報・鍵',
   'attackTree.foothold.kind.path': '場所（管理画面・内部 API）',
   'attackTree.foothold.kind.hint': '正しい値・運用の決まり',
-  'attackTree.detectionGap.heading': '検知の空白（{count} 経路、うち全区間 {blind} 経路）',
+  'attackTree.detectionGap.summary': '{count} 経路のうち、全区間が監視の死角の経路は {blind} 経路です。',
   'attackTree.detectionGap.body':
-    '経路上で、ログが監視先（SIEM 等）に届かないノードの区間です。記録だけのログは、人が見に行くまで気づけないため空白に含めます。ログが届いても検知ルールや対応があるとは限りません。経路のコストや順位には影響しません。ノードの「このコンポーネントのログを送る SIEM」やログの属性を入力すると更新されます。',
+    '経路上で、ログが監視先（SIEM 等）に届かないノードの区間です。記録だけのログは、人が見に行くまで気づけないため死角に含めます。ログが届いても検知ルールや対応があるとは限りません。経路のコストや順位には影響しません。ノードの「このコンポーネントのログを送る SIEM」やログの属性を入力すると更新されます。',
   'attackTree.detectionGap.state.forwarded': '監視先に届く',
   'attackTree.detectionGap.state.localOnly': '記録のみ',
   'attackTree.detectionGap.state.none': 'ログなし',

@@ -80,7 +80,8 @@ counts toward the difficulty of the step where the attacker attacks the VPN devi
 
 ## 3. Reading the result
 
-Press "Attack path analysis" and the analysis opens.
+Press "Attack path analysis" and the analysis opens. From the top: the summary and toggles, the graph (with the evidence on its right), and the tabs at the bottom.
+The maximize button at the top right expands it to fill the screen (it returns to the normal size when closed).
 
 ![Attack path analysis](../assets/guide/en/attack-path/03-graph.png)
 
@@ -134,7 +135,8 @@ The attacker and the target themselves are excluded, since they are obvious by d
 
 ## 5. The route table
 
-Below the graph is the list of routes.
+The tabs below the graph switch between the **route table**, the **leaked-info chain** (threats whose leaked values become the key to the next step) and **monitoring blind spots** (stretches of a route where logs do not reach a monitoring destination).
+The leaked-info chain and blind spots are shown as evidence only and do not change route costs or ranking. The route table lists the routes.
 
 ![The route table](../assets/guide/en/attack-path/05-route-table.png)
 

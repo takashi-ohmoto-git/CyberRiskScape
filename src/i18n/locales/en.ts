@@ -74,7 +74,10 @@ const enCore: Partial<Record<TranslationKey, string>> = {
   'attackTree.chokePoint.heading': 'Choke points (highest-leverage mitigation targets)',
   'attackTree.chokePoint.hits': '{hits}/{total} routes',
   'attackTree.routeTable.heading': 'Routes',
-  'attackTree.foothold.heading': 'Chained footholds ({count})',
+  'attackTree.tab.foothold': 'Leaked-info chain {count}',
+  'attackTree.tab.detectionGap': 'Monitoring blind spots {count}',
+  'attackTree.maximize': 'Maximize',
+  'attackTree.restore': 'Restore size',
   'attackTree.foothold.body':
     'Threats on nodes the attacker can reach whose leaked values become the key to the next step. Which node a foothold opens cannot be read from the diagram, so it is approximated as weakening the route nodes in the same zone (the innermost trust boundary). Route costs and ranking do not include it.',
   'attackTree.foothold.yields': 'Gives away',
@@ -82,9 +85,9 @@ const enCore: Partial<Record<TranslationKey, string>> = {
   'attackTree.foothold.kind.credential': 'credentials and keys',
   'attackTree.foothold.kind.path': 'locations (admin console, internal APIs)',
   'attackTree.foothold.kind.hint': 'valid values and operating rules',
-  'attackTree.detectionGap.heading': 'Detection gaps ({count} routes, {blind} with no coverage at all)',
+  'attackTree.detectionGap.summary': 'Of {count} routes, {blind} are monitoring blind spots end to end.',
   'attackTree.detectionGap.body':
-    "Stretches of a route where nodes' logs do not reach a monitoring destination (SIEM, etc.). Logs that are only recorded locally are counted as gaps, because nobody notices until someone goes to look. Even logs that arrive do not guarantee a detection rule or a response. Route costs and ranking are not affected. Fill in \"SIEM that receives this component's logs\" or the log attributes on a node to update this.",
+    "Stretches of a route where nodes' logs do not reach a monitoring destination (SIEM, etc.). Logs that are only recorded locally are counted as blind spots, because nobody notices until someone goes to look. Even logs that arrive do not guarantee a detection rule or a response. Route costs and ranking are not affected. Fill in \"SIEM that receives this component's logs\" or the log attributes on a node to update this.",
   'attackTree.detectionGap.state.forwarded': 'reaches monitoring',
   'attackTree.detectionGap.state.localOnly': 'logged locally only',
   'attackTree.detectionGap.state.none': 'no logs',

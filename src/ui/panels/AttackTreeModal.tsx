@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Check, ChevronDown, ChevronRight, Crosshair, GitBranch, Lock, ShieldHalf, X } from 'lucide-react';
+import { Check, Crosshair, GitBranch, Lock, Maximize2, Minimize2, ShieldHalf, X } from 'lucide-react';
 import {
   selectActiveBoundaries,
   selectActiveEdges,
@@ -44,6 +44,9 @@ import { AttackMatrixModal } from './AttackMatrixModal';
 import { findFootholdChains, type FootholdKind, type FootholdLink } from '../../features/attack-tree/footholdChains';
 import { assessRouteDetection, type DetectionState, type RouteDetection } from '../../features/attack-tree/detectionGaps';
 import { useLocale, useT } from '../../i18n';
+
+/** 下段タブの種別。 */
+type BottomTab = 'route' | 'foothold' | 'detection';
 
 /** i18n の t() 関数の型（useT の戻り値）。 */
 type TFunc = ReturnType<typeof useT>;
@@ -409,7 +412,7 @@ const FOOTHOLD_KIND_KEY = {
   hint: 'attackTree.foothold.kind.hint',
 } as const satisfies Record<FootholdKind, string>;
 
-/** 手がかりの連鎖（経路の根拠。コスト・順位には含めない）。 */
+/** 漏えい情報の連鎖（経路の根拠。コスト・順位には含めない）。 */
 function FootholdPanel({
   links,
   nodeById,
@@ -419,37 +422,24 @@ function FootholdPanel({
   nodeById: Map<string, DiagramNode>;
   t: TFunc;
 }) {
-  const [open, setOpen] = useState(false); // 経路の図の高さを保つため既定は閉じる;
   return (
-    <div className="bg-slate-800/40 border border-slate-700 rounded-xl">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-300"
-      >
-        {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-        {t('attackTree.foothold.heading', { count: links.length })}
-      </button>
-      {open && (
-        <div className="px-3 pb-3 space-y-2">
-          <p className="text-xs text-slate-500 leading-relaxed">{t('attackTree.foothold.body')}</p>
-          <ul className="overflow-auto max-h-40 space-y-1.5 text-xs text-slate-300">
-            {links.map((l) => (
-              <li key={l.threatId} className="leading-relaxed">
-                <span className="font-bold">{nodeShortLabel(nodeById.get(l.sourceNodeId), l.sourceNodeId)}</span>
-                {' — '}
-                {l.threatName}
-                <span className="block text-slate-400">
-                  {t('attackTree.foothold.yields')}: {l.yields.map((k) => t(FOOTHOLD_KIND_KEY[k])).join('・')}
-                  {' ／ '}
-                  {t('attackTree.foothold.affects')}:{' '}
-                  {l.affectedNodeIds.map((id) => nodeShortLabel(nodeById.get(id), id)).join(', ')}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+    <div className="space-y-2">
+      <p className="text-xs text-slate-500 leading-relaxed">{t('attackTree.foothold.body')}</p>
+      <ul className="space-y-1.5 text-xs text-slate-300">
+        {links.map((l) => (
+          <li key={l.threatId} className="leading-relaxed">
+            <span className="font-bold">{nodeShortLabel(nodeById.get(l.sourceNodeId), l.sourceNodeId)}</span>
+            {' — '}
+            {l.threatName}
+            <span className="block text-slate-400">
+              {t('attackTree.foothold.yields')}: {l.yields.map((k) => t(FOOTHOLD_KIND_KEY[k])).join('・')}
+              {' ／ '}
+              {t('attackTree.foothold.affects')}:{' '}
+              {l.affectedNodeIds.map((id) => nodeShortLabel(nodeById.get(id), id)).join(', ')}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -460,7 +450,7 @@ const DETECTION_STATE_KEY = {
   none: 'attackTree.detectionGap.state.none',
 } as const satisfies Record<DetectionState, string>;
 
-/** 検知の空白（経路上でログが監視先に届かない区間。コスト・順位には含めない）。 */
+/** 監視の死角（経路上でログが監視先に届かない区間。コスト・順位には含めない）。 */
 function DetectionGapPanel({
   routes,
   nodeById,
@@ -470,40 +460,30 @@ function DetectionGapPanel({
   nodeById: Map<string, DiagramNode>;
   t: TFunc;
 }) {
-  const [open, setOpen] = useState(false); // 経路の図の高さを保つため既定は閉じる
   const blind = routes.filter((r) => r.detection.blind).length;
   return (
-    <div className="bg-slate-800/40 border border-slate-700 rounded-xl">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-300"
-      >
-        {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-        {t('attackTree.detectionGap.heading', { count: routes.length, blind })}
-      </button>
-      {open && (
-        <div className="px-3 pb-3 space-y-2">
-          <p className="text-xs text-slate-500 leading-relaxed">{t('attackTree.detectionGap.body')}</p>
-          <ul className="overflow-auto max-h-40 space-y-1.5 text-xs text-slate-300">
-            {routes.map((r) => (
-              <li key={r.index} className="leading-relaxed">
-                <span className="text-slate-500 font-bold">{r.index + 1}</span>{' '}
-                {r.detection.nodes.map((n, i) => (
-                  <span key={n.nodeId}>
-                    {i > 0 && ' → '}
-                    <span className="font-bold">{nodeShortLabel(nodeById.get(n.nodeId), n.nodeId)}</span>
-                    {' ('}
-                    {t(DETECTION_STATE_KEY[n.state])}
-                    {n.assumed && `・${t('attackTree.detectionGap.assumed')}`}
-                    {')'}
-                  </span>
-                ))}
-              </li>
+    <div className="space-y-2">
+      <p className="text-xs text-slate-400 leading-relaxed">
+        {t('attackTree.detectionGap.summary', { count: routes.length, blind })}
+      </p>
+      <p className="text-xs text-slate-500 leading-relaxed">{t('attackTree.detectionGap.body')}</p>
+      <ul className="space-y-1.5 text-xs text-slate-300">
+        {routes.map((r) => (
+          <li key={r.index} className="leading-relaxed">
+            <span className="text-slate-500 font-bold">{r.index + 1}</span>{' '}
+            {r.detection.nodes.map((n, i) => (
+              <span key={n.nodeId}>
+                {i > 0 && ' → '}
+                <span className="font-bold">{nodeShortLabel(nodeById.get(n.nodeId), n.nodeId)}</span>
+                {' ('}
+                {t(DETECTION_STATE_KEY[n.state])}
+                {n.assumed && `・${t('attackTree.detectionGap.assumed')}`}
+                {')'}
+              </span>
             ))}
-          </ul>
-        </div>
-      )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -526,64 +506,50 @@ function RouteTable({
   onHoverRoute: (index: number | null) => void;
   t: TFunc;
 }) {
-  const [open, setOpen] = useState(true);
-
   return (
-    <div className="bg-slate-800/40 border border-slate-700 rounded-xl">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-300"
-      >
-        {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-        {t('attackTree.routeTable.heading')}
-      </button>
-      {open && (
-        <div className="overflow-auto max-h-40 px-3 pb-3" onMouseLeave={() => onHoverRoute(null)}>
-          <table className="w-full text-xs text-slate-300">
-            <thead>
-              <tr className="text-slate-500 text-left border-b border-slate-700">
-                <th className="py-1 pr-2 font-bold">#</th>
-                <th className="py-1 pr-2 font-bold">{t('attackTree.routeTable.colRoute')}</th>
-                <th className="py-1 pr-2 font-bold">{t('attackTree.routeTable.colCost')}</th>
-                <th className="py-1 pr-2 font-bold">{t('attackTree.routeTable.colWeakestHop')}</th>
-                <th className="py-1 pr-2 font-bold">{t('attackTree.routeTable.colStatus')}</th>
+    <div onMouseLeave={() => onHoverRoute(null)}>
+      <table className="w-full text-xs text-slate-300">
+        <thead>
+          <tr className="text-slate-500 text-left border-b border-slate-700">
+            <th className="py-1 pr-2 font-bold">#</th>
+            <th className="py-1 pr-2 font-bold">{t('attackTree.routeTable.colRoute')}</th>
+            <th className="py-1 pr-2 font-bold">{t('attackTree.routeTable.colCost')}</th>
+            <th className="py-1 pr-2 font-bold">{t('attackTree.routeTable.colWeakestHop')}</th>
+            <th className="py-1 pr-2 font-bold">{t('attackTree.routeTable.colStatus')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {analysis.routes.map((r: AnalyzedRoute, i: number) => {
+            const shortLabel = r.route.nodeIds.map((id) => nodeShortLabel(nodeById.get(id), id)).join(' → ');
+            const fullLabel = r.route.nodeIds.map((id) => nodeFullLabel(nodeById.get(id), id)).join(' → ');
+            const hop = graph.hops.get(r.weakestHopKey);
+            const weakestLabel = hop
+              ? `${nodeFullLabel(nodeById.get(hop.a), hop.a)} ⇔ ${nodeFullLabel(nodeById.get(hop.b), hop.b)}`
+              : '—';
+            return (
+              <tr
+                key={i}
+                className="border-b border-slate-800/60 last:border-b-0 cursor-default hover:bg-sky-950/30"
+                onMouseEnter={() => onHoverRoute(i)}
+              >
+                <td className="py-1 pr-2 text-slate-500 font-bold">{i + 1}</td>
+                <td className="py-1 pr-2 max-w-[360px] truncate" title={fullLabel}>
+                  {shortLabel}
+                </td>
+                <td className={`py-1 pr-2 font-bold ${r.feasible ? '' : 'text-slate-500'}`}>
+                  {formatRouteCost(r.cost, t)}
+                </td>
+                <td className="py-1 pr-2 max-w-[220px] truncate" title={weakestLabel}>
+                  {weakestLabel}
+                </td>
+                <td className={`py-1 pr-2 font-bold ${r.feasible ? 'text-rose-300' : 'text-emerald-300'}`}>
+                  {r.feasible ? t('attackTree.routeTable.statusFeasible') : t('attackTree.routeTable.statusBlocked')}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {analysis.routes.map((r: AnalyzedRoute, i: number) => {
-                const shortLabel = r.route.nodeIds.map((id) => nodeShortLabel(nodeById.get(id), id)).join(' → ');
-                const fullLabel = r.route.nodeIds.map((id) => nodeFullLabel(nodeById.get(id), id)).join(' → ');
-                const hop = graph.hops.get(r.weakestHopKey);
-                const weakestLabel = hop
-                  ? `${nodeFullLabel(nodeById.get(hop.a), hop.a)} ⇔ ${nodeFullLabel(nodeById.get(hop.b), hop.b)}`
-                  : '—';
-                return (
-                  <tr
-                    key={i}
-                    className="border-b border-slate-800/60 last:border-b-0 cursor-default hover:bg-sky-950/30"
-                    onMouseEnter={() => onHoverRoute(i)}
-                  >
-                    <td className="py-1 pr-2 text-slate-500 font-bold">{i + 1}</td>
-                    <td className="py-1 pr-2 max-w-[360px] truncate" title={fullLabel}>
-                      {shortLabel}
-                    </td>
-                    <td className={`py-1 pr-2 font-bold ${r.feasible ? '' : 'text-slate-500'}`}>
-                      {formatRouteCost(r.cost, t)}
-                    </td>
-                    <td className="py-1 pr-2 max-w-[220px] truncate" title={weakestLabel}>
-                      {weakestLabel}
-                    </td>
-                    <td className={`py-1 pr-2 font-bold ${r.feasible ? 'text-rose-300' : 'text-emerald-300'}`}>
-                      {r.feasible ? t('attackTree.routeTable.statusFeasible') : t('attackTree.routeTable.statusBlocked')}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -605,6 +571,8 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
   const [hoveredRouteIndex, setHoveredRouteIndex] = useState<number | null>(null);
   const [matrixOpen, setMatrixOpen] = useState(false);
   const [f3Open, setF3Open] = useState(false);
+  const [maximized, setMaximized] = useState(false);
+  const [bottomTab, setBottomTab] = useState<BottomTab>('route');
   const t = useT();
 
   useEffect(() => {
@@ -727,6 +695,17 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
     return s;
   }, [analysis.routes]);
 
+  // 下段タブ（内容がある場合のみ表示。選択中が消えたら先頭に退避）
+  const availableTabs: { id: BottomTab; label: string }[] = [];
+  if (hasPath && graph.routes.length >= 2) availableTabs.push({ id: 'route', label: t('attackTree.routeTable.heading') });
+  if (hasPath && footholdLinks.length > 0) {
+    availableTabs.push({ id: 'foothold', label: t('attackTree.tab.foothold', { count: footholdLinks.length }) });
+  }
+  if (hasPath && detectionRoutes.length > 0) {
+    availableTabs.push({ id: 'detection', label: t('attackTree.tab.detectionGap', { count: detectionRoutes.length }) });
+  }
+  const activeTab = availableTabs.find((x) => x.id === bottomTab)?.id ?? availableTabs[0]?.id;
+
   const selectNode = (nodeId: string) =>
     setSelection((cur) => (cur?.kind === 'node' && cur.nodeId === nodeId ? null : { kind: 'node', nodeId }));
   const selectHop = (hopKey: string) =>
@@ -739,7 +718,9 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
     >
       <style>{`@keyframes atkdash { to { stroke-dashoffset: -1000; } }`}</style>
       <div
-        className={`${selection ? 'w-[1180px]' : 'w-[880px]'} max-w-[96vw] max-h-[90vh] overflow-hidden bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-6 flex flex-col gap-4`}
+        className={`${
+          maximized ? 'w-[96vw] h-[94vh] max-h-[94vh]' : `${selection ? 'w-[1180px]' : 'w-[880px]'} h-[90vh] max-h-[90vh]`
+        } max-w-[96vw] overflow-y-auto bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-6 flex flex-col gap-4`}
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -764,6 +745,15 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
               className="px-2 py-1 rounded border border-slate-700 text-xs font-bold text-slate-300 hover:border-rose-500 disabled:opacity-40 disabled:hover:border-slate-700"
             >
               {t('panels.f3Matrix.open')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMaximized((m) => !m)}
+              className="text-slate-500 hover:text-slate-200 transition-colors"
+              aria-label={maximized ? t('attackTree.restore') : t('attackTree.maximize')}
+              title={maximized ? t('attackTree.restore') : t('attackTree.maximize')}
+            >
+              {maximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
             </button>
             <button
               onClick={onClose}
@@ -868,7 +858,7 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
           </div>
         )}
 
-        <div className="flex gap-3 min-h-0 flex-1">
+        <div className="flex gap-3 min-h-[240px] flex-1">
           {hasPath ? (
             <div className="bg-slate-800/40 border border-slate-700 rounded-xl p-2 overflow-auto flex-1 min-w-0 min-h-0">
               <svg width={layout.width} height={layout.height} className="block">
@@ -1052,22 +1042,47 @@ export function AttackTreeModal({ attacker, allThreats, onClose }: AttackTreeMod
           )}
         </div>
 
-        {hasPath && graph.routes.length >= 2 && (
-          <RouteTable
-            analysis={analysis}
-            nodeById={nodeById}
-            graph={graph}
-            onHoverRoute={setHoveredRouteIndex}
-            t={t}
-          />
+        {availableTabs.length > 0 && activeTab && (
+          <div className="shrink-0 bg-slate-800/40 border border-slate-700 rounded-xl">
+            <div role="tablist" className="flex items-center gap-1 px-2 border-b border-slate-700">
+              {availableTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab.id === activeTab}
+                  onClick={() => setBottomTab(tab.id)}
+                  className={`px-3 py-2 text-xs font-bold border-b-2 ${
+                    tab.id === activeTab
+                      ? 'text-slate-100 border-rose-500'
+                      : 'text-slate-400 border-transparent hover:text-slate-200'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            <div role="tabpanel" className={`${maximized ? 'h-64' : 'h-48'} overflow-auto px-3 py-2`}>
+              {activeTab === 'route' && (
+                <RouteTable
+                  analysis={analysis}
+                  nodeById={nodeById}
+                  graph={graph}
+                  onHoverRoute={setHoveredRouteIndex}
+                  t={t}
+                />
+              )}
+              {activeTab === 'foothold' && <FootholdPanel links={footholdLinks} nodeById={nodeById} t={t} />}
+              {activeTab === 'detection' && (
+                <DetectionGapPanel routes={detectionRoutes} nodeById={nodeById} t={t} />
+              )}
+            </div>
+          </div>
         )}
 
-        {hasPath && detectionRoutes.length > 0 && <DetectionGapPanel routes={detectionRoutes} nodeById={nodeById} t={t} />}
-        {hasPath && footholdLinks.length > 0 && <FootholdPanel links={footholdLinks} nodeById={nodeById} t={t} />}
+        {graph.truncated && <p className="shrink-0 text-xs text-amber-400/80 font-bold">⚠ {t('attackTree.truncated')}</p>}
 
-        {graph.truncated && <p className="text-xs text-amber-400/80 font-bold">⚠ {t('attackTree.truncated')}</p>}
-
-        <p className="text-xs text-slate-500 leading-relaxed">{t('attackTree.footnote')}</p>
+        <p className="shrink-0 text-xs text-slate-500 leading-relaxed">{t('attackTree.footnote')}</p>
       </div>
 
       {matrixOpen && (
