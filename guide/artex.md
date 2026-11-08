@@ -2,6 +2,8 @@
 
 **English** | [日本語](artex.ja.md)
 
+> Threat and rule counts were measured at the time of writing. Rules added since then may raise the counts you see in the current version; the steps and how to read the results are unchanged.
+
 > ARTEX is a name belonging to its respective rights holders. This page explains how to put the attack techniques that actually worked
 > in a run of ARTEX (an AI autonomous penetration testing tool) onto CyberRiskScape threat cards. It is not provided, certified, or
 > endorsed by ARTEX's developer. The name is used descriptively.

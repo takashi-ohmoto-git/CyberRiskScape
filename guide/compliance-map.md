@@ -2,6 +2,8 @@
 
 **English** | [日本語](compliance-map.ja.md)
 
+> Threat and rule counts were measured at the time of writing. Rules added since then may raise the counts you see in the current version; the steps and how to read the results are unchanged.
+
 Detected threats are mapped to items in NIST CSF 2.0, the NIST AI RMF and Japan's AI Business
 Operator Guidelines. The compliance map is **a viewer for that mapping, in both directions**.
 

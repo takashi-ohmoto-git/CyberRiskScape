@@ -2,6 +2,8 @@
 
 **English** | [日本語](security-context.ja.md)
 
+> Threat and rule counts were measured at the time of writing. Rules added since then may raise the counts you see in the current version; the steps and how to read the results are unchanged.
+
 AI can read code and find vulnerabilities. So why does a human need to draw a diagram?
 
 **Because some things are never written in the code.** Where you drew the trust boundaries, what

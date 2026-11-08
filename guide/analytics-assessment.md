@@ -2,6 +2,8 @@
 
 **English** | [日本語](analytics-assessment.ja.md)
 
+> Threat and rule counts were measured at the time of writing. Rules added since then may raise the counts you see in the current version; the steps and how to read the results are unchanged.
+
 Once the threats are listed, the work is **assessing and recording them one by one**. Analytics puts
 **all three records — risk score, risk treatment and control implementation status — on one
 screen**.

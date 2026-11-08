@@ -2,6 +2,8 @@
 
 **English** | [日本語](reading-threats.ja.md)
 
+> Threat and rule counts were measured at the time of writing. Rules added since then may raise the counts you see in the current version; the steps and how to read the results are unchanged.
+
 Once the diagram is drawn, the right pane fills with threats. **This is where threat modeling
 actually happens.** This page covers how to read what is listed, how to record your decisions, and
 how to get the result out of the tool.

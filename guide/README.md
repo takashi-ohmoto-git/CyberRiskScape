@@ -2,6 +2,8 @@
 
 **English** | [日本語](README.ja.md)
 
+> Threat and rule counts were measured at the time of writing. Rules added since then may raise the counts you see in the current version; the steps and how to read the results are unchanged.
+
 A list of how to use each feature of CyberRiskScape. For the project overview, its features and how
 to build it, see the [repository README](../README.md).
 

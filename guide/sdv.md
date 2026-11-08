@@ -2,6 +2,8 @@
 
 **English** | [日本語](sdv.ja.md)
 
+> Threat and rule counts were measured at the time of writing. Rules added since then may raise the counts you see in the current version; the steps and how to read the results are unchanged.
+
 > UN Regulation No. 155, ISO/SAE 21434, CAN, ISO 15118, OCPP and the like are named here in a **descriptive** sense.
 > This page explains how to threat-model an SDV or connected-car design in CyberRiskScape. It is not provided, certified
 > or endorsed by the bodies that publish those standards. Standards are summarized, not quoted verbatim; only the

@@ -2,6 +2,8 @@
 
 **English** | [日本語](templates.ja.md)
 
+> Threat and rule counts were measured at the time of writing. Rules added since then may raise the counts you see in the current version; the steps and how to read the results are unchanged.
+
 Redrawing the same architecture over and over is wasted effort. CyberRiskScape can **export a
 diagram as JSON and import it into another project**.
 

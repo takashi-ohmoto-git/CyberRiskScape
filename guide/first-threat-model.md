@@ -2,6 +2,8 @@
 
 **English** | [日本語](first-threat-model.ja.md)
 
+> Threat and rule counts were measured at the time of writing. Rules added since then may raise the counts you see in the current version; the steps and how to read the results are unchanged.
+
 Using the operations from [Getting Started](getting-started.md), this page walks through
 **building one complete threat model**. The subject is an AI chatbot that searches internal
 knowledge and answers in natural language.
