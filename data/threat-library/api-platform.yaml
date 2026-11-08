@@ -145,6 +145,15 @@
 #     宣言すれば消える。エッジのルールは描いた向き（source→target）で判定するため、送り元から受け口へ線を引いた図が対象。
 #     API の認可（api-function-level-authorization）や弱いサービス認証（weak-service-auth）とは、呼び出し元の真正性を
 #     検証しているか（受け口が送信元を確かめるか）を問う点で異なる。
+#   - 料金が発生する外部機能（SMS・メール送信・有料の外部 API・生成 AI 等）を上限なく呼ばせる API
+#     （api-metered-function-cost-abuse-001、canonicalId: metered-function-cost-exhaustion、2026-11-08 新設）は、
+#     OWASP API4:2023 の費用の面。ゲートウェイの量の制限（gateway-resource-exhaustion）は入口の可用性、
+#     大量取得（api-bulk-data-harvesting）はデータの取得量、認証の入口への推測（login-credential-guessing）は
+#     アカウントの乗っ取りを問い、本ルールは「呼ばれるたびに料金が発生する処理の回数・宛先・金額の上限」を問う。
+#     エージェントの行動予算（agent-action-budget-gap）は AI エージェント自身の暴走で、subject が違う。
+#     運用状況 meteredCalls を「呼ぶ（Yes）」と入力したときだけ発火する（未入力では出さない。
+#     2026-11-08 ユーザー承認の「明示宣言時のみ発火」の例外。API の大半で発火して誤検知になるため）。
+#     呼ぶと宣言したうえで上限（meteredCallLimit）が未入力なら、大方針どおり上限なしと同じ扱いで発火する。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する。
@@ -874,3 +883,34 @@ rules:
         ref: "PR.DS-01"
       - standard: nist-csf-2.0
         ref: "PR.DS-02"
+
+  # ── BACKEND_API / FRONT_END_SERVER: 料金が発生する外部機能を上限なく呼ばせる（明示宣言時のみ）──
+  - id: api-metered-function-cost-abuse-001
+    canonicalId: metered-function-cost-exhaustion
+    framework: STRIDE
+    category: "Denial of Service"
+    name: "料金が発生する外部機能（SMS・メール送信・有料 API・生成 AI）を、回数・宛先・金額の上限なく呼ばせる"
+    severity: Medium
+    description: "{{nodeName}} は、呼び出しに応じて料金が発生する外部機能（SMS・メールの送信、有料の外部 API、生成 AI 等）を呼んでいる。利用者・送信元・宛先あたりの回数や、日・月あたりの件数・金額に上限が無い場合、攻撃者は SMS の認証コードの送信・会員登録の確認メール・問い合わせへの自動応答といった入口をスクリプトで繰り返し呼び、{{nodeName}} に有料の呼び出しを大量に行わせられる（Can）。料金の高い国の電話番号へ SMS を送らせて通信料の一部を受け取る手口（SMS ポンピング）や、生成 AI に長い応答を繰り返させる手口では、データは漏れなくても請求が短期間で膨らみ、提供元が利用を止めれば正規の利用者も認証コードや通知を受け取れなくなる。1 回ずつの呼び出しは正常な形なので、エラー監視や負荷監視では気づけない。一方、利用者・送信元・宛先ごとの回数の上限、送信先の国や番号帯の許可リスト、日・月あたりの件数と金額の上限を {{nodeName}} と提供元の設定の両方で強制し、超えたら止めて通知していれば、繰り返し呼ばれても損害は上限の範囲で止まる（Cannot）。送信元 IP ごとの回数制限だけでは、多数の送信元に分散した呼び出しは止まらない。blast radius は上限に達するまでに発生する料金と、提供元が利用を止めた場合の、その機能に頼る全利用者の手続き（認証・通知）。"
+    mitigation: "[Foundation] 料金が発生する呼び出しごとに、利用者・送信元・宛先（電話番号・メールアドレス）単位の回数の上限を設ける。SMS の送信先は、事業で必要な国・番号帯に限る。提供元の管理画面で、日・月あたりの件数や利用額の上限と、上限に近づいたときの通知を設定する。 [Enterprise] 送信の前にボット対策（CAPTCHA 等）を置き、同じ宛先や同じ番号帯への短時間の集中を検知する。送信件数・利用額・認証コードが実際に入力された割合を日次で監視し、異常があれば自動で送信を止める。生成 AI の呼び出しは、1 回の入力・出力の長さと利用者あたりの使用量に上限を設ける。 [Advanced] 利用額の上限に達したときに該当の機能だけを止めて他の機能を残す切り替えと、正規の利用者向けの代わりの手段（メール・アプリ内の通知・パスキー等）を用意する。料金が発生する呼び出しを 1 か所（送信の専用サービスや AI ゲートウェイ）に集め、上限と監視を一元化する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: BACKEND_API
+        - nodeType: FRONT_END_SERVER
+      # 呼び出し元から受け取る線があるときだけ（攻撃者が入口を繰り返し呼ぶ前提）。
+      connection:
+        direction: inbound
+      # 「呼ぶ（Yes）」と入力したときだけ発火する（未入力では出さない。2026-11-08 ユーザー承認の例外）。
+      # 呼ぶと宣言したうえで上限が未入力なら、上限なしと同じ扱い（大方針）。
+      posture:
+        meteredCalls: [Yes]
+        meteredCallLimit: [None, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.IR-04"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "OWASP API Security Top 10 2023 - API4:2023 Unrestricted Resource Consumption"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/"

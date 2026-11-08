@@ -96,6 +96,8 @@ const FIELD_LABEL_KEYS: Record<string, TranslationKey> = {
   deadLetterProtection: 'panels.posture.field.deadLetterProtection',
   updateSigning: 'panels.posture.field.updateSigning',
   updateRollbackProtection: 'panels.posture.field.updateRollbackProtection',
+  meteredCalls: 'panels.posture.field.meteredCalls',
+  meteredCallLimit: 'panels.posture.field.meteredCallLimit',
   dataNecessity: 'panels.posture.field.dataNecessity',
   recordVolume: 'panels.posture.field.recordVolume',
 };

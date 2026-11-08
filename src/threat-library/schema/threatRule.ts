@@ -161,6 +161,8 @@ export const NodePostureSchema = z.object({
   deadLetterProtection: z.enum(POSTURE_FIELD_VALUES.deadLetterProtection).optional(),
   updateSigning: z.enum(POSTURE_FIELD_VALUES.updateSigning).optional(),
   updateRollbackProtection: z.enum(POSTURE_FIELD_VALUES.updateRollbackProtection).optional(),
+  meteredCalls: z.enum(POSTURE_FIELD_VALUES.meteredCalls).optional(),
+  meteredCallLimit: z.enum(POSTURE_FIELD_VALUES.meteredCallLimit).optional(),
   dataNecessity: z.enum(POSTURE_FIELD_VALUES.dataNecessity).optional(),
   recordVolume: z.enum(POSTURE_FIELD_VALUES.recordVolume).optional(),
   lastReviewedAt: PostureDateSchema.optional(),
@@ -209,7 +211,9 @@ export const PostureMatchSchema = z
     deadLetterProtection: postureValues(POSTURE_FIELD_VALUES.deadLetterProtection),
     updateSigning: postureValues(POSTURE_FIELD_VALUES.updateSigning),
     updateRollbackProtection: postureValues(POSTURE_FIELD_VALUES.updateRollbackProtection),
-    dataNecessity: postureValues(POSTURE_FIELD_VALUES.dataNecessity),
+    meteredCalls: postureValues(POSTURE_FIELD_VALUES.meteredCalls),
+    meteredCallLimit: postureValues(POSTURE_FIELD_VALUES.meteredCallLimit),
+    dataNecessity:postureValues(POSTURE_FIELD_VALUES.dataNecessity),
     recordVolume: postureValues(POSTURE_FIELD_VALUES.recordVolume),
   })
   .refine((p) => POSTURE_ENUM_KEYS.some((k) => p[k] !== undefined), {

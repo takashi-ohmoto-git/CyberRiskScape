@@ -257,6 +257,13 @@ export const POSTURE_FIELD_VALUES = {
   updateSigning: ['Verified', 'None'],
   /** 更新サーバー：版・対象・チャネル・期限の束縛と巻き戻しの防止を強制しているか */
   updateRollbackProtection: ['Enforced', 'None'],
+  /**
+   * 料金が発生する外部機能（SMS・メール送信・有料の外部 API・生成 AI 等）を呼ぶか。
+   * 未入力では脅威を出さない（明示宣言時のみ発火。2026-11-08 ユーザー承認の例外）。
+   */
+  meteredCalls: ['Yes', 'No'],
+  /** 料金が発生する呼び出しの上限（回数・宛先・金額）の強制。meteredCalls が Yes のときに意味を持つ */
+  meteredCallLimit: ['Enforced', 'None'],
   /** データ資産の保有の必要性 */
   dataNecessity: ['Required', 'UnderReview', 'NotRequired'],
   /** データ資産の件数規模 */
@@ -285,6 +292,7 @@ export const POSTURE_GROUPS = [
   'container',
   'broker',
   'update',
+  'meteredCalls',
 ] as const;
 export type PostureGroup = (typeof POSTURE_GROUPS)[number];
 
@@ -304,6 +312,7 @@ export const POSTURE_GROUP_FIELDS: Readonly<Record<PostureGroup, readonly Postur
   container: ['workloadPrivilegeLimit', 'admissionCoverage', 'selectorControl'],
   broker: ['topicAccessScope', 'producerAuthentication', 'deadLetterProtection'],
   update: ['updateSigning', 'updateRollbackProtection'],
+  meteredCalls: ['meteredCalls', 'meteredCallLimit'],
 };
 
 /** 運用状況。すべて optional。未設定は `Unknown`＝対策なしとして脅威を評価する。 */
@@ -335,7 +344,9 @@ export interface NodePosture {
   deadLetterProtection?: (typeof POSTURE_FIELD_VALUES.deadLetterProtection)[number];
   updateSigning?: (typeof POSTURE_FIELD_VALUES.updateSigning)[number];
   updateRollbackProtection?: (typeof POSTURE_FIELD_VALUES.updateRollbackProtection)[number];
-  dataNecessity?: (typeof POSTURE_FIELD_VALUES.dataNecessity)[number];
+  meteredCalls?: (typeof POSTURE_FIELD_VALUES.meteredCalls)[number];
+  meteredCallLimit?: (typeof POSTURE_FIELD_VALUES.meteredCallLimit)[number];
+  dataNecessity?:(typeof POSTURE_FIELD_VALUES.dataNecessity)[number];
   recordVolume?: (typeof POSTURE_FIELD_VALUES.recordVolume)[number];
   /** 最終点検日（YYYY-MM-DD）。記録用で脅威の判定には使わない。全型で入力可。 */
   lastReviewedAt?: string;
