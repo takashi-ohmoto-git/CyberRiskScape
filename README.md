@@ -37,6 +37,31 @@ For the feature list, see [here](guide/README.md).
 
 ---
 
+## Problems it solves
+
+| Problem | How CyberRiskScape solves it |
+|---|---|
+| **Design and threat modeling** | |
+| Threat modeling needs experts and time, so it cannot be run for every design change | Draw the architecture, and 297 rules list the threats that fit it. Start from templates; unset attributes are assumed to be the bad value so nothing is missed ([Getting Started](guide/getting-started.md)) |
+| Conventional methods cannot surface the risks of AI agents, LLMs, MCP servers and long-term memory | Agentic AI is a first-class component, evaluated with rules based on OWASP LLM, Agentic, MITRE ATLAS and more ([AI-driven development](guide/ai-driven-development.md)) |
+| The threat model goes stale with every design change and cannot keep up with code written by AI | Coding agents query threats and update the diagram over MCP, and CI detects new threats from diagram diffs and blocks the PR ([MCP](guide/mcp-integration.md), [CI](guide/ci-integration.md)) |
+| You cannot tell where an AI-agent attacker would get in and what it would go after first | Place an AI agent attacker on the diagram to see the entry points it can use, the targets it is likely to go after and the paths it would prioritize, along with choke points where one countermeasure cuts the most paths and monitoring blind spots. Techniques are shown on ATT&CK and MITRE F3 matrices ([Attack paths](guide/attack-paths.md), [Where to cut the attack paths](guide/agentic-attacker-paths.md)) |
+| **Vulnerability and assessment results** | |
+| Scanners produce too many findings to decide what to fix first, and low-rated findings get put off | Findings are tied to diagram nodes and components, and a priority (P1–P4) is given with reasons from attack paths, CISA KEV, EPSS and CISA SSVC. It shows chains of individually low-rated findings that together reach important assets ([Vulnerability Management with OSS Scanners](guide/oss-vulnerability-management.md)) |
+| Each product's results are separate, so the overall risk cannot be explained | Results from each product, such as SARIF, CycloneDX, SPDX, OCSF and SCAP, are imported into a common model and re-read in the context of your architecture, assets and trust boundaries ([Integrations](guide/integrations.md)) |
+| There is no basis for scoping assessments and penetration tests, and no way to tell whether results really hold | Export a test plan and the scope that may be tested (RoE) from the threat model. Results that autonomous AI penetration testing (Strix, CyberStrikeAI) confirmed with a PoC are shown as "verified" on threat cards ([Test plan](guide/pentest-plan.md), [importing verification](guide/oss-vulnerability-management.md)) |
+| **External exposure and supply chain** | |
+| What is visible from outside does not match the inventory, and admin consoles you thought were closed remain | Import assets observed by ASM (Shodan, ScopeSentry) and AI penetration testing, and list the assets that contradict the diagram's "externally exposed" input ([Reducing exposure](guide/exposure-reduction.md)) |
+| Leaks through SaaS providers, contractors and OSS components cannot be tracked | Tie SBOM components to nodes and look up the affected nodes when a serious vulnerability is announced. Rank contractor connection paths in the order to switch to multi-factor authentication, and raise the leak of data entrusted to SaaS providers and contractors as a threat ([SBOM](guide/sbom.md), [NCO advisory](guide/nco-advisory-2026-11.md)) |
+| **Operations and reporting** | |
+| Every new security alert or guideline means checking whether it applies to you | Turn a published alert's measures into a checklist applied to the diagram, showing each item's status (action needed, no issue, etc.) and related nodes. CI can block on items needing action ([IPA alert](guide/ipa-alert-2026-10.md)) |
+| When a compromise is suspected, it is unclear where to look | Produce an investigation plan with what to check and which logs to read for each node on the attack paths, and report the collected evidence overlaid on the diagram ([Compromise investigation](guide/compromise-investigation.md)) |
+| Preparing explanations for executives and auditors takes effort | Export a PDF report with a one-page executive summary, and map threats to NIST CSF 2.0, NIST AI RMF and Japan's AI Business Operator Guidelines ([Report](guide/report-export.md), [Compliance](guide/compliance-map.md)) |
+| In a PQC (post-quantum cryptography) migration, it is unclear what needs to change | Split paths into segments at the nodes that terminate encryption and judge PQC readiness per segment. Also check cryptographic libraries and algorithms from a CBOM ([PQC migration](guide/pqc-migration.md)) |
+| Confidential design information cannot be handed to external clouds or AI | No server needed; it runs entirely in the browser. It makes no external connections and calls no LLM, so it also works in closed environments |
+
+---
+
 ## What makes it different
 
 ### Agentic AI is a first-class citizen
