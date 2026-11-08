@@ -38,6 +38,7 @@ export const enRoe: Partial<Record<TranslationKey, string>> = {
   'roe.reason.internetZone': 'target in an Internet trust boundary',
 
   'roe.addressHint': 'address hint: {hint} (confirm)',
+  'roe.addressAsset': 'address (assets registered on the node): {hint} (confirm)',
   'roe.addressNone': 'no address hint (confirm manually)',
 
   'roe.approval.intro':

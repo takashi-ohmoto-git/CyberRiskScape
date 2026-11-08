@@ -38,9 +38,11 @@ export function roeToMarkdown(doc: RoeDocument): string {
   } else {
     out.push(t('roe.inScope.rule'), '');
     for (const e of doc.inScope) {
-      const hint = e.addressHint
-        ? ` — ${t('roe.addressHint', { hint: e.addressHint })}`
-        : ` — ${t('roe.addressNone')}`;
+      const hint = !e.addressHint
+        ? ` — ${t('roe.addressNone')}`
+        : e.addressSource === 'asset'
+          ? ` — ${t('roe.addressAsset', { hint: e.addressHint })}`
+          : ` — ${t('roe.addressHint', { hint: e.addressHint })}`;
       const undeclared = e.reason === 'undeclared' ? ` ${t('roe.inScope.undeclared')}` : '';
       out.push(`- **${`${e.id} ${e.name}`.trim()}** (${e.type}, ${t(ZONE_KEY[e.zone])})${hint}${undeclared}`);
     }

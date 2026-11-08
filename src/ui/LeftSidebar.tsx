@@ -200,7 +200,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
     } else if (format === 'roe') {
       triggerDownload(
         `${base.replace(/^threat-report/, 'roe')}.md`,
-        roeToMarkdown(buildRoe(input, new Date())),
+        roeToMarkdown(buildRoe({ ...input, assets: s.assets }, new Date())),
         'text/markdown;charset=utf-8',
       );
     } else if (format === 'attack-navigator') {

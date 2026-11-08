@@ -1,5 +1,6 @@
 import {
   ATTACK_OBJECTIVE_APPLICABLE,
+  type Asset,
   type DiagramBoundary,
   type DiagramEdge,
   type DiagramNode,
@@ -44,6 +45,11 @@ export interface RoeInput {
   boundaries: DiagramBoundary[];
   projectMeta: ProjectMeta;
   layer: LayerKey;
+  /**
+   * 図のノードに結びついた資産（取り込み・手入力）。あればアドレスの手がかりをここから取る
+   * （docs/node-address-asset-panel.md §3.3）。省略時はラベル・説明の走査だけ。
+   */
+  assets?: readonly Asset[];
 }
 
 export interface RoeScopeEntry {
@@ -55,8 +61,13 @@ export interface RoeScopeEntry {
   name: string;
   /** 所属ゾーンの信頼区分（未宣言を含む）。 */
   zone: RoeZone;
-  /** label / description から拾ったアドレスの手がかり（FQDN・IP・URL）。空なら手がかり無し。 */
+  /**
+   * アドレスの手がかり（FQDN・IP・URL）。空なら手がかり無し。
+   * 結びついた資産があればその host・ip・url を「, 」区切りで全部、無ければ label / description から 1 つ。
+   */
   addressHint: string;
+  /** 手がかりの出どころ。`asset`＝ノードに結びついた資産、`text`＝ラベル・説明の走査、空＝手がかり無し。 */
+  addressSource: 'asset' | 'text' | '';
   /** out-of-scope の理由（ThirdParty 所有 / 外部ゾーン）。in-scope では空。 */
   reason: string;
 }
@@ -80,7 +91,7 @@ export interface RoeDocument {
 }
 
 /** label + description から最初に見つかったアドレスらしき文字列を 1 つ返す（確認は人に委ねる）。 */
-function addressHintOf(node: DiagramNode): string {
+function textAddressHintOf(node: DiagramNode): string {
   const text = `${node.label ?? ''} ${node.description ?? ''}`;
   const url = text.match(/https?:\/\/[^\s)]+/i);
   if (url) return url[0];
@@ -89,6 +100,25 @@ function addressHintOf(node: DiagramNode): string {
   const host = text.match(/\b(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}\b/i);
   if (host) return host[0];
   return '';
+}
+
+/**
+ * アドレスの手がかり。ノードに結びついた資産（同じレイヤー）があれば、その host・ip・url を
+ * 出てきた順に重複なしで全部返す。無ければ従来どおりラベル・説明から 1 つ拾う（後方互換）。
+ */
+function addressHintOf(
+  node: DiagramNode,
+  layer: LayerKey,
+  assets: readonly Asset[],
+): Pick<RoeScopeEntry, 'addressHint' | 'addressSource'> {
+  const seen = new Set<string>();
+  for (const a of assets) {
+    if (a.subject?.nodeId !== node.id || a.subject.layer !== layer) continue;
+    for (const v of [a.host, a.ip, a.url]) if (v) seen.add(v);
+  }
+  if (seen.size > 0) return { addressHint: [...seen].join(', '), addressSource: 'asset' };
+  const text = textAddressHintOf(node);
+  return { addressHint: text, addressSource: text ? 'text' : '' };
 }
 
 /** ruleId の接頭辞で、承認・スコープ・自己拡張の脅威が発火しているかを判定する。 */
@@ -125,7 +155,7 @@ export function buildRoe(input: RoeInput, now: Date, locale: Locale = getLocale(
     type: n.type,
     name: getNodeDisplayName(n),
     zone,
-    addressHint: addressHintOf(n),
+    ...addressHintOf(n, input.layer, input.assets ?? []),
     reason,
   });
 

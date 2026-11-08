@@ -38,6 +38,7 @@ export const jaRoe = {
   'roe.reason.internetZone': 'インターネット（Internet）の信頼境界にある対象',
 
   'roe.addressHint': 'アドレスの手がかり: {hint}（要確認）',
+  'roe.addressAsset': 'アドレス（ノードに登録した資産）: {hint}（要確認）',
   'roe.addressNone': 'アドレスの手がかりなし（手動で確認）',
 
   'roe.approval.intro':

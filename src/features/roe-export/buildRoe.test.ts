@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { buildRoe, type RoeInput } from './buildRoe';
 import { roeToJson, roeToMarkdown } from './roeOutput';
 import { analyzeProject } from '../../cli/analyze';
+import type { Asset } from '../../core/model/types';
 
 const NOW = new Date('2026-10-20T12:00:00Z'); // generatedAt は実行環境の日付
 
@@ -89,3 +90,71 @@ describe('buildRoe (sample-project)', () => {
     expect(parsed.approvalPolicy.length).toBe(6);
   });
 });
+
+describe('buildRoe アドレスの手がかり（資産優先）', () => {
+  const asset = (id: string, nodeId: string, over: Partial<Asset> = {}): Asset => ({
+    id,
+    source: { format: 'manual', product: 'Manual', importedAt: '2026-11-08T00:00:00Z' },
+    externalId: id,
+    identifiers: [],
+    kind: 'service',
+    host: 'staging.example.com',
+    subject: { layer: 'L1', nodeId },
+    ...over,
+  });
+
+  /**
+   * sample-project の最初の in-scope ノードにラベルの手がかりを付け、`makeAssets(そのノードの id)` の資産で RoE を作る。
+   * 資産は必ず対象ノードに付くので、条件分岐なしで検証できる。
+   */
+  function roeFor(makeAssets: (nodeId: string) => Asset[], label = 'Web（old.example.com）') {
+    const input = sampleInput();
+    expect(input.layer).toBe('L1');
+    const targetId = buildRoe(input, NOW, 'ja').inScope[0].id;
+    const node = input.nodes.find((n) => (n.seq != null ? `C${n.seq}` : n.id) === targetId);
+    expect(node).toBeDefined();
+    node!.label = label;
+    const doc = buildRoe({ ...input, assets: makeAssets(node!.id) }, NOW, 'ja');
+    return { doc, entry: doc.inScope.find((e) => e.id === targetId)! };
+  }
+
+  it('ノードに結びついた資産がある → host・ip・url を重複なしで全部出し、出どころは asset（ラベルより優先）', () => {
+    const { entry } = roeFor((id) => [
+      asset('a1', id, { ip: '203.0.113.10', port: 443 }),
+      asset('a2', id, { ip: '203.0.113.10', port: 80 }),
+      asset('a3', id, { kind: 'endpoint', url: 'https://staging.example.com/api/v1/runs' }),
+    ]);
+    expect(entry).toMatchObject({
+      addressHint: 'staging.example.com, 203.0.113.10, https://staging.example.com/api/v1/runs',
+      addressSource: 'asset',
+    });
+  });
+
+  it('資産が他ノード・他レイヤーのものだけ → 使わず、従来どおりラベルから拾う（出どころは text）', () => {
+    const { entry } = roeFor((id) => [
+      asset('x1', 'other-node', { ip: '203.0.113.99' }),
+      { ...asset('x2', id), subject: { layer: 'L2', nodeId: id } },
+    ]);
+    expect(entry).toMatchObject({ addressHint: 'old.example.com', addressSource: 'text' });
+  });
+
+  it('資産もラベルの手がかりも無い → 空で、出どころも空', () => {
+    const { entry } = roeFor(() => [], 'Web サーバー');
+    expect(entry).toMatchObject({ addressHint: '', addressSource: '' });
+  });
+
+  it('Markdown は出どころで文言を分ける（資産＝登録した資産、ラベル＝手がかり。どちらも要確認）', () => {
+    const viaAsset = roeToMarkdown(roeFor((id) => [asset('m1', id, { ip: '203.0.113.10' })]).doc);
+    expect(viaAsset).toContain('アドレス（ノードに登録した資産）: staging.example.com, 203.0.113.10（要確認）');
+    const viaText = roeToMarkdown(roeFor(() => []).doc);
+    expect(viaText).toContain('アドレスの手がかり: old.example.com（要確認）');
+  });
+
+  it('英語でも資産の文言が翻訳される', () => {
+    const { doc } = roeFor((id) => [asset('m1', id)]);
+    const en = roeToMarkdown(buildRoe({ ...sampleInput(), assets: [] }, NOW, 'en'));
+    expect(en).not.toContain('roe.addressAsset');
+    expect(roeToMarkdown({ ...doc, locale: 'en' })).toContain('address (assets registered on the node): staging.example.com (confirm)');
+  });
+});
+

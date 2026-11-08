@@ -85,7 +85,7 @@ import { BUNDLED_AITECH_MAP, BUNDLED_FINDING_MAP } from '../features/findings-re
 import { buildThreatReport, toDCRHThreatModelMarkdown, toJsonObject } from '../features/export/threatReport';
 import { effectiveSeverity } from '../core/model/risk';
 import { setLocale, translate, type Locale } from '../i18n';
-import { ATTACK_OBJECTIVE_APPLICABLE, LAYER_KEYS, MAX_FINDINGS, type Finding, type FrameworkView, type Severity } from '../core/model/types';
+import { ATTACK_OBJECTIVE_APPLICABLE, LAYER_KEYS, MAX_FINDINGS, type Asset, type Finding, type FrameworkView, type Severity } from '../core/model/types';
 import { formatElementalId } from '../core/model/elementalId';
 import { getChangeTriggers } from '../change-triggers/loader/bundledChangeTriggers';
 import { loadChangeTriggers } from '../change-triggers/loader/loadChangeTriggers';
@@ -2181,15 +2181,19 @@ ${USAGE}`);
   setLocale(locale);
 
   let results: LayerAnalysisResult[];
+  let assets: Asset[] | undefined;
   try {
-    results = analyzeProject(readJsonFile(file), { layer, framework, locale });
+    const raw = readJsonFile(file);
+    results = analyzeProject(raw, { layer, framework, locale });
+    // ノードに結びついた資産（取り込み・手入力）をアドレスの手がかりに使う
+    assets = resolveProject(raw).assets;
   } catch (e) {
     fail(e instanceof Error ? e.message : String(e));
   }
   const target = results[0];
   if (!target) fail('ノードのあるレイヤーがありません。');
 
-  const doc = buildRoe(target.input, new Date(), locale);
+  const doc = buildRoe({ ...target.input, assets }, new Date(), locale);
   writeOutput(format === 'json' ? roeToJson(doc) : roeToMarkdown(doc), values.out);
   process.stderr.write(
     `交戦規定（RoE）／スコープ宣言を出力しました（${target.layer}・許可対象 ${doc.inScope.length} 件・スコープ外 ${doc.outOfScope.length} 件）
