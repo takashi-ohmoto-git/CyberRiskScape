@@ -30,6 +30,15 @@ describe('nucleiToFindings', () => {
     expect(f).toMatchObject({ severity: 'Critical', sourceSeverity: 'critical', title: 'Example Framework RCE', observedAt: '2026-11-07T01:00:00Z', source: { format: 'nuclei', product: 'Nuclei', scope: 'dast' } });
   });
 
+  it('cvss-metrics のベクターを cvss に残す。無い・形の違う値は持たない', () => {
+    expect(by('CVE-2099-0001')?.cvss).toBe('CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H');
+    expect(conv.findings.filter((f) => f.cvss)).toHaveLength(1);
+    const bad = parseNuclei('{"template-id":"t","info":{"severity":"high","classification":{"cvss-metrics":"AV:N/AC:L/Au:N/C:C/I:C/A:C"}},"matched-at":"https://example.com/"}');
+    if (!bad.ok) throw new Error(bad.error);
+    const out = nucleiToFindings({ results: bad.results, map: BUNDLED_FINDING_MAP, scope: 'dast', importedAt: '2026-11-07T00:00:00.000Z' });
+    expect(out.findings[0]?.cvss).toBeUndefined();
+  });
+
   it('CVE なし・CWE-89 → 対応表の canonicalId', () => {
     const f = by('sqli-error-based');
     expect(f?.canonicalIds).toContain('api-query-injection');

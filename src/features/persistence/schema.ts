@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ASSET_FORMATS, BOM_FORMATS, CRYPTO_TERMINATIONS, FINDING_CONDITION_KINDS, FINDING_FORMATS, FINDING_OUTCOMES, MAX_ASSETS, MAX_FINDING_CONDITIONS, MAX_FINDING_OPEN_QUESTIONS, MAX_BOM_COMPONENTS, MAX_FINDINGS, type Asset } from '../../core/model/types';
+import { ASSET_FORMATS, BOM_FORMATS, CRYPTO_TERMINATIONS, CVSS_VECTOR_RE,FINDING_CONDITION_KINDS, FINDING_FORMATS, FINDING_OUTCOMES, MAX_ASSETS, MAX_FINDING_CONDITIONS, MAX_FINDING_OPEN_QUESTIONS, MAX_BOM_COMPONENTS, MAX_FINDINGS, type Asset } from '../../core/model/types';
 import { assetIdentifiers, toIsoTimestamp } from '../../core/model/assetIdentity';
 import {
   AgencyLevelSchema,
@@ -440,6 +440,7 @@ const PersistedFindingSchema = z.object({
       date: z.string().max(40).optional(),
     })
     .optional(),
+  cvss: z.string().max(FINDING_TEXT_MAX).regex(CVSS_VECTOR_RE).optional(),
 });
 
 /**

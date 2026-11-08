@@ -21,6 +21,14 @@ decisions:
   - id: Act
     description: できるだけ早く対応し、経営層を含めて判断する。
 
+# CVSS ベクターから Technical Impact を決める規則（CyberRiskScape の対応づけ。CISA の文書には無い）。
+# SSVC の total＝「ソフトの振る舞いを完全に制御できる、または全情報を開示させられる」のどちらか。
+# CVSS の C:H（機密性の完全な喪失）・I:H（完全性の完全な喪失）をそれぞれに当て、どれか 1 つでもあれば total、無ければ partial。
+# A:H（停止のみ）は total にしない。v4.0 は脆弱なシステム側の VC・VI で同じ判定。Scope・後続システム（SC・SI）は見ない。
+# 出典（CVSS の指標の定義）: FIRST, Common Vulnerability Scoring System v3.1 / v4.0 Specification Document（Impact Metrics）。
+cvssTechnicalImpact:
+  total: ['C:H', 'I:H', 'VC:H', 'VI:H']
+
 rows:
   - { exploitation: none, automatable: no, technicalImpact: partial, missionWellbeing: low, decision: Track }
   - { exploitation: none, automatable: no, technicalImpact: partial, missionWellbeing: medium, decision: Track }

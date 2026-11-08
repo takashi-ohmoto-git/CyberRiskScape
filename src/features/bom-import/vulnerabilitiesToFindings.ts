@@ -1,4 +1,4 @@
-import type { Finding, FindingIdentifier, FindingSource, Severity } from '../../core/model/types';
+import { CVSS_VECTOR_RE, type Finding, type FindingIdentifier, type FindingSource, type Severity } from '../../core/model/types';
 import { normalizeSeverity } from '../findings-import/replaceFindings';
 import type { ParsedBomItem, ParsedVulnerability } from './parseBom';
 
@@ -40,6 +40,18 @@ const isEpssRating = (r: ParsedVulnerability['ratings'][number]) => r.method?.to
 function epssOf(ratings: ParsedVulnerability['ratings']): number | undefined {
   const s = ratings.filter((r) => isEpssRating(r) && r.score !== undefined && r.score >= 0 && r.score <= 1).map((r) => r.score as number);
   return s.length > 0 ? Math.max(...s) : undefined;
+}
+
+/** CVSS のベクター（v3.x・v4.0）のうち score が最大の rating のもの（同点は先のもの）。 */
+function cvssOf(ratings: ParsedVulnerability['ratings']): string | undefined {
+  let best: { vector: string; score: number } | undefined;
+  for (const r of ratings) {
+    const vector = r.vector?.trim();
+    if (!vector || !CVSS_VECTOR_RE.test(vector)) continue;
+    const score = r.score ?? -1;
+    if (!best || score > best.score) best = { vector, score };
+  }
+  return best?.vector;
 }
 
 /** ratings の最大。score しか無ければ CVSS の帯で分ける。none・info・unknown は Low。 */
@@ -84,6 +96,7 @@ export function vulnerabilitiesToFindings(
     }
     const sev = severityOf(v.ratings);
     const epss = epssOf(v.ratings);
+    const cvss = cvssOf(v.ratings);
     for (const part of v.affects as ParsedBomItem[]) {
       const purl = part.identifiers.find((i) => i.scheme === 'purl')?.value;
       const label = `${part.name}${part.version ? `@${part.version}` : ''}`;
@@ -104,6 +117,7 @@ export function vulnerabilitiesToFindings(
         ...(sev.sourceSeverity ? { sourceSeverity: sev.sourceSeverity } : {}),
         canonicalIds: [UNPATCHED_CANONICAL_ID],
         ...(epss !== undefined ? { epss: { score: epss } } : {}),
+        ...(cvss ? { cvss } : {}),
         ...(subject ? { subject } : {}),
         ...(observedAt ? { observedAt } : {}),
       });

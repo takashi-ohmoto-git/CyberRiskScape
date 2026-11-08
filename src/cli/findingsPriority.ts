@@ -93,7 +93,7 @@ const PRIORITY_TEXT: Record<FindingPriority, string> = {
   P4: 'P4（経路上の根拠なし）',
 };
 
-/** SSVC の判定を表に出す文字列。仮定の値が 1 つでもあれば ※ を付ける（Technical Impact は常に仮置きなので常に付く）。 */
+/** SSVC の判定を表に出す文字列。仮定の値が 1 つでもあれば ※ を付ける（CVSS ベクターの無い指摘は Technical Impact が仮置きなので付く）。 */
 const ssvcCell = (s: SsvcAssessment) => `${s.decision}${Object.values(s.assumed).some(Boolean) ? '※' : ''}`;
 
 /** 表のセルに入れる文字列の無害化（改行・縦線）。 */
@@ -123,7 +123,7 @@ export function priorityToMarkdown(out: FindingsPriorityOutput): string {
     '- SSVC：CISA の判定（Track / Track* / Attend / Act）を P1〜P4 とは別の物差しとして併記する。' +
       SSVC_DECISIONS.map((d) => `${d}＝${BUNDLED_SSVC.descriptions[d].replace(/。$/, '')}`).join('、') +
       '。',
-    '- SSVC の `※` は仮定を含む。未入力・図から決まらない値は悪い側に置いている。Technical Impact は深刻度からの仮置きなので、人が確かめる。',
+    '- SSVC の `※` は仮定を含む。未入力・図から決まらない値は悪い側に置いている。Technical Impact は CVSS ベクター（C:H・I:H があれば total）で決め、ベクターの無い指摘は深刻度から仮置きするので人が確かめる。',
     '',
   );
   const counts = SSVC_DECISIONS.map((d) => `${d} ${result.items.filter((i) => i.ssvc.decision === d).length} 件`).join(' / ');
@@ -225,6 +225,7 @@ export function priorityToJson(out: FindingsPriorityOutput): Record<string, unkn
       exploitation: i.exploitation,
       kev: i.finding.kev ?? null,
       epss: i.finding.epss ?? null,
+      cvss: i.finding.cvss ?? null,
       reachesTargets: i.reachesTargets.map((t) => ({ nodeId: t.nodeId, node: name(i.layer, t.nodeId), hops: t.hops })),
       chains: i.chainIndexes,
       ssvcDecision: {

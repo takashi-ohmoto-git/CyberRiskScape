@@ -1165,7 +1165,15 @@ export interface Finding {
   kev?: FindingKev;
   /** FIRST EPSS：今後 30 日以内に悪用の動きが観測される確率（0〜1）。kev と同じく事実の欄で、深刻度は変えない。 */
   epss?: FindingEpss;
+  /**
+   * 製品が付けた CVSS のベクター文字列（v3.x・v4.0。例：`CVSS:3.1/AV:N/…/C:H/I:N/A:N`）。
+   * SSVC の Technical Impact を根拠つきで決めるのに使う。深刻度は変えない。
+   */
+  cvss?: string;
 }
+
+/** 保存・取り込みで受け付ける CVSS ベクター（v3.0・v3.1・v4.0）。 */
+export const CVSS_VECTOR_RE = /^CVSS:(3\.[01]|4\.0)(\/[A-Z]{1,3}:[A-Za-z]{1,6}){4,40}$/;
 
 /** 指摘の確からしさ（Finding.outcome）。 */
 export const FINDING_OUTCOMES = ['attempted', 'unverified'] as const;

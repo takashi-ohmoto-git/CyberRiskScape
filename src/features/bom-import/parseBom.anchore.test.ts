@@ -33,6 +33,25 @@ describe('parseBom・vulnerabilitiesToFindings（Grype の CycloneDX）', () => 
     expect(parsed.vulnerabilities).toHaveLength(2);
   });
 
+  it('ratings の CVSS ベクターを cvss に残す（EPSS の rating は使わない）', () => {
+    expect(out.findings.find((f) => f.externalId.startsWith('CVE-2026-0301'))?.cvss).toBe('CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H');
+    expect(out.findings.find((f) => f.externalId.startsWith('GHSA-aaaa-bbbb-cccc'))?.cvss).toBe('CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N');
+  });
+
+  it('CVSS ベクターが複数あれば score の大きい rating のもの。v2 の形は持たない', () => {
+    const base = { id: 'CVE-2099-0002', references: [], affects: [{ name: 'p', identifiers: [] }] } as never as Parameters<typeof vulnerabilitiesToFindings>[0][number];
+    const two = vulnerabilitiesToFindings(
+      [{ ...base, ratings: [
+        { score: 5, method: 'CVSSv31', vector: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N' },
+        { score: 9.1, method: 'CVSSv4', vector: 'CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N' },
+      ] }],
+      SOURCE, undefined, undefined,
+    );
+    expect(two.findings[0]?.cvss).toBe('CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N');
+    const v2 = vulnerabilitiesToFindings([{ ...base, ratings: [{ score: 10, method: 'CVSSv2', vector: 'AV:N/AC:L/Au:N/C:C/I:C/A:C' }] }], SOURCE, undefined, undefined);
+    expect(v2.findings[0]?.cvss).toBeUndefined();
+  });
+
   it('affects を bom-ref で部品に解決し、脆弱性 × 影響部品で 3 件 → 除外なし', () => {
     expect(out.findings).toHaveLength(3);
     expect(out.excluded).toBe(0);

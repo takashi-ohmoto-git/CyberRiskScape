@@ -22,7 +22,7 @@ const NucleiResultSchema = z.object({
       name: Str,
       severity: Str,
       classification: z
-        .object({ 'cve-id': StrList, 'cwe-id': StrList, 'cvss-score': Num, 'epss-score': Num, 'epss-percentile': Num })
+        .object({ 'cve-id': StrList, 'cwe-id': StrList, 'cvss-score': Num, 'cvss-metrics': Str, 'epss-score': Num, 'epss-percentile': Num })
         .optional()
         .catch(undefined),
     })

@@ -542,11 +542,18 @@ verbatim.
    Referenced by: data/threat-library/identity.yaml
 
 --------------------------------------------------------------------------------
-28. FIRST — Exploit Prediction Scoring System (EPSS)
+28. FIRST — Exploit Prediction Scoring System (EPSS) and Common Vulnerability
+    Scoring System (CVSS)
    https://www.first.org/epss/
+   https://www.first.org/cvss/
    The CLI import-epss reads the daily EPSS scores file that the user
    downloads from FIRST. No EPSS data is bundled in this repository. See
    FIRST's site for the terms of use of EPSS data.
+   The confidentiality and integrity impact metrics defined in the CVSS v3.1
+   and v4.0 specifications (C, I, VC, VI) are referenced by
+   data/ssvc/cisa-ssvc.yaml to derive the SSVC Technical Impact from a
+   finding's CVSS vector. CVSS is a registered trademark of FIRST, used
+   descriptively; no CVSS specification text is reproduced.
 
 --------------------------------------------------------------------------------
 29. MITRE Fight Fraud Framework (F3) v1.2

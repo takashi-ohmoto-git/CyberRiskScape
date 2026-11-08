@@ -1,11 +1,12 @@
 import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
-import type { Finding, Severity } from '../../core/model/types';
+import { CVSS_VECTOR_RE, type Finding, type Severity } from '../../core/model/types';
 
 /**
  * CISA SSVC の判定（Track / Track* / Attend / Act）。判定表は `data/ssvc/cisa-ssvc.yaml`（出典はそのファイル冒頭）。
  * 指摘の文脈（露出・標的・KEV 等）から 4 つの判定点を決め、表で判定する。
- * 値が図から決まらないときは悪い側の仮定を置き、`assumed` で示す（Technical Impact は常に深刻度からの仮置き）。
+ * 値が図から決まらないときは悪い側の仮定を置き、`assumed` で示す（Technical Impact は CVSS ベクターがあれば
+ * `cvssTechnicalImpact` の規則で決め、無ければ深刻度から仮置き）。
  * 推奨であり判断は人（docs/attack-tree-analysis.md §12）。
  */
 
@@ -27,6 +28,7 @@ export interface SsvcPoints {
 const SsvcFileSchema = z.object({
   schemaVersion: z.literal(1),
   decisions: z.array(z.object({ id: z.enum(SSVC_DECISIONS), description: z.string().min(1) })),
+  cvssTechnicalImpact: z.object({ total: z.array(z.string().regex(/^[A-Z]{1,3}:[A-Z]$/)).min(1) }),
   rows: z.array(
     z.object({
       exploitation: z.enum(SSVC_EXPLOITATION),
@@ -41,6 +43,8 @@ const SsvcFileSchema = z.object({
 export interface SsvcTable {
   descriptions: Record<SsvcDecision, string>;
   rows: Map<string, SsvcDecision>;
+  /** CVSS のこの指標値が 1 つでもあれば Technical Impact＝total。 */
+  cvssTotal: ReadonlySet<string>;
 }
 
 const keyOf = (p: SsvcPoints) => `${p.exploitation}|${p.automatable}|${p.technicalImpact}|${p.missionWellbeing}`;
@@ -59,7 +63,7 @@ export function loadSsvcTable(text: string): SsvcTable {
   const descriptions = {} as Record<SsvcDecision, string>;
   for (const d of file.decisions) descriptions[d.id] = d.description;
   for (const id of SSVC_DECISIONS) if (!descriptions[id]) throw new Error(`[ssvc] decisions に ${id} がありません`);
-  return { descriptions, rows };
+  return { descriptions, rows, cvssTotal: new Set(file.cvssTechnicalImpact.total) };
 }
 
 // ── 同梱データ（Vite の import.meta.glob で raw 文字列として取り込む。CLI ビルド・Vitest でも動く）──
@@ -78,10 +82,23 @@ export function ssvcDecide(points: SsvcPoints, table: SsvcTable = BUNDLED_SSVC):
   return d;
 }
 
+/**
+ * CVSS ベクターから Technical Impact を決める。規則は判定表の `cvssTechnicalImpact`。
+ * 受け付けない形のベクター（v2 等）は undefined（呼び出し側で深刻度から仮置きする）。
+ */
+export function technicalImpactFromCvss(
+  vector: string | undefined,
+  table: SsvcTable = BUNDLED_SSVC,
+): { value: SsvcPoints['technicalImpact']; matched: string[] } | undefined {
+  if (!vector || !CVSS_VECTOR_RE.test(vector)) return undefined;
+  const matched = vector.split('/').slice(1).filter((m) => table.cvssTotal.has(m));
+  return { value: matched.length > 0 ? 'total' : 'partial', matched };
+}
+
 /** 判定点ごとの「仮定」の印。 */
 export interface SsvcAssumed {
   automatable: boolean;
-  /** 常に true（深刻度からの仮置き。人が確かめる）。 */
+  /** CVSS ベクターが無く、深刻度から仮置きしたとき true（人が確かめる）。 */
   technicalImpact: boolean;
   missionWellbeing: boolean;
 }
@@ -146,8 +163,17 @@ export function ssvcPointsFor(item: SsvcInput): SsvcAssessment {
   }
   if (item.exposureAssumed) reasons.push('Automatable：入口・到達の判定が未入力の攻撃面属性の仮定に依存している');
 
-  const technicalImpact: SsvcPoints['technicalImpact'] = HIGH_SEVERITY.has(f.severity) ? 'total' : 'partial';
-  reasons.push(`Technical Impact=${technicalImpact}（仮置き）：深刻度 ${f.severity} から置いた。人が確かめる`);
+  const fromCvss = technicalImpactFromCvss(f.cvss);
+  const technicalImpact: SsvcPoints['technicalImpact'] = fromCvss?.value ?? (HIGH_SEVERITY.has(f.severity) ? 'total' : 'partial');
+  if (fromCvss) {
+    reasons.push(
+      fromCvss.value === 'total'
+        ? `Technical Impact=total：CVSS ベクターに ${fromCvss.matched.join('・')} がある`
+        : 'Technical Impact=partial：CVSS ベクターで機密性・完全性の影響が High ではない',
+    );
+  } else {
+    reasons.push(`Technical Impact=${technicalImpact}（仮置き）：CVSS ベクターが無いため深刻度 ${f.severity} から置いた。人が確かめる`);
+  }
 
   let missionWellbeing: SsvcPoints['missionWellbeing'];
   let missionAssumed = false;
@@ -170,7 +196,7 @@ export function ssvcPointsFor(item: SsvcInput): SsvcAssessment {
   return {
     decision: ssvcDecide(points),
     points,
-    assumed: { automatable: autoAssumed, technicalImpact: true, missionWellbeing: missionAssumed },
+    assumed: { automatable: autoAssumed, technicalImpact: !fromCvss, missionWellbeing: missionAssumed },
     reasons,
   };
 }

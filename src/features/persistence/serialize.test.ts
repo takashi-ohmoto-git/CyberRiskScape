@@ -490,6 +490,13 @@ describe('serializeProject / deserializeProject', () => {
     expect(deserializeProject(serializeProject({ ...STATE, findings: [bad as never] }))).toBeNull();
   });
 
+  it('findings: CVSS ベクターは round-trip で保持され、形の違う値（v2）は読み込まない', () => {
+    const f = { ...FINDING, cvss: 'CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N/U:Clear' };
+    expect(deserializeProject(serializeProject({ ...STATE, findings: [f] }))?.findings).toEqual([f]);
+    const bad = { ...FINDING, cvss: 'AV:N/AC:L/Au:N/C:C/I:C/A:C' };
+    expect(deserializeProject(serializeProject({ ...STATE, findings: [bad] }))).toBeNull();
+  });
+
   it('findings: 上限を超えると読み込まない', () => {
     const out = JSON.parse(JSON.stringify(serializeProject({ ...STATE, findings: [FINDING] })));
     out.findings = Array.from({ length: MAX_FINDINGS + 1 }, (_, i) => ({ ...FINDING, id: `p:${i}` }));

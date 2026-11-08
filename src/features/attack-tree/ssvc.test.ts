@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ssvcPointsFor, type SsvcInput } from './ssvc';
+import { ssvcPointsFor, technicalImpactFromCvss, type SsvcInput } from './ssvc';
 import type { Finding, Severity } from '../../core/model/types';
 
 function input(over: Partial<Omit<SsvcInput, 'finding'>> & { finding?: Partial<Finding> } = {}): SsvcInput {
@@ -79,5 +79,39 @@ describe('ssvcPointsFor', () => {
     const a = ssvcPointsFor(input({ finding: { severity: 'High', kev: { dateAdded: '2099-01-01' } as never }, exposure: 'entry', isTarget: true }));
     expect(a.decision).toBe('Act');
     expect(a.reasons.length).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe('technicalImpactFromCvss', () => {
+  it.each<[string, string, string[]]>([
+    ['CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N', 'total', ['C:H']],
+    ['CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N', 'total', ['I:H']],
+    ['CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H', 'total', ['C:H', 'I:H']],
+    ['CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H', 'partial', []],
+    ['CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N', 'partial', []],
+    ['CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:H/VA:N/SC:N/SI:N/SA:N', 'total', ['VI:H']],
+    ['CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:H/SC:H/SI:H/SA:H', 'partial', []],
+  ])('%s → %s', (vector, value, matched) => {
+    expect(technicalImpactFromCvss(vector)).toEqual({ value, matched });
+  });
+
+  it.each([undefined, '', 'AV:N/AC:L/Au:N/C:C/I:C/A:C', 'CVSS:2.0/AV:N/AC:L/Au:N/C:C/I:C/A:C'])('受け付けない形 %s → undefined', (v) => {
+    expect(technicalImpactFromCvss(v)).toBeUndefined();
+  });
+});
+
+describe('ssvcPointsFor（CVSS ベクターあり）', () => {
+  it('ベクターがあれば深刻度より優先し、仮定の印を外す', () => {
+    const a = ssvcPointsFor(input({ finding: { severity: 'Critical', cvss: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H' } }));
+    expect(a.points.technicalImpact).toBe('partial');
+    expect(a.assumed.technicalImpact).toBe(false);
+    expect(a.reasons.some((r) => r.startsWith('Technical Impact=partial：CVSS'))).toBe(true);
+  });
+
+  it('Low でも C:H があれば total、根拠に指標を書く', () => {
+    const a = ssvcPointsFor(input({ finding: { severity: 'Low', cvss: 'CVSS:3.1/AV:N/AC:H/PR:H/UI:R/S:U/C:H/I:N/A:N' } }));
+    expect(a.points.technicalImpact).toBe('total');
+    expect(a.assumed.technicalImpact).toBe(false);
+    expect(a.reasons).toContain('Technical Impact=total：CVSS ベクターに C:H がある');
   });
 });

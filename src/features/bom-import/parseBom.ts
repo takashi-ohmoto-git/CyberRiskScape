@@ -32,7 +32,7 @@ export interface ParsedVulnerability {
   /** source.name */
   source?: string;
   references: { id: string; source?: string }[];
-  ratings: { score?: number; severity?: string; method?: string }[];
+  ratings: { score?: number; severity?: string; method?: string; vector?: string }[];
   /** analysis.state（VEX） */
   state?: string;
   affects: ParsedBomItem[];
@@ -113,7 +113,7 @@ const CycloneDxVulnerabilitySchema = z.object({
   id: z.string().min(1).max(200),
   source: z.object({ name: str }).optional().catch(undefined),
   references: list(z.object({ id: z.string().min(1).max(200), source: z.object({ name: str }).optional().catch(undefined) })),
-  ratings: list(z.object({ score: num, severity: str, method: str })),
+  ratings: list(z.object({ score: num, severity: str, method: str, vector: str })),
   analysis: z.object({ state: str }).optional().catch(undefined),
   affects: list(z.object({ ref: str })),
 });

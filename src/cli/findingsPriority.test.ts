@@ -101,7 +101,7 @@ describe('findingsPriority（SSVC）', () => {
     expect(md).toMatch(/\| (Track\*?|Attend|Act)※ \|/);
     expect(md).toContain('Track＝標準の更新期間で対応する');
     expect(md).toContain('Act＝できるだけ早く対応し');
-    expect(md).toContain('Technical Impact は深刻度からの仮置き');
+    expect(md).toContain('Technical Impact は CVSS ベクター');
     expect(md).toMatch(/SSVC の内訳：Track \d+ 件 \/ Track\* \d+ 件 \/ Attend \d+ 件 \/ Act \d+ 件/);
   });
 

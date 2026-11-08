@@ -1,4 +1,4 @@
-import type { Finding, FindingIdentifier, LayerKey, Severity } from '../../core/model/types';
+import { CVSS_VECTOR_RE, type Finding, type FindingIdentifier, type LayerKey, type Severity } from '../../core/model/types';
 import { UNPATCHED_CANONICAL_ID } from '../bom-import/vulnerabilitiesToFindings';
 import { capFindings } from '../findings-import/replaceFindings';
 import { cweToCanonicalIds, type FindingMapping } from '../findings-report/findingMap';
@@ -130,6 +130,7 @@ export function nucleiToFindings(input: NucleiToFindingsInput): { findings: Find
     if (typeof epss === 'number' && Number.isFinite(epss)) identifiers.push({ scheme: 'epss', value: String(epss) });
     const inUnit = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 1;
     const pct = cls?.['epss-percentile'];
+    const cvss = cls?.['cvss-metrics']?.trim();
 
     const label = nucleiLabel(r['matched-at'], r.host);
     const externalId = `${r['template-id']}:${label ?? ''}:${r['matcher-name'] ?? ''}`.slice(0, EXTERNAL_ID_MAX);
@@ -146,6 +147,7 @@ export function nucleiToFindings(input: NucleiToFindingsInput): { findings: Find
       ...(sevRaw ? { sourceSeverity: sevRaw.slice(0, 50) } : {}),
       canonicalIds,
       ...(inUnit(epss) ? { epss: { score: epss, ...(inUnit(pct) ? { percentile: pct } : {}) } } : {}),
+      ...(cvss && CVSS_VECTOR_RE.test(cvss) ? { cvss } : {}),
       ...(input.subject ? { subject: input.subject } : {}),
       ...(label ? { resource: { label } } : {}),
       ...(r.timestamp ? { observedAt: r.timestamp.slice(0, 40) } : {}),
