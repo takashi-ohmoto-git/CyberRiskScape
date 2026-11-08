@@ -139,5 +139,5 @@ Import them into the member API (C11) of the NCO advisory template (`guide/templ
 ## Where to go next
 
 - Prioritisation — [OSS vulnerability management](oss-vulnerability-management.md)
-- Attack techniques verified by a penetration test — [ARTEX](artex.md)
+- Attack techniques verified by autonomous AI penetration testing (Strix, CyberStrikeAI) — [Vulnerability Management with OSS Scanners](oss-vulnerability-management.md)
 - All integrations — [Integrations](integrations.md)

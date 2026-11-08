@@ -143,5 +143,5 @@ node dist-cli/main.js import-security-audit model.json \
 ## 次に読むもの
 
 - 優先順位の付け方 — [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md)
-- ペンテストで実証した攻撃手段を載せる — [ARTEX](artex.ja.md)
+- AI 自律ペンテスト（Strix・CyberStrikeAI）で実証した攻撃手段を載せる — [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md)
 - 連携の一覧 — [連携ガイド](integrations.ja.md)

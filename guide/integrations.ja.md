@@ -61,7 +61,6 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | **Metasploit** | 書き出しの変換・取り込み（`db_export -f xml` を `convert-metasploit` → `import-pentest`、ホストとサービスは `import-metasploit-assets`。CLI のみ） | 攻撃が通った脆弱性を脅威カードに「実証」として載せる・ホストとサービスを Asset タブに載せる | [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) §9 |
 | **CyberStrikeAI** | 脆弱性の変換（`convert-cyberstrikeai`。API の応答を保存した JSON、または API（GET のみ・トークンは環境変数）→ ペンテストの台帳 YAML → `import-pentest`。CLI のみ） | AI 自律ペンテストで人が confirmed にした脆弱性を、脅威カードに「実証」として載せる。どの脅威・ノードかは人が台帳で決める | [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) §4 |
 | **CycloneDX・SPDX** | 部品の取り込み（`import-sbom`。CLI のみ）・書き出し（`export-spdx`・`export-sbom-ai`。画面からも可） | SBOM・CBOM・AI BOM の部品をノードに結びつけ、Asset タブで確かめて、標準形式で書き出す（[ガイド](sbom.ja.md)） |
-| **ARTEX** | 台帳 YAML の取り込み（`import-pentest`）・資産の取り込み（`import-artex-assets`。Asset タブに表示）。CLI のみ | 実際に実行して成立した攻撃手段を脅威カードに「実証」として表示する（開発者が検証した内容に限り網羅しない） | [ARTEX が実際に実行した攻撃手段を脅威カードで見る](artex.ja.md) |
 | **Cisco AI Defense**（skill-scanner / mcp-scanner） | 検査結果の突き合わせ（`findings-report --skill-scanner / --mcp-scanner`。結果ファイル・CLI のみ） | エージェントスキル・MCP サーバーの検査結果を、AITech 対応表を介して図の脅威と突き合わせる・描き漏れを見つける | [エージェントスキル・MCP サーバーの検査結果を脅威モデルと突き合わせる](ai-scanners.ja.md) |
 | **Cloudflare security-audit**（スキル） | 指摘の取り込み（`findings.json`・`coverage-ledger.json`。画面と CLI `import-security-audit`） | ソースで実証した指摘と、配置を確かめないと決まらない要確認を脅威カードに出し、要確認の前提を図の事実と並べる | [AI によるソース監査の指摘を構成図に載せる](security-audit.ja.md) |
 | **Velociraptor** | 収集結果（展開したフォルダー）の取り込み・調査計画書への artifact の手がかり・EDR / DFIR サーバーのステンシルと脅威ルール | 侵害が疑われるときに、攻撃経路上のノードで集める artifact を決め、収集結果をノードに重ねて報告する | [侵害の疑いがあるときに、脅威モデルで調べる範囲を決め、結果を報告する](compromise-investigation.ja.md) |
@@ -86,7 +85,7 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | 脆弱性診断の指摘を AI で直す流れを作りたい | Veracode |
 | クラウドの検査結果（AWS）を図の属性に反映したい | Prowler |
 | OSS の診断ツールの結果を、攻撃経路の上で優先順位を付けて管理したい | Trivy・Syft / Grype・ZAP・Nuclei・CyberStrikeAI・Strix・Metasploit（[ガイド](oss-vulnerability-management.ja.md)） |
-| ペンテストで実際に通った攻撃手段を脅威カードに載せたい | ARTEX |
+| ペンテストで実際に通った攻撃手段を脅威カードに載せたい | Strix・CyberStrikeAI・Metasploit（[ガイド](oss-vulnerability-management.ja.md)） |
 | エージェントスキル・MCP サーバーの検査結果を図と突き合わせたい | Cisco AI Defense（skill-scanner / mcp-scanner） |
 | AI にソースを監査させた指摘を、実証と要確認に分けて図に載せたい | Cloudflare security-audit |
 | 侵害が疑われるときに、調べる範囲を決めて結果を報告したい | Velociraptor・同梱のトリアージスクリプト（[ガイド](compromise-investigation.ja.md)） |

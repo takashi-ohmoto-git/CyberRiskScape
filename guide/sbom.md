@@ -109,4 +109,4 @@ The CycloneDX output adds the saved components to the elements built from the di
 
 - Check cryptographic migration — [Supporting PQC Migration](pqc-migration.md)
 - The list of integrations — [Integrations](integrations.md)
-- Import assets — [Seeing the Attack Techniques ARTEX Actually Executed on Threat Cards](artex.md)
+- Import hosts and services as assets — section 9 (Metasploit) of [Vulnerability Management with OSS Scanners](oss-vulnerability-management.md)

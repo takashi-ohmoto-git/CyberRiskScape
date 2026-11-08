@@ -109,4 +109,4 @@ CycloneDX の出力には、図から作る要素に、保存した部品が加�
 
 - 暗号の移行を確かめる — [PQC 移行を支援する](pqc-migration.ja.md)
 - 他の製品との連携の一覧 — [連携](integrations.ja.md)
-- 資産を取り込む — [ARTEX が実際に実行した攻撃手段を脅威カードで見る](artex.ja.md)
+- ホストとサービスを資産として取り込む — [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) §9（Metasploit）
