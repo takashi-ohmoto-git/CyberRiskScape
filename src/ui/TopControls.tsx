@@ -7,6 +7,7 @@ import {
   Redo2,
   Scan,
   ScanSearch,
+  TableProperties,
   Undo2,
   ZoomIn,
   ZoomOut,
@@ -32,6 +33,7 @@ export function TopControls() {
   const setActiveFramework = useDiagramStore((s) => s.setActiveFramework);
   const toggleFocusMode = useDiagramStore((s) => s.toggleFocusMode);
   const openAnalytics = useDiagramStore((s) => s.openAnalytics);
+  const openDfdList = useDiagramStore((s) => s.openDfdList);
   const openComplianceMap = useDiagramStore((s) => s.openComplianceMap);
   const openLibraryInspector = useDiagramStore((s) => s.openLibraryInspector);
   const canUndo = useDiagramStore(selectCanUndo);
@@ -93,6 +95,15 @@ export function TopControls() {
           <Redo2 size={18} />
         </button>
       </div>
+
+      <button
+        onClick={openDfdList}
+        className="flex items-center justify-center gap-1.5 bg-slate-900/90 backdrop-blur-xl p-2.5 rounded-2xl border border-slate-700 shadow-2xl hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition-all active:scale-95"
+        title={t('project.topControls.openDfdList')}
+      >
+        <TableProperties size={18} />
+        <span className="text-xs font-black">{t('project.dfdList.button')}</span>
+      </button>
 
       <button
         onClick={openAnalytics}

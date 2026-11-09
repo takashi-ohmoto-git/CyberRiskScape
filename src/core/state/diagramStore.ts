@@ -382,6 +382,8 @@ interface DiagramState {
   isComplianceMapOpen: boolean;
   /** Analytics（ElementalID 単位リスト）モーダルの開閉状態（UI 表示用、永続化しない）。 */
   isAnalyticsOpen: boolean;
+  /** DFD LIST（構成要素一覧・データフロー一覧）モーダルの開閉。 */
+  isDfdListOpen: boolean;
   /** 注意喚起チェックリストモーダルの開閉状態（UI 表示用、永続化しない）。 */
   isChecklistOpen: boolean;
   /** 脅威ライブラリ・インスペクタ（読み取り専用）モーダルの開閉状態（UI 表示用、永続化しない）。 */
@@ -570,6 +572,8 @@ interface DiagramState {
   closeComplianceMap: () => void;
   openAnalytics: () => void;
   closeAnalytics: () => void;
+  openDfdList: () => void;
+  closeDfdList: () => void;
   openChecklist: () => void;
   closeChecklist: () => void;
   openLibraryInspector: () => void;
@@ -692,6 +696,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   isProjectEditOpen: false,
   isComplianceMapOpen: false,
   isAnalyticsOpen: false,
+  isDfdListOpen: false,
   isChecklistOpen: false,
   isLibraryInspectorOpen: false,
   isTemplateModalOpen: false,
@@ -1331,6 +1336,8 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
   openAnalytics: () => set({ isAnalyticsOpen: true }),
   closeAnalytics: () => set({ isAnalyticsOpen: false }),
+  openDfdList: () => set({ isDfdListOpen: true }),
+  closeDfdList: () => set({ isDfdListOpen: false }),
   openChecklist: () => set({ isChecklistOpen: true }),
   closeChecklist: () => set({ isChecklistOpen: false }),
 

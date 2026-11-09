@@ -28,6 +28,7 @@ import { ProjectEditModal } from './ui/panels/ProjectEditModal';
 import { ComplianceMapModal } from './ui/panels/ComplianceMapModal';
 import { ChecklistModal } from './ui/panels/ChecklistModal';
 import { AnalyticsModal } from './ui/panels/AnalyticsModal';
+import { DfdListModal } from './ui/panels/DfdListModal';
 import { ManualThreatModal } from './ui/panels/ManualThreatModal';
 import { CustomRulesManagerModal } from './ui/panels/CustomRulesManagerModal';
 import { TemplateModal } from './ui/panels/TemplateModal';
@@ -125,6 +126,7 @@ export default function App() {
       <ComplianceMapModal />
       <ChecklistModal />
       <AnalyticsModal threats={threats} />
+      <DfdListModal />
       <ManualThreatModal />
       <CustomRulesManagerModal />
       <TemplateModal />
