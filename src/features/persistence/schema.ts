@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ASSET_FORMATS, BOM_FORMATS, CRYPTO_TERMINATIONS, CVSS_VECTOR_RE,FINDING_CONDITION_KINDS, FINDING_FORMATS, FINDING_OUTCOMES, MAX_ASSETS, MAX_FINDING_CONDITIONS, MAX_FINDING_OPEN_QUESTIONS, MAX_BOM_COMPONENTS, MAX_FINDINGS, type Asset } from '../../core/model/types';
+import { ASSET_FORMATS, BOM_FORMATS, CRYPTO_TERMINATIONS, CVSS_VECTOR_RE,EDGE_PROTOCOLS,FINDING_CONDITION_KINDS, FINDING_FORMATS, FINDING_OUTCOMES, MAX_ASSETS, MAX_FINDING_CONDITIONS, MAX_FINDING_OPEN_QUESTIONS, MAX_BOM_COMPONENTS, MAX_FINDINGS, type Asset } from '../../core/model/types';
 import { assetIdentifiers, toIsoTimestamp } from '../../core/model/assetIdentity';
 import {
   AgencyLevelSchema,
@@ -217,8 +217,12 @@ const PersistedEdgeSchema = z.object({
   dataFlow: DataFlowSchema.optional(),
   /** エッジに付与する自由記述ラベル。空文字は許容しない（未設定として扱う）。 */
   dataFlowName: z.string().min(1).max(80).optional(),
+  /** 説明（記録と表示のみ、後方互換のため optional）。ノードの description と同じく上限なし。 */
+  description: z.string().optional(),
   /** エッジ意味論ラベル（§2.22 1.6d、後方互換のため optional。未指定は 'data_flow' 相当）。 */
   semantic: EdgeSemanticSchema.optional(),
+  /** 通信方式・プロトコル（記録と表示のみ、後方互換のため optional）。 */
+  protocol: z.enum(EDGE_PROTOCOLS).optional(),
   /** 資格情報の発行元ノード id（§2.39 B-1、後方互換のため optional。未設定＝ローカル資格情報）。 */
   authProviderId: z.string().min(1).optional(),
   /** 暗号の詳細（PQC 移行支援、後方互換のため optional） */

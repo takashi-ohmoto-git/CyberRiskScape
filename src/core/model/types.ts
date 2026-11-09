@@ -732,6 +732,36 @@ export type EdgeSemantic =
   | 'rag_retrieval'
   | 'directory_sync';
 
+/**
+ * エッジの通信方式・プロトコル（記録と表示のみ。脅威エンジンは参照しない）。
+ * 暗号は `encryption` で表すため、ここは暗号化前の名前（HTTPS ではなく HTTP）。
+ * 暗号化版が別プロトコルのもの（SFTP / FTP・SSH / Telnet）だけ別の値にする。
+ * 画面のプルダウンは分類ごとの見出しで出すため、分類つきで定義する。
+ */
+export const EDGE_PROTOCOL_GROUPS = [
+  { group: 'web', protocols: ['http_rest', 'http_graphql', 'grpc', 'websocket', 'soap'] },
+  { group: 'ai', protocols: ['mcp', 'a2a'] },
+  { group: 'storage', protocols: ['db_sql', 'smb', 'nfs', 'iscsi'] },
+  { group: 'messaging', protocols: ['amqp', 'kafka', 'mqtt'] },
+  { group: 'identity', protocols: ['ldap', 'kerberos', 'saml', 'oidc_oauth', 'radius', 'scim'] },
+  { group: 'mail', protocols: ['smtp', 'imap_pop3'] },
+  { group: 'remote', protocols: ['ssh', 'rdp', 'telnet'] },
+  { group: 'fileTransfer', protocols: ['sftp', 'ftp'] },
+  { group: 'netOps', protocols: ['dns', 'snmp', 'syslog', 'ipsec'] },
+  { group: 'voice', protocols: ['sip', 'rtp', 'pstn'] },
+  { group: 'print', protocols: ['ipp_lpd'] },
+  { group: 'vehicle', protocols: ['can', 'automotive_ethernet', 'doip_uds', 'v2x', 'ocpp', 'cellular'] },
+  { group: 'wireless', protocols: ['bluetooth'] },
+  { group: 'other', protocols: ['proprietary', 'other'] },
+] as const;
+
+export type EdgeProtocolGroup = (typeof EDGE_PROTOCOL_GROUPS)[number]['group'];
+export type EdgeProtocol = (typeof EDGE_PROTOCOL_GROUPS)[number]['protocols'][number];
+export const EDGE_PROTOCOLS = EDGE_PROTOCOL_GROUPS.flatMap((g) => g.protocols) as unknown as readonly [
+  EdgeProtocol,
+  ...EdgeProtocol[],
+];
+
 export interface DiagramNode {
   id: string;
   /**
@@ -923,11 +953,15 @@ export interface DiagramEdge {
    * キャンバス上で線の中点付近に表示される。
    */
   dataFlowName?: string;
+  /** 説明（データ内容・通信の性質など。記録と表示のみで、脅威エンジンは参照しない）。 */
+  description?: string;
   /**
    * エッジの意味論ラベル。
    * 未指定エッジは脅威エンジンで `data_flow`（既定）として評価される。
    */
   semantic?: EdgeSemantic;
+  /** 通信方式・プロトコル（記録と表示のみ。未設定＝未記入）。 */
+  protocol?: EdgeProtocol;
   /**
    * 認証に用いる資格情報の発行元。
    * 同一レイヤー上の `AUTH_PROVIDER_APPLICABLE` なノード id を指す。参照先ノード削除時は

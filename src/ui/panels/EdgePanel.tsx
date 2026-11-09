@@ -17,11 +17,12 @@ import type {
   ComponentTypeId,
   DataFlow,
   DiagramEdge,
+  EdgeProtocol,
   EdgeSemantic,
   EncryptionType,
   NetworkType,
 } from '../../core/model/types';
-import { AUTH_PROVIDER_APPLICABLE } from '../../core/model/types';
+import { AUTH_PROVIDER_APPLICABLE, EDGE_PROTOCOL_GROUPS } from '../../core/model/types';
 import { getNodeDisplayName } from '../../core/model/nodeDisplay';
 import { selectActiveNodes, useDiagramStore } from '../../core/state/diagramStore';
 import { useT } from '../../i18n';
@@ -161,7 +162,7 @@ export function EdgePanel({ edge }: EdgePanelProps) {
           </div>
           <div className="mt-3">
             <label className="text-xs font-black text-slate-500 uppercase mb-2 block">
-              Data Flow Name
+              {t('panels.edge.dataFlowNameLabel')}
             </label>
             <input
               type="text"
@@ -174,6 +175,25 @@ export function EdgePanel({ edge }: EdgePanelProps) {
               maxLength={80}
               placeholder={t('panels.edge.dataFlowNamePlaceholder')}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white placeholder-slate-500 focus:outline-none focus:border-blue-400"
+            />
+          </div>
+          <div className="mt-3">
+            <label
+              htmlFor={`edge-desc-${edge.id}`}
+              className="text-xs font-black text-slate-500 uppercase mb-2 block"
+            >
+              {t('panels.edge.description')}
+            </label>
+            <textarea
+              id={`edge-desc-${edge.id}`}
+              value={edge.description ?? ''}
+              onChange={(e) => {
+                const v = e.target.value;
+                onUpdate(edge.id, 'description', v.length > 0 ? v : undefined);
+              }}
+              placeholder={t('panels.edge.descriptionPlaceholder')}
+              rows={4}
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-400 resize-y"
             />
           </div>
         </section>
@@ -210,6 +230,38 @@ export function EdgePanel({ edge }: EdgePanelProps) {
               {t('panels.edge.recommendedSuffix', { sourceType: sourceType ?? '', targetType: targetType ?? '' })}
             </p>
           )}
+        </section>
+        <section>
+          <label
+            htmlFor={`edge-protocol-${edge.id}`}
+            className="text-xs font-black text-slate-500 uppercase mb-2 block"
+          >
+            {t('panels.edge.protocolLabel')}
+          </label>
+          <select
+            id={`edge-protocol-${edge.id}`}
+            value={edge.protocol ?? ''}
+            onChange={(e) =>
+              onUpdate(
+                edge.id,
+                'protocol',
+                e.target.value === '' ? undefined : (e.target.value as EdgeProtocol),
+              )
+            }
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-blue-400"
+          >
+            <option value="">{t('panels.edge.protocolUnset')}</option>
+            {EDGE_PROTOCOL_GROUPS.map((g) => (
+              <optgroup key={g.group} label={t(`panels.edge.protocolGroup.${g.group}`)}>
+                {g.protocols.map((p) => (
+                  <option key={p} value={p}>
+                    {t(`panels.edge.protocol.${p}`)}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+          <p className="text-xs text-slate-500 mt-2 leading-relaxed">{t('panels.edge.protocolHint')}</p>
         </section>
         <section>
           <label className="text-xs font-black text-slate-500 uppercase mb-3 block">

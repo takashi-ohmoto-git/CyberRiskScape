@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { EDGE_PROTOCOLS } from '../../core/model/types';
 import {
   PERSISTED_PROJECT_SCHEMA_VERSION,
   PersistedProjectSchema,
@@ -568,6 +569,34 @@ describe('PersistedProjectSchema', () => {
   it('edge.semantic 未設定の旧データを受理する（後方互換）', () => {
     const r = PersistedProjectSchema.safeParse(VALID_PROJECT);
     expect(r.success).toBe(true);
+  });
+
+  // ─── edge.protocol ──────────
+  it('edge.protocol: 全ての有効値を受理する', () => {
+    for (const protocol of EDGE_PROTOCOLS) {
+      const r = PersistedProjectSchema.safeParse({
+        ...VALID_PROJECT,
+        edges: [{ ...VALID_PROJECT.edges[0], protocol }],
+      });
+      expect(r.success, `protocol "${protocol}" should be valid`).toBe(true);
+    }
+  });
+
+  it('edge.protocol: 未知の値（HTTPS など暗号込みの名前）を拒否する', () => {
+    const r = PersistedProjectSchema.safeParse({
+      ...VALID_PROJECT,
+      edges: [{ ...VALID_PROJECT.edges[0], protocol: 'https' }],
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it('edge.description: 説明を受理し、未設定の旧データも受理する', () => {
+    const r = PersistedProjectSchema.safeParse({
+      ...VALID_PROJECT,
+      edges: [{ ...VALID_PROJECT.edges[0], description: 'userId・name・email\n同期・書込み' }],
+    });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.edges?.[0].description).toBe('userId・name・email\n同期・書込み');
   });
 
   // ─── node.identityProviderKind ──────────

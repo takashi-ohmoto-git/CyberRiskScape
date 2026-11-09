@@ -285,6 +285,35 @@ describe('正常系：エッジ', () => {
     expect(project.idCounters!.L1.edge).toBe(3);
   });
 
+  it('add_edge / update_edge：protocol を設定でき、null で未設定に戻せる', () => {
+    const { project, results } = apply([
+      { op: 'add_edge', source: 'n-db', target: 'n-llm', auth: 'None', network: 'VPC', encryption: 'TLS', protocol: 'db_sql' },
+      { op: 'update_edge', id: 'e-1', set: { protocol: 'http_rest' } },
+    ]);
+    const layer = l1(project);
+    expect(layer.edges.find((e) => e.id === results[0].id)!.protocol).toBe('db_sql');
+    expect(layer.edges.find((e) => e.id === 'e-1')!.protocol).toBe('http_rest');
+    const cleared = apply([{ op: 'update_edge', id: 'e-1', set: { protocol: null } }], 'L1', project as unknown as Raw);
+    expect(l1(cleared.project).edges.find((e) => e.id === 'e-1')!.protocol).toBeUndefined();
+  });
+
+  it('add_edge / update_edge：description を設定でき、null で消せる', () => {
+    const { project, results } = apply([
+      { op: 'add_edge', source: 'n-db', target: 'n-llm', auth: 'None', network: 'VPC', encryption: 'TLS', description: '検索クエリ・同期' },
+      { op: 'update_edge', id: 'e-1', set: { description: '非同期・追記のみ' } },
+    ]);
+    expect(l1(project).edges.find((e) => e.id === results[0].id)!.description).toBe('検索クエリ・同期');
+    expect(l1(project).edges.find((e) => e.id === 'e-1')!.description).toBe('非同期・追記のみ');
+    const cleared = apply([{ op: 'update_edge', id: 'e-1', set: { description: null } }], 'L1', project as unknown as Raw);
+    expect(l1(cleared.project).edges.find((e) => e.id === 'e-1')!.description).toBeUndefined();
+  });
+
+  it('add_edge：未知の protocol は拒否', () => {
+    expect(() =>
+      apply([{ op: 'add_edge', source: 'n-db', target: 'n-llm', auth: 'None', network: 'VPC', encryption: 'TLS', protocol: 'https' }]),
+    ).toThrow();
+  });
+
   it('add_edge：自己ループ・発行元に不適切な型は拒否', () => {
     const base = { op: 'add_edge', auth: 'None', network: 'VPC', encryption: 'TLS' };
     expect(reasonOf(() => apply([{ ...base, source: 'n-db', target: 'n-db' }])).reason).toMatch(/同じノード/);

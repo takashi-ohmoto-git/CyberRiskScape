@@ -29,6 +29,7 @@ import {
   AUTH_PROVIDER_APPLICABLE,
   LOG_SINK_APPLICABLE,
   CRYPTO_TERMINATIONS,
+  EDGE_PROTOCOLS,
   IDENTITY_TIER_APPLICABLE,
   IDP_KIND_APPLICABLE,
   LAYER_KEYS,
@@ -117,6 +118,9 @@ const DATA_FLOW_DESC =
   'データ通信の向き（source から見た向き）。outbound＝source → target（既定）、inbound＝target → source、bidirectional＝双方向。キャンバスの矢印の向きと、脅威ルールの接続方向（inbound＝対象ノードがデータを受け取る側、bidirectional は両端とも送受信の両方）の判定に使われる。';
 const SEMANTIC_DESC =
   'エッジの意味（省略時は data_flow）：data_flow／tool_invocation（ツール呼び出し）／delegation（委任）／memory_read／memory_write／rag_retrieval／directory_sync。AI・エージェント系の脅威判定に使われる。';
+const PROTOCOL_DESC =
+  '通信方式・プロトコル（記録と表示のみ。脅威判定には使わない）。暗号は encryption で表すので HTTPS は http_rest＋encryption=TLS。update_edge では null で未設定に戻す。';
+const EdgeProtocolSchema = z.enum(EDGE_PROTOCOLS);
 const BOUNDARY_ID_DESC =
   '配置先の信頼境界の id（set の中ではなく操作の直下に置く）。座標は指定できず、サーバーが境界内に配置する。update_node では null で境界の外へ移動。';
 
@@ -225,7 +229,9 @@ const EdgeSetSchema = opObject({
   encryption: EncryptionTypeSchema.optional(),
   dataFlow: DataFlowSchema.optional().describe(DATA_FLOW_DESC),
   dataFlowName: z.string().min(1).max(80).nullable().optional(),
+  description: descStr.nullable().optional(),
   semantic: EdgeSemanticSchema.nullable().optional().describe(SEMANTIC_DESC),
+  protocol: EdgeProtocolSchema.nullable().optional().describe(PROTOCOL_DESC),
   authProviderId: idStr.nullable().optional(),
   crypto: EdgeCryptoSchema.nullable().optional(),
 });
@@ -300,7 +306,9 @@ export const OperationSchema = z.discriminatedUnion(
       encryption: EncryptionTypeSchema,
       dataFlow: DataFlowSchema.optional().describe(DATA_FLOW_DESC),
       dataFlowName: z.string().min(1).max(80).optional(),
+      description: descStr.optional(),
       semantic: EdgeSemanticSchema.optional().describe(SEMANTIC_DESC),
+      protocol: EdgeProtocolSchema.optional().describe(PROTOCOL_DESC),
       authProviderId: idStr.optional(),
       crypto: EdgeCryptoSchema.optional(),
     }),
@@ -656,7 +664,9 @@ function applyAddEdge(work: Work, op: Extract<Operation, { op: 'add_edge' }>): s
     encryption: op.encryption,
     dataFlow: op.dataFlow ?? 'outbound',
     ...(op.dataFlowName !== undefined ? { dataFlowName: op.dataFlowName } : {}),
+    ...(op.description !== undefined ? { description: op.description } : {}),
     ...(op.semantic !== undefined ? { semantic: op.semantic } : {}),
+    ...(op.protocol !== undefined ? { protocol: op.protocol } : {}),
     ...(authProviderId !== undefined ? { authProviderId } : {}),
     ...(op.crypto !== undefined ? { crypto: op.crypto } : {}),
   };
