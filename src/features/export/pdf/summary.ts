@@ -1,4 +1,11 @@
-import type { ControlStatusValue, LayerKey, Severity, SuppressionStatus, ThreatView } from '../../../core/model/types';
+import type {
+  ControlStatusValue,
+  DetectionAssumptionFlag,
+  LayerKey,
+  Severity,
+  SuppressionStatus,
+  ThreatView,
+} from '../../../core/model/types';
 import { isSuppressed } from '../../../core/model/types';
 import type { AxisLevel } from '../../../core/model/risk';
 import type { ThreatReportRow } from '../threatReport';
@@ -34,6 +41,8 @@ export interface SummaryItem {
   treatment: Treatment;
   /** 未設定は undefined。 */
   control: ControlStatusValue | undefined;
+  /** 未入力の属性を悪い値と仮定して出た脅威なら、その軸（大方針「未入力＝悪い値」）。仮定なしは空。 */
+  assumptions: DetectionAssumptionFlag[];
 }
 
 /** ThreatView が引けないときは「未対応・未設定・行の値」で扱う。 */
@@ -52,6 +61,7 @@ export function toSummaryItem(
     likelihood: row.likelihood,
     treatment: view?.suppression?.status ?? 'unaddressed',
     control: view?.controlStatus?.status,
+    assumptions: view?.assumptionFlags ?? [],
   };
 }
 
@@ -104,6 +114,8 @@ export const CONTROL_BUCKETS: readonly ControlBucket[] = ['implemented', 'requir
 
 export interface PdfSummary {
   activeCount: number;
+  /** 有効脅威のうち、未入力の仮定で出たもの。 */
+  assumedActiveCount: number;
   criticalHighCount: number;
   unaddressedCount: number;
   progressAll: Progress;
@@ -125,6 +137,7 @@ export function computeSummary(items: readonly SummaryItem[], layers: readonly L
   for (const i of active) controlCounts[i.control ?? 'unset'] += 1;
   return {
     activeCount: active.length,
+    assumedActiveCount: active.filter((i) => i.assumptions.length > 0).length,
     criticalHighCount: critHigh.length,
     unaddressedCount: active.filter((i) => i.treatment === 'unaddressed').length,
     progressAll: computeProgress(active),

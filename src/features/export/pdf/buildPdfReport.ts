@@ -1,7 +1,10 @@
 import { PDFDocument, rgb, type PDFFont, type PDFPage, type RGB } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import { BRANDING } from '../../../core/branding';
-import type { LayerKey, Severity, ThreatView } from '../../../core/model/types';
+import type { DetectionAssumptionFlag, LayerData, LayerKey, Severity, ThreatView } from '../../../core/model/types';
+import { getComponentRegistry } from '../../../component-library/defaultRegistry';
+import { buildDfdList, type DfdElementRef } from '../../dfd-list/buildDfdList';
+import { AUTH_KEYS, NETWORK_KEYS, TRUST_LEVEL_KEYS, encryptionLabel } from '../../dfd-list/dfdLabels';
 import { getComplianceMap } from '../../../compliance/loader/bundledComplianceMap';
 import { makeComplianceKey } from '../../../compliance/loader/loadComplianceMap';
 import type { StandardId } from '../../../compliance/schema/complianceItem';
@@ -39,6 +42,8 @@ export interface PdfReportLayer {
   threats: ThreatView[];
   /** 構成図（PNG バイト列）。無ければ図は出さない。 */
   diagramPng?: Uint8Array;
+  /** レイヤーの図。あれば付録に構成要素一覧・データフロー一覧を出す。 */
+  layerData?: LayerData;
 }
 
 export interface BuildPdfReportInput {
@@ -96,6 +101,8 @@ interface PreparedRow {
   impact: string;
   likelihood: string;
   comments: string;
+  /** 未入力の仮定の軸（訳語を区切り文字でつないだもの）。仮定なしは ''。 */
+  assumption: string;
 }
 
 interface PreparedLayer {
@@ -103,6 +110,9 @@ interface PreparedLayer {
   diagramPng?: Uint8Array;
   active: PreparedRow[];
   suppressed: PreparedRow[];
+  /** 構成要素一覧・データフロー一覧の表のセル（DFD LIST と同じ列順）。 */
+  components: string[][];
+  flows: string[][];
 }
 
 /** 制御文字を除き、改行は `\n` に正規化する（フォントに無い文字での描画エラー防止）。 */
@@ -154,13 +164,24 @@ function formatMitigation(row: ThreatReportRow): string {
   return clean(stripTierTags(row.countermeasure));
 }
 
+const ASSUMPTION_KEY: Record<DetectionAssumptionFlag, TranslationKey> = {
+  attackSurface: 'report.pdf.assumption.attackSurface',
+  agentAttributes: 'report.pdf.assumption.agentAttributes',
+  posture: 'report.pdf.assumption.posture',
+  userTrust: 'report.pdf.assumption.userTrust',
+};
+
+/** 仮定で出た脅威の名前の前に付ける印（日英共通。凡例は表の下に出す）。 */
+const ASSUMED_MARK = '* ';
+
 function prepareRow(item: SummaryItem, no: number, locale: Locale): PreparedRow {
   const r = item.row;
+  const assumed = item.assumptions.length > 0;
   return {
     layer: item.layer,
     no: String(no),
     asset: clean(r.asset),
-    name: clean(r.name || r.category),
+    name: `${assumed ? ASSUMED_MARK : ''}${clean(r.name || r.category)}`,
     severity: item.severity,
     status: translate(TREATMENT_KEY[item.treatment], locale),
     controlStatus: translate(CONTROL_KEY[item.control ?? 'unset'], locale),
@@ -172,6 +193,41 @@ function prepareRow(item: SummaryItem, no: number, locale: Locale): PreparedRow 
     impact: r.impact,
     likelihood: r.likelihood,
     comments: clean(r.comments),
+    assumption: item.assumptions
+      .map((f) => translate(ASSUMPTION_KEY[f], locale))
+      .join(translate('report.pdf.assumption.separator', locale)),
+  };
+}
+
+/** 付録の構成要素一覧・データフロー一覧のセル。並びと列は画面の DFD LIST と同じ。 */
+function prepareDfdTables(layer: LayerData | undefined, locale: Locale): { components: string[][]; flows: string[][] } {
+  if (!layer) return { components: [], flows: [] };
+  const t = (key: TranslationKey) => translate(key, locale);
+  const unset = t('project.dfdList.unset');
+  const registry = getComponentRegistry(locale);
+  const ref = (r: DfdElementRef) => clean(`${r.displayId} ${r.name}`.trim());
+  const list = buildDfdList(layer);
+  return {
+    components: list.components.map((c) => [
+      c.displayId,
+      clean(registry.get(c.type)?.label ?? c.type),
+      clean(c.name) || unset,
+      [
+        ...(c.parent ? [ref(c.parent)] : []),
+        ...c.zones.map((z) => `${ref(z)}（${t(TRUST_LEVEL_KEYS[z.trustLevel])}）`),
+      ].join('\n') || unset,
+      c.contains.map(ref).join('\n') || unset,
+      clean(c.description) || unset,
+    ]),
+    flows: list.flows.map((f) => [
+      f.displayId,
+      clean(f.name) || unset,
+      ref(f.from),
+      `${ref(f.to)}${f.bidirectional ? t('project.dfdList.bidirectional') : ''}`,
+      f.protocol ? t(`panels.edge.protocol.${f.protocol}`) : unset,
+      [t(NETWORK_KEYS[f.network]), t(AUTH_KEYS[f.auth]), encryptionLabel(f.encryption, t)].join('\n'),
+      clean(f.description) || unset,
+    ]),
   };
 }
 
@@ -190,7 +246,7 @@ function prepareLayer(l: PdfReportLayer, items: SummaryItem[], locale: Locale): 
   let n = 0;
   const active = sorted.filter((i) => !isSuppressedItem(i)).map((i) => prepareRow(i, ++n, locale));
   const suppressed = sorted.filter(isSuppressedItem).map((i) => prepareRow(i, ++n, locale));
-  return { layer: l.layer, diagramPng: l.diagramPng, active, suppressed };
+  return { layer: l.layer, diagramPng: l.diagramPng, active, suppressed, ...prepareDfdTables(l.layerData, locale) };
 }
 
 /** オブジェクト中の文字列値をすべて集める。 */
@@ -356,6 +412,7 @@ function detailBlock(ctx: Ctx, r: PreparedRow, t: T, top = false): void {
       { label: t('report.pdf.detail.likelihood'), value: r.likelihood },
       { label: t('report.pdf.detail.status'), value: r.status },
       { label: t('report.pdf.detail.controlStatus'), value: r.controlStatus },
+      ...(r.assumption ? [{ label: t('report.pdf.detail.assumption'), value: r.assumption }] : []),
     ],
     CONTENT_W,
     {
@@ -403,6 +460,18 @@ function detailBlock(ctx: Ctx, r: PreparedRow, t: T, top = false): void {
 // 実効深刻度/Effective ≈52pt、Unaddressed ≈70pt、Not applicable ≈76pt、FRONT_END_SERVER ≈104pt（空白で折り返す前提）。
 const THREAT_WIDTHS = [26, 106, 180, 53, 72, 78];
 
+/** 表に仮定の印が 1 件でもあれば、表の直下に凡例を出す。 */
+function assumedLegend(ctx: Ctx, rows: readonly PreparedRow[], t: T): void {
+  if (!rows.some((r) => r.assumption)) return;
+  ctx.cursor.advance(2);
+  paragraph(ctx, t('report.pdf.assumption.legend'), { size: SMALL, lineHeight: 11, color: MUTED });
+}
+
+// 構成要素一覧・データフロー一覧の列幅（合計 = CONTENT_W 515pt。説明は備考扱いで右端・広め）。
+const COMPONENT_WIDTHS = [28, 70, 95, 105, 72, 145];
+const FLOW_WIDTHS = [30, 66, 66, 66, 72, 85, 130];
+const DFD_TABLE_OPTS = { maxLines: 20 };
+
 function threatSection(ctx: Ctx, title: string, rows: PreparedRow[], t: T): void {
   heading(ctx, title, 11);
   ctx.cursor.advance(2);
@@ -423,6 +492,7 @@ function threatSection(ctx: Ctx, title: string, rows: PreparedRow[], t: T): void
       bold: [false, false, false, true],
     })),
   );
+  assumedLegend(ctx, rows, t);
   heading(ctx, t('report.pdf.section.details'), 10, 12);
   for (const r of rows) detailBlock(ctx, r, t);
 }
@@ -454,6 +524,10 @@ const STATIC_LABEL_KEYS: readonly TranslationKey[] = [
   'report.pdf.detail.controlStatus',
   'report.pdf.detail.firstStep',
   'report.pdf.detail.layer',
+  'report.pdf.detail.assumption',
+  'report.pdf.assumption.legend',
+  'report.pdf.dfd.components',
+  'report.pdf.dfd.flows',
   'report.pdf.footer.page',
   'report.pdf.top.heading',
   'report.pdf.top.rank',
@@ -521,7 +595,11 @@ export async function buildPdfReport(input: BuildPdfReportInput): Promise<Uint8A
   ].join('    ');
   const { progressAll, progressCriticalHigh } = summary;
   const metrics: Metric[] = [
-    { label: t('report.pdf.metric.active'), value: String(summary.activeCount), subs: [] },
+    {
+      label: t('report.pdf.metric.active'),
+      value: String(summary.activeCount),
+      subs: [t('report.pdf.metric.assumed', { count: summary.assumedActiveCount })],
+    },
     { label: t('report.pdf.metric.criticalHigh'), value: String(summary.criticalHighCount), subs: [] },
     {
       label: t('report.pdf.metric.progress'),
@@ -568,6 +646,14 @@ export async function buildPdfReport(input: BuildPdfReportInput): Promise<Uint8A
     ...layerHeaders.slice(1).map((_, i) => String(layerRows.reduce((a, r) => a + Number(r[i + 1]), 0))),
   ]);
 
+  // ── 付録の構成要素一覧・データフロー一覧の見出し ──
+  const componentHeaders = (['id', 'type', 'name', 'zone', 'contains', 'description'] as const).map((c) =>
+    t(`project.dfdList.col.${c}`),
+  );
+  const flowHeaders = (['id', 'flow', 'from', 'to', 'protocol', 'security', 'flowDescription'] as const).map((c) =>
+    t(`project.dfdList.col.${c}`),
+  );
+
   // ── 評価の前提 ──
   const premiseRows: [string, string][] = [
     [t('report.pdf.meta.project'), clean(project?.name ?? '')],
@@ -575,6 +661,7 @@ export async function buildPdfReport(input: BuildPdfReportInput): Promise<Uint8A
     [t('report.pdf.meta.businessImpact'), clean(project?.businessImpact ?? '')],
     [t('report.pdf.meta.securityObjectives'), clean(project?.securityObjectives ?? '')],
     [t('report.pdf.meta.framework'), first?.framework ?? ''],
+    [t('report.pdf.premise.unset'), t('report.pdf.premise.unsetBody')],
     [t('report.pdf.meta.schemaVersion'), String(THREAT_REPORT_SCHEMA_VERSION)],
   ];
 
@@ -582,7 +669,7 @@ export async function buildPdfReport(input: BuildPdfReportInput): Promise<Uint8A
   const texts: string[] = STATIC_LABEL_KEYS.map((k) => t(k));
   collectStrings(
     [layers, top, systemName, coverLine, metrics, topRows, topHeaders, treatmentHeaders, treatmentValues,
-      controlHeaders, controlValues, layerHeaders, layerRows, premiseRows],
+      controlHeaders, controlValues, layerHeaders, layerRows, premiseRows, componentHeaders, flowHeaders],
     texts,
   );
   const used = texts.join('');
@@ -619,6 +706,7 @@ export async function buildPdfReport(input: BuildPdfReportInput): Promise<Uint8A
     paragraph(ctx, t('report.pdf.top.empty'), { color: MUTED });
   } else {
     table(ctx, topHeaders, [34, 132, 106, 40, 53, 72, 78], topRows, compact); // 幅の根拠は THREAT_WIDTHS の注記。Rank/レイヤー ≈32/39pt
+    assumedLegend(ctx, top, t);
   }
   heading(ctx, t('report.pdf.counts.treatment'), 10, 6);
   table(ctx, treatmentHeaders, equalWidths(TREATMENTS.length), [{ cells: treatmentValues }], {
@@ -676,6 +764,16 @@ export async function buildPdfReport(input: BuildPdfReportInput): Promise<Uint8A
     paragraph(ctx, t('report.pdf.layer.heading', { layer: l.layer }), { font: bold, size: 15, lineHeight: 22 });
     ctx.cursor.advance(4);
     if (l.diagramPng) await drawDiagram(ctx, l.diagramPng);
+    if (l.components.length > 0) {
+      heading(ctx, t('report.pdf.dfd.components'), 11);
+      ctx.cursor.advance(2);
+      table(ctx, componentHeaders, COMPONENT_WIDTHS, l.components.map((cells) => ({ cells })), DFD_TABLE_OPTS);
+    }
+    if (l.flows.length > 0) {
+      heading(ctx, t('report.pdf.dfd.flows'), 11, 12);
+      ctx.cursor.advance(2);
+      table(ctx, flowHeaders, FLOW_WIDTHS, l.flows.map((cells) => ({ cells })), DFD_TABLE_OPTS);
+    }
     if (l.active.length === 0 && l.suppressed.length === 0) {
       paragraph(ctx, t('report.pdf.noThreats'), { color: MUTED });
       continue;

@@ -9,30 +9,10 @@ import {
   type DfdFlowSortKey,
   type SortDirection,
 } from '../../features/dfd-list/buildDfdList';
-import type { AuthType, EncryptionType, NetworkType, TrustLevel } from '../../core/model/types';
-import { useLocale, useT, type TranslationKey } from '../../i18n';
+import { AUTH_KEYS, NETWORK_KEYS, TRUST_LEVEL_KEYS, encryptionLabel } from '../../features/dfd-list/dfdLabels';
+import { useLocale, useT } from '../../i18n';
 
 type Tab = 'components' | 'flows';
-
-const TRUST_KEYS: Record<TrustLevel, TranslationKey> = {
-  Internal: 'panels.boundary.trust.internal',
-  Partner: 'panels.boundary.trust.partner',
-  Internet: 'panels.boundary.trust.internet',
-};
-const NETWORK_KEYS: Record<NetworkType, TranslationKey> = {
-  Internet: 'panels.edge.network.internet',
-  VPN: 'panels.edge.network.vpn',
-  VPC: 'panels.edge.network.vpc',
-};
-const AUTH_KEYS: Record<AuthType, TranslationKey> = {
-  None: 'panels.edge.auth.none',
-  Password: 'panels.edge.auth.password',
-  ApiKey: 'panels.edge.auth.apiKey',
-  Token: 'panels.edge.auth.token',
-  MFA: 'panels.edge.auth.mfa',
-  Passkey: 'panels.edge.auth.passkey',
-  Certificate: 'panels.edge.auth.certificate',
-};
 
 const TH = 'px-3 py-2 text-left text-xs font-bold text-slate-400 border-b border-slate-700 whitespace-nowrap';
 const TD = 'px-3 py-2 text-xs text-slate-200 border-b border-slate-800 align-top';
@@ -76,8 +56,6 @@ export function DfdListModal() {
   const unset = t('project.dfdList.unset');
   const ref = (r: DfdElementRef): string => `${r.displayId} ${r.name}`.trim();
   const registry = getComponentRegistry(locale);
-  const encryptionLabel = (e: EncryptionType): string =>
-    e === 'Plain' ? t('panels.edge.encryption.plain') : e === 'E2EE' ? t('panels.edge.encryption.e2ee') : 'TLS 1.2+';
 
   const flows = sort
     ? sortDfdFlows(list.flows, sort.key, sort.dir, (p) => t(`panels.edge.protocol.${p}`))
@@ -183,7 +161,7 @@ export function DfdListModal() {
                             {c.parent && <li>{ref(c.parent)}</li>}
                             {c.zones.map((z) => (
                               <li key={z.displayId}>
-                                {ref(z)}（{t(TRUST_KEYS[z.trustLevel])}）
+                                {ref(z)}（{t(TRUST_LEVEL_KEYS[z.trustLevel])}）
                               </li>
                             ))}
                           </ul>
@@ -242,7 +220,7 @@ export function DfdListModal() {
                         <ul className="flex flex-col gap-0.5">
                           <li>{t(NETWORK_KEYS[f.network])}</li>
                           <li>{t(AUTH_KEYS[f.auth])}</li>
-                          <li>{encryptionLabel(f.encryption)}</li>
+                          <li>{encryptionLabel(f.encryption, t)}</li>
                         </ul>
                       </td>
                       <td className={`${TD} whitespace-pre-wrap`}>{f.description || unset}</td>

@@ -168,6 +168,48 @@ describe('buildPdfReport', () => {
     expect(text).toContain('verification');
   }, 30_000);
 
+  it('未入力の仮定：脅威名に * を付け、凡例・詳細の仮定項目・1 ページ目の件数・評価の前提の説明を出す', async () => {
+    const l = layer('L0', 2);
+    l.threats[0].assumptionFlags = ['posture', 'attackSurface'];
+    const pages = await pageTexts(await buildPdfReport(input([l])));
+    const text = pages.join(' ').replace(/\s+/g, '');
+    expect(pages[0].replace(/\s+/g, '')).toContain('うち未入力の仮定1件');
+    expect(text).toContain('*共有コンテキストの汚染');
+    expect(text).toContain('*印：属性が未入力のため');
+    expect(text).toContain('未入力の仮定運用状況・攻撃面属性');
+    expect(text).toContain('未入力の扱い');
+  }, 30_000);
+
+  it('構成要素一覧・データフロー一覧：layerData があれば付録に DFD LIST と同じ列で出す（日英）', async () => {
+    const l = layer('L0', 1);
+    l.layerData = {
+      nodes: [
+        { id: 'n1', seq: 1, type: 'BACKEND_API', x: 0, y: 0, label: 'P3 ユーザー登録', description: '管理主体：アプリ管理者' },
+        { id: 'n2', seq: 2, type: 'DATABASE', x: 300, y: 0, label: 'D1 ユーザーDB' },
+      ],
+      edges: [
+        {
+          id: 'e1', seq: 4, source: 'n1', target: 'n2', auth: 'Password', network: 'VPC', encryption: 'TLS',
+          dataFlowName: 'F4 登録データ', protocol: 'db_sql', description: '同期・書込み',
+        },
+      ],
+      boundaries: [],
+      annotations: [],
+    };
+    const ja = (await pageTexts(await buildPdfReport(input([l])))).join(' ').replace(/\s+/g, '');
+    for (const s of ['構成要素一覧', 'データフロー一覧', 'C1P3ユーザー登録', '管理主体：アプリ管理者', 'DF4', 'F4登録データ', 'DB接続（SQL）', '同期・書込み', 'TLS1.2+']) {
+      expect(ja, s).toContain(s);
+    }
+    const en = (await pageTexts(await buildPdfReport(input([l], 'en')))).join(' ').replace(/\s+/g, '');
+    expect(en).toContain('Dataflows');
+    expect(en).toContain('Databaseconnection(SQL)');
+  }, 30_000);
+
+  it('layerData が無ければ構成要素一覧・データフロー一覧を出さない', async () => {
+    const text = (await pageTexts(await buildPdfReport(input([layer('L0', 1)])))).join(' ');
+    expect(text).not.toContain('データフロー一覧');
+  }, 30_000);
+
   // 目視確認用：CRS_PDF_SAMPLE_OUT にパスを渡すとサンプルと 1 ページ目のテキストを書き出す。
   it.skipIf(!process.env.CRS_PDF_SAMPLE_OUT)('サンプル PDF を書き出す', async () => {
     const out = process.env.CRS_PDF_SAMPLE_OUT as string;

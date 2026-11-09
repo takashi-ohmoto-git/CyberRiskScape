@@ -54,6 +54,7 @@ export async function exportPdf(layerKeys: readonly LayerKey[]): Promise<void> {
       report: buildThreatReport(item.input),
       threats: item.threats,
       diagramPng: diagramPng ?? undefined,
+      layerData: state.layers[item.layer],
     });
   }
   const { fonts, harfbuzzWasm } = await assets.loadPdfAssets();

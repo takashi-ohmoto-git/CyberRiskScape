@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ControlStatusValue, LayerKey, Severity } from '../../../core/model/types';
+import type { ControlStatusValue, DetectionAssumptionFlag, LayerKey, Severity } from '../../../core/model/types';
 import type { AxisLevel } from '../../../core/model/risk';
 import type { ThreatReportRow } from '../threatReport';
 import {
@@ -24,6 +24,7 @@ function item(o: {
   treatment?: Treatment;
   control?: ControlStatusValue;
   id?: string;
+  assumptions?: DetectionAssumptionFlag[];
 }): SummaryItem {
   const id = o.id ?? `t${seq++}`;
   return {
@@ -35,6 +36,7 @@ function item(o: {
     likelihood: o.likelihood ?? '',
     treatment: o.treatment ?? 'unaddressed',
     control: o.control,
+    assumptions: o.assumptions ?? [],
   };
 }
 const ids = (xs: SummaryItem[]) => xs.map((x) => x.row.id);
@@ -166,5 +168,17 @@ describe('緩和策の整形', () => {
     expect(firstStep(r, 'required')).toBe('F');
     expect(firstStep(r, 'implemented')).toBe('');
     expect(firstStep(row({}), undefined)).toBe('');
+  });
+});
+
+describe('computeSummary（未入力の仮定）', () => {
+  it('有効脅威のうち仮定で出たものだけを数え、受容・誤検知は数えない', () => {
+    const xs = [
+      item({ assumptions: ['posture'] }),
+      item({ assumptions: ['attackSurface', 'posture'] }),
+      item({}),
+      item({ assumptions: ['userTrust'], treatment: 'accepted' }),
+    ];
+    expect(computeSummary(xs, ['L1']).assumedActiveCount).toBe(2);
   });
 });
