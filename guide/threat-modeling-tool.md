@@ -32,7 +32,10 @@
 
 1. Open **Template** and choose the **Import** tab.
 2. Press **"Select .tm7 (Microsoft Threat Modeling Tool)"** and choose a .tm7.
-3. The imported counts (nodes, edges, boundaries, annotations, threats, mitigation statuses) and the **number of items needing confirmation** are shown.
+3. The imported counts (nodes, edges, boundaries, annotations, threats, mitigation statuses) and the **number of items to review** are shown.
+
+   ![Result of importing a .tm7](../assets/guide/en/threat-modeling-tool/01-import.png)
+
 4. When you apply it, **the current project is replaced with the imported content** (you are asked to confirm). Save the project first if you need to.
 
 ### 2.2 Import with the CLI
@@ -52,7 +55,7 @@ To rebuild only the migration report later (for example after entering attribute
 node dist-cli/main.js migration-report project.json --out migration-report.md   # --format json for JSON
 ```
 
-On the screen, the project menu in the left sidebar shows **"Migration report from TMT (Markdown)"** (only when there are threats imported from TMT).
+On the screen, opening **Report** in the left sidebar shows **"Migration report from TMT (Markdown)"** (only when there are threats imported from TMT).
 
 ---
 
@@ -69,8 +72,8 @@ On the screen, the project menu in the left sidebar shows **"Migration report fr
 | Data flow "Provides Confidentiality" | Edge encryption (Yes → TLS, No → plaintext) | If unknown, it is treated as plaintext (the bad value) |
 | Data flow "Source Authenticated" | Edge authentication (Yes → password, otherwise → none) | TMT has no authentication method, so it is set conservatively. Raise it to match reality |
 | Trust boundary drawn as a box (CorpNet, etc.) | Boundary (CorpNet is an internal macro-segment) | An edge whose two ends are inside the same box gets path VPC; any other edge gets Internet |
-| **Trust boundary drawn as a line** (Internet Boundary, etc.) | **Annotation** (with coordinates) + needs confirmation | A CyberRiskScape boundary is a "region", so it cannot be drawn as is (§5) |
-| Data flow not connected to anything | Annotation (with coordinates) + needs confirmation | |
+| **Trust boundary drawn as a line** (Internet Boundary, etc.) | **Annotation** (with coordinates) + review | A CyberRiskScape boundary is a "region", so it cannot be drawn as is (§5) |
+| Data flow not connected to anything | Annotation (with coordinates) + review | |
 | Notes | Annotation (with the author and date) | |
 | Multiple diagrams (tabs) | Layers L1, L2, L3, L0 in order from the first | The fifth and later are not imported; their names are shown |
 
@@ -93,7 +96,7 @@ Moving a type changes which threat rules apply, so anything doubtful is not move
 | Thread, Registry, Named Pipe, Virtual Machine, etc. | Basic DFD types such as Process and Data store |
 
 **Types from Azure templates or custom templates**, even when not in the mapping table, are imported as their parent type (Process, External entity, or Data store).
-The original type is kept in the node description with `[TMT] needs confirmation`.
+The original type is kept in the node description with a `[TMT] Review` note.
 
 ### 3.3 Model information and threats
 
@@ -107,6 +110,8 @@ The original type is kept in the node description with `[TMT] needs confirmation
 | All fields of a threat (ID, kind, original state, etc.) | Saved as is, without reinterpretation, as the manual threat's original record |
 
 A threat still untouched in TMT (Not Started) is imported without an implementation status.
+
+![Card of a threat imported from TMT (status, reason, changed by)](../assets/guide/en/threat-modeling-tool/03-card.png)
 
 > When you change the implementation status on the screen, the changer display disappears. CyberRiskScape does not know who is operating it, and keeping it
 > would show another person's change under the original person's name. The original TMT changer remains in the manual threat's original record.
@@ -133,7 +138,11 @@ Elements carry the same display IDs as the screen (C1, DF1, and so on), so eleme
 
 ## 5. What to check after the import
 
-1. **Look at `[TMT] needs confirmation`.** It applies to types not in the mapping table, trust boundaries drawn as lines, and unconnected edges.
+1. **Look at `[TMT] Review`.** It applies to types not in the mapping table, trust boundaries drawn as lines, and unconnected edges.
+   Line trust boundaries, unconnected flows, and notes are placed as annotations below the diagram.
+
+   ![The imported diagram and the review annotations below it](../assets/guide/en/threat-modeling-tool/02-canvas.png)
+
    - Redraw a trust boundary drawn as a line with a CyberRiskScape boundary (a region), using the annotation's coordinates as a guide. An element on the
      internet side is treated as Internet if you do not put it in any boundary.
    - Reconnect an unconnected edge to the elements at its two ends.

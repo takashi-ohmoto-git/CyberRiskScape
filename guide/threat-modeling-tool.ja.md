@@ -33,6 +33,9 @@
 1. **Template** を開き、**Import（読み込み）** タブを選びます。
 2. **「.tm7（Microsoft Threat Modeling Tool）を選択」** を押し、.tm7 を選びます。
 3. 取り込んだ件数（ノード・線・境界・注釈・脅威・対策の状況）と、**要確認の件数**が表示されます。
+
+   ![.tm7 の取り込み結果](../assets/guide/threat-modeling-tool/01-import.png)
+
 4. 適用すると、**今のプロジェクトは取り込んだ内容で置き換わります**（確認があります）。必要なら先にプロジェクトを保存してください。
 
 ### 2.2 CLI で取り込む
@@ -52,7 +55,7 @@ node dist-cli/main.js import-tm7 model.tm7 --out project.json --report migration
 node dist-cli/main.js migration-report project.json --out migration-report.md   # --format json で JSON
 ```
 
-画面では、左のサイドバーのプロジェクトのメニューに **「TMT からの移行レポート（Markdown）」** が出ます（TMT から取り込んだ脅威があるときだけ）。
+画面では、左のサイドバーの **Report** を開くと **「TMT からの移行レポート（Markdown）」** が出ます（TMT から取り込んだ脅威があるときだけ）。
 
 ---
 
@@ -108,6 +111,8 @@ node dist-cli/main.js migration-report project.json --out migration-report.md   
 
 TMT で未着手のままの脅威（Not Started）は、実装状況を付けずに取り込みます。
 
+![TMT から取り込んだ脅威のカード（実装状況・理由・変更者）](../assets/guide/threat-modeling-tool/03-card.png)
+
 > 画面で実装状況を変えると、変更者の表示は消えます。CyberRiskScape は操作している人を知らないため、残すと別の人の変更が
 > 元の人の名前で表示されてしまうからです。TMT の元の変更者は、手動脅威の元の記録に残っています。
 
@@ -134,6 +139,10 @@ TMT の脅威は STRIDE の汎用の問いで、CyberRiskScape のルールと�
 ## 5. 取り込んだ後に確かめること
 
 1. **`[TMT] 要確認` を見る。** 対象は、対応表に無い型・線の形の信頼境界・つながっていない線です。
+   線の形の信頼境界・つながっていない線・メモは、図の下に注釈として並びます。
+
+   ![取り込んだ図と、図の下の要確認の注釈](../assets/guide/threat-modeling-tool/02-canvas.png)
+
    - 線の形の信頼境界は、注釈の座標を手がかりに、CyberRiskScape の境界（領域）で描き直してください。インターネット側の要素は、
      どの境界にも入れなければ Internet として扱われます。
    - つながっていない線は、両端の要素につなぎ直してください。
