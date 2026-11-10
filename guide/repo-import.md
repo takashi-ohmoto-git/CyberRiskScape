@@ -40,6 +40,7 @@ The CLI reads only files in fixed formats. The same directory gives the same res
 | Target | What is read | What is not read or is discarded |
 |---|---|---|
 | `package.json` + `package-lock.json` (v2, v3) | Package name, version, source host, whether an integrity hash exists, whether an install script exists, dev / optional | The path and query of the `resolved` URL (only the host is kept). Versions given as a URL, path or git reference are not recorded |
+| `pnpm-lock.yaml` (lockfileVersion 9; pnpm 9 and 10) | Package name, version, whether an integrity hash exists, dev / optional, and the source host when a `tarball` is given | The path and query of the `tarball` URL (only the host is kept) |
 | `requirements*.txt`, `*.lock`, `*.in` | Package name, version, whether the version is pinned, whether `--hash` is present, the host of `--index-url` | The URL of a `name @ URL` direct reference |
 | `.npmrc` | Only the `ignore-scripts` and `registry` lines | **Token lines and all other lines are not interpreted and are kept out of both the diagram and the output** |
 | `.env`, `.env.*` | **Variable name, kind of value, length of value**, whether it is a template (`.example`, `.sample`, `.template`), whether it is listed in `.gitignore` | **The value itself, or any part of it, is not recorded** |
@@ -108,6 +109,8 @@ The screens on this page were made from a **fictional sample app** (`package.jso
 - **Dependencies are one node per manifest.** Individual packages do not get a type; they are recorded in that node's **inventory**.
 - If `package-lock.json` sits next to `package.json`, the lockfile content (versions, hashes, install scripts) is used. Without a lockfile, only the
   specs in `package.json` (such as `^1.2.0`) are used.
+- If there is no `package-lock.json` and a `pnpm-lock.yaml` sits in a parent directory (a pnpm workspace), every dependency reachable from this
+  `package.json`'s entry (`importers`) is collected. Other packages in the workspace (`workspace:*`) are not followed (each becomes its own node).
 - The layout is a simple one in columns, and links may overlap. Tidy it as needed.
 
 ---
@@ -243,6 +246,9 @@ Results on the sample (at the time of writing):
 - **For pip, `.in` and `.lock` (`requirements*.txt`) become separate nodes.** The same dependency may be counted in two nodes.
 - **pip install scripts are not judged automatically** (the posture stays unset, so a threat appears).
 - **package-lock v1 is not supported.** There is no `packages` section, so a warning is shown and only the specs in `package.json` are used (versions are not treated as pinned).
+- **For pnpm, only lockfileVersion 9 is supported.** Older ones (pnpm 8 and earlier) show a warning and only the specs in `package.json` are used.
+  The pnpm lockfile does not record install scripts, so the "Install scripts" posture stays unset and a threat appears.
+  yarn and bun lockfiles are not read.
 - **Actual communication is not known.** The diagram is a draft made from declarations in files. Where the agent really connected must be checked by another means (a traffic record).
 - **The content of the app (APIs, databases, IaC) is not drawn.** This covers only the development environment and dependency packages; the app's own structure is a later stage.
 - The list of allow rules, the values in `.env` and MCP arguments are not in the output. So the **details of which commands are allowed**, and **whether a value is truly a secret**,

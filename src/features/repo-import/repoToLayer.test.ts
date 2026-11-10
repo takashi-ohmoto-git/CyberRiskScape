@@ -171,6 +171,104 @@ describe('repoToLayer', () => {
     expect(items.find((i) => i.name === 'esbuild')).toMatchObject({ pinned: true, dev: true });
   });
 
+  describe('pnpm', () => {
+    const PNPM_LOCK = `lockfileVersion: '9.0'
+importers:
+  .:
+    devDependencies:
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+  apps/api:
+    dependencies:
+      '@x/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      kysely-d1:
+        specifier: ^0.4.0
+        version: 0.4.0(kysely@0.29.3)
+    devDependencies:
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9
+  packages/core: {}
+packages:
+  typescript@5.9.3:
+    resolution: {integrity: sha512-aaa}
+  kysely-d1@0.4.0:
+    resolution: {integrity: sha512-bbb}
+  kysely@0.29.3:
+    resolution: {integrity: sha512-ccc}
+  vitest@2.1.9:
+    resolution: {tarball: 'https://${URL_USER_SECRET}@npm.example.com/vitest-2.1.9.tgz?token=${QUERY_SECRET}'}
+  fsevents@2.3.3:
+    resolution: {integrity: sha512-ddd}
+snapshots:
+  typescript@5.9.3: {}
+  kysely-d1@0.4.0(kysely@0.29.3):
+    dependencies:
+      kysely: 0.29.3
+  kysely@0.29.3: {}
+  vitest@2.1.9:
+    optionalDependencies:
+      fsevents: 2.3.3
+  fsevents@2.3.3:
+    optional: true
+`;
+    const PNPM_FILES: RepoFile[] = [
+      { path: 'pnpm-lock.yaml', text: PNPM_LOCK },
+      { path: 'package.json', text: JSON.stringify({ devDependencies: { typescript: '^5.6.3' } }) },
+      { path: 'apps/api/package.json', text: JSON.stringify({ dependencies: { 'kysely-d1': '^0.4.0' }, devDependencies: { vitest: '^2.1.0' } }) },
+      { path: 'packages/core/package.json', text: JSON.stringify({}) },
+    ];
+    const items = (layer: LayerData, label: string) => {
+      const inv = node(layer, label).inventory;
+      return inv?.kind === 'npm' ? inv.items : [];
+    };
+
+    it('ワークスペースのルートのロックから importer ごとに推移的な依存を集め、link: は辿らない', () => {
+      const { layer } = ok(PNPM_FILES);
+      expect(items(layer, 'apps/api/package.json').map((i) => `${i.name}@${i.version}`)).toEqual([
+        'fsevents@2.3.3',
+        'kysely@0.29.3',
+        'kysely-d1@0.4.0',
+        'vitest@2.1.9',
+      ]);
+      expect(items(layer, 'package.json').map((i) => i.name)).toEqual(['typescript']);
+    });
+
+    it('本番の依存から辿れないものだけ dev、snapshots の optional を写す', () => {
+      const api = items(ok(PNPM_FILES).layer, 'apps/api/package.json');
+      expect(api.find((i) => i.name === 'kysely')).not.toHaveProperty('dev');
+      expect(api.find((i) => i.name === 'vitest')).toMatchObject({ dev: true, pinned: true });
+      expect(api.find((i) => i.name === 'fsevents')).toMatchObject({ dev: true, optional: true, hasIntegrity: true });
+    });
+
+    it('整合性ハッシュが揃えば Locked、欠ければ Unlocked。外部の依存が無い importer も Locked', () => {
+      const { layer } = ok(PNPM_FILES);
+      expect(node(layer, 'package.json').posture).toEqual({ dependencyLockfile: 'Locked' });
+      expect(node(layer, 'apps/api/package.json').posture).toEqual({ dependencyLockfile: 'Unlocked' });
+      expect(node(layer, 'packages/core/package.json').posture).toEqual({ dependencyLockfile: 'Locked' });
+    });
+
+    it('tarball はホストだけを残し、資格情報・クエリを出力しない。install script は未入力のまま', () => {
+      const { layer } = ok(PNPM_FILES);
+      expect(items(layer, 'apps/api/package.json').find((i) => i.name === 'vitest')).toMatchObject({ resolvedHost: 'npm.example.com' });
+      const json = JSON.stringify(layer);
+      expect(json).not.toContain('urlpass');
+      expect(json).not.toContain(QUERY_SECRET);
+      expect(node(layer, 'apps/api/package.json').posture).not.toHaveProperty('installScripts');
+    });
+
+    it('未対応の lockfileVersion・importers に無いパッケージは警告して package.json の指定に戻る', () => {
+      const old = ok([{ path: 'pnpm-lock.yaml', text: "lockfileVersion: '6.0'\n" }, PNPM_FILES[1]]);
+      expect(old.summary.warnings.some((w) => w.includes('lockfileVersion 6.0'))).toBe(true);
+      expect(node(old.layer, 'package.json').posture).toEqual({ dependencyLockfile: 'Unlocked' });
+      const missing = ok([...PNPM_FILES, { path: 'apps/web/package.json', text: '{}' }]);
+      expect(missing.summary.warnings.some((w) => w.includes('apps/web が importers にありません'))).toBe(true);
+    });
+  });
+
   it('.npmrc の ignore-scripts=true で installScripts が Disabled、registry のホストが取得元になる', () => {
     const files = FILES.map((f) =>
       f.path === '.npmrc' ? { path: '.npmrc', text: 'ignore-scripts=true\nregistry=https://npm.corp/\n' } : f,

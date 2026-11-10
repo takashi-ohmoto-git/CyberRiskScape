@@ -1,3 +1,4 @@
+import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
 import type {
   AuthType,
@@ -237,6 +238,116 @@ function parseNpm(manifestText: string, lockText: string | undefined, warn: (m: 
   add(pkg.optionalDependencies, { optional: true });
   items.sort((a, b) => a.name.localeCompare(b.name));
   return { items, hosts, locked: false };
+}
+
+// ── pnpm ────────────────────────────────────────────────────
+
+const depMap = z.record(z.unknown()).optional().catch(undefined);
+const PnpmLockSchema = z.object({
+  lockfileVersion: z.union([z.string(), z.number()]).optional().catch(undefined),
+  importers: z
+    .record(z.object({ dependencies: depMap, devDependencies: depMap, optionalDependencies: depMap }))
+    .optional()
+    .catch(undefined),
+  packages: z
+    .record(
+      z.object({
+        resolution: z.object({ integrity: str, tarball: str }).partial().optional().catch(undefined),
+      }),
+    )
+    .optional()
+    .catch(undefined),
+  snapshots: z
+    .record(z.object({ dependencies: depMap, optionalDependencies: depMap, optional: flag }).nullable())
+    .optional()
+    .catch(undefined),
+});
+export type PnpmLock = z.infer<typeof PnpmLockSchema>;
+
+/** `pnpm-lock.yaml` を読む。lockfileVersion 9 系（pnpm 9・10）だけに対応し、それ以外は undefined。 */
+export function parsePnpmLock(text: string, warn: (m: string) => void, path: string): PnpmLock | undefined {
+  let lock: PnpmLock;
+  try {
+    lock = PnpmLockSchema.parse(parseYaml(text));
+  } catch {
+    warn(`${path}: YAML として読み込めません`);
+    return undefined;
+  }
+  if (!String(lock.lockfileVersion ?? '').startsWith('9')) {
+    warn(`${path}: lockfileVersion ${String(lock.lockfileVersion ?? '?')} は未対応です（9 系のみ。package.json の指定だけを使います）`);
+    return undefined;
+  }
+  return lock;
+}
+
+/** importer の版の値（`1.2.3(peer@1)`・`link:../x`・別名の `name@1.2.3`）から snapshots のキーを作る。 */
+function pnpmKey(name: string, raw: unknown): string | undefined {
+  // importers の値は `{ specifier, version }`、snapshots の値は版の文字列。
+  const ref = raw && typeof raw === 'object' ? (raw as { version?: unknown }).version : raw;
+  if (typeof ref !== 'string' || ref.startsWith('link:')) return undefined;
+  return /^\d/.test(ref) ? `${name}@${ref}` : ref;
+}
+
+/** `name@1.2.3(peer@1)` → 名前と版（peer の接尾辞を除く）。 */
+function splitPnpmKey(key: string): { name: string; version: string } {
+  const base = key.replace(/\(.*$/, '');
+  const at = base.lastIndexOf('@');
+  return at > 0 ? { name: base.slice(0, at), version: base.slice(at + 1) } : { name: base, version: '' };
+}
+
+/**
+ * 1 つの importer（ワークスペースの 1 パッケージ）から辿れる依存を集める。ワークスペース内の `link:` は辿らない
+ * （それぞれの package.json が別ノードになるため）。本番の依存から辿れないものだけを dev とする。
+ * pnpm 9 系のロックファイルにはインストールスクリプトの有無が無いので、hasInstallScript は入れない（未入力）。
+ */
+function parsePnpmImporter(lock: PnpmLock, importer: string): ParsedManifest | undefined {
+  const imp = lock.importers?.[importer];
+  if (!imp) return undefined;
+  const snapshots = lock.snapshots ?? {};
+  const packages = lock.packages ?? {};
+  const prod = new Set<string>();
+  const all = new Set<string>();
+  const walk = (roots: Array<[string, unknown]>, mark: Set<string>) => {
+    const stack = roots.map(([n, r]) => pnpmKey(n, r)).filter((k): k is string => !!k);
+    while (stack.length > 0) {
+      const key = stack.pop()!;
+      if (mark.has(key)) continue;
+      mark.add(key);
+      all.add(key);
+      const s = snapshots[key];
+      for (const [n, r] of [...Object.entries(s?.dependencies ?? {}), ...Object.entries(s?.optionalDependencies ?? {})]) {
+        const k = pnpmKey(n, r);
+        if (k && !mark.has(k)) stack.push(k);
+      }
+    }
+  };
+  walk([...Object.entries(imp.dependencies ?? {}), ...Object.entries(imp.optionalDependencies ?? {})], prod);
+  walk(Object.entries(imp.devDependencies ?? {}), new Set(prod));
+
+  const hosts = new Map<string, boolean>();
+  const seen = new Set<string>();
+  const items: PackageInventoryItem[] = [];
+  for (const key of all) {
+    const { name, version: rawVersion } = splitPnpmKey(key);
+    const version = safeVersion(rawVersion);
+    const dedup = `${name}@${version ?? ''}`;
+    if (seen.has(dedup)) continue;
+    seen.add(dedup);
+    const res = packages[key.replace(/\(.*$/, '')]?.resolution;
+    const item: PackageInventoryItem = { name, pinned: true, hasIntegrity: !!res?.integrity };
+    if (version) item.version = version;
+    if (!prod.has(key)) item.dev = true;
+    if (snapshots[key]?.optional) item.optional = true;
+    const h = hostOf(res?.tarball);
+    if (h) {
+      item.resolvedHost = h.host;
+      addHost(hosts, res?.tarball);
+    }
+    items.push(item);
+  }
+  items.sort((a, b) => a.name.localeCompare(b.name) || (a.version ?? '').localeCompare(b.version ?? ''));
+  // importer がロックファイルに載っていれば、外部の依存が 0 件（ワークスペース内の参照だけ）でもロック済み。
+  return { items, hosts, locked: items.every((i) => i.hasIntegrity) };
 }
 
 /** `.npmrc` から `ignore-scripts` と registry のホストだけを読む（トークン等の行は見ない）。 */
@@ -663,11 +774,30 @@ export function repoToLayer(files: RepoFile[], opts: RepoImportOptions): RepoImp
     }
   };
 
+  // pnpm はワークスペースのルートに 1 つのロックファイル。package.json から上へ辿って最も近いものを使う。
+  const pnpmLocks = new Map<string, PnpmLock | undefined>();
+  const pnpmFor = (dir: string): ParsedManifest | undefined => {
+    for (let d = dir; ; d = dirOf(d)) {
+      const path = d ? `${d}/pnpm-lock.yaml` : 'pnpm-lock.yaml';
+      const f = byPath.get(path);
+      if (f) {
+        if (!pnpmLocks.has(path)) pnpmLocks.set(path, parsePnpmLock(f.text, warn, path));
+        const lock = pnpmLocks.get(path);
+        const importer = d === dir ? '.' : dir.slice(d ? d.length + 1 : 0);
+        const parsed = lock ? parsePnpmImporter(lock, importer) : undefined;
+        if (lock && !parsed) warn(`${path}: ${importer} が importers にありません（package.json の指定だけを使います）`);
+        return parsed;
+      }
+      if (d === '') return undefined;
+    }
+  };
+
   for (const f of manifestsNpm) {
     const dir = dirOf(f.path);
     const lock = byPath.get(dir ? `${dir}/package-lock.json` : 'package-lock.json');
-    const parsed = parseNpm(f.text, lock?.text, warn, f.path);
+    let parsed = parseNpm(f.text, lock?.text, warn, f.path);
     if (!parsed) continue;
+    if (!lock) parsed = pnpmFor(dir) ?? parsed;
     const npmrc = npmrcFor(dir);
     const posture: NodePosture = { dependencyLockfile: parsed.locked ? 'Locked' : 'Unlocked' };
     if (npmrc?.ignoreScripts) posture.installScripts = 'Disabled';

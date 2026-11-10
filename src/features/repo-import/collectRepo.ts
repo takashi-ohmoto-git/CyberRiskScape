@@ -41,6 +41,7 @@ const SKIP_DIRS = new Set([
 const isTargetName = (name: string) =>
   name === 'package.json' ||
   name === 'package-lock.json' ||
+  name === 'pnpm-lock.yaml' ||
   name === '.npmrc' ||
   name === '.env' ||
   name.startsWith('.env.') ||
