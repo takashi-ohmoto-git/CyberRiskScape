@@ -64,6 +64,7 @@ export const enThreats: Partial<Record<TranslationKey, string>> = {
   'threats.controlStatusEditor.notePlaceholderRequired': 'Record the reason / implementation approach (required)',
   'threats.controlStatusEditor.notePlaceholderOptional': 'Notes (optional)',
   'threats.controlStatusEditor.noteRequiredWarning': '"{label}" requires a note.',
+  'threats.controlStatusEditor.changedBy': 'Changed by: {by}',
 
   // ── RiskTreatmentEditor ──
   'threats.riskTreatmentEditor.notePlaceholder': 'Rationale, residual risk notes, etc. (optional)',

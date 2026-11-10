@@ -71,6 +71,27 @@ export function ProjectEditModal() {
           onChange={(v) => update('systemName', v)}
           placeholder={t('project.editModal.systemNamePlaceholder')}
         />
+        <Field
+          label={t('project.editModal.ownerLabel')}
+          value={draft.owner ?? ''}
+          onChange={(v) => update('owner', v)}
+          placeholder={t('project.editModal.ownerPlaceholder')}
+          maxLength={200}
+        />
+        <Field
+          label={t('project.editModal.reviewerLabel')}
+          value={draft.reviewer ?? ''}
+          onChange={(v) => update('reviewer', v)}
+          placeholder={t('project.editModal.reviewerPlaceholder')}
+          maxLength={200}
+        />
+        <Field
+          label={t('project.editModal.contributorsLabel')}
+          value={draft.contributors ?? ''}
+          onChange={(v) => update('contributors', v)}
+          placeholder={t('project.editModal.contributorsPlaceholder')}
+          maxLength={1000}
+        />
         <FieldArea
           label={t('project.editModal.purposeLabel')}
           value={draft.purpose}
@@ -88,6 +109,20 @@ export function ProjectEditModal() {
           value={draft.securityObjectives}
           onChange={(v) => update('securityObjectives', v)}
           placeholder={t('project.editModal.securityObjectivesPlaceholder')}
+        />
+        <FieldArea
+          label={t('project.editModal.assumptionsLabel')}
+          value={draft.assumptions ?? ''}
+          onChange={(v) => update('assumptions', v)}
+          placeholder={t('project.editModal.assumptionsPlaceholder')}
+          maxLength={4000}
+        />
+        <FieldArea
+          label={t('project.editModal.externalDependenciesLabel')}
+          value={draft.externalDependencies ?? ''}
+          onChange={(v) => update('externalDependencies', v)}
+          placeholder={t('project.editModal.externalDependenciesPlaceholder')}
+          maxLength={4000}
         />
 
         <div className="flex justify-end gap-2 pt-2">
@@ -114,9 +149,10 @@ interface FieldProps {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  maxLength?: number;
 }
 
-function Field({ label, value, onChange, placeholder }: FieldProps) {
+function Field({ label, value, onChange, placeholder, maxLength }: FieldProps) {
   return (
     <label className="flex flex-col gap-1.5">
       <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -127,13 +163,14 @@ function Field({ label, value, onChange, placeholder }: FieldProps) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        maxLength={maxLength}
         className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
       />
     </label>
   );
 }
 
-function FieldArea({ label, value, onChange, placeholder }: FieldProps) {
+function FieldArea({ label, value, onChange, placeholder, maxLength }: FieldProps) {
   return (
     <label className="flex flex-col gap-1.5">
       <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -144,6 +181,7 @@ function FieldArea({ label, value, onChange, placeholder }: FieldProps) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        maxLength={maxLength}
         className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-colors resize-y"
       />
     </label>

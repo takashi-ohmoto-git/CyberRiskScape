@@ -24,6 +24,7 @@ import { jaDetection } from './ja/detection';
 import { jaDiff } from './ja/diff';
 import { jaCliTriggers } from './ja/cliTriggers';
 import { jaFindingsReport } from './ja/findingsReport';
+import { jaMigration } from './ja/migration';
 import { jaChecklist } from './ja/checklist';
 import { jaTestPlan } from './ja/testPlan';
 import { jaContractor } from './ja/contractor';
@@ -254,6 +255,7 @@ export const ja = {
   ...jaDiff,
   ...jaCliTriggers,
   ...jaFindingsReport,
+  ...jaMigration,
   ...jaChecklist,
   ...jaTestPlan,
   ...jaContractor,

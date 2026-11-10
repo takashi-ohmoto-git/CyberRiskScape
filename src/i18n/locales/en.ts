@@ -12,6 +12,7 @@ import { enDetection } from './en/detection';
 import { enDiff } from './en/diff';
 import { enCliTriggers } from './en/cliTriggers';
 import { enFindingsReport } from './en/findingsReport';
+import { enMigration } from './en/migration';
 import { enChecklist } from './en/checklist';
 import { enTestPlan } from './en/testPlan';
 import { enContractor } from './en/contractor';
@@ -229,6 +230,7 @@ export const en: Partial<Record<TranslationKey, string>> = {
   ...enDiff,
   ...enCliTriggers,
   ...enFindingsReport,
+  ...enMigration,
   ...enChecklist,
   ...enTestPlan,
   ...enContractor,

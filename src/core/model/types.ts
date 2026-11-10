@@ -684,6 +684,16 @@ export interface ProjectMeta {
    * 複数行記述。脅威の優先度付けの基準として記載し、Report 冒頭に転記する。
    */
   securityObjectives: string;
+  /** 脅威モデルの責任者（任意。複数なら自由記述）。 */
+  owner?: string;
+  /** レビュー担当（任意）。 */
+  reviewer?: string;
+  /** 作成に関わった人（任意）。 */
+  contributors?: string;
+  /** 前提条件（任意・複数行）。 */
+  assumptions?: string;
+  /** 外部依存（任意・複数行）。 */
+  externalDependencies?: string;
 }
 
 export const EMPTY_PROJECT_META: ProjectMeta = {
@@ -1110,6 +1120,20 @@ export interface ManualThreat {
   description: string;
   /** 緩和策（任意）。 */
   mitigation?: string;
+  /**
+   * 他ツールから移行で取り込んだ脅威の元の記録（任意）。移行の取り込みは情報を落とさない方針のため、
+   * 読み替える前の値（脅威の ID・種類・状態・優先度・題名など）をそのまま残す。画面では編集しない。
+   */
+  importedFrom?: ImportedThreatRecord;
+}
+
+/** 移行で取り込んだ脅威の元の記録。`fields` は元ツールの項目名 → 値（読み替えない）。 */
+export interface ImportedThreatRecord {
+  /** 元のツール名（例: 'Microsoft Threat Modeling Tool'）。 */
+  product: string;
+  /** 元のツールでの脅威の ID。 */
+  externalId: string;
+  fields: Record<string, string>;
 }
 
 /**
@@ -1149,6 +1173,8 @@ export interface ControlStatusState {
   /** 補足。implemented/not-applicable/rejected では必須、required では任意。 */
   note?: string;
   at: number;
+  /** 状況を変えた人（任意。移行で取り込んだ記録の変更者など）。 */
+  by?: string;
 }
 
 /** 指摘の入力形式（docs/architecture.md §8.6）。 */

@@ -660,6 +660,18 @@ export async function buildPdfReport(input: BuildPdfReportInput): Promise<Uint8A
     [t('report.pdf.meta.purpose'), clean(project?.purpose ?? '')],
     [t('report.pdf.meta.businessImpact'), clean(project?.businessImpact ?? '')],
     [t('report.pdf.meta.securityObjectives'), clean(project?.securityObjectives ?? '')],
+    ...(
+      [
+        ['owner', 'report.pdf.meta.owner'],
+        ['reviewer', 'report.pdf.meta.reviewer'],
+        ['contributors', 'report.pdf.meta.contributors'],
+        ['assumptions', 'report.pdf.meta.assumptions'],
+        ['externalDependencies', 'report.pdf.meta.externalDependencies'],
+      ] as const
+    ).flatMap(([field, key]): [string, string][] => {
+      const value = clean(project?.[field] ?? '');
+      return value ? [[t(key), value]] : [];
+    }),
     [t('report.pdf.meta.framework'), first?.framework ?? ''],
     [t('report.pdf.premise.unset'), t('report.pdf.premise.unsetBody')],
     [t('report.pdf.meta.schemaVersion'), String(THREAT_REPORT_SCHEMA_VERSION)],

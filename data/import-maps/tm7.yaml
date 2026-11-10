@@ -1,0 +1,112 @@
+# Microsoft Threat Modeling Tool（.tm7）の要素の型 → CyberRiskScape の型の対応表。
+#
+# .tm7 の要素は TypeId（例: SE.P.TMCore.WebApp）と、その親の汎用型 GenericTypeId（GE.P / GE.EI / GE.DS /
+# GE.DF / GE.TB.B / GE.TB.L）を持つ。ここに載っていない TypeId（Azure テンプレート・独自テンプレートの型）は
+# `generic` の汎用型の対応で取り込み、元の TypeId を残して「型を確認してください」の印を付ける。
+#
+# 方針:
+#   - 移行の取り込みは情報を落とさない（2026-11-11 ユーザー決定）。ここで型を寄せても、元の TypeId と
+#     属性の値は取り込み側で記録する。
+#   - 意味がはっきり一致する型だけを専用の型に寄せる。OS 内部の要素（スレッド・レジストリ・名前付きパイプ等）や
+#     一致する型が無いものは、無理に当てはめず DFD の基本の型（PROCESS / DATA_STORE / EXTERNAL_ENTITY）に置く。
+#     型を寄せると当たる脅威ルールが変わるため、迷うものは寄せない（one stencil, one element）。
+#   - データフローは protocol（記録用）と、TMT の属性「Provides Confidentiality」が型で固定されている場合の
+#     encryption だけを持つ。属性の値の解決（要素で選んだ値 → 型の固定値 → 未入力）は取り込み側で行う。
+#   - 線の形の信頼境界（GE.TB.L）は CyberRiskScape の領域の境界に直せないため、注釈として残す（下の lineBoundary）。
+#
+# 出典:
+#   - TypeId・GenericTypeId の名前は、Microsoft Threat Modeling Tool 7.3（GA 7.3.51110.1、2025-11-10）で
+#     作成した .tm7 に埋め込まれた既定のテンプレート（SDL TM Knowledge Base、ファイル形式 4.3）で確認した（2026-11-11）。
+#     .tm7 の公開仕様は無い。型の名前の参照のみで、テンプレートの説明文・脅威の文面は転載していない。
+#   - https://learn.microsoft.com/en-us/azure/security/develop/threat-modeling-tool-releases
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+# 対応表に無い TypeId は、親の汎用型でここを引く。
+generic:
+  GE.P: { node: PROCESS }
+  GE.EI: { node: EXTERNAL_ENTITY }
+  GE.DS: { node: DATA_STORE }
+  GE.DF: { edge: {} }
+  GE.TB.B: { boundary: { type: RECT, trustLevel: Internal } }
+  GE.TB.L: { lineBoundary: true }
+
+types:
+  # ── プロセス（GE.P）──
+  - typeId: SE.P.TMCore.WebServer
+    node: FRONT_END_SERVER
+    note: Web サーバー
+  - typeId: SE.P.TMCore.WebApp
+    node: FRONT_END_SERVER
+    note: Web アプリケーション（サーバー側）。画面を提供する公開点として扱う
+  - typeId: SE.P.TMCore.WebSvc
+    node: BACKEND_API
+    note: Web サービス
+  # OSProcess・Thread・KernelThread・WinApp・NetApp・ThickClient・BrowserClient・PlugIn・Modern・
+  # Win32Service・VM・NonMS は一致する型が無いため載せない（generic の PROCESS になる）。
+  # VM は仮想マシン（上で動くもの）であって仮想化基盤（HYPERVISOR）ではない。
+
+  # ── 外部の対象（GE.EI）──
+  - typeId: SE.EI.TMCore.User
+    node: USER
+    note: 人の利用者
+  - typeId: SE.EI.TMCore.Browser
+    node: PC
+    note: ブラウザ（利用者の端末として扱う）
+  - typeId: SE.EI.TMCore.AuthProvider
+    node: IDENTITY_PROVIDER
+    note: 認可の提供元
+  - typeId: SE.EI.TMCore.WebApp
+    node: SAAS
+    note: 外部の Web アプリケーション。自社管理でない外部のサービスとして扱う
+  - typeId: SE.EI.TMCore.WebSvc
+    node: SAAS
+    note: 外部の Web サービス
+  # Megasevrice（TMT の綴りのまま）・CRT・NFX・WinRT は generic の EXTERNAL_ENTITY になる。
+
+  # ── データストア（GE.DS）──
+  - typeId: SE.DS.TMCore.SQL
+    node: DATABASE
+    note: SQL データベース
+  - typeId: SE.DS.TMCore.NoSQL
+    node: DATABASE
+    note: 非リレーショナルのデータベース
+  - typeId: SE.DS.TMCore.CloudStorage
+    node: STORAGE
+    note: クラウドのストレージ
+  # FS（ローカルのファイルシステム。共有フォルダとは限らないので FILE_SERVER に寄せない）・Registry・
+  # ConfigFile・Cache・HTML5LS・Cookie・Device は generic の DATA_STORE になる。
+
+  # ── データフロー（GE.DF）──
+  - typeId: SE.DF.TMCore.HTTP
+    edge: { protocol: http_rest, encryption: Plain }
+  - typeId: SE.DF.TMCore.HTTPS
+    edge: { protocol: http_rest, encryption: TLS }
+  - typeId: SE.DF.TMCore.IPsec
+    edge: { protocol: ipsec, encryption: TLS }
+    note: 暗号化ありを TLS で表す（CyberRiskScape の暗号の区分は Plain / TLS / E2EE のため）
+  - typeId: SE.DF.TMCore.SMB
+    edge: { protocol: smb }
+  - typeId: SE.DF.TMCore.Binary
+    edge: { protocol: proprietary }
+  - typeId: SE.DF.TMCore.NamedPipe
+    edge: { protocol: other }
+  - typeId: SE.DF.TMCore.RPC
+    edge: { protocol: other }
+  - typeId: SE.DF.TMCore.ALPC
+    edge: { protocol: other }
+  - typeId: SE.DF.TMCore.UDP
+    edge: { protocol: other }
+  - typeId: SE.DF.TMCore.IOCTL
+    edge: { protocol: other }
+
+  # ── 枠の形の信頼境界（GE.TB.B）──
+  - typeId: SE.TB.B.TMCore.CorpNet
+    boundary: { type: ROUNDED, macroTrust: Office Area }
+    note: 社内ネットワーク
+  # Sandbox・IEB・NonIEB（サンドボックスの境界）は generic の RECT（Internal）になる。
+
+  # ── 線の形の信頼境界（GE.TB.L）──
+  # Internet・Machine・Kernel・AppContainer はすべて generic の lineBoundary（注釈として残す）。

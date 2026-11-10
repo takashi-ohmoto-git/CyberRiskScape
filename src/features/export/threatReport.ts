@@ -669,6 +669,16 @@ export function toDCRHThreatModelMarkdown(
         value: projectMeta.securityObjectives.trim(),
       }),
     );
+  for (const [field, key] of [
+    ['owner', 'report.dcrh.ownerLine'],
+    ['reviewer', 'report.dcrh.reviewerLine'],
+    ['contributors', 'report.dcrh.contributorsLine'],
+    ['assumptions', 'report.dcrh.assumptionsLine'],
+    ['externalDependencies', 'report.dcrh.externalDependenciesLine'],
+  ] as const) {
+    const value = projectMeta[field]?.trim();
+    if (value) ctx.push(translate(key, locale, { value }));
+  }
   if (ctx.length === 0)
     ctx.push(
       translate('report.dcrh.defaultContext', locale, { name: systemName, brand: BRANDING.name }),

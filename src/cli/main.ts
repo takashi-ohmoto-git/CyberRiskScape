@@ -67,7 +67,8 @@ import { parseArtexEndpoints, parseArtexServices } from '../features/asset-impor
 import { parseCyberStrikeAiAssets } from '../features/asset-import/cyberstrikeaiAssets';
 import type { PentestEndpointRecord, PentestServiceRecord } from '../features/asset-import/pentestAssetRecord';
 import { parseBom } from '../features/bom-import/parseBom';
-import { deserializeProject } from '../features/persistence/serialize';
+import { deserializeProject, resolveManualThreats } from '../features/persistence/serialize';
+import { buildMigrationReport, renderMigrationReportMarkdown } from '../features/tm7-import/migrationReport';
 import { version as APP_VERSION } from '../../package.json';
 import { buildSpdx } from '../features/bom-import/buildSpdx';
 import { listBomComponents } from '../features/bom-import/listBomComponents';
@@ -95,6 +96,7 @@ import { createCrsMcpServer } from '../mcp/server';
 import { BRANDING } from '../core/branding';
 import { kongToLayer } from '../features/kong-import/kongToLayer';
 import { layerToProject } from '../features/kong-import/toProject';
+import { tm7ToProject } from '../features/tm7-import/tm7ToProject';
 import { kongctlToLayer } from '../features/kongctl-import/kongctlToLayer';
 import { collectRepo } from '../features/repo-import/collectRepo';
 import { repoToLayer } from '../features/repo-import/repoToLayer';
@@ -193,6 +195,8 @@ const USAGE = `使い方:
   checklist <project.json> --id <checklistId> [options]
   import-kong <kong.yaml> [options]
   import-kongctl <kongctl.yaml> [options]
+  import-tm7 <file.tm7> [options]
+  migration-report <project.json> [options]
   import-repo <dir> [options]
   import-prowler <project.json> --ocsf <file> [options]
   import-findings <project.json> --format <xccdf|arf|oval> --in <file> [options]
@@ -271,6 +275,16 @@ import-kong のオプション（Kong の宣言設定から構成図の下書き
 
 import-kongctl のオプション（Kong AI Gateway 2.x の kongctl 宣言ファイルから構成図の下書きを L1 に作り、プロジェクト JSON を出力）:
   --locale <ja|en>                              ノード名の言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+import-tm7 のオプション（Microsoft Threat Modeling Tool の .tm7 から、構成図・脅威・対策の状況を含むプロジェクト JSON を出力。移行用）:
+  --locale <ja|en>                              ノード名・説明の言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+  --report <file>                               移行レポート（Markdown。migration-report と同じ内容）も出力
+
+migration-report のオプション（TMT から取り込んだ脅威と、検出した脅威の重なりと差。import-tm7 の出力に使う。framework は ALL 固定）:
+  --format <md|json>                            出力形式（既定: md）
+  --locale <ja|en>                              表示言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
 import-repo のオプション（コーディングエージェントの作業ディレクトリ（リポジトリ）の package.json・requirements*.txt・.env*・.mcp.json・.claude/ から、開発環境と依存パッケージの構成図の下書きを L1 に作り、プロジェクト JSON を出力。.env の値・認証情報は読み取り後に捨てる）:
@@ -896,6 +910,98 @@ ${USAGE}`);
   process.stderr.write(
     `Kong 設定を取り込みました（サービス ${services} / ルート ${routes} / プラグイン ${plugins} / コンシューマー ${consumers}）
 `,
+  );
+}
+
+/**
+ * `import-tm7`：Microsoft Threat Modeling Tool の .tm7 を、構成図・手動脅威・対策の状況を含む
+ * プロジェクト JSON（移行用）に変換して出力する。脅威の判定はしない（`analyze` が改めて出す）。
+ */
+function runImportTm7(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+
+  let text: string;
+  try {
+    text = readFileSync(file, 'utf-8');
+  } catch (e) {
+    fail(`ファイルを読み込めません: ${file}（${e instanceof Error ? e.message : String(e)}）`);
+  }
+  const result = tm7ToProject(text);
+  if (!result.ok) fail(result.error);
+
+  writeOutput(JSON.stringify(result.project, null, 2), values.out);
+  const s = result.summary;
+  process.stderr.write(
+    `.tm7 を取り込みました（ノード ${s.nodes} / 線 ${s.edges} / 境界 ${s.boundaries} / 注釈 ${s.annotations} / 脅威 ${s.threats} / 対策の状況 ${s.controlStatuses}）
+`,
+  );
+  if (s.review.length > 0) {
+    const reasons = { unmappedType: '型を確認', lineBoundary: '線の形の境界を描き直す', danglingFlow: '線をつなぎ直す' } as const;
+    process.stderr.write(`要確認 ${s.review.length} 件:
+`);
+    for (const r of s.review) process.stderr.write(`  [${r.layer}] ${r.label}: ${reasons[r.reason]}
+`);
+  }
+  if (s.skippedSurfaces.length > 0) {
+    process.stderr.write(`警告: 5 枚目以降の図は取り込んでいません: ${s.skippedSurfaces.join(', ')}
+`);
+  }
+  if (values.report) {
+    const { report, tmtCount } = buildMigrationReportFor(result.project, locale);
+    writeFileSync(values.report, renderMigrationReportMarkdown(report, (k, p) => translate(k, locale, p)), 'utf-8');
+    process.stderr.write(`移行レポートを出力しました: ${values.report}（TMT の脅威 ${tmtCount} 件）
+`);
+  }
+}
+
+/** 移行レポートの入力（framework ALL の全レイヤーの脅威＋手動脅威）を組み立てて報告を作る。 */
+function buildMigrationReportFor(raw: unknown, locale: Locale) {
+  let results: LayerAnalysisResult[];
+  try {
+    results = analyzeProject(raw, { framework: 'ALL', locale });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  const project = deserializeProject(raw);
+  if (!project) fail('プロジェクト JSON を読み込めません。');
+  const manualThreats = resolveManualThreats(project);
+  const report = buildMigrationReport({
+    layers: results.map((l) => ({ layer: l.layer, threats: l.threats, nodes: l.input.nodes, edges: l.input.edges })),
+    manualThreats,
+  });
+  return { report, tmtCount: report.tmt.total };
+}
+
+/**
+ * `migration-report`：TMT（.tm7）から取り込んだ脅威と、CyberRiskScape が検出した脅威の重なりと差を出す。
+ * 判定は `analyze` と同じエンジン（framework ALL）。図は変更しない。
+ */
+function runMigrationReport(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
+  setLocale(locale);
+  const format = parseEnum(values.format, FINDINGS_REPORT_FORMATS, 'format') ?? 'md';
+  const { report, tmtCount } = buildMigrationReportFor(readJsonFile(file), locale);
+  if (tmtCount === 0) {
+    process.stderr.write('警告: TMT から取り込んだ脅威がありません（import-tm7 の出力を指定してください）\n');
+  }
+  writeOutput(
+    format === 'json'
+      ? JSON.stringify(report, null, 2)
+      : renderMigrationReportMarkdown(report, (k, p) => translate(k, locale, p)),
+    values.out,
   );
 }
 
@@ -2550,6 +2656,10 @@ function main(): void {
     });
   } else if (command === 'import-kong') {
     runImportKong(values, positionals);
+  } else if (command === 'import-tm7') {
+    runImportTm7(values, positionals);
+  } else if (command === 'migration-report') {
+    runMigrationReport(values, positionals);
   } else if (command === 'import-kongctl') {
     runImportKongctl(values, positionals);
   } else if (command === 'mcp') {

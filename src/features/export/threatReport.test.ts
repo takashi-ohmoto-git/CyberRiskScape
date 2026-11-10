@@ -298,6 +298,34 @@ describe('toDCRHThreatModelMarkdown', () => {
     );
   }
 
+  it('責任者・レビュー担当・関係者・前提条件・外部依存: 設定時のみ System context に出す', () => {
+    const withMeta = toDCRHThreatModelMarkdown({
+      ...input([T_HIGH]),
+      projectMeta: {
+        ...EMPTY_PROJECT_META,
+        name: 'ProjectIT',
+        owner: '架空 太郎',
+        reviewer: '架空 花子',
+        contributors: '架空 次郎',
+        assumptions: '社内網は信頼する',
+        externalDependencies: '外部 IdP（架空）',
+      },
+    });
+    for (const v of ['架空 太郎', '架空 花子', '架空 次郎', '社内網は信頼する', '外部 IdP（架空）']) {
+      expect(withMeta).toContain(v);
+    }
+    const without = md([T_HIGH]);
+    for (const v of ['架空 太郎', '社内網は信頼する', '外部 IdP']) {
+      expect(without).not.toContain(v);
+    }
+    // 空文字・空白のみも出さない
+    const blank = toDCRHThreatModelMarkdown({
+      ...input([T_HIGH]),
+      projectMeta: { ...EMPTY_PROJECT_META, owner: '', assumptions: '   ' },
+    });
+    expect(blank).not.toMatch(/責任者|Owner|前提条件|Assumptions/);
+  });
+
   /** section 2 のデータ行（asset / description / sensitivity）を抽出。 */
   function assetRows(text: string): string[][] {
     const lines = text.split('\n');

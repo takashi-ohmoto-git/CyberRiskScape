@@ -385,6 +385,50 @@ describe('serializeProject / deserializeProject', () => {
     expect(restored?.manualThreats?.L1).toEqual([mt]);
   });
 
+  it('移行の取り込みの欄（projectMeta の 5 欄・手動脅威の subject と importedFrom・controlStatus.by）を round-trip で保持する', () => {
+    const meta = {
+      name: 'm',
+      systemName: '',
+      purpose: '',
+      businessImpact: '',
+      securityObjectives: '',
+      owner: '架空 太郎',
+      reviewer: '架空 花子',
+      contributors: 'a, b',
+      assumptions: '前提 1\n前提 2',
+      externalDependencies: '外部 IdP',
+    };
+    const mt = {
+      id: 'mt-tm7',
+      framework: 'STRIDE' as const,
+      nodeId: 'n2',
+      subject: { kind: 'edge' as const, id: 'e1' },
+      category: 'Spoofing',
+      severity: 'High' as const,
+      description: 'なりすまし。',
+      importedFrom: { product: 'Tool', externalId: '9', fields: { TypeId: 'S3', State: 'Mitigated' } },
+    };
+    const controlStatuses = { 'mt-tm7': { status: 'implemented' as const, note: '理由', at: 1, by: 'DOMAIN\\user' } };
+    const out = serializeProject({
+      ...STATE,
+      projectMeta: meta,
+      manualThreats: { L0: [], L1: [mt], L2: [], L3: [], PQC: [] },
+      controlStatuses,
+    });
+    const restored = deserializeProject(out);
+    expect(restored?.projectMeta).toEqual(meta);
+    expect(restored?.manualThreats?.L1).toEqual([mt]);
+    expect(restored?.controlStatuses).toEqual(controlStatuses);
+  });
+
+  it('projectMeta: 新しい 5 欄だけが入っていても保存される', () => {
+    const out = serializeProject({
+      ...STATE,
+      projectMeta: { name: '', systemName: '', purpose: '', businessImpact: '', securityObjectives: '', owner: 'x' },
+    });
+    expect(out.projectMeta?.owner).toBe('x');
+  });
+
   it('manualThreats: targetType（カスタム型ルール）が round-trip で保持される', () => {
     const mt = {
       id: 'mt-type',

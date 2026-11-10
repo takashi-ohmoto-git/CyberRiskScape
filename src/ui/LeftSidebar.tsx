@@ -51,7 +51,7 @@ import { buildContractorPaths } from '../features/contractor-paths/buildContract
 import { contractorPathsToMarkdown } from '../features/contractor-paths/contractorPathsOutput';
 import { buildRequirements } from '../features/requirements-export/buildRequirements';
 import { requirementsToMarkdown } from '../features/requirements-export/requirementsOutput';
-import { reportFilename } from '../features/export/exportFiles';
+import { exportMigrationReport, hasTmtThreats, reportFilename } from '../features/export/exportFiles';
 import { buildPqcReport, toPqcCsv } from '../features/pqc-path/pqcReport';
 import { BUNDLED_ALGORITHM_TABLE, getTerminationBehaviors } from '../crypto-behavior/bundled';
 import { useLocale, useT, type TranslationKey } from '../i18n';
@@ -97,6 +97,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
   const activeLayer = useDiagramStore((s) => s.activeLayer);
   const setActiveLayer = useDiagramStore((s) => s.setActiveLayer);
   const layers = useDiagramStore((s) => s.layers);
+  const showMigrationReport = useDiagramStore((s) => hasTmtThreats(s.manualThreats));
   const [openSections, setOpenSections] = useState<Set<string>>(new Set([PROJECT_SECTION_KEY]));
   const [sbomIncludeThreats, setSbomIncludeThreats] = useState(false);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -498,6 +499,15 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
                     <Download size={12} className="text-emerald-400 shrink-0" />
                     {t('project.sidebar.exportPng')}
                   </button>
+                  {showMigrationReport && (
+                    <button
+                      onClick={exportMigrationReport}
+                      className="w-full flex items-center gap-2 p-2 rounded-lg transition-all border text-xs font-bold text-left bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
+                    >
+                      <Download size={12} className="text-emerald-400 shrink-0" />
+                      {t('project.sidebar.exportMigrationReport')}
+                    </button>
+                  )}
                 </div>
               )}
             </div>

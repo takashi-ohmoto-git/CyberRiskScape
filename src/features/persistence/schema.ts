@@ -268,6 +268,12 @@ const PersistedProjectMetaSchema = z.object({
    * （この欄を持たない projectMeta）を後方互換に受理する（schemaVersion 据え置き）。
    */
   securityObjectives: z.string().max(2000).default(''),
+  /** 責任者・レビュー担当・関係者・前提条件・外部依存（2026-11-11 追加。旧データには無いため optional）。 */
+  owner: z.string().max(200).optional(),
+  reviewer: z.string().max(200).optional(),
+  contributors: z.string().max(1000).optional(),
+  assumptions: z.string().max(4000).optional(),
+  externalDependencies: z.string().max(4000).optional(),
 });
 
 const AnnotationKindSchema = z.enum(['label', 'callout']);
@@ -339,6 +345,16 @@ const PersistedManualThreatSchema = z.object({
   severity: SeveritySchema,
   description: z.string().min(1).max(4000),
   mitigation: z.string().max(4000).optional(),
+  /** 対象要素（線に付く脅威など。2026-11-11 から保存。旧データには無いため optional）。 */
+  subject: z.object({ kind: z.enum(['node', 'edge', 'boundary']), id: z.string().min(1) }).optional(),
+  /** 移行で取り込んだ脅威の元の記録（読み替えない値）。 */
+  importedFrom: z
+    .object({
+      product: z.string().min(1).max(100),
+      externalId: z.string().min(1).max(200),
+      fields: z.record(z.string().min(1).max(200), z.string().max(8000)),
+    })
+    .optional(),
 });
 
 const PersistedManualThreatsSchema = z.object({
@@ -363,6 +379,8 @@ const PersistedControlStatusSchema = z.object({
   status: ControlStatusValueSchema,
   note: z.string().max(2000).optional(),
   at: z.number().int().nonnegative(),
+  /** 状況を変えた人（任意。2026-11-11 追加）。 */
+  by: z.string().max(200).optional(),
 });
 
 /** リスク評価各項目の 3 段階スコア。 */

@@ -66,7 +66,12 @@ export function serializeProject(state: SerializableState): PersistedProject {
       meta.systemName !== '' ||
       meta.purpose !== '' ||
       meta.businessImpact !== '' ||
-      meta.securityObjectives !== '');
+      meta.securityObjectives !== '' ||
+      !!meta.owner ||
+      !!meta.reviewer ||
+      !!meta.contributors ||
+      !!meta.assumptions ||
+      !!meta.externalDependencies);
   const manual = state.manualThreats;
   const hasManual = !!manual && LAYER_KEYS.some((k) => (manual[k]?.length ?? 0) > 0);
   const suppressions = state.suppressions;

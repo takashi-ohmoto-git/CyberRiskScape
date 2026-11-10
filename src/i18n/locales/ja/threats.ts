@@ -66,6 +66,7 @@ export const jaThreats = {
   'threats.controlStatusEditor.notePlaceholderRequired': '理由・実装方法を記録（必須）',
   'threats.controlStatusEditor.notePlaceholderOptional': '補足（任意）',
   'threats.controlStatusEditor.noteRequiredWarning': '「{label}」は note が必須です。',
+  'threats.controlStatusEditor.changedBy': '変更者: {by}',
 
   // ── RiskTreatmentEditor ──
   'threats.riskTreatmentEditor.notePlaceholder': '判断の根拠・残留リスクの補足など（任意）',

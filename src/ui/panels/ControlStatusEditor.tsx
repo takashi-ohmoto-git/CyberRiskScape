@@ -47,6 +47,11 @@ export function ControlStatusEditor({ threat }: { threat: ThreatView }) {
             {t('threats.editor.unset')}
           </span>
         )}
+        {current?.by && (
+          <span className="text-xs text-slate-500">
+            {t('threats.controlStatusEditor.changedBy', { by: current.by })}
+          </span>
+        )}
       </div>
 
       {/* ステータスセレクタ */}

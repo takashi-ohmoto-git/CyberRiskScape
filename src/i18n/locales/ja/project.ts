@@ -44,6 +44,7 @@ export const jaProject = {
   'project.sidebar.exportPqcEmpty': 'ノードの「暗号経路（PQC）」から経路を分析し、「レポートに追加」でフローを登録してください',
   'project.sidebar.exportPdf': 'PDF レポート（レイヤー選択）',
   'project.sidebar.exportPng': 'PNG 画像（レイヤー選択）',
+  'project.sidebar.exportMigrationReport': 'TMT からの移行レポート（Markdown）',
   'project.sidebar.newProject': '新規作成',
   'project.sidebar.fileMenu': 'ファイル（保存 / 開く）',
   'project.sidebar.saveStateSaved': '保存しました',
@@ -128,6 +129,18 @@ export const jaProject = {
   'project.editModal.securityObjectivesLabel': 'セキュリティ目標',
   'project.editModal.securityObjectivesPlaceholder':
     '守るべき機密性・完全性・可用性などの到達目標。脅威の優先度付けの基準になります。',
+  'project.editModal.ownerLabel': '責任者',
+  'project.editModal.ownerPlaceholder': '例: 情報システム部 山田',
+  'project.editModal.reviewerLabel': 'レビュー担当',
+  'project.editModal.reviewerPlaceholder': '例: セキュリティ統括 佐藤',
+  'project.editModal.contributorsLabel': '関係者',
+  'project.editModal.contributorsPlaceholder': '例: 開発チーム 鈴木、インフラ 田中',
+  'project.editModal.assumptionsLabel': '前提条件',
+  'project.editModal.assumptionsPlaceholder':
+    '脅威モデルを描く際に置いた前提（例: 社内ネットワークは信頼する、管理者端末は MDM 管理下）。',
+  'project.editModal.externalDependenciesLabel': '外部依存',
+  'project.editModal.externalDependenciesPlaceholder':
+    'このシステムが依存する外部のサービス・組織・製品（例: 外部 IdP、決済代行、クラウド基盤）。',
 
   // ── NewProjectModal ──
   'project.newModal.title': '新規プロジェクト',
@@ -165,6 +178,12 @@ export const jaProject = {
     'Kong Gateway の宣言設定（decK の kong.yaml / JSON）から構成図の下書きを作ることもできます。認証ヘッダや資格情報の値は読み込みません。',
   'project.templateModal.selectKong': 'Kong 設定（decK）を選択',
   'project.templateModal.kongStats': 'サービス {services} / ルート {routes} / プラグイン {plugins} / コンシューマー {consumers}（コンシューマーは図にしません）',
+  'project.templateModal.tm7Intro':
+    'Microsoft Threat Modeling Tool の .tm7 から、構成図・脅威・対策の状況をプロジェクトとして移行できます（プロジェクト全体を置き換えます）。',
+  'project.templateModal.selectTm7': '.tm7（Microsoft Threat Modeling Tool）を選択',
+  'project.templateModal.tm7Stats': 'ノード {nodes} / 線 {edges} / 境界 {boundaries} / 注釈 {annotations} / 脅威 {threats} / 対策の状況 {controlStatuses}',
+  'project.templateModal.tm7Review': '要確認 {count} 件（型・線の形の境界・つながっていない線）。取り込み後に注釈と説明の [TMT] を確認してください。',
+  'project.templateModal.tm7Skipped': '5 枚目以降の図は取り込んでいません: {names}',
   'project.templateModal.kongctlIntro':
     'Kong AI Gateway 2.x の kongctl 宣言ファイル（YAML）から構成図の下書きを作ることもできます。!secret / !env の中身や認証情報は読み込みません。',
   'project.templateModal.selectKongctl': 'Kong 設定（kongctl）を選択',
@@ -241,6 +260,22 @@ export const jaProject = {
   'kong.desc.noAuth': '認証なし',
   'kong.desc.rateLimitOn': '／ レート制限: 全ルートで有効（rate-limiting 系プラグイン）',
   'kong.desc.rateLimitOff': '／ レート制限: 確認できず（制限なしとして扱う）',
+  'tm7.error.tooLarge': 'ファイルが大きすぎます（50 MB まで）。',
+  'tm7.error.parse': 'XML として読み込めません。Microsoft Threat Modeling Tool の .tm7 を選択してください。',
+  'tm7.error.notTm7': 'Microsoft Threat Modeling Tool の .tm7 ではありません（ThreatModel・DrawingSurfaceList が見つかりません）。',
+  'tm7.desc.type': '[TMT] 型: {name}（{typeId}）',
+  'tm7.desc.attributes': '[TMT] 属性: {list}',
+  'tm7.desc.outOfScope': '[TMT] 対象外（Out Of Scope）: {reason}',
+  'tm7.desc.noReason': '理由の記載なし',
+  'tm7.desc.review': '[TMT] 要確認: この型は対応表に無いため {type} として取り込みました。実態に合う型に変えてください。',
+  'tm7.desc.fullName': '[TMT] 名前（全文）: {name}',
+  'tm7.annotation.lineBoundary':
+    '[TMT] 線の形の信頼境界「{name}」（{typeId}）— 要確認：CyberRiskScape では領域の境界で描き直してください。始点 ({sx}, {sy}) → 終点 ({tx}, {ty})、曲げ ({hx}, {hy})',
+  'tm7.annotation.danglingFlow':
+    '[TMT] つながっていないデータフロー「{name}」（{typeId}）— 要確認：両端の要素につなぎ直してください。始点 ({sx}, {sy}) → 終点 ({tx}, {ty})、曲げ ({hx}, {hy})',
+  'tm7.annotation.note': '[TMT] メモ #{id}: {message}（追加: {by}、{date}）',
+  'tm7.annotation.meta': '[TMT] モデル情報（対応する欄が無い項目）',
+  'tm7.status.noReason': 'TMT で {state}（理由の記載なし）',
   // ── Kong AI Gateway 2.x (kongctl) 取り込み ──
   'kongctl.templateName': 'Kong AI Gateway 2.x（kongctl から生成）',
   'kongctl.error.parse': 'YAML として読み込めません: {message}',

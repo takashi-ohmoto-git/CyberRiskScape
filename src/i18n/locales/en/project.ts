@@ -43,6 +43,7 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'project.sidebar.exportInvestigationPlan': 'Investigation plan (suspected compromise)',
   'project.sidebar.exportPdf': 'PDF report (choose layers)',
   'project.sidebar.exportPng': 'PNG image (choose layers)',
+  'project.sidebar.exportMigrationReport': 'Migration report from TMT (Markdown)',
   'project.sidebar.newProject': 'New project',
   'project.sidebar.fileMenu': 'File (Save / Open)',
   'project.sidebar.saveStateSaved': 'Saved',
@@ -128,6 +129,18 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'project.editModal.securityObjectivesLabel': 'Security objectives',
   'project.editModal.securityObjectivesPlaceholder':
     'Confidentiality, integrity, and availability goals to protect. Used as the basis for prioritizing threats.',
+  'project.editModal.ownerLabel': 'Owner',
+  'project.editModal.ownerPlaceholder': 'e.g. Jane Smith, IT Department',
+  'project.editModal.reviewerLabel': 'Reviewer',
+  'project.editModal.reviewerPlaceholder': 'e.g. John Doe, Security Office',
+  'project.editModal.contributorsLabel': 'Contributors',
+  'project.editModal.contributorsPlaceholder': 'e.g. Alex Lee (development), Sam Kim (infrastructure)',
+  'project.editModal.assumptionsLabel': 'Assumptions',
+  'project.editModal.assumptionsPlaceholder':
+    'Assumptions made while drawing this threat model (e.g. the internal network is trusted, admin devices are MDM-managed).',
+  'project.editModal.externalDependenciesLabel': 'External dependencies',
+  'project.editModal.externalDependenciesPlaceholder':
+    'External services, organizations, or products this system depends on (e.g. external IdP, payment provider, cloud platform).',
 
   // ── NewProjectModal ──
   'project.newModal.title': 'New project',
@@ -166,6 +179,12 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
     'You can also draft a diagram from a Kong Gateway declarative configuration (decK kong.yaml / JSON). Authentication headers and credential values are not read.',
   'project.templateModal.selectKong': 'Select Kong config (decK)',
   'project.templateModal.kongStats': 'Services {services} / Routes {routes} / Plugins {plugins} / Consumers {consumers} (consumers are not drawn)',
+  'project.templateModal.tm7Intro':
+    'Migrate a Microsoft Threat Modeling Tool .tm7 (diagram, threats and mitigation status) as a project. This replaces the whole project.',
+  'project.templateModal.selectTm7': 'Select .tm7 (Microsoft Threat Modeling Tool)',
+  'project.templateModal.tm7Stats': 'Nodes {nodes} / Flows {edges} / Boundaries {boundaries} / Annotations {annotations} / Threats {threats} / Mitigation statuses {controlStatuses}',
+  'project.templateModal.tm7Review': '{count} item(s) to review (types, line-shaped boundaries, unconnected flows). After import, check the [TMT] marks in annotations and descriptions.',
+  'project.templateModal.tm7Skipped': 'Diagrams from the 5th tab onward were not imported: {names}',
   'project.templateModal.kongctlIntro':
     'You can also draft a diagram from a Kong AI Gateway 2.x kongctl declarative file (YAML). The contents of !secret / !env and credentials are not read.',
   'project.templateModal.selectKongctl': 'Select Kong config (kongctl)',
@@ -242,6 +261,22 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'kong.desc.noAuth': 'no authentication',
   'kong.desc.rateLimitOn': '/ Rate limiting: enabled on all routes (rate-limiting plugin)',
   'kong.desc.rateLimitOff': '/ Rate limiting: not confirmed (treated as none)',
+  'tm7.error.tooLarge': 'The file is too large (up to 50 MB).',
+  'tm7.error.parse': 'Cannot read the file as XML. Select a Microsoft Threat Modeling Tool .tm7 file.',
+  'tm7.error.notTm7': 'This is not a Microsoft Threat Modeling Tool .tm7 file (ThreatModel / DrawingSurfaceList not found).',
+  'tm7.desc.type': '[TMT] Type: {name} ({typeId})',
+  'tm7.desc.attributes': '[TMT] Attributes: {list}',
+  'tm7.desc.outOfScope': '[TMT] Out Of Scope: {reason}',
+  'tm7.desc.noReason': 'no reason given',
+  'tm7.desc.review': '[TMT] Review: this type is not in the mapping table, so it was imported as {type}. Change it to the type that matches.',
+  'tm7.desc.fullName': '[TMT] Full name: {name}',
+  'tm7.annotation.lineBoundary':
+    '[TMT] Line trust boundary "{name}" ({typeId}) — Review: redraw it as an area boundary in CyberRiskScape. Start ({sx}, {sy}) → end ({tx}, {ty}), handle ({hx}, {hy})',
+  'tm7.annotation.danglingFlow':
+    '[TMT] Unconnected data flow "{name}" ({typeId}) — Review: reconnect both ends to elements. Start ({sx}, {sy}) → end ({tx}, {ty}), handle ({hx}, {hy})',
+  'tm7.annotation.note': '[TMT] Note #{id}: {message} (added by {by}, {date})',
+  'tm7.annotation.meta': '[TMT] Model information (items with no matching field)',
+  'tm7.status.noReason': '{state} in TMT (no reason given)',
   // ── Kong AI Gateway 2.x (kongctl) import ──
   'kongctl.templateName': 'Kong AI Gateway 2.x (generated from kongctl)',
   'kongctl.error.parse': 'Could not read the file as YAML: {message}',

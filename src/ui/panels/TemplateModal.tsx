@@ -19,6 +19,8 @@ import { kongToLayer, type KongImportSummary } from '../../features/kong-import/
 import { kongctlToLayer, type KongctlImportSummary } from '../../features/kongctl-import/kongctlToLayer';
 import { conjurToLayer, type ConjurImportSummary } from '../../features/conjur-import/conjurToLayer';
 import { shodanToLayer, type ShodanImportSummary } from '../../features/shodan-import/shodanToLayer';
+import { tm7ToProject, type Tm7ImportSummary } from '../../features/tm7-import/tm7ToProject';
+import { EMPTY_LAYER, type LayerData } from '../../core/model/types';
 import { scopesentryToLayer, type ScopesentryImportSummary } from '../../features/scopesentry-import/scopesentryToLayer';
 
 type Tab = 'export' | 'import';
@@ -60,6 +62,7 @@ export function TemplateModal() {
   const [conjurSummary, setConjurSummary] = useState<ConjurImportSummary | null>(null);
   const [shodanSummary, setShodanSummary] = useState<ShodanImportSummary | null>(null);
   const [scopesentrySummary, setScopesentrySummary] = useState<ScopesentryImportSummary | null>(null);
+  const [tm7Summary, setTm7Summary] = useState<Tm7ImportSummary | null>(null);
   /** 既存要素ありの置換に対するインライン確認待ち（ブラウザダイアログを使わない方針）。 */
   const [confirming, setConfirming] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -68,6 +71,7 @@ export function TemplateModal() {
   const conjurInputRef = useRef<HTMLInputElement>(null);
   const shodanInputRef = useRef<HTMLInputElement>(null);
   const scopesentryInputRef = useRef<HTMLInputElement>(null);
+  const tm7InputRef = useRef<HTMLInputElement>(null);
 
   const activeCount = nodes.length + edges.length + boundaries.length;
 
@@ -87,6 +91,7 @@ export function TemplateModal() {
     setConjurSummary(null);
     setShodanSummary(null);
     setScopesentrySummary(null);
+    setTm7Summary(null);
     setConfirming(false);
   }, [isOpen, projectName, activeLayer]);
 
@@ -119,6 +124,7 @@ export function TemplateModal() {
     setConjurSummary(null);
     setShodanSummary(null);
     setScopesentrySummary(null);
+    setTm7Summary(null);
     setConfirming(false);
   };
 
@@ -130,6 +136,7 @@ export function TemplateModal() {
     setConjurSummary(null);
     setShodanSummary(null);
     setScopesentrySummary(null);
+    setTm7Summary(null);
     setImportedFileName(file.name);
     setConfirming(false);
   };
@@ -142,6 +149,7 @@ export function TemplateModal() {
     setConjurSummary(null);
     setShodanSummary(null);
     setScopesentrySummary(null);
+    setTm7Summary(null);
     setImportedFileName(file.name);
     setConfirming(false);
   };
@@ -154,6 +162,7 @@ export function TemplateModal() {
     setKongctlSummary(null);
     setShodanSummary(null);
     setScopesentrySummary(null);
+    setTm7Summary(null);
     setImportedFileName(file.name);
     setConfirming(false);
   };
@@ -170,6 +179,7 @@ export function TemplateModal() {
     setParsed(result);
     setShodanSummary(result.ok ? result.summary : null);
     setScopesentrySummary(null);
+    setTm7Summary(null);
     setKongSummary(null);
     setKongctlSummary(null);
     setConjurSummary(null);
@@ -181,10 +191,31 @@ export function TemplateModal() {
     const result = scopesentryToLayer(await file.text());
     setParsed(result);
     setScopesentrySummary(result.ok ? result.summary : null);
+    setTm7Summary(null);
     setShodanSummary(null);
     setKongSummary(null);
     setKongctlSummary(null);
     setConjurSummary(null);
+    setImportedFileName(file.name);
+    setConfirming(false);
+  };
+
+  const handleTm7File = async (file: File) => {
+    const result = tm7ToProject(await file.text());
+    if (result.ok) {
+      const project = result.project;
+      // 表示用の件数だけに使う（適用は project 全体を hydrate する）
+      const layer = (project.layers?.[project.activeLayer ?? 'L1'] as unknown as LayerData | undefined) ?? EMPTY_LAYER;
+      setParsed({ ok: true, name: project.projectMeta?.name || file.name.replace(/\.tm7$/i, ''), layer, project });
+    } else {
+      setParsed(result);
+    }
+    setTm7Summary(result.ok ? result.summary : null);
+    setKongSummary(null);
+    setKongctlSummary(null);
+    setConjurSummary(null);
+    setShodanSummary(null);
+    setScopesentrySummary(null);
     setImportedFileName(file.name);
     setConfirming(false);
   };
@@ -446,6 +477,28 @@ export function TemplateModal() {
               {t('project.templateModal.selectScopesentry')}
             </button>
 
+            <p className="text-xs text-slate-400 leading-relaxed">
+              {t('project.templateModal.tm7Intro')}
+            </p>
+            <input
+              ref={tm7InputRef}
+              type="file"
+              accept=".tm7"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleTm7File(file);
+                e.target.value = '';
+              }}
+            />
+            <button
+              onClick={() => tm7InputRef.current?.click()}
+              className="flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-wider bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg transition-colors"
+            >
+              <Upload size={14} />
+              {t('project.templateModal.selectTm7')}
+            </button>
+
             {importedFileName && parsed && (
               <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-3 text-xs">
                 <p className="text-slate-500 mb-1 truncate">{importedFileName}</p>
@@ -482,6 +535,30 @@ export function TemplateModal() {
                       <span className="block text-slate-400 mt-1">
                         {t('project.templateModal.scopesentryStats', { ...scopesentrySummary })}
                       </span>
+                    )}
+                    {tm7Summary && (
+                      <>
+                        <span className="block text-slate-400 mt-1">
+                          {t('project.templateModal.tm7Stats', {
+                            nodes: tm7Summary.nodes,
+                            edges: tm7Summary.edges,
+                            boundaries: tm7Summary.boundaries,
+                            annotations: tm7Summary.annotations,
+                            threats: tm7Summary.threats,
+                            controlStatuses: tm7Summary.controlStatuses,
+                          })}
+                        </span>
+                        {tm7Summary.review.length > 0 && (
+                          <span className="block text-amber-300 mt-1">
+                            {t('project.templateModal.tm7Review', { count: tm7Summary.review.length })}
+                          </span>
+                        )}
+                        {tm7Summary.skippedSurfaces.length > 0 && (
+                          <span className="block text-amber-300 mt-1">
+                            {t('project.templateModal.tm7Skipped', { names: tm7Summary.skippedSurfaces.join(', ') })}
+                          </span>
+                        )}
+                      </>
                     )}
                   </p>
                 ) : (
