@@ -62,6 +62,27 @@ export interface Tm7ImportOptions {
   map?: Tm7Map;
 }
 
+/** 注釈の幅（折り返し）。線の形の境界などは図の右側、メモは図の下に置く。 */
+const NOTE_WIDTH = 320;
+const WIDE_NOTE_WIDTH = 520;
+
+/** 注釈の高さの見積もり（全角 1 文字 ≒ 13px・半角 ≒ 7px、1 行 ≒ 20px。重ならないように並べるためだけに使う）。 */
+function estimateHeight(text: string, width: number): number {
+  const lineWidth = (l: string) => [...l].reduce((w, ch) => w + (ch.charCodeAt(0) < 0x80 ? 7 : 13), 0);
+  const lines = text.split('\n').reduce((sum, l) => sum + Math.max(1, Math.ceil(lineWidth(l) / width)), 0);
+  return lines * 20 + 16;
+}
+
+/** 図の下端（ノード・境界・注釈の見積もり）。注釈を図の下に並べる起点。 */
+function bottomOf(nodes: readonly DiagramNode[], boundaries: readonly DiagramBoundary[], annotations: readonly DiagramAnnotation[]): number {
+  return Math.max(
+    0,
+    ...nodes.map((n) => n.y + getNodeDimensions(n).h),
+    ...boundaries.map((b) => b.y + b.height),
+    ...annotations.map((a) => a.y + estimateHeight(a.text, a.width ?? WIDE_NOTE_WIDTH)),
+  );
+}
+
 /** 図（タブ）を入れるレイヤーの順。 */
 const LAYER_ORDER: LayerKey[] = ['L1', 'L2', 'L3', 'L0'];
 
@@ -143,6 +164,7 @@ function convert(
     const edges: DiagramEdge[] = [];
     const boundaries: DiagramBoundary[] = [];
     const annotations: DiagramAnnotation[] = [];
+    const side: { id: string; text: string }[] = [];
     const tmtBorders: Tm7Element[] = [];
     const elementsByGuid = new Map<string, Tm7Element>();
 
@@ -184,6 +206,7 @@ function convert(
             kind: 'label',
             x: (e.left ?? 0) + 8,
             y: (e.top ?? 0) + 8,
+            width: Math.max(120, Math.min((e.width ?? 0) - 16, NOTE_WIDTH)),
             text: descLines(e, b.type, foreign).join('\n'),
           });
         }
@@ -215,7 +238,6 @@ function convert(
 
     for (const e of surface.lines) {
       const resolved = resolveTm7Target(map, e.typeId, e.genericTypeId);
-      const mid = { x: Math.round(e.handleX ?? ((e.sourceX ?? 0) + (e.targetX ?? 0)) / 2), y: Math.round(e.handleY ?? ((e.sourceY ?? 0) + (e.targetY ?? 0)) / 2) };
       const coords = {
         sx: e.sourceX ?? 0,
         sy: e.sourceY ?? 0,
@@ -225,10 +247,8 @@ function convert(
         hy: e.handleY ?? 0,
       };
       if (resolved?.target.lineBoundary || (!resolved?.target.edge && e.genericTypeId !== 'GE.DF')) {
-        annotations.push({
+        side.push({
           id: e.guid,
-          kind: 'label',
-          ...mid,
           text: [t('tm7.annotation.lineBoundary', { name: elementName(e), typeId: e.typeId, ...coords }), ...descLines(e, '', false).slice(1)].join('\n'),
         });
         review.push({ layer, label: elementName(e), reason: 'lineBoundary' });
@@ -237,10 +257,8 @@ function convert(
       const src = e.sourceGuid ?? '';
       const dst = e.targetGuid ?? '';
       if (!nodeIds.has(src) || !nodeIds.has(dst)) {
-        annotations.push({
+        side.push({
           id: e.guid,
-          kind: 'label',
-          ...mid,
           text: [t('tm7.annotation.danglingFlow', { name: elementName(e), typeId: e.typeId, ...coords }), ...descLines(e, '', false).slice(1)].join('\n'),
         });
         review.push({ layer, label: elementName(e), reason: 'danglingFlow' });
@@ -272,22 +290,31 @@ function convert(
       if (foreign) review.push({ layer, label: name, reason: 'unmappedType' });
     }
 
+    // 線の形の境界・つながっていない線の注釈は、図に重ならないよう図の下に縦に並べる（元の座標は本文にある）。
+    // 右側に置くと全体表示（Fit）の範囲に入らず見落とされた（2026-11-11 目視）。
+    const left = Math.min(0, ...nodes.map((n) => n.x), ...boundaries.map((b) => b.x));
+    let sideY = bottomOf(nodes, boundaries, annotations) + 40;
+    for (const a of side) {
+      annotations.push({ id: a.id, kind: 'label', x: left, y: sideY, width: WIDE_NOTE_WIDTH, text: a.text });
+      sideY += estimateHeight(a.text, WIDE_NOTE_WIDTH) + 24;
+    }
+
     layers[layer] = { nodes, edges, boundaries, annotations };
   });
 
   // メモと、対応表に無いモデル情報は L1 の図の下に注釈として並べる。
   const first = layers.L1;
-  const ys = [...first.nodes.map((n) => n.y + 120), ...first.boundaries.map((b) => b.y + b.height + 40), 0];
-  let y = Math.max(...ys) + 40;
+  let y = bottomOf(first.nodes, first.boundaries, first.annotations) + 40;
   const extra: DiagramAnnotation[] = [];
   for (const n of model.notes) {
-    extra.push({ id: `tm7-note-${n.id}`, kind: 'label', x: 0, y, text: t('tm7.annotation.note', { id: n.id, message: n.message, by: n.addedBy, date: n.date }) });
-    y += 60;
+    const text = t('tm7.annotation.note', { id: n.id, message: n.message, by: n.addedBy, date: n.date });
+    extra.push({ id: `tm7-note-${n.id}`, kind: 'label', x: 0, y, width: WIDE_NOTE_WIDTH, text });
+    y += estimateHeight(text, WIDE_NOTE_WIDTH) + 24;
   }
   const KNOWN_META = new Set(['ThreatModelName', 'HighLevelSystemDescription', 'Owner', 'Reviewer', 'Contributors', 'Assumptions', 'ExternalDependencies']);
   const otherMeta = Object.entries(model.meta).filter(([k, v]) => !KNOWN_META.has(k) && v !== '');
   if (otherMeta.length > 0) {
-    extra.push({ id: 'tm7-meta', kind: 'label', x: 0, y, text: [t('tm7.annotation.meta'), ...otherMeta.map(([k, v]) => `${k}: ${v}`)].join('\n') });
+    extra.push({ id: 'tm7-meta', kind: 'label', x: 0, y, width: WIDE_NOTE_WIDTH, text: [t('tm7.annotation.meta'), ...otherMeta.map(([k, v]) => `${k}: ${v}`)].join('\n') });
   }
   if (extra.length > 0) layers.L1 = { ...first, annotations: [...first.annotations, ...extra] };
 
