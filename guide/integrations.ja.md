@@ -53,6 +53,7 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | **Anthropic `defending-code-reference-harness`** | `THREAT_MODEL.md` 互換の書き出し | 脅威モデルを、AI による脆弱性診断の入力にする | [Security Context に変換する](security-context.ja.md) |
 | **Veracode** | 構成例（Veracode CLI・Findings API と、`THREAT_MODEL.md`・`findings-report`・Postman 書き出しの組み合わせ） | SAST・DAST の指摘を AI で修正する流れに、脅威モデルを前提知識・優先順位・回帰テストとして組み込む・Postman 書き出しを DAST の検査範囲にする | [Veracode の指摘を AI で直す](veracode-remediation.ja.md) |
 | **Prowler** | 検査結果の取り込み（`import-prowler`。AWS の検査の OCSF 出力・CLI のみ） | 「未入力のため仮定」の運用状況・攻撃面属性を実測に置き換える・FAIL の検査を図の脅威と突き合わせる | [Prowler の検査結果を構成図に載せる](prowler.ja.md) |
+| **Microsoft Threat Modeling Tool** | .tm7 の取り込み（`import-tm7`・画面の Import）・移行レポート（`migration-report`） | TMT の図・モデル情報・脅威と判断を移し、TMT の脅威と検出脅威の重なり・判断の見直し候補を見る | [Microsoft Threat Modeling Tool の脅威モデルを移行する](threat-modeling-tool.ja.md) |
 | **Trivy** | 結果の取り込み（脆弱性は CycloneDX を `import-sbom`、IaC の設定不備・シークレットは SARIF を `import-sarif`。CLI のみ） | 依存パッケージの脆弱性を部品としてノードに結び、KEV と攻撃経路で優先順位を付ける・設定不備とシークレットをノードの指摘として持つ | [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) |
 | **Syft / Grype** | SBOM・脆弱性の取り込み（CycloneDX を `import-sbom`。CLI のみ） | Syft の SBOM を部品の台帳にし、Grype の脆弱性を部品に結んで KEV と攻撃経路で優先順位付けする | [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) §8 |
 | **ZAP** | 診断結果の取り込み（Automation Framework の `sarif-json` を `import-sarif`。CLI のみ） | 動いているアプリの指摘を、CWE の対応表で図の脅威と対応づける | [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) §5 |

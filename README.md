@@ -123,6 +123,7 @@ platforms, and AI agent platforms. It makes no outbound calls, so it also works 
 | **AI-driven vulnerability review** (Anthropic `defending-code-reference-harness`) | Export the threat model as `THREAT_MODEL.md`-compatible input for the review ([guide](guide/security-context.md)) |
 | **Vulnerability remediation** (Veracode) | An example setup that builds the threat model into a flow fixing SAST and DAST findings with AI, as context, prioritization, and regression tests ([guide](guide/veracode-remediation.md)) |
 | **Cloud security scanning** (Prowler) | Fill the operational posture and attack surface attributes still unset on diagram nodes from Prowler's OCSF findings for AWS, and cross-check FAIL checks against the diagram's threats ([guide](guide/prowler.md)) |
+| **Threat model migration** (Microsoft Threat Modeling Tool) | Import a TMT .tm7, carry over the diagram, threats, and decisions, and see the differences between TMT threats and detected threats in a migration report ([guide](guide/threat-modeling-tool.md)) |
 | **AI component scanning** (Cisco AI Defense skill-scanner / mcp-scanner) | Cross-reference agent skill and MCP server scan results with the diagram's threats through an AITech mapping table, and find what is left undrawn ([guide](guide/ai-scanners.md)) |
 | **AI source audit** (Cloudflare security-audit skill) | Import findings onto a node from the screen or the CLI, mark threat cards as "verified by source audit (local)" or "needs confirmation", and line up the preconditions of needs-confirmation findings with the diagram's facts ([guide](guide/security-audit.md)) |
 | **OSS vulnerability management** (Trivy, Syft / Grype, ZAP, Nuclei) | Import SAST, SCA and DAST results, attach them to nodes as components and findings, and prioritise with KEV, EPSS, CISA SSVC and attack paths (CLI only; [guide](guide/oss-vulnerability-management.md)) |
@@ -253,7 +254,7 @@ npm run test:watch   # watch mode
 npx tsc --noEmit     # type check (strict)
 ```
 
-The standard check after a change is `npx tsc --noEmit` plus the test suite. 2,461 tests
+The standard check after a change is `npx tsc --noEmit` plus the test suite. 2,517 tests
 currently pass.
 
 ---
@@ -286,7 +287,7 @@ Besides `analyze`, the CLI has the following subcommands (run `node dist-cli/mai
 | Purpose | Subcommands |
 |---|---|
 | Build a diagram | `import-kong`, `import-kongctl`, `import-repo`, `import-conjur`, `import-shodan`, `import-scopesentry` |
-| Import product results | `import-sarif`, `import-nuclei`, `import-sbom`, `import-prowler`, `import-findings` (SCAP), `import-security-audit`, `import-pentest` (convert to a registry with `convert-strix`, `convert-cyberstrikeai`, `convert-metasploit`), `import-aipentest-assets`, `import-metasploit-assets` |
+| Import product results | `import-sarif`, `import-nuclei`, `import-sbom`, `import-prowler`, `import-tm7` (migration report with `migration-report`), `import-findings` (SCAP), `import-security-audit`, `import-pentest` (convert to a registry with `convert-strix`, `convert-cyberstrikeai`, `convert-metasploit`), `import-aipentest-assets`, `import-metasploit-assets` |
 | Exploitation facts, likelihood and priority | `import-kev`, `import-epss`, `fill-patch-status`, `findings-priority` (P1–P4 and CISA SSVC) |
 | Reconcile and look up context | `asm-reconcile`, `sbom-report`, `context`, `checklist`, `findings-report`, `investigation-report`, `pqc-sbom-report` |
 | Export | `export-requirements`, `export-test-plan`, `export-roe`, `export-detection-requirements`, `export-contractor-paths`, `export-postman`, `export-attack-navigator`, `export-investigation-plan`, `export-spdx`, `export-sbom-ai`, `export-triage-patterns` |

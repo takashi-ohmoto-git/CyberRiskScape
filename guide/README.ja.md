@@ -48,6 +48,7 @@ CyberRiskScape を使う人のための、機能の使い方の一覧です。
 | **[脅威モデルからペネトレーションテスト計画書を作る](pentest-plan.ja.md)** | 脅威モデルから、テスト業者に依存しないペネトレーションテスト計画書（Markdown）を書き出す方法（画面・CLI）：攻撃者が直接届く入口、OBJECTIVE を持つ攻撃者ごとの攻撃経路とチョークポイント、重大度順の重点テスト項目と確認観点（OWASP API Top 10・LLM Top 10・WSTG・MASVS を参照）、受容・誤検知とした脅威の前提確認、限界 |
 | **[Veracode の指摘を AI で直す](veracode-remediation.ja.md)** | Veracode の SAST・DAST をスケジュールで起動し、指摘を AI（Veracode Fix・コーディングエージェント）で修正し、テストと再検査で解消を確かめる流れの構成例：脅威モデル（THREAT_MODEL.md）を修正の前提にする・findings-report で指摘を脅威モデルと突き合わせて優先順位を付ける・DAST は Postman 書き出しで確かめる・指摘を図に戻す、GitHub Actions の例、AI に修正させるときの安全のための設計と限界 |
 | **[Prowler の検査結果を構成図に載せる](prowler.ja.md)** | Prowler（OSS のクラウドセキュリティ検査ツール）が OCSF で出力した検査結果で、図のノードの運用状況・攻撃面属性の未入力の項目を CLI で埋め（「未入力のため仮定」を実測に置き換える）、FAIL の検査を図の脅威と突き合わせる方法、タグによる資源の結びつけ、対応している AWS の検査、秘密情報の扱い、限界（架空のサンプルでのみ確認） |
+| **[Microsoft Threat Modeling Tool の脅威モデルを移行する](threat-modeling-tool.ja.md)** | TMT の .tm7 を画面・CLI（`import-tm7`）で取り込み、図・モデル情報・脅威と判断（状態・理由・変更者）を落とさず移し、移行レポート（`migration-report`）で TMT の脅威と CyberRiskScape の検出脅威の重なり・判断の見直し候補・CyberRiskScape だけが出した脅威を見る方法と限界 |
 | **[OSS で組む脆弱性管理](oss-vulnerability-management.ja.md)** | OSS の診断ツールの結果を CLI で構成図に取り込み、KEV との照合・攻撃経路の上の優先順位（findings-priority）・CI のしきい値で回す共通の流れ。Trivy の脆弱性（CycloneDX）と IaC の設定不備・シークレット（SARIF）・Syft / Grype の SBOM と脆弱性の取り込み、ZAP（DAST）の SARIF と Nuclei の JSONL の取り込み、CyberStrikeAI・Strix（AI 自律ペンテスト）・Metasploit の結果の台帳への変換と Strix への文脈の受け渡し、保存しないもの、限界（架空のサンプルでのみ確認）。対応ツールは順次追加 |
 | **[SBOM・CBOM・AI BOM を取り込み、SPDX・CycloneDX で書き出す](sbom.ja.md)** | CycloneDX・SPDX の部品をプロジェクトに保存し、ノードに結びつけて Asset タブで確かめ、SPDX 2.3・CycloneDX 1.7 で書き出す方法。書き出しで失う情報も説明します。 |
 | **[AI によるソース監査の指摘を構成図に載せる](security-audit.ja.md)** | Cloudflare security-audit スキル（コーディングエージェントによるソース監査）の findings.json を画面か CLI でノードに取り込み、脅威カードに「ソース監査で実証（ローカル）／要確認」を出す。要確認の前提を図の事実と並べる |
@@ -91,6 +92,7 @@ CyberRiskScape を使う人のための、機能の使い方の一覧です。
 - **ペネトレーションテストの範囲と重点を、脅威モデルを根拠に決めたい** — [脅威モデルからペネトレーションテスト計画書を作る](pentest-plan.ja.md) へ。
 - **Veracode の指摘を AI で直す流れを、脅威モデルを前提に組みたい** — [Veracode の指摘を AI で直す](veracode-remediation.ja.md) へ。
 - **Prowler（AWS）の実測で「未入力のため仮定」を置き換えたい・Prowler の FAIL を図の脅威と突き合わせたい** — [Prowler の検査結果を構成図に載せる](prowler.ja.md) へ。
+- **Microsoft Threat Modeling Tool の脅威モデル（.tm7）を CyberRiskScape に移したい・TMT の判断と CyberRiskScape の検出脅威の差を見たい** — [Microsoft Threat Modeling Tool の脅威モデルを移行する](threat-modeling-tool.ja.md) へ。
 - **OSS の診断ツール（Trivy 等）の結果を、攻撃経路の上で優先順位を付けて管理したい** — [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) へ。
 - **AI 自律ペンテスト（Strix・CyberStrikeAI）が PoC で確かめた結果を脅威カードに載せたい・自分のペンテスト結果を取り込みたい** — [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) の §4・§7・§10 へ。
 - **AI にソースを監査させた指摘を図に載せ、実証と要確認を見分けたい** — [AI によるソース監査の指摘を構成図に載せる](security-audit.ja.md)

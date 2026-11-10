@@ -110,6 +110,7 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 | **AI による脆弱性診断**（Anthropic `defending-code-reference-harness`） | 脅威モデルを `THREAT_MODEL.md` 互換で書き出し、診断の入力にする（[ガイド](guide/security-context.ja.md)） |
 | **脆弱性の修正**（Veracode） | SAST・DAST の指摘を AI で修正する流れに、脅威モデルを前提知識・優先順位・回帰テストとして組み込む構成例（[ガイド](guide/veracode-remediation.ja.md)） |
 | **クラウドの検査**（Prowler） | Prowler の AWS の検査結果（OCSF）で、図のノードの未入力の運用状況・攻撃面属性を埋め、FAIL の検査を図の脅威と突き合わせる（[ガイド](guide/prowler.ja.md)） |
+| **脅威モデルの移行**（Microsoft Threat Modeling Tool） | TMT の .tm7 を取り込み、図・脅威と判断を移して、移行レポートで TMT の脅威と検出脅威の差を見る（[ガイド](guide/threat-modeling-tool.ja.md)） |
 | **AI 部品の検査**（Cisco AI Defense skill-scanner / mcp-scanner） | エージェントスキル・MCP サーバーの検査結果を、AITech 対応表を介して図の脅威と突き合わせ、描き漏れを見つける（[ガイド](guide/ai-scanners.ja.md)） |
 | **AI によるソース監査**（Cloudflare security-audit スキル） | 指摘を画面か CLI でノードに取り込み、脅威カードに「ソース監査で実証（ローカル）／要確認」を出し、要確認の前提を図の事実と並べる（[ガイド](guide/security-audit.ja.md)） |
 | **OSS の脆弱性管理**（Trivy・Syft / Grype・ZAP・Nuclei） | SAST・SCA・DAST の結果を取り込み、部品・指摘としてノードに結びつけ、KEV・EPSS・CISA SSVC と攻撃経路で優先順位を付ける（CLI のみ。[ガイド](guide/oss-vulnerability-management.ja.md)） |
@@ -233,7 +234,7 @@ npm run test:watch   # テスト watch モード
 npx tsc --noEmit     # 型チェック（strict）
 ```
 
-変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 2,461 件の
+変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 2,517 件の
 テストが通ります。
 
 ---
@@ -266,7 +267,7 @@ node dist-cli/main.js analyze <project.json> [options]
 | 用途 | サブコマンド |
 |---|---|
 | 構成図を作る | `import-kong`・`import-kongctl`・`import-repo`・`import-conjur`・`import-shodan`・`import-scopesentry` |
-| 製品の結果を取り込む | `import-sarif`・`import-nuclei`・`import-sbom`・`import-prowler`・`import-findings`（SCAP）・`import-security-audit`・`import-pentest`（`convert-strix`・`convert-cyberstrikeai`・`convert-metasploit` で台帳に変換）・`import-aipentest-assets`・`import-metasploit-assets` |
+| 製品の結果を取り込む | `import-sarif`・`import-nuclei`・`import-sbom`・`import-prowler`・`import-tm7`（移行レポートは `migration-report`）・`import-findings`（SCAP）・`import-security-audit`・`import-pentest`（`convert-strix`・`convert-cyberstrikeai`・`convert-metasploit` で台帳に変換）・`import-aipentest-assets`・`import-metasploit-assets` |
 | 悪用の事実・見込みと優先度 | `import-kev`・`import-epss`・`fill-patch-status`・`findings-priority`（P1〜P4 と CISA SSVC） |
 | 突き合わせ・文脈 | `asm-reconcile`・`sbom-report`・`context`・`checklist`・`findings-report`・`investigation-report`・`pqc-sbom-report` |
 | 書き出す | `export-requirements`・`export-test-plan`・`export-roe`・`export-detection-requirements`・`export-contractor-paths`・`export-postman`・`export-attack-navigator`・`export-investigation-plan`・`export-spdx`・`export-sbom-ai`・`export-triage-patterns` |
