@@ -36,7 +36,7 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | 製品 | 連携の方法 | ユースケース | ページ |
 |---|---|---|---|
 | **Claude Code** | MCP | 設計中に脅威を調べる・構成図を更新する・PR 前にセルフレビューする | [MCP 導入ガイド](mcp-integration.ja.md)・[ユースケース](mcp-use-cases.ja.md) |
-| **Claude Code**（作業ディレクトリ） | 作業ディレクトリの取り込み（`import-repo`。package.json・requirements.txt・.env・.mcp.json・`.claude/` の設定。`.claude/` 以外のエージェントの設定は読まない） | 開発環境と依存パッケージの構成図を自動で作る・依存と権限設定の変化を PR で見張る | [作業ディレクトリを脅威モデルにする](repo-import.ja.md) |
+| **Claude Code**（作業ディレクトリ） | 作業ディレクトリの取り込み（`import-repo`。package.json・requirements.txt・.env・.mcp.json・`.claude/` の設定。`.claude/` 以外のエージェントの設定は読まない） | 開発環境と依存パッケージの構成図を自動で作る・依存と権限設定の変化を PR で見張る | [Claude Codeの作業ディレクトリから脅威モデルを作成する](repo-import.ja.md) |
 | **GitHub Copilot**（VS Code・コーディングエージェント） | MCP | Issue から構成図の更新と脅威の確認まで任せる | [MCP 導入ガイド](mcp-integration.ja.md)・[ユースケース](mcp-use-cases.ja.md)（§5） |
 | **Cursor** | MCP | エディタ内で脅威を問い合わせる | [MCP 導入ガイド](mcp-integration.ja.md)・[ユースケース](mcp-use-cases.ja.md)（§6） |
 | **Snyk** | MCP（エージェント経由で併用） | 脅威モデルの重要脅威と、コードの脆弱性診断の結果を突き合わせる | [ユースケース](mcp-use-cases.ja.md)（§7） |

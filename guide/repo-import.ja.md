@@ -1,4 +1,4 @@
-# 作業ディレクトリを脅威モデルにする — 依存パッケージと Claude Code の設定から構成図を作る
+# Claude Codeの作業ディレクトリから脅威モデルを作成する — 依存パッケージと Claude Code の設定から構成図を作る
 
 [English](repo-import.md) | **日本語**
 

@@ -211,7 +211,7 @@ node dist-cli/main.js import-prowler src/features/prowler-import/__fixtures__/sa
 ### 3.6 埋めた図を画面で見る
 
 `-o` で出したプロジェクト JSON は、そのまま画面に読み込めます。**Template** → **Import** タブで「JSON ファイルを選択」し、「置き換えて適用」を押します
-（手順は [作業ディレクトリを脅威モデルにする](repo-import.ja.md) の §3 と同じです）。埋めた項目はノードの運用状況・攻撃面属性に入り、
+（手順は [Claude Codeの作業ディレクトリから脅威モデルを作成する](repo-import.ja.md) の §3 と同じです）。埋めた項目はノードの運用状況・攻撃面属性に入り、
 その分の「未入力のため仮定」の印が消えます。
 
 ---
