@@ -23,8 +23,12 @@ interface RecommendTargetsSectionProps {
   threats: ThreatView[];
 }
 
-const CATEGORY_KEY: Record<TargetCategory, 'panels.node.recommendCategory.credential' | 'panels.node.recommendCategory.data'> = {
+const CATEGORY_KEY: Record<
+  TargetCategory,
+  'panels.node.recommendCategory.credential' | 'panels.node.recommendCategory.business' | 'panels.node.recommendCategory.data'
+> = {
   credential: 'panels.node.recommendCategory.credential',
+  business: 'panels.node.recommendCategory.business',
   data: 'panels.node.recommendCategory.data',
 };
 

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ASSET_FORMATS, BOM_FORMATS, CRYPTO_TERMINATIONS, CVSS_VECTOR_RE,EDGE_PROTOCOLS,FINDING_CONDITION_KINDS, FINDING_FORMATS, FINDING_OUTCOMES, MAX_ASSETS, MAX_FINDING_CONDITIONS, MAX_FINDING_OPEN_QUESTIONS, MAX_BOM_COMPONENTS, MAX_FINDINGS, type Asset } from '../../core/model/types';
+import { ASSET_FORMATS, BOM_FORMATS, BUSINESS_CRITICALITIES, BUSINESS_CRITICALITY_SOURCES, CRYPTO_TERMINATIONS, CVSS_VECTOR_RE,EDGE_PROTOCOLS,FINDING_CONDITION_KINDS, FINDING_FORMATS, FINDING_OUTCOMES, MAX_ASSETS, MAX_FINDING_CONDITIONS, MAX_FINDING_OPEN_QUESTIONS, MAX_BOM_COMPONENTS, MAX_FINDINGS, type Asset } from '../../core/model/types';
 import { assetIdentifiers, toIsoTimestamp } from '../../core/model/assetIdentity';
 import {
   AgencyLevelSchema,
@@ -166,6 +166,30 @@ const PersistedNodeInventorySchema = z.discriminatedUnion('kind', [
   }),
 ]);
 
+/** 業務の文脈（NodeBusinessContext）。数値は有限・非負、文字列は長さを制限する（外部の表から入るため）。 */
+const PersistedBusinessContextSchema = z.object({
+  criticality: z.enum(BUSINESS_CRITICALITIES),
+  criticalitySource: z.enum(BUSINESS_CRITICALITY_SOURCES),
+  processes: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(200),
+        cases: z.number().finite().nonnegative().optional(),
+        value: z.number().finite().nonnegative().optional(),
+        currency: z.string().min(1).max(16).optional(),
+        period: z.string().min(1).max(64).optional(),
+      }),
+    )
+    .max(100),
+  source: z
+    .object({
+      product: z.string().min(1).max(64),
+      retrievedAt: z.string().min(1).max(40),
+      ref: z.string().min(1).max(200).optional(),
+    })
+    .optional(),
+});
+
 const PersistedNodeSchema = z.object({
   id: z.string().min(1),
   /** ElementalID 採番（§2.26）。後方互換のため optional（旧データはロード時にマイグレ）。 */
@@ -202,6 +226,8 @@ const PersistedNodeSchema = z.object({
   crypto: PersistedNodeCryptoSchema.optional(),
   /** インベントリ（記録用、後方互換のため optional）。未知キーは strip＝env 項目の value は読込時に捨てられる。 */
   inventory: PersistedNodeInventorySchema.optional(),
+  /** 業務の文脈（記録と推奨標的・SSVC 用、後方互換のため optional＝schemaVersion 据え置き）。 */
+  businessContext: PersistedBusinessContextSchema.optional(),
 });
 
 const PersistedEdgeSchema = z.object({

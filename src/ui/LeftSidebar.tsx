@@ -1,5 +1,6 @@
 import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import {
+  Briefcase,
   ClipboardCheck,
   Copy,
   Download,
@@ -56,6 +57,7 @@ import { buildPqcReport, toPqcCsv } from '../features/pqc-path/pqcReport';
 import { BUNDLED_ALGORITHM_TABLE, getTerminationBehaviors } from '../crypto-behavior/bundled';
 import { useLocale, useT, type TranslationKey } from '../i18n';
 import { formatLocalDate } from '../core/model/localDate';
+import { BusinessContextImportDialog } from '../features/business-context/BusinessContextImportDialog';
 
 const BOUNDARY_SECTION_KEY = 'BOUNDARIES';
 const ANNOTATION_SECTION_KEY = 'ANNOTATIONS';
@@ -101,6 +103,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
   const [openSections, setOpenSections] = useState<Set<string>>(new Set([PROJECT_SECTION_KEY]));
   const [sbomIncludeThreats, setSbomIncludeThreats] = useState(false);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [businessImportOpen, setBusinessImportOpen] = useState(false);
 
   const handleSaveNow = async () => {
     setSaveState('saving');
@@ -513,6 +516,11 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
             </div>
             <ProjectMenuItem icon={LibraryIcon} label="Template" onClick={openTemplate} />
             <ProjectMenuItem
+              icon={Briefcase}
+              label={t('businessContext.import.menu')}
+              onClick={() => setBusinessImportOpen(true)}
+            />
+            <ProjectMenuItem
               icon={FilePlus}
               label={t('project.sidebar.newProject')}
               onClick={openNewProjectConfirm}
@@ -709,6 +717,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
           <li className="flex gap-2">{t('project.sidebar.usageHint2')}</li>
         </ul>
       </div>
+      {businessImportOpen && <BusinessContextImportDialog onClose={() => setBusinessImportOpen(false)} />}
     </aside>
   );
 }

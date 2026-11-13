@@ -1,0 +1,5 @@
+node,process,cases,value,currency,period,criticality
+C2,Order-to-Cash,1200,8000000,JPY,2026-10,
+C2,Invoice-to-Cash,300,1500000,JPY,2026-10,
+C3,Purchase-to-Pay,500,500000,JPY,2026-10,
+ghost,Unknown-Process,10,1000,JPY,2026-10,

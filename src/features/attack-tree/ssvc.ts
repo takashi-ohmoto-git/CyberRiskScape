@@ -1,6 +1,6 @@
 import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
-import { CVSS_VECTOR_RE, type Finding, type Severity } from '../../core/model/types';
+import { CVSS_VECTOR_RE, type BusinessCriticality, type BusinessCriticalitySource, type Finding, type Severity } from '../../core/model/types';
 
 /**
  * CISA SSVC の判定（Track / Track* / Attend / Act）。判定表は `data/ssvc/cisa-ssvc.yaml`（出典はそのファイル冒頭）。
@@ -120,6 +120,9 @@ export interface SsvcInput {
   chainIndexes: readonly unknown[];
   /** この指摘のノード自身が推奨標的。 */
   isTarget: boolean;
+  /** ノードの業務上の重要度（業務の文脈）。仮定ではないので assumed には影響しない。 */
+  businessCriticality?: BusinessCriticality;
+  businessCriticalitySource?: BusinessCriticalitySource;
 }
 
 const HIGH_SEVERITY: ReadonlySet<Severity> = new Set<Severity>(['Critical', 'High']);
@@ -190,6 +193,15 @@ export function ssvcPointsFor(item: SsvcInput): SsvcAssessment {
   } else {
     missionWellbeing = 'low';
     reasons.push('Mission & Well-being=low：推奨標的に届かない');
+  }
+
+  if (item.businessCriticality === 'High' || item.businessCriticality === 'Medium') {
+    const v = item.businessCriticality === 'High' ? 'high' : 'medium';
+    if (SSVC_MISSION.indexOf(v) >= SSVC_MISSION.indexOf(missionWellbeing)) {
+      missionWellbeing = v;
+      const how = item.businessCriticalitySource === 'derived' ? '金額の割合から' : '表に記載／手入力';
+      reasons.push(`Mission & Well-being=${v}：業務の重要度 ${item.businessCriticality}（${how}）`);
+    }
   }
 
   const points: SsvcPoints = { exploitation, automatable, technicalImpact, missionWellbeing };

@@ -67,10 +67,12 @@ export type TargetReason =
   /** 機微データ資産を保持する。 */
   | 'sensitiveData'
   /** 大量の件数を保持する（取られたときの影響が大きい）。 */
-  | 'highVolume';
+  | 'highVolume'
+  /** 業務上の重要度が High（取り込み・手入力の業務の文脈）。 */
+  | 'businessCritical';
 
-/** 推奨の種別。認証系はデータ系より先に提示する（次の侵入を開く起点のため）。 */
-export type TargetCategory = 'credential' | 'data';
+/** 推奨の種別。認証系 → 業務上重要 → データ系の順に提示する（次の侵入を開く起点を先に）。 */
+export type TargetCategory = 'credential' | 'business' | 'data';
 
 export interface TargetRecommendation {
   nodeId: string;
@@ -87,7 +89,7 @@ export interface TargetRecommendation {
   reachable: boolean;
 }
 
-const CATEGORY_ORDER: Record<TargetCategory, number> = { credential: 0, data: 1 };
+const CATEGORY_ORDER: Record<TargetCategory, number> = { credential: 0, business: 1, data: 2 };
 
 /** 無向隣接（図の線＋侵入候補の仮想の線）から攻撃者が到達できるノード集合を BFS で求める。 */
 export function reachableFrom(attackerId: string, edges: readonly DiagramEdge[]): Set<string> {
@@ -169,6 +171,9 @@ export function recommendTargets(
       reasons.push('highVolume');
     }
 
+    const isBusiness = n.businessContext?.criticality === 'High';
+    if (isBusiness) reasons.push('businessCritical');
+
     if (reasons.length === 0) continue;
 
     const childIds = new Set(children.map((c) => c.id));
@@ -179,7 +184,7 @@ export function recommendTargets(
     );
     out.push({
       nodeId: n.id,
-      category: isCredential ? 'credential' : 'data',
+      category: isCredential ? 'credential' : isBusiness ? 'business' : 'data',
       reasons,
       threatCount: active.length,
       maxSeverity,

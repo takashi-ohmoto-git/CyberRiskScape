@@ -73,6 +73,7 @@ import { CryptoPathSection, NodeCryptoSection } from './CryptoSections';
 import { PostureSection } from './PostureSection';
 import { InventorySection } from './InventorySection';
 import { SecurityAuditSection } from '../../features/security-audit-import/SecurityAuditSection';
+import { BusinessContextSection } from '../../features/business-context/BusinessContextSection';
 
 type TFunc = ReturnType<typeof useT>;
 
@@ -946,6 +947,8 @@ export function NodePanel({ node, threats, allThreats }: NodePanelProps) {
         <InventorySection node={node} />
 
         <SecurityAuditSection node={node} />
+
+        <BusinessContextSection node={node} />
 
         <div className="bg-slate-800/50 rounded-2xl border border-slate-700">
           <button

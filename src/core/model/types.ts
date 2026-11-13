@@ -875,6 +875,48 @@ export interface DiagramNode {
    * 環境変数の値は記録しない（変数名・値の種類・長さだけ）。
    */
   inventory?: NodeInventory;
+  /**
+   * 業務の文脈（このノードが担う業務プロセスと、業務上の重要度）。取り込み（プロセスマイニング等の集計表）か手入力。
+   * 脅威ルールの発火には使わない。重要度 High は推奨標的に加わり、SSVC の Mission & Well-being に効く。
+   */
+  businessContext?: NodeBusinessContext;
+}
+
+/** 業務上の重要度。 */
+export const BUSINESS_CRITICALITIES = ['High', 'Medium', 'Low'] as const;
+export type BusinessCriticality = (typeof BUSINESS_CRITICALITIES)[number];
+
+/** 重要度の決め方：declared＝表に書かれた・人が入力した／derived＝取り込んだ金額（無ければ件数）の割合から決めた。 */
+export const BUSINESS_CRITICALITY_SOURCES = ['declared', 'derived'] as const;
+export type BusinessCriticalitySource = (typeof BUSINESS_CRITICALITY_SOURCES)[number];
+
+/** ノードが担う業務プロセス 1 件（集計値は記録と根拠の表示用）。 */
+export interface BusinessProcessRef {
+  /** プロセス名（例：Purchase-to-Pay・受注から入金）。 */
+  name: string;
+  /** 件数（ケース数）。 */
+  cases?: number;
+  /** 金額。 */
+  value?: number;
+  /** 通貨（ISO 4217 等の自由記述。例：JPY）。 */
+  currency?: string;
+  /** 集計期間（自由記述。例：2026-10）。 */
+  period?: string;
+}
+
+export interface NodeBusinessContext {
+  criticality: BusinessCriticality;
+  criticalitySource: BusinessCriticalitySource;
+  processes: BusinessProcessRef[];
+  /** 出どころ（取り込み時）。手入力のみなら無し。 */
+  source?: {
+    /** 製品・入力の種類（例：Celonis・business-context）。 */
+    product: string;
+    /** 取得日時（ISO 8601）。 */
+    retrievedAt: string;
+    /** 元の参照（例：KM id / record id）。資格情報・URL のクエリは入れない。 */
+    ref?: string;
+  };
 }
 
 /** 依存パッケージ 1 件（PACKAGE_DEPENDENCIES のインベントリ）。 */

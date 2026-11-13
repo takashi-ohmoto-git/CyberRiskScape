@@ -81,6 +81,14 @@ import {
   importAipentestAssets,
 } from './importAipentestAssets';
 import { MAX_FILE_BYTES } from './readEvidence';
+import { businessContextReportToJson, businessContextReportToText, importBusinessContext } from './importBusinessContext';
+import { parseBusinessContextTable } from '../features/business-context/parseBusinessContextTable';
+import {
+  celonisRowsToTable,
+  credentialsFromEnv,
+  fetchCelonisRecordRows,
+  parseValueMaps,
+} from '../features/business-context/celonis';
 import { buildFindingsReport, evaluateFindingsGate } from '../features/findings-report/buildFindingsReport';
 import { BUNDLED_AITECH_MAP, BUNDLED_FINDING_MAP } from '../features/findings-report/findingMap';
 import { buildThreatReport, toDCRHThreatModelMarkdown, toJsonObject } from '../features/export/threatReport';
@@ -207,6 +215,8 @@ const USAGE = `使い方:
   import-sarif <project.json> --sarif <file> --scope <scope> [options]
   import-nuclei <project.json> --in <results.jsonl> --scope <scope> [options]
   import-security-audit <project.json> --in <findings.json> [options]
+  import-business-context <project.json> --in <table.csv|json> [options]
+  convert-celonis --api <base-url> --km <id> --record <id> --system-field <id> --map-value <値>=<C番号|ID> ... [options]
   import-kev <project.json> --kev <file> [options]
   import-epss <project.json> --epss <epss_scores.csv[.gz]> [options]
   fill-patch-status <project.json> [options]
@@ -371,6 +381,24 @@ import-security-audit のオプション（AI によるソース監査（Cloudfl
   --node <C番号|ID>                             すべての指摘を結びつけるノード（任意。無ければ未結合）
   --report <md|json>                            報告の形式（既定: md。標準出力）
   -o, --out <file>                              指摘を保存したプロジェクト JSON の出力先（指定しなければ報告のみ）
+
+import-business-context のオプション（業務の文脈の表（CSV: node,process,cases,value,currency,period,criticality ／ JSON: kind "cyberriskscape-business-context"）を読み、ノードが担う業務プロセスと重要度（High / Medium / Low）を記録する。重要度は行の criticality（最大値）、無ければ表全体の金額（無ければ件数）に占める割合（30% 以上 High・10% 以上 Medium）から決める。High のノードは推奨標的に加わり、SSVC の Mission & Well-being に効く。脅威ルールの発火には使わない。ネットワークにも出ない）:
+  --in <table.csv|json>                         業務の文脈の表（必須）
+  --format <text|json>                          標準エラー出力の報告の形式（既定: text）
+  -o, --out <file>                              更新したプロジェクト JSON の出力先（既定: 標準出力）
+
+convert-celonis のオプション（Celonis（プロセスマイニング）の Knowledge Model の Record のデータを GET し、業務の文脈の表（JSON）に変換する。読み取りのみ。最大 1,000 行。資格情報は環境変数 CELONIS_CLIENT_ID と CELONIS_CLIENT_SECRET（または CELONIS_TOKEN）で渡す。引数では受け取らず、保存・出力しない）:
+  --api <base-url>                              https://<team>.<cluster>.celonis.cloud/intelligence/api（必須。https のみ）
+  --km <id>                                     Knowledge Model の ID（必須）
+  --record <id>                                 Record の ID（必須）
+  --system-field <id>                           ノードに対応づけるシステム名の項目 ID（必須）
+  --map-value <値>=<C番号|ID>                    システム名の値とノードの対応（必須・繰り返し可。対応のない値の行は除外して報告する）
+  --process <name> | --process-field <id>       プロセス名（固定値、または項目 ID。どちらか必須）
+  --value-field <id>                            金額の項目 ID（任意）
+  --cases-field <id>                            件数の項目 ID（任意）
+  --currency <code>                             通貨（任意。例: JPY）
+  --period <text>                               集計期間（任意。例: 2026-10）
+  -o, --out <table.json>                        表の出力先（既定: 標準出力）
 
 import-kev のオプション（CISA の KEV カタログ JSON（https://www.cisa.gov/known-exploited-vulnerabilities-catalog）を指摘の CVE と照合し、載っている指摘に kev の印を付ける。載っていない指摘からは印を外す＝取り込み直しで最新になる。カタログは同梱せず、ネットワークにも出ない。KEV に載っている＝CISA が悪用を確認した事実）:
   --kev <file>                                  KEV カタログの JSON（必須）
@@ -667,6 +695,16 @@ function parseCliArgs() {
       node: { type: 'string' },
       xml: { type: 'string' },
       'host-node': { type: 'string', multiple: true },
+      'map-value': { type: 'string', multiple: true },
+      km: { type: 'string' },
+      record: { type: 'string' },
+      'system-field': { type: 'string' },
+      process: { type: 'string' },
+      'process-field': { type: 'string' },
+      'value-field': { type: 'string' },
+      'cases-field': { type: 'string' },
+      currency: { type: 'string' },
+      period: { type: 'string' },
       'base-url': { type: 'string' },
       author: { type: 'string' },
       'include-threats': { type: 'boolean' },
@@ -1227,6 +1265,82 @@ ${USAGE}`);
   process.stderr.write(
     `ペンテストの指摘を取り込みました（保存 ${out.stored} / 手動脅威 ${out.manualAdded} / 未結合 ${out.unlinked.length}）
 `,
+  );
+}
+
+/** `import-business-context`：業務の文脈の表をノードの businessContext に反映する。プロジェクトは標準出力か --out、報告は標準エラー。 */
+function runImportBusinessContext(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  if (!values.in) fail('--in <table.csv|json> を指定してください。');
+  const format = parseEnum(values.format, ['text', 'json'] as const, 'format') ?? 'text';
+
+  let text: string;
+  try {
+    if (statSync(values.in).size > MAX_FILE_BYTES) {
+      fail(`ファイルが大きすぎます（上限 ${MAX_FILE_BYTES / 1024 / 1024} MB）: ${values.in}`);
+    }
+    text = readFileSync(values.in, 'utf-8');
+  } catch (e) {
+    fail(`ファイルを読み込めません: ${values.in}（${e instanceof Error ? e.message : String(e)}）`);
+  }
+  const table = parseBusinessContextTable(text, values.in);
+  if (!table.ok) fail(`${table.error}（${values.in}）`);
+
+  let out: ReturnType<typeof importBusinessContext>;
+  try {
+    out = importBusinessContext(readJsonFile(file), table);
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  writeOutput(JSON.stringify(out.project, null, 2), values.out);
+  process.stderr.write(`${format === 'json' ? JSON.stringify(businessContextReportToJson(out.summary), null, 2) : businessContextReportToText(out.summary)}
+`);
+}
+
+/**
+ * `convert-celonis`：Celonis の Knowledge Model の Record のデータ（GET のみ）を業務の文脈の表（JSON）に変換する。
+ * 資格情報は環境変数だけから受け取る。
+ */
+async function runConvertCelonis(values: CliValues): Promise<void> {
+  if (!values.api) fail('--api <base-url> を指定してください。');
+  if (!values.km) fail('--km <id> を指定してください。');
+  if (!values.record) fail('--record <id> を指定してください。');
+  if (!values['system-field']) fail('--system-field <id> を指定してください。');
+  if (!values.process && !values['process-field']) fail('--process <name> か --process-field <id> のどちらかを指定してください。');
+  if (values.process && values['process-field']) fail('--process と --process-field は同時に指定できません。');
+
+  let map: Map<string, string>;
+  let creds: ReturnType<typeof credentialsFromEnv>;
+  try {
+    map = parseValueMaps(values['map-value'] ?? []);
+    creds = credentialsFromEnv(process.env);
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  const fields = [...new Set([values['system-field'], values['process-field'], values['value-field'], values['cases-field']].filter((f): f is string => !!f))];
+  const fetched = await fetchCelonisRecordRows(values.api, creds, { km: values.km, record: values.record, fields });
+  const { table, summary } = celonisRowsToTable(fetched.rows, {
+    km: values.km,
+    record: values.record,
+    systemField: values['system-field'],
+    map,
+    ...(values.process ? { process: values.process } : {}),
+    ...(values['process-field'] ? { processField: values['process-field'] } : {}),
+    ...(values['value-field'] ? { valueField: values['value-field'] } : {}),
+    ...(values['cases-field'] ? { casesField: values['cases-field'] } : {}),
+    ...(values.currency ? { currency: values.currency } : {}),
+    ...(values.period ? { period: values.period } : {}),
+  });
+  writeOutput(JSON.stringify(table, null, 2), values.out);
+  const unmapped = Object.entries(summary.unmapped);
+  process.stderr.write(
+    `Celonis から表を作りました（取得 ${summary.rows} 行 / 使用 ${summary.used} / プロセス名なし ${summary.missingProcess} / 数値でなく無視 ${summary.nonNumeric}）。
+${unmapped.length > 0 ? `対応のない値で除外: ${unmapped.map(([k, n]) => `${k}（${n} 行）`).join('、')}
+` : ''}${fetched.truncated ? `取得できる上限（1000 行）に達したため打ち切りました（総件数 ${fetched.total ?? '不明'}）。Knowledge Model 側で絞り込んでください。
+` : ''}`,
   );
 }
 
@@ -2610,6 +2724,12 @@ function main(): void {
     runImportFindings(values, positionals);
   } else if (command === 'import-pentest') {
     runImportPentest(values, positionals);
+  } else if (command === 'import-business-context') {
+    runImportBusinessContext(values, positionals);
+  } else if (command === 'convert-celonis') {
+    runConvertCelonis(values).catch((e: unknown) => {
+      fail(`Celonis の変換に失敗しました: ${e instanceof Error ? e.message : String(e)}`);
+    });
   } else if (command === 'import-kev') {
     runImportKev(values, positionals);
   } else if (command === 'fill-patch-status') {

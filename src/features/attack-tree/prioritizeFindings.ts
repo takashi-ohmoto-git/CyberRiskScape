@@ -10,7 +10,7 @@ import type {
 import { buildAttackGraph } from './buildAttackGraph';
 import { buildEntryEdges, ENTRY_SEARCH_APPLICABLE, findEntryPoints } from './findEntryPoints';
 import { reachableFrom, recommendTargets } from './recommendTargets';
-import { ssvcPointsFor, type SsvcAssessment } from './ssvc';
+import { ssvcPointsFor, type SsvcAssessment, type SsvcInput } from './ssvc';
 
 /**
  * 指摘の文脈と推奨の優先度（docs/attack-tree-analysis.md §12）。
@@ -110,6 +110,12 @@ function hopsFrom(start: string, edges: readonly DiagramEdge[], attackerId: stri
   return dist;
 }
 
+/** ノードの業務の文脈から SSVC への入力を取り出す。 */
+function businessOf(n: DiagramNode | undefined): Pick<SsvcInput, 'businessCriticality' | 'businessCriticalitySource'> {
+  const b = n?.businessContext;
+  return b ? { businessCriticality: b.criticality, businessCriticalitySource: b.criticalitySource } : {};
+}
+
 function pickAttacker(ctx: LayerContext, attackerId: string | undefined): string | undefined {
   const usable = (n: DiagramNode) => ENTRY_SEARCH_APPLICABLE.has(n.type);
   if (attackerId !== undefined) {
@@ -156,6 +162,7 @@ export function prioritizeFindings(
     const ids = new Set(ctx.nodes.map((n) => n.id));
     // 内包された資産の指摘は親のノードで数える。
     const parentOf = new Map(ctx.nodes.map((n) => [n.id, n.parentId && ids.has(n.parentId) ? n.parentId : n.id]));
+    const nodeById = new Map(ctx.nodes.map((n) => [n.id, n] as const));
     const attacker = pickAttacker(ctx, attackerId);
     for (const f of here) handled.add(f.id);
 
@@ -241,7 +248,7 @@ export function prioritizeFindings(
       const priority: FindingPriority =
         exploitation === 'likely' && (exposure === 'entry' || exposure === 'reachable') ? RAISED[computed] : computed;
       const b = { ...base(f), exposureAssumed, reachesTargets, exploitation, chainIndexes };
-      items.push({ ...b, exposure, priority, ssvc: ssvcPointsFor({ ...b, exposure, isTarget: targetIds.has(top) }) });
+      items.push({ ...b, exposure, priority, ssvc: ssvcPointsFor({ ...b, exposure, isTarget: targetIds.has(top), ...businessOf(nodeById.get(top)) }) });
     }
   }
 
