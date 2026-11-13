@@ -140,7 +140,7 @@ rules:
     appliesTo:
       kind: edge
       when:
-        sourceType: [AGENT, SUB_AGENT, TOOL, CONNECTOR]
+        sourceType: [AGENT, SUB_AGENT, TOOL, CONNECTOR, AUTOMATION_PLATFORM]
         targetType: [PC, SMARTPHONE, IOT]
         targetManagedState: [Unmanaged]
     complianceRefs:

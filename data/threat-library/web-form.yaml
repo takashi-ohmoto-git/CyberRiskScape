@@ -206,7 +206,7 @@ rules:
       # ピアの中身（PERSONAL_INFO 等）は条件にできないため、業務データを持ちうる型で近似する。
       connection:
         direction: any
-        peerType: [DATABASE, DATA_STORE, FILE_SERVER, CRM, BACKEND_API]
+        peerType: [DATABASE, DATA_STORE, ANALYTICS_PLATFORM, FILE_SERVER, CRM, BACKEND_API]
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.DS-01"

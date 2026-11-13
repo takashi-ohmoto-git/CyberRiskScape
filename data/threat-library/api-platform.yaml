@@ -803,7 +803,7 @@ rules:
       # 入口での量の制限は gateway-resource-exhaustion（GATEWAY / REVERSE_PROXY）が扱うため GATEWAY は含めない。
       connection:
         direction: outbound
-        peerType: [BACKEND_API, DATABASE, DATA_STORE, SAAS, CRM, OTHER_APP]
+        peerType: [BACKEND_API, DATABASE, DATA_STORE, ANALYTICS_PLATFORM, SAAS, CRM, OTHER_APP]
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.IR-03"

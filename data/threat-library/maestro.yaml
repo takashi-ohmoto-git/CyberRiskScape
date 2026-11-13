@@ -293,7 +293,7 @@ rules:
     appliesTo:
       kind: edge
       when:
-        targetType: [TOOL, CONNECTOR]
+        targetType: [TOOL, CONNECTOR, AUTOMATION_PLATFORM]
         targetTrust: [Partner]
     complianceRefs:
       - standard: nist-ai-rmf

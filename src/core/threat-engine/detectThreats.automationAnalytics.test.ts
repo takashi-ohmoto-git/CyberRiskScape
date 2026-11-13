@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { detectThreats } from './detectThreats';
-import type { DiagramEdge, DiagramNode } from '../model/types';
+import type { DiagramBoundary, DiagramEdge, DiagramNode } from '../model/types';
 import { componentRegistry } from '../../component-library/defaultRegistry';
 import { BUNDLED_THREAT_LIBRARY } from '../../threat-library/loader/bundledLibrary';
 
@@ -82,5 +82,40 @@ describe('analytics-data-permission-missing-001', () => {
 
   it('DATABASE → 発火しない（アプリが認可を担う）', () => {
     expect(fire(id, [node('d', 'DATABASE')], [])).toHaveLength(0);
+  });
+});
+
+/** 新 2 型の追加時に判断を残した既存ルールの対象拡大（2026-11-13）。 */
+describe('既存ルールの対象に新 2 型を足したもの', () => {
+  const partner: DiagramBoundary = { id: 'bp', type: 'RECT', x: 200, y: 200, width: 200, height: 200, trustLevel: 'Partner' };
+
+  it('agentic-endpoint-command-unmanaged-target: AUTOMATION_PLATFORM → 未管理端末で発火、管理端末では発火しない', () => {
+    const id = 'agentic-endpoint-command-unmanaged-target-001';
+    const p = node('p', 'AUTOMATION_PLATFORM');
+    expect(fire(id, [p, node('d', 'PC', { managedState: 'Unmanaged' })], [edge('p', 'd')])).toHaveLength(1);
+    expect(fire(id, [p, node('d', 'PC', { managedState: 'Managed' })], [edge('p', 'd')])).toHaveLength(0);
+  });
+
+  it('maestro-partner-supply-chain-tool: 取引先境界内の AUTOMATION_PLATFORM で発火、境界外では発火しない', () => {
+    const rule = BUNDLED_THREAT_LIBRARY.rules.find((r) => r.id === 'maestro-partner-supply-chain-tool-001')!;
+    const nodes = [node('s', 'AGENT', { x: 50, y: 50 }), node('p', 'AUTOMATION_PLATFORM', { x: 300, y: 300 })];
+    const run = (boundaries: DiagramBoundary[]) =>
+      detectThreats({ nodes, edges: [edge('s', 'p')], boundaries, framework: 'ALL', rules: [rule] });
+    expect(run([partner])).toHaveLength(1);
+    expect(run([])).toHaveLength(0);
+  });
+
+  it('api-downstream-cascading-failure: BACKEND_API から ANALYTICS_PLATFORM へ outbound で発火、線が無ければ発火しない', () => {
+    const id = 'api-downstream-cascading-failure-001';
+    const a = node('a', 'BACKEND_API');
+    expect(fire(id, [a, node('w', 'ANALYTICS_PLATFORM')], [edge('a', 'w')])).toHaveLength(1);
+    expect(fire(id, [a, node('w', 'ANALYTICS_PLATFORM')], [])).toHaveLength(0);
+  });
+
+  it('admin-console-bulk-export-unguarded: ADMIN_CONSOLE と ANALYTICS_PLATFORM がつながると発火、AUTOMATION_PLATFORM では発火しない', () => {
+    const id = 'admin-console-bulk-export-unguarded-001';
+    const c = node('c', 'ADMIN_CONSOLE');
+    expect(fire(id, [c, node('w', 'ANALYTICS_PLATFORM')], [edge('c', 'w')])).toHaveLength(1);
+    expect(fire(id, [c, node('p', 'AUTOMATION_PLATFORM')], [edge('c', 'p')])).toHaveLength(0);
   });
 });
