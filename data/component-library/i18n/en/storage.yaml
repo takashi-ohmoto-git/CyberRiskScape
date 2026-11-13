@@ -12,7 +12,11 @@ locale: en
 components:
   DATABASE:
     label: "Database"
-    description: "A business database (RDB / NoSQL). In the cloud this includes Amazon RDS, Aurora and DynamoDB, Azure SQL Database and Cosmos DB, Google Cloud SQL, Spanner and Firestore, and OCI Autonomous Database."
+    description: "A business database (RDB / NoSQL). In the cloud this includes Amazon RDS, Aurora and DynamoDB, Azure SQL Database and Cosmos DB, Google Cloud SQL, Spanner and Firestore, and OCI Autonomous Database. For an analytical store that many people, BI tools or AI agents query directly, use Analytics platform / DWH."
+
+  ANALYTICS_PLATFORM:
+    label: "Analytics platform / data warehouse"
+    description: "An analytical store that collects data extracted from multiple business systems and is queried directly by many users, BI tools and AI agents (data warehouses, data lakes, process-mining data models). Examples: Snowflake, Google BigQuery, Amazon Redshift, Databricks, and Celonis Data Pools / Data Models. For a business database where the application enforces authorization, use Database."
 
   STORAGE:
     label: "Storage"

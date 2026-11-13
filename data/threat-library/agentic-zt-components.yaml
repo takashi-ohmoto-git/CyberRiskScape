@@ -143,7 +143,7 @@ rules:
       # 下流 API への接続を持つ MCP サーバでトークン集中リスクが顕在化する。
       connection:
         direction: outbound
-        peerType: [TOOL, CONNECTOR, DB, LLM, EXTERNAL_ENTITY]
+        peerType: [TOOL, CONNECTOR, AUTOMATION_PLATFORM, DB, LLM, EXTERNAL_ENTITY]
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.AA-01"

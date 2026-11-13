@@ -197,7 +197,7 @@ components:
     icon: { kind: builtin, name: "circle-dot" }
     shape: connector
     color: "bg-transparent"
-    description: "中継ノード（iPaaS、サイドカープロキシ）。クラウドでは DB プロキシの Amazon RDS Proxy 等が該当する。メッセージブローカー（Amazon SQS・SNS・EventBridge・MSK / Azure Service Bus・Event Hubs / Google Cloud Pub/Sub / OCI Streaming 等）はメッセージブローカー（MESSAGE_BROKER）を使う。"
+    description: "中継ノード（サイドカープロキシ）。クラウドでは DB プロキシの Amazon RDS Proxy 等が該当する。iPaaS・業務自動化基盤（Workato・Zapier・Power Automate・n8n 等）は業務自動化 / iPaaS（AUTOMATION_PLATFORM）、メッセージブローカー（Amazon SQS・SNS・EventBridge・MSK / Azure Service Bus・Event Hubs / Google Cloud Pub/Sub / OCI Streaming 等）はメッセージブローカー（MESSAGE_BROKER）を使う。"
 
   - id: IDENTITY_PROVIDER
     label: "IdP"

@@ -63,6 +63,8 @@ behaviors:
     note: "Terminates TLS as a front end and reconnects to inner servers. Confirm encryption on the inner leg."
   CONNECTOR:
     note: "Connectors (messaging, DB proxies, etc.) usually terminate each connection and store-and-forward. Confirm encryption on the legs before and after."
+  AUTOMATION_PLATFORM:
+    note: "A workflow automation platform terminates TLS on incoming webhooks and reconnects to each connected system on a separate connection (with that system's credentials). Confirm encryption on each leg to the connected systems."
   AI_GATEWAY:
     note: "An AI gateway terminates TLS, inspects the content, and reconnects to the model provider. Confirm encryption on the upstream (model API) leg."
   PBX:

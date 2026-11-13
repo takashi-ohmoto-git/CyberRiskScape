@@ -179,6 +179,13 @@
 #     ユーザー承認の「明示宣言時のみ発火」の例外。業務フローの機微さは図から決まらず、すべての API で出すと誤検知になるため）。
 #     持つと宣言したうえで対策（businessFlowProtection）が未入力なら、大方針どおり対策なしと同じ扱いで発火する。
 #
+#   AUTOMATION_PLATFORM（2026-11-13 追加。業務自動化 / iPaaS。従来は CONNECTOR に描いていた）:
+#   - 連携先の資格情報の集約と書き戻し → 新規（automation-platform-credential-aggregation）。CONNECTOR（サイドカー・DB プロキシ）
+#     では誤検知になるため専用型に分けた。MCP サーバーのトークン集中（mcp-oauth-token-confused-deputy）とは、あちらが
+#     OAuth 委任、こちらが連携先ごとの接続の権限と書き戻しを問う点で異なる（別 canonicalId）。
+#   - 中間コネクタ改ざん（connector-tampering）・ログ・アカウント棚卸し・PQC の crypto-agility・間接プロンプトインジェクションの
+#     接続先・静的 API キー・MCP の資格情報の集中の対象には、従来 CONNECTOR に含めていた iPaaS の分として加えた。
+#
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する。
 
@@ -1055,3 +1062,31 @@ rules:
         url: "https://owasp.org/API-Security/editions/2023/en/0xa6-unrestricted-access-to-sensitive-business-flows/"
       - title: "OWASP Automated Threats to Web Applications（OAT-005 Scalping・OAT-021 Denial of Inventory 等）"
         url: "https://owasp.org/www-project-automated-threats-to-web-applications/"
+
+  # ── AUTOMATION_PLATFORM: 連携先の資格情報の集約と書き戻し ──────────────────
+  - id: automation-platform-credential-aggregation-001
+    canonicalId: automation-platform-credential-aggregation
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "業務自動化基盤に集約された連携先の資格情報の悪用（多数の連携先への読み書き）"
+    severity: High
+    description: "{{nodeName}} は連携先ごとの接続（資格情報・トークン）を保管し、トリガー（スケジュール・Webhook・イベント・画面のボタン）で連携先へ読み書きする。{{nodeName}} 自体、フローや接続を作成・編集できる利用者のアカウント、保管された接続のいずれかが奪われると、攻撃者はその接続が持つ権限のまま、連携先の業務システム・SaaS・データ基盤からデータを読み出し、書き換え、削除できる（Can）。たとえば抽出用と書き戻し用で同じ接続（同じ高権限アカウント）を使い回していると、読み取りだけのつもりの連携でも書き込みに悪用される。フローの編集権限があれば、新しいフローで連携先のデータを外部へ送る・書き換えることもできる。一方、連携先ごとに専用のアカウントで最小権限の接続を作り、読み取りと書き込みの接続を分け、フローと接続の作成・編集を限られた担当者に絞り、書き込みを伴うフローに承認と記録を付けていれば、1 つの侵害が及ぶ範囲は個々の接続の権限に限られる（Cannot）。blast radius は {{nodeName}} に接続されたすべての連携先と、各接続が読み書きできるデータ。"
+    mitigation: "[Foundation] 連携先ごとに専用のアカウント（サービスアカウント）で最小権限の接続を作り、人の個人アカウントや管理者アカウントを共有しない。読み取り用と書き込み用の接続を分ける。フローと接続を作成・編集できる利用者を限り、接続の一覧（連携先・権限・作成者・最終利用日）を台帳にして未使用の接続を削除する。 [Enterprise] 静的な API キー・パスワードより、OAuth の短命トークンや連携先側で失効できる資格情報を使い、定期的に更新する。書き込み・削除を伴うフローは変更時にレビューと承認を必須にし、フローと接続の作成・変更・実行の監査ログを収集して確認する。 [Advanced] 書き込み量・書き込み先・実行時間帯の異常（急な大量更新・見慣れない宛先）を検知して自動で停止する。連携先側でも自動化基盤のアカウントの操作範囲と接続元を制限し、基盤が侵害されても連携先の管理者権限に及ばないようにする。"
+    appliesTo:
+      kind: node
+      nodeType: AUTOMATION_PLATFORM
+      # 連携先（業務システム・SaaS・データ基盤など）へ接続している図で出す。連携先への線を描かない図では出さない
+      # （接続先が不明なまま「資格情報の集約」を言うと根拠が無いため）。
+      connection:
+        direction: outbound
+        peerType: [BACKEND_API, SAAS, CRM, OTHER_APP, DATABASE, DATA_STORE, ANALYTICS_PLATFORM, MAIL, CHAT]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+    references:
+      - title: "NIST SP 800-53 Rev.5 - Security and Privacy Controls for Information Systems and Organizations（AC-6 Least Privilege / IA-5 Authenticator Management）"
+        url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"
+      # 資格情報を集中して保管するという点で MCP サーバーのトークン集中（mcp-oauth-token-confused-deputy）と近いが、
+      # あちらは MCP の OAuth 委任の問題、こちらは連携先ごとの接続の権限と書き戻しが対象のため別 canonicalId。

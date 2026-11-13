@@ -271,6 +271,8 @@ export const POSTURE_FIELD_VALUES = {
   sensitiveBusinessFlow: ['Yes', 'No'],
   /** 機微な業務フローの自動化への対策（Bot 対策・利用者ごとの上限・人の操作の確認）の強制。sensitiveBusinessFlow が Yes のときに意味を持つ */
   businessFlowProtection: ['Enforced', 'None'],
+  /** データ単位の権限（利用者・グループごとの行の絞り込み）の設定と強制。分析基盤のように多くの人が直接照会するストアで意味を持つ */
+  dataPermission: ['Enforced', 'None'],
   /** データ資産の保有の必要性 */
   dataNecessity: ['Required', 'UnderReview', 'NotRequired'],
   /** データ資産の件数規模 */
@@ -301,6 +303,7 @@ export const POSTURE_GROUPS = [
   'update',
   'meteredCalls',
   'businessFlow',
+  'dataPermission',
 ] as const;
 export type PostureGroup = (typeof POSTURE_GROUPS)[number];
 
@@ -322,6 +325,7 @@ export const POSTURE_GROUP_FIELDS: Readonly<Record<PostureGroup, readonly Postur
   update: ['updateSigning', 'updateRollbackProtection'],
   meteredCalls: ['meteredCalls', 'meteredCallLimit'],
   businessFlow: ['sensitiveBusinessFlow', 'businessFlowProtection'],
+  dataPermission: ['dataPermission'],
 };
 
 /** 運用状況。すべて optional。未設定は `Unknown`＝対策なしとして脅威を評価する。 */
@@ -357,6 +361,7 @@ export interface NodePosture {
   meteredCallLimit?: (typeof POSTURE_FIELD_VALUES.meteredCallLimit)[number];
   sensitiveBusinessFlow?: (typeof POSTURE_FIELD_VALUES.sensitiveBusinessFlow)[number];
   businessFlowProtection?: (typeof POSTURE_FIELD_VALUES.businessFlowProtection)[number];
+  dataPermission?: (typeof POSTURE_FIELD_VALUES.dataPermission)[number];
   dataNecessity?:(typeof POSTURE_FIELD_VALUES.dataNecessity)[number];
   recordVolume?: (typeof POSTURE_FIELD_VALUES.recordVolume)[number];
   /** 最終点検日（YYYY-MM-DD）。記録用で脅威の判定には使わない。全型で入力可。 */

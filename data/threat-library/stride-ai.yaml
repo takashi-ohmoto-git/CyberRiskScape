@@ -204,6 +204,7 @@ rules:
       anyOf:
         - nodeType: DATA_STORE
         - nodeType: DATABASE
+        - nodeType: ANALYTICS_PLATFORM
         - nodeType: BACKUP_STORAGE
         - nodeType: IMMUTABLE_BACKUP
     complianceRefs:
@@ -230,6 +231,7 @@ rules:
       anyOf:
         - nodeType: DATA_STORE
         - nodeType: DATABASE
+        - nodeType: ANALYTICS_PLATFORM
         - nodeType: STORAGE
     complianceRefs:
       - standard: nist-csf-2.0
@@ -251,6 +253,7 @@ rules:
       anyOf:
         - nodeType: DATA_STORE
         - nodeType: DATABASE
+        - nodeType: ANALYTICS_PLATFORM
         - nodeType: STORAGE
         - nodeType: FILE_SERVER
     complianceRefs:
@@ -392,6 +395,7 @@ rules:
       kind: node
       anyOf:
         - nodeType: CONNECTOR
+        - nodeType: AUTOMATION_PLATFORM
         - nodeType: MESSAGE_BROKER
     complianceRefs:
       - standard: nist-csf-2.0
@@ -446,7 +450,7 @@ rules:
         # 業務 DB・ストレージ（storage ライブラリ）も未管理端末から直接触られる機微な保管先のため加える。
         # ファイルサーバー・仮想化基盤（の管理画面）・SIEM（2026-10-21）も、未管理端末から触られると
         # 共有フォルダの中身・全 VM の管理権限・全システムのログに届く機微な対象のため加える。
-        targetType: [LLM, AGENT, DB, DATA_STORE, GATEWAY, DATABASE, STORAGE, FILE_SERVER, HYPERVISOR, SIEM]
+        targetType: [LLM, AGENT, DB, DATA_STORE, GATEWAY, DATABASE, ANALYTICS_PLATFORM, STORAGE, FILE_SERVER, HYPERVISOR, SIEM]
     complianceRefs:
       - standard: nist-ai-rmf
         ref: "MAP 4.1"
@@ -472,12 +476,12 @@ rules:
         # 業務 DB・ストレージ（storage ライブラリ）へ境界外から直接到達できる構成も同じ攻撃面の過大さを
         # 持つため加える。既定の description は AI 前提（プロンプトインジェクション等）のため、
         # conditions で保管先向けの description に差し替える。ファイルサーバー（2026-10-21）も同じ保管先として加える。
-        targetType: [LLM, AGENT, DB, DATABASE, STORAGE, FILE_SERVER]
+        targetType: [LLM, AGENT, DB, DATABASE, ANALYTICS_PLATFORM, STORAGE, FILE_SERVER]
         sourceTrust: [Internet]
         targetTrust: [Internal, Partner]
       conditions:
         - when:
-            targetType: [DATABASE, STORAGE, FILE_SERVER]
+            targetType: [DATABASE, ANALYTICS_PLATFORM, STORAGE, FILE_SERVER]
           description: "{{sourceName}} は信頼境界外（Internet 扱い）にあり、境界内の保管先 {{targetName}} へ直接到達できる構成です。攻撃者は {{targetName}} の認証画面・管理ポート・API を直接狙い、資格情報の総当たりや既知脆弱性の悪用でデータを一括で読み出し・削除できます（Can）。アプリケーションサーバーやゲートウェイを経由させ、{{targetName}} 自体へはインターネットからの経路が存在しない構成であれば、攻撃者はまずその前段を突破しなければなりません（Cannot）。blast radius は {{targetName}} が保管する全データです。"
     complianceRefs:
       - standard: nist-ai-rmf

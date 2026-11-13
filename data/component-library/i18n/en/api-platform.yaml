@@ -32,7 +32,11 @@ components:
 
   MESSAGE_BROKER:
     label: "Message broker"
-    description: "A broker that relays asynchronous messages (queues, topics, event buses, streams). It decouples senders from receivers and holds messages temporarily. In the cloud this includes Amazon SQS, SNS, EventBridge and MSK, Azure Service Bus and Event Hubs, Google Cloud Pub/Sub and OCI Streaming; on premises, Kafka, RabbitMQ and similar. Use CONNECTOR for iPaaS, sidecar proxies and database proxies, and GATEWAY for relaying APIs synchronously."
+    description: "A broker that relays asynchronous messages (queues, topics, event buses, streams). It decouples senders from receivers and holds messages temporarily. In the cloud this includes Amazon SQS, SNS, EventBridge and MSK, Azure Service Bus and Event Hubs, Google Cloud Pub/Sub and OCI Streaming; on premises, Kafka, RabbitMQ and similar. Use CONNECTOR for sidecar proxies and database proxies, Workflow automation / iPaaS (AUTOMATION_PLATFORM) for iPaaS, and GATEWAY for relaying APIs synchronously."
+
+  AUTOMATION_PLATFORM:
+    label: "Workflow automation / iPaaS"
+    description: "An automation platform that connects business systems and SaaS and runs processes on triggers (schedules, webhooks, events, on-screen buttons), reading from and writing to the connected systems. It stores a connection (credentials) for each connected system. Examples: Celonis Action Flows, Workato, Zapier, Microsoft Power Automate, n8n and Make. For something that only relays messages, use Connector or Message broker."
 
   API_SPEC:
     label: "API specification"

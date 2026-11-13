@@ -138,6 +138,8 @@ rules:
         - nodeType: OTA_SERVER
         - nodeType: VEHICLE_PKI
         - nodeType: DATABASE
+        - nodeType: ANALYTICS_PLATFORM
+        - nodeType: AUTOMATION_PLATFORM
         - nodeType: STORAGE
         - nodeType: BACKUP_STORAGE
         - nodeType: IMMUTABLE_BACKUP
@@ -224,6 +226,8 @@ rules:
         - nodeType: OTA_SERVER
         - nodeType: VEHICLE_PKI
         - nodeType: DATABASE
+        - nodeType: ANALYTICS_PLATFORM
+        - nodeType: AUTOMATION_PLATFORM
         - nodeType: STORAGE
         - nodeType: BACKUP_STORAGE
         - nodeType: IMMUTABLE_BACKUP
@@ -363,6 +367,7 @@ rules:
         - nodeType: IAAS
         - nodeType: PAAS
         - nodeType: DATABASE
+        - nodeType: ANALYTICS_PLATFORM
         - nodeType: STORAGE
         - nodeType: BACKUP_STORAGE
         - nodeType: IMMUTABLE_BACKUP
@@ -523,6 +528,8 @@ rules:
         - nodeType: PAM
         - nodeType: IGA
         - nodeType: DATABASE
+        - nodeType: ANALYTICS_PLATFORM
+        - nodeType: AUTOMATION_PLATFORM
         - nodeType: PBX
         - nodeType: CONTAINER_PLATFORM
         - nodeType: MESSAGE_BROKER

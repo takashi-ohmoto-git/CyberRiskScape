@@ -20,8 +20,8 @@ import {
 import { componentRegistry } from '../component-library/defaultRegistry';
 
 describe('termination.yaml', () => {
-  it('スキーマを通り、33 型を含む', () => {
-    expect(BUNDLED_TERMINATION_BEHAVIORS).toHaveLength(33);
+  it('スキーマを通り、34 型を含む', () => {
+    expect(BUNDLED_TERMINATION_BEHAVIORS).toHaveLength(34);
   });
 
   it('componentType が一意', () => {

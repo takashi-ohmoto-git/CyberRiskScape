@@ -1,7 +1,8 @@
 # Storage & Databases コンポーネントライブラリ。
 #
-# データの保管先を具体的に描くための 5 型（カテゴリ STORAGE、ラベル Storage & Databases）：
+# データの保管先を具体的に描くための 6 型（カテゴリ STORAGE、ラベル Storage & Databases）：
 #   DATABASE         : 業務データベース（RDB / NoSQL）
+#   ANALYTICS_PLATFORM : 分析基盤 / DWH（多くの利用者・BI・AI エージェントが直接照会する分析用のストア）
 #   STORAGE          : SAN / オブジェクトストレージ
 #   FILE_SERVER      : 端末から共有フォルダとして使うファイルサーバー・NAS
 #   BACKUP_STORAGE   : バックアップの保管先
@@ -39,9 +40,19 @@ components:
     icon: { kind: builtin, name: "database" }
     shape: rounded
     color: "bg-transparent"
-    description: "業務データベース（RDB / NoSQL）。クラウドでは Amazon RDS・Aurora・DynamoDB / Azure SQL Database・Cosmos DB / Google Cloud SQL・Spanner・Firestore / OCI Autonomous Database 等が該当する。"
+    description: "業務データベース（RDB / NoSQL）。クラウドでは Amazon RDS・Aurora・DynamoDB / Azure SQL Database・Cosmos DB / Google Cloud SQL・Spanner・Firestore / OCI Autonomous Database 等が該当する。多くの人や BI・AI エージェントが直接照会する分析用のストアは分析基盤 / DWH を使う。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, SOURCE_CODE, CREDENTIAL, LOG, VOICE_RECORDING, OTHER_DOCUMENT]
     posture: [log, encryptionAtRest, patch, accountReview]
+
+  - id: ANALYTICS_PLATFORM
+    label: "分析基盤 / DWH"
+    category: STORAGE
+    icon: { kind: builtin, name: "chart-column-big" }
+    shape: rounded
+    color: "bg-transparent"
+    description: "複数の業務システムから抽出したデータを集め、多くの利用者・BI・AI エージェントが直接照会する分析用のストア（データウェアハウス・データレイク・プロセスマイニングのデータモデル等。例：Snowflake・Google BigQuery・Amazon Redshift・Databricks・Celonis の Data Pool / Data Model）。アプリが認可を担う業務データベースはデータベースを使う。"
+    canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, LOG, OTHER_DOCUMENT]
+    posture: [log, encryptionAtRest, accountReview, dataPermission]
 
   - id: STORAGE
     label: "ストレージ"

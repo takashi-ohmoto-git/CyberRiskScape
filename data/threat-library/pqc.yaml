@@ -102,9 +102,9 @@ rules:
       # 量が多く秘匿期間も長いため、収集の価値が高い。
       anyOf:
         - encryption: [Plain, TLS]
-          targetType: [DATA_STORE, DB, DATABASE, STORAGE, FILE_SERVER, BACKUP_STORAGE, IMMUTABLE_BACKUP]
+          targetType: [DATA_STORE, DB, DATABASE, ANALYTICS_PLATFORM, STORAGE, FILE_SERVER, BACKUP_STORAGE, IMMUTABLE_BACKUP]
         - encryption: [Plain, TLS]
-          sourceType: [DATA_STORE, DB, DATABASE, STORAGE, FILE_SERVER, BACKUP_STORAGE, IMMUTABLE_BACKUP]
+          sourceType: [DATA_STORE, DB, DATABASE, ANALYTICS_PLATFORM, STORAGE, FILE_SERVER, BACKUP_STORAGE, IMMUTABLE_BACKUP]
     complianceRefs:
       - standard: nist-csf-2.0
         ref: "PR.DS-02"
@@ -148,6 +148,7 @@ rules:
         - nodeType: CDN
         - nodeType: WAF
         - nodeType: DATABASE
+        - nodeType: ANALYTICS_PLATFORM
         - nodeType: STORAGE
         # ファイルサーバー（2026-10-21）も STORAGE と同じ機密データの保管先で、SMB / NFS の暗号と保管時暗号を持つため加える。
         - nodeType: FILE_SERVER
@@ -223,9 +224,11 @@ rules:
         - nodeType: CDN
         - nodeType: WAF
         - nodeType: CONNECTOR
+        - nodeType: AUTOMATION_PLATFORM
         # 業務 DB・ストレージ（storage ライブラリ）の保管時暗号にも同じ問いが当てはまるため加える。
         # バックアップ 2 型は CBOM と同じ理由で加えない。
         - nodeType: DATABASE
+        - nodeType: ANALYTICS_PLATFORM
         - nodeType: STORAGE
         # ファイルサーバー（2026-10-21）も STORAGE と同じ理由で加える。
         - nodeType: FILE_SERVER

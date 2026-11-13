@@ -100,6 +100,7 @@ const FIELD_LABEL_KEYS: Record<string, TranslationKey> = {
   meteredCallLimit: 'panels.posture.field.meteredCallLimit',
   sensitiveBusinessFlow: 'panels.posture.field.sensitiveBusinessFlow',
   businessFlowProtection: 'panels.posture.field.businessFlowProtection',
+  dataPermission: 'panels.posture.field.dataPermission',
   dataNecessity: 'panels.posture.field.dataNecessity',
   recordVolume: 'panels.posture.field.recordVolume',
 };

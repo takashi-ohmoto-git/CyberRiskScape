@@ -187,7 +187,7 @@ rules:
         # 業務 DB・ストレージ（storage ライブラリ）も VPN 接続後に到達できる機微な保管先のため加える。
         # ファイルサーバー・仮想化基盤（2026-10-21）も VPN 接続後に到達できると横展開の主要な標的になるため加える。
         # SIEM は加えない（VPN 経由の線の多くは拠点からのログの送信で、利用者の到達範囲の問いにならない）。
-        targetType: [DB, DATA_STORE, LLM, AGENT, MCP_SERVER, MEMORY_STORE, SAAS, IAAS, PAAS, DATABASE, STORAGE, FILE_SERVER, HYPERVISOR]
+        targetType: [DB, DATA_STORE, LLM, AGENT, MCP_SERVER, MEMORY_STORE, SAAS, IAAS, PAAS, DATABASE, ANALYTICS_PLATFORM, STORAGE, FILE_SERVER, HYPERVISOR]
       conditions:
         # CISA ZTMM v2 の段階で MFA（Traditional）より強い Token（Initial）・Passkey / Certificate
         # （Advanced）も同じ Low にする（2026-10-10）。本ルールの論点は認証後の到達範囲で、
@@ -743,7 +743,7 @@ rules:
         # ファイルサーバー・仮想化基盤・SIEM（2026-10-21）も、委託先の運用担当・監視事業者が触ることが多く同じ問いを持つため加える。
         # 保守の入口（VPN 装置・踏み台）と管理面（管理画面・API 管理プレーン）（2026-11-06）も、委託先の常設の保守接続と
         # 作業後に残る権限という同じ問いを持つため加える。
-        targetType: [DB, DATA_STORE, LLM, AGENT, MCP_SERVER, MEMORY_STORE, SAAS, IAAS, PAAS, CRM, DATABASE, STORAGE, FILE_SERVER, HYPERVISOR, SIEM, VPN_GATEWAY, BASTION, ADMIN_CONSOLE, API_CONTROL_PLANE]
+        targetType: [DB, DATA_STORE, LLM, AGENT, MCP_SERVER, MEMORY_STORE, SAAS, IAAS, PAAS, CRM, DATABASE, ANALYTICS_PLATFORM, STORAGE, FILE_SERVER, HYPERVISOR, SIEM, VPN_GATEWAY, BASTION, ADMIN_CONSOLE, API_CONTROL_PLANE]
       conditions:
         - when:
             sourceUserTrust: [Guest]

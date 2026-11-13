@@ -71,6 +71,14 @@
 #   公開設定・資格情報の共有・保持モードはいずれも図に現れない設定の性質のため、内在的な脅威
 #   （connection.required: false）として扱う。
 #
+#   ANALYTICS_PLATFORM（2026-11-13 追加。分析基盤 / DWH。多くの利用者・BI・AI エージェントが直接照会する分析用のストア）:
+#   - 情報漏洩・改ざん・監査追跡不能（data-store-*）・保管時暗号化・ログ・アカウント棚卸し・PQC・未管理端末・境界外からの直接到達・
+#     VPN の広域到達・外部協働者・間接プロンプトインジェクションの接続先・管理境界の同居は DATABASE と同じ理由で既存ルールの
+#     対象に加えた。パッチは運用状況の対象外（多くが SaaS・マネージドのため）。
+#   - データ単位の権限（行の絞り込み）の未設定 → 新規（analytics-data-permission-missing）。汎用の情報漏洩とは、
+#     集約により業務システム側のアプリの認可が効かなくなるという固有の原因と、権限テーブル等の対策を持つため別 canonicalId。
+#     DATABASE にはアプリが認可を担うため当てない。運用状況 dataPermission の未入力＝対策なしとして発火する。
+#
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する。
 
@@ -314,6 +322,7 @@ rules:
       kind: node
       anyOf:
         - nodeType: DATABASE
+        - nodeType: ANALYTICS_PLATFORM
         - nodeType: STORAGE
         - nodeType: FILE_SERVER
         - nodeType: BACKUP_STORAGE
@@ -336,3 +345,32 @@ rules:
         url: "https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/landing-zone/design-area/resource-org"
       - title: "NIST SP 800-53 Rev.5 - Security and Privacy Controls for Information Systems and Organizations（CM-4(1) Separate Test Environments / AC-6 Least Privilege）"
         url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"
+
+  # ── ANALYTICS_PLATFORM: データ単位の権限（行の絞り込み）の未設定 ─────────────
+  # 運用状況 dataPermission が None・Unknown（未入力）で発火し、Enforced の宣言で消える（大方針：未入力＝悪い値と同じ）。
+  - id: analytics-data-permission-missing-001
+    canonicalId: analytics-data-permission-missing
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "分析基盤でデータ単位の権限（行の絞り込み）が設定されていない"
+    severity: High
+    description: "{{nodeName}} は複数の業務システムから抽出したデータを 1 か所に集め、多くの利用者・BI ツール・AI エージェント・MCP サーバーが直接照会する。データ単位の権限（利用者・グループごとの行の絞り込み）が設定されていないと、{{nodeName}} に照会できる者は、本来は業務システム側のアプリの認可で見えなかったはずの全件を見られる（Can）。BI ツールや AI エージェントが利用者の権限で照会する構成でも、{{nodeName}} 側に絞り込みが無ければ利用者の質問ひとつで全件が返り、結果が画面・要約・外部のモデルへ出ていく。製品によっては、データ権限を何も設定しない状態が全件の公開になる。一方、利用者・グループごとの行の絞り込み（権限テーブル・行レベルセキュリティ等）を {{nodeName}} 側で強制し、サービスアカウントや AI エージェントの ID にも最小権限を与えていれば、照会できる範囲は各自の権限に収まる（Cannot）。blast radius は {{nodeName}} に集約されたすべての業務データ（個人情報・機密情報を含み得る）と、照会できるすべての利用者・ツール・エージェント。"
+    mitigation: "[Foundation] {{nodeName}} 側でデータ単位の権限を設定する（権限テーブルによる利用者・グループごとの行の絞り込み、行レベルセキュリティ、ビューの限定等）。何も設定しない状態が全件の公開になる製品かを確認し、既定の公開範囲を絞る。照会できる利用者・グループを棚卸しして最小限にする。 [Enterprise] BI ツール・AI エージェント・MCP サーバー・サービスアカウントの ID を利用者ごと（または用途ごとの最小権限）にし、共有の高権限アカウントで照会させない。機微な列（個人情報等）はマスキングや別の権限で保護し、照会の監査ログを収集して確認する。 [Advanced] 権限の設定の変更と、大量・広範囲の照会を継続的に検知する。業務システム側の認可の変更を {{nodeName}} の権限へ自動で反映し、差異を定期的に検証する。"
+    appliesTo:
+      kind: node
+      nodeType: ANALYTICS_PLATFORM
+      # 行の権限は図に現れない設定の性質で、接続関係に依存しない内在リスク。
+      connection:
+        required: false
+      posture:
+        dataPermission: [None, Unknown]
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+    references:
+      - title: "NIST SP 800-53 Rev.5 - Security and Privacy Controls for Information Systems and Organizations（AC-3 Access Enforcement / AC-6 Least Privilege）"
+        url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"
+      # 汎用の情報漏洩（data-store-info-disclosure）は ANALYTICS_PLATFORM にも当たる。こちらは行の権限の未設定という
+      # 固有の原因と対策を持つ別 canonicalId。

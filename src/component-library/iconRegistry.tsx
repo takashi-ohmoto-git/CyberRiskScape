@@ -131,6 +131,8 @@ import {
   ShieldAlert,
   Package,
   Boxes,
+  Zap,
+  ChartColumnBig,
   type LucideIcon,
 } from 'lucide-react';
 import { cloneElement, createElement, type ReactElement } from 'react';
@@ -274,6 +276,8 @@ const BUILTIN_ICONS: Record<string, LucideIcon> = {
   'book-open-text': BookOpenText,
   package: Package,
   boxes: Boxes,
+  zap: Zap,
+  'chart-column-big': ChartColumnBig,
 };
 
 const FALLBACK_ICON: LucideIcon = HelpCircle;

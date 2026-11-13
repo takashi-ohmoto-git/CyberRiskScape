@@ -122,6 +122,10 @@ behaviors:
     default: terminate
     alternatives: []
     note: "コネクタ（メッセージング・DB プロキシ等）は接続ごとに終端し、蓄積転送することが多い。前後の区間の暗号を確認する。"
+  - componentType: AUTOMATION_PLATFORM
+    default: terminate
+    alternatives: []
+    note: "業務自動化基盤は Webhook 等の受信で TLS を終端し、連携先へは別の接続（連携先ごとの資格情報つき）で再接続する。連携先ごとの区間の暗号を確認する。"
   - componentType: AI_GATEWAY
     default: terminate
     alternatives: []

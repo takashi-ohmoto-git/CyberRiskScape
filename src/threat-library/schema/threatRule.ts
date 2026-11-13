@@ -165,6 +165,7 @@ export const NodePostureSchema = z.object({
   meteredCallLimit: z.enum(POSTURE_FIELD_VALUES.meteredCallLimit).optional(),
   sensitiveBusinessFlow: z.enum(POSTURE_FIELD_VALUES.sensitiveBusinessFlow).optional(),
   businessFlowProtection: z.enum(POSTURE_FIELD_VALUES.businessFlowProtection).optional(),
+  dataPermission: z.enum(POSTURE_FIELD_VALUES.dataPermission).optional(),
   dataNecessity: z.enum(POSTURE_FIELD_VALUES.dataNecessity).optional(),
   recordVolume: z.enum(POSTURE_FIELD_VALUES.recordVolume).optional(),
   lastReviewedAt: PostureDateSchema.optional(),
@@ -217,6 +218,7 @@ export const PostureMatchSchema = z
     meteredCallLimit: postureValues(POSTURE_FIELD_VALUES.meteredCallLimit),
     sensitiveBusinessFlow: postureValues(POSTURE_FIELD_VALUES.sensitiveBusinessFlow),
     businessFlowProtection: postureValues(POSTURE_FIELD_VALUES.businessFlowProtection),
+    dataPermission: postureValues(POSTURE_FIELD_VALUES.dataPermission),
     dataNecessity:postureValues(POSTURE_FIELD_VALUES.dataNecessity),
     recordVolume: postureValues(POSTURE_FIELD_VALUES.recordVolume),
   })
