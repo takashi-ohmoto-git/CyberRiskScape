@@ -194,6 +194,9 @@ function renumberKind<T extends { seq?: number }>(items: T[]): T[] {
  * セッション間は `Date.now()` 部が異なるため過去 ID とも衝突しない。
  */
 let idSeq = 0;
+/** プロジェクトの固有 ID を採番する。 */
+const newProjectId = (): string => globalThis.crypto.randomUUID();
+
 const nextId = (prefix: string): string =>
   `${prefix}${Date.now().toString(36)}${(idSeq++).toString(36)}`;
 
@@ -328,6 +331,8 @@ function buildGroupDrag(s: DiagramState, clientX: number, clientY: number): Grou
 }
 
 export interface HydratePayload {
+  /** プロジェクトの固有 ID。省略時（ID を持たない旧データ・変換結果）は新しく採番する。 */
+  projectId?: string;
   layers: Record<LayerKey, LayerData>;
   activeLayer: LayerKey;
   activeFramework: FrameworkView;
@@ -374,6 +379,8 @@ interface DiagramState {
   disabledLibraryIds: Set<string>;
 
   // ---- project metadata ----
+  /** プロジェクトの固有 ID（UUID）。新規作成と、ID を持たないデータを開いたときに採番する。Undo/Redo の対象外。 */
+  projectId: string;
   /** プロジェクト概要（Project Edit 画面で編集）。 */
   projectMeta: ProjectMeta;
   /** Project Edit モーダルの開閉状態（UI 表示用、永続化しない）。 */
@@ -562,6 +569,8 @@ interface DiagramState {
   // ---- actions: project metadata ----
   updateProjectMeta: <K extends keyof ProjectMeta>(field: K, value: ProjectMeta[K]) => void;
   setProjectMeta: (meta: ProjectMeta) => void;
+  /** プロジェクト ID を振り直す（ファイルをコピーして別システムに流用したときの重複を解くため）。 */
+  regenerateProjectId: () => void;
   /** 指摘を丸ごと差し替える（画面からの取り込み用）。Undo/Redo の対象外（§8.2）。保存対象なので dirty になる。 */
   setFindings: (findings: Finding[]) => void;
   /** 資産を丸ごと差し替える（資産ポップアップの手入力用）。指摘と同じく Undo/Redo の対象外。保存対象なので dirty になる。 */
@@ -692,6 +701,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
   disabledLibraryIds: new Set(),
 
+  projectId: newProjectId(),
   projectMeta: EMPTY_PROJECT_META,
   isProjectEditOpen: false,
   isComplianceMapOpen: false,
@@ -743,6 +753,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
   hydrate: (payload) =>
     set({
+      projectId: payload.projectId ?? newProjectId(),
       layers: payload.layers,
       activeLayer: payload.activeLayer,
       idCounters: payload.idCounters ?? emptyIdCounters(),
@@ -1325,6 +1336,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     set((s) => ({ projectMeta: { ...s.projectMeta, [field]: value } })),
 
   setProjectMeta: (meta) => set({ projectMeta: meta }),
+  regenerateProjectId: () => set({ projectId: newProjectId() }),
   setFindings: (findings) => set({ findings }),
   setAssets: (assets) => set({ assets }),
 
@@ -1357,6 +1369,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
   newProject: () =>
     set({
+      projectId: newProjectId(),
       layers: { L0: EMPTY_LAYER, L1: EMPTY_LAYER, L2: EMPTY_LAYER, L3: EMPTY_LAYER, PQC: EMPTY_LAYER },
       activeLayer: DEFAULT_ACTIVE_LAYER,
       idCounters: emptyIdCounters(),

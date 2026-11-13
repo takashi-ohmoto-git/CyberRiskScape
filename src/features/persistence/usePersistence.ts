@@ -52,6 +52,7 @@ export function usePersistence(): void {
     const unsubscribe = useDiagramStore.subscribe((state, prev) => {
       if (!state.isHydrated) return;
       const changed =
+        state.projectId !== prev.projectId ||
         state.layers !== prev.layers ||
         state.activeLayer !== prev.activeLayer ||
         state.idCounters !== prev.idCounters ||
@@ -67,6 +68,7 @@ export function usePersistence(): void {
         state.bomComponents !== prev.bomComponents;
       if (!changed) return;
       pendingSnapshot = {
+        projectId: state.projectId,
         layers: state.layers,
         activeLayer: state.activeLayer,
         idCounters: state.idCounters,

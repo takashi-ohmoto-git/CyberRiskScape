@@ -60,6 +60,7 @@ export function NewProjectModal() {
   const saveCurrentToFile = async (): Promise<boolean> => {
     const s = useDiagramStore.getState();
     const project = serializeProject({
+      projectId: s.projectId,
       layers: s.layers,
       activeLayer: s.activeLayer,
       idCounters: s.idCounters,

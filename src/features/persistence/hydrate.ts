@@ -13,6 +13,7 @@ export function hydrateFromPersisted(loaded: PersistedProject): void {
   const resolved = resolveLayers(loaded);
   const { layers, idCounters } = resolveIdCounters(resolved.layers, loaded.idCounters);
   useDiagramStore.getState().hydrate({
+    projectId: loaded.projectId,
     layers,
     activeLayer: resolved.activeLayer,
     idCounters,

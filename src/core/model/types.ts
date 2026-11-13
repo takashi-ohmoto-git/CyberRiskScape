@@ -699,7 +699,28 @@ export interface ProjectMeta {
   assumptions?: string;
   /** 外部依存（任意・複数行）。 */
   externalDependencies?: string;
+  /** 所属組織の名前（任意）。組織の種別・階層は持たない。 */
+  organizationName?: string;
+  /** 所属組織のコード（任意）。名前の表記ゆれに頼らず組織を特定するための鍵。 */
+  organizationCode?: string;
+  /** 部門（任意）。 */
+  department?: string;
+  /** 外部の台帳（CMDB 等）でのシステムの ID（任意）。 */
+  externalSystemId?: string;
+  /** システム全体の重要度（任意）。ノードの `businessContext` の重要度とは別。 */
+  criticality?: BusinessCriticality;
+  /** 運用段階（任意）。 */
+  lifecycle?: ProjectLifecycle;
 }
+
+/**
+ * プロジェクト（システム）の運用段階。
+ * development＝開発中／production＝本番（稼働中で保守・更新の対象）／
+ * legacy＝レガシーシステム（稼働中だが保守終了・更改予定などで更新が難しく、稼働を継続させているもの）／
+ * retiring＝廃止対象（稼働中で廃止が決まっているもの）／retired＝廃止済み。
+ */
+export const PROJECT_LIFECYCLES = ['development', 'production', 'legacy', 'retiring', 'retired'] as const;
+export type ProjectLifecycle = (typeof PROJECT_LIFECYCLES)[number];
 
 export const EMPTY_PROJECT_META: ProjectMeta = {
   name: '',

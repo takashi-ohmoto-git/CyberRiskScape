@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ASSET_FORMATS, BOM_FORMATS, BUSINESS_CRITICALITIES, BUSINESS_CRITICALITY_SOURCES, CRYPTO_TERMINATIONS, CVSS_VECTOR_RE,EDGE_PROTOCOLS,FINDING_CONDITION_KINDS, FINDING_FORMATS, FINDING_OUTCOMES, MAX_ASSETS, MAX_FINDING_CONDITIONS, MAX_FINDING_OPEN_QUESTIONS, MAX_BOM_COMPONENTS, MAX_FINDINGS, type Asset } from '../../core/model/types';
+import { ASSET_FORMATS, BOM_FORMATS, BUSINESS_CRITICALITIES, BUSINESS_CRITICALITY_SOURCES, CRYPTO_TERMINATIONS, PROJECT_LIFECYCLES, CVSS_VECTOR_RE,EDGE_PROTOCOLS,FINDING_CONDITION_KINDS, FINDING_FORMATS, FINDING_OUTCOMES, MAX_ASSETS, MAX_FINDING_CONDITIONS, MAX_FINDING_OPEN_QUESTIONS, MAX_BOM_COMPONENTS, MAX_FINDINGS, type Asset } from '../../core/model/types';
 import { assetIdentifiers, toIsoTimestamp } from '../../core/model/assetIdentity';
 import {
   AgencyLevelSchema,
@@ -300,6 +300,13 @@ const PersistedProjectMetaSchema = z.object({
   contributors: z.string().max(1000).optional(),
   assumptions: z.string().max(4000).optional(),
   externalDependencies: z.string().max(4000).optional(),
+  /** 組織上の属性（2026-11-14 追加。旧データには無いため optional）。 */
+  organizationName: z.string().max(200).optional(),
+  organizationCode: z.string().max(100).optional(),
+  department: z.string().max(200).optional(),
+  externalSystemId: z.string().max(200).optional(),
+  criticality: z.enum(BUSINESS_CRITICALITIES).optional(),
+  lifecycle: z.enum(PROJECT_LIFECYCLES).optional(),
 });
 
 const AnnotationKindSchema = z.enum(['label', 'callout']);
@@ -564,6 +571,12 @@ const PersistedBomComponentSchema = z.object({
 
 export const PersistedProjectSchema = z.object({
   schemaVersion: z.literal(PERSISTED_PROJECT_SCHEMA_VERSION),
+  /**
+   * プロジェクトの固有 ID（UUID）。省略時は画面で開いたときに採番する。
+   * 形が不正な値は読み捨てる（ID のためにプロジェクト全体を検証エラーにしない）。
+   * schemaVersion は据え置き（optional 追加は後方互換）。
+   */
+  projectId: z.uuid().optional().catch(undefined),
   /**
    * 旧形式（深度レイヤー導入前）のトップレベルダイアグラム。後方互換のため optional。
    * `layers` が未指定なら deserialize 時にこれを L1 へマイグレートする。

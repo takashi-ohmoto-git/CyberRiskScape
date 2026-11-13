@@ -25,6 +25,8 @@ import {
 } from './schema';
 
 export interface SerializableState {
+  /** プロジェクトの固有 ID。省略時は保存しない（CLI の変換結果など、ID を持たない出力）。 */
+  projectId?: string;
   layers: Record<LayerKey, LayerData>;
   activeLayer: LayerKey;
   activeFramework: FrameworkView;
@@ -71,7 +73,13 @@ export function serializeProject(state: SerializableState): PersistedProject {
       !!meta.reviewer ||
       !!meta.contributors ||
       !!meta.assumptions ||
-      !!meta.externalDependencies);
+      !!meta.externalDependencies ||
+      !!meta.organizationName ||
+      !!meta.organizationCode ||
+      !!meta.department ||
+      !!meta.externalSystemId ||
+      !!meta.criticality ||
+      !!meta.lifecycle);
   const manual = state.manualThreats;
   const hasManual = !!manual && LAYER_KEYS.some((k) => (manual[k]?.length ?? 0) > 0);
   const suppressions = state.suppressions;
@@ -88,6 +96,7 @@ export function serializeProject(state: SerializableState): PersistedProject {
   const hasBomComponents = !!bomComponents && bomComponents.length > 0;
   return {
     schemaVersion: PERSISTED_PROJECT_SCHEMA_VERSION,
+    ...(state.projectId ? { projectId: state.projectId } : {}),
     layers: state.layers,
     activeLayer: state.activeLayer,
     ...(state.idCounters ? { idCounters: state.idCounters } : {}),
