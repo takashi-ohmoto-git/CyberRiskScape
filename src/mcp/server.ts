@@ -499,7 +499,7 @@ export function createCrsMcpServer(opts: CrsMcpServerOptions): McpServer {
       inputSchema: {
         path: PathArg,
         revision: RevisionArg,
-        rows: z.array(z.record(z.unknown())).min(1).max(MCP_MAX_BUSINESS_CONTEXT_ROWS),
+        rows: z.array(z.record(z.string(), z.unknown())).min(1).max(MCP_MAX_BUSINESS_CONTEXT_ROWS),
         source: z
           .object({ product: z.string().min(1).max(64), ref: z.string().min(1).max(200).optional() })
           .strict()

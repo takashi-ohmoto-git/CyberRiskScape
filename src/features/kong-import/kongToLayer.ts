@@ -39,7 +39,7 @@ const PluginSchema = z.object({
   enabled: z.boolean().optional(),
   service: RefSchema.optional(),
   route: RefSchema.optional(),
-  config: z.record(z.unknown()).optional(),
+  config: z.record(z.string(), z.unknown()).optional(),
 });
 
 const RouteSchema = z.object({

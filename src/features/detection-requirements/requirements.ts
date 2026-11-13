@@ -27,6 +27,7 @@ const OverlaySchema = z.object({
   schemaVersion: z.literal(1),
   locale: z.string(),
   requirements: z.record(
+    z.string(),
     z.object({
       title: z.string().optional(),
       watch: z.array(z.string().min(1)).optional(),

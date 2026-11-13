@@ -83,7 +83,7 @@ export class McpOperationError extends Error {
 
 // ── エラーメッセージ（日本語） ─────────────────────────────────────────────
 // SDK は入力検証（`z.array(OperationSchema)`）の Zod 既定メッセージをそのままクライアントへ返すため、
-// スキーマ側に errorMap を付けて日本語化する（tools/list の JSON Schema は変わらない）。
+// スキーマ側に error（エラーマップ）を付けて日本語化する（tools/list の JSON Schema は変わらない）。
 // サーバーの他のメッセージと同じく日本語固定（locale は tools 側の脅威本文用）。
 
 /** 判断系（受容・誤検知・リスク評価・対策実装状況・手動脅威）に当たるキー／操作名。 */
@@ -92,27 +92,29 @@ const JUDGEMENT_RE = /suppress|accept|false.?positive|risk|dread|control|manual.
 export const JUDGEMENT_GUIDANCE =
   '受容・誤検知・リスク評価・対策実装状況はこのツールでは変更できません。人が CyberRiskScape で設定し、PR で承認します。';
 
-const opErrorMap: z.ZodErrorMap = (issue, ctx) => {
-  if (issue.code === z.ZodIssueCode.unrecognized_keys) {
+const opErrorMap: z.core.$ZodErrorMap = (issue) => {
+  if (issue.code === 'unrecognized_keys') {
     const keys = issue.keys.map((k) => `"${k}"`).join(', ');
     const hint = issue.keys.some((k) => JUDGEMENT_RE.test(k))
       ? JUDGEMENT_GUIDANCE
       : '座標・id・seq などは指定できません。使えるキーは operations の入力スキーマを参照してください。';
     return { message: `この操作では使えないキーがあります: ${keys}。${hint}` };
   }
-  if (issue.code === z.ZodIssueCode.invalid_union_discriminator) {
-    const given = (ctx.data as { op?: unknown } | undefined)?.op;
+  // 判別キー（op）がどの操作にも当たらないとき。zod 4 は invalid_union に discriminator と options を載せる。
+  if (issue.code === 'invalid_union' && issue.discriminator !== undefined) {
+    const given = (issue.input as { op?: unknown } | undefined)?.op;
     const name = typeof given === 'string' ? given : String(given);
     const hint = typeof given === 'string' && JUDGEMENT_RE.test(given) ? JUDGEMENT_GUIDANCE : '';
+    const options = 'options' in issue && Array.isArray(issue.options) ? issue.options.map(String).join(' / ') : '';
     return {
-      message: `未定義の操作 "${name}" です（使える op: ${issue.options.map(String).join(' / ')}）。${hint}`,
+      message: `未定義の操作 "${name}" です（使える op: ${options}）。${hint}`,
     };
   }
-  return { message: ctx.defaultError };
+  return undefined;
 };
 
-/** `.strict()` ＋日本語 errorMap の操作用オブジェクト。 */
-const opObject = <T extends z.ZodRawShape>(shape: T) => z.object(shape, { errorMap: opErrorMap }).strict();
+/** `.strict()` ＋日本語エラーマップの操作用オブジェクト。 */
+const opObject = <T extends z.ZodRawShape>(shape: T) => z.object(shape, { error: opErrorMap }).strict();
 
 const DATA_FLOW_DESC =
   'データ通信の向き（source から見た向き）。outbound＝source → target（既定）、inbound＝target → source、bidirectional＝双方向。キャンバスの矢印の向きと、脅威ルールの接続方向（inbound＝対象ノードがデータを受け取る側、bidirectional は両端とも送受信の両方）の判定に使われる。';
@@ -340,7 +342,7 @@ export const OperationSchema = z.discriminatedUnion(
       targetNodeId: idStr.optional(),
     }),
 ],
-  { errorMap: opErrorMap },
+  { error: opErrorMap },
 );
 
 export type Operation = z.infer<typeof OperationSchema>;

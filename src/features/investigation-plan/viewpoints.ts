@@ -9,7 +9,7 @@ import type { Locale } from '../../i18n';
 
 const ToolStepSchema = z.object({
   artifact: z.string().min(1),
-  parameters: z.record(z.string()).optional(),
+  parameters: z.record(z.string(), z.string()).optional(),
   /** true: この artifact の結果の行を「痕跡」とみなす（`investigation-report`）。無ければ参考情報。 */
   findings: z.boolean().optional(),
 });
@@ -57,6 +57,7 @@ const OverlaySchema = z.object({
   schemaVersion: z.literal(1),
   locale: z.string(),
   viewpoints: z.record(
+    z.string(),
     z.object({
       title: z.string().optional(),
       checks: z.array(z.string().min(1)).optional(),

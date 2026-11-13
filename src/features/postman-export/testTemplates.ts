@@ -35,10 +35,11 @@ const OverlaySchema = z.object({
   schemaVersion: z.literal(1),
   locale: z.string(),
   templates: z.record(
+    z.string(),
     z.object({
       name: z.string().optional(),
       purpose: z.string().optional(),
-      variables: z.record(z.string()).optional(),
+      variables: z.record(z.string(), z.string()).optional(),
     }),
   ),
 });

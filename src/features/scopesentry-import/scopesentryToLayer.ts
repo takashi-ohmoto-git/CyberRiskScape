@@ -61,7 +61,7 @@ const AssetSchema = z.object({
   products: strList,
   webServer: str,
   cdnname: str,
-  tls: z.unknown(),
+  tls: z.unknown().optional(),
   transport: str,
   version: str,
   tags: strList,

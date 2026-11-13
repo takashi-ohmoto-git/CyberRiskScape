@@ -95,7 +95,7 @@ const EntitySchema = z.object({
   global: z.boolean().optional(),
   deployment_type: z.string().optional(),
   proxy_urls: z.array(ProxyUrlSchema).optional(),
-  config: z.record(z.unknown()).optional(),
+  config: z.record(z.string(), z.unknown()).optional(),
   access: z.object({ auth_strategies: z.array(z.unknown()).optional() }).optional(),
   policies: z.array(z.unknown()).optional(),
   targets: z.array(TargetSchema).optional(),

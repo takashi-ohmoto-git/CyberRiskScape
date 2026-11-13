@@ -139,13 +139,14 @@ const isEnvTemplate = (name: string) => /\.(example|sample|template)$/i.test(nam
 const flag = z.boolean().optional().catch(undefined);
 const str = z.string().optional().catch(undefined);
 const PackageJsonSchema = z.object({
-  dependencies: z.record(z.unknown()).optional().catch(undefined),
-  devDependencies: z.record(z.unknown()).optional().catch(undefined),
-  optionalDependencies: z.record(z.unknown()).optional().catch(undefined),
+  dependencies: z.record(z.string(), z.unknown()).optional().catch(undefined),
+  devDependencies: z.record(z.string(), z.unknown()).optional().catch(undefined),
+  optionalDependencies: z.record(z.string(), z.unknown()).optional().catch(undefined),
 });
 const LockSchema = z.object({
   packages: z
     .record(
+      z.string(),
       z.object({
         version: str,
         dev: flag,
@@ -242,15 +243,16 @@ function parseNpm(manifestText: string, lockText: string | undefined, warn: (m: 
 
 // ── pnpm ────────────────────────────────────────────────────
 
-const depMap = z.record(z.unknown()).optional().catch(undefined);
+const depMap = z.record(z.string(), z.unknown()).optional().catch(undefined);
 const PnpmLockSchema = z.object({
   lockfileVersion: z.union([z.string(), z.number()]).optional().catch(undefined),
   importers: z
-    .record(z.object({ dependencies: depMap, devDependencies: depMap, optionalDependencies: depMap }))
+    .record(z.string(), z.object({ dependencies: depMap, devDependencies: depMap, optionalDependencies: depMap }))
     .optional()
     .catch(undefined),
   packages: z
     .record(
+      z.string(),
       z.object({
         resolution: z.object({ integrity: str, tarball: str }).partial().optional().catch(undefined),
       }),
@@ -258,7 +260,7 @@ const PnpmLockSchema = z.object({
     .optional()
     .catch(undefined),
   snapshots: z
-    .record(z.object({ dependencies: depMap, optionalDependencies: depMap, optional: flag }).nullable())
+    .record(z.string(), z.object({ dependencies: depMap, optionalDependencies: depMap, optional: flag }).nullable())
     .optional()
     .catch(undefined),
 });
@@ -415,12 +417,13 @@ const isPipFile = (name: string) => /(^|[-_.])requirements[\w.-]*\.(txt|lock|in)
 const McpSchema = z.object({
   mcpServers: z
     .record(
+      z.string(),
       z.object({
         command: str,
         type: str,
         url: str,
-        env: z.record(z.unknown()).optional().catch(undefined),
-        headers: z.record(z.unknown()).optional().catch(undefined),
+        env: z.record(z.string(), z.unknown()).optional().catch(undefined),
+        headers: z.record(z.string(), z.unknown()).optional().catch(undefined),
       }),
     )
     .optional()
@@ -434,7 +437,7 @@ const SettingsSchema = z.object({
     .optional()
     .catch(undefined),
   sandbox: z.object({ enabled: flag }).optional().catch(undefined),
-  hooks: z.record(z.unknown()).optional().catch(undefined),
+  hooks: z.record(z.string(), z.unknown()).optional().catch(undefined),
 });
 
 /** 任意コードの実行を許す実行ファイル（`Bash(<これ> *)` の形で許可すると広い許可になる）。 */

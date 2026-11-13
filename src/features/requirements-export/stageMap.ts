@@ -29,7 +29,7 @@ const StageMapFileSchema = z.object({
   schemaVersion: z.literal(1),
   stageLabels: StageLabelsSchema,
   default: z.array(StageSchema).nonempty(),
-  stages: z.record(z.array(StageSchema).nonempty()),
+  stages: z.record(z.string(), z.array(StageSchema).nonempty()),
   contractorRequirements: z.array(ContractorRequirementSchema),
 });
 
@@ -37,7 +37,7 @@ const OverlaySchema = z.object({
   schemaVersion: z.literal(1),
   locale: z.string(),
   stageLabels: StageLabelsSchema.partial().optional(),
-  contractorRequirements: z.record(z.object({ text: z.string().min(1).optional() })).optional(),
+  contractorRequirements: z.record(z.string(), z.object({ text: z.string().min(1).optional() })).optional(),
 });
 
 export type ContractorRequirementDef = z.infer<typeof ContractorRequirementSchema>;
