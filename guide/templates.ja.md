@@ -144,6 +144,7 @@ SAP からの抽出（OPC）・Action Flow の書き戻し・公開フォーム�
 |---|---|
 | [`templates/celonis-process-mining.ja.json`](templates/celonis-process-mining.ja.json) | 日本語版 |
 | [`templates/celonis-process-mining.en.json`](templates/celonis-process-mining.en.json) | 英語版 |
+| [`templates/celonis-business-context.sample.csv`](templates/celonis-business-context.sample.csv) | 業務の文脈の表の例（架空の数値。ノード ID は上のテンプレートのもの） |
 
 **中身：** コンポーネント 20・データフロー 19・トラスト境界 3。読み込むと **140 件**（執筆時点の実測値）の脅威が検出されます。
 型の対応と脅威の読み方は[Celonis を使う構成を脅威モデリングする](celonis.ja.md)を参照してください。

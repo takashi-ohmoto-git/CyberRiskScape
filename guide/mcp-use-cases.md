@@ -149,7 +149,7 @@ summary does not mention it. Once you open the PR, CI's diff gate posts the same
 The configuration is [4.2 GitHub Copilot in VS Code](mcp-integration.md#42-github-copilot-in-vs-code)
 (`.vscode/mcp.json`). In agent mode, the prompts of scenarios 1–4 work as they are. VS Code asks for
 confirmation each time a tool is called, so you can use it so that **you allow the write tool
-(`apply_model_changes`) only after looking at its arguments**.
+(`apply_model_changes`, `apply_business_context`) only after looking at its arguments**.
 
 ### 5.2 Assign an issue to the coding agent
 
@@ -181,10 +181,10 @@ Do not change risk assessments, acceptances or mitigation status.
 a configured MCP server **autonomously, without asking for approval**, so only the tools you put in
 the `tools` allowlist are used. Only MCP **tools** are supported, not resources or prompts.
 
-- To let it update the structure: allow all eight, as in
+- To let it update the structure: allow all nine, as in
   [4.3](mcp-integration.md#43-github-copilot-coding-agent). The change becomes a PR, and a person
   decides at the diff gate
-- **To restrict it to reading**: remove `apply_model_changes`. The agent can look up threats and write
+- **To restrict it to reading**: remove `apply_model_changes` and `apply_business_context`. The agent can look up threats and write
   them in the PR description, but cannot update the diagram
 
 ```json
@@ -333,8 +333,8 @@ checks the dryRun result.
 
 | Configuration | Tools allowed | Suited for |
 |---|---|---|
-| Read-only | The 7 tools other than `apply_model_changes` | Threat research, PR descriptions, review support. When you are trying it first |
-| Read and write | All 8 | Letting it update the diagram too. When the diff gate and CODEOWNERS are in place |
+| Read-only | The 7 tools other than the two write tools (`apply_model_changes`, `apply_business_context`) | Threat research, PR descriptions, review support. When you are trying it first |
+| Read and write | All 9 | Letting it update the diagram too. When the diff gate and CODEOWNERS are in place |
 
 - Even in a read-only configuration the agent **reads** the diagram, so if the model contains
   confidential design information, check how the agent's provider handles data

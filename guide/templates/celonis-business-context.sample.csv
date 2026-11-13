@@ -1,0 +1,5 @@
+node,process,cases,value,currency,period,criticality
+C5,受注から入金（Order to Cash）,18400,2400000000,JPY,2026-10,
+C5,発注から支払（Procure to Pay）,9200,980000000,JPY,2026-10,
+C18,問い合わせ対応（Case Management）,6100,150000000,JPY,2026-10,
+C9,月次の経営報告（Reporting）,300,40000000,JPY,2026-10,

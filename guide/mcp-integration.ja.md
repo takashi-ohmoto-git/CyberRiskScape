@@ -176,14 +176,15 @@ Copilot はここで許可したツールを、**承認を求めずに**自律�
         "list_component_types",
         "lookup_threat_rules",
         "list_change_triggers",
-        "apply_model_changes"
+        "apply_model_changes",
+        "apply_business_context"
       ]
     }
   }
 }
 ```
 
-読み取りだけを許可するなら、`apply_model_changes` を配列から外します。
+読み取りだけを許可するなら、`apply_model_changes` と `apply_business_context` を配列から外します。
 
 - コーディングエージェントはクラウド上の環境でリポジトリを取得して作業します。そこで
   `dist-cli/main.js` を使えるようにするには、`npm run build:cli` をエージェントの環境構築手順
@@ -221,7 +222,7 @@ Cursor は既定で、MCP ツールを使う前に承認を求めます。サー
 
 ## 5. ツール一覧
 
-読み取り系の 7 本と、書き込み系の 1 本です。`path` は `--root` からの相対パスで、モデル JSON を指します。
+読み取り系の 7 本と、書き込み系の 2 本です。`path` は `--root` からの相対パスで、モデル JSON を指します。
 
 | ツール | 主な引数 | 返すもの |
 |---|---|---|
@@ -233,6 +234,7 @@ Cursor は既定で、MCP ツールを使う前に承認を求めます。サー
 | `lookup_threat_rules` | `nodeType?`, `framework?`, `query?` | モデル無しで「この型にどんな脅威ルールが当たるか」を引く。設計の初期段階向け |
 | `list_change_triggers` | なし | 実行トリガー T1〜T8 のチェックリスト |
 | `apply_model_changes` | `path`, `revision`, `layer`, `operations`, `dryRun?` | 構成を変更し、脅威差分と該当トリガーを返す（書き込み） |
+| `apply_business_context` | `path`, `revision`, `rows`, `source?`, `dryRun?` | ノードの「業務の文脈」（担う業務プロセスと重要度）を、共通の表の行で置き換え、重要度の前後（`changes`）と要約を返す（書き込み。`rows` は最大 1,000 行）。Celonis の MCP などで読んだ集計を渡す使い方は[Celonis のガイド](celonis.ja.md)の §8 |
 
 補足：
 
@@ -360,7 +362,7 @@ Cursor は既定で、MCP ツールを使う前に承認を求めます。サー
 
 ## 8. 制限事項
 
-- **構成の変更だけ**ができます。受容・誤検知・リスク評価・対策の実装状況・手動脅威・プロジェクト情報は
+- **構成の変更と、ノードの業務の文脈（`apply_business_context`）だけ**ができます。受容・誤検知・リスク評価・対策の実装状況・手動脅威・プロジェクト情報は
   変更できません。これらの判断は、アプリ上で人が行います
 - 評価対象は**同梱の脅威ライブラリのみ**です。ブラウザ側で作ったカスタムルールは参照されません
   （CLI と同じ）

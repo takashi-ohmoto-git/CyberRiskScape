@@ -19,7 +19,8 @@
 - 新しく加わった 2 つの型（**業務自動化 / iPaaS**・**分析基盤 / DWH**）と、2 つのルール
   （`automation-platform-credential-aggregation-001`・`analytics-data-permission-missing-001`）の読み方
 - 同じ型で Workato・Zapier・Power Automate・n8n などの iPaaS や、Snowflake・BigQuery などの DWH を描く方法
-- Celonis の MCP サーバーと CyberRiskScape の MCP サーバーを、同じ AI エージェントから使うときの注意
+- Celonis の業務プロセスの件数・金額から、ノードの**業務の重要度**を取り込む方法（共通の表・`convert-celonis`）と、推奨標的・SSVC への効き方（§7）
+- Celonis の MCP サーバーと CyberRiskScape の MCP サーバーを、同じ AI エージェントから使うときの注意（§8）
 
 **前提：Celonis の概要**（執筆時点の公式ドキュメントの記載による。2026 年 11 月 13 日に確認）
 
@@ -250,21 +251,128 @@ KM API の既定の制限は 1 日 6000 リクエスト・毎秒 20 リクエス
 
 ---
 
-## 7. Celonis の MCP と CyberRiskScape の MCP を、同じエージェントから使う
+## 7. 業務の重要度を取り込む（共通の表・Celonis の Knowledge Model）
 
-Claude Code などの 1 つの AI エージェントに、**Celonis の MCP サーバー**と **CyberRiskScape の MCP サーバー**（[コーディングエージェントから使う](mcp-integration.ja.md)）の
-両方をつなぐと、エージェントが両方の文脈を突き合わせられます。たとえば「Celonis が示す、止まると影響の大きい業務プロセス（受発注・請求など）を支えるシステムを挙げ、
-CyberRiskScape で、その構成要素に当たっている Critical・High の脅威を調べて」と頼む使い方です。ビジネス上の重要度と脅威を並べることで、対策の優先順位をつけやすくなります。
+### 7.1 何のために取り込むか
 
-**安全上の注意** — このとき、エージェントは**業務データの文脈と脅威モデルの両方**を持ちます。Celonis 側は §4.4 のとおり **`mcp:read` のみ**にし、
-エージェント専用の権限の低いユーザーでつなぎます。2 つのサーバーは互いに通信せず、つなぐのはエージェントです。
-Celonis のツール記述子や、照会結果に紛れた指示（間接プロンプトインジェクション）に従って、脅威モデルを書き換えさせない運用（書き込みの承認は人）も保ちます。
+ここまでの脅威は、図の構成と属性から出ます。一方、**どのシステムが止まると困る業務を担っているか**は、構成図からは分かりません。
+Celonis のようなプロセスマイニングは、受注から入金・発注から支払といった業務プロセスごとの件数や金額を持っています。これを CyberRiskScape のノードに
+**「業務の文脈」**として記録すると、次のように効きます。
+
+- 重要度が **High** のノードは、[攻撃経路分析](attack-paths.ja.md)の**推奨標的**に加わります（新しい区分「業務」。並びは 認証情報 → 業務 → データ）。
+- SSVC の **Mission & Well-being** が引き上げられます（High は high、Medium は medium）。
+- **脅威ルールの発火は変わりません。** 業務の文脈は「どこから直すか」の優先順位の材料で、脅威を増減させるものではありません。
+
+### 7.2 共通の表（ベンダー非依存）
+
+取り込むのは、特定の製品に依存しない表です。Celonis 以外（BI・ITSM・手作業の台帳など）で作った表でも同じように取り込めます。
+
+```csv
+node,process,cases,value,currency,period,criticality
+C5,受注から入金（Order to Cash）,18400,2400000000,JPY,2026-10,
+C5,発注から支払（Procure to Pay）,9200,980000000,JPY,2026-10,
+C18,問い合わせ対応（Case Management）,6100,150000000,JPY,2026-10,
+C9,月次の経営報告（Reporting）,300,40000000,JPY,2026-10,
+```
+
+数値は架空です。`C5` はテンプレートの SAP、`C18` は CRM、`C9` は Data Pool です（**新規プロジェクトにテンプレートを読み込んだとき**の C 番号。ほかの図に読み込むと番号が変わるので、画面に出る C 番号かノード ID に直してください）。同じ内容を [`templates/celonis-business-context.sample.csv`](templates/celonis-business-context.sample.csv) に置いています。
+
+- `node` は**ノードの ID または C 番号**です（図のノードを選ぶと画面に出ます）。1 つのノードに複数の行（プロセス）を書けます。
+- `criticality` は任意です（High / Medium / Low）。ノードごとに複数行あれば最大値を使います。
+- JSON でも渡せます：`{"kind":"cyberriskscape-business-context","schemaVersion":1,"source":{"product":"…","ref":"…"},"rows":[…]}`。
+
+**重要度の決め方** — 表に `criticality` があればそれを使います。無ければ、**表全体の金額に占めるノードの割合**（金額が無ければ件数）で決めます。
+**30% 以上は High、10% 以上は Medium、それ未満は Low** です。上の例では、金額の合計は約 35.7 億円で、SAP が約 95%（High）、CRM が約 4%（Low）、Data Pool が約 1%（Low）です。
+割合から決めた重要度には「金額の割合から導出」の印が付き、表に書いた値と区別できます。割合のしきい値は、表の範囲（どのプロセスを含めたか）に左右されます。
+**表に含めるプロセスを変えると結果が変わる**ので、取り込み後に画面で確かめてください。
+
+### 7.3 手順（画面）
+
+1. 構成図を開く（ここではテンプレート [`celonis-process-mining.ja.json`](templates/celonis-process-mining.ja.json) を使います）。
+2. 左サイドバーのプロジェクトのメニューから **「業務の文脈を取り込む」** を選び、表のファイル（.csv / .json）を選んで **「読み込む」** を押します。
+3. プレビューで、ノードごとの重要度と決め方（表の記載か、割合か）、図に無い参照・複数のノードに当たる参照を確認し、**「反映する」** を押します。表に出たノードだけが置き換わり、元に戻す（Undo）も使えます。
+
+![取り込みダイアログのプレビュー](../assets/guide/celonis/05-business-import.png)
+
+4. ノードを選ぶと、パネルの **「業務の文脈」** に、重要度・決め方・担う業務プロセス・取り込み元が出ます。手で直すこともできます。
+
+![ノードパネルの「業務の文脈」](../assets/guide/celonis/06-business-context.png)
+
+5. 攻撃経路分析の推奨標的に、重要度が High のノードが「業務」の区分で加わります。
+
+![推奨標的の「業務」](../assets/guide/celonis/07-business-target.png)
+
+CLI で同じことをするときは、`import-business-context <project.json> --in <表> [--out <出力先>] [--format text|json]` です（ネットワークには出ません）。
+
+### 7.4 Celonis の Knowledge Model から表を作る（`convert-celonis`）
+
+Celonis の **Knowledge Model（KM）の Record** に、システム名・プロセス名・金額・件数の項目があれば、CLI の `convert-celonis` が KM API を **GET だけ**で呼んで、上の表（JSON）に変換します。
+
+```bash
+export CELONIS_CLIENT_ID=...        # 値はシェルの履歴に残さない方法で設定する
+export CELONIS_CLIENT_SECRET=...
+node dist-cli/main.js convert-celonis \
+  --api https://<team>.<cluster>.celonis.cloud/intelligence/api \
+  --km <km-id> --record <record-id> \
+  --system-field <システム名の項目ID> \
+  --map-value "SAP ECC=ncl_sap" --map-value "Salesforce=ncl_crm" \
+  --process-field <プロセス名の項目ID> --value-field <金額の項目ID> --cases-field <件数の項目ID> \
+  --currency JPY --period 2026-10 \
+  --out business-context.json
+node dist-cli/main.js import-business-context project.json --in business-context.json --out project.json
+```
+
+- **対応づけは最初の 1 回だけ**です。KM の Record と項目（どれがシステム名・金額・件数か）、システム名の値とノードの対応（`--map-value`）を決めて、コマンドを控えておきます。
+  対応のない値の行は除外し、除外した件数を報告します。
+- **更新は、同じコマンドをもう一度実行するだけ**です。スケジューラ（cron・CI のスケジュール実行など）から定期的に実行できます。
+- 資格情報は**環境変数だけ**で渡します（`CELONIS_CLIENT_ID` と `CELONIS_CLIENT_SECRET`、または `CELONIS_TOKEN`）。引数には書けず、保存も出力もしません。
+  OAuth クライアントのスコープは `intelligence.knowledge-models:read` の**読み取りだけ**にします。
+- 前提：テナントで **KM API が有効**であること、OAuth クライアントに、KM を含む Studio のパッケージの **USE PACKAGE** があること。
+- 1 回の取得は最大 **1,000 行**（1 ページ 50 件 × 20 ページ）です。KM API には既定のレート制限があります（§4.6）。
+
+### 7.5 限界
+
+- **API からの取り込みは CLI だけ**です。画面から Celonis には接続しません（画面は、表のファイルを読みます）。
+- **常時の同期はしません。** 取り込んだ時点のスナップショットで、更新は再実行です。
+- **KM の項目は顧客ごとの定義**です。どの項目がシステム名・金額なのかは、利用者が決めます。製品の標準の項目を前提にしていません。
+- **実際の Celonis テナントでは確かめていません。** 公式ドキュメントの記載をもとにした模擬の応答で試験したもので、実機で動かすときは、少量（1 つの Record）で試し、
+  返る項目と件数を確かめてください。
+- 重要度は**業務の影響の目安**で、リスクの評価そのものではありません。判断は人が行います。
 
 ---
 
-## 8. 限界
+## 8. Celonis の MCP と CyberRiskScape の MCP を、同じエージェントから使う
 
-- **CyberRiskScape は Celonis の設定を読み取りません**（取り込み機能はありません）。ロール・権限テーブル・接続の方式・IP 制限・MCP のスコープは、図の属性に人が反映します。
+Claude Code などの 1 つの AI エージェントに、**Celonis の MCP サーバー**と **CyberRiskScape の MCP サーバー**（[コーディングエージェントから使う](mcp-integration.ja.md)）の
+両方をつなぐと、エージェントが両方の文脈を突き合わせられます。§7 の CLI が「決まった表を定期的に取り込む」使い方なのに対し、こちらは
+**エージェントが Celonis に問い合わせて、その場で業務の文脈を図に反映する**使い方です。
+
+### 8.1 ワークフロー
+
+1. **Celonis の MCP で集計を読む。** エージェントは、Celonis の読み取りツール（`query_context_model`・`query_data_lake` など。スコープは `mcp:read`）で、
+   システムごとのプロセス・件数・金額の**集計**を取得します（Data Pool への照会には Data Pool の EDIT 権限が要ります。§4.4）。個人の明細を取り出す必要はありません。
+2. **CyberRiskScape の `apply_business_context` を `dryRun: true` で呼ぶ。** `path`・`revision`（`get_model` で取得）・`rows`（§7.2 の表の行）・`source`（`product` と `ref`）を渡します。
+   処理は CLI の `import-business-context` と同じで、ノードごとの重要度の**変更前後**（`changes`）と要約を返します。変更できるのは `businessContext` だけで、構成や脅威には触れません。
+3. **人が `changes` を確かめる。** 重要度が High に変わるノード、図に無い参照、割合の根拠を見ます。
+4. **`dryRun` を外して書き込む。** `revision` が必須なので、確認のあとに図が変わっていれば拒否されます。
+5. **結果を確かめる。** 攻撃経路分析の推奨標的と、指摘の優先度（SSVC）に、業務の重要度が反映されているかを見ます。
+
+たとえば「Celonis が示す、止まると影響の大きい業務プロセスを支えるシステムを調べ、その重要度を図に反映して（まず dryRun で）、High になったノードに当たっている
+Critical・High の脅威を調べて」と頼みます。ビジネス上の重要度と脅威を並べることで、対策の優先順位をつけやすくなります。
+
+### 8.2 安全上の注意
+
+- エージェントは**業務データの文脈と脅威モデルの両方**を持ちます。Celonis 側は §4.4 のとおり **`mcp:read` のみ**にし、エージェント専用の**権限の低いユーザー**でつなぎます。
+  2 つのサーバーは互いに通信せず、つなぐのはエージェントです。
+- **Celonis から返るデータは、データであって指示ではありません。** ツールの記述子や、照会結果に紛れた指示（間接プロンプトインジェクション）に従って、図を書き換えさせないでください。
+- CyberRiskScape 側の変更は **PR のレビューのもとに置きます**（[ユースケースで学ぶ MCP 連携](mcp-use-cases.ja.md)）。`dryRun` で確かめ、書き込みの承認は人が行います。
+- **`mcp:write` と、図への書き込み権限を、同じエージェントに無人で与えないでください。** Celonis への書き込みと図の更新が一続きに自動で走る構成は、避けます。
+
+---
+
+## 9. 限界
+
+- **CyberRiskScape は Celonis の設定を読み取りません**（取り込むのは §7 の業務の重要度の表だけです）。ロール・権限テーブル・接続の方式・IP 制限・MCP のスコープは、図の属性に人が反映します。
 - 「MCP の読み取りに EDIT 権限が要る」という点は、**ルールではなくこのページの注意**です。
 - Celonis の AI 機能が使う LLM の提供元とデータの扱いは、**確認できていません**。契約と公式の記載で確認してください。
 - Celonis 固有の既定値（既定のレート制限・権限の既定など）は変わりえます。

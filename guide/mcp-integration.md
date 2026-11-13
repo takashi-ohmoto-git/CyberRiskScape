@@ -180,14 +180,15 @@ what you need.
         "list_component_types",
         "lookup_threat_rules",
         "list_change_triggers",
-        "apply_model_changes"
+        "apply_model_changes",
+        "apply_business_context"
       ]
     }
   }
 }
 ```
 
-To allow read-only use, remove `apply_model_changes` from the array.
+To allow read-only use, remove `apply_model_changes` and `apply_business_context` from the array.
 
 - The coding agent works on a checkout of the repository in a cloud environment. To make
   `dist-cli/main.js` available there, include `npm run build:cli` in the agent's environment setup
@@ -225,7 +226,7 @@ Cursor's settings (Customize).
 
 ## 5. Tools
 
-Seven read tools and one write tool. `path` is a path relative to `--root` that points at a model
+Seven read tools and two write tools. `path` is a path relative to `--root` that points at a model
 JSON file.
 
 | Tool | Main arguments | Returns |
@@ -238,6 +239,7 @@ JSON file.
 | `lookup_threat_rules` | `nodeType?`, `framework?`, `query?` | Look up which threat rules apply to a type without a model. For the early design stage |
 | `list_change_triggers` | none | The T1–T8 change-trigger checklist |
 | `apply_model_changes` | `path`, `revision`, `layer`, `operations`, `dryRun?` | Changes the structure and returns the threat diff and matching triggers (write) |
+| `apply_business_context` | `path`, `revision`, `rows`, `source?`, `dryRun?` | Replaces the nodes' business context (the business processes they carry and their criticality) with the rows of a common table, and returns the before and after criticality (`changes`) and a summary (write; up to 1,000 `rows`). For passing aggregates read through the Celonis MCP, see section 8 of the [Celonis guide](celonis.md) |
 
 Notes:
 
@@ -370,7 +372,7 @@ commit your changes before letting an agent work.
 
 ## 8. Limitations
 
-- Only **structure** can be changed. Acceptances, false positives, risk assessments, mitigation
+- Only **structure** and the nodes' business context (`apply_business_context`) can be changed. Acceptances, false positives, risk assessments, mitigation
   status, manual threats and project information cannot. These judgments are made by a person in the
   app
 - Only the **bundled threat library** is evaluated. Custom rules created in the browser are not

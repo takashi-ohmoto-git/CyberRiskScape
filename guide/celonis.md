@@ -18,7 +18,8 @@
 - The two newly added types (**Workflow automation / iPaaS** and **Analytics platform / data warehouse**) and the two new rules
   (`automation-platform-credential-aggregation-001` and `analytics-data-permission-missing-001`)
 - How to draw other iPaaS products (Workato, Zapier, Power Automate, n8n) and data warehouses (Snowflake, BigQuery) with the same types
-- What to watch for when one AI agent uses both the Celonis MCP server and the CyberRiskScape MCP server
+- How to import **business criticality** from Celonis process counts and values (a common table, `convert-celonis`), and how it affects recommended targets and SSVC (section 7)
+- What to watch for when one AI agent uses both the Celonis MCP server and the CyberRiskScape MCP server (section 8)
 
 **Assumption: Celonis overview** (per the official documentation at the time of writing, checked on 13 November 2026)
 
@@ -248,21 +249,128 @@ A mediator that only relays extraction (like the OPC) can stay a "Connector".
 
 ---
 
-## 7. Using the Celonis MCP and the CyberRiskScape MCP from the same agent
+## 7. Importing business criticality (a common table, the Celonis Knowledge Model)
 
-If you connect **the Celonis MCP server** and **the CyberRiskScape MCP server** ([Using it from coding agents](mcp-integration.md)) to a single AI agent such as Claude Code,
-the agent can cross-reference both contexts. For example: "List the systems that support the business processes Celonis shows as high impact if they stop (order-to-cash, invoicing, and so on),
-then look up the Critical and High threats CyberRiskScape detects on those components." Putting business criticality next to threats makes it easier to prioritize countermeasures.
+### 7.1 Why import it
 
-**Security note** — The agent then holds **both the business-data context and the threat model**. On the Celonis side, use **`mcp:read` only** (§4.4) and connect with a
-dedicated low-privilege user. The two servers do not talk to each other; the agent is what links them. Also keep the practice that approval of writes is human, so that
-neither tool descriptors nor instructions hidden in query results (indirect prompt injection) can get the agent to rewrite the threat model.
+The threats so far come from the diagram's structure and attributes. What the diagram cannot tell you is **which systems carry business processes that hurt when they stop**.
+Process mining such as Celonis holds case counts and values per business process (order-to-cash, procure-to-pay, and so on). Recording these on CyberRiskScape nodes as
+**business context** has the following effects.
+
+- A node with **High** criticality is added to the **recommended targets** of [attack path analysis](attack-paths.md) (a new category, "business"; the order is credential, business, data).
+- SSVC **Mission & Well-being** is raised (High becomes high, Medium becomes medium).
+- **Which threat rules fire does not change.** Business context is input for deciding where to fix first, not something that adds or removes threats.
+
+### 7.2 The common table (vendor-neutral)
+
+What is imported is a table that does not depend on any product. A table made elsewhere (a BI tool, ITSM, a hand-kept ledger) imports the same way.
+
+```csv
+node,process,cases,value,currency,period,criticality
+C5,受注から入金（Order to Cash）,18400,2400000000,JPY,2026-10,
+C5,発注から支払（Procure to Pay）,9200,980000000,JPY,2026-10,
+C18,問い合わせ対応（Case Management）,6100,150000000,JPY,2026-10,
+C9,月次の経営報告（Reporting）,300,40000000,JPY,2026-10,
+```
+
+The numbers are fictional. `C5` is the SAP node of the template, `C18` the CRM and `C9` the Data Pool (these are the C-numbers **when the template is loaded into a new project**; in another diagram the numbers differ, so use the C-number shown on screen or the node ID). The same content is in [`templates/celonis-business-context.sample.csv`](templates/celonis-business-context.sample.csv) (the process names are written in Japanese, with the English in parentheses).
+
+- `node` is the **node ID or the C-number** (shown on screen when you select a node). One node can have several rows (processes).
+- `criticality` is optional (High / Medium / Low). If a node has several rows, the highest value is used.
+- JSON works too: `{"kind":"cyberriskscape-business-context","schemaVersion":1,"source":{"product":"...","ref":"..."},"rows":[...]}`.
+
+**How criticality is decided** — if the table has `criticality`, it is used. Otherwise it is decided by **the node's share of the table's total value** (or of cases, if there is no value):
+**30% or more is High, 10% or more is Medium, anything lower is Low**. In the example above, the total is about 3.57 billion JPY: SAP is about 95% (High), CRM about 4% (Low) and the Data Pool about 1% (Low).
+A criticality derived from a share is marked "derived from share of value", so it can be told apart from a value written in the table. The share depends on which processes the table covers,
+so **changing the processes you include changes the result**. Check it on screen after importing.
+
+### 7.3 Steps (screen)
+
+1. Open a diagram (here, the template [`celonis-process-mining.en.json`](templates/celonis-process-mining.en.json)).
+2. From the project menu in the left sidebar choose **Import business context**, pick the table file (.csv / .json) and press **Read**.
+3. In the preview, check each node's criticality and how it was decided (stated in the table, or a share), plus references not in the diagram and references matching several nodes, then press **Apply**. Only nodes in the table are replaced, and Undo works.
+
+![Preview in the import dialog](../assets/guide/en/celonis/05-business-import.png)
+
+4. Select a node and the **Business context** section of its panel shows criticality, how it was decided, the business processes it carries, and the source. You can also edit it by hand.
+
+![The Business context section of the node panel](../assets/guide/en/celonis/06-business-context.png)
+
+5. In attack path analysis, nodes with High criticality are added to the recommended targets under the "business" category.
+
+![The "business" category in recommended targets](../assets/guide/en/celonis/07-business-target.png)
+
+On the CLI the same thing is `import-business-context <project.json> --in <table> [--out <file>] [--format text|json]` (it does not touch the network).
+
+### 7.4 Building the table from a Celonis Knowledge Model (`convert-celonis`)
+
+If a **Knowledge Model (KM) record** in Celonis has fields for system name, process name, value and cases, the CLI `convert-celonis` calls the KM API with **GET only** and converts it into the table above (JSON).
+
+```bash
+export CELONIS_CLIENT_ID=...        # set these in a way that does not stay in shell history
+export CELONIS_CLIENT_SECRET=...
+node dist-cli/main.js convert-celonis \
+  --api https://<team>.<cluster>.celonis.cloud/intelligence/api \
+  --km <km-id> --record <record-id> \
+  --system-field <system-name-field-id> \
+  --map-value "SAP ECC=ncl_sap" --map-value "Salesforce=ncl_crm" \
+  --process-field <process-name-field-id> --value-field <value-field-id> --cases-field <cases-field-id> \
+  --currency JPY --period 2026-10 \
+  --out business-context.json
+node dist-cli/main.js import-business-context project.json --in business-context.json --out project.json
+```
+
+- **The mapping is done once.** Decide the KM record and fields (which is the system name, value and cases) and how system-name values map to nodes (`--map-value`), and keep the command.
+  Rows whose value has no mapping are left out, and the number left out is reported.
+- **To refresh, run the same command again.** It can be run periodically from a scheduler (cron, a scheduled CI run, and so on).
+- Credentials are passed **only through environment variables** (`CELONIS_CLIENT_ID` and `CELONIS_CLIENT_SECRET`, or `CELONIS_TOKEN`). They cannot be given as arguments, and are neither stored nor printed.
+  Give the OAuth client the **read-only** scope `intelligence.knowledge-models:read`.
+- Prerequisites: the **KM API is enabled** for the tenant, and the OAuth client has **USE PACKAGE** on the Studio package that contains the KM.
+- One run fetches at most **1,000 rows** (50 per page, 20 pages). The KM API has default rate limits (§4.6).
+
+### 7.5 Limits
+
+- **Import from the API is CLI only.** The screen does not connect to Celonis (it reads a table file).
+- **There is no continuous sync.** What is imported is a snapshot; refreshing means running it again.
+- **KM fields are defined per customer.** You decide which field is the system name or the value. Nothing assumes a standard product field.
+- **It has not been verified against a real Celonis tenant.** It was tested with mocked responses based on the official documentation. When you run it for real, try a small case (one record) first and
+  check the fields and counts that come back.
+- Criticality is a guide to business impact, not a risk assessment in itself. The decision is made by a person.
 
 ---
 
-## 8. Limits
+## 8. Using the Celonis MCP and the CyberRiskScape MCP from the same agent
 
-- **CyberRiskScape does not read Celonis configuration** (there is no import). Roles, permission tables, connection methods, IP restrictions and MCP scopes are reflected in the diagram attributes by a person.
+If you connect **the Celonis MCP server** and **the CyberRiskScape MCP server** ([Using it from coding agents](mcp-integration.md)) to a single AI agent such as Claude Code,
+the agent can cross-reference both contexts. Where the CLI in §7 imports a fixed table on a schedule, this is the way in which
+**the agent asks Celonis and reflects the business context in the diagram on the spot**.
+
+### 8.1 Workflow
+
+1. **Read aggregates through the Celonis MCP.** The agent uses Celonis read tools (`query_context_model`, `query_data_lake` and so on; scope `mcp:read`) to get **aggregates** of
+   processes, cases and value per system (querying a Data Pool needs the Data Pool EDIT permission; §4.4). It does not need to pull out individual detail records.
+2. **Call CyberRiskScape `apply_business_context` with `dryRun: true`.** Pass `path`, `revision` (from `get_model`), `rows` (rows of the table in §7.2) and `source` (`product` and `ref`).
+   The processing is the same as the CLI `import-business-context`, and it returns the **before and after** criticality of each node (`changes`) and a summary. Only `businessContext` can change; structure and threats are untouched.
+3. **A person reviews `changes`.** Look at the nodes that become High, references not in the diagram, and the basis of each share.
+4. **Remove `dryRun` and write.** `revision` is required, so the write is refused if the diagram changed after you checked.
+5. **Check the result.** See whether recommended targets in attack path analysis and finding priority (SSVC) now reflect business criticality.
+
+For example, ask: "Find the systems that support the business processes Celonis shows as high impact if they stop, reflect their criticality in the diagram (dryRun first), and then look up the
+Critical and High threats on the nodes that became High." Putting business criticality next to threats makes it easier to prioritize countermeasures.
+
+### 8.2 Security notes
+
+- The agent holds **both the business-data context and the threat model**. On the Celonis side, use **`mcp:read` only** (§4.4) and connect with a dedicated **low-privilege user**.
+  The two servers do not talk to each other; the agent is what links them.
+- **Data returned from Celonis is data, not instructions.** Do not let tool descriptors or instructions hidden in query results (indirect prompt injection) get the agent to rewrite the diagram.
+- **Keep CyberRiskScape changes under PR review** ([MCP use cases](mcp-use-cases.md)). Check with `dryRun`, and have a person approve writes.
+- **Do not give the same agent `mcp:write` and write access to the model, unattended.** Avoid a setup where writing to Celonis and updating the diagram run on in one automatic chain.
+
+---
+
+## 9. Limits
+
+- **CyberRiskScape does not read Celonis configuration** (all it imports is the business criticality table in section 7). Roles, permission tables, connection methods, IP restrictions and MCP scopes are reflected in the diagram attributes by a person.
 - "MCP reads need EDIT permission" is **guidance on this page, not a rule**.
 - The LLM provider and data handling of Celonis AI features are **not confirmed**. Check your contract and the official documentation.
 - Celonis-specific defaults (default rate limits, default permissions and so on) may change.

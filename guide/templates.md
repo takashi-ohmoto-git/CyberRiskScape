@@ -143,6 +143,7 @@ A single diagram with SAP extraction (through the OPC), Action Flow write-back, 
 |---|---|
 | [`templates/celonis-process-mining.en.json`](templates/celonis-process-mining.en.json) | English |
 | [`templates/celonis-process-mining.ja.json`](templates/celonis-process-mining.ja.json) | Japanese |
+| [`templates/celonis-business-context.sample.csv`](templates/celonis-business-context.sample.csv) | A sample business context table (fictional numbers; node IDs are those of the template above) |
 
 **Inside:** 20 components, 19 data flows, 3 trust boundaries. Import it and **140 threats** are detected (measured at the time of writing).
 For the type mapping and how to read the threats, see [Threat Modeling a Celonis Setup](celonis.md).
