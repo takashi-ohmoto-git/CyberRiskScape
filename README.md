@@ -3,7 +3,7 @@
 **An open-source Security Context Layer built on threat modeling — for AI, LLM, agentic systems, and post-quantum cryptography**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-297-orange.svg)](data/threat-library)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-299-orange.svg)](data/threat-library)
 [![Tests](https://img.shields.io/badge/tests-2461%20passing-brightgreen.svg)](#development)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
@@ -49,7 +49,7 @@ For the thinking behind it, see [An Introduction to Secure by Design](guide/secu
 For the feature list, see [here](guide/README.md).
 
 > **Interface language.** English and Japanese are both supported — use the JA / EN switch
-> in the top bar, and your choice is remembered. The interface, all 297 threat rules
+> in the top bar, and your choice is remembered. The interface, all 299 threat rules
 > (name, category, description, mitigations) and every component type label are
 > translated. Help is welcome.
 
@@ -60,7 +60,7 @@ For the feature list, see [here](guide/README.md).
 | Problem | How CyberRiskScape solves it |
 |---|---|
 | **Design and threat modeling** | |
-| Threat modeling needs experts and time, so it cannot be run for every design change | Draw the architecture, and 297 rules list the threats that fit it. Start from templates; unset attributes are assumed to be the bad value so nothing is missed ([Getting Started](guide/getting-started.md)) |
+| Threat modeling needs experts and time, so it cannot be run for every design change | Draw the architecture, and 299 rules list the threats that fit it. Start from templates; unset attributes are assumed to be the bad value so nothing is missed ([Getting Started](guide/getting-started.md)) |
 | Conventional methods cannot surface the risks of AI agents, LLMs, MCP servers and long-term memory | Agentic AI is a first-class component, evaluated with rules based on OWASP LLM, Agentic, MITRE ATLAS and more ([AI-driven development](guide/ai-driven-development.md)) |
 | The threat model goes stale with every design change and cannot keep up with code written by AI | Coding agents query threats and update the diagram over MCP, and CI detects new threats from diagram diffs and blocks the PR ([MCP](guide/mcp-integration.md), [CI](guide/ci-integration.md)) |
 | You cannot tell where an AI-agent attacker would get in and what it would go after first | Place an AI agent attacker on the diagram to see the entry points it can use, the targets it is likely to go after and the paths it would prioritize, along with choke points where one countermeasure cuts the most paths and monitoring blind spots. Techniques are shown on ATT&CK and MITRE F3 matrices ([Attack paths](guide/attack-paths.md), [Where to cut the attack paths](guide/agentic-attacker-paths.md)) |
@@ -119,6 +119,7 @@ platforms, and AI agent platforms. It makes no outbound calls, so it also works 
 | **ASM and external exposure** (Shodan) | Generate a diagram of exposed services from a `shodan download` export, assess and reduce exposure along CISA's four steps, and catch new exposure by diffing against the previous import ([guide](guide/exposure-reduction.md)) |
 | **ASM and subdomain takeover** (ScopeSentry) | Generate a diagram of exposed services and DNS zones from a ScopeSentry export or its API (MCP), assess subdomain takeover, and catch new exposure by diffing periodic imports ([guide](guide/scopesentry.md)) |
 | **AI agent platforms** (Salesforce Agentforce) | Dedicated stencils, threat rules, and a diagram template ([guide](guide/agentforce.md)) |
+| **Process mining, iPaaS and data warehouses** (Celonis) | Dedicated types (Workflow automation / iPaaS, Analytics platform / data warehouse), threat rules and a diagram template to assess setups with extraction, write-back and MCP ([guide](guide/celonis.md)) |
 | **Automotive** (SDV, connected cars) | Dedicated stencils (Vehicle (SDV) category), threat rules based on UN R155 Annex 5, and a zonal-architecture diagram template ([guide](guide/sdv.md)) |
 | **AI-driven vulnerability review** (Anthropic `defending-code-reference-harness`) | Export the threat model as `THREAT_MODEL.md`-compatible input for the review ([guide](guide/security-context.md)) |
 | **Vulnerability remediation** (Veracode) | An example setup that builds the threat model into a flow fixing SAST and DAST findings with AI, as context, prioritization, and regression tests ([guide](guide/veracode-remediation.md)) |
@@ -132,7 +133,7 @@ For the full list of products and how they connect, see [Integrations](guide/int
 
 ### Features
 
-- **Visual DFD editor** — 148 component types across 14 libraries and 16 categories, trust
+- **Visual DFD editor** — 150 component types across 14 libraries and 16 categories, trust
   boundaries, and data flows carrying encryption, authentication, and semantic attributes.
   The library covers network and security appliances (with examples of the equivalent cloud
   services), Storage & Databases, and Basic Shapes (DFD) drawn in the classic Yourdon notation
@@ -254,7 +255,7 @@ npm run test:watch   # watch mode
 npx tsc --noEmit     # type check (strict)
 ```
 
-The standard check after a change is `npx tsc --noEmit` plus the test suite. 2,517 tests
+The standard check after a change is `npx tsc --noEmit` plus the test suite. 2,529 tests
 currently pass.
 
 ---
@@ -368,7 +369,7 @@ Near-term priorities, in order:
    detection confidence stated explicitly
 
 Done recently: an English UI with a language switcher, plus English translation overlays
-for all 297 threat rules and every component type label, all leaving the existing schemas
+for all 299 threat rules and every component type label, all leaving the existing schemas
 unchanged.
 
 ---

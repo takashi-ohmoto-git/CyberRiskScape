@@ -136,6 +136,18 @@ LINE の Webhook 署名未検証・チャネル乗っ取り、通話録音（生
 読み込むと **117 件**の脅威が検出されます。構成要素の対応づけと、検出される脅威の読み方は
 [Salesforce Agentforce を脅威モデリングする](agentforce.ja.md)を参照してください。
 
+### Celonis（プロセスマイニング）のテンプレート
+
+SAP からの抽出（OPC）・Action Flow の書き戻し・公開フォーム・Celonis の MCP サーバーと AI エージェントを 1 枚にまとめたテンプレートです。
+
+| ファイル | 内容 |
+|---|---|
+| [`templates/celonis-process-mining.ja.json`](templates/celonis-process-mining.ja.json) | 日本語版 |
+| [`templates/celonis-process-mining.en.json`](templates/celonis-process-mining.en.json) | 英語版 |
+
+**中身：** コンポーネント 20・データフロー 19・トラスト境界 3。読み込むと **140 件**（執筆時点の実測値）の脅威が検出されます。
+型の対応と脅威の読み方は[Celonis を使う構成を脅威モデリングする](celonis.ja.md)を参照してください。
+
 ### AI に SOC を任せる構成のテンプレート
 
 AI エージェントが 1 次調査、人が 2 次で承認、SOAR が封じ込めを実行する構成を、対策前と対策後の 2 枚で用意しています。

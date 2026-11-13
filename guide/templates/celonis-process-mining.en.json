@@ -1,0 +1,402 @@
+{
+  "schemaVersion": 1,
+  "kind": "cyberriskscape-template",
+  "name": "Celonis (process mining) deployment (extraction, write-back, MCP)",
+  "layer": {
+    "nodes": [
+      {
+        "id": "ncl_emp",
+        "type": "USER",
+        "x": 60,
+        "y": 120,
+        "label": "Employees (business users, analysts)",
+        "userTrustAttribute": "Employee"
+      },
+      {
+        "id": "ncl_idp",
+        "type": "IDENTITY_PROVIDER",
+        "x": 300,
+        "y": 120,
+        "label": "Corporate IdP (SAML / OIDC SSO)",
+        "identityProviderKind": "IDaaS"
+      },
+      {
+        "id": "ncl_dev",
+        "type": "USER",
+        "x": 60,
+        "y": 420,
+        "label": "Developers and data engineers",
+        "userTrustAttribute": "Employee"
+      },
+      {
+        "id": "ncl_aic",
+        "type": "AGENT",
+        "x": 300,
+        "y": 420,
+        "label": "AI coding assistant (Claude Code, Copilot, etc.)",
+        "description": "Employee-side AI client connected to the Celonis MCP server. Calls Celonis tools with the permissions of the signed-in user"
+      },
+      {
+        "id": "ncl_sap",
+        "type": "BACKEND_API",
+        "x": 60,
+        "y": 760,
+        "label": "SAP ECC / S/4HANA (core ERP)",
+        "description": "The extraction source and also the write-back target of Action Flows",
+        "attackSurface": {
+          "hasGlobalIp": false,
+          "hasRemoteAccessRestriction": true,
+          "hasUserAuthentication": true
+        }
+      },
+      {
+        "id": "ncl_sapuser",
+        "type": "SERVICE_ACCOUNT",
+        "x": 300,
+        "y": 760,
+        "label": "SAP system user for Celonis (CELONIS_EXTRACTION + write-back role)",
+        "description": "System User (password). The delivered role has S_TABU_DIS DICBERCLS = *, so it can read every table group. Write-back permissions are added manually"
+      },
+      {
+        "id": "ncl_opc",
+        "type": "CONNECTOR",
+        "x": 540,
+        "y": 760,
+        "label": "On-Premise Client (OPC)",
+        "description": "Passive mediator inside the corporate network. Connects outbound to Celonis to fetch instructions (no inbound ports). One SAP connection serves both extraction and Action Flow write-back"
+      },
+      {
+        "id": "ncl_cel",
+        "type": "SAAS",
+        "x": 860,
+        "y": 120,
+        "label": "Celonis Platform (Studio, apps, APIs)",
+        "cloudSanction": "Sanctioned",
+        "cloudOwnership": "Company",
+        "authProviderId": "ncl_idp"
+      },
+      {
+        "id": "ncl_pool",
+        "type": "ANALYTICS_PLATFORM",
+        "x": 1180,
+        "y": 120,
+        "label": "Data Pool / Data Model (extracted business data)",
+        "description": "A Data Model without data permissions can be viewed by every user and group in Studio once loaded"
+      },
+      {
+        "id": "ncl_pii",
+        "type": "PERSONAL_INFO",
+        "x": 0,
+        "y": 0,
+        "label": "Personal data of suppliers, customers and employees",
+        "parentId": "ncl_pool"
+      },
+      {
+        "id": "ncl_fin",
+        "type": "CONFIDENTIAL_INFO",
+        "x": 0,
+        "y": 0,
+        "label": "Order, invoice and payment records",
+        "parentId": "ncl_pool"
+      },
+      {
+        "id": "ncl_mcp",
+        "type": "MCP_SERVER",
+        "x": 860,
+        "y": 420,
+        "label": "Celonis MCP server (/mcp)",
+        "description": "Streamable HTTP. Runs with the permissions of the user who signed in via OAuth (Authorization Code + PKCE). With mcp:write it can deploy packages, run pipelines, run agents and approve their writes",
+        "attackSurface": {
+          "hasGlobalIp": true,
+          "hasUserAuthentication": true,
+          "hasRateLimit": true
+        }
+      },
+      {
+        "id": "ncl_agent",
+        "type": "AGENT",
+        "x": 1180,
+        "y": 420,
+        "label": "Celonis agents (Context Model agent, etc.)",
+        "description": "Can be started from the MCP tools execute_agent / run_context_model_agent"
+      },
+      {
+        "id": "ncl_af",
+        "type": "AUTOMATION_PLATFORM",
+        "x": 860,
+        "y": 760,
+        "label": "Action Flows (write-back and automation)",
+        "description": "Triggers processing in SAP, Salesforce, ServiceNow and others. The Custom Webhook module supports neither app keys nor OAuth"
+      },
+      {
+        "id": "ncl_conncred",
+        "type": "CREDENTIAL",
+        "x": 0,
+        "y": 0,
+        "label": "Stored connection credentials (SAP, cloud business systems)",
+        "parentId": "ncl_af"
+      },
+      {
+        "id": "ncl_form",
+        "type": "WEB_FORM",
+        "x": 1180,
+        "y": 760,
+        "label": "Public form links and public inboxes (created by Action Flows)"
+      },
+      {
+        "id": "ncl_bi",
+        "type": "OAUTH_CLIENT",
+        "x": 1500,
+        "y": 120,
+        "label": "Integration OAuth client (BI and data lake reading the KM API)",
+        "description": "Client Credentials. Scopes do not add permissions, so the Celonis permissions granted to the client apply as-is"
+      },
+      {
+        "id": "ncl_crm",
+        "type": "CRM",
+        "x": 1500,
+        "y": 420,
+        "label": "Salesforce / ServiceNow (cloud business systems)",
+        "cloudSanction": "Sanctioned",
+        "cloudOwnership": "ThirdParty"
+      },
+      {
+        "id": "ncl_hook",
+        "type": "EXTERNAL_ENTITY",
+        "x": 1500,
+        "y": 600,
+        "label": "External system (Custom Webhook caller)"
+      },
+      {
+        "id": "ncl_ext",
+        "type": "USER",
+        "x": 1500,
+        "y": 760,
+        "label": "External partners and applicants (form submitters)",
+        "userTrustAttribute": "Guest"
+      }
+    ],
+    "edges": [
+      {
+        "id": "ecl_01",
+        "source": "ncl_emp",
+        "target": "ncl_cel",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Using Studio and apps (SSO)"
+      },
+      {
+        "id": "ecl_02",
+        "source": "ncl_dev",
+        "target": "ncl_aic",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "Plain",
+        "dataFlow": "outbound",
+        "dataFlowName": "Instructions to the AI"
+      },
+      {
+        "id": "ecl_03",
+        "source": "ncl_aic",
+        "target": "ncl_mcp",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "MCP tool calls (OAuth, user's permissions)"
+      },
+      {
+        "id": "ecl_04",
+        "source": "ncl_mcp",
+        "target": "ncl_pool",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Querying the data lake and Context Model (requires Data Pool EDIT)"
+      },
+      {
+        "id": "ecl_05",
+        "source": "ncl_mcp",
+        "target": "ncl_agent",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Running agents and approving their writes (mcp:write)"
+      },
+      {
+        "id": "ecl_06",
+        "source": "ncl_agent",
+        "target": "ncl_pool",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Reading business data"
+      },
+      {
+        "id": "ecl_07",
+        "source": "ncl_agent",
+        "target": "ncl_af",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Triggering Action Flows"
+      },
+      {
+        "id": "ecl_08",
+        "source": "ncl_cel",
+        "target": "ncl_pool",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Data used by Studio and apps"
+      },
+      {
+        "id": "ecl_09",
+        "source": "ncl_cel",
+        "target": "ncl_af",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Triggering Action Flows from buttons and schedules"
+      },
+      {
+        "id": "ecl_10",
+        "source": "ncl_opc",
+        "target": "ncl_af",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "OPC fetches instructions (outbound only, HTTPS 443)"
+      },
+      {
+        "id": "ecl_11",
+        "source": "ncl_opc",
+        "target": "ncl_pool",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Sending extracted data"
+      },
+      {
+        "id": "ecl_12",
+        "source": "ncl_opc",
+        "target": "ncl_sapuser",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "Plain",
+        "dataFlow": "outbound",
+        "dataFlowName": "RFC connection (plaintext unless SNC is configured)"
+      },
+      {
+        "id": "ecl_13",
+        "source": "ncl_sapuser",
+        "target": "ncl_sap",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "Plain",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "Table extraction and business data write-back"
+      },
+      {
+        "id": "ecl_14",
+        "source": "ncl_af",
+        "target": "ncl_crm",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Write-back to cloud business systems"
+      },
+      {
+        "id": "ecl_15",
+        "source": "ncl_cel",
+        "target": "ncl_crm",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Extraction with Extractor Builder (REST / OData GET)"
+      },
+      {
+        "id": "ecl_16",
+        "source": "ncl_bi",
+        "target": "ncl_cel",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Querying the KM API (Client Credentials)"
+      },
+      {
+        "id": "ecl_17",
+        "source": "ncl_ext",
+        "target": "ncl_form",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Form submission"
+      },
+      {
+        "id": "ecl_18",
+        "source": "ncl_form",
+        "target": "ncl_agent",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Submissions reach agents as process context"
+      },
+      {
+        "id": "ecl_19",
+        "source": "ncl_hook",
+        "target": "ncl_af",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Triggering Action Flows via Custom Webhook (no app key / OAuth support)"
+      }
+    ],
+    "boundaries": [
+      {
+        "id": "bcl_corp",
+        "type": "ROUNDED",
+        "x": 20,
+        "y": 20,
+        "width": 740,
+        "height": 940,
+        "trustLevel": "Internal",
+        "macroTrust": "Security Zone"
+      },
+      {
+        "id": "bcl_cel",
+        "type": "RECT",
+        "x": 800,
+        "y": 20,
+        "width": 620,
+        "height": 940,
+        "trustLevel": "Internet"
+      },
+      {
+        "id": "bcl_ext",
+        "type": "RECT",
+        "x": 1460,
+        "y": 20,
+        "width": 300,
+        "height": 940,
+        "trustLevel": "Internet"
+      }
+    ]
+  }
+}

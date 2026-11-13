@@ -3,7 +3,7 @@
 **脅威モデリングを中核とした、OSS の Security Context Layer — AI・LLM・エージェントシステム・PQC に対応**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-297-orange.svg)](data/threat-library)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-299-orange.svg)](data/threat-library)
 [![Tests](https://img.shields.io/badge/tests-2461%20passing-brightgreen.svg)](#開発)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
@@ -50,7 +50,7 @@ node dist-cli/main.js checklist guide/templates/nco-advisory-2026-11-project.ja.
 | 課題 | CyberRiskScape での解決 |
 |---|---|
 | **設計・脅威モデリング** | |
-| 脅威モデリングに専門家と時間がかかり、設計のたびには回せない | 構成図を描くだけで、297 件のルールが構成に応じた脅威を列挙する。テンプレートから始められ、未入力の属性は悪い値と仮定して漏れを防ぐ（[はじめに](guide/getting-started.ja.md)） |
+| 脅威モデリングに専門家と時間がかかり、設計のたびには回せない | 構成図を描くだけで、299 件のルールが構成に応じた脅威を列挙する。テンプレートから始められ、未入力の属性は悪い値と仮定して漏れを防ぐ（[はじめに](guide/getting-started.ja.md)） |
 | AI エージェント・LLM・MCP サーバー・長期メモリのリスクを、従来の手法では洗い出せない | エージェント型 AI を第一級の部品として扱い、OWASP LLM・Agentic・MITRE ATLAS 等にもとづくルールで評価する（[AI 駆動開発](guide/ai-driven-development.ja.md)） |
 | 設計が変わるたびに脅威モデルが古くなり、AI が書くコードの速さに追いつかない | コーディングエージェントが MCP で脅威を問い合わせ・図を更新し、CI が図の差分から新しい脅威を検出して PR を止める（[MCP](guide/mcp-integration.ja.md)・[CI](guide/ci-integration.ja.md)） |
 | AI エージェント型の攻撃者が、どこから入り、何を優先して狙うかが分からない | 図に AI エージェント攻撃者を置くと、侵入できる入口・狙われやすい標的・優先される経路を示し、1 か所の対策で最も多くの経路を切れる場所（チョークポイント）と監視の死角を挙げる。手口は ATT&CK・MITRE F3 のマトリクスで見られる（[攻撃経路分析](guide/attack-paths.ja.md)・[攻撃経路のどこを切るか](guide/agentic-attacker-paths.ja.md)） |
@@ -106,6 +106,7 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 | **ASM・サブドメイン乗っ取り**（ScopeSentry） | ScopeSentry の書き出しまたは API（MCP）から露出サービスと DNS ゾーンの図を自動生成し、サブドメイン乗っ取りを評価、定期の取り込みの差分で新しい露出を検知する（[ガイド](guide/scopesentry.ja.md)） |
 | **ASM・外部露出**（Shodan） | `shodan download` の書き出しから露出サービスの図を自動生成し、CISA の 4 ステップに沿って評価・削減、前回との差分で新しい露出を検知する（[ガイド](guide/exposure-reduction.ja.md)） |
 | **AI エージェント基盤**（Salesforce Agentforce） | 専用のステンシル・脅威ルール・構成図テンプレートで評価する（[ガイド](guide/agentforce.ja.md)） |
+| **プロセスマイニング・iPaaS・DWH**（Celonis） | 専用の型（業務自動化 / iPaaS・分析基盤 / DWH）・脅威ルール・構成図テンプレートで、抽出・書き戻し・MCP を含む構成を評価する（[ガイド](guide/celonis.ja.md)） |
 | **車載・SDV**（コネクテッドカー） | 専用のステンシル（Vehicle (SDV) カテゴリ）・UN R155 Annex 5 を出典とする脅威ルール・ゾーン型アーキテクチャの構成図テンプレートで評価する（[ガイド](guide/sdv.ja.md)） |
 | **AI による脆弱性診断**（Anthropic `defending-code-reference-harness`） | 脅威モデルを `THREAT_MODEL.md` 互換で書き出し、診断の入力にする（[ガイド](guide/security-context.ja.md)） |
 | **脆弱性の修正**（Veracode） | SAST・DAST の指摘を AI で修正する流れに、脅威モデルを前提知識・優先順位・回帰テストとして組み込む構成例（[ガイド](guide/veracode-remediation.ja.md)） |
@@ -119,7 +120,7 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 
 ### 主な機能
 
-- **ビジュアル DFD エディタ** — 148 種のコンポーネント型（14 ライブラリ・16 カテゴリ）、
+- **ビジュアル DFD エディタ** — 150 種のコンポーネント型（14 ライブラリ・16 カテゴリ）、
   トラスト境界、データフローの暗号化区分・認証状態の表現。ネットワーク・セキュリティ機器
   （クラウドの同等サービスの例つき）、Storage & Databases、DFD 標準記法（Yourdon 法）で
   表示する Basic Shapes (DFD) を収録
@@ -234,7 +235,7 @@ npm run test:watch   # テスト watch モード
 npx tsc --noEmit     # 型チェック（strict）
 ```
 
-変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 2,517 件の
+変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 2,529 件の
 テストが通ります。
 
 ---

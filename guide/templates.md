@@ -135,6 +135,18 @@ agent reads it and can send data out.
 Import it and **117 threats** are detected. For how Agentforce building blocks map to types and how to read
 the detected threats, see [Threat Modeling Salesforce Agentforce](agentforce.md).
 
+### The Celonis (process mining) template
+
+A single diagram with SAP extraction (through the OPC), Action Flow write-back, a public form, and the Celonis MCP server with AI agents.
+
+| File | Contents |
+|---|---|
+| [`templates/celonis-process-mining.en.json`](templates/celonis-process-mining.en.json) | English |
+| [`templates/celonis-process-mining.ja.json`](templates/celonis-process-mining.ja.json) | Japanese |
+
+**Inside:** 20 components, 19 data flows, 3 trust boundaries. Import it and **140 threats** are detected (measured at the time of writing).
+For the type mapping and how to read the threats, see [Threat Modeling a Celonis Setup](celonis.md).
+
 ### The AI-run SOC templates
 
 An architecture where an AI agent does Tier 1 investigation, a human approves at Tier 2, and a SOAR runs containment, as a before and an after diagram.

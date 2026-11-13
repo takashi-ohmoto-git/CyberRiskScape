@@ -29,6 +29,7 @@ CyberRiskScape を使う人のための、機能の使い方の一覧です。
 | **[コーディングエージェントから使う](mcp-integration.ja.md)** | Claude Code・GitHub Copilot などのエージェントが脅威の問い合わせと構成図の更新をできるようにする MCP サーバーの導入：クライアント別の設定・ツール一覧・安全のための仕組み・PR の差分ゲートとの組み合わせ |
 | **[ユースケースで学ぶ MCP 連携](mcp-use-cases.ja.md)** | MCP を使う場面別の実践：設計初期の調査・重要脅威の実装タスク化・コンポーネント追加の影響確認・PR 前のセルフレビュー・GitHub Copilot／Cursor での使い方・Snyk との組み合わせ・許可範囲の決め方 |
 | **[Salesforce Agentforce を脅威モデリングする](agentforce.ja.md)** | Agentforce の構成要素と CyberRiskScape の型の対応、顧客向け Service agent の構成図テンプレート、外部から書き込める CRM 項目を経由する間接プロンプトインジェクション（ForcedLeak 型）など押さえたい脅威と、検出されるルール・されないこと、エージェント定義の変更を PR で見張る方法 |
+| **[Celonis（プロセスマイニング）を使う構成を脅威モデリングする](celonis.ja.md)** | SAP からの抽出・Action Flow の書き戻し・MCP を 1 枚にした構成図テンプレート、業務自動化 / iPaaS と分析基盤 / DWH の型、データ単位の権限・資格情報の集約・MCP の権限の読み方、ほかの iPaaS・DWH の描き方、Celonis と CyberRiskScape の MCP の併用（件数は執筆時点の実測値） |
 | **[SDV を脅威モデリングする](sdv.ja.md)** | SDV の構成要素（ECU・ゾーンコントローラ・ゲートウェイ・TCU・OBD-II・V2X・OTA・車両 PKI）と Vehicle (SDV) の型の対応、ゾーン型アーキテクチャの構成図テンプレート、UN R155 Annex 5 を出典とする 19 ルールと脅威番号の対応、TCU や OBD-II から走行系 ECU への攻撃経路の見方、PQC 移行（ファームウェア署名・終端判定）との関係、限界（型式認証や TARA の代替ではないこと） |
 | **[ScopeSentry の観測結果を構成図にする](scopesentry.ja.md)** | 自前で動かす OSS の ASM「ScopeSentry」の書き出し（資産・脆弱性・サブドメイン乗っ取り）または API（MCP）から、露出したサービスの構成図の下書きを自動で作る方法、新しい DNS（権威DNS・ゾーン）の型と乗っ取りの脅威（運用状況で消す入力）、定期の取り込みと `diff --fail-on` で新しい露出を検知する方法（スキャンは許可された範囲だけ） |
 | **[Kong AI Gateway を脅威モデリングする](kong-ai-gateway.ja.md)** | Kong Gateway の宣言設定（decK の kong.yaml）と AI Gateway 2.x の kongctl 宣言ファイルから構成図の下書きを自動で作る方法（画面・CLI）、設定と型の対応、AI Gateway の構成で押さえたい脅威（認証のない Route・MCP として公開したツール・ガードレールの限界・RAG・管理プレーン）と、kong.yaml の変更を PR で見張る方法 |
@@ -75,6 +76,7 @@ CyberRiskScape を使う人のための、機能の使い方の一覧です。
   [コーディングエージェントから使う](mcp-integration.ja.md) へ。
 - **ほかのツールや製品とつなぎたい** — [連携ガイド](integrations.ja.md) で、連携できる製品と方法を一覧できます。
 - **Salesforce Agentforce の構成を脅威モデル化したい** — [Salesforce Agentforce を脅威モデリングする](agentforce.ja.md) へ。
+- **Celonis（プロセスマイニング）や、iPaaS・DWH を使う構成を脅威モデル化したい** — [Celonis を使う構成を脅威モデリングする](celonis.ja.md) へ。テンプレートから始められます。
 - **SDV・コネクテッドカーの構成を脅威モデル化したい** — [SDV を脅威モデリングする](sdv.ja.md) へ。ゾーン型アーキテクチャのテンプレートから始められます。
 - **Kong Gateway（AI Gateway）の構成を脅威モデル化したい** — [Kong AI Gateway を脅威モデリングする](kong-ai-gateway.ja.md) へ。kong.yaml（decK）や kongctl の宣言ファイル（AI Gateway 2.x）から図の下書きを作れます。
 - **Claude Code を使う作業ディレクトリ（依存パッケージ・.env・MCP・権限設定）から構成図を作りたい** — [Claude Codeの作業ディレクトリから脅威モデルを作成する](repo-import.ja.md) へ。`import-repo` で図の下書きと依存パッケージのインベントリが作れます。

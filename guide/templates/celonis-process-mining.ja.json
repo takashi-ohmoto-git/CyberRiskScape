@@ -1,0 +1,402 @@
+{
+  "schemaVersion": 1,
+  "kind": "cyberriskscape-template",
+  "name": "Celonis（プロセスマイニング）を使う構成（抽出・書き戻し・MCP）",
+  "layer": {
+    "nodes": [
+      {
+        "id": "ncl_emp",
+        "type": "USER",
+        "x": 60,
+        "y": 120,
+        "label": "社員（業務・分析担当）",
+        "userTrustAttribute": "Employee"
+      },
+      {
+        "id": "ncl_idp",
+        "type": "IDENTITY_PROVIDER",
+        "x": 300,
+        "y": 120,
+        "label": "社内 IdP（SAML / OIDC の SSO）",
+        "identityProviderKind": "IDaaS"
+      },
+      {
+        "id": "ncl_dev",
+        "type": "USER",
+        "x": 60,
+        "y": 420,
+        "label": "開発者・データエンジニア",
+        "userTrustAttribute": "Employee"
+      },
+      {
+        "id": "ncl_aic",
+        "type": "AGENT",
+        "x": 300,
+        "y": 420,
+        "label": "AI コーディング支援（Claude Code・Copilot 等）",
+        "description": "Celonis の MCP サーバーに接続する社員側の AI クライアント。サインインした利用者の権限で Celonis のツールを呼ぶ"
+      },
+      {
+        "id": "ncl_sap",
+        "type": "BACKEND_API",
+        "x": 60,
+        "y": 760,
+        "label": "SAP ECC / S/4HANA（基幹）",
+        "description": "抽出の元であり、Action Flow の書き戻し先でもある",
+        "attackSurface": {
+          "hasGlobalIp": false,
+          "hasRemoteAccessRestriction": true,
+          "hasUserAuthentication": true
+        }
+      },
+      {
+        "id": "ncl_sapuser",
+        "type": "SERVICE_ACCOUNT",
+        "x": 300,
+        "y": 760,
+        "label": "SAP の連携用システムユーザー（CELONIS_EXTRACTION ＋書き戻しの役割）",
+        "description": "System User（パスワード）。配布の役割は S_TABU_DIS の DICBERCLS が * で、全テーブルのグループを読める。書き戻しの権限は手で足す"
+      },
+      {
+        "id": "ncl_opc",
+        "type": "CONNECTOR",
+        "x": 540,
+        "y": 760,
+        "label": "On-Premise Client（OPC）",
+        "description": "社内に置く受け身の仲介。外向きに Celonis へ接続して指示を取りに行く（受信ポートを開けない）。1 つの SAP 接続を抽出と Action Flow の書き戻しの両方に使う"
+      },
+      {
+        "id": "ncl_cel",
+        "type": "SAAS",
+        "x": 860,
+        "y": 120,
+        "label": "Celonis Platform（Studio・アプリ・API）",
+        "cloudSanction": "Sanctioned",
+        "cloudOwnership": "Company",
+        "authProviderId": "ncl_idp"
+      },
+      {
+        "id": "ncl_pool",
+        "type": "ANALYTICS_PLATFORM",
+        "x": 1180,
+        "y": 120,
+        "label": "Data Pool / Data Model（抽出した業務データ）",
+        "description": "データ権限を設定しない Data Model は、読み込み後に全ユーザー・全グループが Studio から見られる"
+      },
+      {
+        "id": "ncl_pii",
+        "type": "PERSONAL_INFO",
+        "x": 0,
+        "y": 0,
+        "label": "取引先・顧客・従業員の個人情報",
+        "parentId": "ncl_pool"
+      },
+      {
+        "id": "ncl_fin",
+        "type": "CONFIDENTIAL_INFO",
+        "x": 0,
+        "y": 0,
+        "label": "受発注・請求・支払の業務データ",
+        "parentId": "ncl_pool"
+      },
+      {
+        "id": "ncl_mcp",
+        "type": "MCP_SERVER",
+        "x": 860,
+        "y": 420,
+        "label": "Celonis MCP サーバー（/mcp）",
+        "description": "streamable HTTP。OAuth（Authorization Code＋PKCE）でサインインした利用者の権限で動く。mcp:write でパッケージのデプロイ・パイプラインの実行・エージェントの実行と書き込みの承認ができる",
+        "attackSurface": {
+          "hasGlobalIp": true,
+          "hasUserAuthentication": true,
+          "hasRateLimit": true
+        }
+      },
+      {
+        "id": "ncl_agent",
+        "type": "AGENT",
+        "x": 1180,
+        "y": 420,
+        "label": "Celonis のエージェント（Context Model agent 等）",
+        "description": "MCP の execute_agent / run_context_model_agent から起動できる"
+      },
+      {
+        "id": "ncl_af",
+        "type": "AUTOMATION_PLATFORM",
+        "x": 860,
+        "y": 760,
+        "label": "Action Flow（業務システムへの書き戻し・自動化）",
+        "description": "SAP・Salesforce・ServiceNow などで処理を起動する。Custom Webhook のモジュールは App key / OAuth のどちらにも対応しない"
+      },
+      {
+        "id": "ncl_conncred",
+        "type": "CREDENTIAL",
+        "x": 0,
+        "y": 0,
+        "label": "保存された接続の資格情報（SAP・クラウドの業務システム）",
+        "parentId": "ncl_af"
+      },
+      {
+        "id": "ncl_form",
+        "type": "WEB_FORM",
+        "x": 1180,
+        "y": 760,
+        "label": "公開フォームのリンク・公開受信箱（Action Flow で作成）"
+      },
+      {
+        "id": "ncl_bi",
+        "type": "OAUTH_CLIENT",
+        "x": 1500,
+        "y": 120,
+        "label": "連携用 OAuth クライアント（BI・データレイクが KM API を読む）",
+        "description": "Client Credentials。スコープは権限を足さないため、クライアントに付けた Celonis の権限がそのまま効く"
+      },
+      {
+        "id": "ncl_crm",
+        "type": "CRM",
+        "x": 1500,
+        "y": 420,
+        "label": "Salesforce / ServiceNow（クラウドの業務システム）",
+        "cloudSanction": "Sanctioned",
+        "cloudOwnership": "ThirdParty"
+      },
+      {
+        "id": "ncl_hook",
+        "type": "EXTERNAL_ENTITY",
+        "x": 1500,
+        "y": 600,
+        "label": "外部システム（Custom Webhook の呼び出し元）"
+      },
+      {
+        "id": "ncl_ext",
+        "type": "USER",
+        "x": 1500,
+        "y": 760,
+        "label": "社外の取引先・申請者（フォームの送信者）",
+        "userTrustAttribute": "Guest"
+      }
+    ],
+    "edges": [
+      {
+        "id": "ecl_01",
+        "source": "ncl_emp",
+        "target": "ncl_cel",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Studio・アプリの利用（SSO）"
+      },
+      {
+        "id": "ecl_02",
+        "source": "ncl_dev",
+        "target": "ncl_aic",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "Plain",
+        "dataFlow": "outbound",
+        "dataFlowName": "AI への指示"
+      },
+      {
+        "id": "ecl_03",
+        "source": "ncl_aic",
+        "target": "ncl_mcp",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "MCP のツール呼び出し（OAuth・利用者の権限）"
+      },
+      {
+        "id": "ecl_04",
+        "source": "ncl_mcp",
+        "target": "ncl_pool",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "データレイク・Context Model の照会（Data Pool の EDIT が必要）"
+      },
+      {
+        "id": "ecl_05",
+        "source": "ncl_mcp",
+        "target": "ncl_agent",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "エージェントの実行・書き込みの承認（mcp:write）"
+      },
+      {
+        "id": "ecl_06",
+        "source": "ncl_agent",
+        "target": "ncl_pool",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "業務データの参照"
+      },
+      {
+        "id": "ecl_07",
+        "source": "ncl_agent",
+        "target": "ncl_af",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Action Flow の起動"
+      },
+      {
+        "id": "ecl_08",
+        "source": "ncl_cel",
+        "target": "ncl_pool",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Studio・アプリからのデータの利用"
+      },
+      {
+        "id": "ecl_09",
+        "source": "ncl_cel",
+        "target": "ncl_af",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "ボタン・スケジュールからの Action Flow の起動"
+      },
+      {
+        "id": "ecl_10",
+        "source": "ncl_opc",
+        "target": "ncl_af",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "OPC が指示を取りに行く（外向きのみ・HTTPS 443）"
+      },
+      {
+        "id": "ecl_11",
+        "source": "ncl_opc",
+        "target": "ncl_pool",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "抽出したデータの送信"
+      },
+      {
+        "id": "ecl_12",
+        "source": "ncl_opc",
+        "target": "ncl_sapuser",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "Plain",
+        "dataFlow": "outbound",
+        "dataFlowName": "RFC 接続（SNC を設定しなければ平文）"
+      },
+      {
+        "id": "ecl_13",
+        "source": "ncl_sapuser",
+        "target": "ncl_sap",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "Plain",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "テーブルの抽出・業務データの書き戻し"
+      },
+      {
+        "id": "ecl_14",
+        "source": "ncl_af",
+        "target": "ncl_crm",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "クラウドの業務システムへの書き戻し"
+      },
+      {
+        "id": "ecl_15",
+        "source": "ncl_cel",
+        "target": "ncl_crm",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Extractor Builder による抽出（REST / OData の GET）"
+      },
+      {
+        "id": "ecl_16",
+        "source": "ncl_bi",
+        "target": "ncl_cel",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "KM API の照会（Client Credentials）"
+      },
+      {
+        "id": "ecl_17",
+        "source": "ncl_ext",
+        "target": "ncl_form",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "フォームの送信"
+      },
+      {
+        "id": "ecl_18",
+        "source": "ncl_form",
+        "target": "ncl_agent",
+        "auth": "None",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "送信内容がプロセスの文脈としてエージェントに渡る"
+      },
+      {
+        "id": "ecl_19",
+        "source": "ncl_hook",
+        "target": "ncl_af",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Custom Webhook による Action Flow の起動（App key / OAuth に非対応）"
+      }
+    ],
+    "boundaries": [
+      {
+        "id": "bcl_corp",
+        "type": "ROUNDED",
+        "x": 20,
+        "y": 20,
+        "width": 740,
+        "height": 940,
+        "trustLevel": "Internal",
+        "macroTrust": "Security Zone"
+      },
+      {
+        "id": "bcl_cel",
+        "type": "RECT",
+        "x": 800,
+        "y": 20,
+        "width": 620,
+        "height": 940,
+        "trustLevel": "Internet"
+      },
+      {
+        "id": "bcl_ext",
+        "type": "RECT",
+        "x": 1460,
+        "y": 20,
+        "width": 300,
+        "height": 940,
+        "trustLevel": "Internet"
+      }
+    ]
+  }
+}
