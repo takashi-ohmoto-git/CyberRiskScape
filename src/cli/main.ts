@@ -22,6 +22,10 @@ import {
   type DiffGateResult,
   type ProjectDiff,
 } from './diff';
+import { readModelHistory } from './gitHistory';
+import { buildEventLog } from '../features/event-log/buildEventLog';
+import { toOcelJson } from '../features/event-log/ocel';
+import { toEventCsv } from '../features/event-log/eventCsv';
 import { triggersToJson, triggersToMarkdown } from './triggers';
 import {
   collectModelThreats,
@@ -241,6 +245,7 @@ const USAGE = `使い方:
   export-detection-requirements <project.json> [options]
   export-contractor-paths <project.json> [options]
   export-requirements <project.json> [options]
+  export-event-log --repo <dir> --path <model.json> [options]
   export-triage-patterns [options]
   investigation-report <project.json> --evidence <dir|file> --hosts <hosts.json> [options]
   findings-report <project.json> (--veracode <file> | --skill-scanner <file> | --mcp-scanner <file>) [options]
@@ -527,6 +532,14 @@ export-contractor-paths のオプション（委託先の接続経路の一覧�
   --locale <ja|en>                              表示言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
+export-event-log のオプション（git の履歴（1 コミット＝1 版）から、脅威・指摘への対応の経過をプロセスマイニング用のイベントログ（OCEL 2.0 JSON か、脅威を案件とする CSV）にする。全ての版を現在の脅威ライブラリで解析するため、脅威の出現・解消は図の変更だけで起きる。要素名と変更した人（コミットの作者）を含む。読み取りのみ）:
+  --repo <dir>                                  git のリポジトリ（必須）
+  --path <model.json>                           リポジトリ内のプロジェクト JSON（必須）
+  --since <YYYY-MM-DD>                          この日以降のコミットだけ
+  --max-commits <n>                             読む版の最大数（既定: 500・上限 5000。新しい側から）
+  --format <ocel|csv>                           出力形式（既定: ocel）
+  --out <file>                                  出力先ファイル（既定: 標準出力。CSV をファイルに書くときは BOM 付き）
+
 export-requirements のオプション（脅威モデルから、設計段階で明確にするセキュリティ要件の一覧（たたき台）を出力。緩和策の段階・対象ノード・工程・NIST CSF・委託先への要求を載せる。採否は人間が決める）:
   --format <md|csv|json>                        出力形式（既定: md）
   --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある最初のレイヤー）
@@ -716,6 +729,10 @@ function parseCliArgs() {
       search: { type: 'string' },
       scope: { type: 'string' },
       into: { type: 'string' },
+      repo: { type: 'string' },
+      path: { type: 'string' },
+      since: { type: 'string' },
+      'max-commits': { type: 'string' },
       help: { type: 'boolean' },
     },
   });
@@ -2238,6 +2255,42 @@ ${USAGE}`);
 }
 
 /**
+ * `export-event-log`：git の履歴から脅威・指摘への対応のイベントログ（OCEL 2.0 JSON / CSV）を出力する。
+ */
+function runExportEventLog(values: CliValues): void {
+  if (!values.repo) fail('--repo <dir> を指定してください。');
+  if (!values.path) fail('--path <model.json> を指定してください。');
+  const format = parseEnum(values.format, ['ocel', 'csv'] as const, 'format') ?? 'ocel';
+  let maxCommits: number | undefined;
+  if (values['max-commits'] !== undefined) {
+    if (!/^d{1,5}$/.test(values['max-commits'])) fail('--max-commits は整数で指定してください。');
+    maxCommits = Number(values['max-commits']);
+  }
+  const triggers = getChangeTriggers('ja').triggers;
+  let history: ReturnType<typeof readModelHistory>;
+  let log: ReturnType<typeof buildEventLog>;
+  try {
+    history = readModelHistory(values.repo, values.path, { since: values.since, maxCommits });
+    log = buildEventLog(history.snapshots, {
+      resolve: resolveProject,
+      analyze: (m) => analyzeResolvedProject(m, { framework: 'ALL', locale: 'ja' }),
+      triggerIds: (base, head) => diffProjects(base, head, { locale: 'ja', triggers }).triggerHits.map((h) => h.triggerId),
+      appVersion: APP_VERSION,
+    });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  const text = format === 'csv' ? toEventCsv(log) : JSON.stringify(toOcelJson(log), null, 2);
+  if (format === 'csv' && values.out) writeFileSync(values.out, '﻿' + text, 'utf-8');
+  else if (format === 'csv') process.stdout.write(text);
+  else writeOutput(text, values.out);
+  for (const w of [...history.warnings, ...log.skipped, ...log.notes]) process.stderr.write(`注意: ${w}
+`);
+  process.stderr.write(`イベントログを出力しました（版 ${log.versions} 件・イベント ${log.events.length} 件・オブジェクト ${log.objects.length} 件・解析に使った版 ${log.appVersion}）
+`);
+}
+
+/**
  * `export-requirements`：脅威モデルから、セキュリティ要件の一覧（たたき台）を Markdown / CSV / JSON で出力する。
  */
 function runExportRequirements(values: CliValues, positionals: string[]): void {
@@ -2706,6 +2759,8 @@ function main(): void {
     runExportDetectionRequirements(values, positionals);
   } else if (command === 'export-contractor-paths') {
     runExportContractorPaths(values, positionals);
+  } else if (command === 'export-event-log') {
+    runExportEventLog(values);
   } else if (command === 'export-requirements') {
     runExportRequirements(values, positionals);
   } else if (command === 'investigation-report') {
