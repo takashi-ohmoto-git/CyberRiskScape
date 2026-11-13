@@ -460,6 +460,8 @@ rules:
         - nodeType: CONTAINER_PLATFORM
         - nodeType: MESSAGE_BROKER
         - nodeType: UPDATE_SERVER
+        - nodeType: AUTOMATION_PLATFORM
+        - nodeType: ANALYTICS_PLATFORM
       connection:
         required: false
       posture:

@@ -4,7 +4,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Threat rules](https://img.shields.io/badge/threat%20rules-299-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-2592%20passing-brightgreen.svg)](#development)
+[![Tests](https://img.shields.io/badge/tests-2598%20passing-brightgreen.svg)](#development)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 **English** | [日本語](README.ja.md)
@@ -255,7 +255,7 @@ npm run test:watch   # watch mode
 npx tsc --noEmit     # type check (strict)
 ```
 
-The standard check after a change is `npx tsc --noEmit` plus the test suite. 2,592 tests
+The standard check after a change is `npx tsc --noEmit` plus the test suite. 2,598 tests
 currently pass.
 
 ---

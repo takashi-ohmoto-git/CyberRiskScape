@@ -52,7 +52,7 @@ components:
     color: "bg-transparent"
     description: "複数の業務システムから抽出したデータを集め、多くの利用者・BI・AI エージェントが直接照会する分析用のストア（データウェアハウス・データレイク・プロセスマイニングのデータモデル等。例：Snowflake・Google BigQuery・Amazon Redshift・Databricks・Celonis の Data Pool / Data Model）。アプリが認可を担う業務データベースはデータベースを使う。"
     canContain: [PERSONAL_INFO, CONFIDENTIAL_INFO, LOG, OTHER_DOCUMENT]
-    posture: [log, encryptionAtRest, accountReview, dataPermission]
+    posture: [log, encryptionAtRest, patch, accountReview, dataPermission]
 
   - id: STORAGE
     label: "ストレージ"

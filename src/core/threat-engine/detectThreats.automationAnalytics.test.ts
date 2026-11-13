@@ -119,3 +119,12 @@ describe('既存ルールの対象に新 2 型を足したもの', () => {
     expect(fire(id, [c, node('p', 'AUTOMATION_PLATFORM')], [edge('c', 'p')])).toHaveLength(0);
   });
 });
+
+describe('posture-patch-missing-001（新 2 型）', () => {
+  const id = 'posture-patch-missing-001';
+
+  it.each(['AUTOMATION_PLATFORM', 'ANALYTICS_PLATFORM'] as const)('%s: patchStatus 未入力で発火、UpToDate で発火しない', (type) => {
+    expect(fire(id, [node('n', type)], [])).toHaveLength(1);
+    expect(fire(id, [node('n', type, { posture: { patchStatus: 'UpToDate' } })], [])).toHaveLength(0);
+  });
+});

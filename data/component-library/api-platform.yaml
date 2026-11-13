@@ -117,7 +117,7 @@ components:
     color: "bg-transparent"
     description: "業務システム・SaaS をつなぎ、トリガー（スケジュール・Webhook・イベント・画面のボタン）で処理を実行して連携先へ読み書きする自動化基盤。連携先ごとの接続（資格情報）を保管する。例：Celonis の Action Flow・Workato・Zapier・Microsoft Power Automate・n8n・Make。メッセージの中継だけを行うものはコネクタ／メッセージブローカーを使う。"
     canContain: [CREDENTIAL, PERSONAL_INFO, LOG]
-    posture: [log, accountReview]
+    posture: [log, patch, accountReview]
 
   # ── Documents ───────────────────────────────────────────────
   - id: API_SPEC
