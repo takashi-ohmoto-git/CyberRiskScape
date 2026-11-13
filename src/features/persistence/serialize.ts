@@ -183,7 +183,7 @@ export function resolveLayers(loaded: PersistedProject): {
         if (!data) return acc;
         acc[key] = {
           nodes: data.nodes,
-          edges: data.edges as LayerData['edges'],
+          edges: data.edges,
           boundaries: data.boundaries,
           annotations: data.annotations ?? [],
           ...(data.cryptoFlows ? { cryptoFlows: data.cryptoFlows } : {}),
@@ -198,7 +198,7 @@ export function resolveLayers(loaded: PersistedProject): {
   // 旧形式：トップレベル nodes/edges/boundaries を L1 へマイグレート
   const migratedL1: LayerData = {
     nodes: loaded.nodes ?? [],
-    edges: (loaded.edges ?? []) as LayerData['edges'],
+    edges: loaded.edges ?? [],
     boundaries: loaded.boundaries ?? [],
     annotations: [],
   };
