@@ -13,6 +13,11 @@ import type { ChangeTrigger } from '../change-triggers/schema/trigger';
 import { setLocale, type Locale } from '../i18n';
 import { applyOperations, McpOperationError, MAX_OPERATIONS, OperationSchema } from './applyOperations';
 import {
+  applyBusinessContextTool,
+  assertOnlyBusinessContextChanged,
+  MCP_MAX_BUSINESS_CONTEXT_ROWS,
+} from './businessContext';
+import {
   analyzeThreats,
   diffModels,
   getModel,
@@ -469,6 +474,93 @@ export function createCrsMcpServer(opts: CrsMcpServerOptions): McpServer {
             results,
             ...(args.dryRun === true ? { note: DRYRUN_NOTE } : {}),
             diff,
+          };
+        };
+        const p = writeChain.then(run, run);
+        writeChain = p.catch(() => undefined);
+        return p;
+      },
+    ),
+  );
+
+  server.registerTool(
+    'apply_business_context',
+    {
+      description: [
+        'ノードの「業務の文脈」（担う業務プロセス・件数・金額・業務上の重要度）を、共通の表の行で置き換える（CLI の import-business-context と同じ処理）。',
+        '行：node（ノード id または C1 形式）・process（必須）・cases・value・currency・period・criticality（High/Medium/Low）。',
+        '重要度が無い行のノードは、表全体の金額（無ければ件数）に占める割合で決まる（30% 以上 High・10% 以上 Medium）。',
+        '重要度 High のノードは攻撃経路の推奨標的になり、指摘の SSVC の Mission & Well-being が上がる（脅威ルールの発火は変わらない）。',
+        'プロセスマイニング製品（例：Celonis の MCP）で読んだ集計をそのまま渡す用途を想定。source.product に読んだ元を書く。',
+        'revision は直前の get_model 等の値が必須。まず dryRun: true で changes（重要度の前後）を人に示し、了承を得てから書き込むこと。',
+        '業務の文脈以外（構成・判断系）は変更しない。',
+        `${PATH_NOTE}${DATA_NOTE}`,
+      ].join(''),
+      inputSchema: {
+        path: PathArg,
+        revision: RevisionArg,
+        rows: z.array(z.record(z.unknown())).min(1).max(MCP_MAX_BUSINESS_CONTEXT_ROWS),
+        source: z
+          .object({ product: z.string().min(1).max(64), ref: z.string().min(1).max(200).optional() })
+          .strict()
+          .optional(),
+        dryRun: z.boolean().optional(),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
+    },
+    handler(
+      (args: {
+        path: string;
+        revision: string;
+        rows: Record<string, unknown>[];
+        source?: { product: string; ref?: string };
+        dryRun?: boolean;
+      }) => {
+        const run = async () => {
+          const rel = args.path;
+          const m = await load(rel);
+          if (m.revision !== args.revision) {
+            throw new ToolError(
+              'revision が一致しません。ファイルは前回の読み取り以降に変更されています。get_model 等で再読込し、最新の revision でやり直してください。',
+            );
+          }
+          let applied;
+          try {
+            applied = applyBusinessContextTool(m.raw, { rows: args.rows, ...(args.source ? { source: args.source } : {}) });
+          } catch (e) {
+            throw new ToolError(e instanceof Error ? e.message : String(e));
+          }
+          const before = deserializeProject(m.raw);
+          const after = deserializeProject(applied.project);
+          if (!before || !after) {
+            throw new ToolError('適用後のプロジェクトがスキーマ検証に失敗しました（変更は破棄されます）。');
+          }
+          try {
+            assertOnlyBusinessContextChanged(before, after);
+          } catch (e) {
+            throw new ToolError(e instanceof Error ? e.message : String(e));
+          }
+
+          let revision = m.revision;
+          if (!args.dryRun && applied.summary.applied.length > 0) {
+            const again = await load(rel);
+            if (again.real !== m.real || again.revision !== m.revision) {
+              throw new ToolError(
+                'revision が一致しません。処理中にファイルが変更されました。再読込してやり直してください。',
+              );
+            }
+            const text = JSON.stringify(after, null, 2);
+            await atomicReplace(m.real, text);
+            revision = computeRevision(text);
+          }
+          return {
+            path: rel,
+            dryRun: args.dryRun === true,
+            written: args.dryRun !== true && applied.summary.applied.length > 0,
+            previousRevision: m.revision,
+            revision,
+            changes: applied.changes,
+            summary: applied.summary,
           };
         };
         const p = writeChain.then(run, run);

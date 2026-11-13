@@ -55,12 +55,13 @@ const ADD_DB = { op: 'add_node', type: 'DB', label: 'キャッシュ', ref: 'c' 
 const ADD_EDGE = { op: 'add_edge', source: 'n-llm', target: '@c', auth: 'None', network: 'VPC', encryption: 'Plain' };
 
 describe('MCP サーバー', () => {
-  it('ツールを 9 本公開する', async () => {
+  it('ツールを 10 本公開する', async () => {
     const client = await connect();
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(
       [
         'analyze_threats',
+        'apply_business_context',
         'apply_model_changes',
         'diff_models',
         'get_model',
@@ -112,6 +113,56 @@ describe('MCP サーバー', () => {
     }
     // 続けて正常に応答できる
     expect((await call(client, 'list_change_triggers')).isError).toBe(false);
+  });
+
+  it('apply_business_context：dryRun は書かず、本番は業務の文脈だけを書いて get_model に出る', async () => {
+    const client = await connect();
+    const before = readModel();
+    const rev = (await call(client, 'get_model', { path: 'model.json' })).json.revision;
+    const rows = [{ node: 'n-db', process: '受注から入金', value: 900, currency: 'JPY' }, { node: 'n-llm', process: '問い合わせ', value: 100, currency: 'JPY' }];
+    const dry = await call(client, 'apply_business_context', { path: 'model.json', revision: rev, rows, dryRun: true });
+    expect(dry.isError, dry.text).toBe(false);
+    expect(dry.json.written).toBe(false);
+    expect(dry.json.changes).toEqual(
+      expect.arrayContaining([expect.objectContaining({ nodeId: 'n-db', after: 'High' }), expect.objectContaining({ nodeId: 'n-llm', after: 'Medium' })]),
+    );
+    expect(readModel().equals(before)).toBe(true);
+
+    const r = await call(client, 'apply_business_context', {
+      path: 'model.json',
+      revision: rev,
+      rows,
+      source: { product: 'Celonis via MCP', ref: 'km:demo' },
+    });
+    expect(r.isError, r.text).toBe(false);
+    expect(r.json.written).toBe(true);
+    expect(r.json.revision).toBe(computeRevision(readModel()));
+    const l1 = (await call(client, 'get_model', { path: 'model.json', layer: 'L1' })).json.layers[0];
+    const db = l1.nodes.find((n: any) => n.id === 'n-db');
+    expect(db.businessContext).toMatchObject({ criticality: 'High', criticalitySource: 'derived', source: { product: 'Celonis via MCP', ref: 'km:demo' } });
+    expect(l1.edges.length).toBeGreaterThan(0);
+
+    const stale = await call(client, 'apply_business_context', { path: 'model.json', revision: rev, rows });
+    expect(stale.isError).toBe(true);
+    expect(stale.text).toContain('revision');
+  });
+
+  it('apply_business_context：不正な行・判断系のキーは tool error で、ファイルは変わらない', async () => {
+    const client = await connect();
+    const before = readModel();
+    const rev = (await call(client, 'get_model', { path: 'model.json' })).json.revision;
+    const bad = await call(client, 'apply_business_context', { path: 'model.json', revision: rev, rows: [{ node: 'n-db', process: 'x', value: -1 }] });
+    expect(bad.isError).toBe(true);
+    const crit = await call(client, 'apply_business_context', { path: 'model.json', revision: rev, rows: [{ node: 'n-db', process: 'x', criticality: 'Severe' }] });
+    expect(crit.isError).toBe(true);
+    const extra = await call(client, 'apply_business_context', {
+      path: 'model.json',
+      revision: rev,
+      rows: [{ node: 'n-db', process: 'x', criticality: 'High' }],
+      source: { product: 'x', suppressions: [] },
+    });
+    expect(extra.isError).toBe(true);
+    expect(readModel().equals(before)).toBe(true);
   });
 
   it('apply_model_changes の往復：書き込み後に revision が変わり get_model に反映される', async () => {
