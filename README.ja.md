@@ -4,7 +4,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Threat rules](https://img.shields.io/badge/threat%20rules-299-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-2573%20passing-brightgreen.svg)](#開発)
+[![Tests](https://img.shields.io/badge/tests-2592%20passing-brightgreen.svg)](#開発)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 [English](README.md) | **日本語**
@@ -235,7 +235,7 @@ npm run test:watch   # テスト watch モード
 npx tsc --noEmit     # 型チェック（strict）
 ```
 
-変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 2,573 件の
+変更後の標準的な検証は `npx tsc --noEmit` とテストの実行です。現在 2,592 件の
 テストが通ります。
 
 ---
@@ -271,7 +271,7 @@ node dist-cli/main.js analyze <project.json> [options]
 | 製品の結果を取り込む | `import-sarif`・`import-nuclei`・`import-sbom`・`import-prowler`・`import-tm7`（移行レポートは `migration-report`）・`import-findings`（SCAP）・`import-security-audit`・`import-pentest`（`convert-strix`・`convert-cyberstrikeai`・`convert-metasploit` で台帳に変換）・`import-aipentest-assets`・`import-metasploit-assets`・`import-business-context`（業務の重要度の表。Celonis の Knowledge Model からは `convert-celonis` で変換） |
 | 悪用の事実・見込みと優先度 | `import-kev`・`import-epss`・`fill-patch-status`・`findings-priority`（P1〜P4 と CISA SSVC） |
 | 突き合わせ・文脈 | `asm-reconcile`・`sbom-report`・`context`・`checklist`・`findings-report`・`investigation-report`・`pqc-sbom-report` |
-| 書き出す | `export-requirements`・`export-test-plan`・`export-roe`・`export-detection-requirements`・`export-contractor-paths`・`export-postman`・`export-attack-navigator`・`export-investigation-plan`・`export-spdx`・`export-sbom-ai`・`export-triage-patterns` |
+| 書き出す | `export-requirements`・`export-test-plan`・`export-roe`・`export-detection-requirements`・`export-contractor-paths`・`export-postman`・`export-attack-navigator`・`export-investigation-plan`・`export-spdx`・`export-sbom-ai`・`export-triage-patterns`・`export-event-log`（git の履歴から脅威への対応の経過を、プロセスマイニング用の OCEL 2.0 / CSV のイベントログにする） |
 
 使い方は [OSS で組む脆弱性管理](guide/oss-vulnerability-management.ja.md)・[連携ガイド](guide/integrations.ja.md) と各ガイドを参照してください。
 

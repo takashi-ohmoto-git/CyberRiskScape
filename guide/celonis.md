@@ -20,6 +20,7 @@
 - How to draw other iPaaS products (Workato, Zapier, Power Automate, n8n) and data warehouses (Snowflake, BigQuery) with the same types
 - How to import **business criticality** from Celonis process counts and values (a common table, `convert-celonis`), and how it affects recommended targets and SSVC (section 7)
 - What to watch for when one AI agent uses both the Celonis MCP server and the CyberRiskScape MCP server (section 8)
+- How to turn the course of threat and finding handling (from detection to decision and implementation) into an event log from git history for process mining (section 9)
 
 **Assumption: Celonis overview** (per the official documentation at the time of writing, checked on 13 November 2026)
 
@@ -368,7 +369,102 @@ Critical and High threats on the nodes that became High." Putting business criti
 
 ---
 
-## 9. Limits
+## 9. Process-mining how threats and findings are handled (event log)
+
+Celonis analyzes business processes, but the same tooling can analyze **how threats are handled** (when, by whom and in what order a found threat was decided on and fixed).
+`export-event-log` in CyberRiskScape writes that history as an event log from the **git history** of a diagram (project JSON).
+
+### 9.1 What it is for
+
+- Measure **how many days pass from detection to a treatment decision and to implementation**, by severity or business criticality (section 7)
+- Find **where work is stuck** (threats left at "required")
+- Count **rework** (implemented, then back to required; a withdrawn decision)
+- Find **deviations from the rules** (acceptance without a note, slow decisions on Critical)
+- See **which design changes introduced threats** (relation to execution triggers T1 to T8)
+
+### 9.2 Prerequisites
+
+- The diagram's project JSON is **committed in git** (for example, committed on every change by the human-gate workflow in [CI integration](ci-integration.md)). With only one commit there is no history to build.
+- Use the CLI in an environment where git runs. The screen cannot export this. It only reads, and changes neither the repository nor the diagram.
+
+### 9.3 Command
+
+```bash
+# For tools centered on cases, such as Celonis: a CSV with the threat as the case
+node dist-cli/main.js export-event-log --repo ./my-repo --path threat-model/model.json \
+  --format csv --out threat-events.csv
+
+# For OCEL 2.0-capable tools: JSON with threats, findings and components as separate objects
+node dist-cli/main.js export-event-log --repo ./my-repo --path threat-model/model.json \
+  --since 2026-01-01 --max-commits 500 --format ocel --out threat-events.ocel.json
+```
+
+- `--repo` and `--path` (the project JSON inside the repository) are required. `--since` reads only commits on or after the date; `--max-commits` is the maximum number of versions read (default 500, up to 5000, counted from the newest).
+- `--format` is `ocel` (default) or `csv`. Without `--out` it writes to standard output (a CSV written to a file gets a BOM so Excel does not garble it).
+
+### 9.4 Events
+
+Each commit is one version. Versions are compared with the previous one, oldest first, and these events are emitted. In the output files the event names are in Japanese (shown in parentheses).
+
+| Event | When it appears |
+|---|---|
+| Threat detected (脅威を検出) | A threat newly detected in that version |
+| Threat resolved (脅威が解消) | A threat in the previous version is no longer detected |
+| Severity changed (重大度の変更) | The severity of the same threat changed |
+| Treatment decided / withdrawn (対応方針の決定 / 対応方針の取り消し) | A treatment decision (mitigate, accept and so on) was made or withdrawn |
+| Mitigation status changed / withdrawn (対策の状況の変更 / 対策の状況の取り消し) | A mitigation status (required, implemented and so on) was changed or withdrawn |
+| Finding imported / finding gone (指摘の取り込み / 指摘が消えた) | A product finding (such as a vulnerability scan) appeared or disappeared |
+| Component added / removed / changed (構成要素の追加・削除・変更) | A node was added, removed or had attributes changed (with execution triggers T1 to T8) |
+
+### 9.5 How time and resource are decided
+
+- **Time**: the record's date and time (`at`) if it falls between the previous commit and this one; otherwise the commit time.
+- **Resource**: the record's changer (`by`) if present, otherwise the commit author.
+- The granularity is the **commit**. Changes between commits are not seen.
+
+### 9.6 Bringing it into Celonis
+
+The public documentation does **not document direct OCEL 2.0 import** (the Objects & Events manual needs sign-in; checked 2026-11-13).
+The OCEL project site describes a provisional procedure (convert to CSV, then create object types, event types and relations manually in Celonis) ([reference 15](#references)). So:
+
+- **Use the CSV for Celonis, with the threat as the case** (basic columns: `case_id`, `activity`, `timestamp`, `resource`, plus severity, rule ID, element, commit and so on).
+- **Use OCEL with OCEL-capable tools** (such as PM4Py; the format is the JSON format in the specification, [reference 16](#references)).
+
+There are two ways to send it. CyberRiskScape does not send anything itself; **you send it with existing tools**.
+
+1. **File upload**: upload the CSV from the Celonis UI.
+2. **Standard Data Ingestion API**: an S3-compatible PutObject ([reference 4](#references)). Use the keys issued per data connection, at most 1 GB per file, with unique URI-safe file names.
+
+```bash
+# Example (replace <> with your own values; pass keys by environment variable, never write them in commands or files)
+AWS_ACCESS_KEY_ID=<access-key> AWS_SECRET_ACCESS_KEY=<secret-key> \
+  aws s3 cp threat-events.csv s3://<bucket>/threat-events-20261113.csv \
+  --endpoint-url https://<team>.<cluster>.celonis.cloud/api/data-ingestion
+```
+
+Confirm the endpoint format for your own tenant in the official documentation.
+
+### 9.7 What to look at
+
+- **Lead time from detection to decision, and from decision to implementation**, compared by severity and by business criticality
+- **Bottlenecks**: threats stuck at "required", and their elements
+- **Rework**: threats that went from implemented back to "required", and withdrawn decisions
+- **Conformance**: acceptance without a note, slow decisions on Critical
+- **Design changes behind threats**: the component changes just before a threat was detected, and their triggers
+
+### 9.8 Cautions
+
+- **The file contains vulnerability information and personal names.** Element names and the names of changers (commit authors, `by`) are included **on purpose**, as an audit trail.
+  Handle it as confidential and send it **only to systems allowed to hold that data**. Check the contents before sharing or publishing.
+- **The granularity is the commit.** Changes between commits are not seen.
+- **Versions that do not fit the current schema are skipped and reported.** Older versions may be missing.
+- **Every version is re-analyzed with today's threat library.** Threats appear or disappear only because of model changes, not rule updates. The app version used is recorded in `analysis_version`.
+  Note that this is not the original judgment at the time.
+- This shows the course of the handling, not a verdict on how well it was done. Decisions stay with people.
+
+---
+
+## 10. Limits
 
 - **CyberRiskScape does not read Celonis configuration** (all it imports is the business criticality table in section 7). Roles, permission tables, connection methods, IP restrictions and MCP scopes are reflected in the diagram attributes by a person.
 - "MCP reads need EDIT permission" is **guidance on this page, not a rule**.
@@ -376,6 +472,9 @@ Critical and High threats on the nodes that became High." Putting business criti
 - Celonis-specific defaults (default rate limits, default permissions and so on) may change.
 - The template attributes are placeholders (§3.1). Detection counts change with how attributes and connections are set.
 - Because SAP is placed as a "Backend API", generic API rules that are not SAP-specific appear (§4.1).
+- **The event log (section 9) shows the course per commit.** Changes between commits are not seen, and it is re-analyzed with today's threat library, so it is not the original judgment at the time.
+- **The event log contains element names and changer names** (handle as confidential). Direct OCEL 2.0 import into Celonis is not confirmed, so use the CSV for Celonis.
+- **Import into a real Celonis tenant has not been verified.**
 
 ---
 
@@ -397,6 +496,8 @@ Official documentation was checked on 13 November 2026. docs.celonis.com may req
 12. MCP integration permissions — <https://docs.celonis.com/en/mcp-integration-permissions.html>
 13. Security features — <https://docs.celonis.com/en/security-features.html>
 14. IP-based restrictions — <https://docs.celonis.com/en/ip-based-restrictions.html>
+15. OCEL standard, Celonis (provisional import procedure) — <https://www.ocel-standard.org/tool-support/software/provisional_celonis/>
+16. OCEL standard (specification, JSON format in section 8) — <https://www.ocel-standard.org/>
 
 ---
 
