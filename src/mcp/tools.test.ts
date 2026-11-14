@@ -203,6 +203,18 @@ describe('getThreat', () => {
     expect(t.controlStatus).toBeNull();
   });
 
+  it('旧形式の id（ルール id-要素 id。レイヤー付きも可）でも同じ脅威を引ける', () => {
+    const raw = BASE();
+    const detected = (analyzeThreats(raw, { locale: 'ja' }) as any).threats.find((x: any) =>
+      /^L1:[a-z0-9-]+::node:/.test(x.id),
+    );
+    const current = getThreat(raw, { threatId: detected.id, locale: 'ja' }) as any;
+    const elementId = detected.id.split('::node:')[1];
+    const legacy = `${current.ruleId}-${elementId}`;
+    expect((getThreat(raw, { threatId: legacy, locale: 'ja' }) as any).id).toBe(detected.id);
+    expect((getThreat(raw, { threatId: `L1:${legacy}`, locale: 'ja' }) as any).id).toBe(detected.id);
+  });
+
   it('suppression と note・riskScore を含める', () => {
     const raw = BASE();
     const first = (analyzeThreats(raw, { locale: 'ja' }) as any).threats[0];

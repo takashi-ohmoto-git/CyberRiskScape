@@ -194,6 +194,18 @@ function renumberKind<T extends { seq?: number }>(items: T[]): T[] {
  * セッション間は `Date.now()` 部が異なるため過去 ID とも衝突しない。
  */
 let idSeq = 0;
+/** Record から指定のキーを除いた写しを返す（キーが無ければ同じ中身の写し）。 */
+function withoutKeys<T>(record: Record<string, T>, keys: readonly string[] | undefined): Record<string, T> {
+  const next = { ...record };
+  for (const k of keys ?? []) delete next[k];
+  return next;
+}
+
+/** 現行の id か旧形式の id のどれかが Record にあるか。 */
+function hasAnyKey(record: Record<string, unknown>, id: string, legacyIds: readonly string[] | undefined): boolean {
+  return id in record || (legacyIds ?? []).some((k) => k in record);
+}
+
 /** プロジェクトの固有 ID を採番する。 */
 const newProjectId = (): string => globalThis.crypto.randomUUID();
 
@@ -611,16 +623,20 @@ interface DiagramState {
   closeManualThreatEditor: () => void;
 
   // ---- actions: suppressions ----
-  setSuppression: (threatId: string, status: SuppressionStatus, note?: string) => void;
-  clearSuppression: (threatId: string) => void;
+  /**
+   * `legacyIds`（`ThreatView.legacyIds`）を渡すと、旧形式の id で保存されたエントリを消す
+   * （現行の id へ書き直す・消したはずの判断が旧エントリから復活しないようにする）。以下 6 つ共通。
+   */
+  setSuppression: (threatId: string, status: SuppressionStatus, note?: string, legacyIds?: readonly string[]) => void;
+  clearSuppression: (threatId: string, legacyIds?: readonly string[]) => void;
 
   // ---- actions: リスク評価 ----
-  setRiskScore: (threatId: string, score: Omit<RiskScore, 'at'>) => void;
-  clearRiskScore: (threatId: string) => void;
+  setRiskScore: (threatId: string, score: Omit<RiskScore, 'at'>, legacyIds?: readonly string[]) => void;
+  clearRiskScore: (threatId: string, legacyIds?: readonly string[]) => void;
 
   // ---- actions: 対策実装状況 ----
-  setControlStatus: (threatId: string, status: ControlStatusValue, note?: string) => void;
-  clearControlStatus: (threatId: string) => void;
+  setControlStatus: (threatId: string, status: ControlStatusValue, note?: string, legacyIds?: readonly string[]) => void;
+  clearControlStatus: (threatId: string, legacyIds?: readonly string[]) => void;
 
   // ---- actions: interaction (called by useDragInteractions / canvas) ----
   beginNodeInteraction: (
@@ -1440,61 +1456,49 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   closeManualThreatEditor: () =>
     set({ isManualThreatModalOpen: false, editingManualThreatId: null }),
 
-  setSuppression: (threatId, status, note) => {
+  setSuppression: (threatId, status, note, legacyIds) => {
     get().recordHistory();
     set((s) => ({
       suppressions: {
-        ...s.suppressions,
+        ...withoutKeys(s.suppressions, legacyIds),
         [threatId]: { status, ...(note ? { note } : {}), at: Date.now() },
       },
     }));
   },
 
-  clearSuppression: (threatId) => {
-    if (!(threatId in get().suppressions)) return;
+  clearSuppression: (threatId, legacyIds) => {
+    if (!hasAnyKey(get().suppressions, threatId, legacyIds)) return;
     get().recordHistory();
-    set((s) => {
-      const next = { ...s.suppressions };
-      delete next[threatId];
-      return { suppressions: next };
-    });
+    set((s) => ({ suppressions: withoutKeys(s.suppressions, [threatId, ...(legacyIds ?? [])]) }));
   },
 
-  setRiskScore: (threatId, score) => {
+  setRiskScore: (threatId, score, legacyIds) => {
     get().recordHistory();
     set((s) => ({
-      riskScores: { ...s.riskScores, [threatId]: { ...score, at: Date.now() } },
+      riskScores: { ...withoutKeys(s.riskScores, legacyIds), [threatId]: { ...score, at: Date.now() } },
     }));
   },
 
-  clearRiskScore: (threatId) => {
-    if (!(threatId in get().riskScores)) return;
+  clearRiskScore: (threatId, legacyIds) => {
+    if (!hasAnyKey(get().riskScores, threatId, legacyIds)) return;
     get().recordHistory();
-    set((s) => {
-      const next = { ...s.riskScores };
-      delete next[threatId];
-      return { riskScores: next };
-    });
+    set((s) => ({ riskScores: withoutKeys(s.riskScores, [threatId, ...(legacyIds ?? [])]) }));
   },
 
-  setControlStatus: (threatId, status, note) => {
+  setControlStatus: (threatId, status, note, legacyIds) => {
     get().recordHistory();
     set((s) => ({
       controlStatuses: {
-        ...s.controlStatuses,
+        ...withoutKeys(s.controlStatuses, legacyIds),
         [threatId]: { status, ...(note ? { note } : {}), at: Date.now() },
       },
     }));
   },
 
-  clearControlStatus: (threatId) => {
-    if (!(threatId in get().controlStatuses)) return;
+  clearControlStatus: (threatId, legacyIds) => {
+    if (!hasAnyKey(get().controlStatuses, threatId, legacyIds)) return;
     get().recordHistory();
-    set((s) => {
-      const next = { ...s.controlStatuses };
-      delete next[threatId];
-      return { controlStatuses: next };
-    });
+    set((s) => ({ controlStatuses: withoutKeys(s.controlStatuses, [threatId, ...(legacyIds ?? [])]) }));
   },
 
   beginNodeInteraction: (nodeId, clientX, clientY, additive = false) => {

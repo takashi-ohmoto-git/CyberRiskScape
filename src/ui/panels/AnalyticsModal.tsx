@@ -978,14 +978,14 @@ function RiskEditor({ threat, t }: { threat: ThreatView; t: TFunc }) {
         <div className="flex gap-2 ml-auto">
           {threat.risk && (
             <button
-              onClick={() => clearRiskScore(threat.id)}
+              onClick={() => clearRiskScore(threat.id, threat.legacyIds)}
               className="text-xs px-2.5 py-1 rounded border border-slate-700 text-slate-500 hover:text-red-300 hover:border-red-500/50 transition-colors"
             >
               {t('analytics.risk.clearButton')}
             </button>
           )}
           <button
-            onClick={() => setRiskScore(threat.id, draft)}
+            onClick={() => setRiskScore(threat.id, draft, threat.legacyIds)}
             className="text-xs px-2.5 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-500/30 transition-colors"
           >
             {t('analytics.risk.saveButton')}

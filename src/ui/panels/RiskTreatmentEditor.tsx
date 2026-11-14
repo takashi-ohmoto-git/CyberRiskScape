@@ -76,14 +76,14 @@ export function RiskTreatmentEditor({ threat }: { threat: ThreatView }) {
         <div className="flex gap-2 ml-auto">
           {current && (
             <button
-              onClick={() => clearSuppression(threat.id)}
+              onClick={() => clearSuppression(threat.id, threat.legacyIds)}
               className="flex items-center gap-1 text-xs px-2.5 py-1 rounded border border-slate-700 text-slate-500 hover:text-slate-200 hover:border-slate-500 transition-colors"
             >
               <RotateCcw size={11} /> {t('threats.editor.reset')}
             </button>
           )}
           <button
-            onClick={() => setSuppression(threat.id, status, trimmed === '' ? undefined : trimmed)}
+            onClick={() => setSuppression(threat.id, status, trimmed === '' ? undefined : trimmed, threat.legacyIds)}
             className="text-xs px-2.5 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-500/30 transition-colors"
           >
             {t('threats.editor.save')}

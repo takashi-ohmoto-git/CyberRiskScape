@@ -48,8 +48,11 @@ import { getLocale, translate, type Locale, type TranslationKey } from '../../i1
  * v4 で **CSV の先頭にバージョン行**を足した。JSON は `schemaVersion` で版を見分けられるのに
  * CSV には手掛かりが無く、v1→v2 の列変更と v3 の第 2 ブロック追加を下流が検知できなかったため。
  * **バージョン行の有無自体が版の違い**になるので、行を足した時点で 3 → 4 に上げている。
+ * v5 で **`id` の形を変えた**：`canonicalId` を持つ検出脅威の id は、当たったルールの数によらず
+ * `canonicalId::kind:要素 id`（v4 までは 1 件だけ当たると `ルール id-要素 id`）。当たるルールの数が
+ * 変わっても同じ脅威が同じ id になる。JSON には `ruleId` と、旧形式の id を並べた `legacyIds` を足した。
  */
-export const THREAT_REPORT_SCHEMA_VERSION = 4 as const;
+export const THREAT_REPORT_SCHEMA_VERSION = 5 as const;
 export const THREAT_REPORT_KIND = 'cyberriskscape-threat-report' as const;
 
 /** 脅威 1 件＝レポート 1 行。CSV に出る値は整形済み文字列。`risk` のみ JSON 専用の生値。 */
@@ -102,6 +105,13 @@ export interface ThreatReportRow {
   isCustom?: boolean;
   /** 等価グルーピングキー。 */
   canonicalId?: string;
+  /** 検出元のルール id（畳み込んだときは代表のルール）。手動脅威は undefined。 */
+  ruleId?: string;
+  /**
+   * 旧形式の id（`ルール id-要素 id`）。id を `canonicalId::kind:要素 id` にそろえる前に
+   * 書き出した id と突き合わせるために出す。畳み込んだ全ルールの分を持つ。
+   */
+  legacyIds?: string[];
 }
 
 /**
@@ -254,6 +264,8 @@ export function buildThreatReport({
     assumptionFlags: t.assumptionFlags,
     isCustom: t.isCustom,
     canonicalId: t.canonicalId,
+    ruleId: t.ruleId,
+    legacyIds: t.legacyIds,
   }));
   // 認証基盤インベントリ（`authProviderId` 参照からの派生ビュー。新しいデータは持たない）。
   const identityInventory: IdentityInventoryReportRow[] = buildIdentityInventory(nodes, edges).map(

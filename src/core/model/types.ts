@@ -1509,6 +1509,12 @@ export interface ThreatView extends DetectedThreat {
   /** 対策実装状況（リスク対応方針=suppression とは別レイヤー）。 */
   controlStatus?: ControlStatusState;
   /**
+   * 旧形式の id（`ルール id-要素 id`）。`canonicalId` を持つ検出脅威の id は
+   * `canonicalId::kind:要素 id` にそろえたため、旧形式で保存された人の判断と、
+   * 過去に書き出した id の照会をこれで引く。畳み込んだ全メンバーの分を持つ。
+   */
+  legacyIds?: string[];
+  /**
    * クロスソース畳み込みの裏付け情報（2 件以上が同じ `canonicalId` + subject で
    * マージされたときのみ付与）。複数フレームワークが同一脅威を指摘している事実を
    * カードに表示し、コンサル資産としての権威性を高める。

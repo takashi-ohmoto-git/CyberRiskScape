@@ -315,6 +315,14 @@ export function getThreat(raw: unknown, opts: GetThreatOptions): Record<string, 
   const matches = items.filter(
     (lt) => qualifiedId(lt) === opts.threatId || lt.threat.id === opts.threatId,
   );
+  // 旧形式の id（`ルール id-要素 id`。レイヤー付きも可）でも引けるようにする。
+  if (matches.length === 0) {
+    matches.push(
+      ...items.filter((lt) =>
+        (lt.threat.legacyIds ?? []).some((id) => id === opts.threatId || `${lt.layer}:${id}` === opts.threatId),
+      ),
+    );
+  }
   if (matches.length === 0) {
     throw new Error(
       `threatId "${opts.threatId}" に該当する脅威がありません（analyze_threats が返す id を指定してください）。`,
