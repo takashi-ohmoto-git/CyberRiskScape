@@ -12,7 +12,11 @@ import type { ThreatView } from '../../core/model/types';
  *
  * 脅威 1 件の重みは重大度で決める（リスク評価があれば評価後の重大度）。誤検知と、対策実装状況が
  * 適用外の脅威は、分子にも分母にも入れない。設定率と検討率は「検討が済んだ割合」であり、
- * 「リスクが下がった割合」ではない。重みは `data/indicators/weights.yaml`。
+ * 「リスクが下がった割合」ではない。
+ *
+ * 重みは引数で受け取る（既定は同梱の `data/indicators/weights.yaml`）。組織全体の設定など、別の出どころの
+ * 重みを使うときは、`loadIndicatorWeights` で検証した値を渡す。結果には使った重みを入れて返すので、
+ * 表示する側は同梱の値を直接読まず、結果の `weights` を読む（どの重みで出した数字かが必ず分かる）。
  */
 
 const positive = z.number().positive();
@@ -56,6 +60,8 @@ export interface ModelIndicators {
   implementedRate: number | null;
   /** 脅威モデルの値：3 つの指標の重み付きの平均。対象が 0 件なら null。 */
   value: number | null;
+  /** この結果の計算に使った重み。 */
+  weights: IndicatorWeights;
 }
 
 type IndicatorThreat = Pick<ThreatView, 'severity' | 'risk' | 'suppression' | 'controlStatus'>;
@@ -88,7 +94,7 @@ export function computeIndicators(
     }
   }
 
-  const base = { total: threats.length, excluded: threats.length - inScope, inScope, counts };
+  const base = { total: threats.length, excluded: threats.length - inScope, inScope, counts, weights };
   if (inScope === 0) {
     return { ...base, controlSetRate: null, treatmentSetRate: null, implementedRate: null, value: null };
   }

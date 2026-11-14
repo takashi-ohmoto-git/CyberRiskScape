@@ -1,6 +1,5 @@
 import { analyzeResolvedProject, resolveProject } from './analyze';
 import {
-  BUNDLED_INDICATOR_WEIGHTS,
   computeIndicators,
   type IndicatorWeights,
   type ModelIndicators,
@@ -20,12 +19,11 @@ export interface ProjectIndicatorsReport {
   organizationCode?: string;
   criticality?: BusinessCriticality;
   lifecycle?: ProjectLifecycle;
+  /** 3 つの指標と、計算に使った重み（`weights`）。 */
   indicators: ModelIndicators;
-  /** 計算に使った重み。 */
-  weights: IndicatorWeights;
 }
 
-export function projectIndicators(raw: unknown): ProjectIndicatorsReport {
+export function projectIndicators(raw: unknown, weights?: IndicatorWeights): ProjectIndicatorsReport {
   const resolved = resolveProject(raw);
   const threats = LAYER_KEYS.flatMap((layer) =>
     analyzeResolvedProject(resolved, { layer, framework: 'ALL' }).flatMap((r) => r.threats),
@@ -39,7 +37,6 @@ export function projectIndicators(raw: unknown): ProjectIndicatorsReport {
     ...(meta.organizationCode ? { organizationCode: meta.organizationCode } : {}),
     ...(meta.criticality ? { criticality: meta.criticality } : {}),
     ...(meta.lifecycle ? { lifecycle: meta.lifecycle } : {}),
-    indicators: computeIndicators(threats),
-    weights: BUNDLED_INDICATOR_WEIGHTS,
+    indicators: computeIndicators(threats, weights),
   };
 }

@@ -18,7 +18,6 @@ import {
   TREATMENTS,
   computeSummary,
   firstStep,
-  formatProgress,
   isSuppressedItem,
   mitigationLines,
   rankThreats,
@@ -28,6 +27,7 @@ import {
   type SummaryItem,
   type Treatment,
 } from './summary';
+import { formatRate } from '../../indicators/computeIndicators';
 
 /**
  * 脅威レポートの PDF 生成（A4 縦）。中身は `ThreatReport`（CSV/JSON と同じ行）から作る。
@@ -552,7 +552,7 @@ interface Metric {
 function metricBoxes(ctx: Ctx, metrics: Metric[]): void {
   const gap = 8;
   const w = (CONTENT_W - gap * (metrics.length - 1)) / metrics.length;
-  const h = 68;
+  const h = 78; // 補足は 3 行まで入る
   need(ctx, h + 6);
   const top = ctx.cursor.y;
   const p = page(ctx);
@@ -593,7 +593,7 @@ export async function buildPdfReport(input: BuildPdfReportInput): Promise<Uint8A
     `${t('report.pdf.meta.layers')}: ${layerKeys.join(', ')}`,
     `${t('report.pdf.meta.tool')}: ${toolLine}`,
   ].join('    ');
-  const { progressAll, progressCriticalHigh } = summary;
+  const { indicators, indicatorsCriticalHigh } = summary;
   const metrics: Metric[] = [
     {
       label: t('report.pdf.metric.active'),
@@ -603,10 +603,14 @@ export async function buildPdfReport(input: BuildPdfReportInput): Promise<Uint8A
     { label: t('report.pdf.metric.criticalHigh'), value: String(summary.criticalHighCount), subs: [] },
     {
       label: t('report.pdf.metric.progress'),
-      value: formatProgress(progressAll),
+      value: formatRate(indicators.implementedRate),
       subs: [
-        t('report.pdf.metric.progressDone', { done: progressAll.implemented, total: progressAll.total }),
-        t('report.pdf.metric.progressCh', { rate: formatProgress(progressCriticalHigh) }),
+        t('report.pdf.metric.progressDone', { done: indicators.counts.implemented, total: indicators.inScope }),
+        t('report.pdf.metric.progressCh', { rate: formatRate(indicatorsCriticalHigh.implementedRate) }),
+        t('report.pdf.metric.progressOthers', {
+          controlSet: formatRate(indicators.controlSetRate),
+          treatmentSet: formatRate(indicators.treatmentSetRate),
+        }),
       ],
     },
     { label: t('report.pdf.metric.unaddressed'), value: String(summary.unaddressedCount), subs: [] },

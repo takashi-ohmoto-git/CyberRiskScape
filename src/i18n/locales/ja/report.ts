@@ -160,7 +160,9 @@ export const jaReport = {
   'report.pdf.footer.page': '{page} / {total} ページ',
   'report.pdf.metric.active': '有効脅威数',
   'report.pdf.metric.criticalHigh': 'Critical＋High 件数',
-  'report.pdf.metric.progress': '対策実装進捗率',
+  'report.pdf.metric.progress': '実装済みの割合（重み付き）',
+  // {controlSet}=設定率, {treatmentSet}=検討率（どちらも「42%」の形）
+  'report.pdf.metric.progressOthers': '設定率 {controlSet}・検討率 {treatmentSet}',
   'report.pdf.metric.progressDone': '実装済み {done} / {total} 件',
   'report.pdf.metric.progressCh': 'Critical＋High：{rate}',
   'report.pdf.metric.unaddressed': '未対応件数',

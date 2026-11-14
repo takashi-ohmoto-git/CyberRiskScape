@@ -30,6 +30,7 @@ import { toOcelJson } from '../features/event-log/ocel';
 import { toEventCsv } from '../features/event-log/eventCsv';
 import { triggersToJson, triggersToMarkdown } from './triggers';
 import { projectIndicators, type ProjectIndicatorsReport } from './indicators';
+import { loadIndicatorWeights, type IndicatorWeights } from '../features/indicators/computeIndicators';
 import {
   collectModelThreats,
   countNodeMatches,
@@ -207,7 +208,7 @@ const USAGE = `使い方:
   analyze <project.json> [options]
   diff <base.json> <head.json> [options]
   triggers [options]
-  indicators <project.json> [--out <file>]
+  indicators <project.json> [--weights <file>] [--out <file>]
   checklist <project.json> --id <checklistId> [options]
   import-kong <kong.yaml> [options]
   import-kongctl <kongctl.yaml> [options]
@@ -276,6 +277,7 @@ diff のオプション:
 indicators（脅威モデル単位の指標：設定率・検討率・実装済みの割合を JSON で出す）:
   全レイヤー・全フレームワークの脅威が対象。重大度で重みを付け、誤検知と適用外は対象から外す。
   同梱ルールのみで評価する（カスタムルールの脅威は入らない）。
+  --weights <file>                              重みの YAML（既定: 同梱の data/indicators/weights.yaml と同じ形）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
 triggers のオプション:
@@ -742,6 +744,7 @@ function parseCliArgs() {
       path: { type: 'string' },
       since: { type: 'string' },
       'max-commits': { type: 'string' },
+      weights: { type: 'string' },
       help: { type: 'boolean' },
     },
   });
@@ -903,9 +906,17 @@ function runIndicators(values: CliValues, positionals: string[]): void {
 ${USAGE}`);
   }
   setLocale('ja');
+  let weights: IndicatorWeights | undefined;
+  if (values.weights) {
+    try {
+      weights = loadIndicatorWeights(readFileSync(values.weights, 'utf8'));
+    } catch {
+      fail(`--weights の形式が不正です（同梱の data/indicators/weights.yaml と同じ形で、重みはすべて正の数にしてください）: ${values.weights}`);
+    }
+  }
   let report: ProjectIndicatorsReport;
   try {
-    report = projectIndicators(readJsonFile(file));
+    report = projectIndicators(readJsonFile(file), weights);
   } catch (e) {
     fail(e instanceof Error ? e.message : String(e));
   }

@@ -15,7 +15,7 @@ describe('projectIndicators', () => {
     expect(report.indicators.total).toBe(all.length);
     expect(report.indicators.total).toBeGreaterThan(0);
     expect(report.indicators).toMatchObject({ controlSetRate: 0, treatmentSetRate: 0, implementedRate: 0, value: 0 });
-    expect(report.weights.severity.Critical).toBe(8);
+    expect(report.indicators.weights.severity.Critical).toBe(8);
   });
 
   it('すべての脅威を実装済み・低減にすると 3 つとも 1 になる', () => {
@@ -49,6 +49,19 @@ describe('projectIndicators', () => {
       lifecycle: 'production',
     });
     expect('organizationName' in report).toBe(false);
+  });
+
+  it('重みを渡せば、その重みで計算し、使った重みを結果に入れる', () => {
+    const base = { ...raw(), suppressions: {}, riskScores: {}, controlStatuses: {} };
+    const [first] = analyzeProject(base, { framework: 'ALL' }).flatMap((r) => r.threats);
+    const withOne = { ...base, controlStatuses: { [first.id]: { status: 'implemented', at: 1 } } };
+    const flat = {
+      severity: { Critical: 1, High: 1, Medium: 1, Low: 1 },
+      indicators: { controlSet: 1, treatmentSet: 1, implemented: 1 },
+    };
+    const report = projectIndicators(withOne, flat);
+    expect(report.indicators.weights).toEqual(flat);
+    expect(report.indicators.implementedRate).toBeCloseTo(1 / report.indicators.inScope);
   });
 
   it('形式が不正なら例外', () => {

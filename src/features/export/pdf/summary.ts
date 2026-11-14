@@ -9,6 +9,11 @@ import type {
 import { isSuppressed } from '../../../core/model/types';
 import type { AxisLevel } from '../../../core/model/risk';
 import type { ThreatReportRow } from '../threatReport';
+import {
+  computeIndicators,
+  type IndicatorWeights,
+  type ModelIndicators,
+} from '../../indicators/computeIndicators';
 
 /**
  * PDF の経営層向けサマリ用の純関数（ランキング・集計・緩和策整形）。
@@ -92,21 +97,20 @@ export function rankThreats(items: readonly SummaryItem[], layerOrder: readonly 
     .slice(0, limit);
 }
 
-export interface Progress {
-  implemented: number;
-  /** 分母：有効脅威から対象外を除いた数。 */
-  total: number;
-}
-
-/** 実装済み ÷（有効脅威 − 対象外）。未設定・要対応・却下は未実装として分母に入る。 */
-export function computeProgress(active: readonly SummaryItem[]): Progress {
-  const counted = active.filter((i) => i.control !== 'not-applicable');
-  return { implemented: counted.filter((i) => i.control === 'implemented').length, total: counted.length };
-}
-
-/** 分母 0 は「—」。 */
-export function formatProgress(p: Progress): string {
-  return p.total === 0 ? '—' : `${Math.round((p.implemented / p.total) * 100)}%`;
+/**
+ * 報告に載せる指標。画面（Analytics）・CLI と同じ `computeIndicators` で出す
+ * （重大度の重み付き。誤検知と適用外は対象から外し、受容は対象に残す）。
+ */
+export function itemIndicators(items: readonly SummaryItem[], weights?: IndicatorWeights): ModelIndicators {
+  return computeIndicators(
+    items.map((i) => ({
+      // 行の重大度はリスク評価後の値なので、評価は渡さない（二重に適用しない）
+      severity: i.severity,
+      suppression: i.treatment === 'unaddressed' ? undefined : { status: i.treatment, at: 0 },
+      controlStatus: i.control ? { status: i.control, at: 0 } : undefined,
+    })),
+    weights,
+  );
 }
 
 export type ControlBucket = ControlStatusValue | 'unset';
@@ -118,8 +122,10 @@ export interface PdfSummary {
   assumedActiveCount: number;
   criticalHighCount: number;
   unaddressedCount: number;
-  progressAll: Progress;
-  progressCriticalHigh: Progress;
+  /** 設定率・検討率・実装済みの割合（報告に含めた全脅威が対象）。 */
+  indicators: ModelIndicators;
+  /** 同じ指標を Critical・High の脅威だけで出したもの。 */
+  indicatorsCriticalHigh: ModelIndicators;
   /** 対応方針別の件数（受容・誤検知も含む全脅威）。 */
   treatmentCounts: Record<Treatment, number>;
   /** 対策実装状況別の件数（有効脅威のみ）。 */
@@ -140,8 +146,8 @@ export function computeSummary(items: readonly SummaryItem[], layers: readonly L
     assumedActiveCount: active.filter((i) => i.assumptions.length > 0).length,
     criticalHighCount: critHigh.length,
     unaddressedCount: active.filter((i) => i.treatment === 'unaddressed').length,
-    progressAll: computeProgress(active),
-    progressCriticalHigh: computeProgress(critHigh),
+    indicators: itemIndicators(items),
+    indicatorsCriticalHigh: itemIndicators(items.filter((i) => i.severity === 'Critical' || i.severity === 'High')),
     treatmentCounts,
     controlCounts,
     byLayer: layers.map((layer) => {

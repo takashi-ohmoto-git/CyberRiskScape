@@ -44,11 +44,7 @@ import {
 } from '../../core/threat-engine/orphanedJudgements';
 import { LAYER_KEYS } from '../../core/model/types';
 import { computeLayerThreats } from '../../features/export/layerThreats';
-import {
-  BUNDLED_INDICATOR_WEIGHTS,
-  computeIndicators,
-  formatRate,
-} from '../../features/indicators/computeIndicators';
+import { computeIndicators, formatRate } from '../../features/indicators/computeIndicators';
 import type {
   ControlStatusValue,
   DiagramBoundary,
@@ -501,10 +497,13 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
               title={t('analytics.indicators.tooltip', {
                 inScope: indicators.inScope,
                 excluded: indicators.excluded,
-                critical: BUNDLED_INDICATOR_WEIGHTS.severity.Critical,
-                high: BUNDLED_INDICATOR_WEIGHTS.severity.High,
-                medium: BUNDLED_INDICATOR_WEIGHTS.severity.Medium,
-                low: BUNDLED_INDICATOR_WEIGHTS.severity.Low,
+                critical: indicators.weights.severity.Critical,
+                high: indicators.weights.severity.High,
+                medium: indicators.weights.severity.Medium,
+                low: indicators.weights.severity.Low,
+                wControl: indicators.weights.indicators.controlSet,
+                wTreatment: indicators.weights.indicators.treatmentSet,
+                wImplemented: indicators.weights.indicators.implemented,
               })}
             >
               <span className="text-slate-500">{t('analytics.indicators.scope')}</span>
@@ -513,6 +512,7 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
                   ['analytics.indicators.controlSet', indicators.controlSetRate],
                   ['analytics.indicators.treatmentSet', indicators.treatmentSetRate],
                   ['analytics.indicators.implemented', indicators.implementedRate],
+                  ['analytics.indicators.value', indicators.value],
                 ] as const
               ).map(([key, rate]) => (
                 <span key={key}>

@@ -3,10 +3,9 @@ import type { ControlStatusValue, DetectionAssumptionFlag, LayerKey, Severity } 
 import type { AxisLevel } from '../../../core/model/risk';
 import type { ThreatReportRow } from '../threatReport';
 import {
-  computeProgress,
   computeSummary,
   firstStep,
-  formatProgress,
+  itemIndicators,
   mitigationLines,
   rankThreats,
   stripTierTags,
@@ -89,24 +88,36 @@ describe('rankThreats', () => {
   });
 });
 
-describe('対策実装進捗率', () => {
-  it('分母は対象外を除く。未設定・要対応・却下は未実装', () => {
-    const active = [
-      item({ control: 'implemented' }),
-      item({ control: 'implemented' }),
-      item({ control: 'required' }),
-      item({ control: 'rejected' }),
-      item({}),
-      item({ control: 'not-applicable' }),
-    ];
-    const p = computeProgress(active);
-    expect(p).toEqual({ implemented: 2, total: 5 });
-    expect(formatProgress(p)).toBe('40%');
+describe('itemIndicators（画面・CLI と同じ指標）', () => {
+  it('適用外は対象から外す。未設定・要対応・却下は未実装として対象に残る', () => {
+    const r = itemIndicators([
+      item({ severity: 'High', control: 'implemented' }),
+      item({ severity: 'High', control: 'implemented' }),
+      item({ severity: 'High', control: 'required' }),
+      item({ severity: 'High', control: 'rejected' }),
+      item({ severity: 'High' }),
+      item({ severity: 'High', control: 'not-applicable' }),
+    ]);
+    expect(r.inScope).toBe(5);
+    expect(r.counts.implemented).toBe(2);
+    expect(r.implementedRate).toBeCloseTo(0.4);
+    expect(r.controlSetRate).toBeCloseTo(0.8);
   });
 
-  it('分母 0 は「—」', () => {
-    expect(formatProgress(computeProgress([]))).toBe('—');
-    expect(formatProgress(computeProgress([item({ control: 'not-applicable' })]))).toBe('—');
+  it('受容は対象に残り、誤検知は外す。重大度で重みを付ける', () => {
+    const r = itemIndicators([
+      item({ severity: 'Critical', treatment: 'accepted' }),
+      item({ severity: 'Low', control: 'implemented' }),
+      item({ severity: 'Critical', treatment: 'false-positive' }),
+    ]);
+    expect(r.inScope).toBe(2);
+    expect(r.implementedRate).toBeCloseTo(1 / 9);
+    expect(r.treatmentSetRate).toBeCloseTo(8 / 9);
+  });
+
+  it('対象が 0 件なら null', () => {
+    expect(itemIndicators([]).implementedRate).toBeNull();
+    expect(itemIndicators([item({ control: 'not-applicable' })]).implementedRate).toBeNull();
   });
 });
 
@@ -126,9 +137,12 @@ describe('computeSummary', () => {
     expect(s.unaddressedCount).toBe(2);
   });
 
-  it('進捗率は全体と Critical+High の 2 つ', () => {
-    expect(s.progressAll).toEqual({ implemented: 2, total: 3 });
-    expect(s.progressCriticalHigh).toEqual({ implemented: 1, total: 2 });
+  it('指標は全体と Critical+High の 2 つ（受容は対象に残り、誤検知は外す）', () => {
+    // 対象：Critical 実装済み・High 必須・Low 実装済み・High 受容＋実装済み（Medium 誤検知は外す）
+    expect(s.indicators).toMatchObject({ inScope: 4, counts: { implemented: 3, controlSet: 4, treatmentSet: 2 } });
+    expect(s.indicators.implementedRate).toBeCloseTo((8 + 1 + 4) / (8 + 4 + 1 + 4));
+    expect(s.indicatorsCriticalHigh.inScope).toBe(3);
+    expect(s.indicatorsCriticalHigh.implementedRate).toBeCloseTo(12 / 16);
   });
 
   it('対応方針別は受容・誤検知も数え、対策実装状況別は有効脅威のみ', () => {
