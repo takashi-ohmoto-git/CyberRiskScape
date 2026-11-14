@@ -27,5 +27,6 @@ export function hydrateFromPersisted(loaded: PersistedProject): void {
     findings: loaded.findings,
     assets: loaded.assets,
     bomComponents: loaded.bomComponents,
+    vulnIntel: loaded.vulnIntel,
   });
 }

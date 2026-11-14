@@ -4,6 +4,7 @@ import { formatElementalId } from '../core/model/elementalId';
 import { deserializeProject } from '../features/persistence/serialize';
 import type { PersistedProject } from '../features/persistence/schema';
 import { applyKev, type KevCatalog } from '../features/kev-import/applyKev';
+import { recordKev } from '../features/vuln-intel/vulnIntel';
 
 /**
  * CLI `import-kev`：利用者が渡した CISA KEV カタログを保存済みの指摘と照合し、`kev` の印を付け外しする。
@@ -43,6 +44,10 @@ export function importKev(rawProject: unknown, catalog: KevCatalog): ImportKevOu
   const project: PersistedProject = { ...loaded };
   if (r.findings.length > 0) project.findings = r.findings;
   else delete project.findings;
+  // 照合の結果を CVE ごとに記録する（指摘を取り込み直しても印が消えないように）
+  const vulnIntel = recordKev(loaded.vulnIntel, r.findings, catalog.entries);
+  if (vulnIntel) project.vulnIntel = vulnIntel;
+  else delete project.vulnIntel;
   return {
     project,
     ...(catalog.catalogVersion ? { catalogVersion: catalog.catalogVersion } : {}),

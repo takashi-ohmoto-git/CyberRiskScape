@@ -74,6 +74,7 @@ export function NewProjectModal() {
       findings: s.findings,
       assets: s.assets,
       bomComponents: s.bomComponents,
+      vulnIntel: s.vulnIntel,
     });
     const base = projectFilename(s.projectMeta.name);
     if (!isFileSystemAccessSupported()) {

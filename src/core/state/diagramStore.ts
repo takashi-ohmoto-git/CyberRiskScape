@@ -16,6 +16,7 @@ import type {
   ElementKind,
   Asset,
   BomComponent,
+  VulnIntel,
   FrameworkView,
   GroupDragState,
   LayerData,
@@ -362,6 +363,8 @@ export interface HydratePayload {
   assets?: Asset[];
   /** 取り込んだ部品（docs/architecture.md §8.8）。省略時は空。 */
   bomComponents?: BomComponent[];
+  /** CVE ごとの付加情報（KEV・EPSS）。省略時は無し。 */
+  vulnIntel?: VulnIntel;
   /** ElementalID 採番カウンタ。省略時は全レイヤー 0 始まり。 */
   idCounters?: LayerSeqCounters;
 }
@@ -432,6 +435,8 @@ interface DiagramState {
   findings: Finding[];
   assets: Asset[];
   bomComponents: BomComponent[];
+  /** CVE ごとの付加情報（KEV・EPSS）。画面からは変えず、読み込んだものを保存時に書き戻す。 */
+  vulnIntel: VulnIntel | undefined;
   /** Asset タブを表示中か（保存しない）。脅威の絞り込み（activeFramework）とは別の状態。 */
   isAssetViewOpen: boolean;
   /** 手動脅威エディタモーダルの開閉状態（UI 表示用、永続化しない）。 */
@@ -740,6 +745,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   findings: [],
   assets: [],
   bomComponents: [],
+  vulnIntel: undefined,
   isAssetViewOpen: false,
   isManualThreatModalOpen: false,
   editingManualThreatId: null,
@@ -785,6 +791,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       findings: payload.findings ?? [],
       assets: payload.assets ?? [],
       bomComponents: payload.bomComponents ?? [],
+      vulnIntel: payload.vulnIntel,
       isHydrated: true,
       selectedNodeIds: [],
       selectedEdgeId: null,
@@ -1401,6 +1408,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       findings: [],
       assets: [],
       bomComponents: [],
+      vulnIntel: undefined,
       isAssetViewOpen: false,
       isNewProjectConfirmOpen: false,
       selectedNodeIds: [],

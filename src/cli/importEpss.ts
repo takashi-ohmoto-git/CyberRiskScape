@@ -4,6 +4,7 @@ import { formatElementalId } from '../core/model/elementalId';
 import { deserializeProject } from '../features/persistence/serialize';
 import type { PersistedProject } from '../features/persistence/schema';
 import { applyEpss, type EpssScores } from '../features/epss-import/applyEpss';
+import { recordEpss } from '../features/vuln-intel/vulnIntel';
 
 /**
  * CLI `import-epss`：利用者が渡した FIRST EPSS の CSV を保存済みの指摘と照合し、`epss` を付け外しする
@@ -47,6 +48,10 @@ export function importEpss(rawProject: unknown, parsed: Pick<EpssScores, 'scores
   const project: PersistedProject = { ...loaded };
   if (r.findings.length > 0) project.findings = r.findings;
   else delete project.findings;
+  // 照合の結果を CVE ごとに記録する（指摘を取り込み直しても値が消えないように）
+  const vulnIntel = recordEpss(loaded.vulnIntel, r.findings, parsed.scores, parsed.date);
+  if (vulnIntel) project.vulnIntel = vulnIntel;
+  else delete project.vulnIntel;
   return {
     project,
     ...(parsed.date ? { date: parsed.date } : {}),

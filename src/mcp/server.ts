@@ -163,6 +163,7 @@ const JUDGEMENT_FIELDS = [
   'findings',
   'assets',
   'bomComponents',
+  'vulnIntel',
   'projectMeta',
 ] as const satisfies readonly (keyof PersistedProject)[];
 

@@ -65,7 +65,8 @@ export function usePersistence(): void {
         state.controlStatuses !== prev.controlStatuses ||
         state.findings !== prev.findings ||
         state.assets !== prev.assets ||
-        state.bomComponents !== prev.bomComponents;
+        state.bomComponents !== prev.bomComponents ||
+        state.vulnIntel !== prev.vulnIntel;
       if (!changed) return;
       pendingSnapshot = {
         projectId: state.projectId,
@@ -82,6 +83,7 @@ export function usePersistence(): void {
         findings: state.findings,
         assets: state.assets,
         bomComponents: state.bomComponents,
+        vulnIntel: state.vulnIntel,
       };
       if (timer !== null) clearTimeout(timer);
       timer = setTimeout(flush, DEBOUNCE_MS);

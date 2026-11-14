@@ -2,6 +2,7 @@ import type {
   ControlStatusState,
   Asset,
   BomComponent,
+  VulnIntel,
   Finding,
   FrameworkView,
   LayerData,
@@ -13,6 +14,7 @@ import type {
   SuppressionState,
 } from '../../core/model/types';
 import { EMPTY_LAYER, LAYER_KEYS } from '../../core/model/types';
+import { applyVulnIntel } from '../vuln-intel/vulnIntel';
 
 /** 全レイヤー空の手動脅威 Record を新規生成する（hydrate / 初期化用）。 */
 export function emptyManualThreats(): Record<LayerKey, ManualThreat[]> {
@@ -42,6 +44,8 @@ export interface SerializableState {
   findings?: readonly Finding[];
   assets?: readonly Asset[];
   bomComponents?: readonly BomComponent[];
+  /** CVE ごとの付加情報（KEV・EPSS）。省略時・空は保存しない。 */
+  vulnIntel?: VulnIntel;
   /** ElementalID 採番カウンタ（§2.26）。省略時は保存しない（旧テスト互換）。 */
   idCounters?: LayerSeqCounters;
 }
@@ -110,6 +114,7 @@ export function serializeProject(state: SerializableState): PersistedProject {
     ...(hasFindings ? { findings: [...findings] } : {}),
     ...(hasAssets ? { assets: [...assets] } : {}),
     ...(hasBomComponents ? { bomComponents: [...bomComponents] } : {}),
+    ...(state.vulnIntel && Object.keys(state.vulnIntel).length > 0 ? { vulnIntel: state.vulnIntel } : {}),
     updatedAt: Date.now(),
   };
 }
@@ -168,7 +173,10 @@ function migrateLegacyFramework(raw: unknown): unknown {
 export function deserializeProject(raw: unknown): PersistedProject | null {
   const result = PersistedProjectSchema.safeParse(migrateLegacyFramework(raw));
   if (!result.success) return null;
-  return result.data;
+  const data = result.data;
+  // 記録してある KEV・EPSS を指摘へ付け直す（指摘を取り込み直すと印が消えるため。§7.2 D）
+  if (!data.vulnIntel || !data.findings) return data;
+  return { ...data, findings: [...applyVulnIntel(data.findings, data.vulnIntel)] };
 }
 
 /**

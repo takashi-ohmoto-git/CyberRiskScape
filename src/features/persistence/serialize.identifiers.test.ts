@@ -96,6 +96,14 @@ describe('deserializeProject（識別子の表記をそろえる）', () => {
     });
   });
 
+  it('CVE ごとの付加情報（vulnIntel）は保存と読み込みを往復しても残り、不正なキーは読まない', () => {
+    const vulnIntel = { 'CVE-2099-0001': { kev: { dateAdded: '2099-01-01' }, epss: { score: 0.5 } } };
+    const saved = JSON.parse(JSON.stringify(serializeProject({ ...STATE, vulnIntel })));
+    expect(deserializeProject(saved)?.vulnIntel).toEqual(vulnIntel);
+    expect(serializeProject({ ...STATE, vulnIntel: {} })).not.toHaveProperty('vulnIntel');
+    expect(deserializeProject({ ...saved, vulnIntel: { 'not-a-cve': {} } })).toBeNull();
+  });
+
   it('そろえた後のデータは、もう一度読み込んでも同じ（保存し直しても壊れない）', () => {
     const again = deserializeProject(JSON.parse(JSON.stringify({ ...legacyProject(), ...loaded })));
     expect(again?.findings?.[0].identifiers).toEqual(loaded?.findings?.[0].identifiers);

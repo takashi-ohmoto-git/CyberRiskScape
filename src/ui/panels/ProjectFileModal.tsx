@@ -143,6 +143,7 @@ export function ProjectFileModal() {
         findings: s.findings,
         assets: s.assets,
         bomComponents: s.bomComponents,
+        vulnIntel: s.vulnIntel,
       });
       await writeProjectFile(dir, name, project);
       await refresh(dir);

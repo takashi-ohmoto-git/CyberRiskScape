@@ -17,14 +17,13 @@ describe('nucleiToFindings', () => {
     expect(conv.report).toMatchObject({ results: 6, stored: 4, excludedInfo: 1, excludedNoMatch: 1, withCve: 1, truncated: 0 });
   });
 
-  it('CVE あり → known-vulnerability-unpatched のみ。CVE は大文字、CWE と EPSS も識別子', () => {
+  it('CVE あり → known-vulnerability-unpatched のみ。CVE は大文字、CWE も識別子。EPSS は識別子に入れず epss に持つ', () => {
     const f = by('CVE-2099-0001');
     expect(f?.canonicalIds).toEqual(['known-vulnerability-unpatched']);
     expect(f?.identifiers).toEqual([
       { scheme: 'rule', value: 'CVE-2099-0001' },
       { scheme: 'cve', value: 'CVE-2099-0001' },
       { scheme: 'cwe', value: '94' },
-      { scheme: 'epss', value: '0.91' },
     ]);
     expect(f?.epss).toEqual({ score: 0.91, percentile: 0.99 });
     expect(f).toMatchObject({ severity: 'Critical', sourceSeverity: 'critical', title: 'Example Framework RCE', observedAt: '2026-11-07T01:00:00Z', source: { format: 'nuclei', product: 'Nuclei', scope: 'dast' } });

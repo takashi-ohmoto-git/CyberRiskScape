@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ASSET_FORMATS, BOM_FORMATS, BUSINESS_CRITICALITIES, BUSINESS_CRITICALITY_SOURCES, CRYPTO_TERMINATIONS, PROJECT_LIFECYCLES, CVSS_VECTOR_RE,EDGE_PROTOCOLS,FINDING_CONDITION_KINDS, FINDING_FORMATS, FINDING_OUTCOMES, MAX_ASSETS, MAX_FINDING_CONDITIONS, MAX_FINDING_OPEN_QUESTIONS, MAX_BOM_COMPONENTS, MAX_FINDINGS, type Asset } from '../../core/model/types';
+import { ASSET_FORMATS, BOM_FORMATS, BUSINESS_CRITICALITIES, BUSINESS_CRITICALITY_SOURCES, CRYPTO_TERMINATIONS, PROJECT_LIFECYCLES, CVSS_VECTOR_RE,EDGE_PROTOCOLS,FINDING_CONDITION_KINDS, FINDING_FORMATS, FINDING_OUTCOMES, MAX_ASSETS, MAX_FINDING_CONDITIONS, MAX_FINDING_OPEN_QUESTIONS, MAX_BOM_COMPONENTS, MAX_FINDINGS, MAX_VULN_INTEL, type Asset } from '../../core/model/types';
 import { assetIdentifiers, toIsoTimestamp } from '../../core/model/assetIdentity';
 import { normalizeIdentifiers } from '../../core/model/identifierSchemes';
 import {
@@ -444,6 +444,24 @@ const PersistedRiskScoreSchema = z.object({
 
 /** 外部製品の指摘（docs/architecture.md §8.2）。取り込んだ事実で、人の判断は持たない。 */
 const FINDING_TEXT_MAX = 200;
+const KevSchema = z.object({
+  dateAdded: z.string().max(40).optional(),
+  dueDate: z.string().max(40).optional(),
+  ransomware: z.boolean().optional(),
+  catalogVersion: z.string().max(50).optional(),
+});
+
+const EpssSchema = z.object({
+  score: z.number().min(0).max(1),
+  percentile: z.number().min(0).max(1).optional(),
+  date: z.string().max(40).optional(),
+});
+
+/** CVE ごとの付加情報（KEV・EPSS）。キーは CVE ID（大文字）。 */
+const VulnIntelSchema = z
+  .record(z.string().regex(/^CVE-\d{4}-\d{4,}$/), z.object({ kev: KevSchema.optional(), epss: EpssSchema.optional() }))
+  .refine((r) => Object.keys(r).length <= MAX_VULN_INTEL);
+
 const PersistedFindingSchema = z.object({
   id: z.string().min(1).max(600),
   source: z.object({
@@ -481,21 +499,8 @@ const PersistedFindingSchema = z.object({
     .optional(),
   openQuestions: z.array(z.string().max(FINDING_TEXT_MAX)).max(MAX_FINDING_OPEN_QUESTIONS).optional(),
   validationPlan: z.string().max(FINDING_TEXT_MAX).optional(),
-  kev: z
-    .object({
-      dateAdded: z.string().max(40).optional(),
-      dueDate: z.string().max(40).optional(),
-      ransomware: z.boolean().optional(),
-      catalogVersion: z.string().max(50).optional(),
-    })
-    .optional(),
-  epss: z
-    .object({
-      score: z.number().min(0).max(1),
-      percentile: z.number().min(0).max(1).optional(),
-      date: z.string().max(40).optional(),
-    })
-    .optional(),
+  kev: KevSchema.optional(),
+  epss: EpssSchema.optional(),
   cvss: z.string().max(FINDING_TEXT_MAX).regex(CVSS_VECTOR_RE).optional(),
 });
 
@@ -639,6 +644,8 @@ export const PersistedProjectSchema = z.object({
   findings: z.array(PersistedFindingSchema).max(MAX_FINDINGS).optional(),
   assets: z.array(PersistedAssetSchema).max(MAX_ASSETS).optional(),
   bomComponents: z.array(PersistedBomComponentSchema).max(MAX_BOM_COMPONENTS).optional(),
+  /** CVE ごとの付加情報（KEV・EPSS）。読み込み時に指摘へ付け直す（optional 追加は後方互換）。 */
+  vulnIntel: VulnIntelSchema.optional(),
   updatedAt: z.number().int().nonnegative(),
 });
 

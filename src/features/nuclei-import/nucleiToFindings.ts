@@ -126,8 +126,8 @@ export function nucleiToFindings(input: NucleiToFindingsInput): { findings: Find
       ...cves.map((c) => ({ scheme: 'cve', value: c })),
       ...cwes.map((c) => ({ scheme: 'cwe', value: c })),
     ];
+    // EPSS のスコアは識別子ではないので identifiers には入れず、指摘の epss にだけ持つ
     const epss = cls?.['epss-score'];
-    if (typeof epss === 'number' && Number.isFinite(epss)) identifiers.push({ scheme: 'epss', value: String(epss) });
     const inUnit = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 1;
     const pct = cls?.['epss-percentile'];
     const cvss = cls?.['cvss-metrics']?.trim();

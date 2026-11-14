@@ -35,6 +35,20 @@ describe('importEpss', () => {
     expect(deserializeProject(JSON.parse(JSON.stringify(bad)))).toBeNull();
   });
 
+  it('照合の結果を CVE ごとに記録し、epss の無い指摘に置き換わっても読み込み時に値が戻る。KEV の記録は残す', () => {
+    const withKev = { ...project, vulnIntel: { 'CVE-2099-7777': { kev: { dateAdded: '2099-01-01' } } } };
+    const out = importEpss(withKev, epss());
+    expect(out.project.vulnIntel).toEqual({
+      'CVE-2099-7777': { kev: { dateAdded: '2099-01-01' } },
+      'CVE-2099-0001': { epss: { score: 0.5, percentile: 0.97, date: '2099-01-02T00:00:00+0000' } },
+    });
+    const saved = JSON.parse(JSON.stringify(out.project)) as typeof out.project;
+    const stripped = { ...saved, findings: (saved.findings ?? []).map(({ epss: _epss, ...rest }) => rest) };
+    const reloaded = deserializeProject(JSON.parse(JSON.stringify(stripped)));
+    expect(reloaded?.findings?.find((f) => f.id === 'f1')?.epss).toEqual({ score: 0.5, percentile: 0.97, date: '2099-01-02T00:00:00+0000' });
+    expect(reloaded?.findings?.find((f) => f.id === 'f2')?.kev).toEqual({ dateAdded: '2099-01-01' });
+  });
+
   it('報告：md の見出しと json の形', () => {
     const out = importEpss(project, epss('cve,epss,percentile\nCVE-2099-0001,0.5,0.9\nbad,x,y\n'));
     const md = epssReportToMarkdown(out);

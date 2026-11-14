@@ -1365,6 +1365,21 @@ export interface FindingKev {
 /** 保持する指摘の上限（docs/architecture.md §8.2）。 */
 export const MAX_FINDINGS = 5000;
 
+/** CVE 1 件分の付加情報。 */
+export interface VulnIntelEntry {
+  kev?: FindingKev;
+  epss?: FindingEpss;
+}
+
+/**
+ * CVE（大文字）ごとの付加情報（KEV・EPSS）。指摘を取り込み直しても消えないよう、指摘とは別に
+ * プロジェクト直下に持つ。持つのはプロジェクトの指摘に当たった CVE の分だけ（カタログ全体は持たない）。
+ */
+export type VulnIntel = Record<string, VulnIntelEntry>;
+
+/** 保持する付加情報の CVE の上限。 */
+export const MAX_VULN_INTEL = 5000;
+
 /** 資産の入力の形式。 */
 /** `manual` は NodePanel の資産ポップアップから人が手で登録したもの（docs/node-address-asset-panel.md §3.2）。 */
 export const ASSET_FORMATS = ['artex-assets', 'shodan', 'scopesentry', 'metasploit', 'cyberstrikeai-assets', 'manual'] as const;
