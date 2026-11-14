@@ -45,6 +45,7 @@ import {
 import { LAYER_KEYS } from '../../core/model/types';
 import { computeLayerThreats } from '../../features/export/layerThreats';
 import { computeIndicators, formatRate } from '../../features/indicators/computeIndicators';
+import { computeAttackPathExposure } from '../../features/indicators/computeAttackPathExposure';
 import type {
   ControlStatusValue,
   DiagramBoundary,
@@ -378,9 +379,10 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
 
   // プロジェクト全体の指標（設定率・検討率・実装済みの割合）。表示中のレイヤー・フレームワークに
   // 左右されないよう、全レイヤー・全フレームワークの脅威で計算する。
-  const indicators = useMemo(() => {
-    if (!isOpen) return null;
-    const all = computeLayerThreats(
+  // あわせて、重要資産に届く攻撃経路上の未対策（総合には含めない。攻撃者のノードが図に無ければ null）。
+  const { indicators, attackPath } = useMemo(() => {
+    if (!isOpen) return { indicators: null, attackPath: null };
+    const perLayer = computeLayerThreats(
       {
         layers,
         manualThreats: manualThreatsByLayer,
@@ -392,8 +394,13 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
       },
       merged,
       LAYER_KEYS,
-    ).flatMap((item) => item.threats);
-    return computeIndicators(all);
+    );
+    return {
+      indicators: computeIndicators(perLayer.flatMap((item) => item.threats)),
+      attackPath: computeAttackPathExposure(
+        perLayer.map(({ layer, threats }) => ({ layer, threats, ...layers[layer] })),
+      ),
+    };
   }, [isOpen, layers, manualThreatsByLayer, merged, suppressions, riskScores, controlStatuses, projectMeta]);
 
   if (!isOpen) return null;
@@ -519,6 +526,35 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
                   {t(key)} <span className="font-bold text-slate-200">{formatRate(rate)}</span>
                 </span>
               ))}
+              <span className="text-slate-700" aria-hidden="true">
+                |
+              </span>
+              <span
+                title={
+                  attackPath
+                    ? t('analytics.indicators.attackPathTooltip', {
+                        weighted: attackPath.openWeighted,
+                        critical: attackPath.weights.severity.Critical,
+                        high: attackPath.weights.severity.High,
+                        medium: attackPath.weights.severity.Medium,
+                        low: attackPath.weights.severity.Low,
+                      }) + (attackPath.truncated ? t('analytics.indicators.attackPathTruncated') : '')
+                    : t('analytics.indicators.attackPathNoneTooltip')
+                }
+              >
+                {t('analytics.indicators.attackPath')}{' '}
+                {attackPath ? (
+                  <>
+                    <span className="font-bold text-slate-200">{attackPath.open}</span>{' '}
+                    {t('analytics.indicators.attackPathUnit', {
+                      exposed: attackPath.exposedTargets,
+                      targets: attackPath.targets,
+                    })}
+                  </>
+                ) : (
+                  '—'
+                )}
+              </span>
             </div>
           )}
         </div>

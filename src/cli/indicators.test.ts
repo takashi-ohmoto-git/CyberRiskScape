@@ -64,6 +64,25 @@ describe('projectIndicators', () => {
     expect(report.indicators.implementedRate).toBeCloseTo(1 / report.indicators.inScope);
   });
 
+  it('攻撃経路の露出：攻撃者のノードが無い図は null、置くと件数を返す（総合の値は変わらない）', () => {
+    const base = { ...raw(), suppressions: {}, riskScores: {}, controlStatuses: {} };
+    const without = projectIndicators(base);
+    expect(without.attackPathExposure).toBeNull();
+
+    const layers = raw().layers as Record<string, { nodes: unknown[] }>;
+    const withAttacker = {
+      ...base,
+      layers: {
+        ...layers,
+        L1: { ...layers.L1, nodes: [...layers.L1.nodes, { id: 'n-atk', seq: 99, type: 'AGENTIC_ATTACKER', x: 0, y: 200 }] },
+      },
+    };
+    const report = projectIndicators(withAttacker);
+    expect(report.attackPathExposure).toMatchObject({ truncated: false });
+    expect(report.attackPathExposure?.weights.severity.Critical).toBe(8);
+    expect(report.indicators.value).toBe(without.indicators.value);
+  });
+
   it('形式が不正なら例外', () => {
     expect(() => projectIndicators({ nope: true })).toThrow();
   });

@@ -4,6 +4,10 @@ import {
   type IndicatorWeights,
   type ModelIndicators,
 } from '../features/indicators/computeIndicators';
+import {
+  computeAttackPathExposure,
+  type AttackPathExposure,
+} from '../features/indicators/computeAttackPathExposure';
 import { LAYER_KEYS, type BusinessCriticality, type ProjectLifecycle } from '../core/model/types';
 
 /**
@@ -21,13 +25,17 @@ export interface ProjectIndicatorsReport {
   lifecycle?: ProjectLifecycle;
   /** 3 つの指標と、計算に使った重み（`weights`）。 */
   indicators: ModelIndicators;
+  /**
+   * 重要資産に届く攻撃経路上の未対策の脅威（「総合」には入れない別枠の指標）。
+   * 図に攻撃者（AI エージェント攻撃者）が無ければ null（評価できない）。
+   */
+  attackPathExposure: AttackPathExposure | null;
 }
 
 export function projectIndicators(raw: unknown, weights?: IndicatorWeights): ProjectIndicatorsReport {
   const resolved = resolveProject(raw);
-  const threats = LAYER_KEYS.flatMap((layer) =>
-    analyzeResolvedProject(resolved, { layer, framework: 'ALL' }).flatMap((r) => r.threats),
-  );
+  const results = LAYER_KEYS.flatMap((layer) => analyzeResolvedProject(resolved, { layer, framework: 'ALL' }));
+  const threats = results.flatMap((r) => r.threats);
   const meta = resolved.projectMeta;
   return {
     schemaVersion: 1,
@@ -38,5 +46,9 @@ export function projectIndicators(raw: unknown, weights?: IndicatorWeights): Pro
     ...(meta.criticality ? { criticality: meta.criticality } : {}),
     ...(meta.lifecycle ? { lifecycle: meta.lifecycle } : {}),
     indicators: computeIndicators(threats, weights),
+    attackPathExposure: computeAttackPathExposure(
+      results.map((r) => ({ ...r.input, layer: r.layer, threats: r.threats })),
+      weights,
+    ),
   };
 }

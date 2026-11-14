@@ -166,6 +166,11 @@ export const jaReport = {
   'report.pdf.metric.progressDone': '実装済み {done} / {total} 件',
   'report.pdf.metric.progressCh': 'Critical＋High：{rate}',
   'report.pdf.metric.unaddressed': '未対応件数',
+  'report.pdf.metric.attackPath': '攻撃経路の未対策',
+  // {exposed}・{targets}=経路上に未対策がある標的の数・届く標的の数, {weighted}=重み付きの値
+  'report.pdf.metric.attackPathTargets': '標的 {exposed}/{targets} に届く',
+  'report.pdf.metric.attackPathWeighted': '重み付き {weighted}',
+  'report.pdf.metric.attackPathNone': '攻撃者のノードが図に無いため評価できません',
   'report.pdf.top.heading': '重要脅威 上位 10',
   'report.pdf.top.rank': '順位',
   'report.pdf.top.layer': 'レイヤー',

@@ -69,7 +69,7 @@ The PDF has four parts, in this order.
 
 | Part | Contents |
 |---|---|
-| 1. One-page summary | Four indicators, the top 10 critical threats, and count tables. **Fits on one page** |
+| 1. One-page summary | Five indicators, the top 10 critical threats, and count tables. **Fits on one page** |
 | 2. Assessment premises | Project information (purpose, business impact, security objectives) |
 | 3. Top-10 details | Description, mitigations and compliance references for the 10 threats |
 | 4. Appendix | Per layer: the diagram, every threat as a table and in detail, and the accepted / false-positive list |
@@ -78,7 +78,7 @@ The PDF has four parts, in this order.
 
 ![PDF page 1 (summary)](../assets/guide/en/report-export/03-pdf-summary.png)
 
-Four indicators run across the top.
+Five indicators run across the top.
 
 | Indicator | Meaning |
 |---|---|
@@ -86,11 +86,12 @@ Four indicators run across the top.
 | **Critical + High** | Active threats whose effective severity is Critical or High |
 | **Implemented (weighted)** | How many controls are in place (defined below). Shown overall and for Critical + High only, together with the share that has a control status set and a treatment decided |
 | **Unaddressed** | Active threats with **no risk treatment recorded yet** |
+| **Unmitigated on attack paths** | Threats without an implemented control on the paths from the attacker to critical assets (defined below). Shows "—" if the diagram has no attacker |
 
 > The image above is the guide's AI chatbot with a handful of records entered.
 > The figures in the image are **values for this example only**.
 > The image is from an earlier version: the third indicator had a different name and calculation
-> ("Control implementation progress").
+> ("Control implementation progress"), and the fifth indicator is not shown.
 
 #### How "Implemented", "Set" and "Treated" are defined
 
@@ -113,6 +114,29 @@ These are the same calculation as the figures at the top right of Analytics and 
 - When nothing is in scope, the value shows **"—"**.
 - The PDF covers the layers included in the export. Analytics covers all layers, so a PDF of only
   some layers shows different figures.
+
+#### How "Unmitigated on attack paths" is defined
+
+Instead of "how many CVEs or threats are left", this counts "how many threats without a control are
+left on the paths an attacker can take to critical assets". The figure to the right of Overall in
+Analytics and `attackPathExposure` in the CLI `indicators` command use the same calculation.
+
+- **Attacker**: the AI-agent attacker node placed in the diagram. **A diagram without one shows "—"**
+  (cannot be evaluated).
+- **Critical assets**: the recommended targets reachable from the attacker (identity infrastructure,
+  nodes holding sensitive data, nodes with business criticality High) — the same "recommended targets"
+  as in the attack path view.
+- **On the path**: the nodes (including the target itself) and lines that a path from the attacker to a
+  target passes through. For a node that contains assets, the threats on those assets are counted too.
+- **Without an implemented control**: control status is anything other than "Implemented". False
+  positives and not-applicable threats are left out, and accepted threats stay in (same as the three
+  indicators above).
+- The secondary lines show how many of the reachable targets have an open threat on their path, and a
+  severity-weighted value.
+- **It is not part of Overall.** Overall is a share of review progress; this is a count of remaining
+  exposure, where lower is better.
+- Reachability is inferred from the lines drawn in the diagram and the attack surface attributes. It is
+  not a measurement of actual connectivity, and assets that are not in the diagram are not counted.
 
 For what each status means, see [Reading the Threat Panel, section 5](reading-threats.md).
 

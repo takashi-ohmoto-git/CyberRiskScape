@@ -69,6 +69,12 @@ export const jaAnalytics = {
   'analytics.indicators.value': '総合',
   // {inScope}=対象の脅威の件数, {excluded}=対象から外した件数, {critical}〜{low}=重大度の重み, {wControl}・{wTreatment}・{wImplemented}=平均の重み
   'analytics.indicators.tooltip': '全レイヤー・全フレームワークの脅威 {inScope} 件が対象（誤検知・適用外の {excluded} 件は除く）。重大度で重みを付けた割合です（Critical {critical}・High {high}・Medium {medium}・Low {low}）。設定率＝対策実装状況が未設定でない／検討率＝リスク対応方針が未設定でない／実装済みの割合＝対策実装状況が「実装済み」。設定率と検討率は検討が済んだ割合で、リスクが下がった割合ではありません。総合＝3 つの重み付きの平均（設定率 {wControl}・検討率 {wTreatment}・実装済みの割合 {wImplemented}）。',
+  // 攻撃経路の未対策（総合には含めない）。{weighted}=重み付きの値, {critical}〜{low}=重大度の重み, {exposed}・{targets}=標的の数
+  'analytics.indicators.attackPath': '攻撃経路の未対策',
+  'analytics.indicators.attackPathUnit': '件（標的 {exposed}/{targets}）',
+  'analytics.indicators.attackPathTooltip': '攻撃者（AI エージェント攻撃者のノード）から、到達できる重要資産（認証基盤・機微データ・業務の重要度 High の推奨標的）までの経路上にある脅威のうち、対策実装状況が「実装済み」でないものの件数。誤検知・適用外は除き、受容は含みます。重み付きの値 {weighted}（重大度の重み Critical {critical}・High {high}・Medium {medium}・Low {low}）。総合には含めません。',
+  'analytics.indicators.attackPathNoneTooltip': '図に攻撃者（AI エージェント攻撃者）のノードを置くと計算されます。',
+  'analytics.indicators.attackPathTruncated': '経路の数が上限に達したため、数え漏れがありえます。',
   // どの脅威にも結びついていない判断
   'analytics.orphaned.heading': '脅威に結びついていない判断（{count} 件）',
   'analytics.orphaned.note': '以前に付けたリスク対応方針・リスク評価・対策実装状況のうち、今はどの脅威にも結びついていないもの（全レイヤー・全フレームワークで確認）。保存データには残っており、同じ脅威がまた出れば元どおり付きます。自動では消しません。要らないものは「削除」で消せます。',

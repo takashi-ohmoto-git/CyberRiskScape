@@ -28,6 +28,7 @@ import {
   type Treatment,
 } from './summary';
 import { formatRate } from '../../indicators/computeIndicators';
+import { computeAttackPathExposure } from '../../indicators/computeAttackPathExposure';
 
 /**
  * 脅威レポートの PDF 生成（A4 縦）。中身は `ThreatReport`（CSV/JSON と同じ行）から作る。
@@ -552,7 +553,9 @@ interface Metric {
 function metricBoxes(ctx: Ctx, metrics: Metric[]): void {
   const gap = 8;
   const w = (CONTENT_W - gap * (metrics.length - 1)) / metrics.length;
-  const h = 78; // 補足は 3 行まで入る
+  // 補足は枠の幅で折り返す（枚数が増えると 1 枚が狭くなる）。最低 3 行分の高さを確保する。
+  const subLines = metrics.map((m) => m.subs.flatMap((s) => wrapText(s, w - 12, SMALL, measureOf(ctx.reg))));
+  const h = 48 + Math.max(3, ...subLines.map((l) => l.length)) * 10;
   need(ctx, h + 6);
   const top = ctx.cursor.y;
   const p = page(ctx);
@@ -565,7 +568,7 @@ function metricBoxes(ctx: Ctx, metrics: Metric[]): void {
         p.drawText(line, { x: x + 6, y: top - 10 - li * 10, size: SMALL, font: ctx.bold, color: MUTED });
       });
     p.drawText(m.value, { x: x + 6, y: top - 42, size: 18, font: ctx.bold, color: INK });
-    m.subs.forEach((line, li) => {
+    (subLines[i] ?? []).forEach((line, li) => {
       p.drawText(line, { x: x + 6, y: top - 52 - li * 10, size: SMALL, font: ctx.reg, color: MUTED });
     });
   });
@@ -594,6 +597,10 @@ export async function buildPdfReport(input: BuildPdfReportInput): Promise<Uint8A
     `${t('report.pdf.meta.tool')}: ${toolLine}`,
   ].join('    ');
   const { indicators, indicatorsCriticalHigh } = summary;
+  // 報告に含めたレイヤーのうち、図（layerData）を持つものだけが対象。攻撃者のノードが無ければ null。
+  const attackPath = computeAttackPathExposure(
+    input.reports.flatMap((l) => (l.layerData ? [{ layer: l.layer, threats: l.threats, ...l.layerData }] : [])),
+  );
   const metrics: Metric[] = [
     {
       label: t('report.pdf.metric.active'),
@@ -614,6 +621,16 @@ export async function buildPdfReport(input: BuildPdfReportInput): Promise<Uint8A
       ],
     },
     { label: t('report.pdf.metric.unaddressed'), value: String(summary.unaddressedCount), subs: [] },
+    {
+      label: t('report.pdf.metric.attackPath'),
+      value: attackPath ? String(attackPath.open) : '—',
+      subs: attackPath
+        ? [
+            t('report.pdf.metric.attackPathTargets', { exposed: attackPath.exposedTargets, targets: attackPath.targets }),
+            t('report.pdf.metric.attackPathWeighted', { weighted: attackPath.openWeighted }),
+          ]
+        : [t('report.pdf.metric.attackPathNone')],
+    },
   ];
   const topRows: TableRow[] = top.map((r) => ({
     cells: [r.no, r.name, r.asset, r.layer, r.severity, r.status, r.controlStatus],

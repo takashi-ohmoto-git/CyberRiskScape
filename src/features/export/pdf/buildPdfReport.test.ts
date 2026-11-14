@@ -210,6 +210,32 @@ describe('buildPdfReport', () => {
     expect(text).not.toContain('データフロー一覧');
   }, 30_000);
 
+  it('攻撃経路の未対策：攻撃者のノードが図に無ければ「—」と評価できない旨を 1 ページ目に出す', async () => {
+    const pages = await pageTexts(await buildPdfReport(input([layer('L0', 2)])));
+    const text = pages[0].replace(/\s+/g, '');
+    expect(text).toContain('攻撃経路の未対策');
+    expect(text).toContain('攻撃者のノードが図に無いため評価できません');
+  }, 30_000);
+
+  it('攻撃経路の未対策：攻撃者のノードがあれば届く標的と重み付きの値を出す（日英）', async () => {
+    const l = layer('L0', 2);
+    l.layerData = {
+      nodes: [
+        { id: 'a1', seq: 1, type: 'AGENTIC_ATTACKER', x: 0, y: 0, label: '攻撃者' },
+        { id: 'n1', seq: 2, type: 'LLM', x: 300, y: 0, label: 'LLM' },
+      ],
+      edges: [],
+      boundaries: [],
+      annotations: [],
+    };
+    const ja = (await pageTexts(await buildPdfReport(input([l])))).join(' ').replace(/\s+/g, '');
+    expect(ja).toContain('重み付き');
+    expect(ja).not.toContain('攻撃者のノードが図に無いため評価できません');
+    const en = (await pageTexts(await buildPdfReport(input([l], 'en')))).join(' ').replace(/\s+/g, '');
+    expect(en).toContain('Unmitigatedonattackpaths');
+    expect(en).toContain('Weighted');
+  }, 30_000);
+
   // 目視確認用：CRS_PDF_SAMPLE_OUT にパスを渡すとサンプルと 1 ページ目のテキストを書き出す。
   it.skipIf(!process.env.CRS_PDF_SAMPLE_OUT)('サンプル PDF を書き出す', async () => {
     const out = process.env.CRS_PDF_SAMPLE_OUT as string;

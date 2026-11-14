@@ -61,6 +61,12 @@ export const enAnalytics: Partial<Record<TranslationKey, string>> = {
   'analytics.indicators.implemented': 'Implemented',
   'analytics.indicators.value': 'Overall',
   'analytics.indicators.tooltip': 'Covers {inScope} threats across all layers and frameworks ({excluded} false positives / not-applicable excluded). Rates are weighted by severity (Critical {critical}, High {high}, Medium {medium}, Low {low}). Control status set = control status is not unset; Treatment decided = risk treatment is not unset; Implemented = control status is "Implemented". The first two show how much has been reviewed, not how much risk has been reduced. Overall = weighted average of the three (control status set {wControl}, treatment decided {wTreatment}, implemented {wImplemented}).',
+  // Unmitigated threats on attack paths (not part of Overall)
+  'analytics.indicators.attackPath': 'Unmitigated on attack paths',
+  'analytics.indicators.attackPathUnit': '(targets {exposed}/{targets})',
+  'analytics.indicators.attackPathTooltip': 'Threats on the routes from the attacker (an AI agent attacker node) to the critical assets it can reach (recommended targets: identity infrastructure, sensitive data, business criticality High) whose control status is not "Implemented". False positives and not-applicable are excluded; accepted risks are included. Weighted value {weighted} (severity weights: Critical {critical}, High {high}, Medium {medium}, Low {low}). Not included in Overall.',
+  'analytics.indicators.attackPathNoneTooltip': 'Place an attacker (AI agent attacker) node in the diagram to calculate this.',
+  'analytics.indicators.attackPathTruncated': ' The number of routes hit the cap, so some threats may be missed.',
   // Judgements attached to no threat
   'analytics.orphaned.heading': 'Judgements attached to no threat ({count})',
   'analytics.orphaned.note': 'Risk treatments, risk scores and control statuses recorded earlier that no longer match any threat (checked across all layers and frameworks). They stay in the saved data and re-attach if the same threat appears again. Nothing is deleted automatically; use Delete to remove the ones you no longer need.',
