@@ -1,0 +1,24 @@
+# 脅威モデル単位の指標（設定率・検討率・実装済みの割合）の重み。
+#
+# 出典: なし（CyberRiskScape 独自の初期値。外部の基準に基づく値ではない）。
+#   実データを見て調整する前提の値で、計算式は `src/features/indicators/computeIndicators.ts`。
+#
+# severity   : 脅威 1 件の重み。重大な脅威ほど指標に強く効く。
+# indicators : 3 つの指標を 1 つの値（脅威モデルの値）にまとめるときの、重み付きの平均の重み。
+#   controlSet   = 設定率（対策実装状況が未設定でない）
+#   treatmentSet = 検討率（リスク対応方針が未設定でない）
+#   implemented  = 実装済みの割合（対策実装状況が実装済み）
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+severity:
+  Critical: 8
+  High: 4
+  Medium: 2
+  Low: 1
+
+indicators:
+  controlSet: 1
+  treatmentSet: 1
+  implemented: 2

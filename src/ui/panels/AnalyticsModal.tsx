@@ -43,6 +43,12 @@ import {
   type OrphanReason,
 } from '../../core/threat-engine/orphanedJudgements';
 import { LAYER_KEYS } from '../../core/model/types';
+import { computeLayerThreats } from '../../features/export/layerThreats';
+import {
+  BUNDLED_INDICATOR_WEIGHTS,
+  computeIndicators,
+  formatRate,
+} from '../../features/indicators/computeIndicators';
 import type {
   ControlStatusValue,
   DiagramBoundary,
@@ -195,6 +201,7 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
   const riskScores = useDiagramStore((s) => s.riskScores);
   const controlStatuses = useDiagramStore((s) => s.controlStatuses);
   const customLibraries = useCustomRulesStore(selectCustomLibraries);
+  const projectMeta = useDiagramStore((s) => s.projectMeta);
 
   useEffect(() => {
     if (isOpen) {
@@ -354,6 +361,11 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
     return u ? { threat: u, elementalId: null, elementLabel: t('analytics.unassigned.label') } : null;
   }, [selectedThreatId, tree, visibleUnassigned, t]);
 
+  const merged = useMemo(
+    () => mergeThreatRules(getThreatLibrary(locale).rules, customLibraries),
+    [locale, customLibraries],
+  );
+
   // どの脅威にも結びついていない判断。表示中のレイヤー・フレームワークに左右されないよう、
   // 全レイヤー・全フレームワークで突き合わせる（開いている間だけ計算する）。
   const orphaned = useMemo(() => {
@@ -361,12 +373,32 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
     return findOrphanedJudgements({
       layers: LAYER_KEYS.map((key) => layers[key]),
       manualThreats: LAYER_KEYS.map((key) => manualThreatsByLayer[key]),
-      rules: mergeThreatRules(getThreatLibrary(locale).rules, customLibraries).rules,
+      rules: merged.rules,
       suppressions,
       riskScores,
       controlStatuses,
     });
-  }, [isOpen, layers, manualThreatsByLayer, locale, customLibraries, suppressions, riskScores, controlStatuses]);
+  }, [isOpen, layers, manualThreatsByLayer, merged, suppressions, riskScores, controlStatuses]);
+
+  // プロジェクト全体の指標（設定率・検討率・実装済みの割合）。表示中のレイヤー・フレームワークに
+  // 左右されないよう、全レイヤー・全フレームワークの脅威で計算する。
+  const indicators = useMemo(() => {
+    if (!isOpen) return null;
+    const all = computeLayerThreats(
+      {
+        layers,
+        manualThreats: manualThreatsByLayer,
+        suppressions,
+        riskScores,
+        controlStatuses,
+        activeFramework: 'ALL',
+        projectMeta,
+      },
+      merged,
+      LAYER_KEYS,
+    ).flatMap((item) => item.threats);
+    return computeIndicators(all);
+  }, [isOpen, layers, manualThreatsByLayer, merged, suppressions, riskScores, controlStatuses, projectMeta]);
 
   if (!isOpen) return null;
 
@@ -463,6 +495,32 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
               {t(PRESET_LABEL_KEY[p])}
             </button>
           ))}
+          {indicators && (
+            <div
+              className="ml-auto flex items-center gap-3 text-xs text-slate-400"
+              title={t('analytics.indicators.tooltip', {
+                inScope: indicators.inScope,
+                excluded: indicators.excluded,
+                critical: BUNDLED_INDICATOR_WEIGHTS.severity.Critical,
+                high: BUNDLED_INDICATOR_WEIGHTS.severity.High,
+                medium: BUNDLED_INDICATOR_WEIGHTS.severity.Medium,
+                low: BUNDLED_INDICATOR_WEIGHTS.severity.Low,
+              })}
+            >
+              <span className="text-slate-500">{t('analytics.indicators.scope')}</span>
+              {(
+                [
+                  ['analytics.indicators.controlSet', indicators.controlSetRate],
+                  ['analytics.indicators.treatmentSet', indicators.treatmentSetRate],
+                  ['analytics.indicators.implemented', indicators.implementedRate],
+                ] as const
+              ).map(([key, rate]) => (
+                <span key={key}>
+                  {t(key)} <span className="font-bold text-slate-200">{formatRate(rate)}</span>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ②-a 認証基盤インベントリ。発行元が図に無ければ非表示 */}

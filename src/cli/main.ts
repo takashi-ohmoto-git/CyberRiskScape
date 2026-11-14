@@ -29,6 +29,7 @@ import { buildEventLog } from '../features/event-log/buildEventLog';
 import { toOcelJson } from '../features/event-log/ocel';
 import { toEventCsv } from '../features/event-log/eventCsv';
 import { triggersToJson, triggersToMarkdown } from './triggers';
+import { projectIndicators, type ProjectIndicatorsReport } from './indicators';
 import {
   collectModelThreats,
   countNodeMatches,
@@ -206,6 +207,7 @@ const USAGE = `使い方:
   analyze <project.json> [options]
   diff <base.json> <head.json> [options]
   triggers [options]
+  indicators <project.json> [--out <file>]
   checklist <project.json> --id <checklistId> [options]
   import-kong <kong.yaml> [options]
   import-kongctl <kongctl.yaml> [options]
@@ -269,6 +271,11 @@ diff のオプション:
   --fail-on <Critical|High|Medium|Low>          新規かつ未抑制の脅威が指定重大度以上なら exit 1
   --triggers <file>                             実行トリガー定義 YAML（既定: 同梱の T1〜T8。指定時は翻訳オーバーレイ非適用）
   --locale <ja|en>                              表示言語（既定: ja）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+indicators（脅威モデル単位の指標：設定率・検討率・実装済みの割合を JSON で出す）:
+  全レイヤー・全フレームワークの脅威が対象。重大度で重みを付け、誤検知と適用外は対象から外す。
+  同梱ルールのみで評価する（カスタムルールの脅威は入らない）。
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
 triggers のオプション:
@@ -884,6 +891,27 @@ function runDiff(values: CliValues, positionals: string[]): void {
  * PR テンプレートや AI レビュアーの観点表にそのまま使える。ゲート判定は無い（exit 0 固定、
  * 入力・引数エラーのみ 2）。
  */
+/**
+ * `indicators`：脅威モデル単位の指標（設定率・検討率・実装済みの割合）を JSON で出す。
+ * 全レイヤー・全フレームワーク・同梱ルールのみ（カスタムルールの脅威は入らない）。
+ */
+function runIndicators(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  setLocale('ja');
+  let report: ProjectIndicatorsReport;
+  try {
+    report = projectIndicators(readJsonFile(file));
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  writeOutput(JSON.stringify(report, null, 2), values.out);
+}
+
 function runTriggers(values: CliValues): void {
   const format = parseEnum(values.format, TRIGGERS_FORMATS, 'format') ?? 'md';
   const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
@@ -2762,6 +2790,8 @@ function main(): void {
     runDiff(values, positionals);
   } else if (command === 'triggers') {
     runTriggers(values);
+  } else if (command === 'indicators') {
+    runIndicators(values, positionals);
   } else if (command === 'checklist') {
     runChecklist(values, positionals);
   } else if (command === 'export-postman') {

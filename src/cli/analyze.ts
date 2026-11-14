@@ -62,6 +62,8 @@ export interface ResolvedProject {
   riskScores: Record<string, RiskScore> | undefined;
   controlStatuses: Record<string, ControlStatusState> | undefined;
   projectMeta: ProjectMeta;
+  /** プロジェクトの固有 ID（持たない古いファイルでは undefined）。 */
+  projectId: string | undefined;
   /** 外部製品の指摘（`analyze --with-findings` の SARIF 書き出し用）。 */
   findings: Finding[] | undefined;
   /** 製品が観測した資産（ASM・ARTEX 等）。 */
@@ -94,6 +96,7 @@ export function resolveProject(raw: unknown): ResolvedProject {
     riskScores: resolveRiskScores(loaded),
     controlStatuses: loaded.controlStatuses,
     projectMeta: loaded.projectMeta ?? EMPTY_PROJECT_META,
+    projectId: loaded.projectId,
     findings: loaded.findings,
     assets: loaded.assets,
     bomComponents: loaded.bomComponents,

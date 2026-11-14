@@ -61,6 +61,13 @@ export const jaAnalytics = {
   'analytics.inventory.tier1': 'Tier 1 依存（{count}）',
   'analytics.inventory.tier2': 'Tier 2 直接接続（{count}）',
   'analytics.inventory.none': 'なし',
+  // プロジェクト全体の指標
+  'analytics.indicators.scope': '全レイヤー',
+  'analytics.indicators.controlSet': '設定率',
+  'analytics.indicators.treatmentSet': '検討率',
+  'analytics.indicators.implemented': '実装済みの割合',
+  // {inScope}=対象の脅威の件数, {excluded}=対象から外した件数, {critical}〜{low}=重大度の重み
+  'analytics.indicators.tooltip': '全レイヤー・全フレームワークの脅威 {inScope} 件が対象（誤検知・適用外の {excluded} 件は除く）。重大度で重みを付けた割合です（Critical {critical}・High {high}・Medium {medium}・Low {low}）。設定率＝対策実装状況が未設定でない／検討率＝リスク対応方針が未設定でない／実装済みの割合＝対策実装状況が「実装済み」。設定率と検討率は検討が済んだ割合で、リスクが下がった割合ではありません。',
   // どの脅威にも結びついていない判断
   'analytics.orphaned.heading': '脅威に結びついていない判断（{count} 件）',
   'analytics.orphaned.note': '以前に付けたリスク対応方針・リスク評価・対策実装状況のうち、今はどの脅威にも結びついていないもの（全レイヤー・全フレームワークで確認）。保存データには残っており、同じ脅威がまた出れば元どおり付きます。自動では消しません。要らないものは「削除」で消せます。',
