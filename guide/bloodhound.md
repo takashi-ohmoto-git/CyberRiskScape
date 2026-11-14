@@ -17,12 +17,12 @@ BloodHound CE (SpecterOps, Apache-2.0) is an OSS tool that analyzes the permissi
 CyberRiskScape does not draw AD objects on the diagram. Instead, it takes the results of BloodHound queries (Cypher) as **findings** and attaches them to the directory (AD) node and the certificate authority (CA) node on the diagram.
 Threats that were raised from the configuration "by assumption" (abuse of delegation, abuse of replication rights, and so on) are **backed by real data**.
 
-The first stage covers AD only (Entra ID is planned).
+In addition to AD, permission problems of Entra ID apps and service principals are attached to the **IdP** on the diagram, and permission problems of Azure resources to **IaaS / PaaS** and the **secrets manager** (sections 2 and 3).
 
 **Prerequisites**
 
 - A CyberRiskScape project JSON to attach findings to, with a **directory** (AD) node on the diagram. If you use AD CS (Certificate Services), also place a **certificate authority (CA)** (section 3).
-- A BloodHound CE that you run yourself, with collected data already ingested. **Collection is done on the BloodHound side.**
+- A BloodHound CE that you run yourself, with collected data already ingested. **Collection is done on the BloodHound side.** Collect Entra ID and Azure data with AzureHound.
 - Node.js. Build the CLI first (`npm ci && npm run build:cli`).
 - **CLI only.** The output project JSON can be loaded on screen with **Template** → **Import**.
 
@@ -32,7 +32,7 @@ The first stage covers AD only (Entra ID is planned).
 
 ## 2. What it can do
 
-It sends the 10 bundled queries to BloodHound, counts the matching principals, and links them to the corresponding threats.
+It sends the 16 bundled queries to BloodHound, counts the matching principals, and links them to the corresponding threats.
 
 | Query | Corresponding threat | Attached to |
 |---|---|---|
@@ -46,6 +46,12 @@ It sends the 10 bundled queries to BloodHound, counts the matching principals, a
 | Principals that can take the domain through certificate template or CA misconfiguration (AD CS ESC family) | Impersonating any user through misconfigured certificate templates | CA |
 | Principals that can take the domain by NTLM relay to certificate enrollment | NTLM relay to certificate enrollment interfaces | CA |
 | Principals that can forge certificates with the CA key (GoldenCert) | Forging certificates by stealing the CA private key or administrative rights | CA |
+| Non-Tier Zero principals that can add credentials to apps or service principals (owners, and permissions that can add credentials or owners) (Entra ID) | Taking over registered apps by adding credentials | IdP |
+| Tier Zero service principals (Entra ID) | Tenant-wide privileges held by apps on their own (app-only) | IdP |
+| Apps holding Graph permissions that can grant roles, app permissions, or ownership (Entra ID) | Same as above | IdP |
+| Non-Tier Zero principals that can take control of a subscription or management group (owner, user access administrator) (Azure) | Excessive grants of cloud management roles (owner, access administrator) | IaaS / PaaS |
+| Non-Tier Zero principals that can run code on VMs, containers, web apps, or Automation (Azure) | Excessive grants of code execution on resources (taking over workload identities) | IaaS / PaaS |
+| Non-Tier Zero principals that can read Key Vault secrets, keys, or certificates (Azure) | Concentration of privilege in the secrets manager | Secrets manager |
 
 - The "non-Tier Zero" queries do not count principals that carry BloodHound's **Tier Zero mark** (domain admins, directory servers, and others that legitimately hold the permission). The judgment is left to BloodHound.
 - The queries and mappings are read-only (`MATCH … RETURN`). Write Cypher is forbidden by the bundled mapping, and BloodHound CE itself rejects it by default.
@@ -54,12 +60,29 @@ It sends the 10 bundled queries to BloodHound, counts the matching principals, a
 
 ## 3. Preparing the diagram
 
-Findings are attached to nodes on the diagram. Place these two kinds.
+Findings are attached to nodes on the diagram. Place these kinds (the IdP, IaaS / PaaS, and secrets manager are not needed if you do not use Entra ID or Azure).
 
 | Node | What it represents |
 |---|---|
 | **Directory** (Identity & Access) | AD. Findings on Kerberoasting, delegation, replication rights, LAPS, and GPOs are attached here |
 | **Certificate authority (CA)** (Identity & Access; **a new type**) | The certificate authority of AD CS, if you use it. Includes certificate templates and enrollment interfaces (web enrollment, RPC). AD CS findings are attached here |
+| **IdP** (Identity & Access) | Entra ID. Findings on the permissions of apps and service principals are attached here |
+| **IaaS** or **PaaS** | An Azure subscription. Findings on management scope and code execution are attached here |
+| **Secrets manager** | An Azure Key Vault. Key Vault findings are attached here |
+
+**If there is no IdP on the diagram, Entra ID findings are left unattached** (they are not attached to the directory). Likewise, Azure management-scope and code-execution findings are left unattached if there is no IaaS / PaaS, and Key Vault findings if there is no secrets manager.
+
+The IdP comes with these two threat rules, written as threats of IdPs that hold app registrations in general (not only Entra ID). The "Confirmed by BloodHound" mark appears on the same threats.
+
+- Taking over registered apps by adding credentials
+- Tenant-wide privileges held by apps on their own (app-only)
+
+IaaS and PaaS come with these two threat rules, written as general threats that apply to AWS and Google Cloud as well as Azure. The "Confirmed by BloodHound" mark appears on the same threats.
+
+- Excessive grants of cloud management roles (owner, access administrator)
+- Excessive grants of code execution on resources (taking over workload identities)
+
+Key Vault findings link to the existing threat of the secrets manager (concentration of privilege in the secrets manager).
 
 The CA type comes with these three threat rules. If you use AD CS, place it on the diagram.
 
@@ -110,12 +133,17 @@ A response for zero matches (HTTP 404 with `resource not found`) is also read as
 |---|---|
 | Everything except AD CS | The directory, if the diagram has exactly one. If there are several, `--node C1` (C number or node ID) |
 | AD CS findings | The CA. If there are several, `--ca-node C2`. If there is no CA, the directory |
+| Entra ID findings | The IdP, if the diagram has exactly one. If there are several, `--idp-node C3`. If there is no IdP, left unattached |
+| Azure management-scope and code-execution findings | IaaS or PaaS (exactly one of either on the diagram). If there are several, `--cloud-node C4`. If there is none, left unattached |
+| Azure Key Vault findings | The secrets manager, if the diagram has exactly one. If there are several, `--vault-node C5`. If there is none, left unattached |
+
+Azure findings are one per observation, not split per resource (even with several subscriptions or Key Vaults, they are attached together to one node).
 
 To import per domain, use `--scope` (default `default`). **Re-importing replaces the findings of the same scope.** Findings of other scopes remain.
 
 ```bash
 node dist-cli/main.js import-bloodhound my-project.json --api https://bloodhound.example.com \
-  --node C1 --ca-node C2 --scope corp.example.com -o out.json
+  --node C1 --ca-node C2 --idp-node C3 --cloud-node C4 --vault-node C5 --scope corp.example.com -o out.json
 ```
 
 `--report <md|json>` selects the format of the per-query count report (default `md`, to standard output).
@@ -136,8 +164,8 @@ To see in what order the principals can be followed to a compromise, use the Blo
 
 | Kind | Handling |
 |---|---|
-| User names | **Not stored.** Only the count is kept |
-| Names of computers, groups, GPOs, OUs, certificate templates, CAs, and domains | Kept as asset information (up to 20 per finding) |
+| User names (including Entra ID and Azure users) | **Not stored.** Only the count is kept |
+| Names of computers, groups, GPOs, OUs, certificate templates, CAs, domains, apps, service principals, roles, managed identities, subscriptions, VMs, Key Vaults, and the like | Kept as asset information (up to 20 per finding) |
 | Internal identifiers such as SIDs | Not stored |
 
 ---
@@ -147,8 +175,8 @@ To see in what order the principals can be followed to a compromise, use the Blo
 - **The attack path itself (in what order it is followed) is viewed in BloodHound.** CyberRiskScape goes as far as the counts and the mapping to threats.
 - The "attack path findings" API of BloodHound **Enterprise** is not used. Only the Cypher of CE.
 - Collection (SharpHound and the like) is done by you on the BloodHound side.
-- The first stage covers AD only. Entra ID is planned.
-- It was verified by running the official BloodHound CE docker-compose locally and importing the test collection data from the official repository (2026-11-15: API signing, handling of zero matches, detection of AD CS ESC (3 findings), and exclusion of Tier Zero). **It has not been verified against the AD of a real organization.**
+- Entra ID covers the permissions of apps and service principals (3 queries). Azure covers control of subscriptions and management groups, code execution, and reading Key Vault (3 queries). Permissions on other resources are out of scope.
+- It was verified by running the official BloodHound CE docker-compose locally and importing the test collection data from the official repository (2026-11-15: API signing, handling of zero matches, detection of AD CS ESC (3 findings), and exclusion of Tier Zero). The 3 Entra ID queries and the 3 Azure queries were confirmed to be accepted by BloodHound CE and to be read as zero matches when there is no data. **They have not been verified with real Entra ID or Azure data** (the official test collection data does not include them; the mapping was checked with fictitious data). **It has not been verified against the AD of a real organization either.**
 
 ---
 
