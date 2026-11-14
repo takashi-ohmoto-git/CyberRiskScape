@@ -151,7 +151,7 @@ sharing the same context**. Each feature has its main users and its role:
 |---|---|---|
 | **Canvas** | Executives, service planners, security engineers | The place where everyone **discusses the whole threat picture from the same vantage point**. It makes the tacit knowledge of the business and engineering sides visible as a diagram and its threats |
 | **Analytics** | Security engineers, internal auditors | Security engineers scrutinize threats and record risk scores, responses and control status. Internal auditors **review the state of security controls** from those records |
-| **PDF report (Report)** | Executives | Grasp **the critical threats (top 10) and control implementation progress** on a one-page summary (see [Exporting PDF Reports and Diagram Images](report-export.md)) |
+| **PDF report (Report)** | Executives | Grasp **the critical threats (top 10) and the implemented rate** on a one-page summary (see [Exporting PDF Reports and Diagram Images](report-export.md)) |
 | **DCRH THREAT_MODEL.md (Report)** | AI-driven vulnerability assessment | Feed threat-modeling information — what you protect, the trust boundaries, the decisions people made — to AI vulnerability assessment, **raising its accuracy in the era of frontier AI** (see [Security Context](security-context.md)) |
 | **CLI** | Development teams, CI/CD | Treat the saved project as a source-of-truth file and **build it into the CI/CD of AI-driven development**, with people reviewing threat diffs on pull requests (see [Integrating with AI-Driven Development CI](ci-integration.md)) |
 

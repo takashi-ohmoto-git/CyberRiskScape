@@ -84,22 +84,35 @@ Four indicators run across the top.
 |---|---|
 | **Active threats** | The number of threats **excluding** accepted and false-positive ones |
 | **Critical + High** | Active threats whose effective severity is Critical or High |
-| **Control implementation progress** | How many controls are in place (defined below). Shown overall and for Critical + High only |
+| **Implemented (weighted)** | How many controls are in place (defined below). Shown overall and for Critical + High only, together with the share that has a control status set and a treatment decided |
 | **Unaddressed** | Active threats with **no risk treatment recorded yet** |
 
 > The image above is the guide's AI chatbot with a handful of records entered.
-> Figures such as 42 active threats and 6 / 39 implemented (15%) are **values for this example only**.
+> The figures in the image are **values for this example only**.
+> The image is from an earlier version: the third indicator had a different name and calculation
+> ("Control implementation progress").
 
-#### How control implementation progress is defined
+#### How "Implemented", "Set" and "Treated" are defined
 
-    progress = implemented ÷ (active threats − those whose control status is "Not applicable")
+These are the same calculation as the figures at the top right of Analytics and in the CLI `indicators` command.
 
-- The denominator is the active threats minus those whose control status is **Not applicable**
-  (you decided no control is needed in this design). In the example, 42 active threats minus
-  3 "Not applicable" gives a denominator of 39.
+| Indicator | What it counts |
+|---|---|
+| **Implemented** | Threats whose control status is "Implemented" |
+| **Set** | Threats whose control status is not unset (Implemented, Required, Rejected) |
+| **Treated** | Threats whose risk treatment is not unset (Avoid, Reduce, Transfer, Accept) |
+
+- **Rates are weighted by severity** (Critical 8, High 4, Medium 2, Low 1). Putting a control on a
+  severe threat moves the figure more. The "n / m implemented" line is a plain count, so it does not
+  match the rate.
+- Threats marked **False positive** and threats whose control status is **Not applicable** are left out.
+- **Accepted threats stay in scope.** Accepting a risk does not raise the implemented rate.
 - **Not set, Required (decided to do, not yet in place) and Rejected** count as **not implemented**
-  and stay in the denominator. Leaving something unrecorded never makes progress look better.
-- When the denominator is 0, the value shows **"—"**.
+  and stay in scope. Leaving something unrecorded never makes the figure look better.
+- "Set" and "Treated" show how much has been reviewed, not how much risk has been reduced.
+- When nothing is in scope, the value shows **"—"**.
+- The PDF covers the layers included in the export. Analytics covers all layers, so a PDF of only
+  some layers shows different figures.
 
 For what each status means, see [Reading the Threat Panel, section 5](reading-threats.md).
 
@@ -188,12 +201,12 @@ Check these before exporting.
 
 ## 7. Common sticking points
 
-**Q. Control implementation progress shows "—".**
-That is what appears when the denominator is 0: there are no active threats, or all of them are "Not applicable".
+**Q. "Implemented" shows "—".**
+That is what appears when nothing is in scope: there are no threats, or all of them are "False positive" or "Not applicable".
 
-**Q. Progress is lower than I expected.**
+**Q. "Implemented" is lower than I expected.**
 Threats whose control status is **not recorded count as not implemented**. If a control really is in
-place, record "Implemented" in Analytics.
+place, record "Implemented" in Analytics. Accepted threats also stay in scope.
 
 **Q. The threat count does not match the CSV.**
 The PDF's "Active threats" **excludes accepted and false-positive threats**. The CSV includes
