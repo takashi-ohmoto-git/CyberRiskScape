@@ -186,6 +186,20 @@
 #   - 中間コネクタ改ざん（connector-tampering）・ログ・アカウント棚卸し・PQC の crypto-agility・間接プロンプトインジェクションの
 #     接続先・静的 API キー・MCP の資格情報の集中の対象には、従来 CONNECTOR に含めていた iPaaS の分として加えた。
 #
+#   2026-11-14 追加（AI 自律ペンテスト基盤の悪用に関する公的機関の注意喚起で、即時対応に挙げられた攻撃面の穴埋め。
+#   出典は一般基準とベンダーの公式文書）:
+#   - PaaS のデプロイ・公開用エンドポイントの露出（api-paas-deployment-endpoint-exposure-001、canonicalId:
+#     paas-deployment-endpoint-exposure）。管理面リモートアクセス（web-remote-management-exposure）は
+#     攻撃面属性で SSH / RDP / 管理画面の露出を問い、本ルールは PaaS が既定で公開するコードの配置口
+#     （SCM/Kudu・FTP・Web Deploy）と基本認証の公開用資格情報で、配置済みのファイルを書き換えられる問いで、
+#     仕組みと subject（PAAS）が違う。PAAS は攻撃面属性を持たないため、接続があれば常に発火する（ユーザー決定）。
+#     CI/CD の実行内容の汚染（api-ci-pipeline-poisoned-execution）は配置する側の問いで別。
+#   - XML 外部実体参照（api-backend-xml-external-entity-001、canonicalId: api-xml-external-entity）。
+#     SSRF（api-server-side-request-forgery）とはメタデータサービスへの到達という結果が重なるが、入口が
+#     XML パーサーの設定で対策（DTD の禁止）が違い、ファイルの読み出しも含むため別グループ。
+#   - サーバー側テンプレートインジェクション（SSTI）は新ルールにせず、結果と対策が同じ
+#     api-backend-remote-code-execution-001（canonicalId: api-server-code-execution）に含めた（ユーザー決定）。
+#
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する。
 
@@ -717,10 +731,10 @@ rules:
     canonicalId: api-server-code-execution
     framework: STRIDE
     category: "Elevation of Privilege"
-    name: "API サーバー上での任意のコード実行（デシリアライズ・ファイル書き込み・OS コマンド）"
+    name: "API サーバー上での任意のコード実行（デシリアライズ・ファイル書き込み・OS コマンド・テンプレート）"
     severity: Critical
-    description: "{{nodeName}} が、呼び出し元から受け取ったデータをプログラムのオブジェクトとして復元する（危険なデシリアライズ）、アップロードされたファイルを利用者の指定した名前・場所に保存する、受け取った値を OS コマンドの引数に渡す、のいずれかを行っている場合、攻撃者は細工したデータ・ファイル名（../ を含むパス等）・コマンドの区切り文字を送り、{{nodeName}} の上で任意のプログラムを実行させたり、設定ファイルやプログラム自体を上書きしたりできる（Can）。運用・保守用の機能（ファイルの読み書き、コマンドの実行、デバッグ用の画面）が利用者向けの API と同じ入口で公開されていれば、それを呼ぶだけで同じことができる。コードを実行されると、{{nodeName}} が持つデータベースの接続情報・API キー・クラウドの権限を使って、つながる全システムへ侵入を広げられる。一方、信頼できないデータをオブジェクトとして復元せず（JSON 等の単純な形式で受け、型を検証する）、アップロードしたファイルをサーバーが決めた名前で実行されない場所に保存し、OS コマンドを呼ばずにライブラリの機能を使い、管理用の機能を公開していなければ、細工したデータを送っても実行には至らない（Cannot）。blast radius は {{nodeName}} の実行権限で触れられる全データと認証情報、そこから到達できる内部ネットワーク。"
-    mitigation: "[Foundation] 信頼できない入力を、言語固有の形式（Java のシリアライズ、PHP の unserialize、Python の pickle 等）でオブジェクトに復元しない。JSON 等の単純な形式で受け取り、型をスキーマで検証する。アップロードしたファイルは、サーバーが生成した名前で、Web から実行されない場所（公開ディレクトリの外・オブジェクトストレージ）に保存し、利用者が指定したパスを使わない。OS コマンドの呼び出しをライブラリの機能に置き換え、やむを得ない場合も引数を許可リストで検証し、シェルを介さずに渡す。運用・デバッグ用の機能を利用者向けの API に公開しない。 [Enterprise] API サーバーを最小権限の実行ユーザーで動かし、プログラムの置き場所を書き込み不可にする。使っているライブラリ・フレームワークの脆弱性（デシリアライズ等）を期限を決めて修正する。API サーバーから起動されるシェルや想定外のプロセスを EDR 等で検知する。 [Advanced] API サーバーを読み取り専用のコンテナイメージで動かし、実行中にファイルを書き換えられない構成にする。API サーバーから内部・外部への通信を必要な宛先だけに制限し、侵害時の持ち出しと横展開を抑える。"
+    description: "{{nodeName}} が、呼び出し元から受け取ったデータをプログラムのオブジェクトとして復元する（危険なデシリアライズ）、アップロードされたファイルを利用者の指定した名前・場所に保存する、受け取った値を OS コマンドの引数に渡す、受け取った値をテンプレートエンジンのテンプレートそのものに連結して描画する（サーバー側テンプレートインジェクション）、のいずれかを行っている場合、攻撃者は細工したデータ・ファイル名（../ を含むパス等）・コマンドの区切り文字・テンプレートの構文を送り、{{nodeName}} の上で任意のプログラムを実行させたり、設定ファイルやプログラム自体を上書きしたりできる（Can）。運用・保守用の機能（ファイルの読み書き、コマンドの実行、デバッグ用の画面）が利用者向けの API と同じ入口で公開されていれば、それを呼ぶだけで同じことができる。コードを実行されると、{{nodeName}} が持つデータベースの接続情報・API キー・クラウドの権限を使って、つながる全システムへ侵入を広げられる。一方、信頼できないデータをオブジェクトとして復元せず（JSON 等の単純な形式で受け、型を検証する）、アップロードしたファイルをサーバーが決めた名前で実行されない場所に保存し、OS コマンドを呼ばずにライブラリの機能を使い、利用者の値をテンプレートに変数として渡し、管理用の機能を公開していなければ、細工したデータを送っても実行には至らない（Cannot）。blast radius は {{nodeName}} の実行権限で触れられる全データと認証情報、そこから到達できる内部ネットワーク。"
+    mitigation: "[Foundation] 信頼できない入力を、言語固有の形式（Java のシリアライズ、PHP の unserialize、Python の pickle 等）でオブジェクトに復元しない。JSON 等の単純な形式で受け取り、型をスキーマで検証する。アップロードしたファイルは、サーバーが生成した名前で、Web から実行されない場所（公開ディレクトリの外・オブジェクトストレージ）に保存し、利用者が指定したパスを使わない。OS コマンドの呼び出しをライブラリの機能に置き換え、やむを得ない場合も引数を許可リストで検証し、シェルを介さずに渡す。利用者の値をテンプレートの文字列に連結せず、変数としてテンプレートに渡す（利用者が編集できるテンプレートが必要なら、サンドボックスつきのテンプレートエンジンで使える機能を絞る）。運用・デバッグ用の機能を利用者向けの API に公開しない。 [Enterprise] API サーバーを最小権限の実行ユーザーで動かし、プログラムの置き場所を書き込み不可にする。使っているライブラリ・フレームワークの脆弱性（デシリアライズ等）を期限を決めて修正する。API サーバーから起動されるシェルや想定外のプロセスを EDR 等で検知する。 [Advanced] API サーバーを読み取り専用のコンテナイメージで動かし、実行中にファイルを書き換えられない構成にする。API サーバーから内部・外部への通信を必要な宛先だけに制限し、侵害時の持ち出しと横展開を抑える。"
     appliesTo:
       kind: node
       nodeType: BACKEND_API
@@ -754,6 +768,8 @@ rules:
         url: "https://attack.mitre.org/techniques/T1505/003/"
       - title: "MITRE ATT&CK T1059 - Command and Scripting Interpreter（OS コマンドの実行）"
         url: "https://attack.mitre.org/techniques/T1059/"
+      - title: "MITRE CWE-1336: Improper Neutralization of Special Elements Used in a Template Engine"
+        url: "https://cwe.mitre.org/data/definitions/1336.html"
 
   # ── BACKEND_API / GATEWAY: エラー応答による内部情報の露出（API8 / CWE-209）──
   - id: api-error-response-disclosure-001
@@ -1090,3 +1106,68 @@ rules:
         url: "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"
       # 資格情報を集中して保管するという点で MCP サーバーのトークン集中（mcp-oauth-token-confused-deputy）と近いが、
       # あちらは MCP の OAuth 委任の問題、こちらは連携先ごとの接続の権限と書き戻しが対象のため別 canonicalId。
+
+  # ── PAAS: デプロイ・公開用エンドポイントの露出（基本認証の公開用資格情報）────────
+  - id: api-paas-deployment-endpoint-exposure-001
+    canonicalId: paas-deployment-endpoint-exposure
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "PaaS のデプロイ・公開用エンドポイントの露出（基本認証の公開用資格情報）"
+    severity: High
+    description: "{{nodeName}}（PaaS）でアプリを動かす場合、多くの PaaS はコードを配置するための入口（Azure App Service の Kudu / SCM サイト、FTP / FTPS、Web Deploy 等）を既定でインターネットに公開し、ユーザー名とパスワードだけの公開用資格情報（発行プロファイル等）で受け付ける。攻撃者は、構成ファイル・CI/CD の設定・リポジトリ・開発者の端末から漏れた公開用資格情報を使えば、利用者向けの画面を経由せずに配置済みのファイルを書き換えて Web シェルを置いたり、管理用の API からコマンドを実行して環境変数・接続文字列・マネージド ID のトークンを取り出したりできる（Can）。資格情報の探索と試行は AI による自動化で手間がかからなくなっており、送信元を限らない入口は短時間で試される。一方、基本認証による公開を無効にして配置を IdP の認証（短命のトークン）と CI/CD 用のワークロード ID に限り、デプロイ用の入口を管理用のネットワーク・プライベート接続からだけ到達できるようにし、配置したパッケージを読み取り専用で動かしていれば、漏れたパスワードだけでは配置済みのアプリを書き換えられない（Cannot）。blast radius は {{nodeName}} で動くアプリのコード・設定・環境変数の秘密と、そのアプリの ID で到達できるデータベース・ストレージ・クラウドの権限。"
+    mitigation: "[Foundation] デプロイ・公開用の入口（SCM / Kudu・FTP・Web Deploy 等）で基本認証（ユーザー名とパスワードの公開用資格情報）を無効にし、配置は IdP の認証か CI/CD 用のワークロード ID（OIDC のフェデレーション等）に限る。使っていない配置方式（FTP 等）を止める。発行プロファイル等の公開用資格情報がリポジトリ・構成ファイル・CI/CD の変数に残っていないか確かめ、見つかれば作り直す。 [Enterprise] デプロイ用の入口へのアクセスを、アプリ本体の公開範囲とは別に、管理用のネットワーク・プライベートエンドポイント・CI/CD の実行環境の送信元に限る。配置・コマンドの実行・資格情報の再発行を監査ログに記録し、通常の CI/CD 以外からの配置を通知する。管理面をインターネットに出す前に設計レビューを必須にする。 [Advanced] パッケージからの実行（読み取り専用のパッケージをマウントして動かす方式）や不変のコンテナイメージで、実行中の環境で配置済みのファイルを書き換えられない構成にする。配置するパッケージに署名し、署名を確かめたものだけを動かす。"
+    appliesTo:
+      kind: node
+      nodeType: PAAS
+      # PAAS は攻撃面属性を持たないため、接続があれば発火する（2026-11-14 ユーザー決定）。
+      # 対策済みかどうかはカードの対応状況で扱う。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+      - standard: nist-csf-2.0
+        ref: "PR.IR-01"
+    references:
+      - title: "Microsoft Learn - Disable basic authentication in App Service deployments"
+        url: "https://learn.microsoft.com/en-us/azure/app-service/configure-basic-auth-disable"
+      - title: "Microsoft Learn - Run your app in Azure App Service directly from a ZIP package"
+        url: "https://learn.microsoft.com/en-us/azure/app-service/deploy-run-package"
+      - title: "MITRE ATT&CK T1078.004 - Valid Accounts: Cloud Accounts（漏れた公開用資格情報による配置）"
+        url: "https://attack.mitre.org/techniques/T1078/004/"
+      - title: "MITRE ATT&CK T1552.001 - Unsecured Credentials: Credentials In Files（構成ファイル・リポジトリに残った公開用資格情報）"
+        url: "https://attack.mitre.org/techniques/T1552/001/"
+      - title: "MITRE ATT&CK T1505.003 - Server Software Component: Web Shell（配置済みのファイルの書き換えによる Web シェルの設置）"
+        url: "https://attack.mitre.org/techniques/T1505/003/"
+      # 攻撃面属性による SSH / RDP / 管理画面の露出は web-remote-management-exposure が扱う（別 canonicalId）。
+
+  # ── BACKEND_API: XML 外部実体参照（XXE）────────────────────────────
+  - id: api-backend-xml-external-entity-001
+    canonicalId: api-xml-external-entity
+    framework: STRIDE
+    category: "Information Disclosure"
+    name: "XML 外部実体参照（XXE）"
+    severity: High
+    description: "{{nodeName}} が呼び出し元から XML（SOAP の要求、SAML のアサーション、XML を含む文書形式〔Office 文書・SVG 等〕のアップロード、設定の取り込み）を受け取り、XML パーサーが文書型定義（DTD）と外部実体の解決を有効にしたまま解析している場合、攻撃者は外部実体を宣言した XML を送り、サーバー上のファイル（設定ファイル・鍵・OS のアカウント一覧等）を応答に含めさせたり、サーバー自身に内部の URL を取りに行かせてクラウドのメタデータサービスから一時的な認証情報を読み出したりできる（Can）。応答に結果が出ない場合でも、外部への通信やエラーの内容を通じて値を持ち出せる。古い版や既定の設定のまま外部実体を解決する XML ライブラリは今も多い。一方、XML パーサーで DTD を禁止し（少なくとも外部実体と外部の DTD の読み込みを無効にし）、JSON 等で足りる API では XML を受け付けず、サーバーからメタデータサービス・内部ネットワークへの通信を制限していれば、細工した XML を送っても実体は展開されない（Cannot）。blast radius は {{nodeName}} の実行権限で読めるファイルと、メタデータサービスから得たクラウドの権限で到達できる全リソース。"
+    mitigation: "[Foundation] 使っているすべての XML パーサーで DTD を禁止する（できない場合は外部の一般実体・パラメーター実体・外部 DTD の読み込みを無効にする）。XML を受け付ける入口（SOAP・SAML・ファイルのアップロード・取り込み機能）を洗い出し、JSON 等で足りるものは XML をやめる。XML を扱うライブラリを、既定で外部実体を解決しない版に更新する。 [Enterprise] クラウドのメタデータサービスはトークンを必須にする方式（AWS IMDSv2 等）に限り、API サーバーから内部ネットワーク・メタデータサービスへの通信を必要な宛先に制限する。XXE の検査（SAST・DAST）を CI で実行する。XML の解析エラーの詳細を応答に含めない。 [Advanced] XML の解析を、ファイルシステムとネットワークに触れられない隔離した処理（専用のコンテナ・サンドボックス）に分ける。"
+    appliesTo:
+      kind: node
+      nodeType: BACKEND_API
+      # 呼び出し元からの入力を受けるとき発火する（BOLA ルールと同じ前提）。
+      connection:
+        direction: inbound
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-06"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+    references:
+      - title: "MITRE CWE-611: Improper Restriction of XML External Entity Reference"
+        url: "https://cwe.mitre.org/data/definitions/611.html"
+      - title: "OWASP Cheat Sheet Series - XML External Entity Prevention Cheat Sheet"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html"
+      - title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application（XML パーサーの外部実体の悪用）"
+        url: "https://attack.mitre.org/techniques/T1190/"
+      - title: "MITRE ATT&CK T1552.005 - Unsecured Credentials: Cloud Instance Metadata API（メタデータサービスからの認証情報の取得）"
+        url: "https://attack.mitre.org/techniques/T1552/005/"
+      # URL を受け取る機能からの内部への通信は api-server-side-request-forgery が扱う（別 canonicalId）。

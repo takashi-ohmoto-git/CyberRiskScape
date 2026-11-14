@@ -3,7 +3,7 @@
 **An open-source Security Context Layer built on threat modeling — for AI, LLM, agentic systems, and post-quantum cryptography**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-299-orange.svg)](data/threat-library)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-302-orange.svg)](data/threat-library)
 [![Tests](https://img.shields.io/badge/tests-2598%20passing-brightgreen.svg)](#development)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
@@ -49,7 +49,7 @@ For the thinking behind it, see [An Introduction to Secure by Design](guide/secu
 For the feature list, see [here](guide/README.md).
 
 > **Interface language.** English and Japanese are both supported — use the JA / EN switch
-> in the top bar, and your choice is remembered. The interface, all 299 threat rules
+> in the top bar, and your choice is remembered. The interface, all 302 threat rules
 > (name, category, description, mitigations) and every component type label are
 > translated. Help is welcome.
 
@@ -60,7 +60,7 @@ For the feature list, see [here](guide/README.md).
 | Problem | How CyberRiskScape solves it |
 |---|---|
 | **Design and threat modeling** | |
-| Threat modeling needs experts and time, so it cannot be run for every design change | Draw the architecture, and 299 rules list the threats that fit it. Start from templates; unset attributes are assumed to be the bad value so nothing is missed ([Getting Started](guide/getting-started.md)) |
+| Threat modeling needs experts and time, so it cannot be run for every design change | Draw the architecture, and 302 rules list the threats that fit it. Start from templates; unset attributes are assumed to be the bad value so nothing is missed ([Getting Started](guide/getting-started.md)) |
 | Conventional methods cannot surface the risks of AI agents, LLMs, MCP servers and long-term memory | Agentic AI is a first-class component, evaluated with rules based on OWASP LLM, Agentic, MITRE ATLAS and more ([AI-driven development](guide/ai-driven-development.md)) |
 | The threat model goes stale with every design change and cannot keep up with code written by AI | Coding agents query threats and update the diagram over MCP, and CI detects new threats from diagram diffs and blocks the PR ([MCP](guide/mcp-integration.md), [CI](guide/ci-integration.md)) |
 | You cannot tell where an AI-agent attacker would get in and what it would go after first | Place an AI agent attacker on the diagram to see the entry points it can use, the targets it is likely to go after and the paths it would prioritize, along with choke points where one countermeasure cuts the most paths and monitoring blind spots. Techniques are shown on ATT&CK and MITRE F3 matrices ([Attack paths](guide/attack-paths.md), [Where to cut the attack paths](guide/agentic-attacker-paths.md)) |
@@ -369,7 +369,7 @@ Near-term priorities, in order:
    detection confidence stated explicitly
 
 Done recently: an English UI with a language switcher, plus English translation overlays
-for all 299 threat rules and every component type label, all leaving the existing schemas
+for all 302 threat rules and every component type label, all leaving the existing schemas
 unchanged.
 
 ---

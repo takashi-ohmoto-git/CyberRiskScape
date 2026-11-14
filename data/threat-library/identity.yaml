@@ -220,6 +220,12 @@
 #   - identity-local-credential-outside-idp-001（ローカル資格情報）は **発行元が宣言
 #     されていないエッジ**が subject。DIRECTORY を発行元として宣言した経路では発火せず、
 #     本 4 件とは条件が排他的に近い（重ならない）。
+#   - ローカル管理者パスワードの読み取り権限の過剰付与（identity-directory-local-admin-password-overread-001、
+#     canonicalId: directory-local-admin-password-overread、2026-11-14 追加）は、複製権限の悪用
+#     （directory-replication-credential-dump）と「ディレクトリの正規の読み取りで資格情報を一括取得する」点が
+#     共通するが、取れるのはドメインのアカウントではなく参加端末ごとのローカル管理者パスワードで、
+#     必要な権限（コンピューターのオブジェクトの属性の読み取り）も対策（層ごとの読み取り権限の分離・使用後の変更）も
+#     異なるため別 canonicalId とした。出典は Microsoft Learn（Windows LAPS）と ATT&CK T1078.003 / T1021。
 #   - LDAP の匿名バインド・平文バインド等の**プロトコル設定**は本ファイルでは扱わない。
 #     平文通信は stride-edge-plain-encryption-001、無認証は
 #     stride-edge-unauth-internet-001 / zt-implicit-trust-network-location-001 の領分。
@@ -906,3 +912,30 @@ rules:
         url: "https://cwe.mitre.org/data/definitions/916.html"
       - title: "MITRE ATT&CK T1110.002 - Brute Force: Password Cracking（入手したハッシュの解読）"
         url: "https://attack.mitre.org/techniques/T1110/002/"
+
+  # ── DIRECTORY: ローカル管理者パスワード（LAPS）の読み取り権限の過剰付与 ─────
+  - id: identity-directory-local-admin-password-overread-001
+    canonicalId: directory-local-admin-password-overread
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "ローカル管理者パスワード（LAPS）の読み取り権限の過剰付与"
+    severity: High
+    description: "{{nodeName}} は、参加している端末・サーバーごとに自動で変更するローカル管理者のパスワード（Windows LAPS 等）をコンピューターのオブジェクトの属性として保管し、読み取り権限を持つ主体に渡す。読み取り権限は、ヘルプデスクや端末管理のグループへの委任、組織単位（OU）での広い付与、権限の継承、過去の導入時の設定などで、想定より広い主体に残りやすい。攻撃者はそのいずれか 1 つのアカウントを掌握すれば、ディレクトリへの通常の問い合わせだけで多数の端末のローカル管理者パスワードを一括で読み、各端末に管理者としてログオンして、そこに残る資格情報を盗みながら横展開できる（Can）。端末ごとにパスワードが違うことで使い回しによる横展開は防げるが、読み取り権限の範囲が広ければその利点は失われる。一方、読み取り権限を端末の層（一般端末・サーバー・ディレクトリサーバー）ごとに必要な管理者グループだけに絞って継続的に監査し、パスワードの読み取りを監査ログに記録して一括の読み取りを検知し、使用後にパスワードを自動で変更していれば、1 つのアカウントの侵害が多数の端末の管理者権限へは広がらない（Cannot）。blast radius は読み取り権限が及ぶ組織単位の全端末・サーバーと、そこに保持・キャッシュされている資格情報。この図で {{nodeName}} を資格情報の発行元として宣言しているコンポーネントは {{dependentCount}} 件（{{dependentNames}}）。"
+    mitigation: "[Foundation] ローカル管理者パスワードの読み取り権限を持つ主体を組織単位ごとに列挙し、端末の層ごとに必要な管理者グループだけに絞る（サーバー・ディレクトリサーバーの分を一般端末の管理者に読ませない）。継承や過去の委任で残った権限を外す。パスワードを暗号化して保存する方式を使う。 [Enterprise] パスワードの読み取りを監査ログに記録し、1 つのアカウントによる多数の端末の一括の読み取りを SIEM で通知する。パスワードを使った後に自動で変更する設定にする。読み取り権限の変更を構成ドリフトとして検知する。 [Advanced] 管理階層（Tier 0 / 1 / 2）を分け、上位の層の端末のパスワードは特権アクセス管理（PAM）の承認つきの取り出しに限る。ローカル管理者によるネットワーク経由のログオンを禁止し、パスワードを読まれても横展開に使えない構成にする。"
+    appliesTo:
+      kind: node
+      nodeType: DIRECTORY
+      # 認証を依存する相手が接続されているとき発火（デフォルト接続要件。DIRECTORY 系 4 件と同じ）。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "Microsoft Learn - Windows LAPS overview"
+        url: "https://learn.microsoft.com/en-us/windows-server/identity/laps/laps-overview"
+      - title: "MITRE ATT&CK T1078.003 - Valid Accounts: Local Accounts（読み出したローカル管理者パスワードの使用）"
+        url: "https://attack.mitre.org/techniques/T1078/003/"
+      - title: "MITRE ATT&CK T1021 - Remote Services（ローカル管理者による他の端末への横展開）"
+        url: "https://attack.mitre.org/techniques/T1021/"
+      # ドメインの全アカウントの資格情報の一括取得は directory-replication-credential-dump が扱う（別 canonicalId）。
