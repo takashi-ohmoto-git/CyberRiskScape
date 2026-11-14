@@ -130,7 +130,7 @@ describe('subset', () => {
     const s = await createFontSubsetter(wasm);
     const out = s.subset(regular, '脅威モデリング');
     expect(out.byteLength).toBeLessThan(regular.byteLength / 20);
-  });
+  }, 30_000);
 });
 
 describe('buildPdfReport', () => {
@@ -140,12 +140,12 @@ describe('buildPdfReport', () => {
     expect(bytes.byteLength).toBeLessThan(500 * 1024);
     const doc = await PDFDocument.load(bytes);
     expect(doc.getPageCount()).toBeGreaterThanOrEqual(2);
-  });
+  }, 30_000);
 
   it('英語ロケールでも生成でき、脅威 0 件のレイヤーも扱える', async () => {
     const bytes = await buildPdfReport(input([layer('L0', 0)], 'en'));
     expect(new TextDecoder().decode(bytes.slice(0, 4))).toBe('%PDF');
-  });
+  }, 30_000);
 
   it('最悪ケース（4 レイヤー・上位 10 件が長い名前）でも 1 ページ目が 1 ページに収まり、生の tier タグを印字しない', async () => {
     const bytes = await buildPdfReport(

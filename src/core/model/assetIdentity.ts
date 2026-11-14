@@ -1,3 +1,4 @@
+import { normalizeIdentifier, normalizeIdentifiers } from './identifierSchemes';
 import type { FindingIdentifier } from './types';
 
 /**
@@ -9,8 +10,8 @@ const IPV4 = /^\d{1,3}(\.\d{1,3}){3}$/;
 
 /** ホストの文字列を、IP・FQDN・ホスト名のどれかの識別子にする。 */
 export function hostIdentifier(host: string): FindingIdentifier {
-  if (IPV4.test(host) || host.includes(':')) return { scheme: 'ip', value: host };
-  return { scheme: host.includes('.') ? 'fqdn' : 'hostname', value: host.toLowerCase() };
+  if (IPV4.test(host) || host.includes(':')) return normalizeIdentifier({ scheme: 'ip', value: host });
+  return normalizeIdentifier({ scheme: host.includes('.') ? 'fqdn' : 'hostname', value: host });
 }
 
 /** 資産の項目から同一判定の鍵を作る。重複は除く。 */
@@ -26,13 +27,7 @@ export function assetIdentifiers(asset: {
     hostIdentifier(asset.host),
     ...(asset.url ? [{ scheme: 'url', value: asset.url }] : []),
   ];
-  const seen = new Set<string>();
-  return candidates.filter((id) => {
-    const key = `${id.scheme}\u0000${id.value}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  return normalizeIdentifiers(candidates);
 }
 
 /**

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ASSET_FORMATS, BOM_FORMATS, BUSINESS_CRITICALITIES, BUSINESS_CRITICALITY_SOURCES, CRYPTO_TERMINATIONS, PROJECT_LIFECYCLES, CVSS_VECTOR_RE,EDGE_PROTOCOLS,FINDING_CONDITION_KINDS, FINDING_FORMATS, FINDING_OUTCOMES, MAX_ASSETS, MAX_FINDING_CONDITIONS, MAX_FINDING_OPEN_QUESTIONS, MAX_BOM_COMPONENTS, MAX_FINDINGS, type Asset } from '../../core/model/types';
 import { assetIdentifiers, toIsoTimestamp } from '../../core/model/assetIdentity';
+import { normalizeIdentifiers } from '../../core/model/identifierSchemes';
 import {
   AgencyLevelSchema,
   AuthTypeSchema,
@@ -453,7 +454,7 @@ const PersistedFindingSchema = z.object({
     importedAt: z.string().max(40),
   }),
   externalId: z.string().min(1).max(500),
-  identifiers: z.array(z.object({ scheme: z.string().min(1).max(50), value: z.string().min(1).max(FINDING_TEXT_MAX) })).max(20),
+  identifiers: z.array(z.object({ scheme: z.string().min(1).max(50), value: z.string().min(1).max(FINDING_TEXT_MAX) })).max(20).transform(normalizeIdentifiers),
   title: z.string().max(FINDING_TEXT_MAX).optional(),
   severity: SeveritySchema,
   sourceSeverity: z.string().max(50).optional(),
@@ -513,7 +514,7 @@ const PersistedAssetSchema = z.object({
     importedAt: z.string().max(40),
   }),
   externalId: z.string().min(1).max(3000).optional(),
-  identifiers: z.array(z.object({ scheme: z.string().min(1).max(50), value: z.string().min(1).max(2000) })).max(20).optional(),
+  identifiers: z.array(z.object({ scheme: z.string().min(1).max(50), value: z.string().min(1).max(2000) })).max(20).transform(normalizeIdentifiers).optional(),
   kind: z.enum(['service', 'endpoint']),
   host: z.string().min(1).max(FINDING_TEXT_MAX),
   ip: z.string().max(100).optional(),
@@ -547,7 +548,7 @@ const PersistedBomComponentSchema = z.object({
     importedAt: z.string().max(40),
   }),
   externalId: z.string().min(1).max(2500),
-  identifiers: z.array(z.object({ scheme: z.string().min(1).max(50), value: z.string().min(1).max(2000) })).max(20),
+  identifiers: z.array(z.object({ scheme: z.string().min(1).max(50), value: z.string().min(1).max(2000) })).max(20).transform(normalizeIdentifiers),
   kind: z.enum(['software', 'crypto', 'ai-model', 'dataset', 'other']),
   sourceType: z.string().max(50).optional(),
   name: z.string().min(1).max(500),

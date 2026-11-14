@@ -1,8 +1,9 @@
+import { normalizeIdentifiers } from '../../core/model/identifierSchemes';
 import { MAX_FINDINGS, type Finding, type Severity } from '../../core/model/types';
 
 /**
  * 外部製品の指摘の取り込みで、形式によらず共通の部品（docs/architecture.md §8.6「共通の口」）。
- * - 取り込み直しの置き換え（製品 × 範囲の単位）
+ * - 取り込み直しの置き換え（製品 × 範囲の単位）と、識別子の表記の正規化
  * - 深刻度の正規化
  * - 上限での切り詰め
  */
@@ -28,8 +29,10 @@ export function replaceFindings(
   const prevIds = new Set(prev.map((f) => f.id));
   const nextIds = new Set(incoming.map((f) => f.id));
   const continued = [...nextIds].filter((id) => prevIds.has(id)).length;
+  // 書き込む前に識別子の表記をそろえる（CVE の大文字小文字など。指摘の ID は変わらない）
+  const normalized = incoming.map((f) => ({ ...f, identifiers: normalizeIdentifiers(f.identifiers) }));
   return {
-    findings: [...(existing ?? []).filter((f) => !same(f)), ...incoming],
+    findings: [...(existing ?? []).filter((f) => !same(f)), ...normalized],
     diff: { added: nextIds.size - continued, resolved: prevIds.size - continued, continued },
   };
 }

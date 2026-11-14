@@ -7,6 +7,9 @@ describe('hostIdentifier', () => {
     ['2001:db8::1', 'ip', '2001:db8::1'],
     ['WWW.Example.com', 'fqdn', 'www.example.com'],
     ['intranet', 'hostname', 'intranet'],
+    ['2001:0DB8:0000:0000:0000:0000:0000:0001', 'ip', '2001:db8::1'],
+    ['API.Example.com.', 'fqdn', 'api.example.com'],
+    ['DB01', 'hostname', 'db01'],
   ])('%s → %s', (host, scheme, value) => {
     expect(hostIdentifier(host)).toEqual({ scheme, value });
   });

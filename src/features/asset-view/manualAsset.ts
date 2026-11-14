@@ -1,3 +1,4 @@
+import { normalizeIdentifiers } from '../../core/model/identifierSchemes';
 import { MAX_ASSETS, type Asset, type AssetSubject, type FindingIdentifier } from '../../core/model/types';
 
 /**
@@ -101,7 +102,7 @@ export function createManualAsset(
       id,
       source: { format: 'manual', product: MANUAL_ASSET_PRODUCT, importedAt },
       externalId,
-      identifiers,
+      identifiers: normalizeIdentifiers(identifiers),
       kind: input.kind,
       host,
       ...(ip ? { ip } : {}),

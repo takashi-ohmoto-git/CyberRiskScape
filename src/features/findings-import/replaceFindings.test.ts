@@ -40,6 +40,26 @@ describe('replaceFindings', () => {
   });
 });
 
+describe('replaceFindings（識別子の表記）', () => {
+  it('取り込む指摘の識別子の表記をそろえて書き込む。指摘の ID と既存の指摘は変えない', () => {
+    const existing = { ...mk('Other', 'o1'), identifiers: [{ scheme: 'CVE', value: 'cve-2020-1' }] };
+    const incoming = {
+      ...mk('Scanner', 's1'),
+      identifiers: [
+        { scheme: 'CVE', value: ' cve-2024-1234 ' },
+        { scheme: 'cve', value: 'CVE-2024-1234' },
+        { scheme: 'cwe', value: 'CWE-79' },
+      ],
+    };
+    const { findings } = replaceFindings([existing], [incoming], 'Scanner');
+    expect(findings.find((f) => f.id === 's1')?.identifiers).toEqual([
+      { scheme: 'cve', value: 'CVE-2024-1234' },
+      { scheme: 'cwe', value: '79' },
+    ]);
+    expect(findings.find((f) => f.id === 'o1')).toBe(existing);
+  });
+});
+
 describe('normalizeSeverity', () => {
   it.each([
     ['critical', 'Critical'],
