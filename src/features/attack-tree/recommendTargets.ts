@@ -28,6 +28,7 @@ const CREDENTIAL_HOLDER_TYPES: ReadonlySet<ComponentTypeId> = new Set([
   'DIRECTORY',
   'PAM',
   'IGA',
+  'CERTIFICATE_AUTHORITY',
   'SECRETS_VAULT',
   'HSM',
   'CI_PIPELINE',

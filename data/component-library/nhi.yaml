@@ -1,4 +1,4 @@
-# 非人間アイデンティティ（NHI）と ID ガバナンスのコンポーネントライブラリ。
+# 非人間アイデンティティ（NHI）と ID ガバナンス・ID 基盤の拡張のコンポーネントライブラリ。
 #
 # 人に紐づかない ID（NHI）を、攻撃の主体・権限の持ち主として図に描くための 6 型：
 #   - SERVICE_ACCOUNT: サービスアカウント（ディレクトリやクラウドの技術アカウント・共有アカウント）
@@ -7,6 +7,7 @@
 #   - RPA_BOT: RPAボット（画面操作や業務手順を自動実行するボット）
 #   - PAM: 特権アクセス管理（特権資格情報の保管・払い出しと特権セッションの仲介）
 #   - IGA: IDガバナンス（各システムへのアカウント配布と棚卸し）
+#   - CERTIFICATE_AUTHORITY: 認証局（CA）。社内の証明書の発行基盤（AD 証明書サービス等。2026-11-15 追加）
 #
 # NHI は種類ごとに型を分ける（脅威の当たり方が違うため）。AI エージェントは既存の AGENT / SUB_AGENT を使う。
 # NHI が持つ資格情報（API キー・クライアントシークレット等）は builtin の CREDENTIAL を内包して表す。
@@ -30,7 +31,7 @@ library:
   title: "Non-Human Identity & Identity Governance Components"
   version: "1.0"
   license: "Apache-2.0"
-  description: "非人間アイデンティティ（サービスアカウント / ワークロードID / OAuthクライアント / RPAボット）と、特権アクセス管理・IDガバナンスの型。"
+  description: "非人間アイデンティティ（サービスアカウント / ワークロードID / OAuthクライアント / RPAボット）と、特権アクセス管理・IDガバナンス・認証局の型。"
 
 categories:
   - id: IDENTITY
@@ -93,5 +94,16 @@ components:
     shape: rounded
     color: "bg-fuchsia-600"
     description: "人と NHI のアカウントを各システムへ配布・変更・削除し、権限を棚卸しする基盤。各システムへ接続するための特権資格情報を持つ。"
+    canContain: [CREDENTIAL, LOG]
+    posture: [log, patch, accountReview]
+
+  # ── 認証局（2026-11-15 追加。plan §2.141）──────────────────────────
+  - id: CERTIFICATE_AUTHORITY
+    label: "認証局（CA）"
+    category: IDENTITY
+    icon: { kind: builtin, name: "award" }
+    shape: rounded
+    color: "bg-fuchsia-600"
+    description: "社内の証明書を発行する認証局（AD 証明書サービス等）。証明書テンプレートと登録の窓口（Web 登録・RPC）を含む。発行した証明書がディレクトリへのログオンや TLS の相互認証に使えるため、取られるとディレクトリと同等の影響がある。TLS インスペクション用の CA は各機器の側で扱い、車載の PKI は車両PKIを使う。"
     canContain: [CREDENTIAL, LOG]
     posture: [log, patch, accountReview]

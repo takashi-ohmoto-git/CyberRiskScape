@@ -226,6 +226,14 @@
 #     共通するが、取れるのはドメインのアカウントではなく参加端末ごとのローカル管理者パスワードで、
 #     必要な権限（コンピューターのオブジェクトの属性の読み取り）も対策（層ごとの読み取り権限の分離・使用後の変更）も
 #     異なるため別 canonicalId とした。出典は Microsoft Learn（Windows LAPS）と ATT&CK T1078.003 / T1021。
+#   - 認証局（CERTIFICATE_AUTHORITY。AD 証明書サービス等）の 3 件（2026-11-15 追加、plan §2.141）：
+#     テンプレートの設定不備によるなりすまし（ca-template-impersonation）・登録の窓口への NTLM リレー
+#     （ca-enrollment-ntlm-relay）・CA の秘密鍵と管理権限の奪取による偽造（ca-private-key-forgery）。
+#     TLS インスペクション用の CA の鍵（tls-inspection-ca-key-compromise）は別の型・別の用途、クライアント証明書の
+#     台帳・失効（client-certificate-lifecycle-gap）は証明書を使う側の管理で、いずれも別 canonicalId。
+#     IdP の署名鍵の窃取（idp-token-forgery）とは「信頼された鍵で認証の証拠を偽造する」点が共通するが、
+#     対象（IdP のトークン vs CA の証明書）と対策（HSM・Tier 0 の範囲）が違うため畳み込まない。
+#     出典は ATT&CK T1649・T1557.001、SpecterOps「Certified Pre-Owned」（2021）、Microsoft KB5005413。
 #   - LDAP の匿名バインド・平文バインド等の**プロトコル設定**は本ファイルでは扱わない。
 #     平文通信は stride-edge-plain-encryption-001、無認証は
 #     stride-edge-unauth-internet-001 / zt-implicit-trust-network-location-001 の領分。
@@ -939,3 +947,82 @@ rules:
       - title: "MITRE ATT&CK T1021 - Remote Services（ローカル管理者による他の端末への横展開）"
         url: "https://attack.mitre.org/techniques/T1021/"
       # ドメインの全アカウントの資格情報の一括取得は directory-replication-credential-dump が扱う（別 canonicalId）。
+
+  # ── CERTIFICATE_AUTHORITY: 証明書テンプレートの設定不備による任意の利用者のなりすまし ──
+  - id: identity-ca-template-impersonation-001
+    canonicalId: ca-template-impersonation
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "証明書テンプレートの設定不備による任意の利用者のなりすまし"
+    severity: Critical
+    description: "{{nodeName}} が発行する証明書は、ディレクトリへのログオン（証明書による Kerberos 認証）に使える。証明書テンプレートが「申請者が証明書の主体（誰の証明書か）を自由に指定できる」「クライアント認証に使える」「発行に管理者の承認が要らない」「一般の利用者やドメインのコンピューターが申請できる」を同時に満たしている場合、またはテンプレート・認証局の設定を一般の利用者が書き換えられる場合、攻撃者は掌握した一般のアカウントでドメイン管理者を主体にした証明書を申請し、その証明書でドメイン管理者としてログオンできる（Can）。証明書は申請したアカウントのパスワードを変えても有効期限まで使え、パスワードの変更や MFA ではなりすましを止められない。一方、主体を申請者に指定させないか、指定させるテンプレートは管理者の承認を必須にして申請できる主体を絞り、テンプレートと認証局の設定の変更権限を Tier 0 の管理者だけにし、強い証明書の対応付け（証明書と利用者の確実な結び付け）を有効にしていれば、一般のアカウントを掌握しても他人の証明書は得られない（Cannot）。blast radius は {{nodeName}} の証明書でログオンできるディレクトリの全アカウント。"
+    mitigation: "[Foundation] 証明書テンプレートを棚卸しし、申請者が主体を指定できるテンプレートからクライアント認証の用途を外すか、管理者の承認を必須にする。各テンプレートの申請権限を必要な主体だけに絞り、一般の利用者・ドメインのコンピューター全体に申請・登録を許さない。テンプレートと認証局の設定の変更権限を Tier 0 の管理者だけにする。 [Enterprise] 強い証明書の対応付けを有効にする（証明書を利用者の識別子に確実に結び付ける）。証明書の発行・テンプレートの変更を監査ログに記録し、特権アカウントを主体にした証明書の発行を SIEM で通知する。攻撃経路の分析ツールでテンプレートの設定不備を定期的に検査する。 [Advanced] 認証局を Tier 0 として扱い、管理経路を専用の管理端末に限る。証明書による認証を、必要な利用者・端末だけに限定する。"
+    appliesTo:
+      kind: node
+      nodeType: CERTIFICATE_AUTHORITY
+      # 証明書を申請・利用する相手と接続されているとき発火する（デフォルト接続要件）。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "MITRE ATT&CK T1649 - Steal or Forge Authentication Certificates（設定不備のテンプレートでの証明書の取得）"
+        url: "https://attack.mitre.org/techniques/T1649/"
+      - title: "SpecterOps - Certified Pre-Owned: Abusing Active Directory Certificate Services（2021）"
+        url: "https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf"
+
+  # ── CERTIFICATE_AUTHORITY: 登録の窓口（Web 登録・RPC）への NTLM リレー ──────────────
+  - id: identity-ca-enrollment-ntlm-relay-001
+    canonicalId: ca-enrollment-ntlm-relay
+    framework: STRIDE
+    category: "Spoofing"
+    name: "証明書の登録の窓口への NTLM リレー"
+    severity: High
+    description: "{{nodeName}} の登録の窓口（Web 登録の画面・証明書の登録用の Web サービス・RPC）が NTLM 認証を受け付け、中継の対策（HTTPS と認証の拡張保護、RPC の暗号化の要求）が無い場合、攻撃者はディレクトリサーバー等に攻撃者の端末へ認証させる誘導（認証の強制）を行い、その NTLM 認証を {{nodeName}} の窓口へ中継して、ディレクトリサーバーのコンピューターアカウントの証明書を得られる（Can）。得た証明書でディレクトリサーバーとして認証すれば、複製権限で全アカウントの資格情報を取得できる。一方、使わない窓口（Web 登録等）を止め、残す窓口は HTTPS のみで認証の拡張保護を有効にし、NTLM を無効にするか RPC の暗号化を要求していれば、中継した認証は受け付けられない（Cannot）。blast radius はディレクトリ全体（中継できたコンピューターアカウントの権限、ディレクトリサーバーなら全アカウント）。"
+    mitigation: "[Foundation] 使っていない登録の窓口（Web 登録の画面・登録用の Web サービス）を停止する。残す窓口は HTTPS のみで受け、認証の拡張保護（EPA）を有効にする。RPC での登録には暗号化を要求する。 [Enterprise] 窓口で NTLM 認証を無効にし、Kerberos に限る。ディレクトリサーバーから外への認証の強制（印刷スプーラー等）に使われる機能を止める。コンピューターアカウントを主体にした証明書の発行を監視する。 [Advanced] ドメイン全体で NTLM の利用を監査して段階的に無くす。認証局への到達を管理用のネットワークに限る。"
+    appliesTo:
+      kind: node
+      nodeType: CERTIFICATE_AUTHORITY
+      # 窓口に申請が届く（入力を受ける）とき発火する。
+      connection:
+        direction: inbound
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-03"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "Microsoft Support - KB5005413: Mitigating NTLM Relay Attacks on Active Directory Certificate Services (AD CS)"
+        url: "https://support.microsoft.com/en-us/topic/kb5005413-mitigating-ntlm-relay-attacks-on-active-directory-certificate-services-ad-cs-3612b773-4043-4aa9-b23d-b87910cd3429"
+      - title: "MITRE ATT&CK T1557.001 - Adversary-in-the-Middle: LLMNR/NBT-NS Poisoning and SMB Relay（認証の中継）"
+        url: "https://attack.mitre.org/techniques/T1557/001/"
+      - title: "MITRE ATT&CK T1649 - Steal or Forge Authentication Certificates（中継した認証による証明書の取得）"
+        url: "https://attack.mitre.org/techniques/T1649/"
+
+  # ── CERTIFICATE_AUTHORITY: 認証局の秘密鍵・管理権限の奪取による証明書の偽造 ──────────
+  - id: identity-ca-private-key-forgery-001
+    canonicalId: ca-private-key-forgery
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "認証局の秘密鍵・管理権限の奪取による証明書の偽造"
+    severity: Critical
+    description: "{{nodeName}} の秘密鍵はディレクトリに信頼されており、この鍵で署名した証明書はどの利用者のログオンにも使える。{{nodeName}} のサーバーをディレクトリサーバーより低い管理階層で運用している（一般のサーバー管理者がログオンできる、バックアップに鍵が平文で含まれる、鍵をソフトウェアで保管している）場合、攻撃者はサーバーの管理者権限を得るだけで秘密鍵を持ち出し、{{nodeName}} の外で任意の利用者の証明書を偽造できる（Can）。偽造した証明書は {{nodeName}} の発行記録に残らず失効もできないため、検知と封じ込めが難しく、鍵を作り直してディレクトリの信頼を入れ替えるまで使われ続ける。一方、{{nodeName}} を Tier 0 としてディレクトリサーバーと同じ管理階層・同じ保護で運用し、秘密鍵を HSM に保管して取り出せないようにし、管理者を最小にしていれば、サーバーへの侵入だけでは鍵を持ち出せない（Cannot）。blast radius はディレクトリの全アカウントと、この CA の証明書を信頼する全システム。"
+    mitigation: "[Foundation] 認証局のサーバーを Tier 0（ディレクトリサーバーと同じ管理階層）として扱い、ログオンできる管理者を最小にする。認証局の管理権限（CA の管理者・証明書の管理者）を持つ主体を棚卸しし、不要なものを外す。秘密鍵を含むバックアップを暗号化し、保管先を限定する。 [Enterprise] 秘密鍵を HSM に保管し、取り出せない設定にする。認証局の設定変更・鍵の操作・バックアップを監査ログに記録し、SIEM で通知する。 [Advanced] ルート CA をオフラインで運用し、発行用の CA だけをオンラインにする。鍵の漏えいを想定し、CA の作り直しと信頼の入れ替えの手順を用意して訓練する。"
+    appliesTo:
+      kind: node
+      nodeType: CERTIFICATE_AUTHORITY
+      # 鍵を持つこと自体が脅威（接続の有無によらない）。
+      connection:
+        required: false
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.DS-01"
+    references:
+      - title: "MITRE ATT&CK T1649 - Steal or Forge Authentication Certificates（認証局の鍵による証明書の偽造）"
+        url: "https://attack.mitre.org/techniques/T1649/"
+      - title: "SpecterOps - Certified Pre-Owned: Abusing Active Directory Certificate Services（2021）"
+        url: "https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf"
+      # TLS インスペクション用の CA の鍵は tls-inspection-ca-key-compromise（別の型・別 canonicalId）。

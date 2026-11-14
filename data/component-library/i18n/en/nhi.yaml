@@ -33,3 +33,7 @@ components:
   IGA:
     label: "Identity governance (IGA)"
     description: "A platform that provisions, changes and removes accounts for people and NHIs across systems and reviews their access. Holds privileged credentials for connecting to each system."
+
+  CERTIFICATE_AUTHORITY:
+    label: "Certificate authority (CA)"
+    description: "An internal certificate authority that issues the organization's certificates (Active Directory Certificate Services and the like). Includes certificate templates and the enrollment interfaces (web enrollment, RPC). Certificates it issues can be used to log on to the directory and for mutual TLS, so compromising it has the same impact as compromising the directory. CAs used for TLS inspection belong to the inspecting device, and in-vehicle PKI uses Vehicle PKI."

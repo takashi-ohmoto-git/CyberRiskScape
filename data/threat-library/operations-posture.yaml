@@ -131,6 +131,7 @@ rules:
         - nodeType: ZTNA_PROXY
         - nodeType: SERVICE_MESH
         - nodeType: PAM
+        - nodeType: CERTIFICATE_AUTHORITY
         - nodeType: IGA
         - nodeType: AI_GATEWAY
         - nodeType: CENTRAL_GATEWAY
@@ -219,6 +220,7 @@ rules:
         - nodeType: ZTNA_PROXY
         - nodeType: SERVICE_MESH
         - nodeType: PAM
+        - nodeType: CERTIFICATE_AUTHORITY
         - nodeType: IGA
         - nodeType: AI_GATEWAY
         - nodeType: CENTRAL_GATEWAY
@@ -438,6 +440,7 @@ rules:
         - nodeType: ZTNA_PROXY
         - nodeType: SERVICE_MESH
         - nodeType: PAM
+        - nodeType: CERTIFICATE_AUTHORITY
         - nodeType: IGA
         - nodeType: AI_GATEWAY
         - nodeType: ECU
@@ -528,6 +531,7 @@ rules:
         - nodeType: CDN
         - nodeType: SASE
         - nodeType: PAM
+        - nodeType: CERTIFICATE_AUTHORITY
         - nodeType: IGA
         - nodeType: DATABASE
         - nodeType: ANALYTICS_PLATFORM

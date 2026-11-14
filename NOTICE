@@ -290,11 +290,14 @@ verbatim.
    - LiteLLM documentation — Realtime Guardrails
    - OpenAI Agents SDK documentation — Realtime guide
    - Vice — "How I Broke Into a Bank Account With an AI-Generated Voice"
+   - SpecterOps — Will Schroeder and Lee Christensen, "Certified Pre-Owned:
+     Abusing Active Directory Certificate Services" (2021)
 
    © The respective authors and publishers. Referenced by citation and short
    summary only; no text is reproduced verbatim.
 
-   Referenced by: data/threat-library/voice-contact-center.yaml
+   Referenced by: data/threat-library/voice-contact-center.yaml,
+                  data/threat-library/identity.yaml
 
 --------------------------------------------------------------------------------
 14. Salesforce, Inc. — Salesforce Help, Salesforce Developers documentation
@@ -460,6 +463,11 @@ verbatim.
      enable and disable SMBv1, SMBv2, and SMBv3 in Windows" and "Overview of
      Server Message Block signing"
    - Google Cloud — Cloud Storage, "Bucket Lock"
+   - Microsoft — Microsoft Learn, "Disable basic authentication in App Service
+     deployments", "Run your app in Azure App Service directly from a ZIP
+     package" and "Windows LAPS overview"; Microsoft Support, "KB5005413:
+     Mitigating NTLM Relay Attacks on Active Directory Certificate Services
+     (AD CS)"
    https://docs.aws.amazon.com/ , https://learn.microsoft.com/ ,
    https://cloud.google.com/ , https://istio.io/
    © The respective owners. Referenced by title and URL with a short Japanese
@@ -467,7 +475,9 @@ verbatim.
    are trademarks of their respective owners.
 
    Referenced by: data/threat-library/network-infra.yaml,
-                  data/threat-library/storage.yaml
+                  data/threat-library/storage.yaml,
+                  data/threat-library/api-platform.yaml,
+                  data/threat-library/identity.yaml
 
 --------------------------------------------------------------------------------
 24. United Nations Economic Commission for Europe (UNECE), World Forum for
