@@ -10,6 +10,12 @@ import {
 } from '../../core/model/types';
 import { useT } from '../../i18n';
 import type { TranslationKey } from '../../i18n';
+import { SERVICE_SCOPE_KINDS, type ServiceScopeEntry, type ServiceScopeKind } from '../../core/model/serviceScope';
+import {
+  MAX_SERVICE_SCOPE_ENTRIES,
+  findInvalidScopeRows,
+  toSavedServiceScope,
+} from './serviceScopeDraft';
 
 const CRITICALITY_KEYS: Record<BusinessCriticality, TranslationKey> = {
   High: 'project.editModal.criticality.high',
@@ -31,6 +37,27 @@ const LIFECYCLE_HINT_KEYS: Record<ProjectLifecycle, TranslationKey> = {
   legacy: 'project.editModal.lifecycleHint.legacy',
   retiring: 'project.editModal.lifecycleHint.retiring',
   retired: 'project.editModal.lifecycleHint.retired',
+};
+
+const SCOPE_KIND_KEYS: Record<ServiceScopeKind, TranslationKey> = {
+  host: 'project.editModal.serviceScopeKind.host',
+  domain: 'project.editModal.serviceScopeKind.domain',
+  cidr: 'project.editModal.serviceScopeKind.cidr',
+  'url-prefix': 'project.editModal.serviceScopeKind.url-prefix',
+};
+
+const SCOPE_PLACEHOLDER_KEYS: Record<ServiceScopeKind, TranslationKey> = {
+  host: 'project.editModal.serviceScopePlaceholder.host',
+  domain: 'project.editModal.serviceScopePlaceholder.domain',
+  cidr: 'project.editModal.serviceScopePlaceholder.cidr',
+  'url-prefix': 'project.editModal.serviceScopePlaceholder.url-prefix',
+};
+
+const SCOPE_HINT_KEYS: Record<ServiceScopeKind, TranslationKey> = {
+  host: 'project.editModal.serviceScopeHint.host',
+  domain: 'project.editModal.serviceScopeHint.domain',
+  cidr: 'project.editModal.serviceScopeHint.cidr',
+  'url-prefix': 'project.editModal.serviceScopeHint.url-prefix',
 };
 
 export function ProjectEditModal() {
@@ -62,8 +89,12 @@ export function ProjectEditModal() {
 
   if (!isOpen) return null;
 
+  const scopeRows = draft.serviceScope ?? [];
+  const invalidScopeRows = findInvalidScopeRows(scopeRows);
+
   const handleSave = () => {
-    setProjectMeta(draft);
+    if (invalidScopeRows.length > 0) return;
+    setProjectMeta({ ...draft, serviceScope: toSavedServiceScope(draft.serviceScope) });
     closeProjectEdit();
   };
 
@@ -75,6 +106,12 @@ export function ProjectEditModal() {
     field: 'organizationName' | 'organizationCode' | 'department' | 'externalSystemId',
     value: string,
   ) => update(field, value === '' ? undefined : value);
+
+  const updateScopeRow = (index: number, patch: Partial<ServiceScopeEntry>) =>
+    update(
+      'serviceScope',
+      scopeRows.map((r, i) => (i === index ? { ...r, ...patch } : r)),
+    );
 
   const copyProjectId = () => {
     try {
@@ -288,6 +325,85 @@ export function ProjectEditModal() {
 
         <div className="flex flex-col gap-4 border-t border-slate-700 pt-4">
           <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">
+            {t('project.editModal.serviceScopeSectionTitle')}
+          </h3>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            {t('project.editModal.serviceScopeDescription')}
+          </p>
+          <div className="flex flex-col gap-3">
+            {scopeRows.map((row, i) => (
+              <div key={i} className="flex flex-col gap-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={row.kind}
+                    onChange={(e) => updateScopeRow(i, { kind: e.target.value as ServiceScopeKind })}
+                    className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-blue-500 transition-colors"
+                  >
+                    {SERVICE_SCOPE_KINDS.map((k) => (
+                      <option key={k} value={k}>
+                        {t(SCOPE_KIND_KEYS[k])}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    value={row.value}
+                    onChange={(e) => updateScopeRow(i, { value: e.target.value })}
+                    placeholder={t(SCOPE_PLACEHOLDER_KEYS[row.kind])}
+                    maxLength={500}
+                    className="flex-1 min-w-[12rem] bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
+                  />
+                  <input
+                    type="text"
+                    value={row.note ?? ''}
+                    onChange={(e) => updateScopeRow(i, { note: e.target.value })}
+                    placeholder={t('project.editModal.serviceScopeNotePlaceholder')}
+                    maxLength={200}
+                    className="flex-1 min-w-[10rem] bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      update(
+                        'serviceScope',
+                        scopeRows.filter((_, j) => j !== i),
+                      )
+                    }
+                    className="px-3 py-1.5 text-xs font-bold uppercase bg-slate-700 hover:bg-slate-600 text-slate-100 rounded-lg transition-colors"
+                  >
+                    {t('project.editModal.serviceScopeRemove')}
+                  </button>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  {t(SCOPE_HINT_KEYS[row.kind])}
+                </p>
+                {invalidScopeRows.includes(i) && (
+                  <p className="text-xs text-red-400">{t('project.editModal.serviceScopeInvalid')}</p>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              disabled={scopeRows.length >= MAX_SERVICE_SCOPE_ENTRIES}
+              onClick={() =>
+                update('serviceScope', [...scopeRows, { kind: 'domain', value: '' }])
+              }
+              className="px-3 py-1.5 text-xs font-bold uppercase bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed text-slate-100 rounded-lg transition-colors"
+            >
+              {t('project.editModal.serviceScopeAdd')}
+            </button>
+            {scopeRows.length >= MAX_SERVICE_SCOPE_ENTRIES && (
+              <span className="text-xs text-amber-300">
+                {t('project.editModal.serviceScopeLimit', { max: MAX_SERVICE_SCOPE_ENTRIES })}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-4 border-t border-slate-700 pt-4">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">
             {t('project.editModal.assumptionsSectionTitle')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -317,7 +433,8 @@ export function ProjectEditModal() {
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
+            disabled={invalidScopeRows.length > 0}
+            className="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
           >
             {t('project.common.save')}
           </button>

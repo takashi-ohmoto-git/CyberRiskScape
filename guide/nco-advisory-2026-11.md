@@ -330,6 +330,11 @@ node dist-cli/main.js asm-reconcile step5.json
   through the front reverse proxy. This is the advisory's "admin console we thought was closed"
 - "Entered as exposed but not observed" means outside the observation range, or an outdated diagram
 
+**Split by service scope** (from 2026-11-14): if you enter the hosts, domains (with subdomains), IP ranges and API URL prefixes this service uses under "Service scope" in Project Edit,
+`asm-reconcile` splits observations into "in scope but not in the diagram" (candidates this model failed to draw) and "out of scope" (another service's scope, or the organization's scope needs checking).
+API endpoints observed by penetration tests and the like are split the same way by URL prefix. `export-scope` writes the scope out as seeds for ASM and DAST
+(`node dist-cli/main.js export-scope step5.json --kind domain` gives one domain per line). The organization-wide scope belongs to the organization, not to a threat model, so it is not entered here.
+
 Look up an alert's host, IP or part in the diagram with `context` (read-only). The MCP `lookup_context` does the same
 ([Using it over MCP](mcp-integration.md)).
 

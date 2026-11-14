@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { ASSET_FORMATS, BOM_FORMATS, BUSINESS_CRITICALITIES, BUSINESS_CRITICALITY_SOURCES, CRYPTO_TERMINATIONS, PROJECT_LIFECYCLES, CVSS_VECTOR_RE,EDGE_PROTOCOLS,FINDING_CONDITION_KINDS, FINDING_FORMATS, FINDING_OUTCOMES, MAX_ASSETS, MAX_FINDING_CONDITIONS, MAX_FINDING_OPEN_QUESTIONS, MAX_BOM_COMPONENTS, MAX_FINDINGS, MAX_VULN_INTEL, type Asset } from '../../core/model/types';
 import { assetIdentifiers, toIsoTimestamp } from '../../core/model/assetIdentity';
 import { normalizeIdentifiers } from '../../core/model/identifierSchemes';
+import { SERVICE_SCOPE_KINDS } from '../../core/model/serviceScope';
 import {
   AgencyLevelSchema,
   AuthTypeSchema,
@@ -308,6 +309,17 @@ const PersistedProjectMetaSchema = z.object({
   externalSystemId: z.string().max(200).optional(),
   criticality: z.enum(BUSINESS_CRITICALITIES).optional(),
   lifecycle: z.enum(PROJECT_LIFECYCLES).optional(),
+  /** サービスの担当範囲（2026-11-14 追加。値は入力のまま保存し、比べるときに正規化する）。 */
+  serviceScope: z
+    .array(
+      z.object({
+        kind: z.enum(SERVICE_SCOPE_KINDS),
+        value: z.string().min(1).max(500),
+        note: z.string().max(200).optional(),
+      }),
+    )
+    .max(200)
+    .optional(),
 });
 
 const AnnotationKindSchema = z.enum(['label', 'callout']);

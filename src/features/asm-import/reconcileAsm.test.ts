@@ -58,6 +58,64 @@ describe('reconcileAsm', () => {
     expect(r.diff?.disappeared.map((l) => l.ip)).toEqual(['203.0.113.2']);
     expect(reconcileAsm({ layers, assets: cur }).diff).toBeUndefined();
   });
+
+  describe('担当範囲での区分', () => {
+    const endpoint = (url: string, extra: Partial<Asset> = {}): Asset => ({
+      id: `CyberStrikeAI:s:${url}`,
+      source: { format: 'cyberstrikeai-assets', product: 'CyberStrikeAI', scope: 's', importedAt: 't' },
+      externalId: url,
+      identifiers: [],
+      kind: 'endpoint',
+      host: new URL(url).hostname,
+      method: 'GET',
+      url,
+      ...extra,
+    });
+    const scope = [
+      { kind: 'domain' as const, value: 'order.example.com' },
+      { kind: 'cidr' as const, value: '203.0.113.0/28' },
+      { kind: 'url-prefix' as const, value: 'https://api.example.com/v1/orders' },
+    ];
+
+    it('担当範囲が未入力なら区分しない', () => {
+      expect(reconcileAsm({ layers, assets: [asset('203.0.113.1', 443)] }).scope).toBeUndefined();
+      expect(reconcileAsm({ layers, assets: [asset('203.0.113.1', 443)], serviceScope: [] }).scope).toBeUndefined();
+    });
+
+    it('担当範囲の中で図に無い観測と、担当範囲の外の観測（図にあるものも含む）に分ける', () => {
+      const r = reconcileAsm({
+        layers,
+        serviceScope: scope,
+        assets: [
+          asset('203.0.113.1', 443),
+          asset('198.51.100.9', 443, { host: 'shop.order.example.com' }),
+          asset('203.0.113.2', 80, on('a')),
+          asset('192.0.2.1', 22),
+          asset('192.0.2.2', 443, { host: 'www.example.com', ...on('b') }),
+        ],
+      });
+      expect(r.scope?.entries).toBe(3);
+      expect(r.scope?.unboundInScope.map((l) => l.ip)).toEqual(['203.0.113.1', '198.51.100.9']);
+      expect(r.scope?.outOfScope.map((l) => l.ip)).toEqual(['192.0.2.1', '192.0.2.2']);
+      expect(r.scope?.outOfScope[1].node).toBe('C2 サーバー2');
+    });
+
+    it('観測した API のエンドポイントを URL プレフィックスで分ける（API 定義・手入力は除く）', () => {
+      const r = reconcileAsm({
+        layers,
+        serviceScope: scope,
+        assets: [
+          endpoint('https://api.example.com/v1/orders/42'),
+          endpoint('https://api.example.com/v1/payments'),
+          endpoint('https://api.example.com/v1/orders/1', on('c')),
+          endpoint('https://api.example.com/v1/orders/2', { source: { format: 'shodan', product: 'Kong', importedAt: 't', definition: true } }),
+          endpoint('https://api.example.com/v1/orders/3', { source: { format: 'manual', product: 'manual', importedAt: 't' } }),
+        ],
+      });
+      expect(r.scope?.endpointsUnboundInScope.map((e) => e.url)).toEqual(['https://api.example.com/v1/orders/42']);
+      expect(r.scope?.endpointsOutOfScope.map((e) => e.url)).toEqual(['https://api.example.com/v1/payments']);
+    });
+  });
 });
 
 describe('assetIdentityKey', () => {

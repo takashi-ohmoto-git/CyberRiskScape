@@ -42,7 +42,7 @@ const hostName = (v: string) => v.toLowerCase().replace(/\.$/, '');
 
 const IPV4_RE = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
 
-function parseIpv4(v: string): number[] | undefined {
+export function parseIpv4(v: string): number[] | undefined {
   const m = IPV4_RE.exec(v);
   if (!m) return undefined;
   const octets = m.slice(1).map(Number);
@@ -50,7 +50,7 @@ function parseIpv4(v: string): number[] | undefined {
 }
 
 /** IPv6 を 8 個の 16 ビット値にする。解釈できなければ undefined。 */
-function parseIpv6(v: string): number[] | undefined {
+export function parseIpv6(v: string): number[] | undefined {
   let text = v;
   // 末尾が IPv4 の表記（::ffff:192.0.2.1）は 2 グループに直す
   const lastColon = text.lastIndexOf(':');
@@ -72,7 +72,7 @@ function parseIpv6(v: string): number[] | undefined {
 }
 
 /** RFC 5952 の表記にする（小文字・先頭の 0 を除く・最長の 0 の並びを `::` に）。 */
-function formatIpv6(groups: number[]): string {
+export function formatIpv6(groups: number[]): string {
   let bestStart = -1;
   let bestLen = 0;
   for (let i = 0; i < 8; ) {

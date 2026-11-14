@@ -30,6 +30,8 @@ import { toOcelJson } from '../features/event-log/ocel';
 import { toEventCsv } from '../features/event-log/eventCsv';
 import { triggersToJson, triggersToMarkdown } from './triggers';
 import { projectIndicators, type ProjectIndicatorsReport } from './indicators';
+import { exportScope, exportScopeToText } from './exportScope';
+import { SERVICE_SCOPE_KINDS } from '../core/model/serviceScope';
 import { loadIndicatorWeights, type IndicatorWeights } from '../features/indicators/computeIndicators';
 import {
   collectModelThreats,
@@ -209,6 +211,7 @@ const USAGE = `使い方:
   diff <base.json> <head.json> [options]
   triggers [options]
   indicators <project.json> [--weights <file>] [--out <file>]
+  export-scope <project.json> [--kind <host|domain|cidr|url-prefix>] [--format <text|json>] [--out <file>]
   checklist <project.json> --id <checklistId> [options]
   import-kong <kong.yaml> [options]
   import-kongctl <kongctl.yaml> [options]
@@ -278,6 +281,12 @@ indicators（脅威モデル単位の指標：設定率・検討率・実装済�
   全レイヤー・全フレームワークの脅威が対象。重大度で重みを付け、誤検知と適用外は対象から外す。
   同梱ルールのみで評価する（カスタムルールの脅威は入らない）。
   --weights <file>                              重みの YAML（既定: 同梱の data/indicators/weights.yaml と同じ形）
+  --out <file>                                  出力先ファイル（既定: 標準出力）
+
+export-scope（サービスの担当範囲を、ASM・DAST・ペンテストの探索の起点として書き出す）:
+  担当範囲は Project Edit の「担当範囲」で入力する。値は正規化して出し、解釈できない値は出さない（json の invalid に並べる）。
+  --kind <host|domain|cidr|url-prefix>          種類を絞る（text では値だけを 1 行 1 件で出す）
+  --format <text|json>                          出力形式（既定: text。種類を絞らない text は「種類<TAB>値」）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
 triggers のオプション:
@@ -435,6 +444,7 @@ context のオプション（アラートの IP・ホスト名・purl から、�
   -o, --out <file>                              出力先ファイル（既定: 標準出力）
 
 asm-reconcile のオプション（ASM（Shodan・ScopeSentry）が観測した資産と、図の「外部公開」（Global IP）の入力の食い違いを並べる読み取り専用の報告。判定はしない。終了コードは常に 0）:
+  担当範囲（Project Edit）を入力していれば、観測と観測した API のエンドポイントを担当範囲の中・外に分けて出す。
   --previous <old-project.json>                 前回のプロジェクト JSON（新しく見えた・見えなくなった観測を比較。保存はしない）
   --format <md|json>                            出力形式（既定: md）
   -o, --out <file>                              出力先ファイル（既定: 標準出力）
@@ -745,6 +755,7 @@ function parseCliArgs() {
       since: { type: 'string' },
       'max-commits': { type: 'string' },
       weights: { type: 'string' },
+      kind: { type: 'string' },
       help: { type: 'boolean' },
     },
   });
@@ -921,6 +932,30 @@ ${USAGE}`);
     fail(e instanceof Error ? e.message : String(e));
   }
   writeOutput(JSON.stringify(report, null, 2), values.out);
+}
+
+const EXPORT_SCOPE_FORMATS = ['text', 'json'] as const;
+
+/** `export-scope`：サービスの担当範囲を探索の起点として書き出す。 */
+function runExportScope(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) {
+    fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  }
+  const kind = parseEnum(values.kind, SERVICE_SCOPE_KINDS, 'kind');
+  const format = parseEnum(values.format, EXPORT_SCOPE_FORMATS, 'format') ?? 'text';
+  let result: ReturnType<typeof exportScope>;
+  try {
+    result = exportScope(readJsonFile(file), kind);
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  if (result.invalid.length > 0) {
+    console.error(`解釈できない担当範囲 ${result.invalid.length} 件を出しませんでした: ${result.invalid.map((e) => `${e.kind} ${e.value}`).join(', ')}`);
+  }
+  writeOutput(format === 'json' ? JSON.stringify(result, null, 2) : exportScopeToText(result, kind), values.out);
 }
 
 function runTriggers(values: CliValues): void {
@@ -2803,6 +2838,8 @@ function main(): void {
     runTriggers(values);
   } else if (command === 'indicators') {
     runIndicators(values, positionals);
+  } else if (command === 'export-scope') {
+    runExportScope(values, positionals);
   } else if (command === 'checklist') {
     runChecklist(values, positionals);
   } else if (command === 'export-postman') {

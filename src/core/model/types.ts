@@ -711,6 +711,11 @@ export interface ProjectMeta {
   criticality?: BusinessCriticality;
   /** 運用段階（任意）。 */
   lifecycle?: ProjectLifecycle;
+  /**
+   * サービスの担当範囲（任意。このサービスが使うホスト・ドメイン配下・IP 範囲・API の URL プレフィックス）。
+   * 宣言（入力）であり、取り込んだ資産とは分ける。組織の範囲は Enterprise が持つ（docs/org-view.md §2.3）。
+   */
+  serviceScope?: ServiceScopeEntry[];
 }
 
 /**
@@ -1105,6 +1110,7 @@ export interface DiagramBoundary {
 }
 
 import type { ComplianceRef, MitigationTiers, Reference } from '../../threat-library/schema/threatRule';
+import type { ServiceScopeEntry } from './serviceScope';
 
 export interface DetectedThreat {
   id: string;

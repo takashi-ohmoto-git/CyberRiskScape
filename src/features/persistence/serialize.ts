@@ -83,7 +83,8 @@ export function serializeProject(state: SerializableState): PersistedProject {
       !!meta.department ||
       !!meta.externalSystemId ||
       !!meta.criticality ||
-      !!meta.lifecycle);
+      !!meta.lifecycle ||
+      (meta.serviceScope?.length ?? 0) > 0);
   const manual = state.manualThreats;
   const hasManual = !!manual && LAYER_KEYS.some((k) => (manual[k]?.length ?? 0) > 0);
   const suppressions = state.suppressions;

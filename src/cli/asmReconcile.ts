@@ -1,6 +1,7 @@
 import { resolveProject } from './analyze';
 import {
   reconcileAsm,
+  type ObservedEndpoint,
   type ObservedLine,
   type ReconcileResult,
 } from '../features/asm-import/reconcileAsm';
@@ -13,7 +14,7 @@ import {
 export function asmReconcile(rawProject: unknown, rawPrevious?: unknown): ReconcileResult {
   const cur = resolveProject(rawProject);
   const prev = rawPrevious === undefined ? undefined : resolveProject(rawPrevious).assets ?? [];
-  return reconcileAsm({ layers: cur.layers, assets: cur.assets }, prev);
+  return reconcileAsm({ layers: cur.layers, assets: cur.assets, serviceScope: cur.projectMeta.serviceScope }, prev);
 }
 
 const cell = (s: string) => s.replace(/[\r\n]+/g, ' ').replace(/\|/g, '\\|');
@@ -56,6 +57,26 @@ export function reconcileToMarkdown(r: ReconcileResult): string {
     out.push('- 該当なし', '');
   } else {
     out.push('> 観測の範囲外か、図が古い可能性がある。', '', ...r.publicButUnseen.map((n) => `- ${n.layer}: ${n.node}`), '');
+  }
+
+  if (r.scope) {
+    const sc = r.scope;
+    out.push(`## 担当範囲での区分（担当範囲 ${sc.entries} 件）`, '');
+    out.push('> 担当範囲の中で図に無いものは、このモデルの描き漏れの候補。担当範囲の外のものは、このモデルの担当ではない（他のサービスの担当か、組織の範囲の確認が要る）。判定はしない。', '');
+    out.push(`### 担当範囲の中で図に無い（${sc.unboundInScope.length} 件）`, '');
+    out.push(...(sc.unboundInScope.length ? assetTable(sc.unboundInScope, false) : ['- 該当なし', '']));
+    out.push(`### 担当範囲の外（${sc.outOfScope.length} 件）`, '');
+    out.push(...(sc.outOfScope.length ? assetTable(sc.outOfScope, true) : ['- 該当なし', '']));
+    const epTable = (eps: readonly ObservedEndpoint[]) => [
+      '| メソッド | URL | 製品 | ノード |',
+      '| --- | --- | --- | --- |',
+      ...eps.map((e) => `| ${[e.method ?? '—', e.url, e.product, e.node ?? '—'].map(cell).join(' | ')} |`),
+      '',
+    ];
+    out.push(`### 観測した API で担当範囲の中なのに図に無い（${sc.endpointsUnboundInScope.length} 件）`, '');
+    out.push(...(sc.endpointsUnboundInScope.length ? epTable(sc.endpointsUnboundInScope) : ['- 該当なし', '']));
+    out.push(`### 観測した API で担当範囲の外（${sc.endpointsOutOfScope.length} 件）`, '');
+    out.push(...(sc.endpointsOutOfScope.length ? epTable(sc.endpointsOutOfScope) : ['- 該当なし', '']));
   }
 
   if (r.diff) {
