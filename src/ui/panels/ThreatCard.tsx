@@ -7,6 +7,7 @@ import {
   ChevronRight,
   ExternalLink,
   Layers,
+  Network,
   Pencil,
   Crosshair,
   ShieldCheck,
@@ -28,6 +29,7 @@ import { summarizeAppliesTo } from './appliesToSummary';
 import { findingsForThreat } from '../../features/pentest-import/matchFindings';
 import { securityAuditFindingsForThreat } from '../../features/security-audit-import/matchSecurityAudit';
 import { SecurityAuditMarks } from '../../features/security-audit-import/SecurityAuditMarks';
+import { bloodhoundFindingsForThreat } from '../../features/bloodhound-import/matchBloodhound';
 import { useRuleLookup } from './useRuleLookup';
 import { threatCardDomId } from './threatCardDomId';
 import { useLocale, useT, type Locale, type TranslationKey } from '../../i18n';
@@ -99,6 +101,15 @@ export function ThreatCard({ threat, targetName, collapsible }: ThreatCardProps)
   const auditFindings = useMemo(() => securityAuditFindingsForThreat(findings, threat), [findings, threat]);
   const auditConfirmed = auditFindings.some((f) => f.outcome !== 'unverified');
   const auditUnverified = auditFindings.some((f) => f.outcome === 'unverified');
+  // BloodHound CE の問い合わせで確認された指摘（ツールチップに題名と件数・資産名を並べる）
+  const bloodhoundFindings = useMemo(() => bloodhoundFindingsForThreat(findings, threat), [findings, threat]);
+  const bloodhoundTitle = [
+    t('threats.threatCard.bloodhoundHint'),
+    ...bloodhoundFindings.slice(0, 5).map((f) => [f.title, f.resource?.label].filter(Boolean).join(' / ')),
+    ...(bloodhoundFindings.length > 5
+      ? [t('threats.threatCard.bloodhoundMore', { count: bloodhoundFindings.length - 5 })]
+      : []),
+  ].join('\n');
 
   const isManual = threat.origin === 'manual';
   // 「抑制」（淡色化）扱いは受容/誤検知のみ。回避/低減/移転は表示維持。
@@ -156,6 +167,15 @@ export function ThreatCard({ threat, targetName, collapsible }: ThreatCardProps)
           </span>
         )}
         <SecurityAuditMarks confirmed={auditConfirmed} unverified={auditUnverified} />
+        {bloodhoundFindings.length > 0 && (
+          <span
+            title={bloodhoundTitle}
+            className="shrink-0 text-xs font-bold px-2 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/40 inline-flex items-center gap-1"
+          >
+            <Network size={12} />
+            {t('threats.threatCard.bloodhoundVerified')}
+          </span>
+        )}
         {hasAssumption && (
           <span title={t('threatCard.assumption.badge')} className="shrink-0 text-amber-300">
             <AlertTriangle size={12} />
@@ -263,6 +283,14 @@ export function ThreatCard({ threat, targetName, collapsible }: ThreatCardProps)
             </span>
           )}
           <SecurityAuditMarks confirmed={auditConfirmed} unverified={auditUnverified} />
+          {bloodhoundFindings.length > 0 && (
+            <span
+              className="text-xs bg-sky-500/15 text-sky-300 px-2 py-0.5 rounded font-bold inline-flex items-center gap-1 whitespace-nowrap border border-sky-500/40"
+              title={bloodhoundTitle}
+            >
+              <Network size={12} /> {t('threats.threatCard.bloodhoundVerified')}
+            </span>
+          )}
           {!isManual && threat.suppression && (
             <span
               className={`text-xs px-2 py-0.5 rounded border font-bold ${RISK_TREATMENT_BADGE[threat.suppression.status]}`}

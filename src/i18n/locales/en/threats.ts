@@ -22,6 +22,10 @@ export const enThreats: Partial<Record<TranslationKey, string>> = {
   'threats.threatCard.securityAuditUnverified': 'Source audit: needs confirmation',
   'threats.threatCard.securityAuditUnverifiedHint':
     'An AI source audit gave grounds, but a deciding fact is unresolved. No severity is assigned.',
+  'threats.threatCard.bloodhoundVerified': 'Confirmed by BloodHound',
+  'threats.threatCard.bloodhoundHint':
+    'Querying the actual AD permissions with BloodHound CE found principals that match this threat.',
+  'threats.threatCard.bloodhoundMore': '{count} more',
   'threats.threatCard.mitigationHeadingTiered': 'Mitigations (3-tier maturity)',
   'threats.threatCard.mitigationHeading': 'Mitigations',
   'threats.threatCard.complianceHeading': 'Compliance',
