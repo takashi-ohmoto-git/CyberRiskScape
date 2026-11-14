@@ -54,6 +54,7 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | **Anthropic `defending-code-reference-harness`** | `THREAT_MODEL.md` 互換の書き出し | 脅威モデルを、AI による脆弱性診断の入力にする | [Security Context に変換する](security-context.ja.md) |
 | **Veracode** | 構成例（Veracode CLI・Findings API と、`THREAT_MODEL.md`・`findings-report`・Postman 書き出しの組み合わせ） | SAST・DAST の指摘を AI で修正する流れに、脅威モデルを前提知識・優先順位・回帰テストとして組み込む・Postman 書き出しを DAST の検査範囲にする | [Veracode の指摘を AI で直す](veracode-remediation.ja.md) |
 | **Prowler** | 検査結果の取り込み（`import-prowler`。AWS の検査の OCSF 出力・CLI のみ） | 「未入力のため仮定」の運用状況・攻撃面属性を実測に置き換える・FAIL の検査を図の脅威と突き合わせる | [Prowler の検査結果を構成図に載せる](prowler.ja.md) |
+| **BloodHound CE** | 問い合わせの結果の取り込み（`import-bloodhound`。API はトークンを環境変数で渡す・読み取りのみ。ファイルでも可。CLI のみ） | AD の権限の問題（Kerberoasting・複製権限・LAPS・委任・GPO・AD CS）を図のディレクトリ・認証局に指摘として載せ、前提で出していた脅威を実データで裏づける | [BloodHound CE の結果を構成図に載せる](bloodhound.ja.md) |
 | **Microsoft Threat Modeling Tool** | .tm7 の取り込み（`import-tm7`・画面の Import）・移行レポート（`migration-report`） | TMT の図・モデル情報・脅威と判断を移し、TMT の脅威と検出脅威の重なり・判断の見直し候補を見る | [Microsoft Threat Modeling Tool の脅威モデルを移行する](threat-modeling-tool.ja.md) |
 | **Trivy** | 結果の取り込み（脆弱性は CycloneDX を `import-sbom`、IaC の設定不備・シークレットは SARIF を `import-sarif`。CLI のみ） | 依存パッケージの脆弱性を部品としてノードに結び、KEV と攻撃経路で優先順位を付ける・設定不備とシークレットをノードの指摘として持つ | [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) |
 | **Syft / Grype** | SBOM・脆弱性の取り込み（CycloneDX を `import-sbom`。CLI のみ） | Syft の SBOM を部品の台帳にし、Grype の脆弱性を部品に結んで KEV と攻撃経路で優先順位付けする | [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) §8 |
@@ -87,6 +88,7 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | 脅威モデルを脆弱性診断に活かしたい | Anthropic `defending-code-reference-harness`・Snyk |
 | 脆弱性診断の指摘を AI で直す流れを作りたい | Veracode |
 | クラウドの検査結果（AWS）を図の属性に反映したい | Prowler |
+| AD の権限の問題（BloodHound の結果）で、図の脅威を実データで裏づけたい | BloodHound CE（[ガイド](bloodhound.ja.md)） |
 | OSS の診断ツールの結果を、攻撃経路の上で優先順位を付けて管理したい | Trivy・Syft / Grype・ZAP・Nuclei・CyberStrikeAI・Strix・Metasploit（[ガイド](oss-vulnerability-management.ja.md)） |
 | ペンテストで実際に通った攻撃手段を脅威カードに載せたい | Strix・CyberStrikeAI・Metasploit（[ガイド](oss-vulnerability-management.ja.md)） |
 | エージェントスキル・MCP サーバーの検査結果を図と突き合わせたい | Cisco AI Defense（skill-scanner / mcp-scanner） |
