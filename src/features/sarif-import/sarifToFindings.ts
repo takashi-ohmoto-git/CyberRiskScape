@@ -12,6 +12,8 @@ const TITLE_MAX = 120;
 const LABEL_MAX = 200;
 const EXTERNAL_ID_MAX = 500;
 const EXCLUDED_KINDS = ['pass', 'notApplicable', 'informational'];
+/** 規則 ID が CVE そのものの形（前後に余計な文字が無い）。 */
+const CVE_RULE_ID = /^CVE-\d{4}-\d{4,}$/i;
 
 export interface SarifRunReport {
   product: string;
@@ -138,8 +140,11 @@ export function sarifToFindings(input: SarifToFindingsInput): SarifConversion {
       for (const c of cwes) for (const id of cweToCanonicalIds(input.map, c) ?? []) canonicalIds.add(id);
       if (cwes.length > 0 && canonicalIds.size === 0) report.cweUnmapped++;
 
+      // 規則 ID が CVE の形（Trivy・Grype 等の脆弱性の結果）なら、CVE の識別子も付ける（KEV・EPSS の突き合わせに使う）
+      const cve = CVE_RULE_ID.test(rid) ? rid.toUpperCase() : undefined;
       const identifiers: FindingIdentifier[] = [
         { scheme: 'rule', value: rid.slice(0, 200) },
+        ...(cve ? [{ scheme: 'cve', value: cve }] : []),
         ...cwes.map((c) => ({ scheme: 'cwe', value: String(c) })),
       ];
       const { severity, source: sourceSeverity } = severityOf(rule, r);

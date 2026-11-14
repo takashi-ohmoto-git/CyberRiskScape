@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { importSarif, sarifReportToJson, sarifReportToMarkdown } from './importSarif';
 import { parseSarif } from '../features/sarif-import/parseSarif';
 import { scrubUri } from '../features/sarif-import/sarifToFindings';
+import { applyKev, type KevCatalog } from '../features/kev-import/applyKev';
 import { deserializeProject } from '../features/persistence/serialize';
 
 const AT = '2026-11-07T00:00:00.000Z';
@@ -135,14 +136,30 @@ describe('importSarif（Trivy の SARIF）', () => {
     expect(sev('example-access-key-id')).toBe('Critical');
   });
 
-  it('CWE を持たないため、識別子は rule だけで canonicalIds も空', () => {
+  it('CWE を持たないため、CWE の識別子は無く canonicalIds も空', () => {
     for (const f of findings) {
-      expect(f.identifiers).toHaveLength(1);
       expect(f.identifiers[0].scheme).toBe('rule');
       expect(f.identifiers.some((i) => i.scheme === 'cwe')).toBe(false);
       expect(f.canonicalIds).toEqual([]);
     }
     expect(findings.map((f) => f.identifiers[0].value).sort()).toEqual(['AVD-EXMPL-0001', 'CVE-2026-0101', 'example-access-key-id']);
+  });
+
+  it('規則 ID が CVE の形なら CVE の識別子も付ける。それ以外は rule だけ', () => {
+    const ids = (rule: string) => findings.find((f) => f.identifiers[0].value === rule)?.identifiers;
+    expect(ids('CVE-2026-0101')).toEqual([
+      { scheme: 'rule', value: 'CVE-2026-0101' },
+      { scheme: 'cve', value: 'CVE-2026-0101' },
+    ]);
+    expect(ids('AVD-EXMPL-0001')).toEqual([{ scheme: 'rule', value: 'AVD-EXMPL-0001' }]);
+    expect(ids('example-access-key-id')).toEqual([{ scheme: 'rule', value: 'example-access-key-id' }]);
+  });
+
+  it('CVE の識別子が付くので、KEV の突き合わせに掛かる', () => {
+    const catalog: KevCatalog = { entries: new Map([['CVE-2026-0101', { dateAdded: '2026-01-01' }]]) };
+    const r = applyKev(findings, catalog);
+    expect(r.findings.find((f) => f.identifiers[0].value === 'CVE-2026-0101')?.kev).toBeDefined();
+    expect(r.findings.filter((f) => f.kev)).toHaveLength(1);
   });
 
   it('場所は相対的な表記（ROOTPATH の uriBaseId は読まない）で、message 本文は保存しない', () => {
