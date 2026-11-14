@@ -61,3 +61,28 @@ describe('diagramStore 判断のキー（旧形式の id の片付け）', () =>
     expect(suppressions['rule-a-n1']?.status).toBe('accepted');
   });
 });
+
+describe('diagramStore discardJudgements', () => {
+  it('キーに付いた 3 種の判断をまとめて消し、ほかのキーは残す。Undo 1 回で戻る', () => {
+    useDiagramStore.setState({
+      controlStatuses: { 'rule-a-n1': { status: 'required', at: 1 }, 'rule-b-n1': { status: 'required', at: 1 } },
+    });
+    useDiagramStore.getState().discardJudgements('rule-a-n1');
+    const after = useDiagramStore.getState();
+    expect(after.suppressions).toEqual({ 'other-n9': { status: 'reduce', at: 1 } });
+    expect(after.riskScores).toEqual({});
+    expect(Object.keys(after.controlStatuses)).toEqual(['rule-b-n1']);
+    expect(after.past).toHaveLength(1);
+
+    after.undo();
+    const undone = useDiagramStore.getState();
+    expect('rule-a-n1' in undone.suppressions).toBe(true);
+    expect('rule-a-n1' in undone.riskScores).toBe(true);
+    expect('rule-a-n1' in undone.controlStatuses).toBe(true);
+  });
+
+  it('どの記録にも無いキーなら何もしない（履歴も積まない）', () => {
+    useDiagramStore.getState().discardJudgements('no-such-key');
+    expect(useDiagramStore.getState().past).toHaveLength(0);
+  });
+});

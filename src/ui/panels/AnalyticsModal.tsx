@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BarChart3, ChevronDown, ChevronRight, ShieldCheck, Unlink, X } from 'lucide-react';
+import { BarChart3, ChevronDown, ChevronRight, ShieldCheck, Trash2, Unlink, X } from 'lucide-react';
 import {
   selectActiveBoundaries,
   selectActiveEdges,
@@ -175,6 +175,7 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
   const edges = useDiagramStore(selectActiveEdges);
   const boundaries = useDiagramStore(selectActiveBoundaries);
   const renumber = useDiagramStore((s) => s.renumberElementalIds);
+  const discardJudgements = useDiagramStore((s) => s.discardJudgements);
   const t = useT();
 
   const [filter, setFilter] = useState('');
@@ -575,6 +576,14 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
                         {t(CONTROL_STATUS_LABEL_KEY[o.controlStatus.status])}
                       </span>
                     )}
+                    <button
+                      onClick={() => discardJudgements(o.key)}
+                      title={t('analytics.orphaned.discardTooltip')}
+                      className="ml-auto flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-slate-700 text-slate-400 hover:text-rose-300 hover:border-rose-500/50 transition-colors shrink-0"
+                    >
+                      <Trash2 size={12} />
+                      {t('analytics.orphaned.discard')}
+                    </button>
                   </div>
                 ))}
               </div>

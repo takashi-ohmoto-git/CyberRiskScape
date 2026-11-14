@@ -637,6 +637,8 @@ interface DiagramState {
   // ---- actions: 対策実装状況 ----
   setControlStatus: (threatId: string, status: ControlStatusValue, note?: string, legacyIds?: readonly string[]) => void;
   clearControlStatus: (threatId: string, legacyIds?: readonly string[]) => void;
+  /** どの脅威にも結びついていない判断を、キーごと 3 種まとめて捨てる（Undo 1 回で戻る）。 */
+  discardJudgements: (key: string) => void;
 
   // ---- actions: interaction (called by useDragInteractions / canvas) ----
   beginNodeInteraction: (
@@ -1499,6 +1501,17 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     if (!hasAnyKey(get().controlStatuses, threatId, legacyIds)) return;
     get().recordHistory();
     set((s) => ({ controlStatuses: withoutKeys(s.controlStatuses, [threatId, ...(legacyIds ?? [])]) }));
+  },
+
+  discardJudgements: (key) => {
+    const s = get();
+    if (!(key in s.suppressions) && !(key in s.riskScores) && !(key in s.controlStatuses)) return;
+    s.recordHistory();
+    set((cur) => ({
+      suppressions: withoutKeys(cur.suppressions, [key]),
+      riskScores: withoutKeys(cur.riskScores, [key]),
+      controlStatuses: withoutKeys(cur.controlStatuses, [key]),
+    }));
   },
 
   beginNodeInteraction: (nodeId, clientX, clientY, additive = false) => {

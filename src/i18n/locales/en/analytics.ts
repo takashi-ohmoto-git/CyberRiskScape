@@ -56,7 +56,9 @@ export const enAnalytics: Partial<Record<TranslationKey, string>> = {
   'analytics.inventory.none': 'none',
   // Judgements attached to no threat
   'analytics.orphaned.heading': 'Judgements attached to no threat ({count})',
-  'analytics.orphaned.note': 'Risk treatments, risk scores and control statuses recorded earlier that no longer match any threat (checked across all layers and frameworks). They stay in the saved data and re-attach if the same threat appears again. Nothing is deleted automatically.',
+  'analytics.orphaned.note': 'Risk treatments, risk scores and control statuses recorded earlier that no longer match any threat (checked across all layers and frameworks). They stay in the saved data and re-attach if the same threat appears again. Nothing is deleted automatically; use Delete to remove the ones you no longer need.',
+  'analytics.orphaned.discard': 'Delete',
+  'analytics.orphaned.discardTooltip': 'Removes this judgement (risk treatment, risk score and control status) from the saved data. Undo restores it',
   'analytics.orphaned.reason.elementRemoved': 'Element no longer in the diagram',
   'analytics.orphaned.reason.sourceRemoved': 'Source rule or manual threat not found',
   'analytics.orphaned.reason.notDetected': 'Not detected in the current diagram',

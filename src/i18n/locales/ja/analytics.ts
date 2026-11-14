@@ -63,7 +63,9 @@ export const jaAnalytics = {
   'analytics.inventory.none': 'なし',
   // どの脅威にも結びついていない判断
   'analytics.orphaned.heading': '脅威に結びついていない判断（{count} 件）',
-  'analytics.orphaned.note': '以前に付けたリスク対応方針・リスク評価・対策実装状況のうち、今はどの脅威にも結びついていないもの（全レイヤー・全フレームワークで確認）。保存データには残っており、同じ脅威がまた出れば元どおり付きます。自動では消しません。',
+  'analytics.orphaned.note': '以前に付けたリスク対応方針・リスク評価・対策実装状況のうち、今はどの脅威にも結びついていないもの（全レイヤー・全フレームワークで確認）。保存データには残っており、同じ脅威がまた出れば元どおり付きます。自動では消しません。要らないものは「削除」で消せます。',
+  'analytics.orphaned.discard': '削除',
+  'analytics.orphaned.discardTooltip': 'この判断（リスク対応方針・リスク評価・対策実装状況）を保存データから消します。Undo で戻せます',
   'analytics.orphaned.reason.elementRemoved': '部品が図に無い',
   'analytics.orphaned.reason.sourceRemoved': '元のルール・手動脅威が見つからない',
   'analytics.orphaned.reason.notDetected': '今の図では脅威として出ていない',
