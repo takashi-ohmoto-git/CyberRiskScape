@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BarChart3, ChevronDown, ChevronRight, ShieldCheck, X } from 'lucide-react';
+import { BarChart3, ChevronDown, ChevronRight, ShieldCheck, Unlink, X } from 'lucide-react';
 import {
   selectActiveBoundaries,
   selectActiveEdges,
@@ -34,7 +34,15 @@ import {
 } from './controlStatusStyle';
 import { RiskTreatmentEditor } from './RiskTreatmentEditor';
 import { RISK_TREATMENT_BADGE, RISK_TREATMENT_LABEL_KEY } from './riskTreatmentStyle';
-import { useT } from '../../i18n';
+import { useLocale, useT, type TranslationKey } from '../../i18n';
+import { useCustomRulesStore, selectCustomLibraries } from '../../features/custom-rules/store';
+import { mergeThreatRules } from '../../features/custom-rules/mergeRules';
+import { getThreatLibrary } from '../../threat-library/loader/bundledLibrary';
+import {
+  findOrphanedJudgements,
+  type OrphanReason,
+} from '../../core/threat-engine/orphanedJudgements';
+import { LAYER_KEYS } from '../../core/model/types';
 import type {
   ControlStatusValue,
   DiagramBoundary,
@@ -50,7 +58,13 @@ const SEVERITY_RANK: Record<Severity, number> = { Low: 1, Medium: 2, High: 3, Cr
 /** i18n の t() 関数の型（useT の戻り値）。 */
 type TFunc = ReturnType<typeof useT>;
 
-const KIND_LABEL: Record<ElementAnalyticsRow['kind'], string> = {
+const ORPHAN_REASON_LABEL_KEY: Record<OrphanReason, TranslationKey> = {
+  'element-removed': 'analytics.orphaned.reason.elementRemoved',
+  'source-removed': 'analytics.orphaned.reason.sourceRemoved',
+  'not-detected': 'analytics.orphaned.reason.notDetected',
+};
+
+const KIND_LABEL:Record<ElementAnalyticsRow['kind'], string> = {
   node: 'Component',
   edge: 'Data Flow',
   boundary: 'Boundary',
@@ -171,9 +185,19 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
   const [confirmingRenumber, setConfirmingRenumber] = useState(false);
   /** 認証基盤インベントリの開閉。既定は閉じる（主線の脅威一覧を押し下げない）。 */
   const [inventoryOpen, setInventoryOpen] = useState(false);
+  /** 外れた判断の一覧の開閉。既定は閉じる（件数だけ見せる）。 */
+  const [orphanedOpen, setOrphanedOpen] = useState(false);
+  const [locale] = useLocale();
+  const layers = useDiagramStore((s) => s.layers);
+  const manualThreatsByLayer = useDiagramStore((s) => s.manualThreats);
+  const suppressions = useDiagramStore((s) => s.suppressions);
+  const riskScores = useDiagramStore((s) => s.riskScores);
+  const controlStatuses = useDiagramStore((s) => s.controlStatuses);
+  const customLibraries = useCustomRulesStore(selectCustomLibraries);
 
   useEffect(() => {
     if (isOpen) {
+      setOrphanedOpen(false);
       setFilter('');
       setPreset('all');
       setSelectedThreatId(null);
@@ -329,6 +353,20 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
     return u ? { threat: u, elementalId: null, elementLabel: t('analytics.unassigned.label') } : null;
   }, [selectedThreatId, tree, visibleUnassigned, t]);
 
+  // どの脅威にも結びついていない判断。表示中のレイヤー・フレームワークに左右されないよう、
+  // 全レイヤー・全フレームワークで突き合わせる（開いている間だけ計算する）。
+  const orphaned = useMemo(() => {
+    if (!isOpen) return [];
+    return findOrphanedJudgements({
+      layers: LAYER_KEYS.map((key) => layers[key]),
+      manualThreats: LAYER_KEYS.map((key) => manualThreatsByLayer[key]),
+      rules: mergeThreatRules(getThreatLibrary(locale).rules, customLibraries).rules,
+      suppressions,
+      riskScores,
+      controlStatuses,
+    });
+  }, [isOpen, layers, manualThreatsByLayer, locale, customLibraries, suppressions, riskScores, controlStatuses]);
+
   if (!isOpen) return null;
 
   const totalThreats = rows.reduce((acc, r) => acc + r.threats.length, 0) + unassigned.length;
@@ -482,6 +520,61 @@ export function AnalyticsModal({ threats }: { threats: ThreatView[] }) {
                           : t('analytics.inventory.none')}
                       </dd>
                     </dl>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ②-b どの脅威にも結びついていない判断。無ければ非表示 */}
+        {orphaned.length > 0 && (
+          <div className="border-b border-slate-800 bg-slate-900/40">
+            <button
+              onClick={() => setOrphanedOpen((v) => !v)}
+              className="w-full flex items-center gap-2 px-6 py-2 text-xs text-amber-300 hover:text-amber-200 transition-colors"
+            >
+              {orphanedOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              <Unlink size={14} />
+              <span className="uppercase tracking-widest">
+                {t('analytics.orphaned.heading', { count: orphaned.length })}
+              </span>
+            </button>
+            {orphanedOpen && (
+              <div className="px-6 pb-3 flex flex-col gap-2 max-h-[30vh] overflow-y-auto">
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  {t('analytics.orphaned.note')}
+                </p>
+                {orphaned.map((o) => (
+                  <div
+                    key={o.key}
+                    className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2"
+                  >
+                    <span className="font-mono text-xs text-slate-300 break-all select-text">
+                      {o.key}
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      {t(ORPHAN_REASON_LABEL_KEY[o.reason])}
+                    </span>
+                    {o.suppression && (
+                      <span
+                        className={`text-xs px-1.5 py-0.5 rounded border ${RISK_TREATMENT_BADGE[o.suppression.status]}`}
+                      >
+                        {t(RISK_TREATMENT_LABEL_KEY[o.suppression.status])}
+                      </span>
+                    )}
+                    {o.risk && (
+                      <span className="text-xs px-1.5 py-0.5 rounded border border-slate-700 text-slate-400">
+                        {t('analytics.orphaned.hasRisk')}
+                      </span>
+                    )}
+                    {o.controlStatus && (
+                      <span
+                        className={`text-xs px-1.5 py-0.5 rounded border ${CONTROL_STATUS_BADGE[o.controlStatus.status]}`}
+                      >
+                        {t(CONTROL_STATUS_LABEL_KEY[o.controlStatus.status])}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>

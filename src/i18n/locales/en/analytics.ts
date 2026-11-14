@@ -54,6 +54,13 @@ export const enAnalytics: Partial<Record<TranslationKey, string>> = {
   'analytics.inventory.tier1': 'Tier 1 dependents ({count})',
   'analytics.inventory.tier2': 'Tier 2 direct peers ({count})',
   'analytics.inventory.none': 'none',
+  // Judgements attached to no threat
+  'analytics.orphaned.heading': 'Judgements attached to no threat ({count})',
+  'analytics.orphaned.note': 'Risk treatments, risk scores and control statuses recorded earlier that no longer match any threat (checked across all layers and frameworks). They stay in the saved data and re-attach if the same threat appears again. Nothing is deleted automatically.',
+  'analytics.orphaned.reason.elementRemoved': 'Element no longer in the diagram',
+  'analytics.orphaned.reason.sourceRemoved': 'Source rule or manual threat not found',
+  'analytics.orphaned.reason.notDetected': 'Not detected in the current diagram',
+  'analytics.orphaned.hasRisk': 'Risk score',
   'analytics.renumber.button': 'Renumber IDs',
   'analytics.renumber.confirmBody':
     'Renumbers ElementalIDs (C / DF / Z) from 1 across all layers. IDs referenced in past reports may then point to different elements, and undo history will be cleared.',

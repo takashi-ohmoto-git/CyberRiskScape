@@ -8,10 +8,12 @@ import {
   analyzeProject,
   analyzeResolvedProject,
   evaluateGate,
+  findOrphanedJudgementsInProject,
   resolveProject,
   type LayerAnalysisResult,
   type ResolvedProject,
 } from './analyze';
+import type { OrphanedJudgement } from '../core/threat-engine/orphanedJudgements';
 import { toSarif } from './sarif';
 import { evaluateSavedFindingsGate, formatGateFinding } from './findingsGate';
 import {
@@ -740,6 +742,12 @@ function parseCliArgs() {
 
 type CliValues = ReturnType<typeof parseCliArgs>['values'];
 
+const ORPHAN_REASON_TEXT: Record<OrphanedJudgement['reason'], string> = {
+  'element-removed': '部品が図に無い',
+  'source-removed': '元のルール・手動脅威が見つからない',
+  'not-detected': '今の図では脅威として出ていない',
+};
+
 function runAnalyze(values: CliValues, positionals: string[]): void {
   const file = positionals[1];
   if (!file) {
@@ -762,9 +770,11 @@ function runAnalyze(values: CliValues, positionals: string[]): void {
 
   let results: LayerAnalysisResult[];
   let findings: Finding[] | undefined;
+  let orphaned: OrphanedJudgement[];
   try {
     const resolved = resolveProject(raw);
     results = analyzeResolvedProject(resolved, { layer, framework, locale });
+    orphaned = findOrphanedJudgementsInProject(resolved);
     if (values['with-findings'] || failOnFindings) findings = resolved.findings;
   } catch (e) {
     fail(e instanceof Error ? e.message : String(e));
@@ -786,6 +796,17 @@ function runAnalyze(values: CliValues, positionals: string[]): void {
   }
 
   writeOutput(output, values.out);
+
+  if (orphaned.length > 0) {
+    process.stderr.write(
+      `注意: どの脅威にも結びついていない判断（リスク対応方針・リスク評価・対策実装状況）が ${orphaned.length} 件あります。保存データには残っています（カスタムルールは CLI では評価しないため、その脅威への判断もここに挙がります）。
+`,
+    );
+    for (const o of orphaned) {
+      process.stderr.write(`  - ${o.key}: ${ORPHAN_REASON_TEXT[o.reason]}
+`);
+    }
+  }
 
   if (failOn) {
     const offenders = evaluateGate(results.flatMap((r) => r.threats), failOn);

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { analyzeProject, evaluateGate } from './analyze';
+import { analyzeProject, evaluateGate, findOrphanedJudgementsInProject, resolveProject } from './analyze';
 import { serializeProject } from '../features/persistence/serialize';
 import { EMPTY_LAYER, type LayerData, type LayerKey, type ThreatView } from '../core/model/types';
 
@@ -127,5 +127,27 @@ describe('evaluateGate', () => {
     ];
     // damage+affectedUsers=6→High, reproducibility+exploitability=6→High → riskRank High/High=Critical
     expect(evaluateGate(threats, 'Critical').map((t) => t.id)).toEqual(['t-risk']);
+  });
+});
+
+describe('findOrphanedJudgementsInProject', () => {
+  const raw = () => JSON.parse(readFileSync(FIXTURE_PATH, 'utf8')) as Record<string, unknown>;
+
+  it('出ている脅威に付いた判断は拾わず、外れた判断だけを理由付きで返す', () => {
+    const base = raw();
+    const [first] = analyzeProject(base)[0].threats.filter((t) => t.origin === 'detected');
+    const project = {
+      ...base,
+      suppressions: {
+        [first.id]: { status: 'accepted', at: 1 },
+        'no-such-classification::node:nowhere': { status: 'accepted', at: 1 },
+      },
+      controlStatuses: { 'no-such-rule-001-unknown': { status: 'implemented', at: 1 } },
+    };
+    const orphaned = findOrphanedJudgementsInProject(resolveProject(project));
+    expect(orphaned.map((o) => [o.key, o.reason]).sort()).toEqual([
+      ['no-such-classification::node:nowhere', 'element-removed'],
+      ['no-such-rule-001-unknown', 'source-removed'],
+    ]);
   });
 });

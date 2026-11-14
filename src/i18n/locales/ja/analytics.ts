@@ -61,6 +61,13 @@ export const jaAnalytics = {
   'analytics.inventory.tier1': 'Tier 1 依存（{count}）',
   'analytics.inventory.tier2': 'Tier 2 直接接続（{count}）',
   'analytics.inventory.none': 'なし',
+  // どの脅威にも結びついていない判断
+  'analytics.orphaned.heading': '脅威に結びついていない判断（{count} 件）',
+  'analytics.orphaned.note': '以前に付けたリスク対応方針・リスク評価・対策実装状況のうち、今はどの脅威にも結びついていないもの（全レイヤー・全フレームワークで確認）。保存データには残っており、同じ脅威がまた出れば元どおり付きます。自動では消しません。',
+  'analytics.orphaned.reason.elementRemoved': '部品が図に無い',
+  'analytics.orphaned.reason.sourceRemoved': '元のルール・手動脅威が見つからない',
+  'analytics.orphaned.reason.notDetected': '今の図では脅威として出ていない',
+  'analytics.orphaned.hasRisk': 'リスク評価あり',
   'analytics.renumber.button': 'ID を振り直す',
   'analytics.renumber.confirmBody':
     '全レイヤーの ElementalID（C / DF / Z）を 1 から振り直します。過去のレポート等で参照した ID は別の要素を指す可能性があり、Undo 履歴もクリアされます。',

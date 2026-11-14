@@ -7,6 +7,10 @@ import {
 } from '../features/persistence/serialize';
 import { detectThreats } from '../core/threat-engine/detectThreats';
 import { buildThreatViews } from '../core/threat-engine/buildThreatViews';
+import {
+  findOrphanedJudgements,
+  type OrphanedJudgement,
+} from '../core/threat-engine/orphanedJudgements';
 import { getThreatLibrary } from '../threat-library/loader/bundledLibrary';
 import { effectiveSeverity } from '../core/model/risk';
 import {
@@ -144,6 +148,22 @@ export function analyzeResolvedProject(
       layer,
     };
     return { layer, threats, input };
+  });
+}
+
+/**
+ * どの脅威にも結びついていない人の判断を拾う（全レイヤー・全フレームワークで突き合わせる）。
+ * カスタムルール（IndexedDB 別保存）は含まれないため、カスタムルールの脅威に付けた判断は
+ * 「元のルールが見つからない」として挙がる。
+ */
+export function findOrphanedJudgementsInProject(resolved: ResolvedProject): OrphanedJudgement[] {
+  return findOrphanedJudgements({
+    layers: LAYER_KEYS.map((key) => resolved.layers[key]),
+    manualThreats: LAYER_KEYS.map((key) => resolved.manualThreatsByLayer[key] ?? []),
+    rules: getThreatLibrary('ja').rules,
+    suppressions: resolved.suppressions,
+    riskScores: resolved.riskScores,
+    controlStatuses: resolved.controlStatuses,
   });
 }
 
