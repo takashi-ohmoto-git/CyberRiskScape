@@ -293,13 +293,16 @@ export-scope（サービスの担当範囲を、ASM・DAST・ペンテストの�
   --format <text|json>                          出力形式（既定: text。種類を絞らない text は「種類<TAB>値」）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
-import-bloodhound のオプション（BloodHound CE の問い合わせの結果を、図のディレクトリ・認証局に指摘として保存する。ユーザーの名前・SID は保存しない）:
+import-bloodhound のオプション（BloodHound CE の問い合わせの結果を、図のディレクトリ・認証局・IdP（Entra ID）・IaaS / PaaS とシークレット管理（Azure）に指摘として保存する。ユーザーの名前・SID は保存しない）:
   --in <dir>                                    問い合わせの応答 JSON（POST /api/v2/graphs/cypher の応答）を「<問い合わせ id>.json」で置いたフォルダ
   --api <base-url>                              BloodHound CE の URL。同梱の問い合わせだけを POST /api/v2/graphs/cypher に送る（読み取りのみ）。
                                                 API トークンは環境変数 BLOODHOUND_TOKEN_ID・BLOODHOUND_TOKEN_KEY で渡す（保存・出力しない）。https のみ（localhost は http 可）
   --print-queries                               同梱の問い合わせ（id・題名・Cypher）を JSON で出して終わる（手で実行するとき用）
   --node <C番号|ID>                             指摘を載せるディレクトリ（既定: 図にちょうど 1 つあればそれ）
   --ca-node <C番号|ID>                          AD CS の指摘を載せる認証局（既定: 図にちょうど 1 つあればそれ。無ければディレクトリ）
+  --idp-node <C番号|ID>                         Entra ID の指摘を載せる IdP（既定: 図にちょうど 1 つあればそれ。無ければ未結合）
+  --cloud-node <C番号|ID>                       Azure の管理の範囲・コード実行の指摘を載せる IaaS / PaaS（既定: 図にちょうど 1 つあればそれ）
+  --vault-node <C番号|ID>                       Key Vault の指摘を載せるシークレット管理（既定: 図にちょうど 1 つあればそれ）
   --scope <name>                                置き換えの範囲（既定: default。ドメインごとに分けて取り込むときに使う）
   --report <md|json>                            報告の形式（既定: md。標準出力）
   -o, --out <file>                              指摘を保存したプロジェクト JSON の出力先（省略時は保存しない）
@@ -772,6 +775,9 @@ function parseCliArgs() {
       weights: { type: 'string' },
       kind: { type: 'string' },
       'ca-node': { type: 'string' },
+      'idp-node': { type: 'string' },
+      'cloud-node': { type: 'string' },
+      'vault-node': { type: 'string' },
       'print-queries': { type: 'boolean' },
       help: { type: 'boolean' },
     },
@@ -1808,6 +1814,9 @@ ${USAGE}`);
     out = importBloodhound(readJsonFile(file), responses, {
       ...(values.node ? { node: values.node } : {}),
       ...(values['ca-node'] ? { caNode: values['ca-node'] } : {}),
+      ...(values['idp-node'] ? { idpNode: values['idp-node'] } : {}),
+      ...(values['cloud-node'] ? { cloudNode: values['cloud-node'] } : {}),
+      ...(values['vault-node'] ? { vaultNode: values['vault-node'] } : {}),
       ...(values.scope ? { scope: values.scope } : {}),
     });
   } catch (e) {

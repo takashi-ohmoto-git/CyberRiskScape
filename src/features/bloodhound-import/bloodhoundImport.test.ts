@@ -125,6 +125,46 @@ describe('bloodhoundToFindings', () => {
   });
 });
 
+describe('bloodhoundToFindings（Entra ID）', () => {
+  const q = (id: string) => BUNDLED_BLOODHOUND_QUERIES.find((x) => x.id === id)!;
+  const idp = { layer: 'L1' as const, nodeId: 'entra' };
+  const base = { scope: 'tenant', importedAt: '2026-11-15T00:00:00Z' };
+
+  it('Entra の問い合わせは IdP に載せ、AZUser の名前は残さずアプリ・サービスプリンシパルの名前は残す', () => {
+    const { findings } = bloodhoundToFindings({
+      ...base,
+      queries: [q('entra-app-credential-adders')],
+      results: new Map([
+        [
+          'entra-app-credential-adders',
+          [
+            { kind: 'AZUser', name: 'BOB@CONTOSO.EXAMPLE', isTierZero: false },
+            { kind: 'AZServicePrincipal', name: 'PARTNER-SYNC-APP', isTierZero: false },
+            { kind: 'AZRole', name: 'APPLICATION ADMINISTRATOR', isTierZero: true },
+          ],
+        ],
+      ]),
+      subjects: { directory: { layer: 'L1', nodeId: 'ad' }, idp },
+    });
+    expect(findings[0]).toMatchObject({ subject: idp, canonicalIds: ['idp-app-credential-addition'], resource: { type: 'Entra ID' } });
+    expect(findings[0].title).toContain('2 件');
+    expect(findings[0].resource?.label).toContain('PARTNER-SYNC-APP');
+    expect(JSON.stringify(findings)).not.toContain('BOB');
+  });
+
+  it('IdP が図に無ければ Entra の指摘は未結合（ディレクトリには載せない）', () => {
+    const { findings } = bloodhoundToFindings({
+      ...base,
+      queries: [q('entra-tier-zero-service-principals')],
+      results: new Map([['entra-tier-zero-service-principals', [{ kind: 'AZServicePrincipal', name: 'GRAPH-ADMIN-APP', isTierZero: true }]]]),
+      subjects: { directory: { layer: 'L1', nodeId: 'ad' } },
+    });
+    expect(findings).toHaveLength(1);
+    expect(findings[0].subject).toBeUndefined();
+    expect(findings[0].severity).toBe('Critical');
+  });
+});
+
 describe('bloodhoundFindingsForThreat', () => {
   it('同じノードで canonicalId が一致する BloodHound の指摘だけを返す', () => {
     const { findings } = bloodhoundToFindings({

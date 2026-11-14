@@ -67,6 +67,60 @@ describe('importBloodhound', () => {
     expect(other.project.findings).toHaveLength(2);
   });
 
+  it('Entra ID の指摘は図の IdP に載せる（--idp-node でも指定できる）', () => {
+    const p = project([{ id: 'entra', seq: 4, type: 'IDENTITY_PROVIDER', x: 0, y: 200, label: 'Entra ID' }]);
+    const entra = new Map<string, unknown>([
+      ['entra-privilege-granting-apps', response({ sp: { label: 'GRAPH-ADMIN-APP', kind: 'AZServicePrincipal', isTierZero: true } })],
+    ]);
+    const out = importBloodhound(p, entra);
+    expect(out.idp).toMatchObject({ kind: 'found', node: { id: 'entra' } });
+    expect(out.project.findings?.[0].subject).toEqual({ layer: 'L1', nodeId: 'entra' });
+    expect(importBloodhound(p, entra, { idpNode: 'C1' }).idp.kind).toBe('wrongType');
+    expect(importBloodhound(project(), entra).idp.kind).toBe('none');
+  });
+
+  it('Azure の指摘は IaaS / PaaS とシークレット管理に載せ、ユーザーの名前は残さない', () => {
+    const p = project([
+      { id: 'azure', seq: 4, type: 'IAAS', x: 0, y: 200, label: 'Azure（本番サブスクリプション）' },
+      { id: 'kv', seq: 5, type: 'SECRETS_VAULT', x: 200, y: 200, label: 'Key Vault' },
+    ]);
+    const azure = new Map<string, unknown>([
+      [
+        'azure-scope-controllers',
+        response({
+          mi: { label: 'BUILD-AGENT-IDENTITY', kind: 'AZManagedIdentity', isTierZero: false },
+          u: { label: 'CAROL@CONTOSO.EXAMPLE', kind: 'AZUser', isTierZero: false },
+        }),
+      ],
+      ['azure-key-vault-readers', response({ g: { label: 'APP-OPERATORS', kind: 'AZGroup', isTierZero: false } })],
+    ]);
+    const out = importBloodhound(p, azure);
+    expect(out.cloud).toMatchObject({ kind: 'found', node: { id: 'azure' } });
+    expect(out.vault).toMatchObject({ kind: 'found', node: { id: 'kv' } });
+    const f = out.project.findings ?? [];
+    expect(f.find((x) => x.externalId === 'azure-scope-controllers')).toMatchObject({
+      subject: { layer: 'L1', nodeId: 'azure' },
+      severity: 'Critical',
+      canonicalIds: ['cloud-management-role-overgrant'],
+      resource: { type: 'Azure' },
+    });
+    expect(f.find((x) => x.externalId === 'azure-key-vault-readers')?.subject).toEqual({ layer: 'L1', nodeId: 'kv' });
+    expect(JSON.stringify(out.project)).toContain('BUILD-AGENT-IDENTITY');
+    expect(JSON.stringify(out.project)).not.toContain('CAROL');
+  });
+
+  it('IaaS と PaaS の両方があれば --cloud-node が要り、型が違えば未結合', () => {
+    const p = project([
+      { id: 'iaas', seq: 4, type: 'IAAS', x: 0, y: 200, label: 'IaaS' },
+      { id: 'paas', seq: 5, type: 'PAAS', x: 200, y: 200, label: 'PaaS' },
+    ]);
+    const azure = new Map<string, unknown>([['azure-code-executors', response({ g: { label: 'DEVS', kind: 'AZGroup', isTierZero: false } })]]);
+    expect(importBloodhound(p, azure).cloud.kind).toBe('many');
+    expect(importBloodhound(p, azure, { cloudNode: 'C5' }).cloud).toMatchObject({ kind: 'found', node: { id: 'paas' } });
+    expect(importBloodhound(p, azure, { cloudNode: 'C1' }).cloud.kind).toBe('wrongType');
+    expect(importBloodhound(project(), azure).project.findings?.[0].subject).toBeUndefined();
+  });
+
   it('応答の形が違う問い合わせは invalid に並べる', () => {
     const out = importBloodhound(project(), new Map([['kerberoastable-users', { nope: 1 }]]));
     expect(out.invalid.map((i) => i.queryId)).toEqual(['kerberoastable-users']);

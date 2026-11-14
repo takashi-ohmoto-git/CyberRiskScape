@@ -22,7 +22,7 @@ const QuerySchema = z.object({
   canonicalIds: z.array(z.string().min(1)).nonempty(),
   severity: SeveritySchema,
   /** 指摘を載せる図のノードの種類。 */
-  subject: z.enum(['directory', 'ca']),
+  subject: z.enum(['directory', 'ca', 'idp', 'cloud', 'vault']),
   /** Tier Zero のノード（応答の isTierZero）を数えない。 */
   excludeTierZero: z.boolean(),
 });

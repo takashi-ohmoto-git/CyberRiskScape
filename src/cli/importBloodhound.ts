@@ -15,7 +15,7 @@ import {
 
 /**
  * CLI `import-bloodhound`：BloodHound CE の問い合わせの結果を指摘としてプロジェクト JSON に保存する（plan §2.141）。
- * 指摘は図の DIRECTORY（AD CS の問い合わせは CERTIFICATE_AUTHORITY）に載せる。取り込み直しは製品 × scope の単位で置き換える。
+ * 指摘は図の DIRECTORY（AD CS の問い合わせは CERTIFICATE_AUTHORITY、Entra ID の問い合わせは IDENTITY_PROVIDER）に載せる。取り込み直しは製品 × scope の単位で置き換える。
  * ファイル・API の I/O は呼び出し側（main.ts）。
  */
 
@@ -26,6 +26,12 @@ export interface ImportBloodhoundOptions {
   node?: string;
   /** AD CS の指摘を載せる CERTIFICATE_AUTHORITY。省略時は図にちょうど 1 つあればそれ、無ければ DIRECTORY。 */
   caNode?: string;
+  /** Entra ID の指摘を載せる IDENTITY_PROVIDER。省略時は図にちょうど 1 つあればそれ。無ければ未結合。 */
+  idpNode?: string;
+  /** Azure の管理の範囲・コード実行の指摘を載せる IAAS / PAAS。省略時は図にちょうど 1 つあればそれ。無ければ未結合。 */
+  cloudNode?: string;
+  /** Key Vault の指摘を載せる SECRETS_VAULT。省略時は図にちょうど 1 つあればそれ。無ければ未結合。 */
+  vaultNode?: string;
   scope?: string;
   queries?: readonly BloodhoundQuery[];
   importedAt?: string;
@@ -44,6 +50,9 @@ export interface ImportBloodhoundOutput {
   scope: string;
   directory: BindResult;
   ca: BindResult;
+  idp: BindResult;
+  cloud: BindResult;
+  vault: BindResult;
   reports: BloodhoundQueryReport[];
   /** 応答の形が合わなかった問い合わせ。 */
   invalid: { queryId: string; error: string }[];
@@ -51,13 +60,14 @@ export interface ImportBloodhoundOutput {
   diff: FindingsDiff;
 }
 
-function bind(nodes: readonly ImportNodeRef[], type: string, ref: string | undefined): BindResult {
+function bind(nodes: readonly ImportNodeRef[], type: string | readonly string[], ref: string | undefined): BindResult {
+  const types: readonly string[] = typeof type === 'string' ? [type] : type;
   if (ref !== undefined) {
     const r = lookupNode(nodes, ref);
     if (r.kind !== 'found') return r.kind === 'ambiguous' ? { kind: 'ambiguous' } : { kind: 'unknownNode' };
-    return r.node.type === type ? r : { kind: 'wrongType' };
+    return types.includes(r.node.type) ? r : { kind: 'wrongType' };
   }
-  const hits = nodes.filter((n) => n.type === type);
+  const hits = nodes.filter((n) => types.includes(n.type));
   if (hits.length === 1) return { kind: 'found', node: hits[0] };
   return hits.length === 0 ? { kind: 'none' } : { kind: 'many' };
 }
@@ -76,6 +86,9 @@ export function importBloodhound(
   );
   const directory = bind(nodes, 'DIRECTORY', options.node);
   const ca = bind(nodes, 'CERTIFICATE_AUTHORITY', options.caNode);
+  const idp = bind(nodes, 'IDENTITY_PROVIDER', options.idpNode);
+  const cloud = bind(nodes, ['IAAS', 'PAAS'], options.cloudNode);
+  const vault = bind(nodes, 'SECRETS_VAULT', options.vaultNode);
   const subjectOf = (b: BindResult) => (b.kind === 'found' ? { layer: b.node.layer, nodeId: b.node.id } : undefined);
   const scope = (options.scope ?? DEFAULT_BLOODHOUND_SCOPE).slice(0, 200);
   const queries = options.queries ?? BUNDLED_BLOODHOUND_QUERIES;
@@ -91,10 +104,19 @@ export function importBloodhound(
 
   const dirSubject = subjectOf(directory);
   const caSubject = subjectOf(ca);
+  const idpSubject = subjectOf(idp);
+  const cloudSubject = subjectOf(cloud);
+  const vaultSubject = subjectOf(vault);
   const conv = bloodhoundToFindings({
     queries,
     results,
-    subjects: { ...(dirSubject ? { directory: dirSubject } : {}), ...(caSubject ? { ca: caSubject } : {}) },
+    subjects: {
+      ...(dirSubject ? { directory: dirSubject } : {}),
+      ...(caSubject ? { ca: caSubject } : {}),
+      ...(idpSubject ? { idp: idpSubject } : {}),
+      ...(cloudSubject ? { cloud: cloudSubject } : {}),
+      ...(vaultSubject ? { vault: vaultSubject } : {}),
+    },
     scope,
     importedAt: options.importedAt ?? new Date().toISOString(),
   });
@@ -104,7 +126,7 @@ export function importBloodhound(
   const project: PersistedProject = { ...loaded };
   if (r.findings.length > 0) project.findings = r.findings;
   else delete project.findings;
-  return { project, scope, directory, ca, reports: conv.reports, invalid, stored: conv.findings.length, diff: r.diff };
+  return { project, scope, directory, ca, idp, cloud, vault, reports: conv.reports, invalid, stored: conv.findings.length, diff: r.diff };
 }
 
 const nodeName = (n: ImportNodeRef) => `${n.seq != null ? formatElementalId('node', n.seq) : n.id} ${n.label?.trim() || n.type}`;
@@ -138,6 +160,9 @@ export function bloodhoundReportToMarkdown(out: ImportBloodhoundOutput): string 
     `- scope: ${out.scope}`,
     `- ディレクトリ: ${bindText(out.directory, 'ディレクトリ', '--node')}`,
     `- 認証局（AD CS の指摘）: ${caText}`,
+    `- IdP（Entra ID の指摘）: ${bindText(out.idp, 'IdP', '--idp-node')}`,
+    `- IaaS / PaaS（Azure の管理の範囲・コード実行の指摘）: ${bindText(out.cloud, 'IaaS・PaaS', '--cloud-node')}`,
+    `- シークレット管理（Key Vault の指摘）: ${bindText(out.vault, 'シークレット管理', '--vault-node')}`,
     '',
     `## 件数（保存 ${out.stored} 件。新規 ${out.diff.added} / 解消 ${out.diff.resolved} / 継続 ${out.diff.continued}）`,
     '',
@@ -164,6 +189,9 @@ export function bloodhoundReportToJson(out: ImportBloodhoundOutput): Record<stri
     scope: out.scope,
     directory: b(out.directory),
     ca: b(out.ca),
+    idp: b(out.idp),
+    cloud: b(out.cloud),
+    vault: b(out.vault),
     stored: out.stored,
     diff: out.diff,
     queries: out.reports,

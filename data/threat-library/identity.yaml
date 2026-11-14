@@ -234,6 +234,19 @@
 #     IdP の署名鍵の窃取（idp-token-forgery）とは「信頼された鍵で認証の証拠を偽造する」点が共通するが、
 #     対象（IdP のトークン vs CA の証明書）と対策（HSM・Tier 0 の範囲）が違うため畳み込まない。
 #     出典は ATT&CK T1649・T1557.001、SpecterOps「Certified Pre-Owned」（2021）、Microsoft KB5005413。
+#   - IdP の登録アプリの 2 件（2026-11-15 追加、plan §2.142。BloodHound CE の Entra の観測を受ける）：
+#     アプリへの資格情報の追加による乗っ取り（idp-app-credential-addition）・アプリ単独（app-only）でのテナントの特権
+#     （idp-app-only-privilege）。IDENTITY_PROVIDER を subject にする（テナント全体の事実で、個々のアプリのノードに
+#     載せると曖昧になるため）。NHI ノードの過剰な権限・長期のシークレット（nhi-overprivileged・nhi-long-lived-secret）、
+#     同意画面型 OAuth の委任（oauth-consent-grant-sprawl、エージェント → アプリの線）、フェデレーション信頼の追加
+#     （idp-federation-trust-tampering）とは subject・攻撃の入口が違うため別 canonicalId。Entra に限らずアプリ登録を
+#     持つ IdP 一般の脅威として書いた。出典は ATT&CK T1098.001・T1098.003・T1199・T1078.004、Microsoft Learn。
+#   - クラウドの権限の 2 件（2026-11-15 追加、plan §2.143。BloodHound CE の Azure の観測を受ける）：
+#     管理権限（所有者・アクセス管理者）の過剰な付与（cloud-management-role-overgrant）・リソース上でのコード実行
+#     権限の過剰な付与（cloud-resource-execution-overgrant）。IAAS・PAAS を subject にし、Azure に限らない一般の
+#     脅威として書いた。NHI ノードの過剰な権限（nhi-overprivileged）は NHI 自身が持つ権限、こちらは管理の範囲
+#     （サブスクリプション等）で誰が支配できるかを問うため別 canonicalId。Key Vault の読み取りは既存の
+#     secrets-vault-concentration（SECRETS_VAULT）に結ぶ。出典は ATT&CK T1098.003・T1078.004・T1651・T1552.005、Microsoft Learn。
 #   - LDAP の匿名バインド・平文バインド等の**プロトコル設定**は本ファイルでは扱わない。
 #     平文通信は stride-edge-plain-encryption-001、無認証は
 #     stride-edge-unauth-internet-001 / zt-implicit-trust-network-location-001 の領分。
@@ -1026,3 +1039,115 @@ rules:
       - title: "SpecterOps - Certified Pre-Owned: Abusing Active Directory Certificate Services（2021）"
         url: "https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf"
       # TLS インスペクション用の CA の鍵は tls-inspection-ca-key-compromise（別の型・別 canonicalId）。
+
+  # ── IDENTITY_PROVIDER: 登録アプリへの資格情報の追加による乗っ取り ──────────────
+  - id: identity-idp-app-credential-addition-001
+    canonicalId: idp-app-credential-addition
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "登録アプリへの資格情報の追加によるアプリの乗っ取り"
+    severity: High
+    description: "{{nodeName}} に登録したアプリ（アプリ登録・サービスプリンシパル・連携アプリ）には、アプリとして認証するための資格情報（クライアントシークレット・証明書）を後から追加できる。追加できる主体（アプリの所有者、アプリ管理者のロール、アプリを書き換えられる API の権限を持つ別のアプリ）が管理者以外にも広がっている場合、攻撃者はそのいずれか 1 つを掌握して、権限の強いアプリに自分の資格情報を足し、そのアプリとして API を呼べる（Can）。アプリとしてのアクセスは利用者のサインインではないため、MFA や利用者向けの条件付きアクセスが効かず、正規のアプリの通信に紛れる。取引先が提供する連携アプリが乗っ取られた場合も、同じ経路で自組織のテナントに入られる。一方、アプリの所有者と資格情報を追加できる権限を管理者だけに絞り、資格情報の追加・所有者の変更を監査して通知し、アプリの資格情報を短命の証明書やワークロード ID の連携に限っていれば、一般のアカウントを掌握しても強いアプリにはなりすませない（Cannot）。blast radius は資格情報を足されたアプリが持つ API の権限で触れられる全データ（テナント全体の権限を持つアプリなら全テナント）。"
+    mitigation: "[Foundation] 登録アプリの所有者を棚卸しし、権限の強いアプリの所有者を管理者だけにする。アプリ管理者のロールと、アプリを書き換えられる API の権限（アプリへの資格情報の追加を許すもの）を持つ主体を最小にする。使っていない資格情報・期限の長いシークレットを削除する。 [Enterprise] アプリ・サービスプリンシパルへの資格情報の追加、所有者の追加、権限の付与を監査ログで記録し、SIEM で即時に通知する。アプリの資格情報をシークレットではなく証明書かワークロード ID の連携にし、有効期限を短くする。取引先が提供する連携アプリの権限と資格情報を定期的に見直す。 [Advanced] アプリへの資格情報の追加をポリシーで制限する（シークレットの禁止・期限の上限）。アプリとしてのサインインを、想定した送信元・ワークロードからだけに限る。"
+    appliesTo:
+      kind: node
+      nodeType: IDENTITY_PROVIDER
+      # アプリ・利用者と接続されているとき発火する（デフォルト接続要件）。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "MITRE ATT&CK T1098.001 - Account Manipulation: Additional Cloud Credentials（アプリへの資格情報の追加）"
+        url: "https://attack.mitre.org/techniques/T1098/001/"
+      - title: "MITRE ATT&CK T1199 - Trusted Relationship（取引先の連携アプリ経由の侵入）"
+        url: "https://attack.mitre.org/techniques/T1199/"
+      - title: "Microsoft Learn - Securing service principals in Microsoft Entra ID"
+        url: "https://learn.microsoft.com/en-us/entra/architecture/service-accounts-principal"
+
+  # ── IDENTITY_PROVIDER: アプリ単独（app-only）でのテナントの特権 ──────────────────
+  - id: identity-idp-app-only-privilege-001
+    canonicalId: idp-app-only-privilege
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "アプリ単独（app-only）でテナント全体を操作できる特権"
+    severity: Critical
+    description: "{{nodeName}} に登録したアプリに、テナント全体の管理ロール（全体管理者・特権ロール管理者等）や、ロール・API の権限・所有者を自由に付与できる API の権限を、利用者の代理ではなくアプリ単独の権限（app-only）として与えている場合、そのアプリの資格情報を得た攻撃者は、利用者のサインインを経ずにテナント全体の管理者と同等の操作（管理者の追加・他のアプリへの資格情報の追加・全メールボックスの読み取り等）ができる（Can）。アプリ単独のアクセスには MFA も利用者向けの条件付きアクセスも効かず、長期のシークレットで動いていれば漏えいに気付きにくい。一方、アプリ単独の権限を業務に必要な範囲（特定のメールボックス・特定のサイト等）に絞り、テナント全体のロールや権限付与の権限をアプリに与えず、与える場合は Tier 0 として資格情報・所有者・送信元を管理していれば、アプリの資格情報の漏えいがテナント全体の乗っ取りにならない（Cannot）。blast radius は {{nodeName}} のテナント全体と、そこで認証する全システム。"
+    mitigation: "[Foundation] アプリ単独の権限を持つアプリを棚卸しし、テナント全体の管理ロールと、ロール・API の権限・所有者を付与できる権限を外す。残すアプリは Tier 0 として扱い、所有者・資格情報の管理者を最小にする。API の権限を業務に必要な範囲に絞る（対象を限定できる権限を使う）。 [Enterprise] アプリ単独の権限の付与・ロールの割り当てを承認制にし、監査ログで通知する。特権を持つアプリのサインインを、想定した送信元・ワークロードからだけに限る。アプリの資格情報を証明書かワークロード ID の連携にする。 [Advanced] 特権を持つアプリの通常と違う動き（大量の読み取り・管理操作・新しい送信元）を振る舞いで検知する。特権を持つアプリの資格情報を HSM・マネージド ID に置き、取り出せないようにする。"
+    appliesTo:
+      kind: node
+      nodeType: IDENTITY_PROVIDER
+      # アプリ・利用者と接続されているとき発火する（デフォルト接続要件）。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.AA-01"
+    references:
+      - title: "MITRE ATT&CK T1098.003 - Account Manipulation: Additional Cloud Roles（ロールの付与による特権の取得）"
+        url: "https://attack.mitre.org/techniques/T1098/003/"
+      - title: "MITRE ATT&CK T1078.004 - Valid Accounts: Cloud Accounts（アプリの資格情報でのアクセス）"
+        url: "https://attack.mitre.org/techniques/T1078/004/"
+      - title: "Microsoft Learn - Securing service principals in Microsoft Entra ID"
+        url: "https://learn.microsoft.com/en-us/entra/architecture/service-accounts-principal"
+      # 同意画面型 OAuth の委任（oauth-consent-grant-sprawl、エージェント → アプリの線）・NHI ノードの過剰な権限
+      # （nhi-overprivileged）とは subject が違う（こちらは IdP のテナントで、アプリ単独の権限の付与を問う）。
+
+  # ── IAAS / PAAS: クラウドの管理権限（所有者・アクセス管理者）の過剰な付与 ──────────
+  - id: identity-cloud-management-role-overgrant-001
+    canonicalId: cloud-management-role-overgrant
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "クラウドの管理権限（所有者・アクセス管理者）の過剰な付与"
+    severity: Critical
+    description: "{{nodeName}} のクラウドの管理の範囲（サブスクリプション・アカウント・プロジェクト・管理グループ）で、所有者や権限の割り当てを変えられるロール（アクセス管理者等）が、管理者以外の利用者・グループ・アプリ・ワークロード ID にも与えられている場合、攻撃者はそのいずれか 1 つを掌握すれば、自分に任意の権限を割り当てて、範囲内のすべてのリソース（仮想マシン・ストレージ・データベース・鍵の保管庫）を操作・削除し、データを持ち出せる（Can）。ワークロード ID に与えた所有者の権限は、そのワークロード（仮想マシン・関数・CI）に侵入されただけで奪われ、MFA も効かない。一方、所有者と権限の割り当てを変えられるロールを少数の管理者に限り、必要なときだけ期限付きで有効にし（特権の一時昇格）、ワークロード ID には必要なリソースの範囲の最小の権限だけを与え、権限の割り当ての変更を監査して通知していれば、1 つのアカウントやワークロードの侵害が範囲全体の乗っ取りにならない（Cannot）。blast radius は {{nodeName}} の管理の範囲にあるすべてのリソースとデータ。"
+    mitigation: "[Foundation] 管理の範囲ごとに所有者と権限の割り当てを変えられるロールを持つ主体を棚卸しし、少数の管理者だけにする。ワークロード ID・アプリに所有者の権限を与えず、必要なリソースの範囲の最小の権限に置き換える。使っていない割り当てを削除する。 [Enterprise] 所有者・アクセス管理者のロールを特権の一時昇格（承認と期限付き）で運用する。権限の割り当ての変更を監査ログで記録し、SIEM で即時に通知する。攻撃経路の分析ツールで、管理の範囲を支配できる主体を定期的に検査する。 [Advanced] 管理の範囲を本番・開発・共通基盤で分け、最上位の範囲（管理グループ・組織）の権限を Tier 0 として扱う。権限の割り当てをコード（IaC）で管理し、コード以外からの変更をドリフトとして検知する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: IAAS
+        - nodeType: PAAS
+      # 利用者・ワークロードと接続されているとき発火する（デフォルト接続要件）。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "DE.CM-09"
+    references:
+      - title: "MITRE ATT&CK T1098.003 - Account Manipulation: Additional Cloud Roles（権限の割り当てによる特権の取得）"
+        url: "https://attack.mitre.org/techniques/T1098/003/"
+      - title: "MITRE ATT&CK T1078.004 - Valid Accounts: Cloud Accounts（管理権限を持つアカウント・ワークロード ID の悪用）"
+        url: "https://attack.mitre.org/techniques/T1078/004/"
+      - title: "Microsoft Learn - Best practices for Azure RBAC"
+        url: "https://learn.microsoft.com/en-us/azure/role-based-access-control/best-practices"
+
+  # ── IAAS / PAAS: リソース上でのコード実行権限の過剰な付与 ─────────────────────
+  - id: identity-cloud-resource-execution-overgrant-001
+    canonicalId: cloud-resource-execution-overgrant
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "リソース上でのコード実行権限の過剰な付与（ワークロード ID の権限の奪取）"
+    severity: High
+    description: "{{nodeName}} の仮想マシン・コンテナ基盤・Web アプリ・関数・自動化の基盤には、管理の操作としてコマンドを実行する機能（実行コマンド・管理者ログイン・デプロイ・ランブック等）があり、それを使える権限（共同作成者・仮想マシンの管理者ログイン等）が管理者以外にも与えられている場合、攻撃者はその権限を持つアカウントを掌握するだけで、リソースの上で任意のコードを実行し、そのリソースに付いたワークロード ID（マネージド ID・インスタンスのロール）のトークンを取り出してクラウドの権限を奪える（Can）。リソースのワークロード ID が強い権限を持っていれば、1 台のリソースから管理の範囲全体へ広がる。一方、コマンドの実行やデプロイの権限を運用担当の最小限の主体に絞り、リソースのワークロード ID の権限を最小にし、実行コマンドの使用を監査して通知していれば、一般のアカウントの侵害がリソース上のコード実行やワークロード ID の奪取につながらない（Cannot）。blast radius はコマンドを実行できるリソースと、そこに付いたワークロード ID の権限で触れられるすべてのリソース。"
+    mitigation: "[Foundation] 仮想マシン・コンテナ基盤・Web アプリ・自動化の基盤でコマンドの実行・デプロイができる権限を持つ主体を棚卸しし、運用担当の最小限に絞る。リソースに付けるワークロード ID の権限を、そのリソースの業務に必要な範囲にする。 [Enterprise] 実行コマンド・管理者ログイン・ランブックの実行を監査ログで記録し、通常の運用以外の実行を通知する。管理の操作は特権の一時昇格で行う。ワークロード ID のトークンの利用を、そのリソースから想定した宛先に限る。 [Advanced] 仮想マシンの管理を踏み台・特権アクセス管理の経由に限り、クラウドの管理機能からの直接のコマンド実行を無効にする。リソースのワークロード ID の振る舞い（新しい宛先・大量の読み取り）を検知する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: IAAS
+        - nodeType: PAAS
+      # 利用者・ワークロードと接続されているとき発火する（デフォルト接続要件）。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "MITRE ATT&CK T1651 - Cloud Administration Command（管理機能からのコマンド実行）"
+        url: "https://attack.mitre.org/techniques/T1651/"
+      - title: "MITRE ATT&CK T1552.005 - Unsecured Credentials: Cloud Instance Metadata API（ワークロード ID のトークンの取り出し）"
+        url: "https://attack.mitre.org/techniques/T1552/005/"
+      - title: "Microsoft Learn - Best practices for Azure RBAC"
+        url: "https://learn.microsoft.com/en-us/azure/role-based-access-control/best-practices"
+      # PaaS のデプロイ口（paas-deployment-endpoint-exposure）はインターネットに出た配置口と基本認証の問い、
+      # こちらはクラウドの権限で管理機能からコードを実行できる問いで別 canonicalId。
