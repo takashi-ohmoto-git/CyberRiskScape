@@ -1,4 +1,4 @@
-import { readFileSync, statSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import { basename, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -31,6 +31,9 @@ import { toEventCsv } from '../features/event-log/eventCsv';
 import { triggersToJson, triggersToMarkdown } from './triggers';
 import { projectIndicators, type ProjectIndicatorsReport } from './indicators';
 import { exportScope, exportScopeToText } from './exportScope';
+import { bloodhoundReportToJson, bloodhoundReportToMarkdown, importBloodhound } from './importBloodhound';
+import { BUNDLED_BLOODHOUND_QUERIES } from '../features/bloodhound-import/bloodhoundQueries';
+import { credentialsFromEnv as bloodhoundCredentialsFromEnv, fetchBloodhoundQueries } from '../features/bloodhound-import/fetchBloodhound';
 import { SERVICE_SCOPE_KINDS } from '../core/model/serviceScope';
 import { loadIndicatorWeights, type IndicatorWeights } from '../features/indicators/computeIndicators';
 import {
@@ -227,6 +230,7 @@ const USAGE = `使い方:
   import-sarif <project.json> --sarif <file> --scope <scope> [options]
   import-nuclei <project.json> --in <results.jsonl> --scope <scope> [options]
   import-security-audit <project.json> --in <findings.json> [options]
+  import-bloodhound <project.json> (--in <dir> | --api <base-url>) [options]
   import-business-context <project.json> --in <table.csv|json> [options]
   convert-celonis --api <base-url> --km <id> --record <id> --system-field <id> --map-value <値>=<C番号|ID> ... [options]
   import-kev <project.json> --kev <file> [options]
@@ -288,6 +292,17 @@ export-scope（サービスの担当範囲を、ASM・DAST・ペンテストの�
   --kind <host|domain|cidr|url-prefix>          種類を絞る（text では値だけを 1 行 1 件で出す）
   --format <text|json>                          出力形式（既定: text。種類を絞らない text は「種類<TAB>値」）
   --out <file>                                  出力先ファイル（既定: 標準出力）
+
+import-bloodhound のオプション（BloodHound CE の問い合わせの結果を、図のディレクトリ・認証局に指摘として保存する。ユーザーの名前・SID は保存しない）:
+  --in <dir>                                    問い合わせの応答 JSON（POST /api/v2/graphs/cypher の応答）を「<問い合わせ id>.json」で置いたフォルダ
+  --api <base-url>                              BloodHound CE の URL。同梱の問い合わせだけを POST /api/v2/graphs/cypher に送る（読み取りのみ）。
+                                                API トークンは環境変数 BLOODHOUND_TOKEN_ID・BLOODHOUND_TOKEN_KEY で渡す（保存・出力しない）。https のみ（localhost は http 可）
+  --print-queries                               同梱の問い合わせ（id・題名・Cypher）を JSON で出して終わる（手で実行するとき用）
+  --node <C番号|ID>                             指摘を載せるディレクトリ（既定: 図にちょうど 1 つあればそれ）
+  --ca-node <C番号|ID>                          AD CS の指摘を載せる認証局（既定: 図にちょうど 1 つあればそれ。無ければディレクトリ）
+  --scope <name>                                置き換えの範囲（既定: default。ドメインごとに分けて取り込むときに使う）
+  --report <md|json>                            報告の形式（既定: md。標準出力）
+  -o, --out <file>                              指摘を保存したプロジェクト JSON の出力先（省略時は保存しない）
 
 triggers のオプション:
   --format <md|json>                            出力形式（既定: md）
@@ -756,6 +771,8 @@ function parseCliArgs() {
       'max-commits': { type: 'string' },
       weights: { type: 'string' },
       kind: { type: 'string' },
+      'ca-node': { type: 'string' },
+      'print-queries': { type: 'boolean' },
       help: { type: 'boolean' },
     },
   });
@@ -1729,6 +1746,77 @@ ${USAGE}`);
   process.stdout.write(`${report === 'json' ? JSON.stringify(securityAuditReportToJson(out), null, 2) : securityAuditReportToMarkdown(out)}
 `);
   process.stderr.write(`ソース監査の指摘を取り込みました（保存 ${out.stored} / 要確認 ${out.report.unverified} / 反証 ${out.report.rejected}）
+`);
+}
+
+/** 問い合わせの応答 1 ファイルの上限。 */
+const BLOODHOUND_RESPONSE_MAX_BYTES = 50 * 1024 * 1024;
+
+/** `import-bloodhound`：BloodHound CE の問い合わせの結果を指摘として保存する（plan §2.141）。 */
+async function runImportBloodhound(values: CliValues, positionals: string[]): Promise<void> {
+  if (values['print-queries']) {
+    const qs = BUNDLED_BLOODHOUND_QUERIES.map((q) => ({ id: q.id, title: q.title, cypher: q.cypher }));
+    writeOutput(JSON.stringify(qs, null, 2), values.out);
+    return;
+  }
+  const file = positionals[1];
+  if (!file) fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  if (!values.in === !values.api) fail('--in <dir> か --api <base-url> のどちらか一方を指定してください。');
+  const report = parseEnum(values.report, IMPORT_PROWLER_REPORTS, 'report') ?? 'md';
+
+  const responses = new Map<string, unknown>();
+  if (values.in) {
+    let names: string[];
+    try {
+      names = readdirSync(values.in);
+    } catch (e) {
+      fail(`フォルダを読み込めません: ${values.in}（${e instanceof Error ? e.message : String(e)}）`);
+    }
+    for (const q of BUNDLED_BLOODHOUND_QUERIES) {
+      const name = `${q.id}.json`;
+      if (!names.includes(name)) continue;
+      const path = `${values.in.replace(/[\\/]+$/, '')}/${name}`;
+      if (statSync(path).size > BLOODHOUND_RESPONSE_MAX_BYTES) {
+        fail(`ファイルが大きすぎます（上限 ${BLOODHOUND_RESPONSE_MAX_BYTES / 1024 / 1024} MB）: ${path}`);
+      }
+      responses.set(q.id, readJsonFile(path));
+    }
+    if (responses.size === 0) fail(`${values.in} に問い合わせの応答（<問い合わせ id>.json）がありません。--print-queries で id を確認してください。`);
+  } else {
+    let creds: ReturnType<typeof bloodhoundCredentialsFromEnv>;
+    try {
+      creds = bloodhoundCredentialsFromEnv(process.env);
+    } catch (e) {
+      fail(e instanceof Error ? e.message : String(e));
+    }
+    let fetched: Awaited<ReturnType<typeof fetchBloodhoundQueries>>;
+    try {
+      fetched = await fetchBloodhoundQueries(values.api!, creds, BUNDLED_BLOODHOUND_QUERIES);
+    } catch (e) {
+      fail(`BloodHound CE に問い合わせできません: ${e instanceof Error ? e.message : String(e)}`);
+    }
+    for (const [id, body] of fetched.responses) responses.set(id, body);
+    for (const f of fetched.failed) process.stderr.write(`問い合わせ ${f.queryId} に失敗しました（${f.reason}）。この問い合わせは未評価になります。
+`);
+    if (responses.size === 0) fail('BloodHound CE から 1 件も応答を得られませんでした。');
+  }
+
+  let out: ReturnType<typeof importBloodhound>;
+  try {
+    out = importBloodhound(readJsonFile(file), responses, {
+      ...(values.node ? { node: values.node } : {}),
+      ...(values['ca-node'] ? { caNode: values['ca-node'] } : {}),
+      ...(values.scope ? { scope: values.scope } : {}),
+    });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  if (values.out) writeFileSync(values.out, JSON.stringify(out.project, null, 2), 'utf-8');
+  process.stdout.write(`${report === 'json' ? JSON.stringify(bloodhoundReportToJson(out), null, 2) : bloodhoundReportToMarkdown(out)}
+`);
+  process.stderr.write(`BloodHound CE の結果を取り込みました（保存 ${out.stored} 件）
 `);
 }
 
@@ -2914,6 +3002,10 @@ function main(): void {
     runImportConjur(values, positionals);
   } else if (command === 'import-shodan') {
     runImportShodan(values, positionals);
+  } else if (command === 'import-bloodhound') {
+    runImportBloodhound(values, positionals).catch((e: unknown) => {
+      fail(`BloodHound CE の取り込みに失敗しました: ${e instanceof Error ? e.message : String(e)}`);
+    });
   } else if (command === 'convert-cyberstrikeai') {
     runConvertCyberstrikeai(values, positionals).catch((e: unknown) => {
       fail(`CyberStrikeAI の変換に失敗しました: ${e instanceof Error ? e.message : String(e)}`);

@@ -1252,7 +1252,7 @@ export interface ControlStatusState {
 }
 
 /** 指摘の入力形式（docs/architecture.md §8.6）。 */
-export const FINDING_FORMATS = ['ocsf', 'xccdf', 'arf', 'oval', 'pentest', 'cyclonedx', 'sarif', 'security-audit', 'nuclei'] as const;
+export const FINDING_FORMATS = ['ocsf', 'xccdf', 'arf', 'oval', 'pentest', 'cyclonedx', 'sarif', 'security-audit', 'nuclei', 'bloodhound'] as const;
 export type FindingFormat = (typeof FINDING_FORMATS)[number];
 
 /**

@@ -183,6 +183,7 @@ const LOST_IN_CONVERSION: Record<Finding['source']['format'], string[]> = {
     'confidence, likelihood/impact and their reasons, intended behavior and root-cause text',
     'rejected records and coverage-ledger status',
   ],
+  bloodhound: ['user names (counted only)', 'object identifiers (SIDs), edges and attack path details (kept in BloodHound)', 'Tier Zero objects excluded from counts'],
 };
 
 /**

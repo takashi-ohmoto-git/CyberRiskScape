@@ -1,0 +1,103 @@
+# BloodHound CE（AD の攻撃経路の分析）に送る問い合わせ（Cypher）と、その結果 → 脅威ライブラリの canonicalId の対応表。
+#
+# CyberRiskScape は AD のオブジェクトを図に描かない。問い合わせの結果（問題を持つ主体）を「指摘」にして、
+# 図の DIRECTORY（AD）ノード・CERTIFICATE_AUTHORITY（認証局）ノードに載せ、前提で出していた脅威を実データで裏づける。
+#
+# 方針:
+#   - 問い合わせは読み取りだけ（MATCH … RETURN）。書き込み（CREATE・MERGE・SET・DELETE 等）を含めない（テストで固定）。
+#   - 結果はノードだけを返す（RETURN n）。問題を持つ主体の数を数える。
+#   - `excludeTierZero: true` の問い合わせは、Tier Zero のノード（応答の isTierZero）を数えない
+#     （ドメイン管理者・ディレクトリサーバー等が正当に持つ権限を除く）。Tier Zero の判定は BloodHound に任せる。
+#   - `subject` は指摘を載せる図のノードの種類（directory＝DIRECTORY、ca＝CERTIFICATE_AUTHORITY。無ければ DIRECTORY）。
+#   - 個人の名前は残さない：ユーザーの名前は保存せず件数だけを数える。名前を残すのは資産・構成の種類（取り込み側で決める）。
+#   - 問い合わせ・対応は自前で書いたもの。BloodHound の同梱の問い合わせは転載していない。
+#
+# 出典（辺・属性の名前の確認のみ。定義文は転載しない）:
+#   - SpecterOps/BloodHound（Apache-2.0）packages/cue/bh/ad/ad.cue・packages/go/openapi/src
+#     （2026-11-15、commit 4c2330396d2bfd4f0ed06206452af271be598614）
+#     https://github.com/SpecterOps/BloodHound
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+queries:
+  - id: kerberoastable-users
+    title: Kerberoasting の対象になる有効なユーザー（SPN を持つ）
+    cypher: "MATCH (u:User) WHERE u.hasspn = true AND u.enabled = true AND NOT toLower(coalesce(u.samaccountname, '')) = 'krbtgt' RETURN u"
+    canonicalIds: [directory-offline-credential-cracking]
+    severity: High
+    subject: directory
+    excludeTierZero: false
+
+  - id: asrep-roastable-users
+    title: 事前認証を求めない有効なユーザー（AS-REP ロースティングの対象）
+    cypher: "MATCH (u:User) WHERE u.dontreqpreauth = true AND u.enabled = true RETURN u"
+    canonicalIds: [directory-offline-credential-cracking]
+    severity: High
+    subject: directory
+    excludeTierZero: false
+
+  - id: dcsync-non-tier-zero
+    title: Tier Zero 以外で複製権限（DCSync）を持つ主体
+    cypher: "MATCH (n)-[:DCSync|GetChangesAll]->(:Domain) RETURN n"
+    canonicalIds: [directory-replication-credential-dump]
+    severity: Critical
+    subject: directory
+    excludeTierZero: true
+
+  - id: laps-readers-non-tier-zero
+    title: Tier Zero 以外でローカル管理者パスワード（LAPS）を読める主体
+    cypher: "MATCH (n)-[:ReadLAPSPassword|SyncLAPSPassword]->(:Computer) RETURN n"
+    canonicalIds: [directory-local-admin-password-overread]
+    severity: High
+    subject: directory
+    excludeTierZero: true
+
+  - id: unconstrained-delegation-computers
+    title: 制約なし委任が有効なコンピューター（Tier Zero 以外）
+    cypher: "MATCH (c:Computer) WHERE c.unconstraineddelegation = true RETURN c"
+    canonicalIds: [directory-delegation-abuse]
+    severity: High
+    subject: directory
+    excludeTierZero: true
+
+  - id: constrained-and-rbcd-delegation
+    title: 制約付き委任・リソースベースの委任を持つ主体（Tier Zero 以外）
+    cypher: "MATCH (n)-[:AllowedToDelegate|AllowedToAct]->(:Computer) RETURN n"
+    canonicalIds: [directory-delegation-abuse]
+    severity: High
+    subject: directory
+    excludeTierZero: true
+
+  - id: gpo-writers-non-tier-zero
+    title: Tier Zero 以外で GPO を書き換えられる主体
+    cypher: "MATCH (n)-[:GenericAll|GenericWrite|WriteDACL|WriteOwner|Owns]->(:GPO) RETURN n"
+    canonicalIds: [directory-policy-object-tampering]
+    severity: High
+    subject: directory
+    excludeTierZero: true
+
+  - id: adcs-esc-paths
+    title: 証明書テンプレート・認証局の設定不備でドメインを取れる主体（AD CS の ESC 系）
+    cypher: "MATCH (n)-[:ADCSESC1|ADCSESC3|ADCSESC4|ADCSESC6a|ADCSESC6b|ADCSESC9a|ADCSESC9b|ADCSESC10a|ADCSESC10b|ADCSESC13|ADCSESC16]->(:Domain) RETURN n"
+    canonicalIds: [ca-template-impersonation]
+    severity: Critical
+    subject: ca
+    excludeTierZero: true
+
+  - id: adcs-ntlm-relay
+    title: 証明書の登録の窓口への NTLM リレーでドメインを取れる主体
+    cypher: "MATCH (n)-[:CoerceAndRelayNTLMToADCS]->(:Domain) RETURN n"
+    canonicalIds: [ca-enrollment-ntlm-relay]
+    severity: High
+    subject: ca
+    excludeTierZero: true
+
+  - id: adcs-golden-cert
+    title: 認証局の鍵で証明書を偽造できる主体（Tier Zero 以外）
+    cypher: "MATCH (n)-[:GoldenCert]->(:Domain) RETURN n"
+    canonicalIds: [ca-private-key-forgery]
+    severity: Critical
+    subject: ca
+    excludeTierZero: true
