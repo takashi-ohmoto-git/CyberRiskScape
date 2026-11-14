@@ -1,3 +1,4 @@
+import { identifierValues } from '../../core/model/identifierSchemes';
 import {
   ATTACK_OBJECTIVE_APPLICABLE,
   type DiagramEdge,
@@ -129,9 +130,7 @@ export function buildInvestigationPlan(
     const n = nodeById.get(f.subject.nodeId);
     if (!n || isAttacker(n)) continue;
     const list = kevByNode.get(n.id) ?? [];
-    for (const i of f.identifiers) {
-      if (i.scheme.toLowerCase() !== 'cve') continue;
-      const cve = i.value.trim().toUpperCase();
+    for (const cve of identifierValues(f.identifiers, 'cve')) {
       if (list.some((k) => k.cve === cve)) continue;
       list.push({
         cve,

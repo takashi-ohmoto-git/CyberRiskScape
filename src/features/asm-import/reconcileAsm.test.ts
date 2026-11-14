@@ -66,4 +66,10 @@ describe('assetIdentityKey', () => {
     expect(assetIdentityKey({ ...asset('x', 80), ip: undefined, host: 'example.com' })).toBe('example.com:80');
     expect(assetIdentityKey({ ...asset('x', 80), ip: undefined, port: undefined })).toBe('Shodan:s:x:80');
   });
+
+  it('IP・ホストの表記が違っても同じ鍵になる', () => {
+    expect(assetIdentityKey(asset('2001:0DB8::0001', 443))).toBe(assetIdentityKey(asset('2001:db8::1', 443)));
+    const byHost = (host: string) => assetIdentityKey({ ...asset('x', 80), ip: undefined, host });
+    expect(byHost('Example.COM.')).toBe(byHost('example.com'));
+  });
 });

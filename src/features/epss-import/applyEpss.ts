@@ -1,3 +1,4 @@
+import { identifierValues } from '../../core/model/identifierSchemes';
 import type { Finding, FindingEpss } from '../../core/model/types';
 
 /**
@@ -96,12 +97,12 @@ export function applyEpss(findings: readonly Finding[], parsed: Pick<EpssScores,
   let matched = 0;
   let removed = 0;
   const out = findings.map((f) => {
-    const cves = f.identifiers.filter((i) => i.scheme.toLowerCase() === 'cve');
+    const cves = identifierValues(f.identifiers, 'cve');
     if (cves.length === 0) return f;
     checked++;
     let best: { score: number; percentile?: number } | undefined;
-    for (const i of cves) {
-      const hit = parsed.scores.get(i.value.trim().toUpperCase());
+    for (const cve of cves) {
+      const hit = parsed.scores.get(cve);
       if (hit && (!best || hit.score > best.score)) best = hit;
     }
     if (best) {

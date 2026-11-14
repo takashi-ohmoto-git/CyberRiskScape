@@ -1,4 +1,5 @@
 import { toIsoTimestamp } from '../../core/model/assetIdentity';
+import { identifierValues, normalizeIdentifierValue } from '../../core/model/identifierSchemes';
 import { isExactVersion, purlOf } from '../../core/model/purl';
 import type { BomComponent, DiagramNode, LayerKey } from '../../core/model/types';
 
@@ -11,9 +12,10 @@ export function listBomComponents(
   imported: readonly BomComponent[],
   nodes: readonly { node: Pick<DiagramNode, 'id' | 'inventory'>; layer: LayerKey }[],
 ): BomComponent[] {
-  const key = (nodeId: string | undefined, purl: string) => `${nodeId ?? ''}\u0000${purl}`;
+  // purl は表記をそろえてから比べる（修飾子の有無・`pkg:type` の大文字小文字で二重に出さない）
+  const key = (nodeId: string | undefined, rawPurl: string, purl = normalizeIdentifierValue('purl', rawPurl)) => `${nodeId ?? ''}\u0000${purl}`;
   const seen = new Set(
-    imported.flatMap((c) => c.identifiers.filter((i) => i.scheme === 'purl').map((i) => key(c.subject?.nodeId, i.value))),
+    imported.flatMap((c) => identifierValues(c.identifiers, 'purl').map((purl) => key(c.subject?.nodeId, purl))),
   );
   const derived: BomComponent[] = [];
   for (const { node, layer } of nodes) {

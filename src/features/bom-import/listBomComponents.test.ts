@@ -43,6 +43,13 @@ describe('listBomComponents', () => {
     );
     expect(out.map((c) => c.name)).toEqual(['imported']);
   });
+  it('取り込んだ部品の purl に修飾子が付いていても、同じ部品として 1 件にまとめる', () => {
+    const out = listBomComponents(
+      [imported('pkg:npm/a@1.0.0?repository_url=https://registry.example', 'n1')],
+      [{ layer: 'L1', node: { id: 'n1', inventory: inventory([{ name: 'a', version: '1.0.0' }]) } }],
+    );
+    expect(out.map((c) => c.name)).toEqual(['imported']);
+  });
   it('別のノードの同じ purl は別の部品として残す', () => {
     const out = listBomComponents(
       [imported('pkg:npm/a@1.0.0', 'n2')],

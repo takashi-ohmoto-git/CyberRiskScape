@@ -1,3 +1,4 @@
+import { identifierValues, normalizeIdentifierValue } from '../../core/model/identifierSchemes';
 import type {
   Asset,
   BomComponent,
@@ -164,14 +165,22 @@ export function lookupContext(input: ContextInput, query: ContextQuery): Context
   type Raw = { matchedBy: ContextMatchedBy; record: Record<string, unknown>; subject?: { layer: LayerKey; nodeId: string } };
   const raws: Raw[] = [];
 
+  // 表記の違い（大文字小文字・IPv6 の書き方・末尾のドット・purl の修飾子）で取りこぼさないよう、正規化して比べる
+  const ip = query.ip !== undefined ? normalizeIdentifierValue('ip', query.ip) : undefined;
+  const host = query.host !== undefined ? normalizeIdentifierValue('fqdn', query.host) : undefined;
+  const purl = query.purl !== undefined ? normalizeIdentifierValue('purl', query.purl) : undefined;
+  const sameHost = (value: string | undefined, h: string) =>
+    value !== undefined && normalizeIdentifierValue('fqdn', value) === h;
+
   if (query.ip !== undefined || query.host !== undefined) {
     for (const a of input.assets ?? []) {
       const hit =
-        query.ip !== undefined
-          ? a.ip === query.ip || a.identifiers.some((i) => i.scheme === 'ip' && i.value === query.ip)
-          : eqi(a.host, query.host!) ||
-            eqi(a.domain, query.host!) ||
-            a.identifiers.some((i) => (i.scheme === 'fqdn' || i.scheme === 'hostname') && eqi(i.value, query.host!));
+        ip !== undefined
+          ? (a.ip !== undefined && normalizeIdentifierValue('ip', a.ip) === ip) ||
+            identifierValues(a.identifiers, 'ip').includes(ip)
+          : sameHost(a.host, host!) ||
+            sameHost(a.domain, host!) ||
+            identifierValues(a.identifiers, 'fqdn', 'hostname').includes(host!);
       if (!hit) continue;
       raws.push({
         matchedBy: 'asset',
@@ -199,7 +208,7 @@ export function lookupContext(input: ContextInput, query: ContextQuery): Context
   }
   if (query.purl !== undefined) {
     for (const c of input.bomComponents ?? []) {
-      if (!c.identifiers.some((i) => i.scheme === 'purl' && purlMatches(i.value, query.purl!))) continue;
+      if (!identifierValues(c.identifiers, 'purl').some((v) => purlMatches(v, purl!))) continue;
       raws.push({
         matchedBy: 'bomComponent',
         record: {

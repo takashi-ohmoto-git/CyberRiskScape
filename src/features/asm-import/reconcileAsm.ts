@@ -1,3 +1,4 @@
+import { normalizeIdentifierValue } from '../../core/model/identifierSchemes';
 import { LAYER_KEYS, type Asset, type DiagramNode, type LayerKey } from '../../core/model/types';
 import { formatElementalId } from '../../core/model/elementalId';
 
@@ -50,10 +51,10 @@ export function observedAssets(assets: readonly Asset[] | undefined): Asset[] {
   return (assets ?? []).filter((a) => (a.source.format === 'shodan' || a.source.format === 'scopesentry') && a.source.definition !== true);
 }
 
-/** 資産の同一判定の鍵（ip:port → host:port → asset.id）。 */
+/** 資産の同一判定の鍵（ip:port → host:port → asset.id）。IP・ホストは表記をそろえてから鍵にする。 */
 export function assetIdentityKey(a: Asset): string {
-  if (a.port != null && a.ip) return `${a.ip}:${a.port}`;
-  if (a.port != null && a.host) return `${a.host}:${a.port}`;
+  if (a.port != null && a.ip) return `${normalizeIdentifierValue('ip', a.ip)}:${a.port}`;
+  if (a.port != null && a.host) return `${normalizeIdentifierValue('fqdn', a.host)}:${a.port}`;
   return a.id;
 }
 

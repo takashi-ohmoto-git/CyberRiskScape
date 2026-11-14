@@ -1,3 +1,4 @@
+import { identifierValues } from '../../core/model/identifierSchemes';
 import type { Finding, LayerKey } from '../../core/model/types';
 import { LAYER_KEYS } from '../../core/model/types';
 import { componentRegistry } from '../../component-library/defaultRegistry';
@@ -42,7 +43,7 @@ export function fillPatchStatus(project: PersistedProject): FillPatchStatusResul
 
   for (const f of findings) {
     if (f.outcome !== undefined) continue;
-    const cves = f.identifiers.filter((i) => i.scheme.toLowerCase() === 'cve').map((i) => i.value.trim().toUpperCase());
+    const cves = identifierValues(f.identifiers, 'cve');
     if (cves.length === 0) continue;
     const key = f.subject ? `${f.subject.layer}:${f.subject.nodeId}` : null;
     if (!key || !existingNodeKeys.has(key)) {

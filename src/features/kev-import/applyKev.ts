@@ -1,3 +1,4 @@
+import { identifierValues } from '../../core/model/identifierSchemes';
 import { z } from 'zod';
 import type { Finding, FindingKev } from '../../core/model/types';
 
@@ -63,10 +64,10 @@ export function applyKev(findings: readonly Finding[], catalog: KevCatalog): Kev
   let marked = 0;
   let cleared = 0;
   const out = findings.map((f) => {
-    const cves = f.identifiers.filter((i) => i.scheme.toLowerCase() === 'cve');
+    const cves = identifierValues(f.identifiers, 'cve');
     if (cves.length === 0) return f;
     checked++;
-    const hit = cves.map((i) => catalog.entries.get(i.value.trim().toUpperCase())).find((e) => e !== undefined);
+    const hit = cves.map((cve) => catalog.entries.get(cve)).find((e) => e !== undefined);
     if (hit) {
       marked++;
       return { ...f, kev: hit };
