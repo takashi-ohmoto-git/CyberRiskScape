@@ -112,6 +112,7 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 | **脆弱性の修正**（Veracode） | SAST・DAST の指摘を AI で修正する流れに、脅威モデルを前提知識・優先順位・回帰テストとして組み込む構成例（[ガイド](guide/veracode-remediation.ja.md)） |
 | **クラウドの検査**（Prowler） | Prowler の AWS の検査結果（OCSF）で、図のノードの未入力の運用状況・攻撃面属性を埋め、FAIL の検査を図の脅威と突き合わせる（[ガイド](guide/prowler.ja.md)） |
 | **AD の権限の分析**（BloodHound CE） | BloodHound CE の問い合わせの結果（委任・複製権限・LAPS・GPO・AD CS）を、図のディレクトリ・認証局に指摘として載せ、前提で出していた脅威を実データで裏づける（CLI のみ。[ガイド](guide/bloodhound.ja.md)） |
+| **外部アプリ・同意の在庫**（Microsoft Graph） | Entra ID の外部アプリの強い権限・同意（アプリ単独の権限・テナント全体／利用者ごとの同意・資格情報）を図の IdP に指摘として載せ、図のアプリ系のノードと突き合わせる（CLI のみ。[ガイド](guide/entra-apps.ja.md)） |
 | **脅威モデルの移行**（Microsoft Threat Modeling Tool） | TMT の .tm7 を取り込み、図・脅威と判断を移して、移行レポートで TMT の脅威と検出脅威の差を見る（[ガイド](guide/threat-modeling-tool.ja.md)） |
 | **AI 部品の検査**（Cisco AI Defense skill-scanner / mcp-scanner） | エージェントスキル・MCP サーバーの検査結果を、AITech 対応表を介して図の脅威と突き合わせ、描き漏れを見つける（[ガイド](guide/ai-scanners.ja.md)） |
 | **AI によるソース監査**（Cloudflare security-audit スキル） | 指摘を画面か CLI でノードに取り込み、脅威カードに「ソース監査で実証（ローカル）／要確認」を出し、要確認の前提を図の事実と並べる（[ガイド](guide/security-audit.ja.md)） |

@@ -50,6 +50,7 @@ CyberRiskScape を使う人のための、機能の使い方の一覧です。
 | **[Veracode の指摘を AI で直す](veracode-remediation.ja.md)** | Veracode の SAST・DAST をスケジュールで起動し、指摘を AI（Veracode Fix・コーディングエージェント）で修正し、テストと再検査で解消を確かめる流れの構成例：脅威モデル（THREAT_MODEL.md）を修正の前提にする・findings-report で指摘を脅威モデルと突き合わせて優先順位を付ける・DAST は Postman 書き出しで確かめる・指摘を図に戻す、GitHub Actions の例、AI に修正させるときの安全のための設計と限界 |
 | **[Prowler の検査結果を構成図に載せる](prowler.ja.md)** | Prowler（OSS のクラウドセキュリティ検査ツール）が OCSF で出力した検査結果で、図のノードの運用状況・攻撃面属性の未入力の項目を CLI で埋め（「未入力のため仮定」を実測に置き換える）、FAIL の検査を図の脅威と突き合わせる方法、タグによる資源の結びつけ、対応している AWS の検査、秘密情報の扱い、限界（架空のサンプルでのみ確認） |
 | **[BloodHound CE の結果を構成図に載せる](bloodhound.ja.md)** | BloodHound CE（AD の権限と攻撃経路の分析 OSS）の問い合わせの結果を、図のディレクトリ・認証局（CA）に指摘として載せ、前提で出していた脅威（委任・複製権限・LAPS・GPO・AD CS）を実データで裏づける方法。同梱の 10 本の問い合わせと脅威の対応、API とファイルの取り込み、Tier Zero の除外、ユーザーの名前を保存しない扱い、限界（検証用の収集データでのみ確認） |
+| **[Entra ID の外部アプリ・同意の在庫を構成図に載せる](entra-apps.ja.md)** | Microsoft Graph から読んだ Entra ID の外部アプリ（所有テナントが自組織でも Microsoft のサービスでもないアプリ）の強い権限・同意を、図の IdP に指摘として載せる方法。アプリ単独の権限・テナント全体／利用者ごとの同意・資格情報の 4 つの観測、API とファイルの取り込み、図のアプリ系のノードとの突き合わせ（「図に無い」＝描き漏れの候補）、資格情報の値・利用者を保存しない扱い、限界（実テナントでは未確認） |
 | **[Microsoft Threat Modeling Tool の脅威モデルを移行する](threat-modeling-tool.ja.md)** | TMT の .tm7 を画面・CLI（`import-tm7`）で取り込み、図・モデル情報・脅威と判断（状態・理由・変更者）を落とさず移し、移行レポート（`migration-report`）で TMT の脅威と CyberRiskScape の検出脅威の重なり・判断の見直し候補・CyberRiskScape だけが出した脅威を見る方法と限界 |
 | **[OSS で組む脆弱性管理](oss-vulnerability-management.ja.md)** | OSS の診断ツールの結果を CLI で構成図に取り込み、KEV との照合・攻撃経路の上の優先順位（findings-priority）・CI のしきい値で回す共通の流れ。Trivy の脆弱性（CycloneDX）と IaC の設定不備・シークレット（SARIF）・Syft / Grype の SBOM と脆弱性の取り込み、ZAP（DAST）の SARIF と Nuclei の JSONL の取り込み、CyberStrikeAI・Strix（AI 自律ペンテスト）・Metasploit の結果の台帳への変換と Strix への文脈の受け渡し、保存しないもの、限界（架空のサンプルでのみ確認）。対応ツールは順次追加 |
 | **[SBOM・CBOM・AI BOM を取り込み、SPDX・CycloneDX で書き出す](sbom.ja.md)** | CycloneDX・SPDX の部品をプロジェクトに保存し、ノードに結びつけて Asset タブで確かめ、SPDX 2.3・CycloneDX 1.7 で書き出す方法。書き出しで失う情報も説明します。 |
@@ -96,6 +97,7 @@ CyberRiskScape を使う人のための、機能の使い方の一覧です。
 - **Veracode の指摘を AI で直す流れを、脅威モデルを前提に組みたい** — [Veracode の指摘を AI で直す](veracode-remediation.ja.md) へ。
 - **Prowler（AWS）の実測で「未入力のため仮定」を置き換えたい・Prowler の FAIL を図の脅威と突き合わせたい** — [Prowler の検査結果を構成図に載せる](prowler.ja.md) へ。
 - **BloodHound CE で見つけた AD の権限の問題（委任・複製権限・AD CS など）で、図の脅威を実データで裏づけたい** — [BloodHound CE の結果を構成図に載せる](bloodhound.ja.md) へ。
+- **Entra ID に入り込んだ外部アプリの強い権限・同意を洗い出して、図の IdP に載せたい** — [Entra ID の外部アプリ・同意の在庫を構成図に載せる](entra-apps.ja.md) へ。
 - **Microsoft Threat Modeling Tool の脅威モデル（.tm7）を CyberRiskScape に移したい・TMT の判断と CyberRiskScape の検出脅威の差を見たい** — [Microsoft Threat Modeling Tool の脅威モデルを移行する](threat-modeling-tool.ja.md) へ。
 - **OSS の診断ツール（Trivy 等）の結果を、攻撃経路の上で優先順位を付けて管理したい** — [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) へ。
 - **AI 自律ペンテスト（Strix・CyberStrikeAI）が PoC で確かめた結果を脅威カードに載せたい・自分のペンテスト結果を取り込みたい** — [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) の §4・§7・§10 へ。
