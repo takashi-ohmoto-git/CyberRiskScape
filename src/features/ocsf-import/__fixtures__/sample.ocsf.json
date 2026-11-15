@@ -1,0 +1,50 @@
+[
+  {
+    "class_uid": 2003,
+    "metadata": { "version": "1.5.0", "product": { "name": "Example CSPM", "vendor_name": "Example Vendor", "version": "3.1" } },
+    "time_dt": "2026-11-15T01:00:00Z",
+    "severity": "High",
+    "finding_info": { "uid": "ex-0001", "title": "Storage container allows public access", "desc": "DESCRIPTION-SHOULD-NOT-BE-STORED" },
+    "compliance": { "status": "Fail", "status_id": 3, "control": "STORAGE.PUBLIC.1" },
+    "cloud": { "provider": "Azure", "region": "japaneast", "account": { "uid": "00000000-1111-2222-3333-444444444444" } },
+    "resources": [
+      {
+        "uid": "/subscriptions/00000000-1111-2222-3333-444444444444/resourceGroups/rg-portal/providers/Microsoft.Storage/storageAccounts/portalfiles",
+        "name": "portalfiles",
+        "type": "Microsoft.Storage/storageAccounts",
+        "group": { "name": "storage" },
+        "tags": [{ "name": "crs-node", "value": "C2" }],
+        "data": { "secretSetting": "RESOURCE-DATA-SHOULD-NOT-BE-STORED" }
+      }
+    ]
+  },
+  {
+    "class_uid": 2003,
+    "metadata": { "version": "1.5.0", "product": { "name": "Example CSPM", "version": "3.1" } },
+    "time_dt": "2026-11-15T01:00:00Z",
+    "severity": "Medium",
+    "finding_info": { "uid": "ex-0002", "title": "Deployment credentials enabled" },
+    "compliance": { "status": "Pass", "status_id": 1, "control": "APPSVC.DEPLOY.2" },
+    "cloud": { "provider": "Azure", "account": { "uid": "00000000-1111-2222-3333-444444444444" } },
+    "resources": [
+      { "uid": "/subscriptions/00000000-1111-2222-3333-444444444444/resourceGroups/rg-hr/providers/Microsoft.Web/sites/hr-app", "name": "hr-app", "type": "Microsoft.Web/sites", "region": "japaneast" }
+    ]
+  },
+  {
+    "class_uid": 2004,
+    "metadata": { "version": "1.5.0", "product": { "name": "Prowler", "version": "5.0.0" }, "event_code": "s3_bucket_default_encryption" },
+    "time_dt": "2026-11-15T02:00:00Z",
+    "status_code": "FAIL",
+    "severity": "Medium",
+    "finding_info": { "uid": "prowler-aws-s3-123456789012-bucket" },
+    "cloud": { "provider": "aws", "region": "ap-northeast-1", "account": { "uid": "123456789012" } },
+    "resources": [{ "uid": "arn:aws:s3:::example-backup-bucket", "name": "example-backup-bucket", "type": "AwsS3Bucket", "labels": ["env:prod"] }]
+  },
+  { "class_uid": 2002, "metadata": { "product": { "name": "Example Scanner" } }, "finding_info": { "uid": "v-1" } },
+  {
+    "class_uid": 2004,
+    "status_id": 3,
+    "metadata": { "product": { "name": "Example CSPM" } },
+    "finding_info": { "uid": "ex-0003", "title": "Suppressed detection" }
+  }
+]

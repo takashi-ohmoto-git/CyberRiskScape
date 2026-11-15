@@ -27,6 +27,7 @@ export function countAssetViews(views: AssetViews): Record<AssetMode, number> {
     hosts: views.hosts.length,
     requests: views.requests.length,
     apis: views.apis.reduce((n, g) => n + g.endpoints.length, 0),
+    resources: views.resources.length,
     sbom: views.sbom.length,
   };
 }
@@ -45,6 +46,7 @@ const NODE_MODE_LABEL_KEYS: Record<NodeAssetMode, TranslationKey> = {
   hosts: MODE_LABEL_KEYS.hosts,
   requests: MODE_LABEL_KEYS.requests,
   apis: MODE_LABEL_KEYS.apis,
+  resources: MODE_LABEL_KEYS.resources,
   sbom: MODE_LABEL_KEYS.sbom,
   aibom: 'panels.node.assets.mode.aibom',
   cbom: 'panels.node.assets.mode.cbom',
@@ -63,6 +65,7 @@ export function countNodeAssetModes(views: AssetViews): Record<NodeAssetMode, nu
     hosts: base.hosts,
     requests: base.requests,
     apis: base.apis,
+    resources: base.resources,
     sbom: bomForTab(views.sbom, 'sbom').length,
     aibom: bomForTab(views.sbom, 'aibom').length,
     cbom: bomForTab(views.sbom, 'cbom').length,

@@ -16,7 +16,7 @@ export function hostIdentifier(host: string): FindingIdentifier {
 
 /** 資産の項目から同一判定の鍵を作る。重複は除く。 */
 export function assetIdentifiers(asset: {
-  host: string;
+  host?: string;
   ip?: string;
   domain?: string;
   url?: string;
@@ -24,7 +24,7 @@ export function assetIdentifiers(asset: {
   const candidates: FindingIdentifier[] = [
     ...(asset.ip ? [hostIdentifier(asset.ip)] : []),
     ...(asset.domain ? [hostIdentifier(asset.domain)] : []),
-    hostIdentifier(asset.host),
+    ...(asset.host ? [hostIdentifier(asset.host)] : []),
     ...(asset.url ? [{ scheme: 'url', value: asset.url }] : []),
   ];
   return normalizeIdentifiers(candidates);

@@ -11,8 +11,9 @@ const views: AssetViews = {
   sbom: [],
   requests: [],
   apis: [],
+  resources: [],
 };
-const empty: AssetViews = { hosts: [], sbom: [], requests: [], apis: [] };
+const empty: AssetViews = { hosts: [], sbom: [], requests: [], apis: [], resources: [] };
 const resolve = () => ({ label: 'C1 公開サイト', findings: 0 });
 const render = (v: AssetViews) =>
   renderToStaticMarkup(

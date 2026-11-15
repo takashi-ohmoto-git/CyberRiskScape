@@ -35,6 +35,19 @@ export interface ObservedLine {
 }
 
 /** 観測した API のエンドポイント 1 件（API 定義・手入力は除く）。 */
+/** 図のノードに結びついていないクラウドのリソース（OCSF の取り込み）。 */
+export interface UnboundCloudResource {
+  assetId: string;
+  /** リソースの ID（完全な形）。 */
+  uid: string;
+  name?: string;
+  type?: string;
+  provider?: string;
+  account?: string;
+  region?: string;
+  product: string;
+}
+
 export interface ObservedEndpoint {
   assetId: string;
   method?: string;
@@ -75,6 +88,8 @@ export interface ReconcileResult {
   scope?: ScopeSplit;
   /** API の定義（OpenAPI 等）が 1 件以上あるときだけ入る。観測した API のうち、どの定義にも当たらないもの。 */
   apiDefinitions?: { definitions: number; observed: number; undocumented: ObservedEndpoint[] };
+  /** クラウドのリソース（kind: resource）が 1 件以上あるときだけ入る。 */
+  cloudResources?: { total: number; unbound: UnboundCloudResource[] };
 }
 
 /** ASM が観測した資産（API 定義由来は除く）。 */
@@ -108,7 +123,7 @@ function findNode(layers: ReconcileLayers, subject: Asset['subject']): DiagramNo
 function line(a: Asset, node?: DiagramNode): ObservedLine {
   return {
     assetId: a.id,
-    host: a.host,
+    host: a.host ?? '',
     ...(a.ip ? { ip: a.ip } : {}),
     ...(a.port != null ? { port: a.port } : {}),
     ...(a.serviceName ? { serviceName: a.serviceName } : {}),
@@ -189,6 +204,24 @@ export function reconcileAsm(input: ReconcileInput, previousAssets?: readonly As
       });
     }
     result.apiDefinitions = { definitions: definitions.length, observed: observedEps.length, undocumented };
+  }
+  const resources = (input.assets ?? []).filter((a) => a.kind === 'resource');
+  if (resources.length > 0) {
+    result.cloudResources = {
+      total: resources.length,
+      unbound: resources
+        .filter((a) => !findNode(input.layers, a.subject))
+        .map((a) => ({
+          assetId: a.id,
+          uid: a.externalId.replace(/^resource:/, ''),
+          ...(a.cloud?.name ? { name: a.cloud.name } : {}),
+          ...(a.cloud?.type ? { type: a.cloud.type } : {}),
+          ...(a.cloud?.provider ? { provider: a.cloud.provider } : {}),
+          ...(a.cloud?.account ? { account: a.cloud.account } : {}),
+          ...(a.cloud?.region ? { region: a.cloud.region } : {}),
+          product: a.source.product,
+        })),
+    };
   }
   if (previousAssets) {
     const prev = new Map(observedAssets(previousAssets).map((a) => [assetIdentityKey(a), a]));

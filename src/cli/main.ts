@@ -39,6 +39,8 @@ import { BUNDLED_SARIF_CATEGORIES } from '../features/sarif-import/sarifCategori
 import { extractSecretDetails } from '../features/sarif-import/secretDetails';
 import { importOpenapi, openapiReportToJson, openapiReportToMarkdown } from './importOpenapi';
 import { parseOpenApi } from '../features/openapi-import/parseOpenApi';
+import { importOcsf, ocsfReportToJson, ocsfReportToMarkdown } from './importOcsf';
+import { parseOcsf } from '../features/ocsf-import/parseOcsf';
 import { BUNDLED_BLOODHOUND_QUERIES } from '../features/bloodhound-import/bloodhoundQueries';
 import { credentialsFromEnv as bloodhoundCredentialsFromEnv, fetchBloodhoundQueries } from '../features/bloodhound-import/fetchBloodhound';
 import { SERVICE_SCOPE_KINDS } from '../core/model/serviceScope';
@@ -236,6 +238,7 @@ const USAGE = `使い方:
   convert-metasploit <export.xml> --scope <scope> [--host-node <IP>=<C番号|ID> ...] [options]
   import-sarif <project.json> --sarif <file> --scope <scope> [options]
   import-openapi <project.json> --in <openapi.yaml|json> --scope <scope> [options]
+  import-ocsf <project.json> --in <findings.ocsf.json> --scope <scope> [options]
   import-nuclei <project.json> --in <results.jsonl> --scope <scope> [options]
   import-security-audit <project.json> --in <findings.json> [options]
   import-bloodhound <project.json> (--in <dir> | --api <base-url>) [options]
@@ -334,6 +337,14 @@ import-openapi のオプション（OpenAPI 3.x・Swagger 2.0 の定義の操作
   --node <C番号|ID>                             すべてのエンドポイントを結びつけるノード（任意）
   --report <md|json>                            報告の形式（既定: md。認証の指定が無い操作の一覧を含む）
   -o, --out <file>                              資産を保存したプロジェクト JSON の出力先（指定しなければ報告のみ）
+
+import-ocsf のオプション（OCSF の検査結果〔Detection Finding・Compliance Finding。製品を問わない〕の FAIL を指摘として、出てきたクラウドのリソースを資産として保存する。運用状況は埋めない〔Prowler で埋めるときは import-prowler〕）:
+  --in <file>                                   OCSF の検査結果（JSON の配列）
+  --scope <scope>                               置き換えの範囲（必須。同じ製品 × scope の指摘・リソースを置き換える。アカウントごと等に分ける）
+  --map <file>                                  {"<リソースの ID または名前>": "<ノード ID>"} の JSON（タグ crs-node が無いリソースの対応）
+  --report <md|json>                            報告の形式（既定: md。脅威と結ばなかった検査の一覧を含む）
+  -o, --out <file>                              指摘・資産を保存したプロジェクト JSON の出力先（指定しなければ報告のみ）
+  ※ リソースの ID はアカウント ID を含む完全な形で保存する。図に無いリソースは asm-reconcile で出る
 
 triggers のオプション:
   --format <md|json>                            出力形式（既定: md）
@@ -496,6 +507,7 @@ context のオプション（アラートの IP・ホスト名・purl から、�
 asm-reconcile のオプション（ASM（Shodan・ScopeSentry）が観測した資産と、図の「外部公開」（Global IP）の入力の食い違いを並べる読み取り専用の報告。判定はしない。終了コードは常に 0）:
   担当範囲（Project Edit）を入力していれば、観測と観測した API のエンドポイントを担当範囲の中・外に分けて出す。
   API の定義（import-openapi）があれば、観測した API のうち定義に無いものを出す。
+  クラウドのリソース（import-ocsf）があれば、図のノードに結びついていないものを出す。
   --previous <old-project.json>                 前回のプロジェクト JSON（新しく見えた・見えなくなった観測を比較。保存はしない）
   --format <md|json>                            出力形式（既定: md）
   -o, --out <file>                              出力先ファイル（既定: 標準出力）
@@ -1989,6 +2001,38 @@ ${USAGE}`);
 `);
 }
 
+/** `import-ocsf`：OCSF の検査結果を指摘とクラウドのリソースの資産として保存する（plan §2.149）。 */
+function runImportOcsf(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  if (!values.in) fail('--in <findings.ocsf.json> を指定してください。');
+  if (!values.scope) fail('--scope を指定してください。');
+  const report = parseEnum(values.report, IMPORT_PROWLER_REPORTS, 'report') ?? 'md';
+  const parsed = parseOcsf(readJsonFile(values.in));
+  if (!parsed.ok) fail(`${parsed.error}（${values.in}）`);
+  let nodeMap: Record<string, string> | undefined;
+  if (values.map) {
+    const m = z.record(z.string(), z.string()).safeParse(readJsonFile(values.map));
+    if (!m.success) fail(`--map は {"<リソースの ID または名前>": "<ノード ID>"} の JSON にしてください（${values.map}）`);
+    nodeMap = m.data;
+  }
+  let out: ReturnType<typeof importOcsf>;
+  try {
+    out = importOcsf(readJsonFile(file), parsed, { scope: values.scope, ...(nodeMap ? { nodeMap } : {}) });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  if (values.out) writeFileSync(values.out, JSON.stringify(out.project, null, 2), 'utf-8');
+  process.stdout.write(`${report === 'json' ? JSON.stringify(ocsfReportToJson(out), null, 2) : ocsfReportToMarkdown(out)}
+`);
+  process.stderr.write(
+    `OCSF の検査結果を取り込みました（指摘 ${out.products.reduce((n, p) => n + p.findings, 0)} 件・クラウドのリソース ${out.resources.total} 件）
+`,
+  );
+}
+
 /** `import-sbom`：CycloneDX・SPDX の部品をプロジェクト JSON に保存する（docs/architecture.md §8.8）。 */
 function runImportSbom(values: CliValues, positionals: string[]): void {
   const file = positionals[1];
@@ -3173,6 +3217,8 @@ function main(): void {
     runImportShodan(values, positionals);
   } else if (command === 'import-openapi') {
     runImportOpenapi(values, positionals);
+  } else if (command === 'import-ocsf') {
+    runImportOcsf(values, positionals);
   } else if (command === 'import-entra-apps') {
     runImportEntraApps(values, positionals).catch((e: unknown) => {
       fail(`Microsoft Graph の在庫の取り込みに失敗しました: ${e instanceof Error ? e.message : String(e)}`);

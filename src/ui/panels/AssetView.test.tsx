@@ -52,6 +52,16 @@ const views: AssetViews = {
     endpoint('e1', { method: 'GET', url: 'https://www.example.com/a?x=1', params: [{ name: 'x', location: 'query' }], subject }),
     endpoint('e2', { method: 'POST', url: 'https://www.example.com/b' }),
   ],
+  resources: [
+    {
+      id: 'r1',
+      source: { format: 'ocsf', product: 'ExampleCspm', importedAt: '2026-11-15T00:00:00Z' },
+      externalId: 'resource:arn:aws:s3:::example-bucket',
+      identifiers: [],
+      kind: 'resource',
+      cloud: { provider: 'AWS', account: '123456789012', region: 'ap-northeast-1', type: 'S3 Bucket', name: 'example-bucket' },
+    },
+  ],
   apis: [
     {
       subject,
@@ -65,7 +75,7 @@ const views: AssetViews = {
 const resolve = (s: AssetSubject | undefined): ResolvedNode | null =>
   s?.nodeId === 'n1' ? { label: 'C5 会員 API', findings: 3 } : null;
 const noop = () => {};
-const render = (mode: 'hosts' | 'requests' | 'apis' | 'sbom', v: AssetViews = views) =>
+const render = (mode: 'hosts' | 'requests' | 'apis' | 'resources' | 'sbom', v: AssetViews = views) =>
   renderToStaticMarkup(<AssetViewBody views={v} mode={mode} resolve={resolve} onOpen={noop} />);
 
 describe('AssetViewBody', () => {
@@ -110,8 +120,17 @@ describe('AssetViewBody', () => {
     expect(html).toContain('暗号');
     expect(html).toContain('未対応');
   });
+  it('resources: 完全なリソース ID・事業者・アカウント・製品を出し、結びつかなければ未対応', () => {
+    const html = render('resources');
+    expect(html).toContain('arn:aws:s3:::example-bucket');
+    expect(html).not.toContain('resource:arn');
+    expect(html).toContain('123456789012');
+    expect(html).toContain('AWS');
+    expect(html).toContain('ExampleCspm');
+    expect(html).toContain('未対応');
+  });
   it('0 件の見方は該当なしを出す', () => {
-    const html = render('requests', { hosts: [], requests: [], apis: [], sbom: [] });
+    const html = render('requests', { hosts: [], requests: [], apis: [], resources: [], sbom: [] });
     expect(html).toContain('この見方に該当する資産はありません');
   });
 });

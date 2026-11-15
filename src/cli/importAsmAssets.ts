@@ -48,9 +48,9 @@ export function importAsmAssets(rawProject: unknown, exposed: readonly ExposedSe
   const badRefs = new Set<string>();
   const assets = exposedServicesToAssets(exposed, source).map((asset) => {
     const hostnames = asset.identifiers.filter((i) => i.scheme === 'fqdn' || i.scheme === 'hostname').map((i) => i.value);
-    const hit = resolveHost(nodes, { hostnames, ips: [asset.host] }, options.nodeMap, options.node);
+    const hit = resolveHost(nodes, { hostnames, ips: asset.host ? [asset.host] : [] }, options.nodeMap, options.node);
     if (hit.kind === 'found') return { ...asset, subject: { layer: hit.node.layer, nodeId: hit.node.id } };
-    unlinked.add(asset.host);
+    if (asset.host) unlinked.add(asset.host);
     if (hit.reason !== 'none' && hit.ref) badRefs.add(hit.ref);
     return asset;
   });

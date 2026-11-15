@@ -1388,7 +1388,7 @@ export const MAX_VULN_INTEL = 5000;
 
 /** 資産の入力の形式。 */
 /** `manual` は NodePanel の資産ポップアップから人が手で登録したもの（docs/node-address-asset-panel.md §3.2）。 */
-export const ASSET_FORMATS = ['artex-assets', 'shodan', 'scopesentry', 'metasploit', 'cyberstrikeai-assets', 'manual', 'openapi'] as const;
+export const ASSET_FORMATS = ['artex-assets', 'shodan', 'scopesentry', 'metasploit', 'cyberstrikeai-assets', 'manual', 'openapi', 'ocsf'] as const;
 export type AssetFormat = (typeof ASSET_FORMATS)[number];
 
 /** 資産の出どころ（docs/architecture.md §8.7）。 */
@@ -1401,6 +1401,20 @@ export interface AssetSource extends ImportSource<AssetFormat> {
 export interface AssetParam {
   name: string;
   location: string;
+}
+
+/** クラウドのリソース（kind: 'resource'）の属性。ID は `externalId` に完全な形で持つ（アカウント ID を伏せない。plan §2.149）。 */
+export interface AssetCloud {
+  /** クラウド事業者（OCSF の `cloud.provider`。例：AWS・Azure・GCP）。 */
+  provider?: string;
+  /** アカウント・サブスクリプション・プロジェクトの ID。 */
+  account?: string;
+  region?: string;
+  /** リソースの種類（製品の表記のまま）。 */
+  type?: string;
+  /** サービス名（OCSF の `group.name`）。 */
+  service?: string;
+  name?: string;
 }
 
 /** 資産が結びつく図のノード。 */
@@ -1421,8 +1435,10 @@ export interface Asset {
   externalId: string;
   /** 同一判定の鍵。scheme は ip・fqdn・hostname・url（将来 arn・purl・cpe）と製品の ID。 */
   identifiers: FindingIdentifier[];
-  kind: 'service' | 'endpoint';
-  host: string;
+  /** `resource` はクラウドのリソース（ホストを持たない。`cloud` に属性）。 */
+  kind: 'service' | 'endpoint' | 'resource';
+  /** service・endpoint では必ずある。resource には無い。 */
+  host?: string;
   ip?: string;
   domain?: string;
   port?: number;
@@ -1432,6 +1448,7 @@ export interface Asset {
   method?: string;
   url?: string;
   params?: AssetParam[];
+  cloud?: AssetCloud;
   /** 結びついたノード。無ければ未対応。 */
   subject?: AssetSubject;
   /** 製品が観測した時刻（ISO 8601）。 */

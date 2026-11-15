@@ -1,0 +1,15 @@
+# OCSF（Open Cybersecurity Schema Framework）の検査結果の、製品ごとの検査 ID → 脅威ライブラリの canonicalId の対応表。
+# 出典：OCSF Schema 1.5.0（https://schema.ocsf.io/）の Detection Finding・Compliance Finding。
+#
+# 取り込み（import-ocsf）は、FAIL の検査結果を指摘として保存する。この表に載っている検査だけが
+# 構成図から検出した脅威（同じ canonicalId）と結びつく。載っていない検査も指摘として残す（脅威とは結ばない）。
+#
+# 方針:
+#   - product は OCSF の metadata.product.name と同じ表記にする（大文字小文字は区別しない）。
+#   - Prowler は prowler.yaml の対応をそのまま使うので、ここには書かない。
+#   - 検査 ID は製品に実在するものだけを書く。説明文は転載しない。
+#   - 1 つの製品の中で、1 つの検査 ID は 1 つのエントリにだけ書く（重複は読み込み時にエラー）。
+#
+# SPDX-License-Identifier: Apache-2.0
+schemaVersion: 1
+products: []

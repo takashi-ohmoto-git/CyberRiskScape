@@ -532,8 +532,8 @@ const PersistedAssetSchema = z.object({
   }),
   externalId: z.string().min(1).max(3000).optional(),
   identifiers: z.array(z.object({ scheme: z.string().min(1).max(50), value: z.string().min(1).max(2000) })).max(20).transform(normalizeIdentifiers).optional(),
-  kind: z.enum(['service', 'endpoint']),
-  host: z.string().min(1).max(FINDING_TEXT_MAX),
+  kind: z.enum(['service', 'endpoint', 'resource']),
+  host: z.string().min(1).max(FINDING_TEXT_MAX).optional(),
   ip: z.string().max(100).optional(),
   domain: z.string().max(FINDING_TEXT_MAX).optional(),
   port: z.number().int().min(1).max(65535).optional(),
@@ -542,9 +542,19 @@ const PersistedAssetSchema = z.object({
   method: z.string().max(20).optional(),
   url: z.string().max(2000).optional(),
   params: z.array(z.object({ name: z.string().max(200), location: z.string().max(50) })).max(200).optional(),
+  cloud: z
+    .object({
+      provider: z.string().max(50).optional(),
+      account: z.string().max(200).optional(),
+      region: z.string().max(100).optional(),
+      type: z.string().max(200).optional(),
+      service: z.string().max(100).optional(),
+      name: z.string().max(FINDING_TEXT_MAX).optional(),
+    })
+    .optional(),
   subject: z.object({ layer: LayerKeySchema, nodeId: z.string().min(1) }).optional(),
   observedAt: z.string().max(40).optional(),
-}).transform((a): Asset => {
+}).refine((a) => a.kind === 'resource' || a.host !== undefined, { message: 'service・endpoint の資産には host が要ります', path: ['host'] }).transform((a): Asset => {
   const { observedAt, ...rest } = a;
   const iso = observedAt ? toIsoTimestamp(observedAt) : undefined;
   return {

@@ -56,6 +56,21 @@ describe('buildAssetViews', () => {
   it('ホスト：結びつかなければ subjects は空（未対応）', () => {
     expect(buildAssetViews([svc('a')], nodes).hosts[0].subjects).toEqual([]);
   });
+  it('resource 種別の資産 → resources だけに載り、ホスト・リクエスト・API には載らない', () => {
+    const r: Asset = {
+      id: 'r1',
+      source,
+      externalId: 'resource:arn:aws:s3:::example-bucket',
+      identifiers: [],
+      kind: 'resource',
+      cloud: { provider: 'AWS', name: 'example-bucket' },
+    };
+    const v = buildAssetViews([r], nodes);
+    expect(v.resources).toHaveLength(1);
+    expect(v.hosts).toEqual([]);
+    expect(v.requests).toEqual([]);
+    expect(v.apis).toEqual([]);
+  });
   it('API 系のノードに結びつくエンドポイント → API だけに載る', () => {
     const v = buildAssetViews([ep('a', { subject: { layer: 'L1', nodeId: 'api' } })], nodes);
     expect(v.requests).toEqual([]);

@@ -191,6 +191,9 @@ export const IDENTIFIER_SCHEMES = {
   purl: { kind: 'identity', scope: 'global', normalize: normalizePurlIdentity },
   cpe: { kind: 'identity', scope: 'global', normalize: lower },
   'sha-256': { kind: 'identity', scope: 'global', normalize: normalizeSha256 },
+  // クラウドのリソースの ID（アカウント ID を含む完全な形。Azure の ID は大文字小文字を区別しない）
+  arn: { kind: 'identity', scope: 'global' },
+  'azure-resource-id': { kind: 'identity', scope: 'global', normalize: lower },
   cve: { kind: 'identity', scope: 'global', normalize: upper },
   ghsa: { kind: 'identity', scope: 'global', normalize: normalizeGhsa },
   // 分類
@@ -203,12 +206,14 @@ export const IDENTIFIER_SCHEMES = {
   'security-audit-attack-class': { kind: 'classification', scope: 'product' },
   'bloodhound-query': { kind: 'classification', scope: 'product' },
   'msgraph-check': { kind: 'classification', scope: 'product' },
+  'ocsf-check': { kind: 'classification', scope: 'product' },
   // 取り込み元の製品の中だけで通じる ID
   'artex-asset-id': { kind: 'product', scope: 'product' },
   'cyberstrikeai-asset-id': { kind: 'product', scope: 'product' },
   'pentest-id': { kind: 'product', scope: 'product' },
   'metasploit-service': { kind: 'product', scope: 'product' },
   'security-audit-fingerprint': { kind: 'product', scope: 'product' },
+  'cloud-resource-id': { kind: 'product', scope: 'product' },
   // 識別子ではない付加情報（Nuclei の取り込みが以前スコアを入れていた。古い保存データのために残す）
   epss: { kind: 'annotation', scope: 'global' },
 } as const satisfies Record<string, IdentifierSchemeDef>;

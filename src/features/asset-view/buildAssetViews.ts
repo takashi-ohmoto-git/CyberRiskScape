@@ -1,7 +1,7 @@
 import type { Asset, AssetSubject, BomComponent, ComponentTypeId, DiagramNode, LayerKey } from '../../core/model/types';
 
 /**
- * 資産を Asset タブの 3 つの見方（ホスト・ドメイン／リクエスト／API）に振り分ける（docs/architecture.md §8.7）。
+ * 資産を Asset タブの見方（ホスト・ドメイン／リクエスト／API／クラウドのリソース）に振り分ける（docs/architecture.md §8.7）。
  * エンドポイントはリクエストか API のどちらか一方にだけ載る。URL の字面では判定しない。
  * DOM にも Node にも依存しない純粋関数。
  */
@@ -41,6 +41,8 @@ export interface AssetViews {
   hosts: HostRow[];
   requests: Asset[];
   apis: ApiGroup[];
+  /** クラウドのリソース（kind: resource。OCSF の取り込み）。事業者・アカウント・種類・名前の順。 */
+  resources: Asset[];
   /** SBOM の見方。CBOM・AI BOM の部品も kind で区別して載る。 */
   sbom: BomComponent[];
 }
@@ -56,7 +58,7 @@ function isApi(asset: Asset, nodes: readonly AssetViewNode[]): boolean {
 function buildHosts(services: readonly Asset[]): HostRow[] {
   const byHost = new Map<string, { row: HostRow; ports: Map<number | string, string> }>();
   for (const s of services) {
-    const key = s.ip ?? s.host;
+    const key = s.ip ?? s.host ?? '';
     const entry = byHost.get(key) ?? {
       row: { host: key, domains: [], ports: [], technologies: [], subjects: [] },
       ports: new Map<number | string, string>(),
@@ -129,6 +131,13 @@ export function buildAssetViews(
     hosts: buildHosts(assets.filter((a) => a.kind === 'service')),
     requests: endpoints.filter((a) => !isApi(a, nodes)).sort(endpointOrder),
     apis: [...groups.values()].map((g) => ({ ...g, endpoints: [...g.endpoints].sort(endpointOrder) })),
+    resources: assets
+      .filter((a) => a.kind === 'resource')
+      .sort((a, b) => {
+        const k = (x: Asset) => [x.cloud?.provider, x.cloud?.account, x.cloud?.type, x.cloud?.name ?? x.externalId].map((v) => v ?? '');
+        const [ka, kb] = [k(a), k(b)];
+        return ka.reduce((r, v, i) => r || v.localeCompare(kb[i]), 0);
+      }),
     sbom: [...bomComponents].sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)),
   };
 }

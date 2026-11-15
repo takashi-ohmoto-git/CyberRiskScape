@@ -18,7 +18,7 @@ import { useT, type TranslationKey } from '../../i18n';
  * 表の部分は props だけで描ける AssetViewBody に分け、テストしやすくしている。
  */
 
-export type AssetMode = 'hosts' | 'requests' | 'apis' | 'sbom';
+export type AssetMode = 'hosts' | 'requests' | 'apis' | 'resources' | 'sbom';
 
 /** 結びついたノードの表示用情報。解決できなければ null（未対応）。 */
 export interface ResolvedNode {
@@ -168,6 +168,45 @@ function SbomTable({ rows, resolve, onOpen }: { rows: BomComponent[]; resolve: A
   );
 }
 
+function ResourcesTable({ rows, resolve, onOpen }: { rows: Asset[]; resolve: AssetViewBodyProps['resolve']; onOpen: AssetViewBodyProps['onOpen'] }) {
+  const t = useT();
+  return (
+    <table className="w-full border-collapse">
+      <thead>
+        <tr>
+          <th className={TH}>{t('project.assetView.col.kind')}</th>
+          <th className={TH}>{t('project.assetView.col.name')}</th>
+          <th className={TH}>{t('project.assetView.col.resourceId')}</th>
+          <th className={TH}>{t('project.assetView.col.provider')}</th>
+          <th className={TH}>{t('project.assetView.col.account')}</th>
+          <th className={TH}>{t('project.assetView.col.region')}</th>
+          <th className={TH}>{t('project.assetView.col.product')}</th>
+          <th className={TH}>{t('project.assetView.col.node')}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((a) => {
+          const resolved = resolve(a.subject);
+          return (
+            <tr key={a.id} {...rowProps(a.subject, resolved, onOpen)}>
+              <td className={TD}>{a.cloud?.type ?? '—'}</td>
+              <td className={`${TD} min-w-[8rem] break-words`}>{a.cloud?.name ?? '—'}</td>
+              <td className={`${TD} min-w-[20rem] font-mono break-all`}>{a.externalId.replace(/^resource:/, '')}</td>
+              <td className={TD}>{a.cloud?.provider ?? '—'}</td>
+              <td className={`${TD} font-mono`}>{a.cloud?.account ?? '—'}</td>
+              <td className={TD}>{a.cloud?.region ?? '—'}</td>
+              <td className={TD}>{a.source.product}</td>
+              <td className={TD}>
+                <NodeCell resolved={resolved} />
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
 function methodClass(method: string | undefined): string {
   if (method === 'POST') return 'bg-orange-900/50 text-orange-300 border-orange-700';
   if (method === 'GET') return 'bg-sky-900/50 text-sky-300 border-sky-700';
@@ -220,6 +259,9 @@ export function AssetViewBody({ views, mode, resolve, onOpen }: AssetViewBodyPro
   if (mode === 'sbom') {
     return views.sbom.length === 0 ? empty : <SbomTable rows={views.sbom} resolve={resolve} onOpen={onOpen} />;
   }
+  if (mode === 'resources') {
+    return views.resources.length === 0 ? empty : <ResourcesTable rows={views.resources} resolve={resolve} onOpen={onOpen} />;
+  }
   if (mode === 'requests') {
     return views.requests.length === 0 ? empty : <EndpointsTable endpoints={views.requests} resolve={resolve} onOpen={onOpen} />;
   }
@@ -247,11 +289,12 @@ export function AssetViewBody({ views, mode, resolve, onOpen }: AssetViewBodyPro
   );
 }
 
-export const MODES: AssetMode[] = ['hosts', 'requests', 'apis', 'sbom'];
+export const MODES: AssetMode[] = ['hosts', 'requests', 'apis', 'resources', 'sbom'];
 export const MODE_LABEL_KEYS = {
   hosts: 'project.assetView.mode.hosts',
   requests: 'project.assetView.mode.requests',
   apis: 'project.assetView.mode.apis',
+  resources: 'project.assetView.mode.resources',
   sbom: 'project.assetView.mode.sbom',
 } as const;
 
@@ -315,6 +358,7 @@ export function AssetView() {
     hosts: views.hosts.length,
     requests: views.requests.length,
     apis: apiCount,
+    resources: views.resources.length,
     sbom: views.sbom.length,
   };
 

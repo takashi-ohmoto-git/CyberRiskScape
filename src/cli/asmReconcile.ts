@@ -90,6 +90,20 @@ export function reconcileToMarkdown(r: ReconcileResult): string {
     }
   }
 
+  if (r.cloudResources) {
+    const c = r.cloudResources;
+    out.push(`## 図に無いクラウドのリソース（${c.total} 件のうち ${c.unbound.length} 件）`, '');
+    out.push('> OCSF の検査結果に出たリソースのうち、図のどのノードにも結びついていないもの。描き漏れ・把握していない資産の候補で、判定ではない。検査の対象になったリソースだけが出る。', '');
+    if (c.unbound.length === 0) out.push('- 該当なし', '');
+    else {
+      out.push('| 種類 | 名前 | ID | 事業者 | アカウント | リージョン | 製品 |', '| --- | --- | --- | --- | --- | --- | --- |');
+      out.push(
+        ...c.unbound.map((u) => `| ${[u.type ?? '—', u.name ?? '—', u.uid, u.provider ?? '—', u.account ?? '—', u.region ?? '—', u.product].map(cell).join(' | ')} |`),
+        '',
+      );
+    }
+  }
+
   if (r.diff) {
     out.push('## 前回との差分', '');
     out.push(`### 新しく見えた（${r.diff.appeared.length} 件）`, '');
