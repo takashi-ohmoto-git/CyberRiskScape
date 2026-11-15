@@ -9,6 +9,7 @@ import {
   type SerializableState,
 } from './serialize';
 import { PERSISTED_PROJECT_SCHEMA_VERSION } from './schema';
+import { version as APP_VERSION } from '../../../package.json';
 import { EMPTY_LAYER, MAX_FINDINGS, type Finding, type LayerData, type LayerKey } from '../../core/model/types';
 
 const L1_DATA: LayerData = {
@@ -54,6 +55,20 @@ describe('serializeProject / deserializeProject', () => {
     expect(out.schemaVersion).toBe(PERSISTED_PROJECT_SCHEMA_VERSION);
     expect(out.updatedAt).toBeGreaterThanOrEqual(before);
     expect(out.updatedAt).toBeLessThanOrEqual(after);
+  });
+
+  it('serialize は保存したアプリの版（appVersion）を付与し、読み込んでも残る', () => {
+    const out = serializeProject(STATE);
+    expect(out.appVersion).toBe(APP_VERSION);
+    expect(deserializeProject(JSON.parse(JSON.stringify(out)))?.appVersion).toBe(APP_VERSION);
+  });
+
+  it('appVersion の無いファイル・形が不正なファイルも読める（不正な値は読み捨てる）', () => {
+    const { appVersion: _v, ...without } = serializeProject(STATE);
+    expect(deserializeProject(without)).not.toBeNull();
+    const bad = deserializeProject({ ...without, appVersion: 123 });
+    expect(bad).not.toBeNull();
+    expect(bad?.appVersion).toBeUndefined();
   });
 
   it('round-trip でレイヤー構造が保持される', () => {

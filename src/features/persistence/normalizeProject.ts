@@ -17,7 +17,7 @@ import type { PersistedProject } from './schema';
  * - 旧 framework 値（`deserializeProject` が行う）
  *
  * それ以外の項目は組み替えずにそのまま通す（保存形式に項目を足しても、ここを直さずに通る）。
- * `updatedAt` は変えないので、同じ入力からは同じ結果になり、2 回かけても変わらない。
+ * `updatedAt` と `appVersion`（保存した版の記録）は変えないので、同じ入力からは同じ結果になり、2 回かけても変わらない。
  */
 export function normalizeProject(raw: unknown): PersistedProject | null {
   const loaded = deserializeProject(raw);

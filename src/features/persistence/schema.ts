@@ -606,6 +606,12 @@ export const PersistedProjectSchema = z.object({
    */
   projectId: z.uuid().optional().catch(undefined),
   /**
+   * このファイルを保存したアプリの版（例 '0.8.0'）。この項目を足す前のファイルには無い。
+   * 自分より新しい版で保存されたファイルかどうかを、読む側が確かめるための記録。
+   * 形が不正な値は読み捨てる。schemaVersion は据え置き（optional 追加は後方互換）。
+   */
+  appVersion: z.string().min(1).max(50).optional().catch(undefined),
+  /**
    * 旧形式（深度レイヤー導入前）のトップレベルダイアグラム。後方互換のため optional。
    * `layers` が未指定なら deserialize 時にこれを L1 へマイグレートする。
    */

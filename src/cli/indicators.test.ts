@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { analyzeProject } from './analyze';
 import { projectIndicators } from './indicators';
+import { getThreatLibrary } from '../threat-library/loader/bundledLibrary';
+import { version as APP_VERSION } from '../../package.json';
 
 const FIXTURE_PATH = new URL('./__fixtures__/sample-project.json', import.meta.url);
 const raw = () => JSON.parse(readFileSync(FIXTURE_PATH, 'utf8')) as Record<string, unknown>;
@@ -27,6 +29,13 @@ describe('projectIndicators', () => {
       suppressions: Object.fromEntries(ids.map((id) => [id, { status: 'reduce', at: 1 }])),
     });
     expect(report.indicators).toMatchObject({ controlSetRate: 1, treatmentSetRate: 1, implementedRate: 1, value: 1 });
+  });
+
+  it('計算したアプリの版と、判定に使ったルールの件数を添える', () => {
+    const report = projectIndicators(raw());
+    expect(report.appVersion).toBe(APP_VERSION);
+    expect(report.ruleCount).toBe(getThreatLibrary('ja').rules.length);
+    expect(report.ruleCount).toBeGreaterThan(0);
   });
 
   it('プロジェクトの ID と組織上の属性を添える（無い項目は出さない）', () => {

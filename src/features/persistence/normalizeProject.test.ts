@@ -60,6 +60,11 @@ describe('normalizeProject', () => {
     expect(out.activeFramework).toBe('AgenticAI');
   });
 
+  it('appVersion（保存した版の記録）は書き換えない。無いファイルには足さない', () => {
+    expect(normalizeProject({ ...LEGACY, appVersion: '0.1.0' })!.appVersion).toBe('0.1.0');
+    expect('appVersion' in normalizeProject(LEGACY)!).toBe(false);
+  });
+
   it('updatedAt は変えない。2 回かけても結果は同じ', () => {
     const once = normalizeProject(LEGACY)!;
     expect(once.updatedAt).toBe(1234);

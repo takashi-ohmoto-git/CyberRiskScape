@@ -9,6 +9,8 @@ import {
   type AttackPathExposure,
 } from '../features/indicators/computeAttackPathExposure';
 import { LAYER_KEYS, type BusinessCriticality, type ProjectLifecycle } from '../core/model/types';
+import { getThreatLibrary } from '../threat-library/loader/bundledLibrary';
+import { version as APP_VERSION } from '../../package.json';
 
 /**
  * `indicators`：脅威モデル単位の指標（設定率・検討率・実装済みの割合と、3 つをまとめた値）を出す。
@@ -17,6 +19,10 @@ import { LAYER_KEYS, type BusinessCriticality, type ProjectLifecycle } from '../
  */
 export interface ProjectIndicatorsReport {
   schemaVersion: 1;
+  /** 計算したアプリの版。 */
+  appVersion: string;
+  /** 判定に使った同梱ルールの件数（ルールが増えたことによる値の変化を、取り組みの変化と見分けるため）。 */
+  ruleCount: number;
   projectId?: string;
   projectName?: string;
   organizationName?: string;
@@ -39,6 +45,8 @@ export function projectIndicators(raw: unknown, weights?: IndicatorWeights): Pro
   const meta = resolved.projectMeta;
   return {
     schemaVersion: 1,
+    appVersion: APP_VERSION,
+    ruleCount: getThreatLibrary('ja').rules.length,
     ...(resolved.projectId ? { projectId: resolved.projectId } : {}),
     ...(meta.name ? { projectName: meta.name } : {}),
     ...(meta.organizationName ? { organizationName: meta.organizationName } : {}),

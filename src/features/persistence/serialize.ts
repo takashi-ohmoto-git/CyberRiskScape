@@ -15,6 +15,7 @@ import type {
 } from '../../core/model/types';
 import { EMPTY_LAYER, LAYER_KEYS } from '../../core/model/types';
 import { applyVulnIntel } from '../vuln-intel/vulnIntel';
+import { version as APP_VERSION } from '../../../package.json';
 
 /** 全レイヤー空の手動脅威 Record を新規生成する（hydrate / 初期化用）。 */
 export function emptyManualThreats(): Record<LayerKey, ManualThreat[]> {
@@ -102,6 +103,7 @@ export function serializeProject(state: SerializableState): PersistedProject {
   return {
     schemaVersion: PERSISTED_PROJECT_SCHEMA_VERSION,
     ...(state.projectId ? { projectId: state.projectId } : {}),
+    appVersion: APP_VERSION,
     layers: state.layers,
     activeLayer: state.activeLayer,
     ...(state.idCounters ? { idCounters: state.idCounters } : {}),
