@@ -1,0 +1,27 @@
+# SARIF の取り込みで、利用者が「この SARIF は何の走査の結果か」を指定したときの扱い（CLI import-sarif --category）。
+#
+# CWE を持たない走査の結果（例：秘密の走査）は、規則ごとの対応表（cwe.yaml）では脅威に結べない。
+# 製品の名前や規則 ID で見分けず、取り込む人が分類を指定し、その分類の結果をすべて同じ脅威に結ぶ。
+#
+# 方針:
+#   - 製品の名前を書かない（どの製品の SARIF でも、分類の指定だけで扱いが決まる）
+#   - `canonicalIds` は脅威ライブラリに実在すること（テストで確認）
+#   - `nodeTypes` は、その脅威が出る図のノードの型（指摘を結ぶ先の目安。報告で案内する）
+#   - `defaultSeverity` は、SARIF に深刻度（security-severity・level）が無い結果に使う
+#   - `useMessageAsTitle: false` の分類は、結果の message を題名に使わない（値が含まれうるため）。
+#     コード片（snippet）は分類によらず読まない
+#   - `allowRawReport: true` の分類だけ、`--show-secrets` で取り込みの報告に生の情報（場所・コミットの情報・秘密の値）を出せる。
+#     既定は件数だけ。生の情報はプロジェクト JSON・書き出し・画面には入れない（2026-11-15 ユーザー指示：漏えいした秘密そのものを調べるため）
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+categories:
+  - id: secrets
+    title: 秘密の露出（秘密の走査の結果）
+    canonicalIds: [credential-sprawl]
+    nodeTypes: [CREDENTIAL]
+    defaultSeverity: High
+    useMessageAsTitle: false
+    allowRawReport: true

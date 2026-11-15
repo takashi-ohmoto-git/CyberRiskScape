@@ -2,11 +2,17 @@ import type { Finding, FindingIdentifier, LayerKey, Severity } from '../../core/
 import { capFindings, normalizeSeverity } from '../findings-import/replaceFindings';
 import { cweToCanonicalIds, type FindingMapping } from '../findings-report/findingMap';
 import type { SarifResult, SarifRule, SarifRun } from './parseSarif';
+import type { SarifCategory } from './sarifCategories';
 
 /**
  * 汎用の SARIF の結果を共通モデルの指摘（`Finding`）へ変換する純粋関数（docs/architecture.md §8.6）。
  * message の本文・コード片・codeFlows は保存しない。場所は相対的な表記に落とす（利用者名を持ち帰らない）。
+ * 指摘の ID には、partialFingerprints のうちハッシュ・指紋の項目だけを使う（作者・メールアドレス等を ID に入れない）。
+ * 無ければ規則・ファイル・行で作る。利用者が分類（`category`）を指定したときは、その分類の脅威にすべての結果を結ぶ。
  */
+
+/** ID に使ってよい partialFingerprints の項目（ハッシュ・指紋）。 */
+const FINGERPRINT_KEY = /hash|fingerprint/i;
 
 const TITLE_MAX = 120;
 const LABEL_MAX = 200;
@@ -38,6 +44,8 @@ export interface SarifToFindingsInput {
   scope: string;
   subject?: { layer: LayerKey; nodeId: string };
   importedAt: string;
+  /** 利用者が指定した分類（例：秘密の走査の結果）。 */
+  category?: SarifCategory;
 }
 
 /** uri を相対的な表記に落とす（file://・ドライブ・ホームディレクトリを落とす）。 */
@@ -74,14 +82,21 @@ function collectCwes(rule: SarifRule | undefined, result: SarifResult): number[]
   return [...out];
 }
 
-function severityOf(rule: SarifRule | undefined, result: SarifResult): { severity: Severity; source: string } {
+function severityOf(
+  rule: SarifRule | undefined,
+  result: SarifResult,
+  fallback?: Severity,
+): { severity: Severity; source: string } {
   const raw = result.properties?.['security-severity'] ?? rule?.properties?.['security-severity'];
   const score = raw === undefined ? NaN : Number(raw);
   if (Number.isFinite(score)) {
     const severity: Severity = score >= 9 ? 'Critical' : score >= 7 ? 'High' : score >= 4 ? 'Medium' : 'Low';
     return { severity, source: String(raw) };
   }
-  const level = result.level ?? rule?.defaultConfiguration?.level ?? 'warning';
+  const explicit = result.level ?? rule?.defaultConfiguration?.level;
+  // 深刻度が書かれていない結果は、分類の既定の深刻度を使う
+  if (explicit === undefined && fallback) return { severity: fallback, source: 'category-default' };
+  const level = explicit ?? 'warning';
   const severity: Severity =
     level === 'error' ? 'High' : level === 'warning' ? 'Medium' : level === 'note' || level === 'none' ? 'Low' : normalizeSeverity(level);
   return { severity, source: level };
@@ -136,7 +151,7 @@ export function sarifToFindings(input: SarifToFindingsInput): SarifConversion {
       const label = uri ? `${uri}${line !== undefined ? `:${line}` : ''}` : undefined;
 
       const cwes = collectCwes(rule, r);
-      const canonicalIds = new Set<string>();
+      const canonicalIds = new Set<string>(input.category?.canonicalIds ?? []);
       for (const c of cwes) for (const id of cweToCanonicalIds(input.map, c) ?? []) canonicalIds.add(id);
       if (cwes.length > 0 && canonicalIds.size === 0) report.cweUnmapped++;
 
@@ -147,8 +162,8 @@ export function sarifToFindings(input: SarifToFindingsInput): SarifConversion {
         ...(cve ? [{ scheme: 'cve', value: cve }] : []),
         ...cwes.map((c) => ({ scheme: 'cwe', value: String(c) })),
       ];
-      const { severity, source: sourceSeverity } = severityOf(rule, r);
-      const fingerprint = r.partialFingerprints ? Object.values(r.partialFingerprints)[0] : undefined;
+      const { severity, source: sourceSeverity } = severityOf(rule, r, input.category?.defaultSeverity);
+      const fingerprint = Object.entries(r.partialFingerprints ?? {}).find(([k]) => FINGERPRINT_KEY.test(k))?.[1];
       const externalId = (fingerprint ?? `${rid}:${uri ?? ''}:${line ?? ''}`).slice(0, EXTERNAL_ID_MAX);
       const id = `${product}:${externalId}`;
       if (seen.has(id)) continue;
@@ -158,7 +173,7 @@ export function sarifToFindings(input: SarifToFindingsInput): SarifConversion {
         source,
         externalId,
         identifiers: identifiers.slice(0, 20),
-        title: (rule?.shortDescription?.text ?? r.message?.text ?? rid).slice(0, TITLE_MAX),
+        title: (rule?.shortDescription?.text ?? (input.category?.useMessageAsTitle === false ? undefined : r.message?.text) ?? rid).slice(0, TITLE_MAX),
         severity,
         sourceSeverity: sourceSeverity.slice(0, 50),
         canonicalIds: [...canonicalIds].slice(0, 20),

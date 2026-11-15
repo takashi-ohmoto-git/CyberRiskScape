@@ -35,6 +35,8 @@ import { bloodhoundReportToJson, bloodhoundReportToMarkdown, importBloodhound } 
 import { entraAppsReportToJson, entraAppsReportToMarkdown, importEntraApps, type EntraAppsRaw } from './importEntraApps';
 import { fetchGraphInventory, graphCredentialsFromEnv } from '../features/entra-apps-import/fetchGraph';
 import { BUNDLED_GRAPH_PERMISSIONS } from '../features/entra-apps-import/graphPermissions';
+import { BUNDLED_SARIF_CATEGORIES } from '../features/sarif-import/sarifCategories';
+import { extractSecretDetails } from '../features/sarif-import/secretDetails';
 import { BUNDLED_BLOODHOUND_QUERIES } from '../features/bloodhound-import/bloodhoundQueries';
 import { credentialsFromEnv as bloodhoundCredentialsFromEnv, fetchBloodhoundQueries } from '../features/bloodhound-import/fetchBloodhound';
 import { SERVICE_SCOPE_KINDS } from '../core/model/serviceScope';
@@ -429,6 +431,10 @@ import-sarif のオプション（汎用の SARIF 2.1.0（Semgrep・CodeQL 等�
   --sarif <file>                                SARIF の JSON（必須）
   --scope <scope>                               置き換えの範囲（必須。同じ製品・同じ scope の指摘を置き換える）
   --node <C番号|ID>                             すべての指摘を結びつけるノード（任意。無ければ未結合）
+  --category <secrets>                          SARIF の分類。secrets＝秘密の走査の結果として扱い、すべての結果を「認証材料の静的保管・スプロール」に結ぶ
+                                                （秘密の値・message は保存しない。認証材料のノードを --node で指定するとカードに結びつく）
+  --show-secrets                                --category secrets のとき、報告に生の情報（場所・コミットの情報・秘密の値）を出す。既定は件数だけ。
+                                                生の情報はプロジェクト JSON・書き出し・画面には入れない
   --report <md|json>                            報告の形式（既定: md。標準出力）
   -o, --out <file>                              指摘を保存したプロジェクト JSON の出力先（指定しなければ報告のみ）
 
@@ -789,6 +795,8 @@ function parseCliArgs() {
       'max-commits': { type: 'string' },
       weights: { type: 'string' },
       kind: { type: 'string' },
+      category: { type: 'string' },
+      'show-secrets': { type: 'boolean' },
       'ca-node': { type: 'string' },
       'idp-node': { type: 'string' },
       'cloud-node': { type: 'string' },
@@ -1676,12 +1684,26 @@ ${USAGE}`);
   if (!values.scope) fail('--scope を指定してください。');
   const report = parseEnum(values.report, IMPORT_PROWLER_REPORTS, 'report') ?? 'md';
 
-  const parsed = parseSarif(readJsonFile(values.sarif));
+  const rawSarif = readJsonFile(values.sarif);
+  const parsed = parseSarif(rawSarif);
   if (!parsed.ok) fail(`${parsed.error}（${values.sarif}）`);
+  const category = values.category === undefined ? undefined : BUNDLED_SARIF_CATEGORIES.find((c) => c.id === values.category);
+  if (values.category !== undefined && !category) {
+    fail(`不正な --category の値です: "${values.category}"（指定可能: ${BUNDLED_SARIF_CATEGORIES.map((c) => c.id).join(' | ')}）`);
+  }
+  if (values['show-secrets'] && !category?.allowRawReport) {
+    fail('--show-secrets は、生の情報を出せる分類（--category secrets）と一緒に指定してください。');
+  }
 
   let out: ReturnType<typeof importSarif>;
   try {
-    out = importSarif(readJsonFile(file), parsed, { scope: values.scope, ...(values.node ? { node: values.node } : {}) });
+    out = importSarif(readJsonFile(file), parsed, {
+      scope: values.scope,
+      ...(values.node ? { node: values.node } : {}),
+      ...(category ? { category } : {}),
+      // 生の情報は報告にだけ出す（プロジェクト JSON には入らない）
+      ...(values['show-secrets'] ? { rawDetails: extractSecretDetails(rawSarif) } : {}),
+    });
   } catch (e) {
     fail(e instanceof Error ? e.message : String(e));
   }
@@ -1690,6 +1712,10 @@ ${USAGE}`);
 `);
   process.stderr.write(`SARIF の結果を取り込みました（run ${out.runs.length} / 保存した指摘 ${out.stored} / 上限で除外 ${out.truncated}）
 `);
+  if (out.rawDetails) {
+    process.stderr.write(`注意：報告に秘密の値を含む生の情報 ${out.rawDetails.length} 件を出しました。共有・保存せず、調べ終えたら消してください（プロジェクト JSON には保存していません）。
+`);
+  }
 }
 
 /** `import-nuclei`：Nuclei の結果（JSONL / JSON）を指摘としてプロジェクト JSON に保存する（docs/architecture.md §8.6）。 */
