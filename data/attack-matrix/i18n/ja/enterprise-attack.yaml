@@ -1,4 +1,4 @@
-# MITRE ATT&CK® Enterprise v20.0 の戦術・テクニック・サブテクニック名の日本語訳（非公式訳）。
+# MITRE ATT&CK® Enterprise v20.1 の戦術・テクニック・サブテクニック名の日本語訳（非公式訳）。
 # 原本: data/attack-matrix/enterprise-attack.yaml（英語名が正。照合は ID で行う）。
 # 原本の名前: © The MITRE Corporation, CC BY 4.0。訳は CyberRiskScape による。
 #
@@ -6,7 +6,7 @@
 
 schemaVersion: 1
 locale: ja
-version: "20.0"
+version: "20.1"
 
 names:
   TA0043: 偵察

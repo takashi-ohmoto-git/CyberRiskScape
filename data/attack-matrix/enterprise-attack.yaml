@@ -1,4 +1,4 @@
-# MITRE ATT&CK® Enterprise マトリクス（v20.0、2026-10-13 公開）
+# MITRE ATT&CK® Enterprise マトリクス（v20.1、2026-11-05 公開）
 # 出典: https://attack.mitre.org/ ／ https://github.com/mitre-attack/attack-stix-data
 # © The MITRE Corporation. Licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).
 # 戦術・テクニック・サブテクニックの ID と名前だけを抜き出したもの（説明文は含まない）。
@@ -6,8 +6,8 @@
 #
 # SPDX-License-Identifier: CC-BY-4.0
 
-version: "20.0"
-modified: 2026-10-13
+version: "20.1"
+modified: 2026-11-05
 tactics:
   - id: TA0043
     name: Reconnaissance

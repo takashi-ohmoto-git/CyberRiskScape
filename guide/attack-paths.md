@@ -223,7 +223,7 @@ disabled when there is no route).
 
 | Matrix | What it shows |
 |---|---|
-| **ATT&CK** | MITRE ATT&CK Enterprise (v20.0) |
+| **ATT&CK** | MITRE ATT&CK Enterprise (v20.1) |
 | **MITRE F3** | MITRE Fight Fraud Framework (a catalogue of fraud techniques). Names are shown as in the original |
 
 - **Coloured cells** are matching techniques, coloured by threat severity. Techniques on a route

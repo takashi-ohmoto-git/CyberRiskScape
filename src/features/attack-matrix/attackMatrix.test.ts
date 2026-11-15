@@ -49,6 +49,15 @@ describe('ATT&CK マトリクス（データ整合）', () => {
     expect(missing).toEqual([]);
   });
 
+  it('検知の要件が参照する ATT&CK ID はすべてマトリクスに存在する（廃止 ID 検知）', () => {
+    const text = readFileSync(join('data', 'detection-requirements', 'detection.yaml'), 'utf8');
+    // T0xxx は ATT&CK for ICS（同梱の Enterprise マトリクスの対象外）なので除く。
+    const missing = extractAttackTechniqueIds([{ title: text }]).filter(
+      (id) => !id.startsWith('T0') && !m.techniques.has(id) && !m.subToParent.has(id),
+    );
+    expect(missing).toEqual([]);
+  });
+
   it('日本語訳が全 ID に過不足なくあり、空でない', () => {
     const allIds = new Set([...m.tactics.map((t) => t.id), ...m.techniques.keys(), ...subs.map((s) => s.id)]);
     const missing = [...allIds].filter((id) => !ATTACK_NAMES_JA.get(id)?.trim());

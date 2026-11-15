@@ -216,7 +216,7 @@ AIエージェント攻撃者）を配置し、**攻撃者が最初に触れる�
 
 | マトリクス | 内容 |
 |---|---|
-| **ATT&CK** | MITRE ATT&CK Enterprise（v20.0）。日本語名は非公式訳 |
+| **ATT&CK** | MITRE ATT&CK Enterprise（v20.1）。日本語名は非公式訳 |
 | **MITRE F3** | MITRE Fight Fraud Framework（詐欺の手口の体系）。名称は原文（英語）のまま |
 
 - **色の付いたセル**が該当するテクニックで、色は脅威の重大度です。経路上のテクニックには
