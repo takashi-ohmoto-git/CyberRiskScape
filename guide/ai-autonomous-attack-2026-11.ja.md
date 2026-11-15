@@ -107,7 +107,7 @@ CyberRiskScape は**未入力を悪い値と同じ扱い**で脅威を出しま�
 
 | 推奨策 | 図で確かめる | 実機で・しないこと |
 |---|---|---|
-| ① 周辺系を含む公開アプリの棚卸し | Project Edit の**担当範囲**（ホスト・ドメイン配下・CIDR・API の URL プレフィックス）を入力し、`asm-reconcile` で「担当範囲の中で図に無い観測」（描き漏れの候補）を出す。観測した API も分ける。`export-scope` で ASM・DAST の探索の起点を書き出す。API の台帳は OpenAPI の定義を `import-openapi` で取り込み、`asm-reconcile` で観測した API のうち「定義に無い API」（台帳外・古い版の候補）を出す。取り込み時に認証の指定が無い操作も報告に出る | ASM の実行。観測の範囲外は出ない |
+| ① 周辺系を含む公開アプリの棚卸し | Project Edit の**担当範囲**（ホスト・ドメイン配下・CIDR・API の URL プレフィックス）を入力し、`asm-reconcile` で「担当範囲の中で図に無い観測」（描き漏れの候補）を出す。観測した API も分ける。`export-scope` で ASM・DAST の探索の起点を書き出す。API の台帳は OpenAPI の定義を `import-openapi` で取り込み、`asm-reconcile` で観測した API のうち「定義に無い API」（台帳外・古い版の候補）を出す。取り込み時に認証の指定が無い操作も報告に出る。クラウドの内側は、IaaS・PaaS の検査結果（OCSF）を `import-ocsf` で取り込むと、検査に出たリソースが資産になり（ID はアカウントを含む完全な形）、`asm-reconcile` で「図に無いクラウドのリソース」が出る | ASM・検査の実行。観測・検査の範囲外は出ない |
 | ② クラウド管理・ネットワーク機器・配置口・ハイパーバイザ・バックアップを信頼できる経路に限定 | 管理面リモートアクセス（`stride-web-remote-mgmt-exposed-001`。属性「リモートアクセス制限」）、API 管理プレーン（`api-control-plane-internet-exposure-001`。`API管理プレーン` 型を置いたとき）、PaaS の配置口（`api-paas-deployment-endpoint-exposure-001`）、仮想化基盤の管理面の奪取（`netinfra-hypervisor-management-takeover-001`）、バックアップの破壊（`storage-backup-ransomware-destruction-001`） | 実際の到達制御の確認 |
 | ③ 基本認証での配置の無効化・配置用の資格情報の制限 | 上の PaaS のルール。配置用の資格情報は `認証情報` を内包させて表す（§4.3 ⑮ の対象になる）。攻撃者から PaaS への線の認証方式（対策後は IdP のトークン） | 発行プロファイルの失効はクラウドの管理画面で |
 | ④ 配置済みのファイルを書き換えにくい配置方式（パッケージからの実行） | 同じ PaaS のルールの緩和策（Advanced）。**属性では消えない**ので、カードの対策実装状況に記録 | 実際の配置方式の確認 |
