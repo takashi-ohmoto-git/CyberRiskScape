@@ -2,6 +2,7 @@ import { normalizeIdentifierValue } from '../../core/model/identifierSchemes';
 import { LAYER_KEYS, type Asset, type DiagramNode, type LayerKey } from '../../core/model/types';
 import { formatElementalId } from '../../core/model/elementalId';
 import { matchServiceScope, type ScopeTarget, type ServiceScopeEntry } from '../../core/model/serviceScope';
+import { matchesApiDefinition } from '../openapi-import/matchApiPath';
 
 /**
  * 図の「外部公開」の入力（attackSurface.hasGlobalIp）と、ASM（Shodan・ScopeSentry）が観測した資産の突き合わせ。
@@ -72,6 +73,8 @@ export interface ReconcileResult {
   diff?: { appeared: ObservedLine[]; disappeared: ObservedLine[] };
   /** 担当範囲が入力されているときだけ入る。 */
   scope?: ScopeSplit;
+  /** API の定義（OpenAPI 等）が 1 件以上あるときだけ入る。観測した API のうち、どの定義にも当たらないもの。 */
+  apiDefinitions?: { definitions: number; observed: number; undocumented: ObservedEndpoint[] };
 }
 
 /** ASM が観測した資産（API 定義由来は除く）。 */
@@ -169,6 +172,23 @@ export function reconcileAsm(input: ReconcileInput, previousAssets?: readonly As
       else if (!node) split.endpointsUnboundInScope.push(ep);
     }
     result.scope = split;
+  }
+  const definitions = (input.assets ?? []).filter((a) => a.kind === 'endpoint' && a.url && a.source.definition === true);
+  if (definitions.length > 0) {
+    const observedEps = observedEndpoints(input.assets);
+    const undocumented: ObservedEndpoint[] = [];
+    for (const a of observedEps) {
+      if (definitions.some((d) => matchesApiDefinition({ method: a.method, url: a.url! }, { method: d.method, url: d.url! }))) continue;
+      const node = findNode(input.layers, a.subject);
+      undocumented.push({
+        assetId: a.id,
+        ...(a.method ? { method: a.method } : {}),
+        url: a.url!,
+        product: a.source.product,
+        ...(node ? { node: nodeName(node) } : {}),
+      });
+    }
+    result.apiDefinitions = { definitions: definitions.length, observed: observedEps.length, undocumented };
   }
   if (previousAssets) {
     const prev = new Map(observedAssets(previousAssets).map((a) => [assetIdentityKey(a), a]));

@@ -37,6 +37,8 @@ import { fetchGraphInventory, graphCredentialsFromEnv } from '../features/entra-
 import { BUNDLED_GRAPH_PERMISSIONS } from '../features/entra-apps-import/graphPermissions';
 import { BUNDLED_SARIF_CATEGORIES } from '../features/sarif-import/sarifCategories';
 import { extractSecretDetails } from '../features/sarif-import/secretDetails';
+import { importOpenapi, openapiReportToJson, openapiReportToMarkdown } from './importOpenapi';
+import { parseOpenApi } from '../features/openapi-import/parseOpenApi';
 import { BUNDLED_BLOODHOUND_QUERIES } from '../features/bloodhound-import/bloodhoundQueries';
 import { credentialsFromEnv as bloodhoundCredentialsFromEnv, fetchBloodhoundQueries } from '../features/bloodhound-import/fetchBloodhound';
 import { SERVICE_SCOPE_KINDS } from '../core/model/serviceScope';
@@ -233,6 +235,7 @@ const USAGE = `使い方:
   convert-strix <findings.sarif | strix_runs/<run>> --scope <scope> [options]
   convert-metasploit <export.xml> --scope <scope> [--host-node <IP>=<C番号|ID> ...] [options]
   import-sarif <project.json> --sarif <file> --scope <scope> [options]
+  import-openapi <project.json> --in <openapi.yaml|json> --scope <scope> [options]
   import-nuclei <project.json> --in <results.jsonl> --scope <scope> [options]
   import-security-audit <project.json> --in <findings.json> [options]
   import-bloodhound <project.json> (--in <dir> | --api <base-url>) [options]
@@ -323,6 +326,14 @@ import-entra-apps のオプション（Microsoft Graph の外部アプリ・同�
   --scope <name>                                置き換えの範囲（既定: default。テナントごとに分けるときに使う）
   --report <md|json>                            報告の形式（既定: md。標準出力）
   -o, --out <file>                              指摘を保存したプロジェクト JSON の出力先（省略時は保存しない）
+
+import-openapi のオプション（OpenAPI 3.x・Swagger 2.0 の定義の操作を、API の定義の資産として保存する。asm-reconcile で観測した API と突き合わせ、定義に無い API を出す）:
+  --in <file>                                   OpenAPI の定義（JSON・YAML。16 MB まで）
+  --scope <scope>                               置き換えの範囲（必須。同じ scope の API の定義を置き換える。API ごとに分ける）
+  --base-url <url>                              サーバーの URL（定義に servers が無い・相対のとき。あれば上書き）
+  --node <C番号|ID>                             すべてのエンドポイントを結びつけるノード（任意）
+  --report <md|json>                            報告の形式（既定: md。認証の指定が無い操作の一覧を含む）
+  -o, --out <file>                              資産を保存したプロジェクト JSON の出力先（指定しなければ報告のみ）
 
 triggers のオプション:
   --format <md|json>                            出力形式（既定: md）
@@ -484,6 +495,7 @@ context のオプション（アラートの IP・ホスト名・purl から、�
 
 asm-reconcile のオプション（ASM（Shodan・ScopeSentry）が観測した資産と、図の「外部公開」（Global IP）の入力の食い違いを並べる読み取り専用の報告。判定はしない。終了コードは常に 0）:
   担当範囲（Project Edit）を入力していれば、観測と観測した API のエンドポイントを担当範囲の中・外に分けて出す。
+  API の定義（import-openapi）があれば、観測した API のうち定義に無いものを出す。
   --previous <old-project.json>                 前回のプロジェクト JSON（新しく見えた・見えなくなった観測を比較。保存はしない）
   --format <md|json>                            出力形式（既定: md）
   -o, --out <file>                              出力先ファイル（既定: 標準出力）
@@ -1940,6 +1952,43 @@ ${USAGE}`);
 `);
 }
 
+const OPENAPI_MAX_BYTES = 16 * 1024 * 1024;
+
+/** `import-openapi`：OpenAPI の定義を API の定義の資産として保存する（plan §2.148）。 */
+function runImportOpenapi(values: CliValues, positionals: string[]): void {
+  const file = positionals[1];
+  if (!file) fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  if (!values.in) fail('--in <openapi.yaml|json> を指定してください。');
+  if (!values.scope) fail('--scope を指定してください。');
+  const report = parseEnum(values.report, IMPORT_PROWLER_REPORTS, 'report') ?? 'md';
+  let text: string;
+  try {
+    if (statSync(values.in).size > OPENAPI_MAX_BYTES) fail(`ファイルが大きすぎます（上限 16 MB）: ${values.in}`);
+    text = readFileSync(values.in, 'utf8');
+  } catch (e) {
+    fail(`ファイルを読み込めません: ${values.in}（${e instanceof Error ? e.message : String(e)}）`);
+  }
+  const parsed = parseOpenApi(text);
+  if (!parsed.ok) fail(`${parsed.error}（${values.in}）`);
+  let out: ReturnType<typeof importOpenapi>;
+  try {
+    out = importOpenapi(readJsonFile(file), parsed.doc, {
+      scope: values.scope,
+      ...(values['base-url'] ? { baseUrl: values['base-url'] } : {}),
+      ...(values.node ? { node: values.node } : {}),
+    });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  if (values.out) writeFileSync(values.out, JSON.stringify(out.project, null, 2), 'utf-8');
+  process.stdout.write(`${report === 'json' ? JSON.stringify(openapiReportToJson(out), null, 2) : openapiReportToMarkdown(out)}
+`);
+  process.stderr.write(`OpenAPI の定義を取り込みました（エンドポイント ${out.endpoints} 件・認証の指定が無い操作 ${out.withoutAuth.length} 件）
+`);
+}
+
 /** `import-sbom`：CycloneDX・SPDX の部品をプロジェクト JSON に保存する（docs/architecture.md §8.8）。 */
 function runImportSbom(values: CliValues, positionals: string[]): void {
   const file = positionals[1];
@@ -3122,6 +3171,8 @@ function main(): void {
     runImportConjur(values, positionals);
   } else if (command === 'import-shodan') {
     runImportShodan(values, positionals);
+  } else if (command === 'import-openapi') {
+    runImportOpenapi(values, positionals);
   } else if (command === 'import-entra-apps') {
     runImportEntraApps(values, positionals).catch((e: unknown) => {
       fail(`Microsoft Graph の在庫の取り込みに失敗しました: ${e instanceof Error ? e.message : String(e)}`);

@@ -79,6 +79,17 @@ export function reconcileToMarkdown(r: ReconcileResult): string {
     out.push(...(sc.endpointsOutOfScope.length ? epTable(sc.endpointsOutOfScope) : ['- 該当なし', '']));
   }
 
+  if (r.apiDefinitions) {
+    const a = r.apiDefinitions;
+    out.push(`## 定義に無い API（観測した API ${a.observed} 件のうち ${a.undocumented.length} 件。API の定義 ${a.definitions} 件と突き合わせ）`, '');
+    out.push('> 観測した要求（メソッド・URL）が、取り込んだ API の定義（OpenAPI 等）のどれにも当たらないもの。台帳に無い API・古い版の API・定義の書き漏れの候補で、判定ではない。', '');
+    if (a.undocumented.length === 0) out.push('- 該当なし', '');
+    else {
+      out.push('| メソッド | URL | 製品 | ノード |', '| --- | --- | --- | --- |');
+      out.push(...a.undocumented.map((e) => `| ${[e.method ?? '—', e.url, e.product, e.node ?? '—'].map(cell).join(' | ')} |`), '');
+    }
+  }
+
   if (r.diff) {
     out.push('## 前回との差分', '');
     out.push(`### 新しく見えた（${r.diff.appeared.length} 件）`, '');
