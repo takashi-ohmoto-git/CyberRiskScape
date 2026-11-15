@@ -301,6 +301,18 @@ Adding one Redis (6379) banner to the sample and comparing gives 11 added and 0 
 (Redis information disclosure, tampering and short log retention, and eavesdropping and password-only authentication on its line) at the time of writing.
 A hand-drawn diagram (such as the §3 templates) and an imported one have different IDs, so you cannot `diff` the two against each other.
 
+
+**Find APIs and cloud resources missing from the diagram.** `asm-reconcile` also prints the two sections below. Both only list candidates, not verdicts.
+
+| Section | What it lists | How to feed it |
+|---|---|---|
+| APIs missing from the definition | Observed API requests that match none of the imported API definitions (candidates for APIs outside the inventory, old versions or gaps in the definition). Appears only when API definitions exist | `import-openapi project.json --in openapi.yaml --scope api-defs` (OpenAPI 3.x / Swagger 2.0) |
+| Cloud resources not on the diagram | Resources in OCSF results that are not linked to any node on the diagram (only resources that were checked) | `import-ocsf project.json --in findings.ocsf.json --scope cloud-scan` |
+
+`import-openapi` stores only the server URL, path, method, and parameter names and locations (no example values, defaults, descriptions or securitySchemes contents).
+Operations with no authentication specified are listed in the report. `import-ocsf` stores resource IDs in full, including the account or subscription ID, so take care when you share the imported project JSON
+([Putting Prowler Findings on the Diagram](prowler.md) §9).
+
 ---
 
 ## 8. Check the effect of the measures with attack path analysis

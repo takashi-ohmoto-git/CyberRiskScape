@@ -283,6 +283,18 @@ node dist-cli/main.js diff 2026-10.json 2026-11.json --fail-on High
 線の盗聴・パスワード単独認証）で止まります（執筆時点）。手で描き足した図（§3 のテンプレートなど）と取り込んだ図は ID が違うため、
 この 2 つを `diff` で比べることはできません。
 
+
+**図に無い API・クラウドのリソースを見つける。** `asm-reconcile` は、次の 2 つの節も出します。どちらも「候補」を並べるだけで、判定ではありません。
+
+| 節 | 出るもの | 入れ方 |
+|---|---|---|
+| 定義に無い API | 観測した API のリクエストのうち、取り込んだ API の定義のどれにも当たらないもの（在庫の外の API・古い版・定義の抜けの候補）。API の定義があるときだけ出る | `import-openapi project.json --in openapi.yaml --scope api-defs`（OpenAPI 3.x / Swagger 2.0） |
+| 図に無いクラウドのリソース | OCSF の検査結果に出た資源のうち、図のどのノードにも結びついていないもの（検査した資源だけ） | `import-ocsf project.json --in findings.ocsf.json --scope cloud-scan` |
+
+`import-openapi` が保存するのは、サーバー URL・パス・メソッド・パラメータの名前と場所だけです（例の値・既定値・説明・securitySchemes の中身は保存しません）。
+認証の指定が無い操作は、報告に一覧します。`import-ocsf` は資源の ID をアカウント・サブスクリプションの ID を含めて保存するため、取り込んだプロジェクト JSON の共有に注意してください
+（[Prowler の検査結果を構成図に載せる](prowler.ja.md) §9）。
+
 ---
 
 ## 8. 攻撃経路分析で対策の効き目を確かめる

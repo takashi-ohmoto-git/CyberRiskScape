@@ -119,7 +119,7 @@ CyberRiskScape は**未入力を悪い値と同じ扱い**で脅威を出しま�
 | 推奨策 | 図で確かめる | 実機で・しないこと |
 |---|---|---|
 | ⑦ マルチテナントのアプリの権限・同意を最小に | `import-entra-apps`（[ガイド](entra-apps.ja.md)）で、強い権限を持つ外部アプリを指摘として IdP に載せる。ルール `identity-idp-app-only-privilege-001`・`identity-idp-external-app-consent-001` | 同意の取り消しは Entra ID で |
-| ⑧ 資格情報の追加・特権の付与・アプリ単独の動作を監視 | ルール `identity-idp-app-credential-addition-001`。`import-bloodhound` の Entra ID の問い合わせ（[ガイド](bloodhound.ja.md)） | 監視そのものは SIEM の領分 |
+| ⑧ 資格情報の追加・特権の付与・アプリ単独の動作を監視 | ルール `identity-idp-app-credential-addition-001`。`import-bloodhound` の Entra ID の問い合わせ（[ガイド](bloodhound.ja.md)）。`export-detection-requirements --format sigma` で、攻撃経路上の監視要件を Sigma ルールの下書き（要件ごと。検知の条件は空欄で `status: unsupported`）として書き出し、SIEM の検知を作る起点にする | 監視そのものは SIEM の領分。検知の条件は環境のログに合わせて書く |
 | ⑨ 取引先のアプリが入っている（入っていた）テナントの点検 | `import-entra-apps` の「図に無い」の印（図に描いていない外部アプリ）。図には取引先の SaaS と IdP の線を描く | 過去に入っていたアプリの調査は実機で |
 | ⑩ サービスプリンシパルのサインインと監査記録の確認 | **範囲外**（§7） | ログ分析は SIEM で |
 | ⑪ 証明書の発行の承認・Web 登録の保護（AD CS） | 型「認証局（CA）」と 3 ルール（`identity-ca-template-impersonation-001`・`identity-ca-enrollment-ntlm-relay-001`・`identity-ca-private-key-forgery-001`）。`import-bloodhound` の AD CS の問い合わせ | テンプレートの設定は CA で確認 |

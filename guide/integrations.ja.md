@@ -54,6 +54,8 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | **Anthropic `defending-code-reference-harness`** | `THREAT_MODEL.md` 互換の書き出し | 脅威モデルを、AI による脆弱性診断の入力にする | [Security Context に変換する](security-context.ja.md) |
 | **Veracode** | 構成例（Veracode CLI・Findings API と、`THREAT_MODEL.md`・`findings-report`・Postman 書き出しの組み合わせ） | SAST・DAST の指摘を AI で修正する流れに、脅威モデルを前提知識・優先順位・回帰テストとして組み込む・Postman 書き出しを DAST の検査範囲にする | [Veracode の指摘を AI で直す](veracode-remediation.ja.md) |
 | **Prowler** | 検査結果の取り込み（`import-prowler`。AWS の検査の OCSF 出力・CLI のみ） | 「未入力のため仮定」の運用状況・攻撃面属性を実測に置き換える・FAIL の検査を図の脅威と突き合わせる | [Prowler の検査結果を構成図に載せる](prowler.ja.md) |
+| **OCSF**（製品を問わない） | 検査結果の取り込み（`import-ocsf`。Detection Finding・Compliance Finding の OCSF。CLI のみ） | どの製品の OCSF でも、FAIL を指摘として持ち、結果に出た資源をクラウドのリソースとして Asset タブに載せる・図に無いリソースを `asm-reconcile` で見つける | [Prowler の検査結果を構成図に載せる](prowler.ja.md)（§9） |
+| **OpenAPI**（Swagger 2.0 を含む） | API の定義の取り込み（`import-openapi`。CLI のみ） | 定義の操作を API の在庫として Asset タブに載せる・認証の指定が無い操作を洗い出す・観測した API のうち定義に無いものを `asm-reconcile` で見つける | [インターネット露出を減らす](exposure-reduction.ja.md)（§7） |
 | **BloodHound CE** | 問い合わせの結果の取り込み（`import-bloodhound`。API はトークンを環境変数で渡す・読み取りのみ。ファイルでも可。CLI のみ） | AD の権限の問題（Kerberoasting・複製権限・LAPS・委任・GPO・AD CS）を図のディレクトリ・認証局に指摘として載せ、前提で出していた脅威を実データで裏づける | [BloodHound CE の結果を構成図に載せる](bloodhound.ja.md) |
 | **Microsoft Graph（Entra ID）** | 外部アプリ・同意の在庫の取り込み（`import-entra-apps`。API はクライアント資格情報を環境変数で渡す・GET のみ。ファイルでも可。CLI のみ） | 外部アプリの強い権限・同意（アプリ単独の権限・テナント全体／利用者ごとの同意・資格情報）を図の IdP に指摘として載せ、図のアプリ系のノードと突き合わせる | [Entra ID の外部アプリ・同意の在庫を構成図に載せる](entra-apps.ja.md) |
 | **Microsoft Threat Modeling Tool** | .tm7 の取り込み（`import-tm7`・画面の Import）・移行レポート（`migration-report`） | TMT の図・モデル情報・脅威と判断を移し、TMT の脅威と検出脅威の重なり・判断の見直し候補を見る | [Microsoft Threat Modeling Tool の脅威モデルを移行する](threat-modeling-tool.ja.md) |
@@ -68,6 +70,7 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | **Cisco AI Defense**（skill-scanner / mcp-scanner） | 検査結果の突き合わせ（`findings-report --skill-scanner / --mcp-scanner`。結果ファイル・CLI のみ） | エージェントスキル・MCP サーバーの検査結果を、AITech 対応表を介して図の脅威と突き合わせる・描き漏れを見つける | [エージェントスキル・MCP サーバーの検査結果を脅威モデルと突き合わせる](ai-scanners.ja.md) |
 | **Cloudflare security-audit**（スキル） | 指摘の取り込み（`findings.json`・`coverage-ledger.json`。画面と CLI `import-security-audit`） | ソースで実証した指摘と、配置を確かめないと決まらない要確認を脅威カードに出し、要確認の前提を図の事実と並べる | [AI によるソース監査の指摘を構成図に載せる](security-audit.ja.md) |
 | **Velociraptor** | 収集結果（展開したフォルダー）の取り込み・調査計画書への artifact の手がかり・EDR / DFIR サーバーのステンシルと脅威ルール | 侵害が疑われるときに、攻撃経路上のノードで集める artifact を決め、収集結果をノードに重ねて報告する | [侵害の疑いがあるときに、脅威モデルで調べる範囲を決め、結果を報告する](compromise-investigation.ja.md) |
+| **Sigma**（Sigma ルールを変換できる SIEM・検知のツール） | 検知の要件の書き出し（`export-detection-requirements --format sigma`） | 攻撃経路上の監視の要件を、Sigma ルールの下書き（Sigma Rules Specification 2.1.0）にして検知の設計の出発点にする。検知の条件は生成しない | [AI 自律攻撃への備え](ai-autonomous-attack-2026-11.ja.md) |
 
 ---
 

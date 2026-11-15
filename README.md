@@ -4,7 +4,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Threat rules](https://img.shields.io/badge/threat%20rules-310-orange.svg)](data/threat-library)
-[![Tests](https://img.shields.io/badge/tests-2598%20passing-brightgreen.svg)](#development)
+[![Tests](https://img.shields.io/badge/tests-2881%20passing-brightgreen.svg)](#development)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
 **English** | [日本語](README.ja.md)
@@ -290,7 +290,7 @@ Besides `analyze`, the CLI has the following subcommands (run `node dist-cli/mai
 | Purpose | Subcommands |
 |---|---|
 | Build a diagram | `import-kong`, `import-kongctl`, `import-repo`, `import-conjur`, `import-shodan`, `import-scopesentry` |
-| Import product results | `import-sarif`, `import-nuclei`, `import-sbom`, `import-prowler`, `import-tm7` (migration report with `migration-report`), `import-findings` (SCAP), `import-security-audit`, `import-pentest` (convert to a registry with `convert-strix`, `convert-cyberstrikeai`, `convert-metasploit`), `import-aipentest-assets`, `import-metasploit-assets`, `import-business-context` (a business criticality table; convert a Celonis Knowledge Model with `convert-celonis`) |
+| Import product results | `import-sarif`, `import-nuclei`, `import-sbom`, `import-prowler`, `import-ocsf`, `import-openapi`, `import-tm7` (migration report with `migration-report`), `import-findings` (SCAP), `import-security-audit`, `import-pentest` (convert to a registry with `convert-strix`, `convert-cyberstrikeai`, `convert-metasploit`), `import-aipentest-assets`, `import-metasploit-assets`, `import-business-context` (a business criticality table; convert a Celonis Knowledge Model with `convert-celonis`) |
 | Exploitation facts, likelihood and priority | `import-kev`, `import-epss`, `fill-patch-status`, `findings-priority` (P1–P4 and CISA SSVC) |
 | Reconcile and look up context | `asm-reconcile`, `export-scope`, `sbom-report`, `context`, `checklist`, `findings-report`, `investigation-report`, `pqc-sbom-report` |
 | Export | `export-requirements`, `export-test-plan`, `export-roe`, `export-detection-requirements`, `export-contractor-paths`, `export-postman`, `export-attack-navigator`, `export-investigation-plan`, `export-spdx`, `export-sbom-ai`, `export-triage-patterns`, `export-event-log` (the course of threat handling from git history, as an OCEL 2.0 / CSV event log for process mining) |

@@ -25,7 +25,7 @@
 - You have scanned AWS with Prowler and have the `*.ocsf.json` written by `-M json-ocsf`.
 - You have the CyberRiskScape project JSON (a saved diagram) to put the findings on.
 - Node.js runs. Build the CLI first (`npm ci && npm run build:cli`).
-- **This is CLI only.** You cannot load a Prowler file from the screen (§9). The project JSON the command writes can be loaded from **Template** → **Import**.
+- **This is CLI only.** You cannot load a Prowler file from the screen (§10). The project JSON the command writes can be loaded from **Template** → **Import**.
 
 **Background knowledge for this page**: the basics in [Getting Started](getting-started.md) and [Reading the Threat Panel](reading-threats.md).
 
@@ -321,7 +321,31 @@ A **fictional** sample shaped after Prowler's output code (`prowler/lib/outputs/
 
 ---
 
-## 9. Limits
+## 9. Choosing between `import-prowler` and `import-ocsf`
+
+Prowler's OCSF can also be read by `import-ocsf`, the import that works for any product. Choose by purpose.
+
+| What you want | Command |
+|---|---|
+| Fill posture and attack surface attributes with measurements (AWS) | `import-prowler` (the steps on this page) |
+| Keep cloud resources as assets, or import OCSF from products other than Prowler | `import-ocsf` |
+
+```bash
+node dist-cli/main.js import-ocsf project.json --in findings.ocsf.json --scope cloud-scan --report md -o project.out.json
+```
+
+- **It reads** OCSF Detection Finding (2004) and Compliance Finding (2003) from any product. FAIL results are saved as findings, replacing the ones for the same product and the same `--scope`.
+- **Every resource in the results goes on the Asset tab as a cloud resource** ("Cloud resources" view). Link them to nodes with the resource tag or label `crs-node`, or with `--map` (same as §3).
+- **Resource IDs (ARN, Azure resource ID) are stored in full, including the account or subscription ID**, so that exposed assets can be identified.
+  Take care when you share or publish a project JSON imported with `import-ocsf` (this differs from `import-prowler`, see §6).
+- Checks not in the mapping table `data/finding-maps/ocsf.yaml` are kept as findings without a threat link, and listed in the report. For Prowler results, the Prowler mapping is used.
+- **It does not fill posture (operational status).** Only `import-prowler` replaces posture and attack surface attributes with measurements.
+- **Importing the same Prowler results with both commands duplicates the findings** (the report warns you). Use one of them. If you also want posture filled, choose `import-prowler`.
+- Resources not linked to any node appear in the "Cloud resources not on the diagram" section of `asm-reconcile` ([Reducing Internet Exposure](exposure-reduction.md) §7).
+
+---
+
+## 10. Limits
 
 - **It was verified with fictional samples shaped after Prowler's output code (`ocsf.py`). It has not been verified against real Prowler output.**
   If field names or shapes differ, entries that cannot be read are counted as "unreadable" in the report. At first, check that the counts are what you expect.

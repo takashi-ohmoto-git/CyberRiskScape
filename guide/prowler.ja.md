@@ -24,7 +24,7 @@
 - Prowler で AWS を検査し、`-M json-ocsf` で出力した `*.ocsf.json` がある。
 - 検査結果を載せる先の、CyberRiskScape のプロジェクト JSON（図を保存したもの）がある。
 - Node.js が動くこと。CLI をビルドしておきます（`npm ci && npm run build:cli`）。
-- **CLI 専用です。** 画面から Prowler のファイルを読み込むことはできません（§9）。出力したプロジェクト JSON は、画面の **Template** → **Import** で読み込めます。
+- **CLI 専用です。** 画面から Prowler のファイルを読み込むことはできません（§10）。出力したプロジェクト JSON は、画面の **Template** → **Import** で読み込めます。
 
 **このページの前提となる知識**：[はじめに](getting-started.ja.md)の操作と、[脅威パネルの読み方](reading-threats.ja.md)。
 
@@ -318,7 +318,31 @@ Prowler の出力処理（`prowler/lib/outputs/ocsf/ocsf.py`）の形に合わ�
 
 ---
 
-## 9. 限界
+## 9. `import-prowler` と `import-ocsf` の使い分け
+
+Prowler の OCSF は、製品を問わない取り込み `import-ocsf` でも読めます。目的で選んでください。
+
+| やりたいこと | 使うコマンド |
+|---|---|
+| 運用状況・攻撃面属性を実測で埋めたい（AWS） | `import-prowler`（このページの手順） |
+| クラウドのリソースを資産として持ちたい・Prowler 以外の製品の OCSF も取り込みたい | `import-ocsf` |
+
+```bash
+node dist-cli/main.js import-ocsf project.json --in findings.ocsf.json --scope cloud-scan --report md -o project.out.json
+```
+
+- **対象**は OCSF の Detection Finding（2004）と Compliance Finding（2003）で、どの製品の出力でも読めます。FAIL は指摘として、同じ製品・同じ `--scope` の分を置き換えて保存します。
+- **結果に出た資源は、すべてクラウドのリソースとして Asset タブの「クラウドのリソース」に載ります。** ノードへの結びつけは、資源のタグ・ラベル `crs-node` か `--map` です（§3 と同じ）。
+- **資源の ID（ARN・Azure のリソース ID）は、アカウント・サブスクリプションの ID を含めてそのまま保存します**（外に出ている資産を特定するため）。
+  そのため、`import-ocsf` で取り込んだプロジェクト JSON は、共有・公開するときに注意してください（§6 の `import-prowler` とは扱いが違います）。
+- 対応表 `data/finding-maps/ocsf.yaml` に無い検査は、脅威への結びつけ無しの指摘として保存し、報告に一覧します。Prowler の結果には、Prowler の対応表を使います。
+- **運用状況（posture）は埋めません。** 運用状況・攻撃面属性を実測に置き換えるのは `import-prowler` だけです。
+- **同じ Prowler の結果を両方で取り込むと、指摘が二重になります**（報告に警告が出ます）。どちらか一方にしてください。運用状況も埋めたいなら `import-prowler` を選びます。
+- 図に結びつかないリソースは、`asm-reconcile` の「図に無いクラウドのリソース」に出ます（[インターネット露出を減らす](exposure-reduction.ja.md) §7）。
+
+---
+
+## 10. 限界
 
 - **動作確認は、Prowler の出力処理（`ocsf.py`）に合わせた架空のサンプルで行っています。実環境の Prowler の出力では確かめていません。**
   項目の名前や形が異なると、読み込めない項目は「読めなかった」件数として報告に出ます。最初は件数が想定どおりかを確かめてください。
