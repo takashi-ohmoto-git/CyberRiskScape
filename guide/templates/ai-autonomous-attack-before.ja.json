@@ -1,0 +1,456 @@
+{
+  "schemaVersion": 1,
+  "kind": "cyberriskscape-template",
+  "name": "取引先ポータルと周辺系 — AI 自律攻撃への備え（対策前）",
+  "layer": {
+    "nodes": [
+      {
+        "id": "ni_att",
+        "type": "AGENTIC_ATTACKER",
+        "x": 60,
+        "y": 80,
+        "label": "攻撃者（AI で自律的に侵入する）",
+        "attackObjectiveId": "ni_db"
+      },
+      {
+        "id": "ni_partner",
+        "type": "SAAS",
+        "x": 60,
+        "y": 580,
+        "label": "取引先の SaaS（連携アプリ）"
+      },
+      {
+        "id": "ni_portal",
+        "type": "FRONT_END_SERVER",
+        "x": 420,
+        "y": 80,
+        "label": "取引先・サプライヤー向けポータル",
+        "attackSurface": {
+          "hasGlobalIp": true,
+          "hasUserAuthentication": true
+        },
+        "posture": {
+          "sensitiveBusinessFlow": "Yes"
+        }
+      },
+      {
+        "id": "ni_mobile",
+        "type": "BACKEND_API",
+        "x": 420,
+        "y": 300,
+        "label": "モバイル用バックエンド API",
+        "attackSurface": {
+          "hasGlobalIp": true,
+          "hasUserAuthentication": true
+        },
+        "posture": {
+          "sensitiveBusinessFlow": "Yes"
+        }
+      },
+      {
+        "id": "ni_paas",
+        "type": "PAAS",
+        "x": 420,
+        "y": 520,
+        "label": "社員向け Web アプリ（PaaS）"
+      },
+      {
+        "id": "ni_cred",
+        "type": "CREDENTIAL",
+        "x": 0,
+        "y": 0,
+        "label": "配置用の資格情報（発行プロファイル）",
+        "parentId": "ni_paas"
+      },
+      {
+        "id": "ni_idp",
+        "type": "IDENTITY_PROVIDER",
+        "x": 420,
+        "y": 740,
+        "label": "Entra ID（IdP）",
+        "identityProviderKind": "IDaaS"
+      },
+      {
+        "id": "ni_admin",
+        "type": "ADMIN_CONSOLE",
+        "x": 820,
+        "y": 80,
+        "label": "事業部の業務アプリの管理画面",
+        "attackSurface": {
+          "hasGlobalIp": true
+        }
+      },
+      {
+        "id": "ni_ad",
+        "type": "DIRECTORY",
+        "x": 1130,
+        "y": 80,
+        "label": "Active Directory"
+      },
+      {
+        "id": "ni_ca",
+        "type": "CERTIFICATE_AUTHORITY",
+        "x": 1440,
+        "y": 80,
+        "label": "認証局（AD CS）"
+      },
+      {
+        "id": "ni_db",
+        "type": "DATABASE",
+        "x": 820,
+        "y": 340,
+        "label": "取引先・個人情報の DB"
+      },
+      {
+        "id": "ni_pi",
+        "type": "PERSONAL_INFO",
+        "x": 0,
+        "y": 0,
+        "label": "個人情報",
+        "parentId": "ni_db"
+      },
+      {
+        "id": "ni_backup",
+        "type": "BACKUP_STORAGE",
+        "x": 1130,
+        "y": 340,
+        "label": "バックアップ"
+      },
+      {
+        "id": "ni_hv",
+        "type": "HYPERVISOR",
+        "x": 1440,
+        "y": 340,
+        "label": "旧システムの仮想化基盤"
+      },
+      {
+        "id": "ni_azure",
+        "type": "IAAS",
+        "x": 820,
+        "y": 620,
+        "label": "Azure のサブスクリプション"
+      },
+      {
+        "id": "ni_kv",
+        "type": "SECRETS_VAULT",
+        "x": 1130,
+        "y": 620,
+        "label": "Key Vault（シークレット管理）"
+      },
+      {
+        "id": "ni_user",
+        "type": "USER",
+        "x": 820,
+        "y": 880,
+        "label": "社員",
+        "userTrustAttribute": "Employee"
+      },
+      {
+        "id": "ni_pc",
+        "type": "PC",
+        "x": 0,
+        "y": 0,
+        "label": "社員の PC",
+        "parentId": "ni_user",
+        "managedState": "Managed"
+      }
+    ],
+    "edges": [
+      {
+        "id": "ei_att_portal",
+        "source": "ni_att",
+        "target": "ni_portal",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "外部からの探索・ログイン試行"
+      },
+      {
+        "id": "ei_att_mobile",
+        "source": "ni_att",
+        "target": "ni_mobile",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "モバイル用 API への直接の要求"
+      },
+      {
+        "id": "ei_att_paas",
+        "source": "ni_att",
+        "target": "ni_paas",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "デプロイ用の入口への配置の試行"
+      },
+      {
+        "id": "ei_att_admin",
+        "source": "ni_att",
+        "target": "ni_admin",
+        "auth": "Password",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "管理画面への直接の到達"
+      },
+      {
+        "id": "ei_att_partner",
+        "source": "ni_att",
+        "target": "ni_partner",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "取引先の SaaS の侵害"
+      },
+      {
+        "id": "ei_partner_mobile",
+        "source": "ni_partner",
+        "target": "ni_mobile",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "取引先システムからの連携 API 呼び出し"
+      },
+      {
+        "id": "ei_partner_idp",
+        "source": "ni_partner",
+        "target": "ni_idp",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "取引先アプリのテナントへの同意・資格情報"
+      },
+      {
+        "id": "ei_portal_idp",
+        "source": "ni_portal",
+        "target": "ni_idp",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "ポータルのログイン"
+      },
+      {
+        "id": "ei_mobile_idp",
+        "source": "ni_mobile",
+        "target": "ni_idp",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "モバイル用 API のトークン検証"
+      },
+      {
+        "id": "ei_portal_db",
+        "source": "ni_portal",
+        "target": "ni_db",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "ポータルから DB へ"
+      },
+      {
+        "id": "ei_mobile_db",
+        "source": "ni_mobile",
+        "target": "ni_db",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "モバイル用 API から DB へ"
+      },
+      {
+        "id": "ei_paas_db",
+        "source": "ni_paas",
+        "target": "ni_db",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Web アプリから DB へ"
+      },
+      {
+        "id": "ei_paas_kv",
+        "source": "ni_paas",
+        "target": "ni_kv",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "接続文字列・秘密の取得"
+      },
+      {
+        "id": "ei_idp_ad",
+        "source": "ni_idp",
+        "target": "ni_ad",
+        "auth": "Password",
+        "network": "VPN",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "ID の同期（AD Connect）",
+        "semantic": "directory_sync"
+      },
+      {
+        "id": "ei_idp_azure",
+        "source": "ni_idp",
+        "target": "ni_azure",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Azure のロール・権限の管理"
+      },
+      {
+        "id": "ei_azure_kv",
+        "source": "ni_azure",
+        "target": "ni_kv",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "シークレットの読み取り"
+      },
+      {
+        "id": "ei_user_ad",
+        "source": "ni_pc",
+        "target": "ni_ad",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "ドメインへのログオン"
+      },
+      {
+        "id": "ei_pc_ca",
+        "source": "ni_pc",
+        "target": "ni_ca",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "証明書の登録（Web 登録）"
+      },
+      {
+        "id": "ei_ad_ca",
+        "source": "ni_ad",
+        "target": "ni_ca",
+        "auth": "Certificate",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "証明書テンプレートの参照"
+      },
+      {
+        "id": "ei_pc_hv",
+        "source": "ni_pc",
+        "target": "ni_hv",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "仮想化基盤の管理"
+      },
+      {
+        "id": "ei_pc_admin",
+        "source": "ni_pc",
+        "target": "ni_admin",
+        "auth": "MFA",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "管理画面の操作"
+      },
+      {
+        "id": "ei_admin_db",
+        "source": "ni_admin",
+        "target": "ni_db",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "管理画面から DB へ"
+      },
+      {
+        "id": "ei_db_backup",
+        "source": "ni_db",
+        "target": "ni_backup",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "バックアップの取得"
+      },
+      {
+        "id": "ei_hv_ad",
+        "source": "ni_hv",
+        "target": "ni_ad",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "ドメイン参加（管理権限をグループで付与）"
+      },
+      {
+        "id": "ei_pc_paas",
+        "source": "ni_pc",
+        "target": "ni_paas",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "社員の利用"
+      }
+    ],
+    "boundaries": [
+      {
+        "id": "bi_att",
+        "type": "RECT",
+        "x": 20,
+        "y": 20,
+        "width": 300,
+        "height": 440,
+        "trustLevel": "Internet",
+        "label": "外部（攻撃者）"
+      },
+      {
+        "id": "bi_partner",
+        "type": "RECT",
+        "x": 20,
+        "y": 520,
+        "width": 300,
+        "height": 200,
+        "trustLevel": "Internet",
+        "label": "外部（取引先）"
+      },
+      {
+        "id": "bi_pub",
+        "type": "ROUNDED",
+        "x": 380,
+        "y": 20,
+        "width": 340,
+        "height": 940,
+        "trustLevel": "Internet",
+        "macroTrust": "Public Area",
+        "label": "公開セグメント"
+      },
+      {
+        "id": "bi_int",
+        "type": "ROUNDED",
+        "x": 780,
+        "y": 20,
+        "width": 1000,
+        "height": 1100,
+        "trustLevel": "Internal",
+        "macroTrust": "Security Zone",
+        "label": "社内（Security Zone）"
+      }
+    ]
+  }
+}

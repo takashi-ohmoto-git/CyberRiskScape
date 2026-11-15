@@ -1,0 +1,577 @@
+{
+  "schemaVersion": 1,
+  "kind": "cyberriskscape-template",
+  "name": "Partner portal and peripheral systems - preparing for AI autonomous attacks (after)",
+  "layer": {
+    "nodes": [
+      {
+        "id": "ni_att",
+        "type": "AGENTIC_ATTACKER",
+        "x": 60,
+        "y": 80,
+        "label": "Attacker (autonomous AI intrusion)",
+        "attackObjectiveId": "ni_db"
+      },
+      {
+        "id": "ni_partner",
+        "type": "SAAS",
+        "x": 60,
+        "y": 580,
+        "label": "Partner's SaaS (integrated app)"
+      },
+      {
+        "id": "ni_portal",
+        "type": "FRONT_END_SERVER",
+        "x": 420,
+        "y": 80,
+        "label": "Partner / supplier portal",
+        "attackSurface": {
+          "hasGlobalIp": true,
+          "hasUserAuthentication": true,
+          "hasRemoteAccessRestriction": true,
+          "hasAccessLog": true,
+          "hasWafProtection": true,
+          "hasDdosProtection": true,
+          "hasRateLimit": true
+        },
+        "posture": {
+          "sensitiveBusinessFlow": "Yes",
+          "businessFlowProtection": "Enforced",
+          "patchStatus": "UpToDate",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "lastReviewedAt": "2026-11-14"
+        }
+      },
+      {
+        "id": "ni_mobile",
+        "type": "BACKEND_API",
+        "x": 420,
+        "y": 300,
+        "label": "Mobile backend API",
+        "attackSurface": {
+          "hasGlobalIp": true,
+          "hasUserAuthentication": true,
+          "hasRemoteAccessRestriction": true,
+          "hasAccessLog": true,
+          "hasWafProtection": true,
+          "hasDdosProtection": true,
+          "hasRateLimit": true
+        },
+        "posture": {
+          "sensitiveBusinessFlow": "Yes",
+          "businessFlowProtection": "Enforced",
+          "patchStatus": "UpToDate",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "lastReviewedAt": "2026-11-14"
+        }
+      },
+      {
+        "id": "ni_paas",
+        "type": "PAAS",
+        "x": 420,
+        "y": 520,
+        "label": "Employee web app (PaaS)",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "accountReview": "Periodic",
+          "encryptionAtRest": "CustomerManagedKey",
+          "lastReviewedAt": "2026-11-14"
+        }
+      },
+      {
+        "id": "ni_cred",
+        "type": "CREDENTIAL",
+        "x": 0,
+        "y": 0,
+        "label": "Deployment credentials (publish profile)",
+        "parentId": "ni_paas"
+      },
+      {
+        "id": "ni_idp",
+        "type": "IDENTITY_PROVIDER",
+        "x": 420,
+        "y": 740,
+        "label": "Entra ID (IdP)",
+        "identityProviderKind": "IDaaS",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "accountReview": "Periodic",
+          "lastReviewedAt": "2026-11-14"
+        }
+      },
+      {
+        "id": "ni_admin",
+        "type": "ADMIN_CONSOLE",
+        "x": 820,
+        "y": 80,
+        "label": "Admin console of a business-unit app",
+        "attackSurface": {
+          "hasGlobalIp": false,
+          "hasSourceIpRestriction": true,
+          "hasRemoteAccessRestriction": true,
+          "hasUserAuthentication": true,
+          "hasAccessLog": true,
+          "hasWafProtection": true,
+          "hasRateLimit": true
+        },
+        "posture": {
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "accountReview": "Periodic",
+          "lastReviewedAt": "2026-11-14"
+        }
+      },
+      {
+        "id": "ni_ad",
+        "type": "DIRECTORY",
+        "x": 1130,
+        "y": 80,
+        "label": "Active Directory",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "accountReview": "Periodic",
+          "lastReviewedAt": "2026-11-14"
+        }
+      },
+      {
+        "id": "ni_ca",
+        "type": "CERTIFICATE_AUTHORITY",
+        "x": 1440,
+        "y": 80,
+        "label": "Certification authority (AD CS)",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "accountReview": "Periodic",
+          "lastReviewedAt": "2026-11-14"
+        }
+      },
+      {
+        "id": "ni_db",
+        "type": "DATABASE",
+        "x": 820,
+        "y": 340,
+        "label": "Partner and personal-data DB",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "accountReview": "Periodic",
+          "encryptionAtRest": "CustomerManagedKey",
+          "lastReviewedAt": "2026-11-14"
+        }
+      },
+      {
+        "id": "ni_pi",
+        "type": "PERSONAL_INFO",
+        "x": 0,
+        "y": 0,
+        "label": "Personal information",
+        "parentId": "ni_db",
+        "posture": {
+          "dataNecessity": "Required"
+        }
+      },
+      {
+        "id": "ni_backup",
+        "type": "BACKUP_STORAGE",
+        "x": 1130,
+        "y": 340,
+        "label": "Backup",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "encryptionAtRest": "CustomerManagedKey",
+          "lastReviewedAt": "2026-11-14"
+        }
+      },
+      {
+        "id": "ni_hv",
+        "type": "HYPERVISOR",
+        "x": 1440,
+        "y": 340,
+        "label": "Legacy virtualization platform",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "accountReview": "Periodic",
+          "lastReviewedAt": "2026-11-14"
+        }
+      },
+      {
+        "id": "ni_azure",
+        "type": "IAAS",
+        "x": 820,
+        "y": 620,
+        "label": "Azure subscription",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "patchStatus": "UpToDate",
+          "accountReview": "Periodic",
+          "encryptionAtRest": "CustomerManagedKey",
+          "lastReviewedAt": "2026-11-14"
+        }
+      },
+      {
+        "id": "ni_kv",
+        "type": "SECRETS_VAULT",
+        "x": 1130,
+        "y": 620,
+        "label": "Key Vault (secrets management)",
+        "posture": {
+          "logCollection": "Collected",
+          "logRetention": "OneYearOrMore",
+          "logReviewer": "Self",
+          "accountReview": "Periodic",
+          "encryptionAtRest": "CustomerManagedKey",
+          "lastReviewedAt": "2026-11-14"
+        }
+      },
+      {
+        "id": "ni_user",
+        "type": "USER",
+        "x": 820,
+        "y": 880,
+        "label": "Employee",
+        "userTrustAttribute": "Employee"
+      },
+      {
+        "id": "ni_pc",
+        "type": "PC",
+        "x": 0,
+        "y": 0,
+        "label": "Employee's PC",
+        "parentId": "ni_user",
+        "managedState": "Managed",
+        "posture": {
+          "encryptionAtRest": "CustomerManagedKey",
+          "patchStatus": "UpToDate"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "ei_att_portal",
+        "source": "ni_att",
+        "target": "ni_portal",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "External probing and login attempts"
+      },
+      {
+        "id": "ei_att_mobile",
+        "source": "ni_att",
+        "target": "ni_mobile",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Direct requests to the mobile API"
+      },
+      {
+        "id": "ei_att_paas",
+        "source": "ni_att",
+        "target": "ni_paas",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Attempts to deploy through the deployment endpoint"
+      },
+      {
+        "id": "ei_att_partner",
+        "source": "ni_att",
+        "target": "ni_partner",
+        "auth": "None",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Compromise of the partner's SaaS"
+      },
+      {
+        "id": "ei_partner_mobile",
+        "source": "ni_partner",
+        "target": "ni_mobile",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Integration API calls from the partner's system",
+        "authProviderId": "ni_idp"
+      },
+      {
+        "id": "ei_partner_idp",
+        "source": "ni_partner",
+        "target": "ni_idp",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Partner app's consent and credentials in the tenant",
+        "authProviderId": "ni_idp"
+      },
+      {
+        "id": "ei_portal_idp",
+        "source": "ni_portal",
+        "target": "ni_idp",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Portal sign-in",
+        "authProviderId": "ni_idp"
+      },
+      {
+        "id": "ei_mobile_idp",
+        "source": "ni_mobile",
+        "target": "ni_idp",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Token validation for the mobile API",
+        "authProviderId": "ni_idp"
+      },
+      {
+        "id": "ei_portal_db",
+        "source": "ni_portal",
+        "target": "ni_db",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Portal to DB",
+        "authProviderId": "ni_idp"
+      },
+      {
+        "id": "ei_mobile_db",
+        "source": "ni_mobile",
+        "target": "ni_db",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Mobile API to DB",
+        "authProviderId": "ni_idp"
+      },
+      {
+        "id": "ei_paas_db",
+        "source": "ni_paas",
+        "target": "ni_db",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Web app to DB",
+        "authProviderId": "ni_idp"
+      },
+      {
+        "id": "ei_paas_kv",
+        "source": "ni_paas",
+        "target": "ni_kv",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Fetching connection strings and secrets",
+        "authProviderId": "ni_idp"
+      },
+      {
+        "id": "ei_idp_ad",
+        "source": "ni_idp",
+        "target": "ni_ad",
+        "auth": "Certificate",
+        "network": "VPN",
+        "encryption": "TLS",
+        "dataFlow": "bidirectional",
+        "dataFlowName": "Identity sync (AD Connect)",
+        "semantic": "directory_sync"
+      },
+      {
+        "id": "ei_idp_azure",
+        "source": "ni_idp",
+        "target": "ni_azure",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Managing Azure roles and permissions",
+        "authProviderId": "ni_idp"
+      },
+      {
+        "id": "ei_azure_kv",
+        "source": "ni_azure",
+        "target": "ni_kv",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Reading secrets",
+        "authProviderId": "ni_idp"
+      },
+      {
+        "id": "ei_user_ad",
+        "source": "ni_pc",
+        "target": "ni_ad",
+        "auth": "MFA",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Domain logon",
+        "authProviderId": "ni_ad"
+      },
+      {
+        "id": "ei_pc_ca",
+        "source": "ni_pc",
+        "target": "ni_ca",
+        "auth": "MFA",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Certificate enrollment (web enrollment)",
+        "authProviderId": "ni_ad"
+      },
+      {
+        "id": "ei_ad_ca",
+        "source": "ni_ad",
+        "target": "ni_ca",
+        "auth": "Certificate",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Reading certificate templates"
+      },
+      {
+        "id": "ei_pc_hv",
+        "source": "ni_pc",
+        "target": "ni_hv",
+        "auth": "MFA",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Managing the virtualization platform",
+        "authProviderId": "ni_ad"
+      },
+      {
+        "id": "ei_pc_admin",
+        "source": "ni_pc",
+        "target": "ni_admin",
+        "auth": "MFA",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Operating the admin console",
+        "authProviderId": "ni_idp"
+      },
+      {
+        "id": "ei_admin_db",
+        "source": "ni_admin",
+        "target": "ni_db",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Admin console to DB",
+        "authProviderId": "ni_idp"
+      },
+      {
+        "id": "ei_db_backup",
+        "source": "ni_db",
+        "target": "ni_backup",
+        "auth": "Token",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Taking backups",
+        "authProviderId": "ni_idp"
+      },
+      {
+        "id": "ei_hv_ad",
+        "source": "ni_hv",
+        "target": "ni_ad",
+        "auth": "Password",
+        "network": "VPC",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Domain-joined (admin rights granted by group)",
+        "authProviderId": "ni_ad"
+      },
+      {
+        "id": "ei_pc_paas",
+        "source": "ni_pc",
+        "target": "ni_paas",
+        "auth": "Token",
+        "network": "Internet",
+        "encryption": "TLS",
+        "dataFlow": "outbound",
+        "dataFlowName": "Employee use",
+        "authProviderId": "ni_idp"
+      }
+    ],
+    "boundaries": [
+      {
+        "id": "bi_att",
+        "type": "RECT",
+        "x": 20,
+        "y": 20,
+        "width": 300,
+        "height": 440,
+        "trustLevel": "Internet",
+        "label": "External (attacker)"
+      },
+      {
+        "id": "bi_partner",
+        "type": "RECT",
+        "x": 20,
+        "y": 520,
+        "width": 300,
+        "height": 200,
+        "trustLevel": "Internet",
+        "label": "External (partner)"
+      },
+      {
+        "id": "bi_pub",
+        "type": "ROUNDED",
+        "x": 380,
+        "y": 20,
+        "width": 340,
+        "height": 940,
+        "trustLevel": "Internet",
+        "macroTrust": "Public Area",
+        "label": "Public segment"
+      },
+      {
+        "id": "bi_int",
+        "type": "ROUNDED",
+        "x": 780,
+        "y": 20,
+        "width": 1000,
+        "height": 1100,
+        "trustLevel": "Internal",
+        "macroTrust": "Security Zone",
+        "label": "Internal (Security Zone)"
+      }
+    ]
+  }
+}
