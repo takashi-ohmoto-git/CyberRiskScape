@@ -26,6 +26,10 @@ export const enThreats: Partial<Record<TranslationKey, string>> = {
   'threats.threatCard.bloodhoundHint':
     'Querying the actual AD permissions with BloodHound CE found principals that match this threat.',
   'threats.threatCard.bloodhoundMore': '{count} more',
+  'threats.threatCard.entraAppsVerified': 'Confirmed in Entra settings',
+  'threats.threatCard.entraAppsHint':
+    'Reading Entra ID apps and consents via Microsoft Graph found apps that match this threat.',
+  'threats.threatCard.entraAppsMore': '{count} more',
   'threats.threatCard.mitigationHeadingTiered': 'Mitigations (3-tier maturity)',
   'threats.threatCard.mitigationHeading': 'Mitigations',
   'threats.threatCard.complianceHeading': 'Compliance',

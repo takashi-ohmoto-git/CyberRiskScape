@@ -298,3 +298,13 @@ rules:
         title: "MITRE ATT&CK T1651 - Cloud Administration Command (running commands through management features)"
       "1":
         title: "MITRE ATT&CK T1552.005 - Unsecured Credentials: Cloud Instance Metadata API (extracting workload identity tokens)"
+
+  identity-idp-external-app-consent-001:
+    name: "Delegated consent to external apps (including illicit consent grants)"
+    description: "In {{nodeName}}, users and administrators can grant apps from other organizations (SaaS, business partners' integration apps) delegated permission to read and write their mail, files and calendars on their behalf. If users can still consent on their own, or administrators have consented on behalf of every user in the tenant, an attacker only has to lure someone to a legitimate-looking app's consent screen (an illicit consent grant) to obtain tokens that keep reading and writing mail and files with that user's permissions, without breaking any password or MFA (Can). Consent survives the user changing their password, and if a business partner's app is taken over, attackers can follow consents to that app into your data. If, on the other hand, user consent is disabled or limited to verified publishers and low-impact permissions, everything else requires administrator approval, and consents to external apps are regularly reviewed and unneeded ones revoked, luring someone to a consent screen does not reach your data (Cannot). The blast radius is the user data reachable with the permissions delegated to the consented app (every user's data for tenant-wide consent)."
+    mitigation: "[Foundation] Disable user consent, or limit it to verified publishers and low-impact permissions. Route all other consent through an administrator approval process (request and approval). Inventory consents to external apps (tenant-wide and per-user) and revoke those that are unused or too broad. [Enterprise] Record new consents, tenant-wide consents and consents to powerful permissions in audit logs and alert on them in the SIEM. Prohibit consent to external apps whose publisher cannot be verified. Regularly review the permissions of business partners' integration apps against the contract. [Advanced] Control the use of external apps' tokens through Conditional Access and app governance features, and detect unusual behavior (bulk reads, new sources) through behavioral analysis."
+    references:
+      "0":
+        title: "MITRE ATT&CK T1528 - Steal Application Access Token (obtaining tokens through illicit consent grants)"
+      "1":
+        title: "MITRE ATT&CK T1199 - Trusted Relationship (abusing consents to business partners' integration apps)"

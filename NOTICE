@@ -466,8 +466,11 @@ verbatim.
    - Microsoft — Microsoft Learn, "Disable basic authentication in App Service
      deployments", "Run your app in Azure App Service directly from a ZIP
      package", "Windows LAPS overview", "Securing service principals in
-     Microsoft Entra ID" and "Best practices for Azure RBAC"; Microsoft
-     Support, "KB5005413:
+     Microsoft Entra ID", "Best practices for Azure RBAC" and "Configure how
+     users consent to applications"; Microsoft Graph documentation
+     (microsoft-graph-docs-contrib, CC BY 4.0: servicePrincipal,
+     oAuth2PermissionGrant and appRoleAssignment resources, permissions
+     reference — permission names only); Microsoft Support, "KB5005413:
      Mitigating NTLM Relay Attacks on Active Directory Certificate Services
      (AD CS)"
    https://docs.aws.amazon.com/ , https://learn.microsoft.com/ ,

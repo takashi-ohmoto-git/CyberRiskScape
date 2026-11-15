@@ -247,6 +247,11 @@
 #     脅威として書いた。NHI ノードの過剰な権限（nhi-overprivileged）は NHI 自身が持つ権限、こちらは管理の範囲
 #     （サブスクリプション等）で誰が支配できるかを問うため別 canonicalId。Key Vault の読み取りは既存の
 #     secrets-vault-concentration（SECRETS_VAULT）に結ぶ。出典は ATT&CK T1098.003・T1078.004・T1651・T1552.005、Microsoft Learn。
+#   - 外部アプリへの委任の同意（identity-idp-external-app-consent-001、canonicalId: idp-external-app-consent、
+#     2026-11-15 追加、plan §2.144。Microsoft Graph の同意の在庫を受ける）。エージェント → アプリの線の同意画面型 OAuth
+#     （oauth-consent-grant-sprawl）は図に描いた委任の線、こちらはテナントに入った外部アプリへの同意（不正な同意の付与を
+#     含む）で subject が IdP。アプリ単独の権限（idp-app-only-privilege）は利用者の代理ではない権限で別。出典は
+#     ATT&CK T1528・T1199、Microsoft Learn。
 #   - LDAP の匿名バインド・平文バインド等の**プロトコル設定**は本ファイルでは扱わない。
 #     平文通信は stride-edge-plain-encryption-001、無認証は
 #     stride-edge-unauth-internet-001 / zt-implicit-trust-network-location-001 の領分。
@@ -1151,3 +1156,31 @@ rules:
         url: "https://learn.microsoft.com/en-us/azure/role-based-access-control/best-practices"
       # PaaS のデプロイ口（paas-deployment-endpoint-exposure）はインターネットに出た配置口と基本認証の問い、
       # こちらはクラウドの権限で管理機能からコードを実行できる問いで別 canonicalId。
+
+  # ── IDENTITY_PROVIDER: 外部アプリへの委任の同意（不正な同意の付与を含む）────────────
+  - id: identity-idp-external-app-consent-001
+    canonicalId: idp-external-app-consent
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "外部アプリへの委任の同意（不正な同意の付与を含む）"
+    severity: High
+    description: "{{nodeName}} では、利用者や管理者が他の組織のアプリ（SaaS・取引先の連携アプリ）に「自分の代わりにメール・ファイル・予定表を読み書きしてよい」という委任を同意で与えられる。利用者が自分で同意できる設定のままだったり、管理者がテナント全体の利用者の分をまとめて同意していたりする場合、攻撃者は正規に見えるアプリの同意画面に誘導するだけで（不正な同意の付与）、パスワードも MFA も破らずに、利用者の権限でメール・ファイルを読み書きし続けるトークンを得られる（Can）。同意は利用者がパスワードを変えても残り、取引先のアプリが乗っ取られた場合も、そのアプリへの同意をたどって自組織のデータに入られる。一方、利用者による同意を止めるか、発行元を確認できたアプリと影響の小さい権限に限り、それ以外は管理者の承認を必須にし、外部アプリへの同意を定期的に棚卸しして不要なものを取り消していれば、同意画面への誘導だけではデータに届かない（Cannot）。blast radius は同意したアプリに委ねた権限で触れられる利用者のデータ（テナント全体の同意なら全利用者のデータ）。"
+    mitigation: "[Foundation] 利用者による同意を止めるか、発行元を確認できたアプリと影響の小さい権限だけに限る。それ以外の同意は管理者の承認の手続き（申請と承認）にする。外部アプリへの同意（テナント全体の同意と利用者ごとの同意）を棚卸しし、使っていないもの・権限が広すぎるものを取り消す。 [Enterprise] 新しい同意・テナント全体の同意・強い権限の同意を監査ログで記録し、SIEM で通知する。発行元を確認できない外部アプリへの同意を禁止する。取引先が提供する連携アプリの権限を契約と照らして定期的に見直す。 [Advanced] 外部アプリのトークンの利用を条件付きアクセス・アプリの管理の仕組みで制御し、通常と違う動き（大量の読み取り・新しい送信元）を振る舞いで検知する。"
+    appliesTo:
+      kind: node
+      nodeType: IDENTITY_PROVIDER
+      # 利用者・アプリと接続されているとき発火する（デフォルト接続要件）。
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "GV.SC-07"
+    references:
+      - title: "MITRE ATT&CK T1528 - Steal Application Access Token（不正な同意の付与によるトークンの取得）"
+        url: "https://attack.mitre.org/techniques/T1528/"
+      - title: "MITRE ATT&CK T1199 - Trusted Relationship（取引先の連携アプリへの同意の悪用）"
+        url: "https://attack.mitre.org/techniques/T1199/"
+      - title: "Microsoft Learn - Configure how users consent to applications"
+        url: "https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/configure-user-consent"
+      # エージェント → アプリの線の同意画面型 OAuth（oauth-consent-grant-sprawl）は図に描いた委任の線の問い、
+      # こちらはテナントに入った外部アプリへの同意（不正な同意の付与を含む）で、subject が IdP。

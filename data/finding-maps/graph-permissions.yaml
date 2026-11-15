@@ -1,0 +1,63 @@
+# Microsoft Graph の権限のうち、外部アプリに与えると影響が大きいもの（「強い権限」）の一覧。
+#
+# Microsoft Graph の在庫の取り込み（CLI import-entra-apps）が、外部アプリのアプリ単独の権限（appRoleAssignment）と
+# 委任の同意（oAuth2PermissionGrant の scope）をこの一覧で判定し、指摘にする。
+#
+# 方針:
+#   - 権限の名前だけを置く。権限の説明文は転載しない。`group` は日本語の短い分類名（報告の内訳に使う）。
+#   - アプリ単独の権限（application）と委任の権限（delegated）で同じ名前が両方にあるものは、両方で強いとみなす。
+#   - 名前は公式の権限の一覧（permissions reference）の見出しに実在することを確認した（2026-11-15）。
+#
+# 出典:
+#   - Microsoft Graph permissions reference（microsoftgraph/microsoft-graph-docs-contrib、concepts/permissions-reference.md、
+#     CC BY 4.0。権限の名前のみ参照）。
+#     https://learn.microsoft.com/en-us/graph/permissions-reference
+#   - Microsoft のサービスのアプリの所有テナント ID（MicrosoftDocs/SupportArticles-docs
+#     「Verify first-party Microsoft applications in sign-in reports」）。
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+# Microsoft のサービスのアプリの所有テナント（外部アプリから除く。資格情報の設定は別の観測で見る）。
+microsoftTenantIds:
+  - f8cdef31-a31e-4b4a-93e4-5f571e91255a
+
+# Microsoft Graph のアプリ ID（アプリ単独の権限を Graph 側から一括で引くときの対象）。
+graphAppId: 00000003-0000-0000-c000-000000000000
+
+powerfulPermissions:
+  - group: テナントの管理（ロール・アプリ・権限の付与）
+    names:
+      - RoleManagement.ReadWrite.Directory
+      - Application.ReadWrite.All
+      - AppRoleAssignment.ReadWrite.All
+      - DelegatedPermissionGrant.ReadWrite.All
+      - Directory.ReadWrite.All
+      - Directory.AccessAsUser.All
+      - Domain.ReadWrite.All
+      - Policy.ReadWrite.ConditionalAccess
+  - group: 利用者・グループ・認証方法の変更
+    names:
+      - User.ReadWrite.All
+      - Group.ReadWrite.All
+      - GroupMember.ReadWrite.All
+      - UserAuthenticationMethod.ReadWrite.All
+  - group: メール・予定表
+    names:
+      - Mail.Read
+      - Mail.ReadWrite
+      - Mail.Send
+      - MailboxSettings.ReadWrite
+      - Calendars.ReadWrite
+  - group: ファイル・サイト
+    names:
+      - Files.Read.All
+      - Files.ReadWrite.All
+      - Sites.Read.All
+      - Sites.ReadWrite.All
+      - Sites.FullControl.All
+  - group: チャット
+    names:
+      - Chat.Read.All
+      - ChannelMessage.Read.All

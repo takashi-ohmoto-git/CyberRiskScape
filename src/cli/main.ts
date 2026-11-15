@@ -32,6 +32,9 @@ import { triggersToJson, triggersToMarkdown } from './triggers';
 import { projectIndicators, type ProjectIndicatorsReport } from './indicators';
 import { exportScope, exportScopeToText } from './exportScope';
 import { bloodhoundReportToJson, bloodhoundReportToMarkdown, importBloodhound } from './importBloodhound';
+import { entraAppsReportToJson, entraAppsReportToMarkdown, importEntraApps, type EntraAppsRaw } from './importEntraApps';
+import { fetchGraphInventory, graphCredentialsFromEnv } from '../features/entra-apps-import/fetchGraph';
+import { BUNDLED_GRAPH_PERMISSIONS } from '../features/entra-apps-import/graphPermissions';
 import { BUNDLED_BLOODHOUND_QUERIES } from '../features/bloodhound-import/bloodhoundQueries';
 import { credentialsFromEnv as bloodhoundCredentialsFromEnv, fetchBloodhoundQueries } from '../features/bloodhound-import/fetchBloodhound';
 import { SERVICE_SCOPE_KINDS } from '../core/model/serviceScope';
@@ -231,6 +234,7 @@ const USAGE = `使い方:
   import-nuclei <project.json> --in <results.jsonl> --scope <scope> [options]
   import-security-audit <project.json> --in <findings.json> [options]
   import-bloodhound <project.json> (--in <dir> | --api <base-url>) [options]
+  import-entra-apps <project.json> (--in <dir> --tenant-id <id> | --graph) [options]
   import-business-context <project.json> --in <table.csv|json> [options]
   convert-celonis --api <base-url> --km <id> --record <id> --system-field <id> --map-value <値>=<C番号|ID> ... [options]
   import-kev <project.json> --kev <file> [options]
@@ -304,6 +308,17 @@ import-bloodhound のオプション（BloodHound CE の問い合わせの結果
   --cloud-node <C番号|ID>                       Azure の管理の範囲・コード実行の指摘を載せる IaaS / PaaS（既定: 図にちょうど 1 つあればそれ）
   --vault-node <C番号|ID>                       Key Vault の指摘を載せるシークレット管理（既定: 図にちょうど 1 つあればそれ）
   --scope <name>                                置き換えの範囲（既定: default。ドメインごとに分けて取り込むときに使う）
+  --report <md|json>                            報告の形式（既定: md。標準出力）
+  -o, --out <file>                              指摘を保存したプロジェクト JSON の出力先（省略時は保存しない）
+
+import-entra-apps のオプション（Microsoft Graph の外部アプリ・同意の在庫を、図の IdP に指摘として保存し、外部アプリと図のアプリ系のノードを突き合わせる。図は変えない。資格情報の値・利用者は保存しない）:
+  --in <dir>                                    Graph の応答 JSON のフォルダ。servicePrincipals.json（必須）・graphServicePrincipal.json・
+                                                graphAppRoleAssignedTo.json・oauth2PermissionGrants.json（1 ページでもページの配列でもよい）
+  --tenant-id <id>                              自組織のテナント ID（--in のとき必須。外部アプリの判定に使う）
+  --graph                                       Microsoft Graph から読む（GET のみ）。環境変数 MSGRAPH_TENANT_ID・MSGRAPH_CLIENT_ID・
+                                                MSGRAPH_CLIENT_SECRET（保存・出力しない）。要る権限：Application.Read.All・Directory.Read.All
+  --idp-node <C番号|ID>                         指摘を載せる IdP（既定: 図にちょうど 1 つあればそれ。無ければ未結合）
+  --scope <name>                                置き換えの範囲（既定: default。テナントごとに分けるときに使う）
   --report <md|json>                            報告の形式（既定: md。標準出力）
   -o, --out <file>                              指摘を保存したプロジェクト JSON の出力先（省略時は保存しない）
 
@@ -778,6 +793,8 @@ function parseCliArgs() {
       'idp-node': { type: 'string' },
       'cloud-node': { type: 'string' },
       'vault-node': { type: 'string' },
+      'tenant-id': { type: 'string' },
+      graph: { type: 'boolean' },
       'print-queries': { type: 'boolean' },
       help: { type: 'boolean' },
     },
@@ -1826,6 +1843,74 @@ ${USAGE}`);
   process.stdout.write(`${report === 'json' ? JSON.stringify(bloodhoundReportToJson(out), null, 2) : bloodhoundReportToMarkdown(out)}
 `);
   process.stderr.write(`BloodHound CE の結果を取り込みました（保存 ${out.stored} 件）
+`);
+}
+
+/** `import-entra-apps`：Microsoft Graph の外部アプリ・同意の在庫を取り込む（plan §2.144）。 */
+async function runImportEntraApps(values: CliValues, positionals: string[]): Promise<void> {
+  const file = positionals[1];
+  if (!file) fail(`入力ファイルを指定してください。
+
+${USAGE}`);
+  if (!values.in === !values.graph) fail('--in <dir> か --graph のどちらか一方を指定してください。');
+  const report = parseEnum(values.report, IMPORT_PROWLER_REPORTS, 'report') ?? 'md';
+
+  let raw: EntraAppsRaw;
+  let tenantId: string;
+  if (values.in) {
+    if (!values['tenant-id']) fail('--in のときは --tenant-id <自組織のテナント ID> を指定してください。');
+    tenantId = values['tenant-id'];
+    const dir = values.in.replace(/[\\/]+$/, '');
+    const read = (name: string, required: boolean): unknown => {
+      const path = `${dir}/${name}`;
+      let size: number;
+      try {
+        size = statSync(path).size;
+      } catch {
+        if (required) fail(`${path} がありません。`);
+        return undefined;
+      }
+      if (size > BLOODHOUND_RESPONSE_MAX_BYTES) fail(`ファイルが大きすぎます（上限 ${BLOODHOUND_RESPONSE_MAX_BYTES / 1024 / 1024} MB）: ${path}`);
+      return readJsonFile(path);
+    };
+    raw = {
+      servicePrincipals: read('servicePrincipals.json', true),
+      graphServicePrincipal: read('graphServicePrincipal.json', false),
+      graphAppRoleAssignedTo: read('graphAppRoleAssignedTo.json', false),
+      oauth2PermissionGrants: read('oauth2PermissionGrants.json', false),
+    };
+  } else {
+    let creds: ReturnType<typeof graphCredentialsFromEnv>;
+    try {
+      creds = graphCredentialsFromEnv(process.env);
+    } catch (e) {
+      fail(e instanceof Error ? e.message : String(e));
+    }
+    tenantId = creds.tenantId;
+    try {
+      const r = await fetchGraphInventory(creds, BUNDLED_GRAPH_PERMISSIONS.graphAppId);
+      raw = r;
+      for (const t of r.truncated) process.stderr.write(`${t} はページの上限で打ち切りました（数え漏れがありえます）。
+`);
+    } catch (e) {
+      fail(`Microsoft Graph から読めません: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  let out: ReturnType<typeof importEntraApps>;
+  try {
+    out = importEntraApps(readJsonFile(file), raw, {
+      tenantId,
+      ...(values['idp-node'] ? { idpNode: values['idp-node'] } : {}),
+      ...(values.scope ? { scope: values.scope } : {}),
+    });
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  if (values.out) writeFileSync(values.out, JSON.stringify(out.project, null, 2), 'utf-8');
+  process.stdout.write(`${report === 'json' ? JSON.stringify(entraAppsReportToJson(out), null, 2) : entraAppsReportToMarkdown(out)}
+`);
+  process.stderr.write(`Microsoft Graph の在庫を取り込みました（外部アプリ ${out.externalCount} 件・保存 ${out.stored} 件）
 `);
 }
 
@@ -3011,6 +3096,10 @@ function main(): void {
     runImportConjur(values, positionals);
   } else if (command === 'import-shodan') {
     runImportShodan(values, positionals);
+  } else if (command === 'import-entra-apps') {
+    runImportEntraApps(values, positionals).catch((e: unknown) => {
+      fail(`Microsoft Graph の在庫の取り込みに失敗しました: ${e instanceof Error ? e.message : String(e)}`);
+    });
   } else if (command === 'import-bloodhound') {
     runImportBloodhound(values, positionals).catch((e: unknown) => {
       fail(`BloodHound CE の取り込みに失敗しました: ${e instanceof Error ? e.message : String(e)}`);

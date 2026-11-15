@@ -3,7 +3,7 @@
 **脅威モデリングを中核とした、OSS の Security Context Layer — AI・LLM・エージェントシステム・PQC に対応**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Threat rules](https://img.shields.io/badge/threat%20rules-309-orange.svg)](data/threat-library)
+[![Threat rules](https://img.shields.io/badge/threat%20rules-310-orange.svg)](data/threat-library)
 [![Tests](https://img.shields.io/badge/tests-2598%20passing-brightgreen.svg)](#開発)
 [![Demo](https://img.shields.io/badge/demo-live-blueviolet.svg)](https://takashi-ohmoto-git.github.io/CyberRiskScape/)
 
@@ -50,7 +50,7 @@ node dist-cli/main.js checklist guide/templates/nco-advisory-2026-11-project.ja.
 | 課題 | CyberRiskScape での解決 |
 |---|---|
 | **設計・脅威モデリング** | |
-| 脅威モデリングに専門家と時間がかかり、設計のたびには回せない | 構成図を描くだけで、309 件のルールが構成に応じた脅威を列挙する。テンプレートから始められ、未入力の属性は悪い値と仮定して漏れを防ぐ（[はじめに](guide/getting-started.ja.md)） |
+| 脅威モデリングに専門家と時間がかかり、設計のたびには回せない | 構成図を描くだけで、310 件のルールが構成に応じた脅威を列挙する。テンプレートから始められ、未入力の属性は悪い値と仮定して漏れを防ぐ（[はじめに](guide/getting-started.ja.md)） |
 | AI エージェント・LLM・MCP サーバー・長期メモリのリスクを、従来の手法では洗い出せない | エージェント型 AI を第一級の部品として扱い、OWASP LLM・Agentic・MITRE ATLAS 等にもとづくルールで評価する（[AI 駆動開発](guide/ai-driven-development.ja.md)） |
 | 設計が変わるたびに脅威モデルが古くなり、AI が書くコードの速さに追いつかない | コーディングエージェントが MCP で脅威を問い合わせ・図を更新し、CI が図の差分から新しい脅威を検出して PR を止める（[MCP](guide/mcp-integration.ja.md)・[CI](guide/ci-integration.ja.md)） |
 | AI エージェント型の攻撃者が、どこから入り、何を優先して狙うかが分からない | 図に AI エージェント攻撃者を置くと、侵入できる入口・狙われやすい標的・優先される経路を示し、1 か所の対策で最も多くの経路を切れる場所（チョークポイント）と監視の死角を挙げる。手口は ATT&CK・MITRE F3 のマトリクスで見られる（[攻撃経路分析](guide/attack-paths.ja.md)・[攻撃経路のどこを切るか](guide/agentic-attacker-paths.ja.md)） |

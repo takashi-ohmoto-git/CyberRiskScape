@@ -28,6 +28,10 @@ export const jaThreats = {
   'threats.threatCard.bloodhoundHint':
     'BloodHound CE で AD の実際の権限を問い合わせた結果、この脅威に当たる主体が見つかりました。',
   'threats.threatCard.bloodhoundMore': 'ほか {count} 件',
+  'threats.threatCard.entraAppsVerified': 'Entra の設定で確認',
+  'threats.threatCard.entraAppsHint':
+    'Microsoft Graph で Entra ID のアプリ・同意を読んだ結果、この脅威に当たるアプリが見つかりました。',
+  'threats.threatCard.entraAppsMore': 'ほか {count} 件',
   'threats.threatCard.mitigationHeadingTiered': '緩和策（3 段階成熟度）',
   'threats.threatCard.mitigationHeading': '緩和策',
   'threats.threatCard.complianceHeading': 'コンプライアンス',

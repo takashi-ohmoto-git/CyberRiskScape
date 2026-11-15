@@ -202,6 +202,7 @@ export const IDENTIFIER_SCHEMES = {
   rule: { kind: 'classification', scope: 'product' },
   'security-audit-attack-class': { kind: 'classification', scope: 'product' },
   'bloodhound-query': { kind: 'classification', scope: 'product' },
+  'msgraph-check': { kind: 'classification', scope: 'product' },
   // 取り込み元の製品の中だけで通じる ID
   'artex-asset-id': { kind: 'product', scope: 'product' },
   'cyberstrikeai-asset-id': { kind: 'product', scope: 'product' },

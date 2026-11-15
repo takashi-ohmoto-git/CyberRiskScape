@@ -5,6 +5,7 @@ import {
   BookOpen,
   ChevronDown,
   ChevronRight,
+  AppWindow,
   ExternalLink,
   Layers,
   Network,
@@ -30,6 +31,7 @@ import { findingsForThreat } from '../../features/pentest-import/matchFindings';
 import { securityAuditFindingsForThreat } from '../../features/security-audit-import/matchSecurityAudit';
 import { SecurityAuditMarks } from '../../features/security-audit-import/SecurityAuditMarks';
 import { bloodhoundFindingsForThreat } from '../../features/bloodhound-import/matchBloodhound';
+import { entraAppsFindingsForThreat } from '../../features/entra-apps-import/matchEntraApps';
 import { useRuleLookup } from './useRuleLookup';
 import { threatCardDomId } from './threatCardDomId';
 import { useLocale, useT, type Locale, type TranslationKey } from '../../i18n';
@@ -110,6 +112,15 @@ export function ThreatCard({ threat, targetName, collapsible }: ThreatCardProps)
       ? [t('threats.threatCard.bloodhoundMore', { count: bloodhoundFindings.length - 5 })]
       : []),
   ].join('\n');
+  // Microsoft Graph（Entra ID のアプリ・同意）の指摘（BloodHound と同じ形のツールチップ）
+  const entraAppsFindings = useMemo(() => entraAppsFindingsForThreat(findings, threat), [findings, threat]);
+  const entraAppsTitle = [
+    t('threats.threatCard.entraAppsHint'),
+    ...entraAppsFindings.slice(0, 5).map((f) => [f.title, f.resource?.label].filter(Boolean).join(' / ')),
+    ...(entraAppsFindings.length > 5
+      ? [t('threats.threatCard.entraAppsMore', { count: entraAppsFindings.length - 5 })]
+      : []),
+  ].join('\n');
 
   const isManual = threat.origin === 'manual';
   // 「抑制」（淡色化）扱いは受容/誤検知のみ。回避/低減/移転は表示維持。
@@ -174,6 +185,15 @@ export function ThreatCard({ threat, targetName, collapsible }: ThreatCardProps)
           >
             <Network size={12} />
             {t('threats.threatCard.bloodhoundVerified')}
+          </span>
+        )}
+        {entraAppsFindings.length > 0 && (
+          <span
+            title={entraAppsTitle}
+            className="shrink-0 text-xs font-bold px-2 py-0.5 rounded bg-teal-500/15 text-teal-300 border border-teal-500/40 inline-flex items-center gap-1"
+          >
+            <AppWindow size={12} />
+            {t('threats.threatCard.entraAppsVerified')}
           </span>
         )}
         {hasAssumption && (
@@ -289,6 +309,14 @@ export function ThreatCard({ threat, targetName, collapsible }: ThreatCardProps)
               title={bloodhoundTitle}
             >
               <Network size={12} /> {t('threats.threatCard.bloodhoundVerified')}
+            </span>
+          )}
+          {entraAppsFindings.length > 0 && (
+            <span
+              className="text-xs bg-teal-500/15 text-teal-300 px-2 py-0.5 rounded font-bold inline-flex items-center gap-1 whitespace-nowrap border border-teal-500/40"
+              title={entraAppsTitle}
+            >
+              <AppWindow size={12} /> {t('threats.threatCard.entraAppsVerified')}
             </span>
           )}
           {!isManual && threat.suppression && (
