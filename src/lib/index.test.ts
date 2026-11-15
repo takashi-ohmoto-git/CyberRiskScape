@@ -11,6 +11,7 @@ const FUNCTIONS = [
   'analyzeProject',
   'findOrphanedJudgementsInProject',
   'findOrphanedJudgements',
+  'effectiveSeverity',
   'computeIndicators',
   'computeAttackPathExposure',
   'loadIndicatorWeights',

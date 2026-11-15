@@ -38,6 +38,9 @@ export {
   type OrphanReason,
 } from '../core/threat-engine/orphanedJudgements';
 
+// リスク評価後の重大度（評価済みなら評価の結果、未評価ならルールの重大度）
+export { effectiveSeverity } from '../core/model/risk';
+
 // 指標
 export {
   BUNDLED_INDICATOR_WEIGHTS,
