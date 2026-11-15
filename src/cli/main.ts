@@ -41,6 +41,7 @@ import { importOpenapi, openapiReportToJson, openapiReportToMarkdown } from './i
 import { parseOpenApi } from '../features/openapi-import/parseOpenApi';
 import { importOcsf, ocsfReportToJson, ocsfReportToMarkdown } from './importOcsf';
 import { parseOcsf } from '../features/ocsf-import/parseOcsf';
+import { detectionRequirementsToSigma } from '../features/detection-requirements/detectionRequirementsSigma';
 import { BUNDLED_BLOODHOUND_QUERIES } from '../features/bloodhound-import/bloodhoundQueries';
 import { credentialsFromEnv as bloodhoundCredentialsFromEnv, fetchBloodhoundQueries } from '../features/bloodhound-import/fetchBloodhound';
 import { SERVICE_SCOPE_KINDS } from '../core/model/serviceScope';
@@ -210,6 +211,7 @@ const FINDINGS_REPORT_FORMATS = ['md', 'json'] as const;
 const IMPORT_PROWLER_REPORTS = ['md', 'json'] as const;
 const IMPORT_FINDINGS_FORMATS = ['xccdf', 'arf', 'oval'] as const;
 const TEST_PLAN_FORMATS = ['md', 'json'] as const;
+const DETECTION_FORMATS = ['md', 'json', 'sigma'] as const;
 const REQUIREMENTS_FORMATS = ['md', 'csv', 'json'] as const;
 const INVESTIGATION_TOOLS = ['velociraptor'] as const;
 const SBOM_CRYPTO_FORMATS = ['md', 'json'] as const;
@@ -631,7 +633,7 @@ export-requirements のオプション（脅威モデルから、設計段階で
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
 export-detection-requirements のオプション（攻撃経路上のノードごとに「監視すべき振る舞い」「必要なログ」と、ログが監視先に届かない区間をまとめる。検知できることは示さない）:
-  --format <md|json>                            出力形式（既定: md）
+  --format <md|json|sigma>                      出力形式（既定: md。sigma は要件ごとの Sigma ルールの下書き〔複数文書の YAML〕。検知の条件は空欄で status: unsupported）
   --layer <L0|L1|L2|L3|PQC>                     対象レイヤー（既定: ノードがある最初のレイヤー）
   --locale <ja|en>                              表示言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
@@ -2550,7 +2552,7 @@ function runExportDetectionRequirements(values: CliValues, positionals: string[]
 
 ${USAGE}`);
   }
-  const format = parseEnum(values.format, TEST_PLAN_FORMATS, 'format') ?? 'md';
+  const format = parseEnum(values.format, DETECTION_FORMATS, 'format') ?? 'md';
   const layer = parseEnum(values.layer, LAYER_KEYS, 'layer');
   const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
   setLocale(locale);
@@ -2565,7 +2567,10 @@ ${USAGE}`);
   if (!target) fail('ノードのあるレイヤーがありません。');
 
   const d = buildDetectionRequirements(target.input, new Date(), locale);
-  writeOutput(format === 'json' ? detectionRequirementsToJson(d) : detectionRequirementsToMarkdown(d), values.out);
+  writeOutput(
+    format === 'json' ? detectionRequirementsToJson(d) : format === 'sigma' ? detectionRequirementsToSigma(d) : detectionRequirementsToMarkdown(d),
+    values.out,
+  );
   const reqs = d.nodes.reduce((n, x) => n + x.requirements.length, 0);
   process.stderr.write(
     `検知要件を出力しました（${target.layer}・対象ノード ${d.nodes.length} 件・監視要件 ${reqs} 件・経路 ${d.routes.length} 本${d.pathBased ? '' : '・攻撃経路なし＝全ノード'}）

@@ -10,12 +10,16 @@
 #   - 攻撃手順・エクスプロイトのコードは置かない。被害企業の事例は書かない。
 #   - 本文は日本語の要約。英語は i18n/en/detection.yaml の翻訳オーバーレイ（title / watch / logs）。
 #   - attack は参考の ATT&CK テクニック ID（任意）。
+#   - sigma は Sigma 形式の書き出し（export-detection-requirements --format sigma）で使う主なログの種類（任意）。
+#     Sigma の taxonomy（SigmaHQ sigma-specification の appendix）の値だけを書く。合う値が無い要件は書かない（application になる）。
 #
 # 出典（考え方）:
 #   - MITRE ATT&CK Data Sources / Techniques（テクニック ID）
 #     https://attack.mitre.org/datasources/
 #   - NIST SP 800-92 Guide to Computer Security Log Management
 #     https://csrc.nist.gov/pubs/sp/800/92/final
+#   - Sigma Rules Specification 2.1.0・Taxonomy Appendix（logsource の値）
+#     https://github.com/SigmaHQ/sigma-specification
 #   - CISA Best Practices for Event Logging and Threat Detection
 #     https://www.cisa.gov/resources-tools/resources/best-practices-event-logging-and-threat-detection
 #
@@ -34,6 +38,7 @@ requirements:
       - "同一の送信元からの異常なエラー応答（5xx）やワーカー異常終了の急増"
       - "想定外の宛先への外向き通信"
     logs: ["Web サーバーのアクセスログ・エラーログ", "EDR・OS のプロセス生成ログ", "ファイル整合性監視のログ"]
+    sigma: { category: webserver }
     attack: [T1190, T1505.003]
 
   - id: edge-management-exposure
@@ -45,6 +50,7 @@ requirements:
       - "管理系パスへの認証失敗の連続"
       - "公開面の設定変更（ルール追加・ポート開放）"
     logs: ["境界の FW・WAF のログ", "管理画面の認証・操作ログ", "クラウドの構成変更の監査ログ"]
+    sigma: { category: firewall }
     attack: [T1133, T1190]
 
   - id: credential-guessing
@@ -122,6 +128,7 @@ requirements:
       - "グループポリシーなどポリシーオブジェクトの変更"
       - "同期アカウント・委任設定の変更や、同期アカウントの異常な利用"
     logs: ["ドメインコントローラーのセキュリティイベントログ", "ディレクトリの変更監査ログ", "同期サービスのログ"]
+    sigma: { product: windows, service: security }
     attack: [T1003.006, T1484.001]
 
   - id: lateral-movement-network
@@ -133,6 +140,7 @@ requirements:
       - "VPN・ZTNA の接続元から、普段触れない資産への広範なアクセス"
       - "開発環境と本番の管理面をまたぐ操作"
     logs: ["ネットワーク機器・FW のフローログ", "VPN・ZTNA のアクセスログ", "ファイルサーバーのアクセス監査ログ", "EDR のネットワーク接続ログ"]
+    sigma: { category: firewall }
     attack: [T1021, T1570]
 
   - id: data-store-access
@@ -145,6 +153,7 @@ requirements:
       - "データストアの公開設定・アクセス権限の変更"
       - "データストアから外部への大量の外向き通信"
     logs: ["DB の監査ログ", "ストレージのアクセスログ", "クラウドの構成変更の監査ログ", "外向き通信のフローログ"]
+    sigma: { category: database }
     attack: [T1530, T1567, T1565]
 
   - id: api-abuse
@@ -157,6 +166,7 @@ requirements:
       - "ゲートウェイを経由しない直接のバックエンドへの到達"
       - "サーバー側からメタデータ・内部アドレスへの想定外のリクエスト"
     logs: ["API ゲートウェイのアクセスログ", "バックエンドのアプリケーションログ", "WAF のログ", "クラウドのメタデータ参照ログ"]
+    sigma: { category: webserver }
     attack: [T1190, T1212]
 
   - id: web-input-attacks
@@ -168,6 +178,7 @@ requirements:
       - "機微なファイル・隠しパスへのアクセス試行"
       - "署名検証に失敗した Webhook の連続"
     logs: ["WAF のログ", "リバースプロキシ・CDN のアクセスログ", "アプリのエラーログ"]
+    sigma: { category: webserver }
     attack: [T1190, T1659]
 
   - id: supply-chain-pipeline
@@ -191,7 +202,7 @@ requirements:
       - "ログ基盤・EDR の設定変更、除外ルールの追加、ログの削除"
       - "監視基盤の管理者操作と認証"
     logs: ["ログ基盤・EDR 自身の管理操作ログ", "ログ転送の死活（ハートビート）", "OS・クラウドの構成変更の監査ログ"]
-    attack: [T1562, T1070]
+    attack: [T1685, T1070]
 
   - id: ransomware-backup
     match:
@@ -202,6 +213,7 @@ requirements:
       - "バックアップの削除・保持期間の短縮・ロック設定の変更"
       - "バックアップ管理面への通常と異なる認証"
     logs: ["ファイルサーバーのアクセス監査ログ", "バックアップ基盤の操作ログ", "EDR のファイル操作ログ"]
+    sigma: { category: file_event }
     attack: [T1486, T1490]
 
   - id: virtualization-management
@@ -257,6 +269,7 @@ requirements:
       - "エージェントの実行環境でのシェル・コード実行"
       - "エージェントの設定・スキル・拡張の新規導入や変更"
     logs: ["エージェント実行環境のプロセス・ネットワークログ", "プロキシ・FW の外向きログ", "設定・スキルの変更履歴"]
+    sigma: { category: proxy }
     attack: [T1071, T1059]
 
   - id: mcp-tool-integrity

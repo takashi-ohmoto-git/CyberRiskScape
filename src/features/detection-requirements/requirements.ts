@@ -16,6 +16,15 @@ const RequirementSchema = z.object({
   logs: z.array(z.string().min(1)).nonempty(),
   /** 参考の ATT&CK テクニック ID。 */
   attack: z.array(z.string().regex(/^T\d{4}(\.\d{3})?$/)).optional(),
+  /** Sigma の書き出しで使う主なログの種類（Sigma の taxonomy の値。無ければ application）。 */
+  sigma: z
+    .object({
+      category: z.string().regex(/^[a-z0-9_.-]+$/).optional(),
+      product: z.string().regex(/^[a-z0-9_.-]+$/).optional(),
+      service: z.string().regex(/^[a-z0-9_.-]+$/).optional(),
+    })
+    .refine((l) => l.category !== undefined || l.product !== undefined, { message: 'category か product が要ります' })
+    .optional(),
 });
 
 const RequirementFileSchema = z.object({

@@ -30,4 +30,8 @@ export const jaDetection = {
   'detection.requirement': '{title}（脅威: {threats}）',
   'detection.watch': '監視すべき振る舞い:',
   'detection.logs': '必要なログ:',
+  'detection.sigma.draft': '{product} が脅威モデル「{system}」（{layer}）から作った Sigma ルールの下書き。検知の条件（detection）は環境のログに合わせて書く。そのままでは動かない（status: unsupported）。「検知できる」ことは示さない。',
+  'detection.sigma.nodes': '対象ノード:',
+  'detection.sigma.author': '{product}（脅威モデルから生成した下書き）',
+  'detection.sigma.falsepositive': '未調整（環境に合わせて調整する）',
 } as const;
