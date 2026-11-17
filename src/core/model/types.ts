@@ -699,9 +699,9 @@ export interface ProjectMeta {
   assumptions?: string;
   /** 外部依存（任意・複数行）。 */
   externalDependencies?: string;
-  /** 所属組織の名前（任意）。組織の種別・階層は持たない。 */
+  /** 所属会社の名前（任意）。会社の種別・階層は持たない。 */
   organizationName?: string;
-  /** 所属組織のコード（任意）。名前の表記ゆれに頼らず組織を特定するための鍵。 */
+  /** 所属会社のコード（任意）。名前の表記ゆれに頼らず会社を特定するための鍵。 */
   organizationCode?: string;
   /** 部門（任意）。 */
   department?: string;

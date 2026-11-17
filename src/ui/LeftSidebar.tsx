@@ -34,6 +34,7 @@ import { useCustomRulesStore } from '../features/custom-rules/store';
 import { componentRegistry, getComponentRegistry } from '../component-library/defaultRegistry';
 import { renderIcon } from '../component-library/iconRegistry';
 import { saveProject } from '../features/persistence/repository';
+import { pickSerializableState } from '../features/persistence/serialize';
 import { buildThreatReport, toCsv, toJson, toDCRHThreatModelMarkdown } from '../features/export/threatReport';
 import { triggerDownload } from '../features/export/download';
 import { toPostmanCollection } from '../features/postman-export/toPostmanCollection';
@@ -108,22 +109,7 @@ export function LeftSidebar({ threats }: LeftSidebarProps) {
   const handleSaveNow = async () => {
     setSaveState('saving');
     try {
-      const s = useDiagramStore.getState();
-      await saveProject({
-        layers: s.layers,
-        activeLayer: s.activeLayer,
-        idCounters: s.idCounters,
-        activeFramework: s.activeFramework,
-        disabledLibraryIds: s.disabledLibraryIds,
-        projectMeta: s.projectMeta,
-        manualThreats: s.manualThreats,
-        suppressions: s.suppressions,
-        riskScores: s.riskScores,
-        controlStatuses: s.controlStatuses,
-        findings: s.findings,
-        assets: s.assets,
-        bomComponents: s.bomComponents,
-      });
+      await saveProject(pickSerializableState(useDiagramStore.getState()), 'manual');
       setSaveState('saved');
       setTimeout(() => setSaveState('idle'), 1500);
     } catch (e) {

@@ -52,6 +52,31 @@ export interface SerializableState {
 }
 
 /**
+ * ストアの state から、保存する項目だけを取り出す。
+ * 自動保存と保存ボタンで同じ項目を保存するために、取り出す所をここ 1 つにする
+ * （選択状態などの一時的な状態は入れない）。
+ */
+export function pickSerializableState(state: SerializableState): SerializableState {
+  return {
+    projectId: state.projectId,
+    layers: state.layers,
+    activeLayer: state.activeLayer,
+    idCounters: state.idCounters,
+    activeFramework: state.activeFramework,
+    disabledLibraryIds: state.disabledLibraryIds,
+    projectMeta: state.projectMeta,
+    manualThreats: state.manualThreats,
+    suppressions: state.suppressions,
+    riskScores: state.riskScores,
+    controlStatuses: state.controlStatuses,
+    findings: state.findings,
+    assets: state.assets,
+    bomComponents: state.bomComponents,
+    vulnIntel: state.vulnIntel,
+  };
+}
+
+/**
  * ストアの永続化対象 state を IndexedDB 保存形式に変換する純粋関数。
  *
  * 深度レイヤー化以降は `layers` を保存し、旧形式の `nodes/edges/boundaries`

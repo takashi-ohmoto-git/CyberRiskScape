@@ -1,33 +1,25 @@
 import { DEFAULT_PROJECT_KEY, getDb, PROJECTS_STORE } from './db';
 import { deserializeProject, serializeProject, type SerializableState } from './serialize';
 import type { PersistedProject } from './schema';
+import { getProjectStorage, type SaveTrigger } from './storage';
 
 /**
  * 単一プロジェクトの save / load / clear。
  *
- * `key` を渡せばマルチプロジェクト化にも拡張できるが、Phase 1 では
- * `DEFAULT_PROJECT_KEY` 固定で auto-save 用途に限定する。
+ * 保存先は `storage.ts`（既定は IndexedDB の `DEFAULT_PROJECT_KEY`）。
+ * ここでは保存形式への変換と、読み込んだ値の検証を行う。
  */
 
-export async function saveProject(
-  state: SerializableState,
-  key: string = DEFAULT_PROJECT_KEY,
-): Promise<void> {
-  const db = await getDb();
-  await db.put(PROJECTS_STORE, serializeProject(state), key);
+export async function saveProject(state: SerializableState, trigger: SaveTrigger = 'auto'): Promise<void> {
+  await getProjectStorage().save(serializeProject(state), trigger);
 }
 
-export async function loadProject(
-  key: string = DEFAULT_PROJECT_KEY,
-): Promise<PersistedProject | null> {
-  const db = await getDb();
-  const raw = await db.get(PROJECTS_STORE, key);
-  if (raw === undefined) return null;
+export async function loadProject(): Promise<PersistedProject | null> {
+  const raw = await getProjectStorage().load();
+  if (raw === undefined || raw === null) return null;
   const project = deserializeProject(raw);
   if (project === null) {
-    console.warn(
-      `[persistence] saved project "${key}" failed schema validation; falling back to defaults`,
-    );
+    console.warn('[persistence] saved project failed schema validation; falling back to defaults');
   }
   return project;
 }

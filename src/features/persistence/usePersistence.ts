@@ -2,12 +2,12 @@ import { useEffect } from 'react';
 import { useDiagramStore } from '../../core/state/diagramStore';
 import { loadProject, saveProject } from './repository';
 import { hydrateFromPersisted } from './hydrate';
-import { type SerializableState } from './serialize';
+import { pickSerializableState, type SerializableState } from './serialize';
 
 const DEBOUNCE_MS = 500;
 
 /**
- * 起動時に IndexedDB からプロジェクトを復元し、その後の編集を
+ * 起動時に保存先（既定は IndexedDB。`storage.ts`）からプロジェクトを復元し、その後の編集を
  * デバウンス auto-save するフック。`App.tsx` のルートで 1 回だけ呼ぶ。
  *
  * - ハイドレート完了までは `isHydrated = false`。`App.tsx` 側で描画ゲート。
@@ -68,23 +68,7 @@ export function usePersistence(): void {
         state.bomComponents !== prev.bomComponents ||
         state.vulnIntel !== prev.vulnIntel;
       if (!changed) return;
-      pendingSnapshot = {
-        projectId: state.projectId,
-        layers: state.layers,
-        activeLayer: state.activeLayer,
-        idCounters: state.idCounters,
-        activeFramework: state.activeFramework,
-        disabledLibraryIds: state.disabledLibraryIds,
-        projectMeta: state.projectMeta,
-        manualThreats: state.manualThreats,
-        suppressions: state.suppressions,
-        riskScores: state.riskScores,
-        controlStatuses: state.controlStatuses,
-        findings: state.findings,
-        assets: state.assets,
-        bomComponents: state.bomComponents,
-        vulnIntel: state.vulnIntel,
-      };
+      pendingSnapshot = pickSerializableState(state);
       if (timer !== null) clearTimeout(timer);
       timer = setTimeout(flush, DEBOUNCE_MS);
     });
