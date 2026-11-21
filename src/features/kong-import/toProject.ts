@@ -1,12 +1,13 @@
-import { EMPTY_LAYER, type LayerData } from '../../core/model/types';
+import { EMPTY_LAYER, EMPTY_PROJECT_META, type LayerData } from '../../core/model/types';
 import { serializeProject } from '../persistence/serialize';
 import type { PersistedProject } from '../persistence/schema';
 
 /**
  * 取り込んだ 1 レイヤー分の図を、L1 に置いたプロジェクト（保存形式）にする。CLI 用。
+ * `name` を渡すと projectMeta のプロジェクト名に入る。
  * ElementalID の連番（`seq`）はここで 1 から振る（UI ではテンプレート取り込みが振る）。
  */
-export function layerToProject(layer: LayerData): PersistedProject {
+export function layerToProject(layer: LayerData, name?: string): PersistedProject {
   const number = <T extends object>(items: T[]) => items.map((item, i) => ({ ...item, seq: i + 1 }));
   return serializeProject({
     layers: {
@@ -21,6 +22,7 @@ export function layerToProject(layer: LayerData): PersistedProject {
       L3: EMPTY_LAYER,
       PQC: EMPTY_LAYER,
     },
+    ...(name ? { projectMeta: { ...EMPTY_PROJECT_META, name } } : {}),
     activeLayer: 'L1',
     activeFramework: 'ALL',
     idCounters: {

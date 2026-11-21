@@ -130,3 +130,24 @@ describe('互換', () => {
     expect(s.layer.nodes.find((n) => n.id === 'shodan-203_0_113_10-443-tcp')?.description).toContain('CVE-2024-0001');
   });
 });
+
+describe('importAsmAssets（サービス単位のキー）', () => {
+  const r = shodan(banner('203.0.113.10', 22), banner('203.0.113.10', 443, { hostnames: ['www.example.com'] }));
+  const nodeOf = (out: ReturnType<typeof importAsmAssets>, ext: string) => out.project.assets?.find((a) => a.externalId === ext)?.subject?.nodeId;
+
+  it('同じ IP の 22 と 443 を、ip:port/transport のキーでそれぞれ別のノードに結ぶ', () => {
+    const out = importAsmAssets(project(), r.exposed, opts('s1', { nodeMap: { '203.0.113.10:22/tcp': 'n-db', '203.0.113.10:443/tcp': 'C1' } }));
+    expect(nodeOf(out, '203.0.113.10:22/tcp')).toBe('n-db');
+    expect(nodeOf(out, '203.0.113.10:443/tcp')).toBe('n-web');
+    expect(out.unlinkedHosts).toEqual([]);
+  });
+  it('サービスのキーは IP のキーより優先し、ホスト名のサービスのキーでも引ける', () => {
+    const out = importAsmAssets(project(), r.exposed, opts('s1', { nodeMap: { '203.0.113.10': 'n-web', '203.0.113.10:22/tcp': 'n-db', 'www.example.com:443/tcp': 'n-tool' } }));
+    expect(nodeOf(out, '203.0.113.10:22/tcp')).toBe('n-db');
+    expect(nodeOf(out, '203.0.113.10:443/tcp')).toBe('n-tool');
+  });
+  it('部分一致では結ばない（ポートまたは transport が違えば IP のキーに落ちる）', () => {
+    const out = importAsmAssets(project(), r.exposed, opts('s1', { nodeMap: { '203.0.113.10:80/tcp': 'n-web', '203.0.113.10:22/udp': 'n-web', '203.0.113.10:2/tcp': 'n-web' } }));
+    expect(out.project.assets?.every((a) => a.subject === undefined)).toBe(true);
+  });
+});

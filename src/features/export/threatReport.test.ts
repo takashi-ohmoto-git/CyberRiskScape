@@ -189,6 +189,16 @@ describe('toCsv', () => {
 });
 
 describe('toJson', () => {
+  it('脅威ごとに layer と nodeId / edgeId を独立した欄で持つ（id の分解は不要）', () => {
+    const edge: ThreatView = { ...DETECTED, id: 'rule-b::edge:e1', subject: { kind: 'edge', id: 'e1' }, nodeId: 'n2' };
+    const json = JSON.parse(toJson(buildThreatReport(input([DETECTED, edge, MANUAL]))));
+    expect(json.threats[0]).toMatchObject({ layer: 'L1', nodeId: 'n1' });
+    expect(json.threats[0].edgeId).toBeUndefined();
+    expect(json.threats[1]).toMatchObject({ layer: 'L1', edgeId: 'e1' });
+    expect(json.threats[1].nodeId).toBeUndefined();
+    expect(json.threats[2].nodeId).toBeUndefined();
+  });
+
   it('schemaVersion / kind / project / threats を含む', () => {
     const json = JSON.parse(toJson(buildThreatReport(input([DETECTED]))));
     expect(json.schemaVersion).toBe(THREAT_REPORT_SCHEMA_VERSION);

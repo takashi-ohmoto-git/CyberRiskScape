@@ -291,6 +291,8 @@ export function analyzeThreats(raw: unknown, opts: AnalyzeThreatsOptions): Recor
   const threats = items.slice(0, limit).map((lt) => ({
     id: qualifiedId(lt),
     layer: lt.layer,
+    ...(lt.element?.kind === 'node' ? { nodeId: lt.element.id } : {}),
+    ...(lt.element?.kind === 'edge' ? { edgeId: lt.element.id } : {}),
     name: trunc(lt.threat.name ?? lt.threat.category),
     effectiveSeverity: effectiveSeverity(lt.threat),
     ruleSeverity: lt.threat.severity,

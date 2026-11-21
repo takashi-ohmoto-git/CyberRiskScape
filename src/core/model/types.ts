@@ -1388,7 +1388,7 @@ export const MAX_VULN_INTEL = 5000;
 
 /** 資産の入力の形式。 */
 /** `manual` は NodePanel の資産ポップアップから人が手で登録したもの（docs/node-address-asset-panel.md §3.2）。 */
-export const ASSET_FORMATS = ['artex-assets', 'shodan', 'scopesentry', 'metasploit', 'cyberstrikeai-assets', 'manual', 'openapi', 'ocsf'] as const;
+export const ASSET_FORMATS = ['artex-assets', 'shodan', 'scopesentry', 'metasploit', 'cyberstrikeai-assets', 'manual', 'openapi', 'ocsf', 'ai-asm'] as const;
 export type AssetFormat = (typeof ASSET_FORMATS)[number];
 
 /** 資産の出どころ（docs/architecture.md §8.7）。 */

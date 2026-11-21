@@ -59,6 +59,12 @@ export const THREAT_REPORT_KIND = 'cyberriskscape-threat-report' as const;
 export interface ThreatReportRow {
   /** 脅威の安定 ID（`ThreatView.id`）。 */
   id: string;
+  /** 対象要素のレイヤー。id の文字列を分解せずに脅威と要素を結ぶための独立した欄（JSON 用）。 */
+  layer?: LayerKey;
+  /** 対象がノードのときのノード ID。 */
+  nodeId?: string;
+  /** 対象がエッジのときのエッジ ID。 */
+  edgeId?: string;
   /** 対象要素：ElementalID（`C3` / `DF2` / `Z1`）＋ラベル。未割当（全体スコープ）は空。 */
   asset: string;
   framework: string;
@@ -237,6 +243,12 @@ export function buildThreatReport({
   const index = buildAssetIndex(nodes, edges, boundaries);
   const rows: ThreatReportRow[] = threats.map((t) => ({
     id: t.id,
+    layer,
+    ...(t.subject?.kind === 'edge'
+      ? { edgeId: t.subject.id }
+      : t.subject?.kind === 'node' || (!t.subject && t.nodeId)
+        ? { nodeId: t.subject?.id ?? t.nodeId }
+        : {}),
     asset: assetLabel(t, index),
     framework: t.framework,
     category: t.category,

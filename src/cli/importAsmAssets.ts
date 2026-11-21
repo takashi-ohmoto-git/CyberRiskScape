@@ -16,7 +16,7 @@ export interface ImportAsmAssetsOptions {
   format: Extract<AssetFormat, 'shodan' | 'scopesentry'>;
   product: string;
   scope: string;
-  /** IP・ホスト名 → ノード（C 番号または ID）。 */
+  /** IP・ホスト名、または `<IP|ホスト名>:<ポート>/<tcp|udp>` → ノード（C 番号または ID）。サービスのキーは完全一致のときだけ、IP・ホスト名のキーより優先。 */
   nodeMap?: Record<string, string>;
   /** 対応表に無いサービスを結びつけるノード。 */
   node?: string;
@@ -48,7 +48,10 @@ export function importAsmAssets(rawProject: unknown, exposed: readonly ExposedSe
   const badRefs = new Set<string>();
   const assets = exposedServicesToAssets(exposed, source).map((asset) => {
     const hostnames = asset.identifiers.filter((i) => i.scheme === 'fqdn' || i.scheme === 'hostname').map((i) => i.value);
-    const hit = resolveHost(nodes, { hostnames, ips: asset.host ? [asset.host] : [] }, options.nodeMap, options.node);
+    // `<IP|ホスト名>:<ポート>/<transport>` の完全一致を IP・ホスト名のキーより先に引く（--node 指定時は従来どおり --node が優先）
+    const suffix = asset.externalId.slice(asset.externalId.lastIndexOf(':'));
+    const serviceKeys = [...hostnames, ...(asset.host ? [asset.host] : [])].map((a) => `${a}${suffix}`);
+    const hit = resolveHost(nodes, { hostnames: [...serviceKeys, ...hostnames], ips: asset.host ? [asset.host] : [] }, options.nodeMap, options.node);
     if (hit.kind === 'found') return { ...asset, subject: { layer: hit.node.layer, nodeId: hit.node.id } };
     if (asset.host) unlinked.add(asset.host);
     if (hit.reason !== 'none' && hit.ref) badRefs.add(hit.ref);

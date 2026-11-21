@@ -87,6 +87,7 @@ import {
   parseSecurityAudit,
 } from '../features/security-audit-import/parseSecurityAudit';
 import { parseArtexEndpoints, parseArtexServices } from '../features/asset-import/artexAssets';
+import { parseAiAsmEndpoints } from '../features/asset-import/aiAsmAssets';
 import { parseCyberStrikeAiAssets } from '../features/asset-import/cyberstrikeaiAssets';
 import type { PentestEndpointRecord, PentestServiceRecord } from '../features/asset-import/pentestAssetRecord';
 import { parseBom } from '../features/bom-import/parseBom';
@@ -254,7 +255,7 @@ const USAGE = `使い方:
   asm-reconcile <project.json> [options]
   sbom-report <project.json> [options]
   context <project.json> (--ip <ip> | --host <name> | --purl <purl>) [options]
-  import-aipentest-assets <project.json> --format <artex|cyberstrikeai> --scope <scope> [--services <file>] [--endpoints <file>] [--assets <file> ...] [options]
+  import-aipentest-assets <project.json> --format <artex|cyberstrikeai|ai-asm> --scope <scope> [--services <file>] [--endpoints <file>] [--assets <file> ...] [options]
   import-metasploit-assets <project.json> --xml <export.xml> --scope <scope> [--host-node <IP>=<C番号|ID> ...] [options]
   import-sbom <project.json> --sbom <file> --scope <scope> [options]
   import-conjur <policy.yml> [options]
@@ -409,12 +410,13 @@ import-pentest のオプション（ペンテストの指摘の台帳 YAML の�
   -o, --out <file>                              指摘を保存したプロジェクト JSON の出力先（指定しなければ書き出さない）
 
 import-aipentest-assets のオプション（AI ペンテストのツールが観測した資産の JSON から、サービスとエンドポイントを Asset タブ用に保存する。パラメータの値・担当者や部署は保存しない）:
-  --format <artex|cyberstrikeai>                入力の形（必須）
+  --format <artex|cyberstrikeai|ai-asm>         入力の形（必須）
   --assets <file>                               cyberstrikeai: GET /api/assets?page=N&page_size=100 の JSON（必須。ページごとに繰り返し可）。手で登録した資産（manual）と inactive は読まない
   --services <file>                             artex: GET /api/assets?type=service&task_id=N の JSON（--endpoints とどちらか必須）
-  --endpoints <file>                            artex: GET /api/assets?type=endpoint&task_id=N の JSON
+  --endpoints <file>                            artex: GET /api/assets?type=endpoint&task_id=N の JSON。ai-asm: AI-ASM の endpoints.json（必須）
   --scope <scope>                               置き換えの範囲（必須。例: task-3）
-  --map <file>                                  ホストとノードの対応表（任意。JSON {"<IP|ドメイン>": "<C番号|ノード ID>"}）
+  --map <file>                                  ホストとノードの対応表（任意。JSON {"<IP|ドメイン>": "<C番号|ノード ID>"}）。
+                                                キーは <IP|ホスト名>:<ポート>/<tcp|udp> でもよい（完全一致のときだけ。IP・ホスト名だけのキーより優先）
   --node <C番号|ID>                             対応表に無いホストを結びつけるノード（任意。無ければ未対応）
   --report <md|json>                            報告の形式（既定: md。標準出力）
   -o, --out <file>                              資産を保存したプロジェクト JSON の出力先（指定しなければ報告のみ）
@@ -549,8 +551,11 @@ import-shodan のオプション（Shodan の書き出し（.json.gz または J
   --into <project.json>                         図の下書きの代わりに、観測したサービス（ip:port/transport）を資産として既存のプロジェクトに保存する。
                                                 製品が報告した CVE は識別子（cve・未検証・最大 10 件）として残す。指定しなければ従来どおり図の下書きを出す
   --scope <scope>                               --into のとき必須。置き換えの範囲（同じ製品・同じ scope の資産を置き換える）
-  --map <file>                                  --into のとき、IP・ホスト名とノードの対応表（任意。JSON {"<IP|ホスト名>": "<C番号|ノード ID>"}。無ければ未対応）
+  --map <file>                                  --into のとき、IP・ホスト名とノードの対応表（任意。JSON {"<IP|ホスト名>": "<C番号|ノード ID>"}。無ければ未対応）。
+                                                キーは <IP|ホスト名>:<ポート>/<tcp|udp> でもよい（完全一致のときだけ。IP・ホスト名だけのキーより優先）
   --node <C番号|ID>                             --into のとき、対応表に無いサービスを結びつけるノード（任意）
+  --name <text>                                 --into を使わないとき、下書きのプロジェクト名（1〜200 文字）
+  --report <json>                               機械向けの結果を標準出力に JSON で出す（--out の指定が必要。件数・未対応のホスト等）
   --locale <ja|en>                              ノード名の言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
@@ -562,8 +567,11 @@ import-scopesentry のオプション（ScopeSentry の書き出し JSON、ま�
   --into <project.json>                         図の下書きの代わりに、観測したサービス（ip:port/transport）を資産として既存のプロジェクトに保存する。
                                                 製品が報告した CVE は識別子（cve・未検証・最大 10 件）として残す。指定しなければ従来どおり図の下書きを出す
   --scope <scope>                               --into のとき必須。置き換えの範囲（同じ製品・同じ scope の資産を置き換える）
-  --map <file>                                  --into のとき、IP・ホスト名とノードの対応表（任意。JSON {"<IP|ホスト名>": "<C番号|ノード ID>"}。無ければ未対応）
+  --map <file>                                  --into のとき、IP・ホスト名とノードの対応表（任意。JSON {"<IP|ホスト名>": "<C番号|ノード ID>"}。無ければ未対応）。
+                                                キーは <IP|ホスト名>:<ポート>/<tcp|udp> でもよい（完全一致のときだけ。IP・ホスト名だけのキーより優先）
   --node <C番号|ID>                             --into のとき、対応表に無いサービスを結びつけるノード（任意）
+  --name <text>                                 --into を使わないとき、下書きのプロジェクト名（1〜200 文字）
+  --report <json>                               機械向けの結果を標準出力に JSON で出す（--out の指定が必要。件数・未対応のホスト等）
   --product <name>                              --into のとき、資産の製品名（既定: ScopeSentry。同じ形で書き出す別の製品のとき。例: AI-ASM）
   --locale <ja|en>                              ノード名の言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
@@ -817,6 +825,7 @@ function parseCliArgs() {
       scope: { type: 'string' },
       into: { type: 'string' },
       product: { type: 'string' },
+      name: { type: 'string' },
       repo: { type: 'string' },
       path: { type: 'string' },
       since: { type: 'string' },
@@ -2083,14 +2092,14 @@ function runExportSpdx(values: CliValues, positionals: string[]): void {
 }
 
 /**
- * `import-aipentest-assets`：AI ペンテストのツール（ARTEX・CyberStrikeAI）が観測した資産の JSON をプロジェクト JSON に保存する
+ * `import-aipentest-assets`：AI ペンテストのツール（ARTEX・CyberStrikeAI・AI-ASM）が観測した資産の JSON をプロジェクト JSON に保存する
  * （docs/architecture.md §8.7）。
  */
 function runImportAipentestAssets(values: CliValues, positionals: string[]): void {
   const file = positionals[1];
   if (!file) fail(`入力ファイルを指定してください。\n\n${USAGE}`);
   const tool = parseEnum(values.format, AIPENTEST_ASSET_TOOL_KEYS, 'format');
-  if (!tool) fail('--format を指定してください（artex か cyberstrikeai）。');
+  if (!tool) fail('--format を指定してください（artex・cyberstrikeai・ai-asm のどれか）。');
   if (!values.scope) fail('--scope を指定してください（例: task-3）。');
   const report = parseEnum(values.report, IMPORT_PROWLER_REPORTS, 'report') ?? 'md';
 
@@ -2111,6 +2120,11 @@ function runImportAipentestAssets(values: CliValues, positionals: string[]): voi
       endpoints.push(...parsed.records);
       skippedBySource += parsed.skippedBySource;
     }
+  } else if (tool === 'ai-asm') {
+    if (!values.endpoints) fail('--endpoints を指定してください（AI-ASM の endpoints.json）。');
+    const parsed = parseAiAsmEndpoints(readJsonFile(values.endpoints));
+    if (!parsed.ok) fail(`${parsed.error}（${values.endpoints}）`);
+    endpoints.push(...parsed.records);
   } else {
     if (!values.assets || values.assets.length === 0) fail('--assets を指定してください（ページごとに繰り返し可）。');
     for (const f of values.assets) {
@@ -2171,6 +2185,18 @@ function runImportConjur(values: CliValues, positionals: string[]): void {
   );
 }
 
+/** import-shodan / import-scopesentry 共通の `--name` / `--report` の検証。 */
+function parseAsmCommonOptions(values: CliValues): { name?: string; json: boolean } {
+  const json = parseEnum(values.report, ['json'] as const, 'report') === 'json';
+  if (json && !values.out) fail('--report json のときは --out を指定してください（標準出力にはプロジェクト JSON が出るため）。');
+  if (values.name === undefined) return { json };
+  if (values.into) fail('--name は --into と一緒に使えません（既存のプロジェクト名は変えません）。');
+  const name = values.name.trim();
+  // eslint-disable-next-line no-control-regex
+  if (!name || name.length > 200 || /[\u0000-\u001f\u007f]/.test(name)) fail('--name は 1〜200 文字で、制御文字を含めないでください。');
+  return { name, json };
+}
+
 /**
  * `import-shodan` / `import-scopesentry` の `--into`：観測サービスを資産として既存プロジェクトに保存する。
  * ノードとの結合は `--map` / `--node` の明示だけ（推測しない）。
@@ -2179,6 +2205,7 @@ function saveAsmAssets(
   values: CliValues,
   exposed: Parameters<typeof importAsmAssets>[1],
   product: { format: 'shodan' | 'scopesentry'; product: string },
+  json = false,
 ): void {
   if (!values.into) return;
   if (!values.scope) fail('--into のときは --scope を指定してください（例: 2026-11）。');
@@ -2195,6 +2222,11 @@ function saveAsmAssets(
     fail(e instanceof Error ? e.message : String(e));
   }
   writeOutput(JSON.stringify(out.project, null, 2), values.out);
+  if (json) {
+    const { services, cves, unlinkedHosts, badNodeRefs } = out;
+    process.stdout.write(`${JSON.stringify({ schemaVersion: 1, kind: 'cyberriskscape-asm-import-report', product: product.product, mode: 'into', services, cves, unlinkedHosts, badNodeRefs }, null, 2)}
+`);
+  }
   process.stderr.write(
     `${product.product} のサービスを資産として保存しました（サービス ${out.services} / CVE の識別子 ${out.cves} / 未対応のホスト ${out.unlinkedHosts.length}）
 `,
@@ -2214,6 +2246,7 @@ function runImportShodan(values: CliValues, positionals: string[]): void {
 
 ${USAGE}`);
   }
+  const { name, json } = parseAsmCommonOptions(values);
   const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
   setLocale(locale);
 
@@ -2228,11 +2261,13 @@ ${USAGE}`);
   if (!result.ok) fail(result.error);
 
   if (values.into) {
-    saveAsmAssets(values, result.exposed, { format: 'shodan', product: 'Shodan' });
+    saveAsmAssets(values, result.exposed, { format: 'shodan', product: 'Shodan' }, json);
     return;
   }
-  writeOutput(JSON.stringify(layerToProject(result.layer), null, 2), values.out);
+  writeOutput(JSON.stringify(layerToProject(result.layer, name), null, 2), values.out);
   const s = result.summary;
+  if (json) process.stdout.write(`${JSON.stringify({ schemaVersion: 1, kind: 'cyberriskscape-asm-import-report', product: 'Shodan', mode: 'diagram', ...s }, null, 2)}
+`);
   process.stderr.write(
     `Shodan の書き出しを取り込みました（サービス ${s.services} / ホスト ${s.hosts} / CVE ${s.cves} / 読み飛ばし ${s.skipped} / 上限超過 ${s.truncated}）
 `,
@@ -2400,6 +2435,7 @@ ${USAGE}`);
   const product = values.product?.trim() ?? 'ScopeSentry';
   // eslint-disable-next-line no-control-regex
   if (!product || product.length > 100 || /[\u0000-\u001f\u007f]/.test(product)) fail('--product は 1〜100 文字で、制御文字を含めないでください。');
+  const { name, json } = parseAsmCommonOptions(values);
   const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
   setLocale(locale);
 
@@ -2432,11 +2468,13 @@ ${USAGE}`);
   if (!result.ok) fail(result.error);
 
   if (values.into) {
-    saveAsmAssets(values, result.exposed, { format: 'scopesentry', product });
+    saveAsmAssets(values, result.exposed, { format: 'scopesentry', product }, json);
     return;
   }
-  writeOutput(JSON.stringify(layerToProject(result.layer), null, 2), values.out);
+  writeOutput(JSON.stringify(layerToProject(result.layer, name), null, 2), values.out);
   const s = result.summary;
+  if (json) process.stdout.write(`${JSON.stringify({ schemaVersion: 1, kind: 'cyberriskscape-asm-import-report', product: 'ScopeSentry', mode: 'diagram', ...s }, null, 2)}
+`);
   process.stderr.write(
     `ScopeSentry のデータを取り込みました（サービス ${s.services} / ホスト ${s.hosts} / 脆弱性 ${s.vulns}（紐付かず ${s.unmatchedVulns}） / 乗っ取り報告 ${s.takeovers} / 読み飛ばし ${s.skipped} / 上限超過 ${s.truncated}）
 `,
