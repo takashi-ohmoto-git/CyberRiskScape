@@ -115,6 +115,13 @@ describe('importAsmAssets（ScopeSentry）', () => {
     expect(a.observedAt).toBe(new Date('2026-10-20T10:00:00').toISOString());
     expect(JSON.stringify(out.project.assets)).not.toContain('SECRET-BODY');
   });
+  it('同じ形で書き出す別の製品（--product）は、その製品名で保存され、ScopeSentry の資産を置き換えない', () => {
+    const sentry = importAsmAssets(project(), r.exposed, opts('p1', { format: 'scopesentry', product: 'ScopeSentry' })).project;
+    const both = importAsmAssets(sentry, r.exposed, opts('p1', { format: 'scopesentry', product: 'AI-ASM' })).project;
+    expect(both.assets?.map((a) => a.source.product)).toEqual(['ScopeSentry', 'AI-ASM']);
+    expect(both.assets?.[1].source.format).toBe('scopesentry');
+    expect(deserializeProject(both)?.assets?.[1].source.product).toBe('AI-ASM');
+  });
 });
 
 describe('互換', () => {

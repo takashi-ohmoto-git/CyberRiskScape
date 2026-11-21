@@ -564,6 +564,7 @@ import-scopesentry のオプション（ScopeSentry の書き出し JSON、ま�
   --scope <scope>                               --into のとき必須。置き換えの範囲（同じ製品・同じ scope の資産を置き換える）
   --map <file>                                  --into のとき、IP・ホスト名とノードの対応表（任意。JSON {"<IP|ホスト名>": "<C番号|ノード ID>"}。無ければ未対応）
   --node <C番号|ID>                             --into のとき、対応表に無いサービスを結びつけるノード（任意）
+  --product <name>                              --into のとき、資産の製品名（既定: ScopeSentry。同じ形で書き出す別の製品のとき。例: AI-ASM）
   --locale <ja|en>                              ノード名の言語（既定: ja）
   --out <file>                                  出力先ファイル（既定: 標準出力）
 
@@ -815,6 +816,7 @@ function parseCliArgs() {
       search: { type: 'string' },
       scope: { type: 'string' },
       into: { type: 'string' },
+      product: { type: 'string' },
       repo: { type: 'string' },
       path: { type: 'string' },
       since: { type: 'string' },
@@ -2393,6 +2395,11 @@ ${USAGE}`);
   }
   if (file && values.api) fail('入力ファイルと --api は同時に指定できません。');
   if (!values.api && (values.project || values.search)) fail('--project / --search は --api と一緒に指定してください。');
+  if (values.product !== undefined && !values.into) fail('--product は --into と一緒に指定してください。');
+  // 画面の「製品」欄と資産の ID に入る。保存形式の上限（100 文字）に合わせ、制御文字は受け付けない
+  const product = values.product?.trim() ?? 'ScopeSentry';
+  // eslint-disable-next-line no-control-regex
+  if (!product || product.length > 100 || /[\u0000-\u001f\u007f]/.test(product)) fail('--product は 1〜100 文字で、制御文字を含めないでください。');
   const locale = parseEnum(values.locale, LOCALES, 'locale') ?? 'ja';
   setLocale(locale);
 
@@ -2425,7 +2432,7 @@ ${USAGE}`);
   if (!result.ok) fail(result.error);
 
   if (values.into) {
-    saveAsmAssets(values, result.exposed, { format: 'scopesentry', product: 'ScopeSentry' });
+    saveAsmAssets(values, result.exposed, { format: 'scopesentry', product });
     return;
   }
   writeOutput(JSON.stringify(layerToProject(result.layer), null, 2), values.out);
