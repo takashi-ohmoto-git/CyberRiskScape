@@ -300,6 +300,11 @@ export const jaProject = {
   'scopesentry.desc.cves': 'ScopeSentry が報告した脆弱性（未検証）: {ids}',
   'scopesentry.desc.more': '他 {n} 件',
   'scopesentry.desc.ics': 'OT/ICS 機器（本ツールのステンシルは OT/ICS に未対応のため IoT として描いています）',
+  'scopesentry.desc.observedReach': '観測: 診断元から到達できた（送信元 IP 制限なし）',
+  'scopesentry.desc.observedAuth': '観測: 認証の入口あり',
+  'scopesentry.desc.observedTls': '観測: TLS {version}',
+  'scopesentry.desc.observedTlsKex': '観測: TLS {version}・鍵交換 {kex}',
+  'scopesentry.desc.observedType': '観測: 機器の型を指定（{type}）',
   'scopesentry.desc.takeover': '乗っ取り可能と報告（未検証）: {hosts}',
   // ── Kong（decK）取り込み ──
   'kong.templateName': 'Kong Gateway（decK から生成）',

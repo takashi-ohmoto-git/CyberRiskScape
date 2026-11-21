@@ -1,4 +1,5 @@
-import type { DiagramBoundary, DiagramEdge, DiagramNode, LayerData } from '../../core/model/types';
+import { ATTACK_SURFACE_APPLICABLE, ATTACK_SURFACE_KEYS_BY_TYPE } from '../../core/model/types';
+import type { AttackSurfaceAttribute, DiagramBoundary, DiagramEdge, DiagramNode, LayerData } from '../../core/model/types';
 import { getLocale, translate, type TranslationKey } from '../../i18n';
 
 /**
@@ -40,6 +41,20 @@ const PORT_NAMES: Record<number, string> = {
   5986: 'WinRM',
 };
 
+/**
+ * 診断側が実際に観測した事実（ScopeSentry 形の `crsObserved`。ScopeSentry の取り込みだけが埋める）。
+ * 観測できたときだけ値を持つ（送信元 IP 制限は「無い」と観測できた false、認証は「入口がある」と観測できた true のみ）。
+ * 観測しなかったことは「無い」「有る」にせず、未入力のまま（未入力＝悪い値の仮定）にする。
+ */
+export interface ObservedFacts {
+  /** 機器の型の指定（同梱のコンポーネント型 ID。分類より優先する）。 */
+  componentType?: string;
+  sourceIpRestriction?: false;
+  userAuthentication?: true;
+  /** 線の暗号。版が分かったときだけ。 */
+  tls?: { version: string; kex?: string };
+}
+
 /** 製品ごとの入力を正規化した、インターネットに露出した 1 サービス。 */
 export interface ExposedService {
   ip: string;
@@ -60,6 +75,8 @@ export interface ExposedService {
   observedAt?: string;
   /** 線のラベル用のサービス名（製品名が無いときの代替）。 */
   serviceHint?: string;
+  /** 診断側の観測（任意）。 */
+  observed?: ObservedFacts;
   /** 説明欄に追記する、翻訳済みの注記（観測日の後ろ・脆弱性の前に並ぶ）。 */
   notes?: string[];
 }
@@ -147,7 +164,8 @@ export function asmToLayer(input: ExposedService[], options: AsmOptions): { laye
   const allCves = new Set<string>();
   services.forEach((s) => {
     const { x, y } = place();
-    const type = classify(s);
+    const o = s.observed;
+    const type = o?.componentType ?? classify(s);
     const transport = transportOf(s);
     const suffix = `${safeId(s.ip)}-${s.port}-${transport}`;
     const product = s.product?.trim();
@@ -163,12 +181,28 @@ export function asmToLayer(input: ExposedService[], options: AsmOptions): { laye
       s.tags?.length ? t('desc.tags', { tags: s.tags.join(', ') }) : '',
       date ? t('desc.observed', { date }) : '',
       ...(s.notes ?? []),
+      o?.sourceIpRestriction === false ? t('desc.observedReach') : '',
+      o?.userAuthentication ? t('desc.observedAuth') : '',
+      o?.tls ? t(o.tls.kex ? 'desc.observedTlsKex' : 'desc.observedTls', { version: o.tls.version, kex: o.tls.kex ?? '' }) : '',
+      o?.componentType ? t('desc.observedType', { type: o.componentType }) : '',
       cves.length ? t('desc.cves', { ids: cves.length > MAX_CVES ? `${shown} ${t('desc.more', { n: cves.length - MAX_CVES })}` : shown }) : '',
     ]
       .filter(Boolean)
       .join(' ／ ');
 
-    const exposes = type === 'FRONT_END_SERVER' || type === 'GATEWAY';
+    // 型を観測で指定したときは、攻撃面属性の対象型なら同じく付ける。
+    const exposes = type === 'FRONT_END_SERVER' || type === 'GATEWAY' || (!!o?.componentType && ATTACK_SURFACE_APPLICABLE.has(type));
+    const surface: AttackSurfaceAttribute = {
+      hasGlobalIp: true,
+      ...(s.hasWaf ? { hasWafProtection: true } : {}),
+      ...(o?.sourceIpRestriction === false ? { hasSourceIpRestriction: false } : {}),
+      ...(o?.userAuthentication ? { hasUserAuthentication: true } : {}),
+    };
+    // 型ごとに入力できる項目だけ残す（入力できない項目は脅威の判定に使わない）。
+    const keys = ATTACK_SURFACE_KEYS_BY_TYPE[type];
+    const attackSurface = keys
+      ? (Object.fromEntries(Object.entries(surface).filter(([k]) => keys.includes(k as keyof AttackSurfaceAttribute))) as AttackSurfaceAttribute)
+      : surface;
     const id = `${prefix}-${suffix}`;
     nodes.push({
       id,
@@ -177,7 +211,7 @@ export function asmToLayer(input: ExposedService[], options: AsmOptions): { laye
       y,
       label: `${s.hostnames?.[0] ?? s.ip}:${s.port}${product ? ` ${product}` : ''}`,
       description,
-      ...(exposes ? { attackSurface: { hasGlobalIp: true, ...(s.hasWaf ? { hasWafProtection: true } : {}) } } : {}),
+      ...(exposes ? { attackSurface } : {}),
     });
 
     const serviceName = `${PORT_NAMES[s.port] ?? product ?? s.serviceHint ?? transport} ${s.port}/${transport}`;
@@ -186,7 +220,8 @@ export function asmToLayer(input: ExposedService[], options: AsmOptions): { laye
       source: `${prefix}-actor`,
       target: id,
       network: 'Internet',
-      encryption: s.hasTls ? 'TLS' : 'Plain',
+      encryption: s.hasTls || o?.tls ? 'TLS' : 'Plain',
+      ...(o?.tls ? { crypto: { protocol: 'TLS', version: o.tls.version, ...(o.tls.kex ? { kex: o.tls.kex } : {}) } } : {}),
       // 外から認証の有無は確かめられないため保守的に Password とする（利用者が実態に合わせて直す）。
       auth: 'Password',
       dataFlow: 'bidirectional',

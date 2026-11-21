@@ -301,6 +301,11 @@ export const enProject: Partial<Record<TranslationKey, string>> = {
   'scopesentry.desc.cves': 'Vulnerabilities reported by ScopeSentry (unverified): {ids}',
   'scopesentry.desc.more': '{n} more',
   'scopesentry.desc.ics': 'OT/ICS device (this tool has no OT/ICS stencils yet, so it is drawn as IoT)',
+  'scopesentry.desc.observedReach': 'Observed: reachable from the scanner (no source IP restriction)',
+  'scopesentry.desc.observedAuth': 'Observed: an authentication entry point exists',
+  'scopesentry.desc.observedTls': 'Observed: TLS {version}',
+  'scopesentry.desc.observedTlsKex': 'Observed: TLS {version}, key exchange {kex}',
+  'scopesentry.desc.observedType': 'Observed: device type specified ({type})',
   'scopesentry.desc.takeover': 'Reported as takeover-able (unverified): {hosts}',
   // ── Kong (decK) import ──
   'kong.templateName': 'Kong Gateway (generated from decK)',

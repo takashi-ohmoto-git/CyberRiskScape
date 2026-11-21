@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import type { LayerData } from '../../core/model/types';
 import { getLocale, translate, type TranslationKey } from '../../i18n';
-import { asmToLayer, LLM_PRODUCT, type ExposedService, type ExtraNode } from '../asm-import/asmToLayer';
+import { BUNDLED_COMPONENT_LIBRARY } from '../../component-library/loader/bundledComponentLibrary';
+import { asmToLayer, LLM_PRODUCT, type ExposedService, type ExtraNode, type ObservedFacts } from '../asm-import/asmToLayer';
 
 /**
  * ScopeSentry（自前ホストの OSS ASM）の書き出し・API/MCP の応答から、インターネットに露出したサービスの
@@ -21,6 +22,8 @@ import { asmToLayer, LLM_PRODUCT, type ExposedService, type ExtraNode } from '..
  *   title・matched は宣言しない（Zod の object は未知キーを捨てるので、スキーマに書いたものしか手元に残らない）。
  *   URL は脆弱性をノードに結びつける照合にだけ使い、図には出さない（userinfo・クエリは照合前に捨てる）。
  * - **脅威の知識を持たない。** 型の分類は `asmToLayer`、脅威の判定は既存ルールに任せる。
+ * - 任意の `crsObserved`（診断側が観測した事実）は、契約どおりの値だけ読む（`ObservedFacts`）。
+ *   項目ごとに検証し、契約外・壊れた値はその項目だけ無視する（レコードも取り込みも落とさない）。未知の機器の型は件数だけ数える。
  * - 乗っ取りは rootDomain ごとに DNS_ZONE ノードを 1 つ置き、報告ホストを「未検証」として説明欄に書く。
  *   posture は未入力のまま（未入力＝悪い値と同じ扱いで、乗っ取りの脅威が出る）。線は引かない
  *   （DNS の乗っ取りは図上の接続ではなく名前の問題で、既存のサービスとの接続を ScopeSentry の結果から確定できないため）。
@@ -38,6 +41,8 @@ export interface ScopesentryImportSummary {
   takeovers: number;
   skipped: number;
   truncated: number;
+  /** `crsObserved.componentType` が同梱の型に無く、無視した件数。 */
+  unknownObservedTypes: number;
 }
 
 export type ScopesentryImportResult =
@@ -48,6 +53,18 @@ const str = z.string().optional().catch(undefined);
 const strList = z.array(z.string()).optional().catch(undefined);
 // 書き出しは port が文字列（"443"）、数値で来ても読む。
 const portField = z.union([z.string(), z.number()]).optional().catch(undefined);
+
+// 契約：sourceIpRestriction は false のみ（観測できた「制限なし」）、userAuthentication は true のみ（認証の入口を観測）。
+const ObservedSchema = z.object({
+  componentType: z.string().max(100).optional().catch(undefined),
+  sourceIpRestriction: z.literal(false).optional().catch(undefined),
+  userAuthentication: z.literal(true).optional().catch(undefined),
+  tls: z
+    .object({ version: z.string().min(1).max(20), kex: z.string().min(1).max(100).optional().catch(undefined) })
+    .optional()
+    .catch(undefined),
+});
+const KNOWN_TYPES = new Set(BUNDLED_COMPONENT_LIBRARY.components.map((c) => c.id));
 
 const AssetSchema = z.object({
   host: str,
@@ -67,6 +84,7 @@ const AssetSchema = z.object({
   tags: strList,
   time: str,
   lastScanTime: str,
+  crsObserved: z.unknown().optional(),
 });
 const VulnSchema = z.object({
   url: str,
@@ -153,6 +171,7 @@ export function scopesentryRecordsToLayer(records: unknown[]): ScopesentryImport
 
   let skipped = 0;
   let recordCount = 0;
+  let unknownObservedTypes = 0;
   const assets = new Map<string, Merged>();
   const vulns: z.infer<typeof VulnSchema>[] = [];
   const takeovers: z.infer<typeof TakeoverSchema>[] = [];
@@ -202,6 +221,21 @@ export function scopesentryRecordsToLayer(records: unknown[]): ScopesentryImport
       s.tags = [...new Set([...(s.tags ?? []), ...(a.tags ?? [])])];
       if (a.cdnname?.trim()) s.notes = [...new Set([...(s.notes ?? []), t('scopesentry.desc.cdn', { name: a.cdnname.trim() })])];
       if ((observedAt ?? '') > (s.observedAt ?? '')) s.observedAt = observedAt;
+      const ob = ObservedSchema.safeParse(a.crsObserved);
+      if (ob.success) {
+        const { componentType, sourceIpRestriction, userAuthentication, tls } = ob.data;
+        const known = componentType !== undefined && KNOWN_TYPES.has(componentType);
+        if (componentType !== undefined && !known) unknownObservedTypes++;
+        // 同じサービスの複数レコードは、先に観測された項目を優先して合わせる。
+        const merged: ObservedFacts = {
+          ...(known ? { componentType } : {}),
+          ...(sourceIpRestriction === false ? { sourceIpRestriction } : {}),
+          ...(userAuthentication ? { userAuthentication } : {}),
+          ...(tls ? { tls } : {}),
+          ...s.observed,
+        };
+        if (Object.keys(merged).length) s.observed = merged;
+      }
     }
   }
 
@@ -285,6 +319,7 @@ export function scopesentryRecordsToLayer(records: unknown[]): ScopesentryImport
       takeovers: [...zones.values()].reduce((n, e) => n + e.size, 0),
       skipped,
       truncated: summary.truncated,
+      unknownObservedTypes,
     },
     exposed: services,
   };
