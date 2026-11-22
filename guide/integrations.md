@@ -11,6 +11,17 @@ details.
 
 ---
 
+## Overview
+
+This figure shows how CyberRiskScape connects with the surrounding systems once deployed in your environment.
+Results from the products in layer 2 enter through CyberRiskScape's inputs into a common model (diagram, findings,
+assets, BOM, business context, and human decisions), go through the processing steps, and leave through the outputs to
+the actions in layer 4. Only implemented integrations are shown.
+
+![Overview of how CyberRiskScape connects with surrounding systems: public sources, your assets and design, CyberRiskScape's inputs, processing and outputs, and actions](../assets/guide/en/integrations/architecture.svg)
+
+---
+
 ## How to connect
 
 ### Through MCP, directly from AI agents
