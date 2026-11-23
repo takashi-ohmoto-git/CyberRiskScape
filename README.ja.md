@@ -94,29 +94,29 @@ API ゲートウェイ・API テスト・ID 基盤・AI エージェント基盤
 
 | 連携先 | 成熟度 | できること |
 |---| --- |---|
-| **MCP**（Claude Code・GitHub Copilot・Cursor など） | β | コーディングエージェントが設計中に脅威を問い合わせ、構成図を更新する（[ガイド](guide/mcp-integration.ja.md)） |
+| **MCP**（Claude Code・GitHub Copilot・Cursor など） | Controlled GA（Claude Code）・α（GitHub Copilot・Cursor） | コーディングエージェントが設計中に脅威を問い合わせ、構成図を更新する（[ガイド](guide/mcp-integration.ja.md)） |
+| **コーディングエージェント**（Claude Code の作業ディレクトリ） | Controlled GA | package.json・requirements.txt・.env・.mcp.json・`.claude/` の設定から、開発環境と依存パッケージの構成図を自動生成する。.env の値は記録しない（[ガイド](guide/repo-import.ja.md)） |
+| **API テスト**（Postman・Postman CLI・Newman） | β | 検出した脅威を確かめる検証用リクエストを書き出す（[ガイド](guide/postman.ja.md)） |
+| **AD の権限の分析**（BloodHound CE） | β（AD）・α（Entra ID・Azure） | BloodHound CE の問い合わせの結果（委任・複製権限・LAPS・GPO・AD CS）を、図のディレクトリ・認証局に指摘として載せ、前提で出していた脅威を実データで裏づける（CLI のみ。[ガイド](guide/bloodhound.ja.md)） |
+| **脅威モデルの移行**（Microsoft Threat Modeling Tool） | β | TMT の .tm7 を取り込み、図・脅威と判断を移して、移行レポートで TMT の脅威と検出脅威の差を見る（[ガイド](guide/threat-modeling-tool.ja.md)） |
 | **CI**（GitHub Actions） | α | 構成図の差分から新しい脅威を検出して PR を止め、結果を SARIF で出力する（[ガイド](guide/ci-integration.ja.md)） |
 | **API ゲートウェイ**（Kong AI Gateway） | α | decK・kongctl（AI Gateway 2.x）の設定から構成図を自動生成し、設定の変更を PR で見張る（[ガイド](guide/kong-ai-gateway.ja.md)） |
-| **コーディングエージェント**（Claude Code の作業ディレクトリ） | β | package.json・requirements.txt・.env・.mcp.json・`.claude/` の設定から、開発環境と依存パッケージの構成図を自動生成する。.env の値は記録しない（[ガイド](guide/repo-import.ja.md)） |
-| **API テスト**（Postman・Postman CLI・Newman） | β | 検出した脅威を確かめる検証用リクエストを書き出す（[ガイド](guide/postman.ja.md)） |
-| **ペネトレーションテスト**（社内・外部のテスト業者） | — | 入口・攻撃経路・重点テスト項目と確認観点をまとめた、業者に依存しないテスト計画書を書き出す（[ガイド](guide/pentest-plan.ja.md)） |
 | **AI ペンテストの実証**（Strix・CyberStrikeAI） | α | AI 自律ペネトレーションテストが PoC で成立を確かめた結果を台帳 YAML に変換して取り込み、脅威カードに「実証」と表示する。Strix には脅威モデルと診断してよい範囲（RoE）を指示ファイルと MCP で渡せる。Metasploit の攻撃結果も同じ台帳で取り込める（CLI のみ。[ガイド](guide/oss-vulnerability-management.ja.md) §4・§7・§9・§10） |
-| **侵害の調査**（Velociraptor・同梱のトリアージスクリプト） | PoC | 侵害が疑われるときに、脅威モデルから調査計画書を書き出し、集めた証拠を図のノードに重ねて「痕跡あり・否定できない・未調査・痕跡なし」を報告する。侵害の有無は判定しない（[ガイド](guide/compromise-investigation.ja.md)） |
 | **ID 基盤・NHI**（Okta・SailPoint・CyberArk（Idira）・Microsoft Entra ID・Active Directory / LDAP） | α（Conjur）・PoC（その他） | IdP・ディレクトリ・NHI・PAM・IGA をモデル化して評価し、Conjur のポリシーから図を自動生成、各社の MCP サーバーと組み合わせて実際の ID の状態と突き合わせる（[ガイド](guide/nhi-identity.ja.md)） |
 | **ASM・サブドメイン乗っ取り**（ScopeSentry） | α | ScopeSentry の書き出しまたは API（MCP）から露出サービスと DNS ゾーンの図を自動生成し、サブドメイン乗っ取りを評価、定期の取り込みの差分で新しい露出を検知する（[ガイド](guide/scopesentry.ja.md)） |
 | **ASM・外部露出**（Shodan） | α | `shodan download` の書き出しから露出サービスの図を自動生成し、CISA の 4 ステップに沿って評価・削減、前回との差分で新しい露出を検知する（[ガイド](guide/exposure-reduction.ja.md)） |
-| **AI エージェント基盤**（Salesforce Agentforce） | — | 専用のステンシル・脅威ルール・構成図テンプレートで評価する（[ガイド](guide/agentforce.ja.md)） |
-| **プロセスマイニング・iPaaS・DWH**（Celonis） | PoC | 専用の型（業務自動化 / iPaaS・分析基盤 / DWH）・脅威ルール・構成図テンプレートで、抽出・書き戻し・MCP を含む構成を評価する（[ガイド](guide/celonis.ja.md)） |
-| **車載・SDV**（コネクテッドカー） | — | 専用のステンシル（Vehicle (SDV) カテゴリ）・UN R155 Annex 5 を出典とする脅威ルール・ゾーン型アーキテクチャの構成図テンプレートで評価する（[ガイド](guide/sdv.ja.md)） |
 | **AI による脆弱性診断**（Anthropic `defending-code-reference-harness`） | α | 脅威モデルを `THREAT_MODEL.md` 互換で書き出し、診断の入力にする（[ガイド](guide/security-context.ja.md)） |
 | **脆弱性の修正**（Veracode） | α | SAST・DAST の指摘を AI で修正する流れに、脅威モデルを前提知識・優先順位・回帰テストとして組み込む構成例（[ガイド](guide/veracode-remediation.ja.md)） |
 | **クラウドの検査**（Prowler） | α | Prowler の AWS の検査結果（OCSF）で、図のノードの未入力の運用状況・攻撃面属性を埋め、FAIL の検査を図の脅威と突き合わせる（[ガイド](guide/prowler.ja.md)） |
-| **AD の権限の分析**（BloodHound CE） | β（AD）・α（Entra ID・Azure） | BloodHound CE の問い合わせの結果（委任・複製権限・LAPS・GPO・AD CS）を、図のディレクトリ・認証局に指摘として載せ、前提で出していた脅威を実データで裏づける（CLI のみ。[ガイド](guide/bloodhound.ja.md)） |
 | **外部アプリ・同意の在庫**（Microsoft Graph） | α | Entra ID の外部アプリの強い権限・同意（アプリ単独の権限・テナント全体／利用者ごとの同意・資格情報）を図の IdP に指摘として載せ、図のアプリ系のノードと突き合わせる（CLI のみ。[ガイド](guide/entra-apps.ja.md)） |
-| **脅威モデルの移行**（Microsoft Threat Modeling Tool） | β | TMT の .tm7 を取り込み、図・脅威と判断を移して、移行レポートで TMT の脅威と検出脅威の差を見る（[ガイド](guide/threat-modeling-tool.ja.md)） |
 | **AI 部品の検査**（Cisco AI Defense skill-scanner / mcp-scanner） | α | エージェントスキル・MCP サーバーの検査結果を、AITech 対応表を介して図の脅威と突き合わせ、描き漏れを見つける（[ガイド](guide/ai-scanners.ja.md)） |
 | **AI によるソース監査**（Cloudflare security-audit スキル） | α | 指摘を画面か CLI でノードに取り込み、脅威カードに「ソース監査で実証（ローカル）／要確認」を出し、要確認の前提を図の事実と並べる（[ガイド](guide/security-audit.ja.md)） |
 | **OSS の脆弱性管理**（Trivy・Syft / Grype・ZAP・Nuclei） | α | SAST・SCA・DAST の結果を取り込み、部品・指摘としてノードに結びつけ、KEV・EPSS・CISA SSVC と攻撃経路で優先順位を付ける（CLI のみ。[ガイド](guide/oss-vulnerability-management.ja.md)） |
+| **侵害の調査**（Velociraptor・同梱のトリアージスクリプト） | PoC | 侵害が疑われるときに、脅威モデルから調査計画書を書き出し、集めた証拠を図のノードに重ねて「痕跡あり・否定できない・未調査・痕跡なし」を報告する。侵害の有無は判定しない（[ガイド](guide/compromise-investigation.ja.md)） |
+| **プロセスマイニング・iPaaS・DWH**（Celonis） | PoC | 専用の型（業務自動化 / iPaaS・分析基盤 / DWH）・脅威ルール・構成図テンプレートで、抽出・書き戻し・MCP を含む構成を評価する（[ガイド](guide/celonis.ja.md)） |
+| **ペネトレーションテスト**（社内・外部のテスト業者） | — | 入口・攻撃経路・重点テスト項目と確認観点をまとめた、業者に依存しないテスト計画書を書き出す（[ガイド](guide/pentest-plan.ja.md)） |
+| **AI エージェント基盤**（Salesforce Agentforce） | — | 専用のステンシル・脅威ルール・構成図テンプレートで評価する（[ガイド](guide/agentforce.ja.md)） |
+| **車載・SDV**（コネクテッドカー） | — | 専用のステンシル（Vehicle (SDV) カテゴリ）・UN R155 Annex 5 を出典とする脅威ルール・ゾーン型アーキテクチャの構成図テンプレートで評価する（[ガイド](guide/sdv.ja.md)） |
 
 成熟度（PoC・α・β・Controlled GA）は、その連携をどこまで確かめたかを表します。意味と、連携できる製品と方法の一覧は [連携ガイド](guide/integrations.ja.md) を参照してください。
 

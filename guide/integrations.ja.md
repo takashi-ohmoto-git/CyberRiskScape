@@ -59,19 +59,16 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 
 | 製品 | 成熟度 | 連携の方法 | ユースケース | ページ |
 |---| --- |---|---|---|
-| **Claude Code** | β | MCP | 設計中に脅威を調べる・構成図を更新する・PR 前にセルフレビューする | [MCP 導入ガイド](mcp-integration.ja.md)・[ユースケース](mcp-use-cases.ja.md) |
-| **Claude Code**（作業ディレクトリ） | β | 作業ディレクトリの取り込み（`import-repo`。package.json・requirements.txt・.env・.mcp.json・`.claude/` の設定。`.claude/` 以外のエージェントの設定は読まない） | 開発環境と依存パッケージの構成図を自動で作る・依存と権限設定の変化を PR で見張る | [Claude Codeの作業ディレクトリから脅威モデルを作成する](repo-import.ja.md) |
+| **Claude Code** | Controlled GA | MCP | 設計中に脅威を調べる・構成図を更新する・PR 前にセルフレビューする | [MCP 導入ガイド](mcp-integration.ja.md)・[ユースケース](mcp-use-cases.ja.md) |
+| **Claude Code**（作業ディレクトリ） | Controlled GA | 作業ディレクトリの取り込み（`import-repo`。package.json・requirements.txt・.env・.mcp.json・`.claude/` の設定。`.claude/` 以外のエージェントの設定は読まない） | 開発環境と依存パッケージの構成図を自動で作る・依存と権限設定の変化を PR で見張る | [Claude Codeの作業ディレクトリから脅威モデルを作成する](repo-import.ja.md) |
+| **Postman**（Postman CLI・Newman） | β | 検証用リクエストの書き出し（Collection v2.1） | 検出した脅威が実装でも成立するかを確かめ、CI で回帰テストにする | [脅威を Postman で確かめる](postman.ja.md) |
+| **BloodHound CE** | β（AD）・α（Entra ID・Azure） | 問い合わせの結果の取り込み（`import-bloodhound`。API はトークンを環境変数で渡す・読み取りのみ。ファイルでも可。CLI のみ） | AD の権限の問題（Kerberoasting・複製権限・LAPS・委任・GPO・AD CS）を図のディレクトリ・認証局に指摘として載せ、前提で出していた脅威を実データで裏づける | [BloodHound CE の結果を構成図に載せる](bloodhound.ja.md) |
+| **Microsoft Threat Modeling Tool** | β | .tm7 の取り込み（`import-tm7`・画面の Import）・移行レポート（`migration-report`） | TMT の図・モデル情報・脅威と判断を移し、TMT の脅威と検出脅威の重なり・判断の見直し候補を見る | [Microsoft Threat Modeling Tool の脅威モデルを移行する](threat-modeling-tool.ja.md) |
 | **GitHub Copilot**（VS Code・コーディングエージェント） | α | MCP | Issue から構成図の更新と脅威の確認まで任せる | [MCP 導入ガイド](mcp-integration.ja.md)・[ユースケース](mcp-use-cases.ja.md)（§5） |
 | **Cursor** | α | MCP | エディタ内で脅威を問い合わせる | [MCP 導入ガイド](mcp-integration.ja.md)・[ユースケース](mcp-use-cases.ja.md)（§6） |
-| **Snyk** | PoC | MCP（エージェント経由で併用） | 脅威モデルの重要脅威と、コードの脆弱性診断の結果を突き合わせる | [ユースケース](mcp-use-cases.ja.md)（§7） |
 | **GitHub Actions** | α | CLI・GitHub Action | 構成図の差分から新しい脅威を検出して PR を止める・実行トリガーで見直しを求める | [AI駆動開発のCIに組み込む](ci-integration.ja.md) |
 | **Kong AI Gateway** | α | 設定ファイルの取り込み（decK の kong.yaml・AI Gateway 2.x の kongctl 宣言ファイル） | 設定から構成図を自動生成する・設定の変更で出る新しい脅威を PR で見張る | [Kong AI Gateway を脅威モデリングする](kong-ai-gateway.ja.md) |
-| **Postman**（Postman CLI・Newman） | β | 検証用リクエストの書き出し（Collection v2.1） | 検出した脅威が実装でも成立するかを確かめ、CI で回帰テストにする | [脅威を Postman で確かめる](postman.ja.md) |
 | **MITRE ATT&CK Navigator**（レイヤーを取り込める BAS・CTEM・SOC のツール） | α | Navigator レイヤーの書き出し（JSON） | 攻撃シナリオの経路で模擬する technique を渡し、図で切った経路が実機でも塞がっているかを確かめる | [攻撃経路のどこを切るか](agentic-attacker-paths.ja.md)（§6） |
-| **Salesforce Agentforce** | — | 専用のステンシル・脅威ルール・テンプレート | Service agent の構成を評価する・エージェント定義の変更を PR で見張る | [Salesforce Agentforce を脅威モデリングする](agentforce.ja.md) |
-| **Celonis**（プロセスマイニング） | PoC | 専用の型（業務自動化 / iPaaS・分析基盤 / DWH）・脅威ルール・テンプレート・業務の重要度の取り込み（共通の表・`convert-celonis`）・MCP（併用）・イベントログの書き出し（`export-event-log`。脅威への対応のプロセスマイニング） | 抽出・書き戻し・MCP を含む構成を評価する・データ単位の権限と資格情報の集約を確かめる・止まると困る業務を担うシステムを推奨標的と優先度に反映する | [Celonis を使う構成を脅威モデリングする](celonis.ja.md) |
-| **Okta** | PoC | MCP（エージェント経由で併用）・専用のステンシルと脅威ルール | 図の NHI と実在するサービスアプリを突き合わせる・認証方式で ID の強度を確かめる・使われていない NHI を探す | [NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md) |
-| **SailPoint** | PoC | MCP（エージェント経由で併用）・IGA のステンシルと脅威ルール | 過剰な権限の代わりに、申請できる最小のアクセスを探す | [NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md) |
 | **CyberArk（Idira）** | α（Conjur） | Conjur ポリシーの取り込み・MCP（エージェント経由で併用）・PAM のステンシルと脅威ルール | ポリシーから NHI とシークレットの読み取り経路の図を作る・図の NHI と Secrets Manager のワークロードを突き合わせる | [NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md) |
 | **ScopeSentry** | α | 書き出しの取り込み（Export の JSON）・API の取り込み（MCP・読み取りのみ） | 自前の ASM の資産・脆弱性・乗っ取り報告から露出の図を自動で作る・サブドメイン乗っ取りを評価する・定期の取り込みの差分で新しい露出を検知する | [ScopeSentry の観測結果を構成図にする](scopesentry.ja.md) |
 | **Shodan** | α | 書き出しの取り込み（`shodan download` の .json.gz） | 外部に露出したサービスの図を自動で作る・前回の取り込みとの差分で新しく開いたポートを検知する・CISA の 4 ステップに沿って露出を減らす | [インターネット露出を減らす](exposure-reduction.ja.md) |
@@ -80,9 +77,7 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | **Prowler** | α | 検査結果の取り込み（`import-prowler`。AWS の検査の OCSF 出力・CLI のみ） | 「未入力のため仮定」の運用状況・攻撃面属性を実測に置き換える・FAIL の検査を図の脅威と突き合わせる | [Prowler の検査結果を構成図に載せる](prowler.ja.md) |
 | **OCSF**（製品を問わない） | α | 検査結果の取り込み（`import-ocsf`。Detection Finding・Compliance Finding の OCSF。CLI のみ） | どの製品の OCSF でも、FAIL を指摘として持ち、結果に出た資源をクラウドのリソースとして Asset タブに載せる・図に無いリソースを `asm-reconcile` で見つける | [Prowler の検査結果を構成図に載せる](prowler.ja.md)（§9） |
 | **OpenAPI**（Swagger 2.0 を含む） | α | API の定義の取り込み（`import-openapi`。CLI のみ） | 定義の操作を API の在庫として Asset タブに載せる・認証の指定が無い操作を洗い出す・観測した API のうち定義に無いものを `asm-reconcile` で見つける | [インターネット露出を減らす](exposure-reduction.ja.md)（§7） |
-| **BloodHound CE** | β（AD）・α（Entra ID・Azure） | 問い合わせの結果の取り込み（`import-bloodhound`。API はトークンを環境変数で渡す・読み取りのみ。ファイルでも可。CLI のみ） | AD の権限の問題（Kerberoasting・複製権限・LAPS・委任・GPO・AD CS）を図のディレクトリ・認証局に指摘として載せ、前提で出していた脅威を実データで裏づける | [BloodHound CE の結果を構成図に載せる](bloodhound.ja.md) |
 | **Microsoft Graph（Entra ID）** | α | 外部アプリ・同意の在庫の取り込み（`import-entra-apps`。API はクライアント資格情報を環境変数で渡す・GET のみ。ファイルでも可。CLI のみ） | 外部アプリの強い権限・同意（アプリ単独の権限・テナント全体／利用者ごとの同意・資格情報）を図の IdP に指摘として載せ、図のアプリ系のノードと突き合わせる | [Entra ID の外部アプリ・同意の在庫を構成図に載せる](entra-apps.ja.md) |
-| **Microsoft Threat Modeling Tool** | β | .tm7 の取り込み（`import-tm7`・画面の Import）・移行レポート（`migration-report`） | TMT の図・モデル情報・脅威と判断を移し、TMT の脅威と検出脅威の重なり・判断の見直し候補を見る | [Microsoft Threat Modeling Tool の脅威モデルを移行する](threat-modeling-tool.ja.md) |
 | **Trivy** | α | 結果の取り込み（脆弱性は CycloneDX を `import-sbom`、IaC の設定不備・シークレットは SARIF を `import-sarif`。CLI のみ） | 依存パッケージの脆弱性を部品としてノードに結び、KEV と攻撃経路で優先順位を付ける・設定不備とシークレットをノードの指摘として持つ | [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) |
 | **Syft / Grype** | α | SBOM・脆弱性の取り込み（CycloneDX を `import-sbom`。CLI のみ） | Syft の SBOM を部品の台帳にし、Grype の脆弱性を部品に結んで KEV と攻撃経路で優先順位付けする | [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) §8 |
 | **ZAP** | α | 診断結果の取り込み（Automation Framework の `sarif-json` を `import-sarif`。CLI のみ） | 動いているアプリの指摘を、CWE の対応表で図の脅威と対応づける | [OSS で組む脆弱性管理](oss-vulnerability-management.ja.md) §5 |
@@ -93,8 +88,13 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 | **CycloneDX・SPDX** | α | 部品の取り込み（`import-sbom`。CLI のみ）・書き出し（`export-spdx`・`export-sbom-ai`。画面からも可） | SBOM・CBOM・AI BOM の部品をノードに結びつけ、Asset タブで確かめて、標準形式で書き出す（[ガイド](sbom.ja.md)） |
 | **Cisco AI Defense**（skill-scanner / mcp-scanner） | α | 検査結果の突き合わせ（`findings-report --skill-scanner / --mcp-scanner`。結果ファイル・CLI のみ） | エージェントスキル・MCP サーバーの検査結果を、AITech 対応表を介して図の脅威と突き合わせる・描き漏れを見つける | [エージェントスキル・MCP サーバーの検査結果を脅威モデルと突き合わせる](ai-scanners.ja.md) |
 | **Cloudflare security-audit**（スキル） | α | 指摘の取り込み（`findings.json`・`coverage-ledger.json`。画面と CLI `import-security-audit`） | ソースで実証した指摘と、配置を確かめないと決まらない要確認を脅威カードに出し、要確認の前提を図の事実と並べる | [AI によるソース監査の指摘を構成図に載せる](security-audit.ja.md) |
-| **Velociraptor** | PoC | 収集結果（展開したフォルダー）の取り込み・調査計画書への artifact の手がかり・EDR / DFIR サーバーのステンシルと脅威ルール | 侵害が疑われるときに、攻撃経路上のノードで集める artifact を決め、収集結果をノードに重ねて報告する | [侵害の疑いがあるときに、脅威モデルで調べる範囲を決め、結果を報告する](compromise-investigation.ja.md) |
 | **Sigma**（Sigma ルールを変換できる SIEM・検知のツール） | α | 検知の要件の書き出し（`export-detection-requirements --format sigma`） | 攻撃経路上の監視の要件を、Sigma ルールの下書き（Sigma Rules Specification 2.1.0）にして検知の設計の出発点にする。検知の条件は生成しない | [AI 自律攻撃への備え](ai-autonomous-attack-2026-11.ja.md) |
+| **Snyk** | PoC | MCP（エージェント経由で併用） | 脅威モデルの重要脅威と、コードの脆弱性診断の結果を突き合わせる | [ユースケース](mcp-use-cases.ja.md)（§7） |
+| **Celonis**（プロセスマイニング） | PoC | 専用の型（業務自動化 / iPaaS・分析基盤 / DWH）・脅威ルール・テンプレート・業務の重要度の取り込み（共通の表・`convert-celonis`）・MCP（併用）・イベントログの書き出し（`export-event-log`。脅威への対応のプロセスマイニング） | 抽出・書き戻し・MCP を含む構成を評価する・データ単位の権限と資格情報の集約を確かめる・止まると困る業務を担うシステムを推奨標的と優先度に反映する | [Celonis を使う構成を脅威モデリングする](celonis.ja.md) |
+| **Okta** | PoC | MCP（エージェント経由で併用）・専用のステンシルと脅威ルール | 図の NHI と実在するサービスアプリを突き合わせる・認証方式で ID の強度を確かめる・使われていない NHI を探す | [NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md) |
+| **SailPoint** | PoC | MCP（エージェント経由で併用）・IGA のステンシルと脅威ルール | 過剰な権限の代わりに、申請できる最小のアクセスを探す | [NHI と ID 基盤を脅威モデリングする](nhi-identity.ja.md) |
+| **Velociraptor** | PoC | 収集結果（展開したフォルダー）の取り込み・調査計画書への artifact の手がかり・EDR / DFIR サーバーのステンシルと脅威ルール | 侵害が疑われるときに、攻撃経路上のノードで集める artifact を決め、収集結果をノードに重ねて報告する | [侵害の疑いがあるときに、脅威モデルで調べる範囲を決め、結果を報告する](compromise-investigation.ja.md) |
+| **Salesforce Agentforce** | — | 専用のステンシル・脅威ルール・テンプレート | Service agent の構成を評価する・エージェント定義の変更を PR で見張る | [Salesforce Agentforce を脅威モデリングする](agentforce.ja.md) |
 
 ---
 
