@@ -37,7 +37,10 @@ CyberRiskScape は **MCP（Model Context Protocol）サーバーを内蔵**し�
 ### ファイルと CLI でつなぐ
 
 設定ファイルの取り込み、検証用リクエストの書き出し、CI での差分判定は、ファイルと CLI（`dist-cli/main.js`）で行います。
-いずれも製品の API を呼び出さないため、API キーや有償のプランは不要です。
+ファイルの取り込みは製品の API を呼び出さないため、API キーや有償のプランは不要です。
+
+一部の製品（BloodHound CE・Microsoft Graph・ScopeSentry・CyberStrikeAI・Celonis）は、製品の API から直接取り込むこともできます。
+API の取り込みは CLI だけで使え、キーやトークンは環境変数で渡し、読み取りの操作だけを行います。API の利用条件（無償か有償か）は各製品の契約に従います。
 
 ---
 

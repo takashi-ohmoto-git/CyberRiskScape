@@ -39,7 +39,10 @@ For setup, see **[Using It from Coding Agents — MCP Server Setup Guide](mcp-in
 ### Through files and the CLI
 
 Importing configuration files, exporting verification requests, and diff checks in CI run on files and the CLI
-(`dist-cli/main.js`). None of them call the product's API, so no API keys or paid plans are needed.
+(`dist-cli/main.js`). File imports do not call the product's API, so no API keys or paid plans are needed.
+
+Some products (BloodHound CE, Microsoft Graph, ScopeSentry, CyberStrikeAI, Celonis) can also be imported directly from the product's API.
+API imports are available only in the CLI, take keys and tokens from environment variables, and perform read-only operations. Whether the API is free or paid depends on each product's terms.
 
 ---
 
