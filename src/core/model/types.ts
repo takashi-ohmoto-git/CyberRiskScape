@@ -272,6 +272,15 @@ export const POSTURE_FIELD_VALUES = {
   /** 機微な業務フローの自動化への対策（Bot 対策・利用者ごとの上限・人の操作の確認）の強制。sensitiveBusinessFlow が Yes のときに意味を持つ */
   businessFlowProtection: ['Enforced', 'None'],
   /** データ単位の権限（利用者・グループごとの行の絞り込み）の設定と強制。分析基盤のように多くの人が直接照会するストアで意味を持つ */
+  /**
+   * ファイルのアップロードを受け付けるか。入口の高価値の面の判定にだけ使う（脅威ルールは読まない）。
+   * 未入力は数えない（明示宣言時のみ。2026-11-28 ユーザー承認の例外）。
+   */
+  fileUpload: ['Yes', 'No'],
+  /** 入力（リクエスト・ファイル）を逆シリアライズするか。入口の高価値の面の判定にだけ使う。未入力は数えない（明示宣言時のみ。2026-11-28 ユーザー承認の例外） */
+  deserializesInput: ['Yes', 'No'],
+  /** 認証前に届く組み込みのルート（管理・診断・デバッグ用の経路等）を持つか。入口の高価値の面の判定にだけ使う。未入力は数えない（明示宣言時のみ。2026-11-28 ユーザー承認の例外） */
+  preAuthBuiltinRoutes: ['Yes', 'No'],
   dataPermission: ['Enforced', 'None'],
   /** データ資産の保有の必要性 */
   dataNecessity: ['Required', 'UnderReview', 'NotRequired'],
@@ -304,6 +313,7 @@ export const POSTURE_GROUPS = [
   'meteredCalls',
   'businessFlow',
   'dataPermission',
+  'inputFeatures',
 ] as const;
 export type PostureGroup = (typeof POSTURE_GROUPS)[number];
 
@@ -326,6 +336,7 @@ export const POSTURE_GROUP_FIELDS: Readonly<Record<PostureGroup, readonly Postur
   meteredCalls: ['meteredCalls', 'meteredCallLimit'],
   businessFlow: ['sensitiveBusinessFlow', 'businessFlowProtection'],
   dataPermission: ['dataPermission'],
+  inputFeatures: ['fileUpload', 'deserializesInput', 'preAuthBuiltinRoutes'],
 };
 
 /** 運用状況。すべて optional。未設定は `Unknown`＝対策なしとして脅威を評価する。 */
@@ -362,6 +373,9 @@ export interface NodePosture {
   sensitiveBusinessFlow?: (typeof POSTURE_FIELD_VALUES.sensitiveBusinessFlow)[number];
   businessFlowProtection?: (typeof POSTURE_FIELD_VALUES.businessFlowProtection)[number];
   dataPermission?: (typeof POSTURE_FIELD_VALUES.dataPermission)[number];
+  fileUpload?: (typeof POSTURE_FIELD_VALUES.fileUpload)[number];
+  deserializesInput?: (typeof POSTURE_FIELD_VALUES.deserializesInput)[number];
+  preAuthBuiltinRoutes?: (typeof POSTURE_FIELD_VALUES.preAuthBuiltinRoutes)[number];
   dataNecessity?:(typeof POSTURE_FIELD_VALUES.dataNecessity)[number];
   recordVolume?: (typeof POSTURE_FIELD_VALUES.recordVolume)[number];
   /** 最終点検日（YYYY-MM-DD）。記録用で脅威の判定には使わない。全型で入力可。 */

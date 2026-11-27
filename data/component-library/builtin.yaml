@@ -170,7 +170,7 @@ components:
     shape: rounded
     color: "bg-transparent"
     description: "API ゲートウェイ。境界での API の認証・認可、API キー、レート制限などの流入制御を担う。中継だけを行うものはリバースプロキシを使う。クラウドでは Amazon API Gateway / Azure API Management / Google Cloud API Gateway・Apigee / OCI API Gateway 等が該当する。"
-    posture: [logRetention, patch]
+    posture: [logRetention, patch, inputFeatures]
 
   - id: FRONT_END_SERVER
     label: "フロントエンドサーバー"
@@ -179,7 +179,7 @@ components:
     shape: rounded
     color: "bg-transparent"
     description: "Web サーバー等、アプリやコンテンツを自身で提供する外部公開ポイント。中継だけを行うものはリバースプロキシを使う。attackSurface 属性で公開条件・防御策の有無を表現する。"
-    posture: [logRetention, patch, meteredCalls, businessFlow]
+    posture: [logRetention, patch, meteredCalls, businessFlow, inputFeatures]
 
   - id: ADMIN_CONSOLE
     label: "管理画面"
@@ -189,7 +189,7 @@ components:
     color: "bg-transparent"
     description: "業務アプリの Web 管理画面（会員・注文・コンテンツの管理、データの一括書き出し等）。利用者向けの公開画面とは別のノードとして描く。API ゲートウェイの管理面は API 管理プレーン、サーバーへの保守接続は踏み台を使う。公開条件は attackSurface 属性で表現する。"
     canContain: [CREDENTIAL, LOG]
-    posture: [logRetention, patch, accountReview]
+    posture: [logRetention, patch, accountReview, inputFeatures]
 
   - id: CONNECTOR
     label: "コネクタ"

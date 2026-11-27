@@ -11,7 +11,7 @@ import {
   useDiagramStore,
 } from '../../core/state/diagramStore';
 import { findEntryPoints } from '../../features/attack-tree/findEntryPoints';
-import { useT } from '../../i18n';
+import { useT, type TranslationKey } from '../../i18n';
 
 interface EntrySearchSectionProps {
   attacker: DiagramNode;
@@ -90,6 +90,18 @@ export function EntrySearchSection({ attacker, threats }: EntrySearchSectionProp
                           ...c.weaknesses.map((w) => t(`panels.node.entryWeakness.${w}`)),
                         ].join(' · ')}
                       </span>
+                      {c.outcomes.length > 0 && (
+                        <span className="block text-xs text-fuchsia-200 mt-1 leading-relaxed">
+                          {t('panels.node.entryOutcomes', {
+                            outcomes: c.outcomes.map((o) => t(`panels.node.entryOutcome.${o}`)).join(' · '),
+                          })}
+                          <span className="block text-slate-400">
+                            {t('panels.node.entrySurfaces', {
+                              surfaces: c.surfaces.map((x) => t(`panels.node.entrySurface.${x.id}` as TranslationKey)).join(' · '),
+                            })}
+                          </span>
+                        </span>
+                      )}
                     </button>
                   </li>
                 );

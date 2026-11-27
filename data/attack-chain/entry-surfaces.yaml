@@ -1,0 +1,58 @@
+# 攻撃経路の分析で「入口の高価値の面」とみなす脅威（canonicalId）の一覧。
+#
+# AI エージェント型の攻撃者は、外から見える入口のうち、リモートコード実行（rce）・権限の上昇（privesc）・
+# データの持ち出し（exfil）のどれかに届き得る処理を持つものを価値が高いと判断する。ここに載せた脅威が
+# 入口のノード（と内包する資産）で出ていれば、入口の一覧に「届き得る先」とその根拠の面を並べ、
+# 入口の順位づけに使う。「届き得る」にとどめ、悪用できるとは言わない（docs の攻撃経路分析の設計メモ §14）。
+#
+# 方針:
+#   - outcomes は面が主に届き得る先：rce／privesc／exfil／recon（次の段の材料になる情報）。
+#   - 1 つの canonicalId を複数の面に載せてよい（同じ面の中での重複は読み込み時にエラー）。
+#   - declaredBy は「機能があるときだけ意味を持つ面」の印。運用状況（inputFeatures グループ）の
+#     そのフィールドが Yes と明示されたときだけ、その面を数える（未入力・No は数えない）。
+#     脅威カードの発火は変えない（面に数えるかどうかだけを絞る）。
+#   - 既存の canonicalId は面より束ね方が広いものがある。id は変えず、面の側で受け入れる。
+#
+# SPDX-License-Identifier: Apache-2.0
+
+schemaVersion: 1
+
+surfaces:
+  - id: preAuthBuiltinRoute
+    outcomes: [rce, privesc]
+    canonicalIds: [pre-auth-builtin-route]
+    declaredBy: preAuthBuiltinRoutes
+
+  - id: fileUpload
+    outcomes: [rce]
+    canonicalIds: [web-shell-implant, api-server-code-execution]
+    declaredBy: fileUpload
+
+  - id: parsingBoundary
+    outcomes: [rce, privesc, exfil]
+    canonicalIds: [input-canonicalization-mismatch, http-request-smuggling, api-xml-external-entity]
+
+  - id: deserialization
+    outcomes: [rce]
+    canonicalIds: [api-server-code-execution]
+    declaredBy: deserializesInput
+
+  - id: errorLeak
+    outcomes: [recon]
+    canonicalIds: [api-error-information-disclosure]
+
+  - id: cachePoisoning
+    outcomes: [exfil]
+    canonicalIds: [web-cache-poisoning]
+
+  - id: raceCondition
+    outcomes: [privesc, exfil]
+    canonicalIds: [request-race-condition]
+
+  - id: typeConfusion
+    outcomes: [privesc]
+    canonicalIds: [parameter-type-confusion]
+
+  - id: massAssignment
+    outcomes: [privesc, exfil]
+    canonicalIds: [api-object-level-authorization]

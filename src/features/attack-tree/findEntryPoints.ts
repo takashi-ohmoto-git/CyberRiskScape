@@ -14,6 +14,13 @@ import {
   type AttackSurfaceKey,
 } from '../../core/model/types';
 import { resolveNodeBoundaries } from '../../core/canvas/boundaryCrossing';
+import {
+  BUNDLED_ENTRY_SURFACES,
+  evaluateEntrySurfaces,
+  type EntryOutcome,
+  type EntrySurfaceHit,
+  type EntrySurfaceTable,
+} from './entrySurfaces';
 
 /**
  * 侵入ポイントの分析（Search Attack Graph）を使える攻撃者の型。
@@ -75,6 +82,10 @@ export interface EntryCandidate {
   /** このノード（と内包するデータ資産）のアクティブな脅威の件数。 */
   threatCount: number;
   maxSeverity?: Severity;
+  /** 入口の高価値の面（届き得る先の根拠。docs の攻撃経路分析の設計メモ §14）。 */
+  surfaces: EntrySurfaceHit[];
+  /** 届き得る先（rce・privesc・exfil・recon の順）。「届き得る」であり、悪用できるとは限らない。 */
+  outcomes: EntryOutcome[];
 }
 
 const SEVERITY_ORDER: Record<Severity, number> = { Low: 1, Medium: 2, High: 3, Critical: 4 };
@@ -98,7 +109,7 @@ function receives(edge: DiagramEdge, nodeId: string): boolean {
  * - 攻撃者から線が引かれている
  *
  * 未入力の攻撃面属性は悪い値（Global IP あり・防御策なし）として扱い、`assumed` を立てる。
- * 順位は弱点の数 → 脅威の最大重大度 → 脅威の件数 → 連番の順。
+ * 順位は弱点の数 → 届き得る先の数（recon を含む） → 高価値の面の数 → 脅威の最大重大度 → 脅威の件数 → 連番の順。
  * 攻撃者が見つからない、または対象外の型なら空配列。
  */
 export function findEntryPoints(
@@ -107,6 +118,7 @@ export function findEntryPoints(
   boundaries: readonly DiagramBoundary[],
   threats: readonly ThreatView[],
   attackerId: string,
+  entrySurfaces: EntrySurfaceTable = BUNDLED_ENTRY_SURFACES,
 ): EntryCandidate[] {
   const attacker = nodes.find((n) => n.id === attackerId);
   if (!attacker || !ENTRY_SEARCH_APPLICABLE.has(attacker.type)) return [];
@@ -123,6 +135,9 @@ export function findEntryPoints(
     );
     return { threatCount: active.length, maxSeverity };
   };
+
+  const surfaceSummary = (n: DiagramNode): Pick<EntryCandidate, 'surfaces' | 'outcomes'> =>
+    evaluateEntrySurfaces(n, nodes, threats, entrySurfaces);
 
   const typeOf = new Map(nodes.map((x) => [x.id, x.type] as const));
   for (const n of nodes) {
@@ -145,7 +160,7 @@ export function findEntryPoints(
       const reasons: EntryReason[] = [];
       if (external) reasons.push('externalEndpoint');
       if (attackerEdge) reasons.push('attackerEdge');
-      candidates.push({ nodeId: n.id, reasons, weaknesses: [], assumed: false, ...threatSummary(n.id) });
+      candidates.push({ nodeId: n.id, reasons, weaknesses: [], assumed: false, ...threatSummary(n.id), ...surfaceSummary(n) });
       continue;
     }
 
@@ -186,13 +201,15 @@ export function findEntryPoints(
 
     if (reasons.length === 0) continue;
 
-    candidates.push({ nodeId: n.id, reasons, weaknesses, assumed, ...threatSummary(n.id) });
+    candidates.push({ nodeId: n.id, reasons, weaknesses, assumed, ...threatSummary(n.id), ...surfaceSummary(n) });
   }
 
   const seqOf = new Map(nodes.map((n) => [n.id, n.seq ?? Number.MAX_SAFE_INTEGER]));
   candidates.sort(
     (a, b) =>
       b.weaknesses.length - a.weaknesses.length ||
+      b.outcomes.length - a.outcomes.length ||
+      b.surfaces.length - a.surfaces.length ||
       (b.maxSeverity ? SEVERITY_ORDER[b.maxSeverity] : 0) - (a.maxSeverity ? SEVERITY_ORDER[a.maxSeverity] : 0) ||
       b.threatCount - a.threatCount ||
       (seqOf.get(a.nodeId) ?? 0) - (seqOf.get(b.nodeId) ?? 0),

@@ -231,7 +231,7 @@ describe('withEntryEdgeThreats', () => {
       edge('lan', 'jump', 'vpn'),
     ];
     const threats = [edgeThreat('t7', 'df7', 'vpn'), edgeThreat('t8', 'df8', 'jump'), edgeThreat('tl', 'lan', 'vpn'), threat('vpn', 'Low')];
-    const entry = buildEntryEdges('atk', [{ nodeId: 'vpn', rank: 1, reasons: ['internetEdge'], weaknesses: [], assumed: false, threatCount: 0 }]);
+    const entry = buildEntryEdges('atk', [{ nodeId: 'vpn', rank: 1, reasons: ['internetEdge'], weaknesses: [], assumed: false, threatCount: 0, surfaces: [], outcomes: [] }]);
     const out = withEntryEdgeThreats(threats, edges, entry);
     const added = out.slice(threats.length);
     expect(added.map((t) => [t.id, t.subject])).toEqual([['t7', { kind: 'edge', id: 'entry:vpn' }]]);
