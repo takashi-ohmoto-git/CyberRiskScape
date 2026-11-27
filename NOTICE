@@ -329,7 +329,7 @@ verbatim.
     Series (Secrets Management, File Upload, Third Party JavaScript
     Management, JSON Web Token, Server-Side Request Forgery Prevention,
     Injection Prevention, Query Parameterization, Deserialization,
-    OS Command Injection Defense, Logging, Error Handling), OWASP Top 10 2021, OWASP
+    OS Command Injection Defense, Logging, Error Handling, Input Validation), OWASP Top 10 2021, OWASP
     Automated Threats to Web Applications, OWASP Mobile Application Security
     Verification Standard (MASVS), OWASP Web Security Testing Guide (WSTG) v4.2
    https://owasp.org/API-Security/ ,

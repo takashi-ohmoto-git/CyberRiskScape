@@ -49,6 +49,9 @@
 #   - OWASP Credential Stuffing Prevention Cheat Sheet、NIST SP 800-63B-4（試行回数の制限・漏えい済みパスワードの拒否）
 #     https://cheatsheetseries.owasp.org/cheatsheets/Credential_Stuffing_Prevention_Cheat_Sheet.html
 #     https://pages.nist.gov/800-63-4/sp800-63b.html （認証の入口への推測攻撃のルール、2026-11-06）
+#   - MITRE CWE（CWE-362 / CWE-367 / CWE-1287 / CWE-235 / CWE-20 / CWE-180 / CWE-174 / CWE-176 / CWE-22 /
+#     CWE-306 / CWE-489 / CWE-1188）、OWASP Web Security Testing Guide（WSTG-BUSL-05 / WSTG-INPV-04 /
+#     WSTG-ATHZ-01 / WSTG-CONF-05）、OWASP Input Validation Cheat Sheet（入口の高価値の面の 4 ルール、2026-11-28）
 #   - MITRE ATT&CK (Enterprise) v20.0（2026-10-24 に既存ルールの references へ対応づけ。技術 ID と正式名のみ
 #     出典つきで参照し本文は転載しない）:
 #     T1190 "Exploit Public-Facing Application"、T1078 "Valid Accounts"、
@@ -199,6 +202,26 @@
 #     XML パーサーの設定で対策（DTD の禁止）が違い、ファイルの読み出しも含むため別グループ。
 #   - サーバー側テンプレートインジェクション（SSTI）は新ルールにせず、結果と対策が同じ
 #     api-backend-remote-code-execution-001（canonicalId: api-server-code-execution）に含めた（ユーザー決定）。
+#
+#   2026-11-28 追加（攻撃経路の入口の高価値の面の穴埋め。出典は CWE・OWASP WSTG / Cheat Sheet / API Top 10・ATT&CK。
+#   4 つとも canonicalId は新設で、粒度は仮置き）:
+#   - 確認と更新の間の競合状態（api-race-condition-toctou-001、canonicalId: request-race-condition）。機微な業務フローの
+#     自動化（sensitive-business-flow-automation）は回数・量で業務の流れを使い尽くす悪用で、明示宣言のときだけ出る。
+#     本ルールは同時に届いた要求が確認をすり抜ける実装の問い（原子的な更新・冪等キー）で、対策が違うため別。
+#   - パラメーターの型の混同・重複パラメーター（api-parameter-type-confusion-001、canonicalId: parameter-type-confusion）。
+#     一括代入（BOPLA、api-object-level-authorization）は受け付ける項目の許可リスト、NoSQL の演算子の注入
+#     （api-query-injection）はクエリの構文の問いで、本ルールは同じ項目の値が検証と処理で食い違うこと（配列・重複・型）を問う。
+#   - 符号化・文字集合・正規化の境界のずれ（api-input-canonicalization-mismatch-001、canonicalId:
+#     input-canonicalization-mismatch）。リクエストスマグリング（http-request-smuggling、前段のプロキシ）は要求の境界の
+#     解釈のずれ、前段の振り分けを経由した管理面への到達（web-remote-management-exposure）は管理面の露出の問いで、
+#     パスの正規化の違いを経路の一例として述べるに留まる。本ルールは値の表記（二重の符号化・Unicode・文字コード・パス）を
+#     検査の後に解釈し直すアプリ側の実装の問いで別。ファイルの保存先に利用者のパスを使うことによるコード実行は
+#     api-server-code-execution が扱い、本ルールは読み出し・検査の回避の側を扱う。
+#   - 認証前に届く組み込みのルート（api-pre-auth-builtin-route-001、canonicalId: pre-auth-builtin-route）。アプリ全体に認証が
+#     無いこと（web-missing-authentication、攻撃面属性）、SSH / RDP / 管理画面の露出（web-remote-management-exposure）、
+#     境界機器の既知脆弱性・既定の資格情報（network-edge-device-exploitation、境界機器への線）、公開ディレクトリのファイル
+#     （web-public-dir-sensitive-file-exposure）とは、製品・フレームワークが既定で持つルートが認証の設定から漏れる点で
+#     問いが違う。境界機器（VPN_GATEWAY 等）は network-edge-device-exploitation と同じカードを重ねないため対象にしない。
 #
 # mitigation は 3 段階成熟度（[Foundation] / [Enterprise] / [Advanced]）をインライン markup で示す。
 # description は Can/Cannot ペアと blast radius を意識して記述する。
@@ -1171,3 +1194,160 @@ rules:
       - title: "MITRE ATT&CK T1552.005 - Unsecured Credentials: Cloud Instance Metadata API（メタデータサービスからの認証情報の取得）"
         url: "https://attack.mitre.org/techniques/T1552/005/"
       # URL を受け取る機能からの内部への通信は api-server-side-request-forgery が扱う（別 canonicalId）。
+
+  # ── 2026-11-28 追加：攻撃経路の入口の高価値の面（設計メモ §14）の穴埋め ──────────
+  # 競合状態・型の混同・符号化と正規化の境界のずれ・認証前の組み込みルートの 4 つ。canonicalId は新設（粒度は仮置き）。
+
+  # ── BACKEND_API / FRONT_END_SERVER: 確認と更新の間の競合状態（TOCTOU）──────────
+  - id: api-race-condition-toctou-001
+    canonicalId: request-race-condition
+    framework: STRIDE
+    category: "Tampering"
+    name: "確認と更新の間の競合状態（同時リクエストによる上限・残高・一回限りの制限の回避）"
+    severity: Medium
+    description: "{{nodeName}} が、残高・在庫・利用回数・クーポンや招待コードの使用済みの印・権限の状態を「読んで確かめてから、別の処理で更新する」作りになっている場合、攻撃者は同じ要求をほぼ同時に多数送り、どの要求もまだ更新されていない状態で確認を通過させられる（Can）。その結果、残高を超える二重の支払い・送金、一回限りのクーポンや招待の複数回の使用、回数上限・在庫の上限の超過、取り消したはずの権限での操作が成立する。HTTP/2 の多重化で複数の要求を 1 回の送信にまとめれば、ネットワークの揺らぎに関係なく同時に届けられ、AI エージェントを使う攻撃者はどの操作が競合に弱いかを機械的に試せる。一方、確認と更新をデータベースの 1 つの操作（条件付きの更新・一意制約・行ロック・楽観的ロックのバージョン確認）で原子的に行い、一回限りの操作に冪等キーを付けて重複を拒否していれば、同時に送っても成功するのは 1 回だけになる（Cannot）。blast radius は {{nodeName}} が扱う金銭・在庫・特典・権限の状態で、損失は同時に送れる要求の数だけ膨らむ。"
+    mitigation: "[Foundation] 残高・在庫・回数・使用済みの印・権限の状態を確かめて更新する処理を洗い出し、確認と更新を 1 つの原子的な操作にする（条件付きの UPDATE〔WHERE 残高 >= 金額〕・一意制約・行ロック・楽観的ロックのバージョン確認）。アプリのメモリ上の確認や、読んでから書く 2 回のデータベース操作に頼らない。支払い・送金・特典の付与など一回限りの操作は冪等キーを必須にし、同じキーの 2 回目以降を拒否する。 [Enterprise] 同じ要求を同時に多数送る試験（単一の HTTP/2 接続で同時に届ける形を含む）を重要な操作の試験項目に入れ、CI または定期の診断で行う。複数のサーバー・コンテナに分散した構成では、確認をデータベースや分散ロックに寄せ、各サーバーのメモリに持たない。 [Advanced] 金額・回数の台帳を追記型にして、事後に整合を照合する（二重の計上を検知して自動で差し戻す）。同じ利用者・同じ対象への短時間の同時要求の集中を検知する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: BACKEND_API
+        - nodeType: FRONT_END_SERVER
+      # 呼び出し元からの要求を受けるとき発火する（BOLA ルールと同じ前提）。状態を持つ処理があるかは図から決まらないため、
+      # 大方針（未入力＝悪い値）どおり要求を受ける API・Web アプリには出す。
+      connection:
+        direction: inbound
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-06"
+    references:
+      - title: "MITRE CWE-362: Concurrent Execution using Shared Resource with Improper Synchronization"
+        url: "https://cwe.mitre.org/data/definitions/362.html"
+      - title: "MITRE CWE-367: Time-of-check Time-of-use (TOCTOU) Race Condition"
+        url: "https://cwe.mitre.org/data/definitions/367.html"
+      - title: "OWASP Web Security Testing Guide - Test Number of Times a Function Can Be Used Limits（WSTG-BUSL-05）"
+        url: "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/10-Business_Logic_Testing/05-Test_Number_of_Times_a_Function_Can_Be_Used_Limits"
+      # 業務フローを機械的に使い尽くす悪用（量）は sensitive-business-flow-automation が扱う（別 canonicalId）。
+
+  # ── BACKEND_API / FRONT_END_SERVER: パラメーターの型の混同・重複パラメーター ─────────
+  - id: api-parameter-type-confusion-001
+    canonicalId: parameter-type-confusion
+    framework: STRIDE
+    category: "Tampering"
+    name: "パラメーターの型の混同・重複パラメーター（検証した値と処理する値のずれ）"
+    severity: Medium
+    description: "{{nodeName}} が、1 つの値が来るはずのパラメーターに配列やオブジェクトが来た場合、同じ名前のパラメーターが複数来た場合（HTTP パラメーター汚染）、数値・真偽値・文字列の型が混ざった場合（JSON の型のゆるい比較。'0' と 0、true と 'true'）の扱いを決めていないと、検証する処理と実際に使う処理が別の値を見ることがある。攻撃者は id=自分&id=他人 のように同じ名前を重ねる、role を文字列ではなく配列で送る、トークンや金額を想定外の型で送るといった方法で、検証（権限・所有者・金額の確認、WAF・ゲートウェイの検査）を通過させたうえで、別の値で処理させられる（Can）。前段（WAF・ゲートウェイ）と {{nodeName}}、フレームワークと業務のコードとで、重複したパラメーターの先頭・末尾・連結のどれを採るかが違うことが原因になりやすい。一方、受け取るパラメーターの名前・型・個数をスキーマで厳密に定め（重複したパラメーター・想定外の型・未知の項目を拒否し、暗黙の型変換をしない）、検証した値をそのまま処理に渡していれば、形を変えて送っても検証と処理で値は食い違わない（Cannot）。blast radius は検証をすり抜けた値で実行できる操作の範囲（他人のレコード・権限・金額）。"
+    mitigation: "[Foundation] API ごとに、受け取るパラメーターの名前・型・個数をスキーマ（OpenAPI・JSON Schema 等）で定め、サーバー側で厳密に検証する。同じ名前のパラメーターが複数ある要求、1 つの値の項目に配列・オブジェクトが来た要求、想定外の型の要求は拒否する（先頭・末尾を選んで続けない）。比較は型も含めた厳密な比較にし、暗黙の型変換に頼らない。検証した後の値をそのまま処理に渡し、処理の側で生の要求を読み直さない。 [Enterprise] 前段（WAF・API ゲートウェイ）と背後のアプリで、重複したパラメーターや型の扱いが同じになるよう設定し、前段で重複・型違いを拒否する。重複パラメーター・配列・型違いを送る試験を API の試験項目に入れ、CI で毎回実行する。 [Advanced] API 仕様書と実際の受け付けの差（仕様にない型・項目が通ること）を継続的に検査する。検証の失敗（型違い・重複）を記録し、同じ呼び出し元からの集中を検知する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: BACKEND_API
+        - nodeType: FRONT_END_SERVER
+      # 呼び出し元からの要求を受けるとき発火する（BOLA ルールと同じ前提）。
+      connection:
+        direction: inbound
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-06"
+    references:
+      - title: "MITRE CWE-1287: Improper Validation of Specified Type of Input"
+        url: "https://cwe.mitre.org/data/definitions/1287.html"
+      - title: "MITRE CWE-235: Improper Handling of Extra Parameters"
+        url: "https://cwe.mitre.org/data/definitions/235.html"
+      - title: "MITRE CWE-20: Improper Input Validation"
+        url: "https://cwe.mitre.org/data/definitions/20.html"
+      - title: "OWASP Web Security Testing Guide - Testing for HTTP Parameter Pollution（WSTG-INPV-04）"
+        url: "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/04-Testing_for_HTTP_Parameter_Pollution"
+      - title: "OWASP Cheat Sheet Series - Input Validation Cheat Sheet"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html"
+      # NoSQL の演算子（オブジェクト）を検索条件に入れさせる注入は api-query-injection、
+      # 受け取った項目をそのまま反映する一括代入は api-object-level-authorization が扱う（別 canonicalId）。
+
+  # ── BACKEND_API / FRONT_END_SERVER: 符号化・文字集合・正規化の境界のずれ ─────────────
+  - id: api-input-canonicalization-mismatch-001
+    canonicalId: input-canonicalization-mismatch
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "符号化・文字集合・正規化の境界のずれによる検査・認可の回避"
+    severity: Medium
+    description: "{{nodeName}} に届く値は、前段（CDN・WAF・リバースプロキシ・ゲートウェイ）、フレームワーク、業務のコード、ファイルシステムやデータベースの順に、URL のデコード・文字コードの変換・Unicode の正規化・パスの正規化（../・//・末尾のスラッシュ・大文字小文字）を受けながら渡っていく。どこかの層が検査（WAF のシグネチャ、パスによるアクセス制御、../ や危険な文字の拒否、利用者名の重複確認）を行い、その後の層がもう一度デコードしたり正規化したりする場合、攻撃者は %252e%252e%252f のような二重の符号化、全角や互換の文字（ＡＤＭＩＮ・ﬁ）、不正なバイト列や別の文字コードを送り、検査した層には無害に見え、処理する層では ../ や /admin や既存の利用者名になる値を届けられる（Can）。その結果、パスによる管理機能の制限の回避、公開ディレクトリの外のファイルの読み出し、WAF の回避、見た目が同じ別アカウントの登録によるなりすましが成立する。一方、値を受け取った最初の地点で 1 回だけデコードと正規化（文字コードの確定・Unicode 正規化・パスの正規化）を行ってから検査し、以後の層で再びデコードせず、不正な符号化や混在した文字コードの要求を拒否し、アクセス制御とファイルの解決をアプリ自身が正規化した後の値で行っていれば、表記を変えても検査をすり抜けられない（Cannot）。blast radius は回避された検査が守っていた範囲（管理機能・サーバー上のファイル・他の利用者のアカウント）。"
+    mitigation: "[Foundation] 入力は受け取った地点で 1 回だけデコード・正規化（文字コードを UTF-8 に確定、Unicode の正規化形式を統一、パスを正規化）してから検査し、検査の後に再びデコードしない。不正なバイト列・二重の符号化・想定外の文字コードの要求は拒否する。ファイルのパスは利用者の値を連結して作らず、正規化した後のパスが許可したディレクトリの中にあるかを確かめる。パスによるアクセス制御は前段だけに任せず、アプリが正規化した後の値でも判定する。 [Enterprise] 前段（CDN・WAF・リバースプロキシ・ゲートウェイ）とアプリで、URL のデコード・パスの正規化・大文字小文字の扱いを揃え、前段でパスを正規化した値を背後へ渡す。利用者名・メールアドレス等の識別子は正規化した値で一意性を確かめる。二重の符号化・全角文字・パスの別表記を送る試験を診断の項目に入れる。 [Advanced] 識別子に使える文字を許可リストで限定し、見た目が紛らわしい文字の混在を拒否する。検査と処理を同じ正規化済みの値の上で行うよう、入力の正規化を共通の部品に集約する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: BACKEND_API
+        - nodeType: FRONT_END_SERVER
+      # 呼び出し元からの要求を受けるとき発火する（BOLA ルールと同じ前提）。値を最後に解釈するアプリ側の問いとし、
+      # 前段のプロキシには出さない（要求の境界のずれ＝スマグリングは http-request-smuggling が前段で扱う）。
+      connection:
+        direction: inbound
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.PS-06"
+    references:
+      - title: "MITRE CWE-180: Incorrect Behavior Order: Validate Before Canonicalize"
+        url: "https://cwe.mitre.org/data/definitions/180.html"
+      - title: "MITRE CWE-174: Double Decoding of the Same Data"
+        url: "https://cwe.mitre.org/data/definitions/174.html"
+      - title: "MITRE CWE-176: Improper Handling of Unicode Encoding"
+        url: "https://cwe.mitre.org/data/definitions/176.html"
+      - title: "MITRE CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')"
+        url: "https://cwe.mitre.org/data/definitions/22.html"
+      - title: "OWASP Web Security Testing Guide - Testing Directory Traversal File Include（WSTG-ATHZ-01）"
+        url: "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/05-Authorization_Testing/01-Testing_Directory_Traversal_File_Include"
+      - title: "OWASP Cheat Sheet Series - Input Validation Cheat Sheet"
+        url: "https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html"
+      - title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application（符号化・正規化のずれによる検査の回避）"
+        url: "https://attack.mitre.org/techniques/T1190/"
+      # 要求の境界のずれ（Content-Length / Transfer-Encoding）は http-request-smuggling、前段の振り分けを経由した
+      # 管理面への到達は web-remote-management-exposure が扱う（別 canonicalId）。
+
+  # ── 公開アプリ・API・管理面: 認証前に届く組み込みのルート ─────────────────────
+  - id: api-pre-auth-builtin-route-001
+    canonicalId: pre-auth-builtin-route
+    framework: STRIDE
+    category: "Elevation of Privilege"
+    name: "認証前に届く組み込みのルート（管理・デバッグ・状態確認・初期設定・旧版の入口）"
+    severity: High
+    description: "{{nodeName}} の製品・フレームワーク・ミドルウェア・プラットフォームが既定で持つルート（管理用の API、デバッグ・診断・メトリクス・状態確認のエンドポイント、初回の設定ウィザード、旧版の API や互換用の処理、サンプルのアプリ）は、利用者が自分で書いたルートと違って認証の設定から漏れやすい。アプリ本体がログインを要求していても、これらがログインの前に届くままだと、攻撃者は製品ごとによく知られたパスを機械的に試し、環境変数・設定・認証情報の読み出し、ログの設定やヒープの内容の取得、初期設定のやり直しによる管理者の作成、設定の変更やコードの実行につながる操作を、認証なしで呼び出せる（Can）。こうしたルートは製品の脆弱性として繰り返し公開されており、版を特定できればどのパスを試すかも分かる。一方、使っている製品・フレームワークが既定で公開するルートを棚卸しし、不要なものを無効にし、必要なものも利用者向けとは別の入口・別のポートに分けてログインと送信元の制限を掛け、初期設定を完了させてウィザードを閉じていれば、パスを当てても認証なしでは何も操作できない（Cannot）。blast radius は組み込みのルートが持つ権限（設定・認証情報・コードの実行）で、多くは {{nodeName}} の管理者と同等。"
+    mitigation: "[Foundation] 使っている製品・フレームワーク・ミドルウェアが既定で公開するルート（管理用 API・デバッグ・診断・メトリクス・状態確認・初期設定・サンプル・旧版の API）を棚卸しし、本番で不要なものは無効にする。必要なもの（死活監視等）も返す情報を最小にし、認証と送信元の制限を掛ける。初期設定のウィザードは導入時に完了させ、未設定のまま公開しない。認証の設定は既定を拒否にし、認証なしで許すルートを明示的に列挙する。 [Enterprise] 管理・診断用のルートを利用者向けとは別のポート・別のホストで提供し、管理用ネットワークからのみ届くようにする。外部から、製品ごとのよく知られた管理・デバッグのパスに認証なしで届かないことを、構成を変えるたびと定期の診断で確かめる。製品の更新で新たに加わった既定のルートを確認する。 [Advanced] 認証なしで届くルートの一覧を API 仕様書と突き合わせ、仕様にないルートが応答することを継続的に検知する。よく知られた管理・デバッグのパスへの外部からの要求を検知し、送信元を遮断する。"
+    appliesTo:
+      kind: node
+      anyOf:
+        - nodeType: FRONT_END_SERVER
+        - nodeType: BACKEND_API
+        - nodeType: ADMIN_CONSOLE
+        - nodeType: API_CONTROL_PLANE
+        - nodeType: GATEWAY
+      # 要求を受けるとき発火する。組み込みのルートの有無は図から決まらないため、大方針（未入力＝悪い値）どおり出す。
+      connection:
+        direction: inbound
+      conditions:
+        # Global IP 無しと明示したとき（未入力は Global IP 有りとして扱う）は、外から直接は届かないため下げる。
+        - when:
+            attackSurface:
+              hasGlobalIp: false
+          severity: Medium
+    complianceRefs:
+      - standard: nist-csf-2.0
+        ref: "PR.AA-05"
+      - standard: nist-csf-2.0
+        ref: "PR.PS-01"
+    references:
+      - title: "MITRE CWE-306: Missing Authentication for Critical Functionality"
+        url: "https://cwe.mitre.org/data/definitions/306.html"
+      - title: "MITRE CWE-489: Active Debug Code"
+        url: "https://cwe.mitre.org/data/definitions/489.html"
+      - title: "MITRE CWE-1188: Initialization of a Resource with an Insecure Default"
+        url: "https://cwe.mitre.org/data/definitions/1188.html"
+      - title: "OWASP API Security Top 10 2023 - API8:2023 Security Misconfiguration（不要な機能の有効化）"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/"
+      - title: "OWASP API Security Top 10 2023 - API9:2023 Improper Inventory Management（旧版・デバッグ用の入口）"
+        url: "https://owasp.org/API-Security/editions/2023/en/0xa9-improper-inventory-management/"
+      - title: "OWASP Web Security Testing Guide - Enumerate Infrastructure and Application Admin Interfaces（WSTG-CONF-05）"
+        url: "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/05-Enumerate_Infrastructure_and_Application_Admin_Interfaces"
+      - title: "MITRE ATT&CK T1190 - Exploit Public-Facing Application（認証なしで届く組み込みのルートの悪用）"
+        url: "https://attack.mitre.org/techniques/T1190/"
+      - title: "MITRE ATT&CK T1595.003 - Active Scanning: Wordlist Scanning（よく知られた管理・デバッグのパスの探索）"
+        url: "https://attack.mitre.org/techniques/T1595/003/"
+      # アプリ全体の認証の欠如は web-missing-authentication、管理面（SSH / RDP / 管理画面）の露出は
+      # web-remote-management-exposure、境界機器の既知脆弱性は network-edge-device-exploitation が扱う（別 canonicalId）。
