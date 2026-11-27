@@ -1,0 +1,11 @@
+# Snyk (https://snyk.io) policy file
+# 公開しないローカル専用のフォルダと、ビルド成果物を Snyk の解析から除外する
+exclude:
+  global:
+    - docs/**
+    - persona/**
+    - save/**
+    - .claude/**
+    - dist/**
+    - dist-cli/**
+    - node_modules/**
