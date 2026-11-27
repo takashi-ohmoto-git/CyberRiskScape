@@ -28,7 +28,7 @@ let outDir = '';
 let gitRepo = '';
 
 interface Case {
-  /** サブコマンド名（main.ts の command === '...' と一致させる）。 */
+  /** サブコマンド名（main.ts のコマンド表 COMMANDS の名前と一致させる）。 */
   command: string;
   /** 引数を返す（一時ディレクトリが決まった後に評価する）。サブコマンド名は含めない。 */
   args: () => string[];
@@ -528,10 +528,10 @@ const CASES: Case[] = [
   },
 ];
 
-/** main.ts のソースから、サブコマンド名（command === '...'）を集める。 */
+/** main.ts のソースから、サブコマンド名（コマンド表 COMMANDS の `['名前', ...` の行）を集める。 */
 function commandsInMainSource(): string[] {
   const source = readFileSync(fx('./main.ts'), 'utf-8');
-  const names = [...source.matchAll(/command === '([a-z0-9-]+)'/g)].map((m) => m[1]);
+  const names = [...source.matchAll(/^ {2}\['([a-z0-9-]+)', /gm)].map((m) => m[1]);
   return [...new Set(names)];
 }
 

@@ -3165,6 +3165,187 @@ async function runMcp(values: CliValues): Promise<void> {
   process.stderr.write(`${BRANDING.name} MCP サーバーを起動しました（root: ${root}、locale: ${locale}）\n`);
 }
 
+/** サブコマンドの表（名前 → 実行）。main() はここから引く。 */
+const COMMANDS = new Map<string, (values: CliValues, positionals: string[]) => void>([
+  ['analyze', (values, positionals) => {
+    runAnalyze(values, positionals);
+  }],
+  ['diff', (values, positionals) => {
+    runDiff(values, positionals);
+  }],
+  ['triggers', (values) => {
+    runTriggers(values);
+  }],
+  ['indicators', (values, positionals) => {
+    runIndicators(values, positionals);
+  }],
+  ['export-scope', (values, positionals) => {
+    runExportScope(values, positionals);
+  }],
+  ['checklist', (values, positionals) => {
+    runChecklist(values, positionals);
+  }],
+  ['export-postman', (values, positionals) => {
+    runExportPostman(values, positionals);
+  }],
+  ['export-sbom-ai', (values, positionals) => {
+    runExportSbomAi(values, positionals);
+  }],
+  ['export-test-plan', (values, positionals) => {
+    runExportTestPlan(values, positionals);
+  }],
+  ['export-roe', (values, positionals) => {
+    runExportRoe(values, positionals);
+  }],
+  ['export-attack-navigator', (values, positionals) => {
+    runExportNavigator(values, positionals);
+  }],
+  ['export-investigation-plan', (values, positionals) => {
+    runExportInvestigationPlan(values, positionals);
+  }],
+  ['export-detection-requirements', (values, positionals) => {
+    runExportDetectionRequirements(values, positionals);
+  }],
+  ['export-contractor-paths', (values, positionals) => {
+    runExportContractorPaths(values, positionals);
+  }],
+  ['export-event-log', (values) => {
+    runExportEventLog(values);
+  }],
+  ['export-requirements', (values, positionals) => {
+    runExportRequirements(values, positionals);
+  }],
+  ['investigation-report', (values, positionals) => {
+    runInvestigationReport(values, positionals);
+  }],
+  ['export-triage-patterns', (values) => {
+    runExportTriagePatterns(values);
+  }],
+  ['findings-report', (values, positionals) => {
+    runFindingsReport(values, positionals);
+  }],
+  ['pqc-sbom-report', (values, positionals) => {
+    runPqcSbomReport(values, positionals);
+  }],
+  ['import-repo', (values, positionals) => {
+    runImportRepo(values, positionals);
+  }],
+  ['import-prowler', (values, positionals) => {
+    runImportProwler(values, positionals);
+  }],
+  ['import-findings', (values, positionals) => {
+    runImportFindings(values, positionals);
+  }],
+  ['import-pentest', (values, positionals) => {
+    runImportPentest(values, positionals);
+  }],
+  ['import-business-context', (values, positionals) => {
+    runImportBusinessContext(values, positionals);
+  }],
+  ['convert-celonis', (values) => {
+    runConvertCelonis(values).catch((e: unknown) => {
+      fail(`Celonis の変換に失敗しました: ${e instanceof Error ? e.message : String(e)}`);
+    });
+  }],
+  ['import-kev', (values, positionals) => {
+    runImportKev(values, positionals);
+  }],
+  ['fill-patch-status', (values, positionals) => {
+    runFillPatchStatusCommand(values, positionals);
+  }],
+  ['context', (values, positionals) => {
+    runContext(values, positionals);
+  }],
+  ['import-epss', (values, positionals) => {
+    runImportEpss(values, positionals);
+  }],
+  ['findings-priority', (values, positionals) => {
+    runFindingsPriority(values, positionals);
+  }],
+  ['asm-reconcile', (values, positionals) => {
+    runAsmReconcile(values, positionals);
+  }],
+  ['sbom-report', (values, positionals) => {
+    runSbomReport(values, positionals);
+  }],
+  ['import-sarif', (values, positionals) => {
+    runImportSarif(values, positionals);
+  }],
+  ['import-nuclei', (values, positionals) => {
+    runImportNuclei(values, positionals);
+  }],
+  ['import-security-audit', (values, positionals) => {
+    runImportSecurityAudit(values, positionals);
+  }],
+  ['import-sbom', (values, positionals) => {
+    runImportSbom(values, positionals);
+  }],
+  ['export-spdx', (values, positionals) => {
+    runExportSpdx(values, positionals);
+  }],
+  ['import-aipentest-assets', (values, positionals) => {
+    runImportAipentestAssets(values, positionals);
+  }],
+  ['import-conjur', (values, positionals) => {
+    runImportConjur(values, positionals);
+  }],
+  ['import-shodan', (values, positionals) => {
+    runImportShodan(values, positionals);
+  }],
+  ['import-openapi', (values, positionals) => {
+    runImportOpenapi(values, positionals);
+  }],
+  ['import-ocsf', (values, positionals) => {
+    runImportOcsf(values, positionals);
+  }],
+  ['import-entra-apps', (values, positionals) => {
+    runImportEntraApps(values, positionals).catch((e: unknown) => {
+      fail(`Microsoft Graph の在庫の取り込みに失敗しました: ${e instanceof Error ? e.message : String(e)}`);
+    });
+  }],
+  ['import-bloodhound', (values, positionals) => {
+    runImportBloodhound(values, positionals).catch((e: unknown) => {
+      fail(`BloodHound CE の取り込みに失敗しました: ${e instanceof Error ? e.message : String(e)}`);
+    });
+  }],
+  ['convert-cyberstrikeai', (values, positionals) => {
+    runConvertCyberstrikeai(values, positionals).catch((e: unknown) => {
+      fail(`CyberStrikeAI の変換に失敗しました: ${e instanceof Error ? e.message : String(e)}`);
+    });
+  }],
+  ['convert-strix', (values, positionals) => {
+    runConvertStrix(values, positionals);
+  }],
+  ['convert-metasploit', (values, positionals) => {
+    runConvertMetasploit(values, positionals);
+  }],
+  ['import-metasploit-assets', (values, positionals) => {
+    runImportMetasploitAssets(values, positionals);
+  }],
+  ['import-scopesentry', (values, positionals) => {
+    runImportScopesentry(values, positionals).catch((e: unknown) => {
+      fail(`ScopeSentry の取り込みに失敗しました: ${e instanceof Error ? e.message : String(e)}`);
+    });
+  }],
+  ['import-kong', (values, positionals) => {
+    runImportKong(values, positionals);
+  }],
+  ['import-tm7', (values, positionals) => {
+    runImportTm7(values, positionals);
+  }],
+  ['migration-report', (values, positionals) => {
+    runMigrationReport(values, positionals);
+  }],
+  ['import-kongctl', (values, positionals) => {
+    runImportKongctl(values, positionals);
+  }],
+  ['mcp', (values) => {
+    runMcp(values).catch((e: unknown) => {
+      fail(`MCP サーバーの起動に失敗しました: ${e instanceof Error ? e.message : String(e)}`);
+    });
+  }],
+]);
+
 function main(): void {
   let parsed: ReturnType<typeof parseCliArgs>;
   try {
@@ -3181,131 +3362,11 @@ function main(): void {
   }
 
   const command = positionals[0];
-  if (command === 'analyze') {
-    runAnalyze(values, positionals);
-  } else if (command === 'diff') {
-    runDiff(values, positionals);
-  } else if (command === 'triggers') {
-    runTriggers(values);
-  } else if (command === 'indicators') {
-    runIndicators(values, positionals);
-  } else if (command === 'export-scope') {
-    runExportScope(values, positionals);
-  } else if (command === 'checklist') {
-    runChecklist(values, positionals);
-  } else if (command === 'export-postman') {
-    runExportPostman(values, positionals);
-  } else if (command === 'export-sbom-ai') {
-    runExportSbomAi(values, positionals);
-  } else if (command === 'export-test-plan') {
-    runExportTestPlan(values, positionals);
-  } else if (command === 'export-roe') {
-    runExportRoe(values, positionals);
-  } else if (command === 'export-attack-navigator') {
-    runExportNavigator(values, positionals);
-  } else if (command === 'export-investigation-plan') {
-    runExportInvestigationPlan(values, positionals);
-  } else if (command === 'export-detection-requirements') {
-    runExportDetectionRequirements(values, positionals);
-  } else if (command === 'export-contractor-paths') {
-    runExportContractorPaths(values, positionals);
-  } else if (command === 'export-event-log') {
-    runExportEventLog(values);
-  } else if (command === 'export-requirements') {
-    runExportRequirements(values, positionals);
-  } else if (command === 'investigation-report') {
-    runInvestigationReport(values, positionals);
-  } else if (command === 'export-triage-patterns') {
-    runExportTriagePatterns(values);
-  } else if (command === 'findings-report') {
-    runFindingsReport(values, positionals);
-  } else if (command === 'pqc-sbom-report') {
-    runPqcSbomReport(values, positionals);
-  } else if (command === 'import-repo') {
-    runImportRepo(values, positionals);
-  } else if (command === 'import-prowler') {
-    runImportProwler(values, positionals);
-  } else if (command === 'import-findings') {
-    runImportFindings(values, positionals);
-  } else if (command === 'import-pentest') {
-    runImportPentest(values, positionals);
-  } else if (command === 'import-business-context') {
-    runImportBusinessContext(values, positionals);
-  } else if (command === 'convert-celonis') {
-    runConvertCelonis(values).catch((e: unknown) => {
-      fail(`Celonis の変換に失敗しました: ${e instanceof Error ? e.message : String(e)}`);
-    });
-  } else if (command === 'import-kev') {
-    runImportKev(values, positionals);
-  } else if (command === 'fill-patch-status') {
-    runFillPatchStatusCommand(values, positionals);
-  } else if (command === 'context') {
-    runContext(values, positionals);
-  } else if (command === 'import-epss') {
-    runImportEpss(values, positionals);
-  } else if (command === 'findings-priority') {
-    runFindingsPriority(values, positionals);
-  } else if (command === 'asm-reconcile') {
-    runAsmReconcile(values, positionals);
-  } else if (command === 'sbom-report') {
-    runSbomReport(values, positionals);
-  } else if (command === 'import-sarif') {
-    runImportSarif(values, positionals);
-  } else if (command === 'import-nuclei') {
-    runImportNuclei(values, positionals);
-  } else if (command === 'import-security-audit') {
-    runImportSecurityAudit(values, positionals);
-  } else if (command === 'import-sbom') {
-    runImportSbom(values, positionals);
-  } else if (command === 'export-spdx') {
-    runExportSpdx(values, positionals);
-  } else if (command === 'import-aipentest-assets') {
-    runImportAipentestAssets(values, positionals);
-  } else if (command === 'import-conjur') {
-    runImportConjur(values, positionals);
-  } else if (command === 'import-shodan') {
-    runImportShodan(values, positionals);
-  } else if (command === 'import-openapi') {
-    runImportOpenapi(values, positionals);
-  } else if (command === 'import-ocsf') {
-    runImportOcsf(values, positionals);
-  } else if (command === 'import-entra-apps') {
-    runImportEntraApps(values, positionals).catch((e: unknown) => {
-      fail(`Microsoft Graph の在庫の取り込みに失敗しました: ${e instanceof Error ? e.message : String(e)}`);
-    });
-  } else if (command === 'import-bloodhound') {
-    runImportBloodhound(values, positionals).catch((e: unknown) => {
-      fail(`BloodHound CE の取り込みに失敗しました: ${e instanceof Error ? e.message : String(e)}`);
-    });
-  } else if (command === 'convert-cyberstrikeai') {
-    runConvertCyberstrikeai(values, positionals).catch((e: unknown) => {
-      fail(`CyberStrikeAI の変換に失敗しました: ${e instanceof Error ? e.message : String(e)}`);
-    });
-  } else if (command === 'convert-strix') {
-    runConvertStrix(values, positionals);
-  } else if (command === 'convert-metasploit') {
-    runConvertMetasploit(values, positionals);
-  } else if (command === 'import-metasploit-assets') {
-    runImportMetasploitAssets(values, positionals);
-  } else if (command === 'import-scopesentry') {
-    runImportScopesentry(values, positionals).catch((e: unknown) => {
-      fail(`ScopeSentry の取り込みに失敗しました: ${e instanceof Error ? e.message : String(e)}`);
-    });
-  } else if (command === 'import-kong') {
-    runImportKong(values, positionals);
-  } else if (command === 'import-tm7') {
-    runImportTm7(values, positionals);
-  } else if (command === 'migration-report') {
-    runMigrationReport(values, positionals);
-  } else if (command === 'import-kongctl') {
-    runImportKongctl(values, positionals);
-  } else if (command === 'mcp') {
-    runMcp(values).catch((e: unknown) => {
-      fail(`MCP サーバーの起動に失敗しました: ${e instanceof Error ? e.message : String(e)}`);
-    });
-  } else {
+  const run = command === undefined ? undefined : COMMANDS.get(command);
+  if (run === undefined) {
     fail(`不明なコマンドです: "${command ?? ''}"\n\n${USAGE}`);
   }
+  run(values, positionals);
 }
 
 main();
