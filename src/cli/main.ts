@@ -2709,7 +2709,7 @@ function runExportEventLog(values: CliValues): void {
   const format = parseEnum(values.format, ['ocel', 'csv'] as const, 'format') ?? 'ocel';
   let maxCommits: number | undefined;
   if (values['max-commits'] !== undefined) {
-    if (!/^d{1,5}$/.test(values['max-commits'])) fail('--max-commits は整数で指定してください。');
+    if (!/^\d{1,5}$/.test(values['max-commits'])) fail('--max-commits は整数で指定してください。');
     maxCommits = Number(values['max-commits']);
   }
   const triggers = getChangeTriggers('ja').triggers;

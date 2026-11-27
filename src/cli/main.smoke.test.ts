@@ -163,7 +163,7 @@ const CASES: Case[] = [
   },
   {
     command: 'export-event-log',
-    args: () => ['--repo', gitRepo, '--path', 'model.json', '--out', out('events.json')],
+    args: () => ['--repo', gitRepo, '--path', 'model.json', '--max-commits', '5', '--out', out('events.json')],
     exit: 0,
     outFile: 'events.json',
     stderrContains: ['イベントログを出力しました'],
