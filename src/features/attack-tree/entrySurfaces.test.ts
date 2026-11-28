@@ -136,10 +136,10 @@ describe('loadEntrySurfaces', () => {
 });
 
 describe('同梱の入口の面の表', () => {
-  it('9 つの面があり、canonicalId はすべて脅威ライブラリに存在する', () => {
+  it('10 の面があり、canonicalId はすべて脅威ライブラリに存在する', () => {
     const known = new Set(BUNDLED_THREAT_LIBRARY.rules.map((r) => r.canonicalId));
     const missing = BUNDLED_ENTRY_SURFACES.flatMap((s) => s.canonicalIds).filter((c) => !known.has(c));
-    expect(BUNDLED_ENTRY_SURFACES).toHaveLength(9);
+    expect(BUNDLED_ENTRY_SURFACES).toHaveLength(10);
     expect(missing).toEqual([]);
   });
 
@@ -149,6 +149,13 @@ describe('同梱の入口の面の表', () => {
       'fileUpload',
       'preAuthBuiltinRoute',
     ]);
+  });
+
+  it('noRateLimit: declaredBy を持たず、outcomes と canonicalIds が決めた値', () => {
+    const s = BUNDLED_ENTRY_SURFACES.find((x) => x.id === 'noRateLimit');
+    expect(s?.declaredBy).toBeUndefined();
+    expect(s?.outcomes).toEqual(['privesc', 'exfil']);
+    expect(s?.canonicalIds).toEqual(['login-credential-guessing', 'api-bulk-data-harvesting']);
   });
 });
 

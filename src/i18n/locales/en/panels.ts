@@ -113,6 +113,7 @@ export const enPanels: Partial<Record<TranslationKey, string>> = {
   'panels.node.entrySurface.raceCondition': 'Race condition',
   'panels.node.entrySurface.typeConfusion': 'Type confusion',
   'panels.node.entrySurface.massAssignment': 'Mass assignment',
+  'panels.node.entrySurface.noRateLimit': 'No rate limiting',
 
   'panels.node.recommendButton': "Recommended targets & priority routes",
   'panels.node.recommendHide': "Hide recommendations",

@@ -56,3 +56,7 @@ surfaces:
   - id: massAssignment
     outcomes: [privesc, exfil]
     canonicalIds: [api-object-level-authorization]
+
+  - id: noRateLimit
+    outcomes: [privesc, exfil]
+    canonicalIds: [login-credential-guessing, api-bulk-data-harvesting]

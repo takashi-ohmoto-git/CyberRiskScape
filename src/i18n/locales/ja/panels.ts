@@ -114,6 +114,7 @@ export const jaPanels = {
   'panels.node.entrySurface.raceCondition': '競合状態',
   'panels.node.entrySurface.typeConfusion': '型の混同',
   'panels.node.entrySurface.massAssignment': '一括代入',
+  'panels.node.entrySurface.noRateLimit': '回数の制限が無い',
 
   'panels.node.recommendButton': "推奨標的と優先的に守る経路",
   'panels.node.recommendHide': "推奨の表示をやめる",
