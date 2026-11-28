@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUNDLED_ENTRY_SURFACES, evaluateEntrySurfaces, loadEntrySurfaces } from './entrySurfaces';
+import { BUNDLED_ENTRY_SURFACES, entrySurfaceDetails, evaluateEntrySurfaces, loadEntrySurfaces } from './entrySurfaces';
 import { findEntryPoints } from './findEntryPoints';
 import { BUNDLED_THREAT_LIBRARY } from '../../threat-library/loader/bundledLibrary';
 import { PersistedLayerDataSchema } from '../persistence/schema';
@@ -171,5 +171,49 @@ describe('保存形式の互換', () => {
     expect(PersistedLayerDataSchema.safeParse(layer()).success).toBe(true);
     expect(PersistedLayerDataSchema.safeParse(layer({ fileUpload: 'Yes' })).success).toBe(true);
     expect(PersistedLayerDataSchema.safeParse(layer({ fileUpload: 'Maybe' })).success).toBe(false);
+  });
+});
+
+describe('entrySurfaceDetails', () => {
+  const table = [
+    { id: 'sA', outcomes: ['rce', 'exfil'] as const, canonicalIds: ['a'] },
+    { id: 'sB', outcomes: ['recon'] as const, canonicalIds: ['b'] },
+  ];
+
+  it('面の順を保ち、面ごとに表の outcomes と根拠の脅威（名前・実効の重大度）を返す', () => {
+    const ta = threat('api', 'a', { name: '脅威A', severity: 'Medium' });
+    const tb = threat('api', 'b', { severity: 'Low' });
+    const r = entrySurfaceDetails(
+      [
+        { id: 'sB', threatIds: [tb.id], canonicalIds: ['b'] },
+        { id: 'sA', threatIds: [ta.id], canonicalIds: ['a'] },
+      ],
+      [ta, tb],
+      table,
+    );
+    expect(r.map((d) => d.id)).toEqual(['sB', 'sA']);
+    expect(r[1].outcomes).toEqual(['rce', 'exfil']);
+    expect(r[1].threats).toEqual([{ id: ta.id, name: '脅威A', severity: 'Medium' }]);
+    expect(r[0].threats[0].name).toBe('c');
+  });
+
+  it('根拠の脅威は重大度の高い順に並ぶ（同じなら元の順）', () => {
+    const t1 = threat('n1', 'a', { severity: 'Low' });
+    const t2 = threat('n2', 'a', { severity: 'Critical' });
+    const t3 = threat('n3', 'a', { severity: 'High' });
+    const t4 = threat('n4', 'a', { severity: 'High' });
+    const r = entrySurfaceDetails(
+      [{ id: 'sA', threatIds: [t1.id, t3.id, t2.id, t4.id], canonicalIds: ['a'] }],
+      [t1, t2, t3, t4],
+      table,
+    );
+    expect(r[0].threats.map((x) => x.id)).toEqual([t2.id, t3.id, t4.id, t1.id]);
+  });
+
+  it('threats に無い id は飛ばし、表に無い面は outcomes が空', () => {
+    const ta = threat('api', 'a');
+    const r = entrySurfaceDetails([{ id: 'unknown', threatIds: ['missing', ta.id], canonicalIds: ['a'] }], [ta], table);
+    expect(r[0].outcomes).toEqual([]);
+    expect(r[0].threats.map((x) => x.id)).toEqual([ta.id]);
   });
 });

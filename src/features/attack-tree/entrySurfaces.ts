@@ -1,6 +1,7 @@
 import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
-import type { DiagramNode, ThreatView } from '../../core/model/types';
+import type { DiagramNode, Severity, ThreatView } from '../../core/model/types';
+import { effectiveSeverity } from '../../core/model/risk';
 import { isSuppressed, POSTURE_GROUP_FIELDS } from '../../core/model/types';
 
 /**
@@ -111,4 +112,30 @@ export function evaluateEntrySurfaces(
     for (const o of s.outcomes) outcomes.add(o);
   }
   return { surfaces, outcomes: ENTRY_OUTCOMES.filter((o) => outcomes.has(o)) };
+}
+
+/** 面ごとの詳細（その面の届き得る先と、根拠の脅威）。一覧の開閉表示に使う。 */
+export interface EntrySurfaceDetail {
+  id: string;
+  outcomes: readonly EntryOutcome[];
+  threats: { id: string; name: string; severity: Severity }[];
+}
+
+const SEVERITY_RANK: Record<Severity, number> = { Critical: 3, High: 2, Medium: 1, Low: 0 };
+
+export function entrySurfaceDetails(
+  surfaces: readonly EntrySurfaceHit[],
+  threats: readonly ThreatView[],
+  table: EntrySurfaceTable = BUNDLED_ENTRY_SURFACES,
+): EntrySurfaceDetail[] {
+  const byId = new Map(threats.map((t) => [t.id, t]));
+  return surfaces.map((hit) => {
+    const rows = hit.threatIds.flatMap((id) => {
+      const t = byId.get(id);
+      return t ? [{ id: t.id, name: t.name ?? t.category, severity: effectiveSeverity(t) }] : [];
+    });
+    // Array.prototype.sort は安定なので、同じ重大度は元の順のまま
+    rows.sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
+    return { id: hit.id, outcomes: table.find((d) => d.id === hit.id)?.outcomes ?? [], threats: rows };
+  });
 }

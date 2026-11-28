@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Radar } from 'lucide-react';
 import type { DiagramNode, ThreatView } from '../../core/model/types';
 import { formatElementalId } from '../../core/model/elementalId';
@@ -11,7 +11,9 @@ import {
   useDiagramStore,
 } from '../../core/state/diagramStore';
 import { findEntryPoints } from '../../features/attack-tree/findEntryPoints';
-import { useT, type TranslationKey } from '../../i18n';
+import { entrySurfaceDetails } from '../../features/attack-tree/entrySurfaces';
+import { useT } from '../../i18n';
+import { EntryCandidateModal } from './EntryCandidateModal';
 
 interface EntrySearchSectionProps {
   attacker: DiagramNode;
@@ -22,7 +24,7 @@ interface EntrySearchSectionProps {
 /**
  * 侵入ポイントの分析（Search Attack Graph）の操作と候補の一覧。
  * 押すと攻撃者から入口の候補へ仮想の線をキャンバスに重ね（EntryProbeLayer）、ここに入りやすい順で並べる。
- * 候補を押すとそのノードを選択する。
+ * 候補を押すと詳細のポップアップ（EntryCandidateModal）を開く。ノードの選択はポップアップの中のボタンで行う。
  */
 export function EntrySearchSection({ attacker, threats }: EntrySearchSectionProps) {
   const t = useT();
@@ -33,11 +35,20 @@ export function EntrySearchSection({ attacker, threats }: EntrySearchSectionProp
   const edges = useDiagramStore(selectActiveEdges);
   const boundaries = useDiagramStore(selectActiveBoundaries);
   const isActive = activeId === attacker.id;
+  const [openId, setOpenId] = useState<string | null>(null);
 
   const candidates = useMemo(
     () => (isActive ? findEntryPoints(nodes, edges, boundaries, threats, attacker.id) : []),
     [isActive, nodes, edges, boundaries, threats, attacker.id],
   );
+
+  const openCandidate = candidates.find((c) => c.nodeId === openId);
+  const openNode = openCandidate ? nodes.find((x) => x.id === openCandidate.nodeId) : undefined;
+  const openTitle = openNode
+    ? [openNode.seq !== undefined ? formatElementalId('node', openNode.seq) : '', getNodeDisplayName(openNode)]
+        .filter(Boolean)
+        .join(' ')
+    : '';
 
   return (
     <div className="space-y-2">
@@ -68,7 +79,7 @@ export function EntrySearchSection({ attacker, threats }: EntrySearchSectionProp
                 return (
                   <li key={c.nodeId}>
                     <button
-                      onClick={() => selectNode(c.nodeId)}
+                      onClick={() => setOpenId(c.nodeId)}
                       className="w-full text-left bg-slate-900 border border-slate-700 hover:border-fuchsia-400 rounded-lg px-3 py-2 transition-colors"
                     >
                       <span className="flex items-center gap-2 text-sm text-slate-100">
@@ -95,11 +106,11 @@ export function EntrySearchSection({ attacker, threats }: EntrySearchSectionProp
                           {t('panels.node.entryOutcomes', {
                             outcomes: c.outcomes.map((o) => t(`panels.node.entryOutcome.${o}`)).join(' · '),
                           })}
-                          <span className="block text-slate-400">
-                            {t('panels.node.entrySurfaces', {
-                              surfaces: c.surfaces.map((x) => t(`panels.node.entrySurface.${x.id}` as TranslationKey)).join(' · '),
-                            })}
-                          </span>
+                          {c.surfaces.length > 0 && (
+                            <span className="block text-slate-400">
+                              {t('panels.node.entrySurfaceCount', { count: String(c.surfaces.length) })}
+                            </span>
+                          )}
                         </span>
                       )}
                     </button>
@@ -110,6 +121,18 @@ export function EntrySearchSection({ attacker, threats }: EntrySearchSectionProp
           )}
           {candidates.some((c) => c.assumed) && (
             <p className="text-xs text-slate-400 leading-relaxed">{t('panels.node.entrySearchAssumed')}</p>
+          )}
+          {openCandidate && openNode && (
+            <EntryCandidateModal
+              title={openTitle}
+              candidate={openCandidate}
+              details={entrySurfaceDetails(openCandidate.surfaces, threats)}
+              onClose={() => setOpenId(null)}
+              onSelectNode={() => {
+                setOpenId(null);
+                selectNode(openCandidate.nodeId);
+              }}
+            />
           )}
         </div>
       )}
